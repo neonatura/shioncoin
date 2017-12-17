@@ -1879,7 +1879,7 @@ bool CBlock::trust(int deg, const char *msg, ...)
     originPeer->Misbehaving(-deg);
 
   shcoind_err(SHERR_INVAL, iface->name, errbuf);
-  Debug("TRUST: %s", ToString());
+  Debug("TRUST: %s", ToString().c_str());
 
   return (false);
 }
