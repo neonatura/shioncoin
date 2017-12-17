@@ -453,6 +453,7 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
 #endif
   } else {
     err = c_processblock(pblock);
+if (pblock->ifaceIndex == EMC2_COIN_IFACE) { Debug("DEBUG: (emc2) c_submitblock: %d = c_processblock()\n", err); }
     if (!err) {
       string submit_block_hash;
       char errbuf[1024];

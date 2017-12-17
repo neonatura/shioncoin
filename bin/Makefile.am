@@ -1,13 +1,13 @@
 
 
-noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXTEXT)
+noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXEEXT)
 noinst_SCRIPTS =
 
 if USDE_SERVICE
 noinst_SCRIPTS += .usde$(EXEEXT)
 
 .usde$(EXEEXT):
-	ln -sf $(top_builddir)/src/coin-console/usde$(EXTEXT)
+	ln -sf $(top_builddir)/src/coin-console/usde$(EXEEXT)
 	@echo > .usde$(EXEEXT)
 endif
 
@@ -15,7 +15,7 @@ if EMC2_SERVICE
 noinst_SCRIPTS += .emc2$(EXEEXT)
 
 .emc2$(EXEEXT):
-	ln -sf $(top_builddir)/src/coin-console/emc2$(EXTEXT)
+	ln -sf $(top_builddir)/src/coin-console/emc2$(EXEEXT)
 	@echo > .emc2$(EXEEXT)
 endif
 
@@ -34,8 +34,8 @@ docs:
 endif
 
 
-.notice$(EXTEXT):
-	@echo > .notice$(EXTEXT)
+.notice$(EXEEXT):
+	@echo > .notice$(EXEEXT)
 	@echo ""
 	@echo "It is now safe to perform a 'make install'."
 	@echo ""
