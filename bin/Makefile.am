@@ -1,19 +1,22 @@
 
 
 noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXTEXT)
+noinst_SCRIPTS =
 
 if USDE_SERVICE
-noinst_PROGRAMS += usde$(EXTEXT)
+noinst_SCRIPTS += .usde$(EXEEXT)
 
-usde$(EXTEXT):
+.usde$(EXEEXT):
 	ln -sf $(top_builddir)/src/coin-console/usde$(EXTEXT)
+	@echo > .usde$(EXEEXT)
 endif
 
 if EMC2_SERVICE
-noinst_PROGRAMS += emc2$(EXTEXT)
+noinst_SCRIPTS += .emc2$(EXEEXT)
 
-emc2$(EXTEXT):
+.emc2$(EXEEXT):
 	ln -sf $(top_builddir)/src/coin-console/emc2$(EXTEXT)
+	@echo > .emc2$(EXEEXT)
 endif
 
 shcoind$(EXEEXT): docs
