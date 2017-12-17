@@ -28,8 +28,8 @@
 #define __SHC_PROTO_H__
 
 
-#define SHC_VERSION_MAJOR  2 
-#define SHC_VERSION_MINOR  29
+#define SHC_VERSION_MAJOR  3
+#define SHC_VERSION_MINOR  1
 #define SHC_VERSION_REVISION 0
 #define SHC_VERSION_BUILD 0
 
