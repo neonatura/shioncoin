@@ -1,7 +1,9 @@
 share-coin
 ==========
 
-<h4>Part of the Share Library Suite.</b>
+<h4>Part of the Share Library Suite.</h4>
+
+<h3>Programs Provided</h3>
 
 The "shcoind" daemon provides RPC, Stratum, and Currency services.
 
