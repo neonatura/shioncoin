@@ -1,0 +1,37 @@
+.TH "shfs_dir_t" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shfs_dir_t \- 
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "char \fBpath\fP [((4096-sizeof(\fBshfs_hdr_t\fP))-34)]"
+.br
+.ti -1c
+.RI "\fBshfs_t\fP * \fBfs\fP"
+.br
+.ti -1c
+.RI "\fBshfs_t\fP * \fBalloc_fs\fP"
+.br
+.ti -1c
+.RI "int \fBino_tot\fP"
+.br
+.ti -1c
+.RI "int \fBino_idx\fP"
+.br
+.ti -1c
+.RI "\fBshfs_dirent_t\fP * \fBino\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 1181 of file shfs.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

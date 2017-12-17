@@ -1,0 +1,136 @@
+.TH "Libshare_fsaux" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsaux \- 
+.PP
+Generic 'auxillary' binary data storage.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_aux_read\fP (\fBshfs_ino_t\fP *inode, \fBshbuf_t\fP *ret_buff)"
+.br
+.RI "\fIRetrieve a full data segment of a sharefs filesystem inode. \fP"
+.ti -1c
+.RI "int \fBshfs_aux_pread\fP (\fBshfs_ino_t\fP *inode, \fBshbuf_t\fP *ret_buff, off_t seek_of, size_t seek_max)"
+.br
+.RI "\fIRetrieve a full or partial data segment of a sharefs filesystem inode. \fP"
+.ti -1c
+.RI "int \fBshfs_aux_write\fP (\fBshfs_ino_t\fP *inode, \fBshbuf_t\fP *buff)"
+.br
+.RI "\fIStores a full data segment to a sharefs filesystem inode. \fP"
+.ti -1c
+.RI "int \fBshfs_aux_pwrite\fP (\fBshfs_ino_t\fP *inode, \fBshbuf_t\fP *buff, off_t seek_of, size_t seek_max)"
+.br
+.RI "\fIStores a full or partial data segment to a sharefs filesystem inode. \fP"
+.ti -1c
+.RI "ssize_t \fBshfs_aux_pipe\fP (\fBshfs_ino_t\fP *inode, int fd)"
+.br
+.RI "\fIWrites the auxillary contents of the inode to the file descriptor. \fP"
+.ti -1c
+.RI "uint64_t \fBshfs_aux_crc\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Generic 'auxillary' binary data storage. 
+.SH "Function Documentation"
+.PP 
+.SS "ssize_t shfs_aux_pipe (\fBshfs_ino_t\fP * inode, int fd)"
+.PP
+Writes the auxillary contents of the inode to the file descriptor. \fBParameters:\fP
+.RS 4
+\fIinode\fP The sharefs filesystem inode to print from. 
+.br
+\fIfd\fP A posix file descriptor number representing a socket or local filesystem file reference. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The size of the bytes written or a SHERR_XX error code on error. On error one of the following error codes will be set: SHERR_BADF fd is not a valid file descriptor or is not open for writing. 
+.RE
+.PP
+
+.SS "int shfs_aux_pread (\fBshfs_ino_t\fP * inode, \fBshbuf_t\fP * ret_buff, off_t seek_of, size_t seek_max)"
+.PP
+Retrieve a full or partial data segment of a sharefs filesystem inode. \fBParameters:\fP
+.RS 4
+\fIinode\fP The inode whose data is being retrieved. 
+.br
+\fIret_buff\fP The \fC\fBshbuf_t\fP\fP return buffer. 
+.br
+\fIseek_of\fP The offset to begin reading data from the inode. 
+.br
+\fIseek_max\fP The length of data to be read or zero (0) to indicate no limit. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero (0) on success or an libshare error code no failure. 
+.RE
+.PP
+
+.SS "int shfs_aux_pwrite (\fBshfs_ino_t\fP * inode, \fBshbuf_t\fP * buff, off_t seek_of, size_t seek_max)"
+.PP
+Stores a full or partial data segment to a sharefs filesystem inode. \fBParameters:\fP
+.RS 4
+\fIinode\fP The inode whose data is being retrieved. 
+.br
+\fIbuff\fP The data segment to write to the inode. 
+.br
+\fIseek_of\fP The offset to begin writing data to the inode. 
+.br
+\fIseek_max\fP The length of data to be write or zero (0) to indicate no limit. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero (0) on success or an libshare error code no failure. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+A inode must be linked before it can be written to. 
+.RE
+.PP
+
+.SS "int shfs_aux_read (\fBshfs_ino_t\fP * inode, \fBshbuf_t\fP * ret_buff)"
+.PP
+Retrieve a full data segment of a sharefs filesystem inode. \fBParameters:\fP
+.RS 4
+\fIinode\fP The inode whose data is being retrieved. 
+.br
+\fIret_buff\fP The \fC\fBshbuf_t\fP\fP return buffer. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero (0) on success or an libshare error code no failure. 
+.RE
+.PP
+
+.SS "int shfs_aux_write (\fBshfs_ino_t\fP * inode, \fBshbuf_t\fP * buff)"
+.PP
+Stores a full data segment to a sharefs filesystem inode. \fBParameters:\fP
+.RS 4
+\fIinode\fP The inode whose data is being retrieved. 
+.br
+\fIbuff\fP The data segment to write to the inode. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero (0) on success or an libshare error code no failure. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+A inode must be linked before it can be written to. 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

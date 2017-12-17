@@ -1,0 +1,34 @@
+.TH "Libshare_memzlib" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_memzlib \- 
+.PP
+Compress and decompress data segments.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshzenc\fP (\fBshbuf_t\fP *buff, void *data, size_t data_len)"
+.br
+.RI "\fICompress data into a data buffer. \fP"
+.ti -1c
+.RI "int \fBshzdec\fP (\fBshbuf_t\fP *buff, unsigned char *data, size_t data_len)"
+.br
+.RI "\fIDecompress a data segment into a data buffer. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Compress and decompress data segments. 
+.SH "Function Documentation"
+.PP 
+.SS "int shzdec (\fBshbuf_t\fP * buff, unsigned char * data, size_t data_len)"
+.PP
+Decompress a data segment into a data buffer. The data buffer to store the decompressed data.  The data segment to decompress. 
+.SS "int shzenc (\fBshbuf_t\fP * buff, void * data, size_t data_len)"
+.PP
+Compress data into a data buffer. The data buffer to store the compressed data.  The data segment to compress. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

@@ -1,0 +1,244 @@
+.TH "Network socket operations." 3 "12 Nov 2014" "Version 2.16" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Network socket operations. \- 
+.PP
+The libshare Socket Handling provides access to regular socket operations with posix or convienence functions in addition to access to the ESP network protocol.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshnet_t\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBUSHORT_MAX\fP   65536"
+.br
+.ti -1c
+.RI "#define \fBSHNET_ALIVE\fP   (1 << 0)"
+.br
+.RI "\fIsocket is not closed \fP"
+.ti -1c
+.RI "#define \fBSHNET_IPHDR\fP   (1 << 1)"
+.br
+.RI "\fIinclude IP hdr on transmission \fP"
+.ti -1c
+.RI "#define \fBSHNET_ESP\fP   (1 << 2)"
+.br
+.RI "\fIenable Encoded Stream Protocol \fP"
+.ti -1c
+.RI "#define \fBSHNET_ASYNC\fP   (1 << 3)"
+.br
+.RI "\fIdo not block client calls \fP"
+.ti -1c
+.RI "#define \fBTX_NONE\fP   0"
+.br
+.ti -1c
+.RI "#define \fBTX_IDENT\fP   1"
+.br
+.ti -1c
+.RI "#define \fBTX_PEER\fP   2"
+.br
+.ti -1c
+.RI "#define \fBTX_FILE\fP   3"
+.br
+.ti -1c
+.RI "#define \fBTX_WALLET\fP   4"
+.br
+.ti -1c
+.RI "#define \fBTX_WARD\fP   5"
+.br
+.RI "\fI* A ward can be placed on another transaction to prohibit from being used. \fP"
+.ti -1c
+.RI "#define \fBTX_SIGNATURE\fP   6"
+.br
+.ti -1c
+.RI "#define \fBTX_LEDGER\fP   7"
+.br
+.ti -1c
+.RI "#define \fBTX_LOG\fP   8"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshnet_t\fP \fBshnet_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshnet_accept\fP (int sockfd)"
+.br
+.RI "\fIaccept \fP"
+.ti -1c
+.RI "int \fBshnet_bindsk\fP (int sockfd, char *hostname, unsigned int port)"
+.br
+.RI "\fIbind \fP"
+.ti -1c
+.RI "int \fBshnet_bind\fP (int sockfd, const struct sockaddr *addr, socklen_t addrlen)"
+.br
+.RI "\fIbind \fP"
+.ti -1c
+.RI "int \fBshnet_close\fP (int sk)"
+.br
+.RI "\fIclose \fP"
+.ti -1c
+.RI "int \fBshnet_conn\fP (int sk, char *host, unsigned short port, int async)"
+.br
+.RI "\fIconnect \fP"
+.ti -1c
+.RI "int \fBshnet_fcntl\fP (int fd, int cmd, long arg)"
+.br
+.RI "\fIfcntl \fP"
+.ti -1c
+.RI "struct hostent * \fBshnet_gethostbyname\fP (char *name)"
+.br
+.RI "\fIgethost \fP"
+.ti -1c
+.RI "struct hostent * \fBshnet_peer\fP (char *name)"
+.br
+.RI "\fIgethost \fP"
+.ti -1c
+.RI "ssize_t \fBshnet_read\fP (int fd, const void *buf, size_t count)"
+.br
+.RI "\fIread \fP"
+.ti -1c
+.RI "int \fBshnet_sk\fP (void)"
+.br
+.RI "\fIsocket \fP"
+.ti -1c
+.RI "int \fBshnet_socket\fP (int domain, int type, int protocol)"
+.br
+.RI "\fIsocket \fP"
+.ti -1c
+.RI "struct sockaddr * \fBshnet_host\fP (int sockfd)"
+.br
+.RI "\fIsocket \fP"
+.ti -1c
+.RI "ssize_t \fBshnet_write\fP (int fd, const void *buf, size_t count)"
+.br
+.RI "\fIwrite \fP"
+.ti -1c
+.RI "int \fBshnet_verify\fP (fd_set *readfds, fd_set *writefds, long *millis)"
+.br
+.RI "\fIWaits on the specified read/write socket streams and marks which are available for an IO operation. \fP"
+.ti -1c
+.RI "int \fBshnet_select\fP (int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)"
+.br
+.RI "\fIPerforms a POSIX select() against a set of \fBshnet_t\fP socket streams. \fP"
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBshnet_t\fP \fB_sk_table\fP [65536]"
+.br
+.RI "\fIsocket \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+The libshare Socket Handling provides access to regular socket operations with posix or convienence functions in addition to access to the ESP network protocol. 
+
+The ESP protocol performs streaming compression and provides more security than TCP. The libshare network socket operations. 
+.SH "Define Documentation"
+.PP 
+.SS "#define SHNET_ALIVE   (1 << 0)"
+.PP
+socket is not closed 
+.PP
+Definition at line 49 of file shnet.h.
+.SS "#define SHNET_ASYNC   (1 << 3)"
+.PP
+do not block client calls 
+.PP
+Definition at line 55 of file shnet.h.
+.SS "#define SHNET_ESP   (1 << 2)"
+.PP
+enable Encoded Stream Protocol 
+.PP
+Definition at line 53 of file shnet.h.
+.SS "#define SHNET_IPHDR   (1 << 1)"
+.PP
+include IP hdr on transmission 
+.PP
+Definition at line 51 of file shnet.h.
+.SS "#define TX_WARD   5"
+.PP
+* A ward can be placed on another transaction to prohibit from being used. * 
+.PP
+\fBNote:\fP
+.RS 4
+Applying the identical ward causes the initial ward to be removed. 
+.RE
+.PP
+
+.PP
+Definition at line 85 of file shnet.h.
+.SH "Function Documentation"
+.PP 
+.SS "int shnet_accept (int sockfd)"
+.PP
+accept 
+.SS "int shnet_bind (int sockfd, const struct sockaddr * addr, socklen_t addrlen)"
+.PP
+bind 
+.SS "int shnet_bindsk (int sockfd, char * hostname, unsigned int port)"
+.PP
+bind 
+.SS "int shnet_close (int sk)"
+.PP
+close 
+.SS "int shnet_conn (int sk, char * host, unsigned short port, int async)"
+.PP
+connect 
+.SS "int shnet_fcntl (int fd, int cmd, long arg)"
+.PP
+fcntl 
+.SS "struct hostent* shnet_gethostbyname (char * name)\fC [read]\fP"
+.PP
+gethost 
+.SS "struct sockaddr* shnet_host (int sockfd)\fC [read]\fP"
+.PP
+socket 
+.SS "struct hostent* shnet_peer (char * name)\fC [read]\fP"
+.PP
+gethost 
+.SS "ssize_t shnet_read (int fd, const void * buf, size_t count)"
+.PP
+read 
+.SS "int shnet_select (int nfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds, struct timeval * timeout)"
+.PP
+Performs a POSIX select() against a set of \fBshnet_t\fP socket streams. 
+.SS "int shnet_sk (void)"
+.PP
+socket 
+.SS "int shnet_socket (int domain, int type, int protocol)"
+.PP
+socket 
+.SS "int shnet_verify (fd_set * readfds, fd_set * writefds, long * millis)"
+.PP
+Waits on the specified read/write socket streams and marks which are available for an IO operation. \fBSee also:\fP
+.RS 4
+\fBshnet_select()\fP 
+.RE
+.PP
+
+.SS "ssize_t shnet_write (int fd, const void * buf, size_t count)"
+.PP
+write 
+.SH "Variable Documentation"
+.PP 
+.SS "\fBshnet_t\fP \fB_sk_table\fP[65536]"
+.PP
+socket 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

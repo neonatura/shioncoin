@@ -1,0 +1,79 @@
+.TH "Libshare_fsattr" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsattr \- 
+.PP
+Inode attributes.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_access_read\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *id_key)"
+.br
+.RI "\fICheck whether a user has read permission to an inode. \fP"
+.ti -1c
+.RI "int \fBshfs_access_write\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *id_key)"
+.br
+.RI "\fICheck whether a user has write permission to an inode. \fP"
+.ti -1c
+.RI "int \fBshfs_access_exec\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *id_key)"
+.br
+.RI "\fICheck whether a user has exec permission to an inode. \fP"
+.ti -1c
+.RI "int \fBshfs_access_owner_set\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *id_key)"
+.br
+.RI "\fISet the owner of a file to an identity key. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshfs_access_owner_get\fP (\fBshfs_ino_t\fP *file)"
+.br
+.RI "\fIGet a file owner's identity key. \fP"
+.ti -1c
+.RI "char * \fBshfs_attr_label\fP (int attr_idx)"
+.br
+.ti -1c
+.RI "\fBshfs_attr_t\fP \fBshfs_block_attr\fP (\fBshfs_block_t\fP *blk)"
+.br
+.ti -1c
+.RI "\fBshfs_attr_t\fP \fBshfs_attr\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.ti -1c
+.RI "char * \fBshfs_attr_str\fP (\fBshfs_attr_t\fP attr)"
+.br
+.ti -1c
+.RI "int \fBshfs_attr_set\fP (\fBshfs_ino_t\fP *file, int attr)"
+.br
+.ti -1c
+.RI "int \fBshfs_attr_unset\fP (\fBshfs_ino_t\fP *file, int attr)"
+.br
+.ti -1c
+.RI "int \fBshfs_cred_store\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *key, unsigned char *data, size_t data_len)"
+.br
+.ti -1c
+.RI "int \fBshfs_cred_load\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *key, unsigned char *data, size_t max_len)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Inode attributes. 
+.SH "Function Documentation"
+.PP 
+.SS "int shfs_access_exec (\fBshfs_ino_t\fP * file, \fBshkey_t\fP * id_key)"
+.PP
+Check whether a user has exec permission to an inode. 
+.SS "\fBshkey_t\fP* shfs_access_owner_get (\fBshfs_ino_t\fP * file)"
+.PP
+Get a file owner's identity key. 
+.SS "int shfs_access_owner_set (\fBshfs_ino_t\fP * file, \fBshkey_t\fP * id_key)"
+.PP
+Set the owner of a file to an identity key. 
+.SS "int shfs_access_read (\fBshfs_ino_t\fP * file, \fBshkey_t\fP * id_key)"
+.PP
+Check whether a user has read permission to an inode. 
+.SS "int shfs_access_write (\fBshfs_ino_t\fP * file, \fBshkey_t\fP * id_key)"
+.PP
+Check whether a user has write permission to an inode. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

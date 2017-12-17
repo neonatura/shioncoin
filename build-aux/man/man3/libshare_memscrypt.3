@@ -1,0 +1,93 @@
+.TH "Scrypt hash generator" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Scrypt hash generator \- 
+.PP
+Scrypt hash generator.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBscrypt_work\fP"
+.br
+.ti -1c
+.RI "struct \fBscrypt_peer\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBbswap_16\fP(value)   ((((value) & 0xff) << 8) | ((value) >> 8))"
+.br
+.ti -1c
+.RI "#define \fBbswap_32\fP(value)"
+.br
+.ti -1c
+.RI "#define \fBbswap_64\fP(value)"
+.br
+.ti -1c
+.RI "#define \fBflip32\fP(dest_p, src_p)   (swap32yes(dest_p, src_p, 32 / 4))"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBshscrypt_peer\fP (\fBscrypt_peer\fP *peer, char *nonce1, double diff)"
+.br
+.ti -1c
+.RI "int \fBshscrypt\fP (\fBscrypt_work\fP *work, int step)"
+.br
+.ti -1c
+.RI "int \fBshscrypt_verify\fP (\fBscrypt_work\fP *work)"
+.br
+.ti -1c
+.RI "void \fBshscrypt_peer_gen\fP (\fBscrypt_peer\fP *peer, double diff)"
+.br
+.ti -1c
+.RI "double \fBshscrypt_hash_diff\fP (\fBscrypt_work\fP *work)"
+.br
+.ti -1c
+.RI "void \fBshscrypt_work\fP (\fBscrypt_peer\fP *peer, \fBscrypt_work\fP *work, char **merkle_list, char *prev_hash, char *coinbase1, char *coinbase2, char *nbit, char *ntime)"
+.br
+.ti -1c
+.RI "void \fBshscrypt_swap256\fP (void *dest_p, const void *src_p)"
+.br
+.ti -1c
+.RI "int \fBscrypt_test\fP (unsigned char *pdata, const unsigned char *ptarget, uint32_t nonce)"
+.br
+.RI "\fIScrypt hash generator. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Scrypt hash generator. 
+.SH "Define Documentation"
+.PP 
+.SS "#define bswap_32(value)"\fBValue:\fP
+.PP
+.nf
+(((uint32_t)bswap_16((uint16_t)((value) & 0xffff)) << 16) | \
+        (uint32_t)bswap_16((uint16_t)((value) >> 16)))
+.fi
+.PP
+Definition at line 1187 of file shmem.h.
+.SS "#define bswap_64(value)"\fBValue:\fP
+.PP
+.nf
+(((uint64_t)bswap_32((uint32_t)((value) & 0xffffffff)) \
+            << 32) | \
+        (uint64_t)bswap_32((uint32_t)((value) >> 32)))
+.fi
+.PP
+Definition at line 1191 of file shmem.h.
+.SH "Function Documentation"
+.PP 
+.SS "int scrypt_test (unsigned char * pdata, const unsigned char * ptarget, uint32_t nonce)"
+.PP
+Scrypt hash generator. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

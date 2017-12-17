@@ -1,0 +1,5 @@
+v2.27 Share Coin
+--
+Debute of SHC (share coin virtual currency) with extended transaction support.
+
+The sharecoin virtual currency utilizes scrypt-based proofing with an estimated block reward-span of over 40 years. The underlying block-chain is capable of storing extended information; such as named aliases, certificate licensing, asset references, and a decentralized method of exchanging coins between currencies.

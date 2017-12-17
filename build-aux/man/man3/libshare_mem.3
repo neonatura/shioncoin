@@ -1,0 +1,156 @@
+.TH "Encryption, memory pools, and hashmaps." 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Encryption, memory pools, and hashmaps. \- 
+.PP
+Memory manipulation routines.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshseed_t\fP"
+.br
+.in -1c
+.SS "Modules"
+
+.in +1c
+.ti -1c
+.RI "\fBDynamic memory buffer allocation utilities.\fP"
+.br
+.PP
+
+.RI "\fIDynamic memory buffer. \fP"
+.ti -1c
+.RI "\fBUtility functions to generate unique checksums of data.\fP"
+.br
+.PP
+
+.RI "\fIKey token generator. \fP"
+.ti -1c
+.RI "\fBThe libshare memory buffer pool allocation utilities.\fP"
+.br
+.PP
+
+.RI "\fIMemory Buffer Pools. \fP"
+.ti -1c
+.RI "\fBStore object-related information by key token.\fP"
+.br
+.PP
+
+.RI "\fIMeta definition hashmaps. \fP"
+.ti -1c
+.RI "\fBEncryption and decryption of memory segments.\fP"
+.br
+.PP
+
+.RI "\fIEncryption routines. \fP"
+.ti -1c
+.RI "\fBUtility functions to provide mutex thread locks and semaphores.\fP"
+.br
+.PP
+
+.RI "\fIMutex and semaphore locks. \fP"
+.ti -1c
+.RI "\fBJSON text parser and generator.\fP"
+.br
+.PP
+
+.RI "\fIJSON text parser and generator. \fP"
+.ti -1c
+.RI "\fBScrypt hash generator\fP"
+.br
+.PP
+
+.RI "\fIScrypt hash generator. \fP"
+.ti -1c
+.RI "\fBUtility functions to generate unique checksums of data in SHA256 format.\fP"
+.br
+.PP
+
+.RI "\fIGenerate hash checksums. \fP"
+.ti -1c
+.RI "\fBLibshare_memzlib\fP"
+.br
+.PP
+
+.RI "\fICompress and decompress data segments. \fP"
+.ti -1c
+.RI "\fBLibshare_memdelta\fP"
+.br
+.PP
+
+.RI "\fIGenerate xd3 diff comparisons. \fP"
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHMEM_MAGIC\fP   0x87654321"
+.br
+.RI "\fIA hard-coded value stored in memory segments in order to validate a current state or integrity. \fP"
+.ti -1c
+.RI "#define \fBSHMEM_PAD_SIZE\fP   32"
+.br
+.RI "\fIThe byte padding size when allocating a stored value. \fP"
+.ti -1c
+.RI "#define \fBSHSEED_PLAIN\fP   0"
+.br
+.ti -1c
+.RI "#define \fBSHSEED_MD5\fP   1"
+.br
+.ti -1c
+.RI "#define \fBSHSEED_SHA256\fP   3"
+.br
+.ti -1c
+.RI "#define \fBSHSEED_SHA512\fP   2"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshseed_t\fP \fBshseed_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshdiff\fP (\fBshbuf_t\fP *buff, char *str_1, char *str_2)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Memory manipulation routines. 
+.SH "Define Documentation"
+.PP 
+.SS "#define SHMEM_MAGIC   0x87654321"
+.PP
+A hard-coded value stored in memory segments in order to validate a current state or integrity. \fBNote:\fP
+.RS 4
+Specifies a hard-coded value that identifies a \fC\fBshmeta_value_t\fP\fP data segment. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshmeta_value_t\fP \fBshencode()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 53 of file shmem.h.
+.SS "#define SHMEM_PAD_SIZE   32"
+.PP
+The byte padding size when allocating a stored value. \fBSee also:\fP
+.RS 4
+\fBshencode()\fP \fBshmeta_set()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 59 of file shmem.h.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

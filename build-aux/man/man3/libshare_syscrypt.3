@@ -1,0 +1,33 @@
+.TH "Libshare_syscrypt" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_syscrypt \- 
+.PP
+Perform posix crypt algorythm for sha256, and sha512.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "char * \fBshcrypt\fP (const char *passwd, const char *salt)"
+.br
+.ti -1c
+.RI "char * \fBshcrypt_sha256_r\fP (const char *key, const char *salt, char *buffer, int buflen)"
+.br
+.ti -1c
+.RI "char * \fBshcrypt_sha256\fP (const char *key, const char *salt)"
+.br
+.ti -1c
+.RI "char * \fBshcrypt_sha512_r\fP (const char *key, const char *salt, char *buffer, int buflen)"
+.br
+.ti -1c
+.RI "char * \fBshcrypt_sha512\fP (const char *key, const char *salt)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Perform posix crypt algorythm for sha256, and sha512. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

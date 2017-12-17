@@ -1,0 +1,228 @@
+.TH "Utility functions to provide mutex thread locks and semaphores." 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Utility functions to provide mutex thread locks and semaphores. \- 
+.PP
+Mutex and semaphore locks.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshlock_t\fP"
+.br
+.RI "\fIThe share library lock structure. \fP"
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHLOCK_SYSTEM\fP   -9999"
+.br
+.RI "\fIA lock used by the share library in order to ensure no two threads perform a system call at the same instance. \fP"
+.ti -1c
+.RI "#define \fBSHLK_PRIVATE\fP   (1 << 0)"
+.br
+.RI "\fIPrevents the mutex from allowing the same thread to access the lock. \fP"
+.ti -1c
+.RI "#define \fBshlock_open_num\fP(_num, _flags)   shlock_open(ashkey_num(_num), (_flags))"
+.br
+.RI "\fIOpens a lock based on a number. \fP"
+.ti -1c
+.RI "#define \fBshlock_open_str\fP(_str, _flags)   shlock_open(ashkey_str(_str), (_flags))"
+.br
+.RI "\fIOpens a lock based on a string. \fP"
+.ti -1c
+.RI "#define \fBshlock_tryopen_num\fP(_num, _flags, _keyp)   shlock_tryopen(ashkey_num(_num), (_flags), (_keyp))"
+.br
+.RI "\fIOpens a lock based on a number. \fP"
+.ti -1c
+.RI "#define \fBshlock_tryopen_str\fP(_str, _flags, _keyp)   shlock_tryopen(ashkey_str(_str), (_flags), (_keyp))"
+.br
+.RI "\fIOpens a lock based on a string. \fP"
+.ti -1c
+.RI "#define \fBshlock_close_num\fP(_num, _flags)   shlock_close(ashkey_num(_num), (_flags))"
+.br
+.RI "\fICloses a lock based on a number. \fP"
+.ti -1c
+.RI "#define \fBshlock_close_str\fP(_str, _flags)   shlock_close(ashkey_str(_str), (_flags))"
+.br
+.RI "\fICloses a lock based on a string. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshlock_t\fP \fBshlock_t\fP"
+.br
+.RI "\fIThe share library lock structure is used primarily in order to prevent multiple threads from performing system calls at the same instance. \fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshlock_t\fP * \fBshlock_open\fP (\fBshkey_t\fP *key, int flags)"
+.br
+.RI "\fICreate a new lock on a mutex waiting if needed. \fP"
+.ti -1c
+.RI "int \fBshlock_tryopen\fP (\fBshkey_t\fP *key, int flags, \fBshlock_t\fP **lock_p)"
+.br
+.RI "\fICreate a new lock on a mutex unless one has already been created. \fP"
+.ti -1c
+.RI "int \fBshlock_close\fP (\fBshkey_t\fP *key)"
+.br
+.RI "\fIUnlock a mutex. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Mutex and semaphore locks. 
+.SH "Define Documentation"
+.PP 
+.SS "#define SHLK_PRIVATE   (1 << 0)"
+.PP
+Prevents the mutex from allowing the same thread to access the lock. \fBNote:\fP
+.RS 4
+Similar to a semaphore as the lock is not based on thread conditions. 
+.RE
+.PP
+
+.PP
+Definition at line 797 of file shmem.h.
+.SS "#define shlock_close_num(_num, _flags)   shlock_close(ashkey_num(_num), (_flags))"
+.PP
+Closes a lock based on a number. \fBSee also:\fP
+.RS 4
+\fBshlock_close()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 889 of file shmem.h.
+.SS "#define shlock_close_str(_str, _flags)   shlock_close(ashkey_str(_str), (_flags))"
+.PP
+Closes a lock based on a string. \fBSee also:\fP
+.RS 4
+\fBshlock_close()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 896 of file shmem.h.
+.SS "#define shlock_open_num(_num, _flags)   shlock_open(ashkey_num(_num), (_flags))"
+.PP
+Opens a lock based on a number. \fBSee also:\fP
+.RS 4
+\fBshlock_open()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 846 of file shmem.h.
+.SS "#define shlock_open_str(_str, _flags)   shlock_open(ashkey_str(_str), (_flags))"
+.PP
+Opens a lock based on a string. \fBSee also:\fP
+.RS 4
+\fBshlock_open()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 853 of file shmem.h.
+.SS "#define SHLOCK_SYSTEM   -9999"
+.PP
+A lock used by the share library in order to ensure no two threads perform a system call at the same instance. 
+.PP
+Definition at line 791 of file shmem.h.
+.SS "#define shlock_tryopen_num(_num, _flags, _keyp)   shlock_tryopen(ashkey_num(_num), (_flags), (_keyp))"
+.PP
+Opens a lock based on a number. \fBSee also:\fP
+.RS 4
+\fBshlock_tryopen()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 870 of file shmem.h.
+.SS "#define shlock_tryopen_str(_str, _flags, _keyp)   shlock_tryopen(ashkey_str(_str), (_flags), (_keyp))"
+.PP
+Opens a lock based on a string. \fBSee also:\fP
+.RS 4
+\fBshlock_tryopen()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 877 of file shmem.h.
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef struct \fBshlock_t\fP \fBshlock_t\fP"
+.PP
+The share library lock structure is used primarily in order to prevent multiple threads from performing system calls at the same instance. The lock includes both re-entrant and private access styles. The functionality can be extended in order to provide custom locks. 
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshlock_open()\fP \fBshlock_close()\fP 
+.RE
+.PP
+
+.PP
+Definition at line 805 of file shmem.h.
+.SH "Function Documentation"
+.PP 
+.SS "int shlock_close (\fBshkey_t\fP * key)"
+.PP
+Unlock a mutex. 
+.SS "\fBshlock_t\fP* shlock_open (\fBshkey_t\fP * key, int flags)"
+.PP
+Create a new lock on a mutex waiting if needed. \fBParameters:\fP
+.RS 4
+\fInum\fP A positive number identifying the lock. 
+.br
+\fIflags\fP A set of modifiers to configure the lock. (SHLK_XXX) 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+The libshare uses negative numbers for internal locks. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBSHLOCK_SYSTEM\fP \fBSHLK_PRIVATE\fP 
+.RE
+.PP
+\fBBug\fP
+.RS 4
+flags should be stored in \fBshkey_t\fP instead of a paramter 
+.RE
+.PP
+
+.SS "int shlock_tryopen (\fBshkey_t\fP * key, int flags, \fBshlock_t\fP ** lock_p)"
+.PP
+Create a new lock on a mutex unless one has already been created. \fBParameters:\fP
+.RS 4
+\fInum\fP A positive number identifying the lock. 
+.br
+\fIflags\fP A set of modifiers to configure the lock. (SHLK_XXX) 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+The libshare uses negative numbers for internal locks. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A 0 on success, a 1 when the mutex is already locked, and a -1 on error. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBSHLOCK_SYSTEM\fP \fBSHLK_PRIVATE\fP 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

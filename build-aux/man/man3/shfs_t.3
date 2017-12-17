@@ -1,0 +1,89 @@
+.TH "shfs_t" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shfs_t \- 
+.PP
+The sharefs filesystem structure.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shfs.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "int \fBflags\fP"
+.br
+.RI "\fIThe flags associated with the sharefs partition. \fP"
+.ti -1c
+.RI "\fBshpeer_t\fP \fBpeer\fP"
+.br
+.RI "\fIThe machine related to the sharefs inode's partition. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBbase_ino\fP"
+.br
+.RI "\fIWorking root directory. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBfsbase_ino\fP"
+.br
+.RI "\fIRoot directory. \fP"
+.ti -1c
+.RI "void * \fBjcache\fP [16]"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+The sharefs filesystem structure. 
+
+\fBNote:\fP
+.RS 4
+See also: \fC\fBshfs_ino_t\fP\fP 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+.PP
+\fBshkeystore.c\fP.
+.PP
+Definition at line 718 of file shfs.h.
+.SH "Field Documentation"
+.PP 
+.SS "\fBshfs_ino_t\fP* \fBshfs_t::base_ino\fP"
+.PP
+Working root directory. \fBSee also:\fP
+.RS 4
+shchroot() 
+.RE
+.PP
+
+.PP
+Definition at line 734 of file shfs.h.
+.SS "int \fBshfs_t::flags\fP"
+.PP
+The flags associated with the sharefs partition. 
+.PP
+Definition at line 722 of file shfs.h.
+.SS "\fBshfs_ino_t\fP* \fBshfs_t::fsbase_ino\fP"
+.PP
+Root directory. 
+.PP
+Definition at line 739 of file shfs.h.
+.SS "\fBshpeer_t\fP \fBshfs_t::peer\fP"
+.PP
+The machine related to the sharefs inode's partition. \fBNote:\fP
+.RS 4
+This variable is not saved as part of the fileystem inode. 
+.RE
+.PP
+
+.PP
+Definition at line 728 of file shfs.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

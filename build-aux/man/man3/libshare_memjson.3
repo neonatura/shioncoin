@@ -1,0 +1,337 @@
+.TH "JSON text parser and generator." 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+JSON text parser and generator. \- 
+.PP
+JSON text parser and generator.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshjson_t\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBDBL_EPSILON\fP   2.2204460492503131E-16"
+.br
+.ti -1c
+.RI "#define \fBINT_MAX\fP   0x7FFF/0x7FFFFFFF"
+.br
+.ti -1c
+.RI "#define \fBINT_MIN\fP   ((int) 0x8000/0x80000000)"
+.br
+.ti -1c
+.RI "#define \fBshjson_False\fP   0"
+.br
+.ti -1c
+.RI "#define \fBshjson_True\fP   1"
+.br
+.ti -1c
+.RI "#define \fBshjson_NULL\fP   2"
+.br
+.ti -1c
+.RI "#define \fBshjson_Number\fP   3"
+.br
+.ti -1c
+.RI "#define \fBshjson_String\fP   4"
+.br
+.ti -1c
+.RI "#define \fBshjson_Array\fP   5"
+.br
+.ti -1c
+.RI "#define \fBshjson_Object\fP   6"
+.br
+.ti -1c
+.RI "#define \fBshjson_IsReference\fP   256"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "char * \fBshjson_print\fP (\fBshjson_t\fP *json)"
+.br
+.RI "\fIObtain a text representation of the \fCjson\fP hiearchy in JSON format. \fP"
+.ti -1c
+.RI "char * \fBshjson_str\fP (\fBshjson_t\fP *json, char *name, char *def_str)"
+.br
+.RI "\fIObtain an allocated string value from a JSON object. \fP"
+.ti -1c
+.RI "char * \fBshjson_astr\fP (\fBshjson_t\fP *json, char *name, char *def_str)"
+.br
+.RI "\fIObtain an un-allocated string value from a JSON object. \fP"
+.ti -1c
+.RI "\fBshjson_t\fP * \fBshjson_str_add\fP (\fBshjson_t\fP *tree, char *name, char *val)"
+.br
+.RI "\fIAdd a string value to a JSON object or array. \fP"
+.ti -1c
+.RI "void \fBshjson_free\fP (\fBshjson_t\fP **tree_p)"
+.br
+.RI "\fIDe-allocates memory associated with a JSON hiearchy. \fP"
+.ti -1c
+.RI "double \fBshjson_num\fP (\fBshjson_t\fP *json, char *name, double def_d)"
+.br
+.RI "\fIObtain a number value from a JSON object. \fP"
+.ti -1c
+.RI "\fBshjson_t\fP * \fBshjson_num_add\fP (\fBshjson_t\fP *tree, char *name, double num)"
+.br
+.RI "\fIAdd a number value to a JSON object or array. \fP"
+.ti -1c
+.RI "\fBshjson_t\fP * \fBshjson_init\fP (char *json_str)"
+.br
+.RI "\fICreate a new JSON tree hierarchy. \fP"
+.ti -1c
+.RI "\fBshjson_t\fP * \fBshjson_array_add\fP (\fBshjson_t\fP *tree, char *name)"
+.br
+.RI "\fICreate a new JSON node at the end of an array. \fP"
+.ti -1c
+.RI "char * \fBshjson_array_str\fP (\fBshjson_t\fP *json, char *name, int idx)"
+.br
+.RI "\fIObtain an allocated string value from an array. \fP"
+.ti -1c
+.RI "char * \fBshjson_array_astr\fP (\fBshjson_t\fP *json, char *name, int idx)"
+.br
+.RI "\fIObtain an un-allocated string value from an array. \fP"
+.ti -1c
+.RI "double \fBshjson_array_num\fP (\fBshjson_t\fP *json, char *name, int idx)"
+.br
+.RI "\fIObtain a number value from an array. \fP"
+.ti -1c
+.RI "\fBshjson_t\fP * \fBshjson_obj\fP (\fBshjson_t\fP *json, char *name)"
+.br
+.ti -1c
+.RI "size_t \fBshjson_strlen\fP (\fBshjson_t\fP *json, char *name)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+JSON text parser and generator. 
+.SH "Function Documentation"
+.PP 
+.SS "\fBshjson_t\fP* shjson_array_add (\fBshjson_t\fP * tree, char * name)"
+.PP
+Create a new JSON node at the end of an array. \fBParameters:\fP
+.RS 4
+\fIjson\fP The JSON object containing the array. 
+.br
+\fIname\fP The name of the array in the JSON object. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A new JSON node attachd to the array. 
+.RE
+.PP
+
+.SS "char* shjson_array_astr (\fBshjson_t\fP * json, char * name, int idx)"
+.PP
+Obtain an un-allocated string value from an array. \fBParameters:\fP
+.RS 4
+\fIjson\fP The JSON object containing the array. 
+.br
+\fIname\fP The name of the array in the JSON object. 
+.br
+\fIidx\fP The index number of the JSON node in the array. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The string value contained in the array's node index. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Do not free the string pointer returned. 
+.RE
+.PP
+
+.SS "double shjson_array_num (\fBshjson_t\fP * json, char * name, int idx)"
+.PP
+Obtain a number value from an array. \fBParameters:\fP
+.RS 4
+\fIjson\fP The JSON object containing the array. 
+.br
+\fIname\fP The name of the array in the JSON object. 
+.br
+\fIidx\fP The index number of the JSON node in the array. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The numeric value contained in the array's node index. 
+.RE
+.PP
+
+.SS "char* shjson_array_str (\fBshjson_t\fP * json, char * name, int idx)"
+.PP
+Obtain an allocated string value from an array. \fBParameters:\fP
+.RS 4
+\fIjson\fP The JSON object containing the array. 
+.br
+\fIname\fP The name of the array in the JSON object. 
+.br
+\fIidx\fP The index number of the JSON node in the array. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The string value contained in the array's node index. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+The string pointer returned must be de-allocated. 
+.RE
+.PP
+
+.SS "char* shjson_astr (\fBshjson_t\fP * json, char * name, char * def_str)"
+.PP
+Obtain an un-allocated string value from a JSON object. \fBParameters:\fP
+.RS 4
+\fItree\fP The JSON object containing the string value. 
+.br
+\fIname\fP The name of the string JSON node. 
+.br
+\fIdef_str\fP The default string value if the JSON node does not exist. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The string value contained in the JSON node. 
+.RE
+.PP
+
+.SS "void shjson_free (\fBshjson_t\fP ** tree_p)"
+.PP
+De-allocates memory associated with a JSON hiearchy. \fBParameters:\fP
+.RS 4
+\fItree_p\fP A reference to the JSON hierarchy. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshjson_init()\fP 
+.RE
+.PP
+
+.SS "\fBshjson_t\fP* shjson_init (char * json_str)"
+.PP
+Create a new JSON tree hierarchy. \fBParameters:\fP
+.RS 4
+\fIjson_str\fP A JSON formatted text string or NULL. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A new JSON object if \fCjson_str\fP is null or a full JSON node hierarchy otherwise. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshjson_print\fP 
+.PP
+\fBshjson_free\fP 
+.RE
+.PP
+
+.SS "double shjson_num (\fBshjson_t\fP * json, char * name, double def_d)"
+.PP
+Obtain a number value from a JSON object. \fBParameters:\fP
+.RS 4
+\fItree\fP The JSON object containing the number value. 
+.br
+\fIname\fP The name of the number JSON node. 
+.br
+\fIdef_d\fP The default number value if the JSON node does not exist. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The number value contained in the JSON node. 
+.RE
+.PP
+
+.SS "\fBshjson_t\fP* shjson_num_add (\fBshjson_t\fP * tree, char * name, double num)"
+.PP
+Add a number value to a JSON object or array. \fBParameters:\fP
+.RS 4
+\fItree\fP The JSON object or array to add the number value. 
+.br
+\fIname\fP The name of the number JSON node or NULL if \fCtree\fP is an array. 
+.br
+\fIidx\fP The number value to store in the new JSON node. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The new JSON node containing the number value. 
+.RE
+.PP
+
+.SS "\fBshjson_t\fP* shjson_obj (\fBshjson_t\fP * json, char * name)"\fBReturns:\fP
+.RS 4
+A JSON object contained inside another object. 
+.RE
+.PP
+
+.SS "char* shjson_print (\fBshjson_t\fP * json)"
+.PP
+Obtain a text representation of the \fCjson\fP hiearchy in JSON format. \fBReturns:\fP
+.RS 4
+An allocated string in JSON format. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshjson_init()\fP 
+.RE
+.PP
+
+.SS "char* shjson_str (\fBshjson_t\fP * json, char * name, char * def_str)"
+.PP
+Obtain an allocated string value from a JSON object. \fBParameters:\fP
+.RS 4
+\fItree\fP The JSON object containing the string value. 
+.br
+\fIname\fP The name of the string JSON node. 
+.br
+\fIdef_str\fP The default string value if the JSON node does not exist. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The string value contained in the JSON node. 
+.RE
+.PP
+
+.SS "\fBshjson_t\fP* shjson_str_add (\fBshjson_t\fP * tree, char * name, char * val)"
+.PP
+Add a string value to a JSON object or array. \fBParameters:\fP
+.RS 4
+\fItree\fP The JSON object containing the string value. 
+.br
+\fIname\fP The name of the string JSON node. 
+.br
+\fIval\fP The string value to store in the new JSON node. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The new JSON node containing the string value. 
+.RE
+.PP
+
+.SS "size_t shjson_strlen (\fBshjson_t\fP * json, char * name)"\fBReturns:\fP
+.RS 4
+The string length of a JSON object node. 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

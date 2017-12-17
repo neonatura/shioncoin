@@ -1,0 +1,74 @@
+.TH "Libshare_fspartition" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fspartition \- 
+.PP
+The libshare 'share-fs' file-system partition management.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshfs_t\fP * \fBshfs_init\fP (\fBshpeer_t\fP *peer)"
+.br
+.RI "\fICreates a reference to a sharefs filesystem. \fP"
+.ti -1c
+.RI "void \fBshfs_free\fP (\fBshfs_t\fP **tree_p)"
+.br
+.RI "\fIFree a reference to a sharefs partition. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshfs_partition_id\fP (\fBshfs_t\fP *tree)"
+.br
+.RI "\fIObtain the partition id for a sharefs partition. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+The libshare 'share-fs' file-system partition management. 
+.SH "Function Documentation"
+.PP 
+.SS "void shfs_free (\fBshfs_t\fP ** tree_p)"
+.PP
+Free a reference to a sharefs partition. \fBParameters:\fP
+.RS 4
+\fItree_p\fP A reference to the sharefs partition instance to free. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "\fBshfs_t\fP* shfs_init (\fBshpeer_t\fP * peer)"
+.PP
+Creates a reference to a sharefs filesystem. \fBParameters:\fP
+.RS 4
+\fIpeer\fP A local or remote reference to a sharefs partition. \fIflags\fP A combination of SHFS_PARTITION_XXX flags. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+\fBshfs_t\fP A share partition associated with the peer specified or the local default partition if a NULL peer is specified. 
+.RE
+.PP
+\fBTodo\fP
+.RS 4
+write local file '/system/version' with current version. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "\fBshkey_t\fP* shfs_partition_id (\fBshfs_t\fP * tree)"
+.PP
+Obtain the partition id for a sharefs partition. \fBNote:\fP
+.RS 4
+The local parition will always return zero (0). 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

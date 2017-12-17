@@ -1,0 +1,51 @@
+.TH "shlock_t" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shlock_t \- 
+.PP
+The share library lock structure.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shmem.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "int \fBref\fP"
+.br
+.RI "\fIThe number of references being made to this lock. \fP"
+.ti -1c
+.RI "pid_t \fBtid\fP"
+.br
+.RI "\fIThe process thread identification number. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+The share library lock structure. 
+.PP
+Definition at line 810 of file shmem.h.
+.SH "Field Documentation"
+.PP 
+.SS "int \fBshlock_t::ref\fP"
+.PP
+The number of references being made to this lock. 
+.PP
+Definition at line 814 of file shmem.h.
+.SS "pid_t \fBshlock_t::tid\fP"
+.PP
+The process thread identification number. \fBSee also:\fP
+.RS 4
+gettid() 
+.RE
+.PP
+
+.PP
+Definition at line 820 of file shmem.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

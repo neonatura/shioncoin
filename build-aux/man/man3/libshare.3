@@ -1,0 +1,825 @@
+.TH "Libshare" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare \- 
+.PP
+The Share Library.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshpeer_addr\fP"
+.br
+.ti -1c
+.RI "struct \fBshpeer_key_t\fP"
+.br
+.ti -1c
+.RI "struct \fBshpeer_t\fP"
+.br
+.RI "\fIA local or remote reference to a libshare runtime enabled application. \fP"
+.in -1c
+.SS "Modules"
+
+.in +1c
+.ti -1c
+.RI "\fBLibshare_error\fP"
+.br
+.PP
+
+.RI "\fIThe libshare error codes. \fP"
+.ti -1c
+.RI "\fBThe share library 'sharefs' file system.\fP"
+.br
+.PP
+
+.RI "\fIThe sharefs file system. \fP"
+.ti -1c
+.RI "\fBEncryption, memory pools, and hashmaps.\fP"
+.br
+.PP
+
+.RI "\fIMemory manipulation routines. \fP"
+.ti -1c
+.RI "\fBNetwork socket operations.\fP"
+.br
+.PP
+
+.RI "\fIThe libshare Socket Handling provides access to regular socket operations with posix or convienence functions in addition to access to the ESP network protocol. \fP"
+.ti -1c
+.RI "\fBLibshare_sys\fP"
+.br
+.PP
+
+.RI "\fISystem-level routines. \fP"
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBFALSE\fP   0"
+.br
+.ti -1c
+.RI "#define \fBTRUE\fP   (!FALSE)"
+.br
+.ti -1c
+.RI "#define \fBMIN\fP(a, b)   (a < b ? a : b)"
+.br
+.ti -1c
+.RI "#define \fBMAX\fP(a, b)   (a > b ? a : b)"
+.br
+.ti -1c
+.RI "#define \fBPRINT_RUSAGE\fP(_msg)"
+.br
+.ti -1c
+.RI "#define \fBPRINT_ERROR\fP(_err, _msg)   sherr(_err, _msg)"
+.br
+.ti -1c
+.RI "#define \fBINADDR_LOOPBACK\fP   0x7f000001"
+.br
+.ti -1c
+.RI "#define \fBMAX_SHARE_NAME_LENGTH\fP   136"
+.br
+.ti -1c
+.RI "#define \fBMAX_SHARE_PASS_LENGTH\fP   136"
+.br
+.ti -1c
+.RI "#define \fBMAX_SHARE_HASH_LENGTH\fP   136"
+.br
+.ti -1c
+.RI "#define \fBSHARE_PAGE_SIZE\fP   8192"
+.br
+.ti -1c
+.RI "#define \fBSHARE_DEFAULT_EXPIRE_TIME\fP   15147432000"
+.br
+.RI "\fIA shtime_t representation of 01/01/60 UTC. \fP"
+.ti -1c
+.RI "#define \fBMAX_SHARE_SESSION_TIME\fP   2073600"
+.br
+.ti -1c
+.RI "#define \fBSHNET_PEER_LOCAL\fP   0"
+.br
+.RI "\fIThe local machine. \fP"
+.ti -1c
+.RI "#define \fBSHNET_PEER_IPV4\fP   1"
+.br
+.RI "\fIA remote IPv4 network destination. \fP"
+.ti -1c
+.RI "#define \fBSHNET_PEER_IPV6\fP   2"
+.br
+.RI "\fIA remote IPv6 network destination. \fP"
+.ti -1c
+.RI "#define \fBSHNET_PEER_VPN_IPV4\fP   3"
+.br
+.RI "\fIA IPv4 network destination on the sharenet VPN. \fP"
+.ti -1c
+.RI "#define \fBSHNET_PEER_VPN_IPV6\fP   4"
+.br
+.RI "\fIA IPv6 network destination on the sharenet VPN. \fP"
+.ti -1c
+.RI "#define \fBSHNET_BROADCAST\fP   5"
+.br
+.RI "\fIGlobal network destination. \fP"
+.ti -1c
+.RI "#define \fBSHARCH_32BIT\fP   (1 << 0)"
+.br
+.RI "\fI32bit hardware (i.e. \fP"
+.ti -1c
+.RI "#define \fBSHARCH_LINUX\fP   (1 << 1)"
+.br
+.RI "\fIlinux \fP"
+.ti -1c
+.RI "#define \fBSHARCH_WIN\fP   (1 << 2)"
+.br
+.RI "\fIwin/doh \fP"
+.ti -1c
+.RI "#define \fBSHARCH_MAC\fP   (1 << 3)"
+.br
+.RI "\fIapple/mac \fP"
+.ti -1c
+.RI "#define \fBSHARCH_BSD\fP   (1 << 4)"
+.br
+.RI "\fIbsd/freebsd \fP"
+.ti -1c
+.RI "#define \fBSHARCH_SUN\fP   (1 << 5)"
+.br
+.RI "\fIsun os \fP"
+.ti -1c
+.RI "#define \fBSHARCH_MIPS\fP   (1 << 7)"
+.br
+.RI "\fI(android) mips chipset \fP"
+.ti -1c
+.RI "#define \fBSHARCH_BIGEND\fP   (1 << 7)"
+.br
+.RI "\fI(aix/4) big endian / network byte order \fP"
+.ti -1c
+.RI "#define \fBshpeer_kpub\fP(_peer)   (& (_peer)->key.pub)"
+.br
+.RI "\fIpublic key reference of peer \fP"
+.ti -1c
+.RI "#define \fBshpeer_kpriv\fP(_peer)   (& (_peer)->key.priv)"
+.br
+.RI "\fIpriveleged key reference of peer \fP"
+.ti -1c
+.RI "#define \fBSHPREF_BASE_DIR\fP   'base-dir'"
+.br
+.RI "\fISpecifies the preferred location of where the sharefs filesystem is stored on the local file system. \fP"
+.ti -1c
+.RI "#define \fBSHPREF_TRACK\fP   'track'"
+.br
+.RI "\fISpecifies whether to track sharefs filesystem revisions. \fP"
+.ti -1c
+.RI "#define \fBSHPREF_OVERLAY\fP   'overlay'"
+.br
+.RI "\fISpecifies whether the sharefs file system references files on the local filesystem. \fP"
+.ti -1c
+.RI "#define \fBSHPREF_ACC_NAME\fP   SHMETA_USER_EMAIL"
+.br
+.RI "\fIThe account name is typically comprised of an email address. \fP"
+.ti -1c
+.RI "#define \fBSHPREF_ACC_PASS\fP   SHMETA_USER_PASS"
+.br
+.RI "\fIA key reference to the user's account password. \fP"
+.ti -1c
+.RI "#define \fBSHPREF_ACC_SALT\fP   SHMETA_USER_SALT"
+.br
+.RI "\fIThe salt used to perturb the account password key. \fP"
+.ti -1c
+.RI "#define \fBSHPREF_MAX\fP   6"
+.br
+.RI "\fISpecifies the number of preferences available. \fP"
+.ti -1c
+.RI "#define \fBSHPREF_NAME_MAX\fP   4096"
+.br
+.RI "\fISpecified the maximum size of a share library global preference name. \fP"
+.ti -1c
+.RI "#define \fBSHPREF_VALUE_MAX\fP   4096"
+.br
+.RI "\fISpecified the maximum size of a share library global preference value. \fP"
+.ti -1c
+.RI "#define \fBshpref_track\fP()   (0 == strcmp(shpref_get(SHPREF_TRACK), 'true') ? TRUE : FALSE)"
+.br
+.RI "\fISpecifies whether to track sharefs filesystem revisions. \fP"
+.ti -1c
+.RI "#define \fBshpref_set_track\fP(opt)   (opt ? shpref_set(SHPREF_TRACK, 'true') : shpref_set(SHPREF_TRACK, 'false'))"
+.br
+.RI "\fIPermanently sets the \fCSHPREF_TRACK\fP option. \fP"
+.ti -1c
+.RI "#define \fBshpref_overlay\fP()   (0 == strcmp(shpref_get(SHPREF_OVERLAY), 'true') ? TRUE : FALSE)"
+.br
+.RI "\fISpecifies whether to overlay the sharefs filesystem ontop of the work directory on the local filesystem. \fP"
+.ti -1c
+.RI "#define \fBshpref_set_overlay\fP(opt)   (opt ? shpref_set(SHPREF_OVERLAY, 'true') : shpref_set(SHPREF_OVERLAY, 'false'))"
+.br
+.RI "\fIPermanently sets the \fCSHPREF_OVERLAY\fP option. \fP"
+.ti -1c
+.RI "#define \fBshpref_unset\fP(pref)   shpref_set(pref, NULL)"
+.br
+.RI "\fIPersistently unset a libshare configuration option. \fP"
+.ti -1c
+.RI "#define \fBshpref_sess_set\fP(pref, value)   shmeta_set(_pref, shkey_init_str(pref), value)"
+.br
+.RI "\fIOverwrite a preference for the current session. \fP"
+.ti -1c
+.RI "#define \fBshpref_sess_unset\fP(pref)   shpref_sess_set(pref, NULL)"
+.br
+.RI "\fITemporarily unset a libshare configuration option. \fP"
+.ti -1c
+.RI "#define \fBSHTIME64_ONE_SECOND\fP   10"
+.br
+.RI "\fIOne second in \fBshtime64()\fP format. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef uint64_t \fBshsize_t\fP"
+.br
+.RI "\fIA specification of byte size. \fP"
+.ti -1c
+.RI "typedef struct \fBshpeer_addr\fP \fBshpeer_addr_t\fP"
+.br
+.ti -1c
+.RI "typedef struct \fBshpeer_key_t\fP \fBshpeer_key_t\fP"
+.br
+.ti -1c
+.RI "typedef struct \fBshpeer_t\fP \fBshpeer_t\fP"
+.br
+.RI "\fIA local or remote network address. \fP"
+.ti -1c
+.RI "typedef uint64_t \fBshtime_t\fP"
+.br
+.RI "\fIThe libshare representation of a particular time. \fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "char * \fBget_libshare_email\fP (void)"
+.br
+.RI "\fIAn email address where bug reports can be submitted. \fP"
+.ti -1c
+.RI "char * \fBget_libshare_version\fP (void)"
+.br
+.RI "\fIThe current libshare library version. \fP"
+.ti -1c
+.RI "char * \fBget_libshare_title\fP (void)"
+.br
+.RI "\fIThe libshare library package name. \fP"
+.ti -1c
+.RI "const char * \fBget_libshare_path\fP (void)"
+.br
+.RI "\fIUnix: /var/lib/share or ~/.share Windows: C:\\.share Mac: ~/Library/Application Support/.share. \fP"
+.ti -1c
+.RI "const char * \fBget_libshare_account_name\fP (void)"
+.br
+.ti -1c
+.RI "void \fBshpeer_set_default\fP (\fBshpeer_t\fP *peer)"
+.br
+.RI "\fISet the application's default peer reference. \fP"
+.ti -1c
+.RI "\fBshpeer_t\fP * \fBshpeer\fP (void)"
+.br
+.RI "\fIReturns the default peer reference to the local user for IPv4. \fP"
+.ti -1c
+.RI "\fBshpeer_t\fP * \fBashpeer\fP (void)"
+.br
+.RI "\fIReturns the default peer reference to the local user for IPv4 without dynamic memory allocation. \fP"
+.ti -1c
+.RI "\fBshpeer_t\fP * \fBshpeer_init\fP (char *appname, char *hostname)"
+.br
+.RI "\fIGenerate a peer reference. \fP"
+.ti -1c
+.RI "void \fBshpeer_free\fP (\fBshpeer_t\fP **peer_p)"
+.br
+.RI "\fIFree the resources associated with a peer reference. \fP"
+.ti -1c
+.RI "char * \fBshpeer_print\fP (\fBshpeer_t\fP *peer)"
+.br
+.RI "\fIA string representation of the libshare peer. \fP"
+.ti -1c
+.RI "char * \fBshpref_base_dir\fP (void)"
+.br
+.RI "\fISpecifies the preferred location of where the sharefs filesystem is stored on the local file system. \fP"
+.ti -1c
+.RI "char * \fBshpref_path\fP (int uid)"
+.br
+.RI "\fIThe local filesystem path for storing configuration options. \fP"
+.ti -1c
+.RI "int \fBshpref_init\fP (void)"
+.br
+.RI "\fIInitialize an instance of configuration options in memory. \fP"
+.ti -1c
+.RI "void \fBshpref_free\fP (void)"
+.br
+.RI "\fIFree the configuration options loaded into memory. \fP"
+.ti -1c
+.RI "const char * \fBshpref_get\fP (char *pref, char *default_value)"
+.br
+.RI "\fIRetrieve a configuration option value. \fP"
+.ti -1c
+.RI "int \fBshpref_set\fP (char *pref, char *value)"
+.br
+.RI "\fISet a persistent value for a particular libshare user-specific configuration option. \fP"
+.ti -1c
+.RI "double \fBshtime\fP (void)"
+.br
+.RI "\fIGenerate a float-point precision representation of the current time. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBshtime64\fP (void)"
+.br
+.RI "\fIGenerate a 64bit representation integral of the current time with millisecond precision. \fP"
+.ti -1c
+.RI "char * \fBshctime64\fP (\fBshtime_t\fP t)"
+.br
+.RI "\fIDisplay full ISO 8601 format of date and time. \fP"
+.ti -1c
+.RI "time_t \fBshutime64\fP (\fBshtime_t\fP t)"
+.br
+.RI "\fIConvert a share library timestamp into a unix timestamp. \fP"
+.ti -1c
+.RI "char * \fBshstrtime64\fP (\fBshtime_t\fP t, char *fmt)"
+.br
+.RI "\fIConvert a libshare time-stamp into a string format. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBshtime64_adj\fP (\fBshtime_t\fP stamp, double secs)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+The Share Library. 
+
+Time operations are performed in order to store and compare timestamps in the sharefs file system and for network operations.
+.PP
+Handles management of user-specific configuration options for the Share Library.
+.PP
+\fBNote:\fP
+.RS 4
+The Share Library is hosted at https://github.com/neonatura/share
+.PP
+See the \fBshpref_sess_set()\fP function for information on overwriting an option values for the current process session. Specify user specific configuration items.
+.RE
+.PP
+libshare_time Time calculating operations. 
+.SH "Define Documentation"
+.PP 
+.SS "#define SHARCH_32BIT   (1 << 0)"
+.PP
+32bit hardware (i.e. not 64bit) 
+.PP
+Definition at line 67 of file shpeer.h.
+.SS "#define SHARCH_BIGEND   (1 << 7)"
+.PP
+(aix/4) big endian / network byte order 
+.PP
+Definition at line 81 of file shpeer.h.
+.SS "#define SHARCH_BSD   (1 << 4)"
+.PP
+bsd/freebsd 
+.PP
+Definition at line 75 of file shpeer.h.
+.SS "#define SHARCH_LINUX   (1 << 1)"
+.PP
+linux 
+.PP
+Definition at line 69 of file shpeer.h.
+.SS "#define SHARCH_MAC   (1 << 3)"
+.PP
+apple/mac 
+.PP
+Definition at line 73 of file shpeer.h.
+.SS "#define SHARCH_MIPS   (1 << 7)"
+.PP
+(android) mips chipset 
+.PP
+Definition at line 79 of file shpeer.h.
+.SS "#define SHARCH_SUN   (1 << 5)"
+.PP
+sun os 
+.PP
+Definition at line 77 of file shpeer.h.
+.SS "#define SHARCH_WIN   (1 << 2)"
+.PP
+win/doh 
+.PP
+Definition at line 71 of file shpeer.h.
+.SS "#define SHARE_DEFAULT_EXPIRE_TIME   15147432000"
+.PP
+A shtime_t representation of 01/01/60 UTC. 
+.PP
+Definition at line 186 of file share.h.
+.SS "#define SHNET_BROADCAST   5"
+.PP
+Global network destination. 
+.PP
+Definition at line 63 of file shpeer.h.
+.SS "#define SHNET_PEER_IPV4   1"
+.PP
+A remote IPv4 network destination. 
+.PP
+Definition at line 43 of file shpeer.h.
+.SS "#define SHNET_PEER_IPV6   2"
+.PP
+A remote IPv6 network destination. 
+.PP
+Definition at line 48 of file shpeer.h.
+.SS "#define SHNET_PEER_LOCAL   0"
+.PP
+The local machine. 
+.PP
+Definition at line 38 of file shpeer.h.
+.SS "#define SHNET_PEER_VPN_IPV4   3"
+.PP
+A IPv4 network destination on the sharenet VPN. 
+.PP
+Definition at line 53 of file shpeer.h.
+.SS "#define SHNET_PEER_VPN_IPV6   4"
+.PP
+A IPv6 network destination on the sharenet VPN. 
+.PP
+Definition at line 58 of file shpeer.h.
+.SS "#define shpeer_kpriv(_peer)   (& (_peer)->key.priv)"
+.PP
+priveleged key reference of peer 
+.PP
+Definition at line 169 of file shpeer.h.
+.SS "#define shpeer_kpub(_peer)   (& (_peer)->key.pub)"
+.PP
+public key reference of peer 
+.PP
+Definition at line 165 of file shpeer.h.
+.SS "#define SHPREF_ACC_NAME   SHMETA_USER_EMAIL"
+.PP
+The account name is typically comprised of an email address. 
+.PP
+Definition at line 57 of file shpref.h.
+.SS "#define SHPREF_ACC_PASS   SHMETA_USER_PASS"
+.PP
+A key reference to the user's account password. 
+.PP
+Definition at line 59 of file shpref.h.
+.SS "#define SHPREF_ACC_SALT   SHMETA_USER_SALT"
+.PP
+The salt used to perturb the account password key. 
+.PP
+Definition at line 61 of file shpref.h.
+.SS "#define SHPREF_BASE_DIR   'base-dir'"
+.PP
+Specifies the preferred location of where the sharefs filesystem is stored on the local file system. \fBNote:\fP
+.RS 4
+The default location is '$HOME/.share'. 
+.PP
+Use \fC\fBshpref_sess_set()\fP\fP to temporarily overwrite this value. 
+.RE
+.PP
+
+.PP
+Definition at line 44 of file shpref.h.
+.SS "#define SHPREF_MAX   6"
+.PP
+Specifies the number of preferences available. 
+.PP
+Definition at line 66 of file shpref.h.
+.SS "#define SHPREF_NAME_MAX   4096"
+.PP
+Specified the maximum size of a share library global preference name. 
+.PP
+Definition at line 71 of file shpref.h.
+.SS "#define shpref_overlay()   (0 == strcmp(shpref_get(SHPREF_OVERLAY), 'true') ? TRUE : FALSE)"
+.PP
+Specifies whether to overlay the sharefs filesystem ontop of the work directory on the local filesystem. \fBNote:\fP
+.RS 4
+Disable this option to prevent libshare from writing outside of the base directory. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero (0) when disabled and a non-zero value when enabled. 
+.RE
+.PP
+
+.PP
+Definition at line 103 of file shpref.h.
+.SS "#define SHPREF_OVERLAY   'overlay'"
+.PP
+Specifies whether the sharefs file system references files on the local filesystem. \fBNote:\fP
+.RS 4
+Use \fC\fBshpref_sess_set()\fP\fP to temporarily overwrite this value. 
+.RE
+.PP
+
+.PP
+Definition at line 54 of file shpref.h.
+.SS "#define shpref_sess_set(pref, value)   shmeta_set(_pref, shkey_init_str(pref), value)"
+.PP
+Overwrite a preference for the current session. 
+.PP
+Definition at line 163 of file shpref.h.
+.SS "#define shpref_sess_unset(pref)   shpref_sess_set(pref, NULL)"
+.PP
+Temporarily unset a libshare configuration option. 
+.PP
+Definition at line 168 of file shpref.h.
+.SS "#define shpref_set_overlay(opt)   (opt ? shpref_set(SHPREF_OVERLAY, 'true') : shpref_set(SHPREF_OVERLAY, 'false'))"
+.PP
+Permanently sets the \fCSHPREF_OVERLAY\fP option. \fBParameters:\fP
+.RS 4
+\fIopt\fP A zero to disable the option and a non-zero to enable. 
+.RE
+.PP
+
+.PP
+Definition at line 110 of file shpref.h.
+.SS "#define shpref_set_track(opt)   (opt ? shpref_set(SHPREF_TRACK, 'true') : shpref_set(SHPREF_TRACK, 'false'))"
+.PP
+Permanently sets the \fCSHPREF_TRACK\fP option. \fBParameters:\fP
+.RS 4
+\fIopt\fP A zero to disable the option and a non-zero to enable. 
+.RE
+.PP
+
+.PP
+Definition at line 95 of file shpref.h.
+.SS "#define shpref_track()   (0 == strcmp(shpref_get(SHPREF_TRACK), 'true') ? TRUE : FALSE)"
+.PP
+Specifies whether to track sharefs filesystem revisions. \fBReturns:\fP
+.RS 4
+A zero (0) when disabled and a non-zero value when enabled. 
+.RE
+.PP
+
+.PP
+Definition at line 88 of file shpref.h.
+.SS "#define SHPREF_TRACK   'track'"
+.PP
+Specifies whether to track sharefs filesystem revisions. \fBNote:\fP
+.RS 4
+Use \fC\fBshpref_sess_set()\fP\fP to temporarily overwrite this value. 
+.RE
+.PP
+
+.PP
+Definition at line 49 of file shpref.h.
+.SS "#define shpref_unset(pref)   shpref_set(pref, NULL)"
+.PP
+Persistently unset a libshare configuration option. 
+.PP
+Definition at line 158 of file shpref.h.
+.SS "#define SHPREF_VALUE_MAX   4096"
+.PP
+Specified the maximum size of a share library global preference value. 
+.PP
+Definition at line 76 of file shpref.h.
+.SS "#define SHTIME64_ONE_SECOND   10"
+.PP
+One second in \fBshtime64()\fP format. 
+.PP
+Definition at line 43 of file shtime.h.
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef struct \fBshpeer_t\fP \fBshpeer_t\fP"
+.PP
+A local or remote network address. 
+.PP
+Definition at line 161 of file shpeer.h.
+.SS "typedef uint64_t \fBshsize_t\fP"
+.PP
+A specification of byte size.  
+ See the libshare_net.3 API man page for ESTP protocol network operations.
+   \fBshmeta_value_t.sz\fP 
+.PP
+\fBNote:\fP
+.RS 4
+This type is typically only used for disk storage or socket communications. A regular \fBsize_t\fP is used when the bitsize of a number being reference is not restricted. 
+.RE
+.PP
+
+.PP
+Definition at line 198 of file share.h.
+.SS "typedef uint64_t \fBshtime_t\fP"
+.PP
+The libshare representation of a particular time. 
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.PP
+Definition at line 48 of file shtime.h.
+.SH "Function Documentation"
+.PP 
+.SS "\fBshpeer_t\fP* ashpeer (void)"
+.PP
+Returns the default peer reference to the local user for IPv4 without dynamic memory allocation. \fBReturns:\fP
+.RS 4
+Information relevant to identifying a peer host. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Do NOT use \fBshpeer_free()\fP to free. 
+.RE
+.PP
+
+.SS "char* get_libshare_email (void)"
+.PP
+An email address where bug reports can be submitted. 
+.SS "const char* get_libshare_path (void)"
+.PP
+Unix: /var/lib/share or ~/.share Windows: C:\\.share Mac: ~/Library/Application Support/.share. \fBReturns:\fP
+.RS 4
+The directory where share library persistent data is stored. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+This value can be overwritten with a shared preference. 
+.RE
+.PP
+
+.SS "char* get_libshare_title (void)"
+.PP
+The libshare library package name. 
+.SS "char* get_libshare_version (void)"
+.PP
+The current libshare library version. 
+.SS "char* shctime64 (\fBshtime_t\fP t)"
+.PP
+Display full ISO 8601 format of date and time. 
+.SS "\fBshpeer_t\fP* shpeer (void)"
+.PP
+Returns the default peer reference to the local user for IPv4. \fBReturns:\fP
+.RS 4
+Information relevant to identifying a peer host. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Use \fBshpeer_free()\fP to free resources allocated. 
+.RE
+.PP
+
+.SS "void shpeer_free (\fBshpeer_t\fP ** peer_p)"
+.PP
+Free the resources associated with a peer reference. 
+.SS "\fBshpeer_t\fP* shpeer_init (char * appname, char * hostname)"
+.PP
+Generate a peer reference. \fBParameters:\fP
+.RS 4
+\fIappname\fP An application name an optional group name in '[<group>@]app' format or NULL for a un-named generic 'libshare' app. 
+.br
+\fIhostname\fP A host and optional port in '<host>[:<port>]' format or NULL for a localhost reference. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A peer identity reference. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Use \fBshpeer_free()\fP to free. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "char* shpeer_print (\fBshpeer_t\fP * peer)"
+.PP
+A string representation of the libshare peer. 
+.SS "void shpeer_set_default (\fBshpeer_t\fP * peer)"
+.PP
+Set the application's default peer reference. \fBSee also:\fP
+.RS 4
+\fBshapp_init()\fP 
+.RE
+.PP
+
+.SS "char* shpref_base_dir (void)"
+.PP
+Specifies the preferred location of where the sharefs filesystem is stored on the local file system. \fBReturns:\fP
+.RS 4
+The path to a directory on the local file-system. 
+.RE
+.PP
+
+.SS "void shpref_free (void)"
+.PP
+Free the configuration options loaded into memory. \fBNote:\fP
+.RS 4
+This will remove all temporar configuration settings that have been made this process session. 
+.RE
+.PP
+
+.SS "const char* shpref_get (char * pref, char * default_value)"
+.PP
+Retrieve a configuration option value. \fBParameters:\fP
+.RS 4
+\fIpref\fP The name of the preference. 
+.br
+\fIdefault_value\fP The default string value to return if the preference is not set. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The configuration option value. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+This function is not thread-safe. 
+.RE
+.PP
+
+.SS "int shpref_init (void)"
+.PP
+Initialize an instance of configuration options in memory. \fBNote:\fP
+.RS 4
+This function does not need to be called in order to retrieve or set configuration options. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero (0) on success and a negative one (-1) on failure. 
+.RE
+.PP
+
+.SS "char* shpref_path (int uid)"
+.PP
+The local filesystem path for storing configuration options. \fBReturns:\fP
+.RS 4
+The path to the location on the local file-system that contains user-specific libshare configuration options. 
+.RE
+.PP
+
+.SS "int shpref_set (char * pref, char * value)"
+.PP
+Set a persistent value for a particular libshare user-specific configuration option. Specify user specific configuration items:
+.IP "\(bu" 2
+SHPREF_BASE_DIR The base directory to store sharefs file data.
+.IP "\(bu" 2
+SHPREF_TRACK Whether to automatically track file revisions.
+.IP "\(bu" 2
+SHPREF_OVERLAY Whether to write outside of the base directory. Set a configuration option value. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIpref\fP The name of the preference. 
+.br
+\fIvalue\fP The configuration option value. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The configuration option value. 
+.RE
+.PP
+
+.PP
+
+.SS "char* shstrtime64 (\fBshtime_t\fP t, char * fmt)"
+.PP
+Convert a libshare time-stamp into a string format. \fBParameters:\fP
+.RS 4
+\fIfmt\fP If NULL then '%x %X' will be used. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+This function utilizes the same time tokens as strftime(). 
+.RE
+.PP
+
+.SS "double shtime (void)"
+.PP
+Generate a float-point precision representation of the current time. \fBReturns:\fP
+.RS 4
+an double representing the milliseconds since 2012 UTC. 
+.RE
+.PP
+
+.SS "\fBshtime_t\fP shtime64 (void)"
+.PP
+Generate a 64bit representation integral of the current time with millisecond precision. \fBReturns:\fP
+.RS 4
+an unsigned long representing the milliseconds since 2012 UTC. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+32bit friendly. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "time_t shutime64 (\fBshtime_t\fP t)"
+.PP
+Convert a share library timestamp into a unix timestamp. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

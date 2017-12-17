@@ -1,0 +1,162 @@
+.TH "Dynamic memory buffer allocation utilities." 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Dynamic memory buffer allocation utilities. \- 
+.PP
+Dynamic memory buffer.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshbuf_t\fP"
+.br
+.RI "\fIA memory buffer that utilizes that re-uses available memory to reduce OS overhead and dynamically grows to a user specific need. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshbuf_t\fP \fBshbuf_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshbuf_t\fP * \fBshbuf_init\fP (void)"
+.br
+.RI "\fIInitialize a memory buffer for use. \fP"
+.ti -1c
+.RI "void \fBshbuf_catstr\fP (\fBshbuf_t\fP *buf, char *data)"
+.br
+.RI "\fIInserts a string into a \fC\fBshbuf_t\fP\fP memory pool. \fP"
+.ti -1c
+.RI "void \fBshbuf_cat\fP (\fBshbuf_t\fP *buf, void *data, size_t data_len)"
+.br
+.RI "\fIInserts a binary data segment into a \fC\fBshbuf_t\fP\fP memory pool. \fP"
+.ti -1c
+.RI "size_t \fBshbuf_size\fP (\fBshbuf_t\fP *buf)"
+.br
+.RI "\fIThe current size of the data segement stored in the memory buffer. \fP"
+.ti -1c
+.RI "unsigned char * \fBshbuf_data\fP (\fBshbuf_t\fP *buf)"
+.br
+.ti -1c
+.RI "void \fBshbuf_clear\fP (\fBshbuf_t\fP *buf)"
+.br
+.RI "\fIClear the contents of a \fC\fBshbuf_t\fP\fP libshare memory buffer. \fP"
+.ti -1c
+.RI "void \fBshbuf_trim\fP (\fBshbuf_t\fP *buf, size_t len)"
+.br
+.RI "\fIReduce the data size of a memory buffer. \fP"
+.ti -1c
+.RI "void \fBshbuf_free\fP (\fBshbuf_t\fP **buf_p)"
+.br
+.RI "\fIFrees the resources utilizited by the memory buffer. \fP"
+.ti -1c
+.RI "int \fBshbuf_grow\fP (\fBshbuf_t\fP *buf, size_t data_len)"
+.br
+.RI "\fIGrow the memory buffer to atleast the size specified. \fP"
+.ti -1c
+.RI "\fBshbuf_t\fP * \fBshbuf_file\fP (char *path)"
+.br
+.RI "\fIMap a file into a memory buffer. \fP"
+.ti -1c
+.RI "int \fBshbuf_growmap\fP (\fBshbuf_t\fP *buf, size_t data_len)"
+.br
+.ti -1c
+.RI "\fBshbuf_t\fP * \fBshbuf_map\fP (unsigned char *data, size_t data_len)"
+.br
+.ti -1c
+.RI "\fBshbuf_t\fP * \fBashbuf_map\fP (unsigned char *data, size_t data_len)"
+.br
+.ti -1c
+.RI "unsigned char * \fBshbuf_unmap\fP (\fBshbuf_t\fP *buf)"
+.br
+.ti -1c
+.RI "size_t \fBshbuf_pos\fP (\fBshbuf_t\fP *buff)"
+.br
+.ti -1c
+.RI "void \fBshbuf_pos_set\fP (\fBshbuf_t\fP *buff, size_t pos)"
+.br
+.ti -1c
+.RI "void \fBshbuf_pos_incr\fP (\fBshbuf_t\fP *buff, size_t pos)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Dynamic memory buffer. 
+.SH "Function Documentation"
+.PP 
+.SS "void shbuf_cat (\fBshbuf_t\fP * buf, void * data, size_t data_len)"
+.PP
+Inserts a binary data segment into a \fC\fBshbuf_t\fP\fP memory pool. 
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "void shbuf_catstr (\fBshbuf_t\fP * buf, char * data)"
+.PP
+Inserts a string into a \fC\fBshbuf_t\fP\fP memory pool. 
+.SS "void shbuf_clear (\fBshbuf_t\fP * buf)"
+.PP
+Clear the contents of a \fC\fBshbuf_t\fP\fP libshare memory buffer. 
+.SS "\fBshbuf_t\fP* shbuf_file (char * path)"
+.PP
+Map a file into a memory buffer. 
+.SS "void shbuf_free (\fBshbuf_t\fP ** buf_p)"
+.PP
+Frees the resources utilizited by the memory buffer. 
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "int shbuf_grow (\fBshbuf_t\fP * buf, size_t data_len)"
+.PP
+Grow the memory buffer to atleast the size specified. \fBParameters:\fP
+.RS 4
+\fIbuf\fP The \fBshbuf_t\fP memory buffer. 
+.br
+\fIdata_len\fP The minimum byte size the memory buffer should be allocated. 
+.RE
+.PP
+
+.SS "\fBshbuf_t\fP* shbuf_init (void)"
+.PP
+Initialize a memory buffer for use. \fBNote:\fP
+.RS 4
+A \fC\fBshbuf_t\fP\fP memory buffer handles automatic allocation of memory. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "size_t shbuf_size (\fBshbuf_t\fP * buf)"
+.PP
+The current size of the data segement stored in the memory buffer. 
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "void shbuf_trim (\fBshbuf_t\fP * buf, size_t len)"
+.PP
+Reduce the data size of a memory buffer. \fBParameters:\fP
+.RS 4
+\fIbuf\fP The memory buffer. 
+.br
+\fIlen\fP The size of bytes to reduce by. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+This removes data from the beginning of the data segment. 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

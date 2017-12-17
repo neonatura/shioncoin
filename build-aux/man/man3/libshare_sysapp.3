@@ -1,0 +1,95 @@
+.TH "Libshare_sysapp" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_sysapp \- 
+.PP
+Application state management.  
+
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHAPP_LOCAL\fP   (1 << 0)"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "char * \fBshapp_name\fP (char *app_name)"
+.br
+.RI "\fIStrips the absolute parent from \fIapp_name\fP. \fP"
+.ti -1c
+.RI "\fBshpeer_t\fP * \fBshapp_init\fP (char *exec_path, char *host, int flags)"
+.br
+.RI "\fIInitialize the share library runtime for an application. \fP"
+.ti -1c
+.RI "int \fBshapp_register\fP (\fBshpeer_t\fP *peer)"
+.br
+.ti -1c
+.RI "int \fBshapp_listen\fP (int tx, \fBshpeer_t\fP *peer)"
+.br
+.ti -1c
+.RI "int \fBshapp_account\fP (const char *username, char *passphrase, \fBshseed_t\fP **seed_p)"
+.br
+.ti -1c
+.RI "int \fBshapp_ident\fP (uint64_t uid, \fBshkey_t\fP **id_key_p)"
+.br
+.ti -1c
+.RI "int \fBshapp_session\fP (\fBshseed_t\fP *seed, \fBshkey_t\fP **sess_key_p)"
+.br
+.ti -1c
+.RI "int \fBshapp_account_create\fP (char *acc_name, char *acc_pass, \fBshkey_t\fP **id_key_p)"
+.br
+.ti -1c
+.RI "int \fBshapp_account_login\fP (char *acc_name, char *acc_pass, \fBshkey_t\fP **sess_key_p)"
+.br
+.ti -1c
+.RI "int \fBshapp_account_setpass\fP (char *acc_name, char *opass, char *pass)"
+.br
+.ti -1c
+.RI "int \fBshapp_account_remove\fP (char *acc_name, char *acc_pass)"
+.br
+.ti -1c
+.RI "int \fBshapp_account_info\fP (uint64_t uid, \fBshadow_t\fP *shadow, \fBshseed_t\fP *seed)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Application state management. 
+.SH "Function Documentation"
+.PP 
+.SS "\fBshpeer_t\fP* shapp_init (char * exec_path, char * host, int flags)"
+.PP
+Initialize the share library runtime for an application. \fBParameters:\fP
+.RS 4
+\fIexec_path\fP The process's executable path. 
+.br
+\fIhost\fP The host that the app runs on or NULL for localhost. 
+.br
+\fIflags\fP application flags 
+.RE
+.PP
+
+.SS "char* shapp_name (char * app_name)"
+.PP
+Strips the absolute parent from \fIapp_name\fP. \fBNote:\fP
+.RS 4
+'/test/one/two' becomes 'two' 
+.RE
+.PP
+\fBParameters:\fP
+.RS 4
+\fIapp_name\fP The running application's executable path 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+Relative filename of executable. 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

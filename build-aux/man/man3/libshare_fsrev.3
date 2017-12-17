@@ -1,0 +1,99 @@
+.TH "Libshare_fsrev" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsrev \- 
+.PP
+revision repository  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_rev_init\fP (\fBshfs_ino_t\fP *file)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_clear\fP (\fBshfs_ino_t\fP *file)"
+.br
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_rev_branch_resolve\fP (\fBshfs_ino_t\fP *repo, char *name)"
+.br
+.RI "\fIObtain a revision inode from a branch name. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_rev_tag_resolve\fP (\fBshfs_ino_t\fP *repo, char *name)"
+.br
+.RI "\fIObtain a revision inode from a tag name. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_rev_base\fP (\fBshfs_ino_t\fP *repo)"
+.br
+.RI "\fIObtain the current committed revision. \fP"
+.ti -1c
+.RI "int \fBshfs_rev_ref_read\fP (\fBshfs_ino_t\fP *file, char *group, char *name, \fBshbuf_t\fP *buff)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_ref_write\fP (\fBshfs_ino_t\fP *file, char *group, char *name, \fBshbuf_t\fP *buff)"
+.br
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_rev_prev\fP (\fBshfs_ino_t\fP *rev)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_delta_read\fP (\fBshfs_ino_t\fP *rev, \fBshbuf_t\fP *buff)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_delta_write\fP (\fBshfs_ino_t\fP *rev, \fBshbuf_t\fP *buff)"
+.br
+.ti -1c
+.RI "const char * \fBshfs_rev_desc_get\fP (\fBshfs_ino_t\fP *rev)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_commit\fP (\fBshfs_ino_t\fP *file, \fBshfs_ino_t\fP **rev_p)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_cat\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *rev_key, \fBshbuf_t\fP *buff, \fBshfs_ino_t\fP **rev_p)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_delta\fP (\fBshfs_ino_t\fP *file, \fBshbuf_t\fP *diff_buff)"
+.br
+.RI "\fIObtain a binary delta containing the differences between the current file's data-content and the last committed revision's data-content. \fP"
+.ti -1c
+.RI "int \fBshfs_rev_branch\fP (\fBshfs_ino_t\fP *repo, char *name, \fBshfs_ino_t\fP *rev)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_tag\fP (\fBshfs_ino_t\fP *repo, char *name, \fBshfs_ino_t\fP *rev)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_switch\fP (\fBshfs_ino_t\fP *file, char *ref_name, \fBshfs_ino_t\fP **rev_p)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_revert\fP (\fBshfs_ino_t\fP *file)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_checkout\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *key, \fBshfs_ino_t\fP **rev_p)"
+.br
+.ti -1c
+.RI "int \fBshfs_rev_diff\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *rev_key, \fBshbuf_t\fP *buff)"
+.br
+.ti -1c
+.RI "void \fBshfs_rev_desc_set\fP (\fBshfs_ino_t\fP *rev, char *desc)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+revision repository 
+.SH "Function Documentation"
+.PP 
+.SS "\fBshfs_ino_t\fP* shfs_rev_base (\fBshfs_ino_t\fP * repo)"
+.PP
+Obtain the current committed revision. 
+.SS "\fBshfs_ino_t\fP* shfs_rev_branch_resolve (\fBshfs_ino_t\fP * repo, char * name)"
+.PP
+Obtain a revision inode from a branch name. 
+.SS "int shfs_rev_delta (\fBshfs_ino_t\fP * file, \fBshbuf_t\fP * diff_buff)"
+.PP
+Obtain a binary delta containing the differences between the current file's data-content and the last committed revision's data-content. 
+.SS "\fBshfs_ino_t\fP* shfs_rev_tag_resolve (\fBshfs_ino_t\fP * repo, char * name)"
+.PP
+Obtain a revision inode from a tag name. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

@@ -1,0 +1,123 @@
+.TH "shmeta_value_t" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shmeta_value_t \- 
+.PP
+The base of a version 1 shmeta hashmap entry value.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shmem.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "uint32_t \fBmagic\fP"
+.br
+.RI "\fIThe hard-coded value \fCSHMETA_VALUE_MAGIC\fP set to ensure validity. \fP"
+.ti -1c
+.RI "uint32_t \fBcrc\fP"
+.br
+.RI "\fIAn adler32 checksum of this \fC\fBshmeta_value_t\fP\fP hashmap value header and the data segment following. \fP"
+.ti -1c
+.RI "uint32_t \fBstamp\fP"
+.br
+.RI "\fIA unix-time timestamp referencing when this hashmap value was generated. \fP"
+.ti -1c
+.RI "uint32_t \fBgl\fP"
+.br
+.RI "\fIA unique index number directly related to this \fC\fBshmeta_value_t\fP\fP hashmap value. \fP"
+.ti -1c
+.RI "uint32_t \fBfunc\fP"
+.br
+.RI "\fIA adler32 reference to a function pertaining to this hashmap value. \fP"
+.ti -1c
+.RI "uint32_t \fBpf\fP"
+.br
+.RI "\fIA paramater format which describes the data segment following the \fC\fBshmeta_value_t\fP\fP header. \fP"
+.ti -1c
+.RI "uint32_t \fBseq\fP"
+.br
+.RI "\fIA sequence number in an order of operations. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP \fBname\fP"
+.br
+.RI "\fIAn adler64 reference to the name of this value. \fP"
+.ti -1c
+.RI "\fBshsize_t\fP \fBsz\fP"
+.br
+.RI "\fIThe total size of data segment not including the \fC\fBshmeta_value_t\fP\fP header. \fP"
+.ti -1c
+.RI "char \fBraw\fP [0]"
+.br
+.RI "\fIblind reference to additional an data segment. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+The base of a version 1 shmeta hashmap entry value. 
+.PP
+Definition at line 514 of file shmem.h.
+.SH "Field Documentation"
+.PP 
+.SS "uint32_t \fBshmeta_value_t::crc\fP"
+.PP
+An adler32 checksum of this \fC\fBshmeta_value_t\fP\fP hashmap value header and the data segment following. 
+.PP
+Definition at line 526 of file shmem.h.
+.SS "uint32_t \fBshmeta_value_t::func\fP"
+.PP
+A adler32 reference to a function pertaining to this hashmap value. 
+.PP
+Definition at line 541 of file shmem.h.
+.SS "uint32_t \fBshmeta_value_t::gl\fP"
+.PP
+A unique index number directly related to this \fC\fBshmeta_value_t\fP\fP hashmap value. 
+.PP
+Definition at line 536 of file shmem.h.
+.SS "uint32_t \fBshmeta_value_t::magic\fP"
+.PP
+The hard-coded value \fCSHMETA_VALUE_MAGIC\fP set to ensure validity. \fBNote:\fP
+.RS 4
+Used for recycling pools of objects and to ensure network integrity. 
+.RE
+.PP
+
+.PP
+Definition at line 521 of file shmem.h.
+.SS "\fBshkey_t\fP \fBshmeta_value_t::name\fP"
+.PP
+An adler64 reference to the name of this value. 
+.PP
+Definition at line 556 of file shmem.h.
+.SS "uint32_t \fBshmeta_value_t::pf\fP"
+.PP
+A paramater format which describes the data segment following the \fC\fBshmeta_value_t\fP\fP header. 
+.PP
+Definition at line 546 of file shmem.h.
+.SS "char \fBshmeta_value_t::raw\fP[0]"
+.PP
+blind reference to additional an data segment. 
+.PP
+Definition at line 566 of file shmem.h.
+.SS "uint32_t \fBshmeta_value_t::seq\fP"
+.PP
+A sequence number in an order of operations. 
+.PP
+Definition at line 551 of file shmem.h.
+.SS "uint32_t \fBshmeta_value_t::stamp\fP"
+.PP
+A unix-time timestamp referencing when this hashmap value was generated. 
+.PP
+Definition at line 531 of file shmem.h.
+.SS "\fBshsize_t\fP \fBshmeta_value_t::sz\fP"
+.PP
+The total size of data segment not including the \fC\fBshmeta_value_t\fP\fP header. 
+.PP
+Definition at line 561 of file shmem.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

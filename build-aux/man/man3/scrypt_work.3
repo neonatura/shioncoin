@@ -1,0 +1,85 @@
+.TH "scrypt_work" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+scrypt_work \- 
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "unsigned char \fBdata\fP [128]"
+.br
+.ti -1c
+.RI "unsigned char \fBmidstate\fP [32]"
+.br
+.ti -1c
+.RI "unsigned char \fBtarget\fP [32]"
+.br
+.ti -1c
+.RI "char \fBhash\fP [32]"
+.br
+.ti -1c
+.RI "char \fBntime\fP [16]"
+.br
+.ti -1c
+.RI "struct timeval \fBtv_received\fP"
+.br
+.ti -1c
+.RI "uint32_t \fBhash_nonce\fP"
+.br
+.ti -1c
+.RI "int \fBrestart\fP"
+.br
+.ti -1c
+.RI "uint64_t \fBshare_diff\fP"
+.br
+.ti -1c
+.RI "int \fBrolls\fP"
+.br
+.ti -1c
+.RI "int \fBdrv_rolllimit\fP"
+.br
+.ti -1c
+.RI "struct timeval \fBtv_staged\fP"
+.br
+.ti -1c
+.RI "uint32_t \fBnonce\fP"
+.br
+.ti -1c
+.RI "char * \fBjob_id\fP"
+.br
+.ti -1c
+.RI "char \fBxnonce2\fP [16]"
+.br
+.ti -1c
+.RI "double \fBsdiff\fP"
+.br
+.ti -1c
+.RI "unsigned char \fBwork_restart_id\fP"
+.br
+.ti -1c
+.RI "int \fBid\fP"
+.br
+.ti -1c
+.RI "int \fBdevice_id\fP"
+.br
+.ti -1c
+.RI "double \fBwork_difficulty\fP"
+.br
+.ti -1c
+.RI "char \fBmerkle_root\fP [256]"
+.br
+.ti -1c
+.RI "double \fBpool_diff\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 1096 of file shmem.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

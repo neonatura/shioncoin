@@ -1,0 +1,94 @@
+.TH "Libshare_fsjournal" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsjournal \- 
+.PP
+Partition journal management.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "char * \fBshfs_journal_path\fP (\fBshfs_t\fP *tree, int index)"
+.br
+.RI "\fIThe local file-system path where a sharefs journal is stored. \fP"
+.ti -1c
+.RI "\fBshfs_journal_t\fP * \fBshfs_journal_open\fP (\fBshfs_t\fP *tree, int index)"
+.br
+.RI "\fIReturns an instance to a sharefs filesystem journal. \fP"
+.ti -1c
+.RI "int \fBshfs_journal_scan\fP (\fBshfs_t\fP *tree, \fBshkey_t\fP *key, \fBshfs_idx_t\fP *idx)"
+.br
+.RI "\fISearch for the first empty inode entry in a journal. \fP"
+.ti -1c
+.RI "int \fBshfs_journal_close\fP (\fBshfs_journal_t\fP **jrnl_p)"
+.br
+.RI "\fIRelease all resources being used to reference a shared partition journal. \fP"
+.ti -1c
+.RI "\fBshfs_block_t\fP * \fBshfs_journal_block\fP (\fBshfs_journal_t\fP *jrnl, int ino)"
+.br
+.RI "\fIRetrieve an inode block from a journal. \fP"
+.ti -1c
+.RI "size_t \fBshfs_journal_size\fP (\fBshfs_journal_t\fP *jrnl)"
+.br
+.RI "\fICalculates the byte size of a sharefs partition journal. \fP"
+.ti -1c
+.RI "void \fBshfs_journal_cache_free\fP (\fBshfs_t\fP *tree)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Partition journal management. 
+.SH "Function Documentation"
+.PP 
+.SS "\fBshfs_block_t\fP* shfs_journal_block (\fBshfs_journal_t\fP * jrnl, int ino)"
+.PP
+Retrieve an inode block from a journal. 
+.SS "int shfs_journal_close (\fBshfs_journal_t\fP ** jrnl_p)"
+.PP
+Release all resources being used to reference a shared partition journal. \fBParameters:\fP
+.RS 4
+\fIjrnl_p\fP A reference to the journal. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero (0) on success and a negative error code on failure. 
+.RE
+.PP
+
+.SS "\fBshfs_journal_t\fP* shfs_journal_open (\fBshfs_t\fP * tree, int index)"
+.PP
+Returns an instance to a sharefs filesystem journal. 
+.SS "char* shfs_journal_path (\fBshfs_t\fP * tree, int index)"
+.PP
+The local file-system path where a sharefs journal is stored. 
+.SS "int shfs_journal_scan (\fBshfs_t\fP * tree, \fBshkey_t\fP * key, \fBshfs_idx_t\fP * idx)"
+.PP
+Search for the first empty inode entry in a journal. \fBParameters:\fP
+.RS 4
+\fItree\fP The sharefs filesystem partition. 
+.br
+\fIkey\fP The token name of the inode being referenced. 
+.br
+\fIidx\fP The index number of the journal. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A inode index number or zero (0) on failure. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Inode index #0 is reserved for system use. 
+.RE
+.PP
+
+.SS "size_t shfs_journal_size (\fBshfs_journal_t\fP * jrnl)"
+.PP
+Calculates the byte size of a sharefs partition journal. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

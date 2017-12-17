@@ -1,0 +1,320 @@
+.TH "Libshare_fsinode" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsinode \- 
+.PP
+Base file-system inode management.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshfs_block_t\fP"
+.br
+.RI "\fIThe contents of a sharefs inode. \fP"
+.ti -1c
+.RI "struct \fBshfs_ino_buf\fP"
+.br
+.RI "\fIThe current stream positioned when stream-based I/O is performed. \fP"
+.ti -1c
+.RI "struct \fBshfs_ino_t\fP"
+.br
+.RI "\fIA sharefs filesystem inode. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshfs_ino_buf\fP \fBshfs_ino_buf_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_inode\fP (\fBshfs_ino_t\fP *parent, char *name, int mode)"
+.br
+.RI "\fIRetrieve a sharefs inode entry based on a given parent inode and path name. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_inode_load\fP (\fBshfs_ino_t\fP *parent, \fBshkey_t\fP *key)"
+.br
+.RI "\fIRetrieve a sharefs inode child entry based on a token key. \fP"
+.ti -1c
+.RI "\fBshfs_t\fP * \fBshfs_inode_tree\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.RI "\fIObtain the shfs partition associated with a particular inode. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_inode_root\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.RI "\fIObtain the root partition inode associated with a particular inode. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_inode_parent\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.RI "\fIObtain the parent [directory/container] inode associated with a particular inode. \fP"
+.ti -1c
+.RI "int \fBshfs_inode_write_entity\fP (\fBshfs_ino_t\fP *ent)"
+.br
+.RI "\fIWrite an entity such as a file inode. \fP"
+.ti -1c
+.RI "\fBshsize_t\fP \fBshfs_size\fP (\fBshfs_ino_t\fP *file)"
+.br
+.ti -1c
+.RI "int \fBshfs_inode_write_block\fP (\fBshfs_t\fP *tree, \fBshfs_block_t\fP *blk)"
+.br
+.RI "\fIWrites a single inode block to a sharefs filesystem journal. \fP"
+.ti -1c
+.RI "int \fBshfs_inode_read_block\fP (\fBshfs_t\fP *tree, \fBshfs_idx_t\fP *pos, \fBshfs_block_t\fP *blk)"
+.br
+.RI "\fIRetrieve a single data block from a sharefs filesystem inode. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshfs_token_init\fP (\fBshfs_ino_t\fP *parent, int mode, char *fname)"
+.br
+.RI "\fIReturns a unique key token representing an inode. \fP"
+.ti -1c
+.RI "void \fBshfs_filename_set\fP (\fBshfs_ino_t\fP *inode, char *name)"
+.br
+.RI "\fIAssign an inode a filename. \fP"
+.ti -1c
+.RI "char * \fBshfs_filename\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.RI "\fIReturns the filename of the inode. \fP"
+.ti -1c
+.RI "char * \fBshfs_inode_path\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.ti -1c
+.RI "char * \fBshfs_inode_id\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.RI "\fIA unique hexadecimal string representing a sharefs inode. \fP"
+.ti -1c
+.RI "char * \fBshfs_inode_print\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.ti -1c
+.RI "char * \fBshfs_inode_block_print\fP (\fBshfs_block_t\fP *jblk)"
+.br
+.ti -1c
+.RI "uint64_t \fBshfs_crc_init\fP (\fBshfs_block_t\fP *blk)"
+.br
+.RI "\fICreate a inode checksum. \fP"
+.ti -1c
+.RI "uint64_t \fBshfs_crc\fP (\fBshfs_ino_t\fP *file)"
+.br
+.RI "\fIThe share library file inode's data checksum. \fP"
+.ti -1c
+.RI "int \fBshfs_block_type\fP (\fBshfs_block_t\fP *blk)"
+.br
+.RI "\fIThe type of an inode block. \fP"
+.ti -1c
+.RI "int \fBshfs_type\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.RI "\fIThe type of inode. \fP"
+.ti -1c
+.RI "int \fBshfs_block_format\fP (\fBshfs_block_t\fP *blk)"
+.br
+.RI "\fIThe format of an inode block. \fP"
+.ti -1c
+.RI "int \fBshfs_format\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.RI "\fIThe format of an inode. \fP"
+.ti -1c
+.RI "int \fBshfs_format_set\fP (\fBshfs_ino_t\fP *file, int format)"
+.br
+.RI "\fIConvert the inode to hold a different data format. \fP"
+.ti -1c
+.RI "char * \fBshfs_type_str\fP (int type)"
+.br
+.RI "\fIA string representation of an inode type. \fP"
+.ti -1c
+.RI "char \fBshfs_type_char\fP (int type)"
+.br
+.RI "\fIA single-character reference to an inode type. \fP"
+.ti -1c
+.RI "char * \fBshfs_format_str\fP (int format)"
+.br
+.RI "\fIA string representation of an inode format. \fP"
+.ti -1c
+.RI "int \fBshfs_block_stat\fP (\fBshfs_block_t\fP *blk, struct stat *st)"
+.br
+.ti -1c
+.RI "int \fBshfs_fstat\fP (\fBshfs_ino_t\fP *file, struct stat *st)"
+.br
+.RI "\fIObtain inode attribute information. \fP"
+.ti -1c
+.RI "int \fBshfs_stat\fP (\fBshfs_t\fP *fs, const char *path, struct stat *st)"
+.br
+.RI "\fIObtain inode attribute information for a path. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshfs_token\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.ti -1c
+.RI "int \fBshfs_inode_remove\fP (\fBshfs_ino_t\fP *file)"
+.br
+.ti -1c
+.RI "int \fBshfs_unlink\fP (\fBshfs_t\fP *fs, char *path)"
+.br
+.RI "\fIClear the contents of a sharefs inode. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Base file-system inode management. 
+.SH "Function Documentation"
+.PP 
+.SS "int shfs_block_format (\fBshfs_block_t\fP * blk)"
+.PP
+The format of an inode block. 
+.SS "int shfs_block_type (\fBshfs_block_t\fP * blk)"
+.PP
+The type of an inode block. 
+.SS "uint64_t shfs_crc (\fBshfs_ino_t\fP * file)"
+.PP
+The share library file inode's data checksum. 
+.SS "uint64_t shfs_crc_init (\fBshfs_block_t\fP * blk)"
+.PP
+Create a inode checksum. 
+.SS "char* shfs_filename (\fBshfs_ino_t\fP * inode)"
+.PP
+Returns the filename of the inode. 
+.SS "void shfs_filename_set (\fBshfs_ino_t\fP * inode, char * name)"
+.PP
+Assign an inode a filename. 
+.SS "int shfs_format (\fBshfs_ino_t\fP * inode)"
+.PP
+The format of an inode. 
+.SS "int shfs_format_set (\fBshfs_ino_t\fP * file, int format)"
+.PP
+Convert the inode to hold a different data format. 
+.SS "char* shfs_format_str (int format)"
+.PP
+A string representation of an inode format. 
+.SS "int shfs_fstat (\fBshfs_ino_t\fP * file, struct stat * st)"
+.PP
+Obtain inode attribute information. An SHERR_NOENT error occurs if inode format is not set. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIThe\fP inode to generate info for. 
+.br
+\fIst\fP The result info structure. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+Zero (0) on success or a libshare error code. 
+.RE
+.PP
+
+.SS "\fBshfs_ino_t\fP* shfs_inode (\fBshfs_ino_t\fP * parent, char * name, int mode)"
+.PP
+Retrieve a sharefs inode entry based on a given parent inode and path name. \fBNote:\fP
+.RS 4
+Searches for a reference to a sharefs inode labelled 'name' in the \fIparent\fP inode. 
+.PP
+A new inode is created if a pre-existing one is not found. 
+.RE
+.PP
+\fBParameters:\fP
+.RS 4
+\fIparent\fP The parent inode such as a directory where the file presides. 
+.br
+\fIname\fP The relational pathname of the file being referenced. 
+.br
+\fImode\fP The type of information that this inode is referencing (SHINODE_XX). 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A \fCshfs_node\fP is returned based on the \fCparent\fP, \fCname\fP, \fCand\fP mode specified. If one already exists it will be returned, and otherwise a new entry will be created. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+A new inode will be linked to the sharefs partition if it does not exist. 
+.RE
+.PP
+
+.SS "char* shfs_inode_id (\fBshfs_ino_t\fP * inode)"
+.PP
+A unique hexadecimal string representing a sharefs inode. 
+.SS "\fBshfs_ino_t\fP* shfs_inode_load (\fBshfs_ino_t\fP * parent, \fBshkey_t\fP * key)"
+.PP
+Retrieve a sharefs inode child entry based on a token key. 
+.SS "\fBshfs_ino_t\fP* shfs_inode_parent (\fBshfs_ino_t\fP * inode)"
+.PP
+Obtain the parent [directory/container] inode associated with a particular inode. \fBParameters:\fP
+.RS 4
+\fIinode\fP The inode in reference. 
+.RE
+.PP
+
+.SS "int shfs_inode_read_block (\fBshfs_t\fP * tree, \fBshfs_idx_t\fP * pos, \fBshfs_block_t\fP * blk)"
+.PP
+Retrieve a single data block from a sharefs filesystem inode. \fBParameters:\fP
+.RS 4
+\fItree\fP The sharefs partition allocated by \fC\fBshfs_init()\fP\fP. 
+.br
+\fIinode\fP The inode whose data is being retrieved. 
+.br
+\fIhdr\fP A specification of where the block is location in the sharefs filesystem partition. 
+.br
+\fIinode\fP The inode block data to be filled in. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+Returns 0 on success and a SHERR_XXX on failure. 
+.RE
+.PP
+
+.SS "\fBshfs_ino_t\fP* shfs_inode_root (\fBshfs_ino_t\fP * inode)"
+.PP
+Obtain the root partition inode associated with a particular inode. \fBParameters:\fP
+.RS 4
+\fIinode\fP The inode in reference. 
+.RE
+.PP
+
+.SS "\fBshfs_t\fP* shfs_inode_tree (\fBshfs_ino_t\fP * inode)"
+.PP
+Obtain the shfs partition associated with a particular inode. \fBParameters:\fP
+.RS 4
+\fIinode\fP The inode in reference. 
+.RE
+.PP
+
+.SS "int shfs_inode_write_block (\fBshfs_t\fP * tree, \fBshfs_block_t\fP * blk)"
+.PP
+Writes a single inode block to a sharefs filesystem journal. 
+.SS "int shfs_inode_write_entity (\fBshfs_ino_t\fP * ent)"
+.PP
+Write an entity such as a file inode. 
+.SS "int shfs_stat (\fBshfs_t\fP * fs, const char * path, struct stat * st)"
+.PP
+Obtain inode attribute information for a path. 
+.SS "\fBshkey_t\fP* shfs_token_init (\fBshfs_ino_t\fP * parent, int mode, char * fname)"
+.PP
+Returns a unique key token representing an inode. \fBParameters:\fP
+.RS 4
+\fIparent\fP The parent inode of the inode being referenced. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+free the returned key with shkey_free() 
+.RE
+.PP
+
+.SS "int shfs_type (\fBshfs_ino_t\fP * inode)"
+.PP
+The type of inode. 
+.SS "char shfs_type_char (int type)"
+.PP
+A single-character reference to an inode type. 
+.SS "char* shfs_type_str (int type)"
+.PP
+A string representation of an inode type. 
+.SS "int shfs_unlink (\fBshfs_t\fP * fs, char * path)"
+.PP
+Clear the contents of a sharefs inode. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

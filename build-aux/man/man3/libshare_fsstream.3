@@ -1,0 +1,91 @@
+.TH "Libshare_fsstream" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsstream \- 
+.PP
+Posix stdio oriented stream IO on sharefs files.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBSHFL\fP * \fBshfopen\fP (const char *path, const char *mode, \fBshfs_t\fP *fs)"
+.br
+.RI "\fIOpen a sharefs file inode for stream-based I/O. \fP"
+.ti -1c
+.RI "int \fBshfclose\fP (\fBSHFL\fP *fp)"
+.br
+.RI "\fIClose a previously opened stream-based file reference. \fP"
+.ti -1c
+.RI "ssize_t \fBshfread\fP (void *ptr, size_t size, size_t nmemb, \fBSHFL\fP *stream)"
+.br
+.RI "\fIBuffered read of an inode's data stream. \fP"
+.ti -1c
+.RI "size_t \fBshfwrite\fP (const void *ptr, size_t size, size_t nmemb, \fBSHFL\fP *stream)"
+.br
+.RI "\fIBuffered write of an inode's data stream. \fP"
+.ti -1c
+.RI "int \fBshfseek\fP (\fBSHFL\fP *stream, size_t offset, int whence)"
+.br
+.RI "\fISets the file position indicator for the stream pointed to by stream. \fP"
+.ti -1c
+.RI "size_t \fBshftell\fP (\fBSHFL\fP *stream)"
+.br
+.RI "\fIObtain the current position of a file stream. \fP"
+.ti -1c
+.RI "\fBSHFL\fP * \fBshfmemopen\fP (void *buf, size_t size, const char *mode)"
+.br
+.RI "\fIOpens a memory stream. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Posix stdio oriented stream IO on sharefs files. 
+.SH "Function Documentation"
+.PP 
+.SS "int shfclose (\fBSHFL\fP * fp)"
+.PP
+Close a previously opened stream-based file reference. 
+.SS "\fBSHFL\fP* shfmemopen (void * buf, size_t size, const char * mode)"
+.PP
+Opens a memory stream. \fBParameters:\fP
+.RS 4
+\fImode\fP The I/O access level - i.e. 'r' read, 'w' write, 'a' append 
+.br
+\fIbuf\fP The memory segment to perform stream I/O on. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+fmemopen() 
+.RE
+.PP
+
+.SS "\fBSHFL\fP* shfopen (const char * path, const char * mode, \fBshfs_t\fP * fs)"
+.PP
+Open a sharefs file inode for stream-based I/O. \fBParameters:\fP
+.RS 4
+\fIfs\fP The sharefs partition or NULL for default. 
+.RE
+.PP
+
+.SS "ssize_t shfread (void * ptr, size_t size, size_t nmemb, \fBSHFL\fP * stream)"
+.PP
+Buffered read of an inode's data stream. 
+.SS "int shfseek (\fBSHFL\fP * stream, size_t offset, int whence)"
+.PP
+Sets the file position indicator for the stream pointed to by stream. \fBSee also:\fP
+.RS 4
+fseek() 
+.RE
+.PP
+
+.SS "size_t shftell (\fBSHFL\fP * stream)"
+.PP
+Obtain the current position of a file stream. 
+.SS "size_t shfwrite (const void * ptr, size_t size, size_t nmemb, \fBSHFL\fP * stream)"
+.PP
+Buffered write of an inode's data stream. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

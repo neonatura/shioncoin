@@ -1,0 +1,12 @@
+** share-coin v2.25
+ * Compiler support for ubuntu linux distribution. 
+ * USDe transaction error states are now returned to stratum client.
+ * Added or optimized the following stratum commands:
+ - block.info[<mode>,<hash>]
+ - account.create[<label>]
+ - account.transactions[<amount>,<pkey>,<duration>]
+ - account.address[<hash>]
+ - account.secret[<addr>,<pkey>]
+ - account.import[<account>,<priv addr>]
+ - account.transfer[<account>,<pkey>,<addr>,<amount>]
+ - account.info[<account>,<pkey>]

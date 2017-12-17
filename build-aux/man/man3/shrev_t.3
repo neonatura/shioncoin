@@ -1,0 +1,63 @@
+.TH "shrev_t" 3 "18 Apr 2013" "Version 2.1.1" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shrev_t \- 
+.PP
+Describes a particular revision of a data segment.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shfs_rev.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "struct shrev_s * \fBdelta\fP"
+.br
+.RI "\fIThe parent delta of this revision. \fP"
+.ti -1c
+.RI "\fBshpeer_t\fP \fBpeer\fP"
+.br
+.RI "\fIThe machine on which the revision resides. \fP"
+.ti -1c
+.RI "\fBshfs_inode_off_t\fP \fBd_jno\fP"
+.br
+.RI "\fIThe sharefs journal and inode index number. \fP"
+.ti -1c
+.RI "\fBshfs_inode_off_t\fP \fBd_ino\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Describes a particular revision of a data segment. 
+.PP
+Definition at line 38 of file shfs_rev.h.
+.SH "Field Documentation"
+.PP 
+.SS "\fBshfs_inode_off_t\fP \fBshrev_t::d_jno\fP"
+.PP
+The sharefs journal and inode index number. 
+.PP
+Definition at line 53 of file shfs_rev.h.
+.SS "struct shrev_s* \fBshrev_t::delta\fP\fC [read]\fP"
+.PP
+The parent delta of this revision. 
+.PP
+Definition at line 42 of file shfs_rev.h.
+.SS "\fBshpeer_t\fP \fBshrev_t::peer\fP"
+.PP
+The machine on which the revision resides. \fBNote:\fP
+.RS 4
+A \fC\fBshpeer_t.type\fP\fP of \fCSHFS_PEER_LOCAL\fP refernces the local machine. 
+.RE
+.PP
+
+.PP
+Definition at line 48 of file shfs_rev.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

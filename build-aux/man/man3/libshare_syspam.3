@@ -1,0 +1,138 @@
+.TH "Libshare_syspam" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_syspam \- 
+.PP
+Permission access management.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshadow_t\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHPAM_DELETE\fP   (1 << 0)"
+.br
+.ti -1c
+.RI "#define \fBSHPAM_EXPIRE\fP   (1 << 1)"
+.br
+.ti -1c
+.RI "#define \fBSHPAM_LOCK\fP   (1 << 2)"
+.br
+.ti -1c
+.RI "#define \fBSHPAM_STATUS\fP   (1 << 3)"
+.br
+.ti -1c
+.RI "#define \fBSHPAM_SESSION\fP   (1 << 4)"
+.br
+.ti -1c
+.RI "#define \fBSHPAM_UNLOCK\fP   (1 << 5)"
+.br
+.ti -1c
+.RI "#define \fBSHPAM_UPDATE\fP   (1 << 6)"
+.br
+.ti -1c
+.RI "#define \fBSHPAM_CREATE\fP   (1 << 7)"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshadow_t\fP \fBshadow_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "uint64_t \fBshpam_uid\fP (char *username)"
+.br
+.RI "\fIA unique reference to a share account. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshpam_ident_gen\fP (uint64_t uid, \fBshpeer_t\fP *peer)"
+.br
+.RI "\fIAn identity key referencing an account for an application. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshpam_ident_root\fP (\fBshpeer_t\fP *peer)"
+.br
+.RI "\fIThe 'root' identity for an application. \fP"
+.ti -1c
+.RI "int \fBshpam_ident_verify\fP (\fBshkey_t\fP *id_key, uint64_t uid, \fBshpeer_t\fP *peer)"
+.br
+.RI "\fIVerify that an identity key references an application account. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshpam_sess_gen\fP (\fBshkey_t\fP *pass_key, \fBshtime_t\fP stamp, \fBshkey_t\fP *id_key)"
+.br
+.ti -1c
+.RI "int \fBshpam_sess_verify\fP (\fBshkey_t\fP *sess_key, \fBshkey_t\fP *pass_key, \fBshtime_t\fP stamp, \fBshkey_t\fP *id_key)"
+.br
+.ti -1c
+.RI "uint64_t \fBshpam_salt\fP (void)"
+.br
+.RI "\fIGenerate a random salt to be used to perterb a password key. \fP"
+.ti -1c
+.RI "uint64_t \fBshpam_salt_gen\fP (unsigned char *data, size_t data_len)"
+.br
+.RI "\fIGenerate a key salt from the data content provided. \fP"
+.ti -1c
+.RI "const char * \fBshpam_username_sys\fP (void)"
+.br
+.RI "\fIThe current user's system account name. \fP"
+.ti -1c
+.RI "\fBshseed_t\fP * \fBshpam_pass_gen\fP (char *username, char *passphrase, uint64_t salt)"
+.br
+.RI "\fIGenerate a password seed from the username, passphrase, and salt provided. \fP"
+.ti -1c
+.RI "\fBshseed_t\fP * \fBshpam_pass_sys\fP (char *username)"
+.br
+.RI "\fIGenerate a password seed from the system login username specified. \fP"
+.ti -1c
+.RI "int \fBshpam_pass_verify\fP (\fBshseed_t\fP *seed, char *username, char *passphrase)"
+.br
+.RI "\fIVerify a password seed references a username and password. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Permission access management. 
+.SH "Function Documentation"
+.PP 
+.SS "\fBshkey_t\fP* shpam_ident_gen (uint64_t uid, \fBshpeer_t\fP * peer)"
+.PP
+An identity key referencing an account for an application. 
+.SS "\fBshkey_t\fP* shpam_ident_root (\fBshpeer_t\fP * peer)"
+.PP
+The 'root' identity for an application. 
+.SS "int shpam_ident_verify (\fBshkey_t\fP * id_key, uint64_t uid, \fBshpeer_t\fP * peer)"
+.PP
+Verify that an identity key references an application account. 
+.SS "\fBshseed_t\fP* shpam_pass_gen (char * username, char * passphrase, uint64_t salt)"
+.PP
+Generate a password seed from the username, passphrase, and salt provided. 
+.SS "\fBshseed_t\fP* shpam_pass_sys (char * username)"
+.PP
+Generate a password seed from the system login username specified. 
+.SS "int shpam_pass_verify (\fBshseed_t\fP * seed, char * username, char * passphrase)"
+.PP
+Verify a password seed references a username and password. 
+.SS "uint64_t shpam_salt (void)"
+.PP
+Generate a random salt to be used to perterb a password key. 
+.SS "uint64_t shpam_salt_gen (unsigned char * data, size_t data_len)"
+.PP
+Generate a key salt from the data content provided. 
+.SS "uint64_t shpam_uid (char * username)"
+.PP
+A unique reference to a share account. 
+.SS "const char* shpam_username_sys (void)"
+.PP
+The current user's system account name. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

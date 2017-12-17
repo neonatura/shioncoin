@@ -1,0 +1,107 @@
+.TH "shpeer_t" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shpeer_t \- 
+.PP
+A local or remote reference to a libshare runtime enabled application.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shpeer.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBshpeer_addr_t\fP \fBaddr\fP"
+.br
+.RI "\fIA IP 4/6 network address. \fP"
+.ti -1c
+.RI "char \fBlabel\fP [16]"
+.br
+.RI "\fIA label identifying a perspective view of the peer. \fP"
+.ti -1c
+.RI "char \fBgroup\fP [16]"
+.br
+.RI "\fIA label identifying a sub-group of this peer. \fP"
+.ti -1c
+.RI "uint32_t \fBuid\fP"
+.br
+.RI "\fIThe client user ID that is associated with the peer. \fP"
+.ti -1c
+.RI "uint32_t \fBarch\fP"
+.br
+.RI "\fIArchitecture of local machine for private key generation. \fP"
+.ti -1c
+.RI "uint32_t \fBtype\fP"
+.br
+.RI "\fIA SHNET_PEER_XX type. \fP"
+.ti -1c
+.RI "\fBshpeer_key_t\fP \fBkey\fP"
+.br
+.RI "\fIKey references to this peer. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+A local or remote reference to a libshare runtime enabled application. 
+
+ 
+ See the libshare_net.3 API man page for ESP protocol network operations.
+  
+.PP
+\fBNote:\fP
+.RS 4
+Addresses are stored in network byte order. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+.PP
+\fBshkeystore.c\fP.
+.PP
+Definition at line 120 of file shpeer.h.
+.SH "Field Documentation"
+.PP 
+.SS "\fBshpeer_addr_t\fP \fBshpeer_t::addr\fP"
+.PP
+A IP 4/6 network address. 
+.PP
+Definition at line 125 of file shpeer.h.
+.SS "uint32_t \fBshpeer_t::arch\fP"
+.PP
+Architecture of local machine for private key generation. 
+.PP
+Definition at line 145 of file shpeer.h.
+.SS "char \fBshpeer_t::group\fP[16]"
+.PP
+A label identifying a sub-group of this peer. 
+.PP
+Definition at line 135 of file shpeer.h.
+.SS "\fBshpeer_key_t\fP \fBshpeer_t::key\fP"
+.PP
+Key references to this peer. 
+.PP
+Definition at line 155 of file shpeer.h.
+.SS "char \fBshpeer_t::label\fP[16]"
+.PP
+A label identifying a perspective view of the peer. 
+.PP
+Definition at line 130 of file shpeer.h.
+.SS "uint32_t \fBshpeer_t::type\fP"
+.PP
+A SHNET_PEER_XX type. 
+.PP
+Definition at line 150 of file shpeer.h.
+.SS "uint32_t \fBshpeer_t::uid\fP"
+.PP
+The client user ID that is associated with the peer. 
+.PP
+Definition at line 140 of file shpeer.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

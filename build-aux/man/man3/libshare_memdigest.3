@@ -1,0 +1,62 @@
+.TH "Utility functions to generate unique checksums of data in SHA256 format." 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Utility functions to generate unique checksums of data in SHA256 format. \- 
+.PP
+Generate hash checksums.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBsh_sha256_t\fP"
+.br
+.ti -1c
+.RI "struct \fBsh_sha512_t\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fB_SH_SHA256_BLOCK_SIZE\fP   ( 512 / 8)"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBsh_sha256\fP (const unsigned char *message, unsigned int len, unsigned char *digest)"
+.br
+.ti -1c
+.RI "char * \fBshdigest\fP (void *data, int32_t len)"
+.br
+.ti -1c
+.RI "void \fBsh_calc_midstate\fP (struct \fBscrypt_work\fP *work)"
+.br
+.ti -1c
+.RI "void \fBsh_sha256_init\fP (\fBsh_sha256_t\fP *ctx)"
+.br
+.ti -1c
+.RI "void \fBsh_sha256_update\fP (\fBsh_sha256_t\fP *ctx, const unsigned char *message, unsigned int len)"
+.br
+.ti -1c
+.RI "void \fBsh_sha256_final\fP (\fBsh_sha256_t\fP *ctx, unsigned char *digest)"
+.br
+.ti -1c
+.RI "void \fBsh_sha512_init\fP (\fBsh_sha512_t\fP *ctx)"
+.br
+.ti -1c
+.RI "void \fBsh_sha512_update\fP (\fBsh_sha512_t\fP *ctx, const unsigned char *input, size_t ilen)"
+.br
+.ti -1c
+.RI "void \fBsh_sha512_final\fP (\fBsh_sha512_t\fP *ctx, unsigned char output[64])"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Generate hash checksums. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

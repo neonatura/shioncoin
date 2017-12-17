@@ -1,0 +1,87 @@
+.TH "shjson_t" 3 "20 Mar 2015" "Version 2.24" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shjson_t \- 
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshjson_t\fP * \fBnext\fP"
+.br
+.RI "\fInext/prev allow you to walk array/object chains. \fP"
+.ti -1c
+.RI "struct \fBshjson_t\fP * \fBprev\fP"
+.br
+.ti -1c
+.RI "struct \fBshjson_t\fP * \fBchild\fP"
+.br
+.RI "\fIAn array or object item will have a child pointer pointing to a chain of the items in the array/object. \fP"
+.ti -1c
+.RI "int \fBtype\fP"
+.br
+.RI "\fIThe type of the item, as above. \fP"
+.ti -1c
+.RI "char * \fBvaluestring\fP"
+.br
+.RI "\fIThe item's string, if type==shjson_String. \fP"
+.ti -1c
+.RI "int \fBvalueint\fP"
+.br
+.RI "\fIThe item's number, if type==shjson_Number. \fP"
+.ti -1c
+.RI "double \fBvaluedouble\fP"
+.br
+.RI "\fIThe item's number, if type==shjson_Number. \fP"
+.ti -1c
+.RI "char * \fBstring\fP"
+.br
+.RI "\fIThe item's name string, if this item is the child of, or is in the list of subitems of an object. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 944 of file shmem.h.
+.SH "Field Documentation"
+.PP 
+.SS "struct \fBshjson_t\fP* \fBshjson_t::child\fP\fC [read]\fP"
+.PP
+An array or object item will have a child pointer pointing to a chain of the items in the array/object. 
+.PP
+Definition at line 949 of file shmem.h.
+.SS "struct \fBshjson_t\fP* \fBshjson_t::next\fP\fC [read]\fP"
+.PP
+next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem 
+.PP
+Definition at line 946 of file shmem.h.
+.SS "char* \fBshjson_t::string\fP"
+.PP
+The item's name string, if this item is the child of, or is in the list of subitems of an object. 
+.PP
+Definition at line 962 of file shmem.h.
+.SS "int \fBshjson_t::type\fP"
+.PP
+The type of the item, as above. 
+.PP
+Definition at line 952 of file shmem.h.
+.SS "double \fBshjson_t::valuedouble\fP"
+.PP
+The item's number, if type==shjson_Number. 
+.PP
+Definition at line 959 of file shmem.h.
+.SS "int \fBshjson_t::valueint\fP"
+.PP
+The item's number, if type==shjson_Number. 
+.PP
+Definition at line 957 of file shmem.h.
+.SS "char* \fBshjson_t::valuestring\fP"
+.PP
+The item's string, if type==shjson_String. 
+.PP
+Definition at line 955 of file shmem.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

@@ -1,0 +1,9 @@
+Source: share-coin
+Section: web
+Maintainer: Neo Natura <support@neo-natura.com>
+Priority: standard
+Homepage: http://www.sharelib.net/
+
+Package: share-coin
+Architecture: amd64
+Description: SHC Virtual Currency Server compatible with libshare suite.
