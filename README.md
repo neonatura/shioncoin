@@ -3,17 +3,31 @@ share-coin
 
 <h4>Part of the Share Library Suite.</b>
 
-<h3>Stratum + SHC + USDe Coin Service</h3>
-The SHC and USDE virtual currency coin services, and a stratum service to handle mining, is embedded into the shc and usde coin services via the program "shcoind". The "shc" and "usde" client programs are provided to perform RPC commands against their respective coin services.
+The "shcoind" daemon provides RPC, Stratum, and Currency services.
 
-Note: No daemon or utility programs from the share library suite is required in order to run the coin+stratum service. The C share library is staticly linked against the coin services, and a 'make install' is not required to run the program.
+The "shc" console utility program provides access to the daemon. 
 
-The stratum service utilizes supplemental methods that are not standard, and require a compatible API client for full usage. 
+<h3>Share Coin Service</h3>
+The ShareCoin service provides the core SHC virtual currency server operations.
+
+SHC Port: 24104
+
+<h3>RPC Service</h3>
+The RPC service is provided for the "shc" utility program to manage service or wallet operations.
+
+RPC Port: 9447
+
+<h3>Stratum Service</h3>
+The Stratum service provides full-capability gateway access for scrypt coin miner devices. In typical scenerios, a seperate program is required in order to provide this service. In addition, capabilities for creating and managing wallet accounts is provided for web/API interfacing.
+
+Note: The stratum service utilizes supplemental methods that are not standard, and require a compatible API client for full usage. 
+
+Stratum Port: 9448
 
 
 <h3>Build Dependencies</h3>
 
-The c++ boost shared library is required.  To be specific, the "system", "filesystem", "program_options", and "thread" boost libraries. The "shcoind" and "shcoin" programs are the only sharelib program that link against boost libraries.
+The c++ boost shared library is required.  To be specific, the "system", "filesystem", and "thread" boost libraries. The "shcoind" and "shc" programs are the only sharelib program that link against boost libraries.
 To install on linux run 'yum install libboost*' or 'apt-get install libboost*'.
 
 The 'openssl version 1.0.1g' distribution has been included in the directory '/src/share-ssl-lib'. This version will automatically be compiled and linked against the shcoind and shcoin programs. The Open SSL library is used for RPC protocol communication between the shcoind daemon and shcoin utility program.
@@ -24,32 +38,18 @@ Run "apt-get install libgmp-dev" on Ubuntu.
 Run "pacman -S libgmp-devel" from MSYS2 64-bit.
 
 <h2>SHC Specifications</h2>
-The share-coin is unique in that it allows for additional types of transactions than regular coin transfers. Examples of these capabilities include exchanging coins between currencies, providing certified licenses for custom use, and assigning names to otherwise hard to remember hash tags. Compatibilty with the 'share library' file-system and network providing methods to utilize SHC block-chain transactions via external programs.
+The share-coin is unique in that it allows for additional types of transactions just regular coin transfers. Examples of these capabilities include exchanging coins between currencies, providing certified licenses for custom use, and assigning names to otherwise hard to remember hash tags. Compatibilty with the 'share library' file-system and network providing methods to utilize SHC block-chain transactions via external programs.
+
+Additional examples including commiting address alias names onto the block-chain, multi-level certification operations that are compatible with x509, geodetic context operations such as commiting a name to a location, and much more. 
  
 The shcoind SHC coin server recalcultes the block difficulty rate every block using the Kimoto Gravity Well algorythm. The target duration for blocks is one minute.
 
 A maximum of 1 Billion SHC coins will be generated. The reward life-time is expected to continue for around 40 years (~ 2055).  
 
-SHC Server Port: 24104
-
-Stratum Port: 9448
-
 The SHC network requires 1 confirmation per transaction.
 
 The SHC network block matures after 60 confirmations.
 
-<h2>USDe Specifications</h2>
-The shcoind USDe coin server recalcultes the block difficulty rate every block using the Kimoto Gravity Well algorythm. The target duration for blocks is one minute.
-
-A maximum of 1.6Billion USDe will be generated. Block reward halves every 130,000 blocks. The current money supply is estimated at 1.12 billion coins in circulation.
-
-USDE Server Port: 54449
-
-Stratum Port: 9448
-
-The USDE network requires 5 confirmations per transaction.
-
-The USDE network block matures after 100 confirmations.
 
 
 <h2>Quick Instructions</h2>
@@ -77,120 +77,39 @@ Building the share-coin programs:
 The binaries can be found under src/share-coin as "shc", "usde", and "shcoind". Performing a 'make install' will install these programs into the bin and sbin directories respectively. The "shc" and "usde" programs must be ran as the same user as the "shcoind" daemon. The daemons supplied with the share library suite (shared, shlogd, shfsyncd) and base libraries can be installed by running 'make install' in the libshare directory built from the instructions above. 
 
 When installed on a unix-like systems that supports the traditional /etc/init.d/rc.d/ hierarchy a 'shcoind' daemon will be registered with the system to load upon startup as the root user. 
-Note: The client utility programs "shc" and "usde" must be ran as the same user as the 'shcoind' daemon.
+Note: The client utility programs "shc" must be ran as the same user as the 'shcoind' daemon.
 
-The shcoind daemon and client programs store data in the "/var/lib/share/blockchain/" directory. These programs will not [automatically] attempt to read the contents of the traditional currency hierarchy (i.e. "~/.usde/"). Commands are provided in order to import or export in either a legacy and/or optimized manner for the entire block-chain, wallet transactions, and network peer addresses. No RPC access is permitted except via the local machine and only with the automatically generated rpc credentials (see "rpc.conf" file). 
+The shcoind daemon and client programs store data in the "/var/lib/share/blockchain/" directory on linux and the "%APPDATA%\share\blockchain\" directory on windows. These programs will not [automatically] attempt to read the contents of the traditional currency hierarchy (i.e. "~/.usde/") used by many other coins. Commands are provided in order to import or export in either a legacy and/or optimized manner for the entire block-chain, wallet transactions, and network peer addresses. No RPC access is permitted except via the local machine and only with the automatically generated rpc credentials (see "rpc.dat" file). 
 
 
 Client Utility Program
 ===============================
 
-Run "shc help" or "usde help" to list command-line arguments:
+Run "shc help" to list command-line arguments:
 
-<small>
-addmultisigaddress <nrequired> <'["key","key"]'> [account]
+Example of receiving and sending a transaction:
 
-<br>peer.add <host>[:port]
-<br><i>Attempt to connect to a USDE server at the network destination specified.</i>
-
-wallet.export <destination>
-
-createrawtransaction [{"txid":txid,"vout":n},...] {address:amount,...}
-
-decoderawtransaction <hex string>
-
-wallet.key <address>
-
-getaccount <address>
-
-getaccountaddress <account>
-
-getaddressesbyaccount <account>
-
-getbalance [account] [minconf=1]
-
-block.get <hash>
-
-getblockcount
-
-block.hash <index>
-
-getblocktemplate [params]
-
-getconnectioncount
-
-block.difficulty
-
-block.info
-
-net.info
-
-getnetworkhashps [blocks]
-
-wallet.new
-
-peer.info
-
-getrawmempool
-
-tx.get <txid> [verbose=0]
-
-getreceivedbyaccount <account> [minconf=1]
-
-getreceivedbyaddress <address> [minconf=1]
-
-getwork [data]
-
-getworkex [data, coinbase]
-
-help [command]
-
-wallet.importkey <privkey> <account>
-
-keypoolrefill
-
-wallet.accounts [minconf=1]
-
-listreceivedbyaccount [minconf=1] [includeempty=false]
-
-listreceivedbyaddress [minconf=1] [includeempty=false]
-
-listsinceblock [blockhash] [target-confirmations]
-
-listtransactions [account] [count=10] [from=0]
-
-listunspent [minconf=1] [maxconf=999999]
-
-wallet.move <fromaccount> <toaccount> <amount> [minconf=1] [comment]
-
-wallet.send <fromaccount> <toaddress> <amount> [minconf=1] [comment] [comment-to]
-
-sendmany <fromaccount> {address:amount,...} [minconf=1] [comment]
-
-sendrawtransaction <hex string>
-
-sendtoaddress <address> <amount> [comment] [comment-to]
-
-setaccount <address> <account>
-
-setmininput <amount>
-
-settxfee <amount>
-
-signmessage <address> <message>
-
-signrawtransaction <hex string> [{"txid":txid,"vout":n,"scriptPubKey":hex},...] [<privatekey1>,...] [sighashtype="ALL"]
-
-shutdown
-
-validateaddress <address>
-
-verifymessage <address> <signature> <message>
-</small>
+# shc wallet.new test
+<small>RzpBMp4xE4GgCdoECqd9GpW32Fkxcpqa3u</small>
+# shc wallet.listaddr test
+<small>["RzpBMp4xE4GgCdoECqd9GpW32Fkxcpqa3u"]</small>
+** Send 1 SHC to address generated. **
+# shc wallet.balance test
+<small>1</small>
+# shc wallet.new test2
+<small>S9cXrHRUoDSJdNvBANSUVPKrMxCWGxHMuH</small>
+# shc wallet.send test S9cXrHRUoDSJdNvBANSUVPKrMxCWGxHMuH 0.9998
+<small>b82ce47f65ac5f15101a84ef7c89c8e0acec52db93feb4f78cf5d12f49368bcb</small>
+** Wait for transaction to be committed to a block. **
+# shc wallet.unspent test
+<small>[]</small>
+# shc wallet.balance test2
+<small>0.9998</small>
 
 
 
 <h3>Stratum Protocol Template</h3>
+
 <br>Command: mining.ping
 <br>Description: Verify or measure server response time.
 <br>Example Request: {"method":"mining.ping","id":1,"params":[]}
