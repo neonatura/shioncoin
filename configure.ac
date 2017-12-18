@@ -240,15 +240,16 @@ AC_CHECK_LIB([ssl], [SSL_version], ,
 #  AC_MSG_ERROR("libboost (runtime library) is required")
 #)
 
-AC_CHECK_LIB([share], [get_libshare_version])
 AC_ARG_WITH([libshare],
   [AS_HELP_STRING([--with-libshare],
   [specify a path to the libshare build directory])],
   [],
   [with_libshare=yes])
 LIBSHARE=
-AS_IF([test "x$with_libshare" = "xyes"],
-  AC_CHECK_LIB([share_sexe], [sexe_load]))
+AS_IF([test "x$with_libshare" ! "xyes"],
+  AC_CHECK_LIB([share], [get_libshare_version])
+  AC_CHECK_LIB([share_sexe], [sexe_load])
+)
 AC_SUBST([LIBSHARE], $with_libshare)
 AM_CONDITIONAL([STATIC_LIBSHARE], test x"$with_libshare" != x"yes") 
 

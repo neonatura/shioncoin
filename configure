@@ -21816,6 +21816,16 @@ fi
 #)
 
 
+# Check whether --with-libshare was given.
+if test "${with_libshare+set}" = set; then
+  withval=$with_libshare;
+else
+  with_libshare=yes
+fi
+
+LIBSHARE=
+if test "x$with_libshare" ! "xyes"; then
+
 { $as_echo "$as_me:$LINENO: checking for get_libshare_version in -lshare" >&5
 $as_echo_n "checking for get_libshare_version in -lshare... " >&6; }
 if test "${ac_cv_lib_share_get_libshare_version+set}" = set; then
@@ -21891,16 +21901,6 @@ _ACEOF
 fi
 
 
-# Check whether --with-libshare was given.
-if test "${with_libshare+set}" = set; then
-  withval=$with_libshare;
-else
-  with_libshare=yes
-fi
-
-LIBSHARE=
-if test "x$with_libshare" = "xyes"; then
-
 { $as_echo "$as_me:$LINENO: checking for sexe_load in -lshare_sexe" >&5
 $as_echo_n "checking for sexe_load in -lshare_sexe... " >&6; }
 if test "${ac_cv_lib_share_sexe_sexe_load+set}" = set; then
@@ -21974,6 +21974,7 @@ _ACEOF
   LIBS="-lshare_sexe $LIBS"
 
 fi
+
 
 fi
 

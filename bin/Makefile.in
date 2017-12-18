@@ -35,8 +35,6 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) \
-	.notice$(EXTEXT)$(EXEEXT)
 @USDE_SERVICE_TRUE@am__append_1 = .usde$(EXEEXT)
 @EMC2_SERVICE_TRUE@am__append_2 = .emc2$(EXEEXT)
 subdir = bin
@@ -55,9 +53,9 @@ CONFIG_HEADER = $(top_builddir)/config.h \
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-_notice__EXTEXT__SOURCES = .c
-_notice__EXTEXT__OBJECTS = .$(OBJEXT)
-_notice__EXTEXT__LDADD = $(LDADD)
+_notice_SOURCES = .c
+_notice_OBJECTS = .$(OBJEXT)
+_notice_LDADD = $(LDADD)
 shc_SOURCES = shc.c
 shc_OBJECTS = shc.$(OBJEXT)
 shc_LDADD = $(LDADD)
@@ -225,6 +223,7 @@ version_info = @version_info@
 version_patch = @version_patch@
 with_kernel = @with_kernel@
 with_kerneldir = @with_kerneldir@
+noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXEEXT)
 noinst_SCRIPTS = $(am__append_1) $(am__append_2)
 all: all-am
 
@@ -506,11 +505,11 @@ uninstall-am:
 
 
 @USDE_SERVICE_TRUE@.usde$(EXEEXT):
-@USDE_SERVICE_TRUE@	ln -sf $(top_builddir)/src/coin-console/usde$(EXTEXT)
+@USDE_SERVICE_TRUE@	ln -sf $(top_builddir)/src/coin-console/usde$(EXEEXT)
 @USDE_SERVICE_TRUE@	@echo > .usde$(EXEEXT)
 
 @EMC2_SERVICE_TRUE@.emc2$(EXEEXT):
-@EMC2_SERVICE_TRUE@	ln -sf $(top_builddir)/src/coin-console/emc2$(EXTEXT)
+@EMC2_SERVICE_TRUE@	ln -sf $(top_builddir)/src/coin-console/emc2$(EXEEXT)
 @EMC2_SERVICE_TRUE@	@echo > .emc2$(EXEEXT)
 
 shcoind$(EXEEXT): docs
@@ -524,8 +523,8 @@ shc$(EXEEXT):
 @HAVE_DOXYGEN_FALSE@docs:
 @HAVE_DOXYGEN_FALSE@	echo > docs
 
-.notice$(EXTEXT):
-	@echo > .notice$(EXTEXT)
+.notice$(EXEEXT):
+	@echo > .notice$(EXEEXT)
 	@echo ""
 	@echo "It is now safe to perform a 'make install'."
 	@echo ""
