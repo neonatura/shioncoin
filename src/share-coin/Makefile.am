@@ -252,7 +252,9 @@ test_shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a
 test_shcoind_CFLAGS = -g -O0 -DTEST_SHCOIND
 test_shcoind_CXXFLAGS = -g -O0 -DTEST_SHCOIND
 if STATIC_LIBSHARE
-test_shcoind_LDADD += $(LIBSHARE)/src/sexe/libshare_sexe.a
+test_shcoind_LDADD += \
+	$(LIBSHARE)/src/share-lib/libshare.a \
+	$(LIBSHARE)/src/sexe/libshare_sexe.a
 test_shcoind_CFLAGS += -I$(LIBSHARE)/include
 test_shcoind_CXXFLAGS += -I$(LIBSHARE)/include
 else
@@ -278,6 +280,7 @@ shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a
 if STATIC_LIBSHARE
 shcoind_LDADD += \
+	$(LIBSHARE)/src/share-lib/libshare.a \
 	$(LIBSHARE)/src/sexe/libshare_sexe.a
 shcoind_CFLAGS = -I$(LIBSHARE)/include
 shcoind_CXXFLAGS = -I$(LIBSHARE)/include

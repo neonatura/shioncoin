@@ -37,11 +37,15 @@ host_triplet = @host@
 TESTS = test_shcoind$(EXEEXT)
 noinst_PROGRAMS = test_shcoind$(EXEEXT)
 sbin_PROGRAMS = shcoind$(EXEEXT)
-@STATIC_LIBSHARE_TRUE@am__append_1 = $(LIBSHARE)/src/sexe/libshare_sexe.a
+@STATIC_LIBSHARE_TRUE@am__append_1 = \
+@STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/share-lib/libshare.a \
+@STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/sexe/libshare_sexe.a
+
 @STATIC_LIBSHARE_TRUE@am__append_2 = -I$(LIBSHARE)/include
 @STATIC_LIBSHARE_TRUE@am__append_3 = -I$(LIBSHARE)/include
 @STATIC_LIBSHARE_FALSE@am__append_4 = -lshare_sexe
 @STATIC_LIBSHARE_TRUE@am__append_5 = \
+@STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/share-lib/libshare.a \
 @STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/sexe/libshare_sexe.a
 
 @STATIC_LIBSHARE_FALSE@am__append_6 = -lshare_sexe

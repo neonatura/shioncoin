@@ -1287,7 +1287,11 @@ _TRUE(wallet->CommitTransaction(wtx) == true);
 
 static void _init_exectx_sx(char *src_path, char *sx_path)
 {
+#ifndef WIN32
   const char *tmp_path = shcache_path("tmp");
+#else
+  const char *tmp_path = "exectx";
+#endif
   const char *text = 
     "function buyTicket(farg)\n"
     "  if (userdata.rtotal >= userdata.rmax) then\n"
