@@ -275,6 +275,11 @@ shcoind_SOURCES = \
 	shcoind.c \
 	shcoind_daemon.c \
 	shcoind_daemon.h
+if WINDOWS
+shcoind_SOURCES += \
+	shcoind_svc.c \
+	shcoind_svc.h
+endif
 
 shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a

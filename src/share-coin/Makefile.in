@@ -44,15 +44,19 @@ sbin_PROGRAMS = shcoind$(EXEEXT)
 @STATIC_LIBSHARE_TRUE@am__append_2 = -I$(LIBSHARE)/include
 @STATIC_LIBSHARE_TRUE@am__append_3 = -I$(LIBSHARE)/include
 @STATIC_LIBSHARE_FALSE@am__append_4 = -lshare_sexe
-@STATIC_LIBSHARE_TRUE@am__append_5 = \
+@WINDOWS_TRUE@am__append_5 = \
+@WINDOWS_TRUE@	shcoind_svc.c \
+@WINDOWS_TRUE@	shcoind_svc.h
+
+@STATIC_LIBSHARE_TRUE@am__append_6 = \
 @STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/share-lib/libshare.a \
 @STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/sexe/libshare_sexe.a
 
-@STATIC_LIBSHARE_FALSE@am__append_6 = -lshare_sexe
-@DEBUG_TRUE@am__append_7 = -g3 
-@DEBUG_TRUE@am__append_8 = -g3
-@DEBUG_FALSE@am__append_9 = -O2
+@STATIC_LIBSHARE_FALSE@am__append_7 = -lshare_sexe
+@DEBUG_TRUE@am__append_8 = -g3 
+@DEBUG_TRUE@am__append_9 = -g3
 @DEBUG_FALSE@am__append_10 = -O2
+@DEBUG_FALSE@am__append_11 = -O2
 subdir = src/share-coin
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -70,6 +74,96 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
+am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
+	$(top_srcdir)/src/share-lib/share.h \
+	$(top_srcdir)/src/share-lib/mem/shmem.h \
+	$(top_srcdir)/src/share-lib/sherr.h \
+	$(top_srcdir)/src/share-lib/share_base.h \
+	$(top_srcdir)/src/share-lib/shpeer.h \
+	$(top_srcdir)/src/share-lib/shtime.h \
+	$(top_srcdir)/src/share-lib/shpref.h \
+	$(top_srcdir)/src/share-lib/shcrc.h \
+	$(top_srcdir)/src/share-lib/shfile.h \
+	$(top_srcdir)/src/share-lib/fs/shfs.h \
+	$(top_srcdir)/src/share-lib/delta/xdelta3.h \
+	$(top_srcdir)/src/share-lib/net/shnet.h unet/unet.h \
+	server/coin.h server/chain.h server/global.h \
+	server/allocators.h server/bignum.h server/rpcalias_proto.h \
+	server/rpccert_proto.h server/rpccontext_proto.h \
+	server/compat.h server/crypter.h server/txidx.h server/init.h \
+	server/key.h server/keystore.h server/mruset.h \
+	server/netbase.h server/net.h server/txsignature.h \
+	server/versionbits.h server/protocol.h server/script.h \
+	server/scrypt.h server/serialize.h server/strlcpy.h \
+	server/sync.h server/ui_interface.h server/uint256.h \
+	server/util.h server/version.h server/walletdb.h \
+	server/wallet.h server/txcreator.h shcoind_version.h \
+	server_iface.h shcoind_rpc.h shcoind_log.h shcoind_opt.h \
+	shcoind_signal.h shcoind_descriptor.h shcoind.h shcoind_rpc.c \
+	shcoind_log.c shcoind_opt.c shcoind_signal.c \
+	shcoind_descriptor.c unet/unet_accept.c unet/unet_bind.c \
+	unet/unet.c unet/unet_close.c unet/unet_connect.c \
+	unet/unet_io.c unet/unet_timer.c unet/unet_peer.c \
+	unet/unet_event.c unet/unet_local.c server/mnemonic.cpp \
+	server/netbase.cpp server/version.cpp server/util.cpp \
+	server/txfeerate.cpp $(srcdir)/blockchain/bc_block.c \
+	$(srcdir)/blockchain/bc_index.c \
+	$(srcdir)/blockchain/bc_table.c $(srcdir)/blockchain/bc_arch.c \
+	$(srcdir)/blockchain/bc_fmap.c $(srcdir)/blockchain/bc.h \
+	$(srcdir)/blockchain/bc_block.h \
+	$(srcdir)/blockchain/bc_index.h \
+	$(srcdir)/blockchain/bc_table.h $(srcdir)/blockchain/bc_arch.h \
+	$(srcdir)/blockchain/bc_fmap.h $(srcdir)/proto/coin_proto.c \
+	$(srcdir)/proto/shc_proto.cpp $(srcdir)/proto/usde_proto.cpp \
+	$(srcdir)/proto/emc2_proto.cpp $(srcdir)/proto/test_proto.cpp \
+	$(srcdir)/proto/coin_proto.h $(srcdir)/proto/shc_proto.h \
+	$(srcdir)/proto/usde_proto.h $(srcdir)/proto/emc2_proto.h \
+	$(srcdir)/proto/test_proto.h stratum/stratum.h \
+	stratum/stratum_http.h stratum/stratum_message.h \
+	stratum/stratum_protocol.h stratum/stratum_user.h \
+	stratum/stratum_task.h stratum/stratum_sync.h \
+	stratum/stratum.c stratum/stratum_http.c \
+	stratum/stratum_message.c stratum/stratum_protocol.c \
+	stratum/stratum_user.c stratum/stratum_task.c \
+	stratum/stratum_sync.c fractal/fractal.c fractal/fractal_bmp.c \
+	server/test/test_wallet.cpp server/test/test_wallet.h \
+	server/test/test_block.cpp server/test/test_block.h \
+	server/test/test_pool.cpp server/test/test_pool.h \
+	server/shc/shc_netmsg.cpp server/shc/shc_netmsg.h \
+	server/shc/shc_block.cpp server/shc/shc_block.h \
+	server/shc/shc_wallet.cpp server/shc/shc_wallet.h \
+	server/shc/shc_txidx.cpp server/shc/shc_txidx.h \
+	server/shc/shc_rpc.cpp server/shc/shc_pool.cpp \
+	server/shc/shc_pool.h server/usde/usde_netmsg.cpp \
+	server/usde/usde_netmsg.h server/usde/usde_block.cpp \
+	server/usde/usde_block.h server/usde/usde_wallet.cpp \
+	server/usde/usde_wallet.h server/usde/usde_txidx.cpp \
+	server/usde/usde_txidx.h server/usde/usde_pool.cpp \
+	server/usde/usde_pool.h server/emc2/emc2_txidx.cpp \
+	server/emc2/emc2_txidx.h server/emc2/emc2_block.cpp \
+	server/emc2/emc2_block.h server/emc2/emc2_wallet.cpp \
+	server/emc2/emc2_wallet.h server/emc2/emc2_netmsg.cpp \
+	server/emc2/emc2_netmsg.h server/emc2/emc2_pool.cpp \
+	server/emc2/emc2_pool.h server/ext/txext.cpp \
+	server/ext/alias.cpp server/ext/certificate.cpp \
+	server/ext/offer.cpp server/ext/asset.cpp server/ext/exec.cpp \
+	server/ext/channel.cpp server/ext/context.cpp \
+	server/rpc/rpcalias_proto.cpp server/rpc/rpccert_proto.cpp \
+	server/rpc/rpccontext_proto.cpp server/rpc/rpcdump.cpp \
+	server/rpc/rpc_command.cpp server/rpc/rpcrawtransaction.cpp \
+	server/versionbits.cpp server/txsignature.cpp \
+	server/protocol.cpp server/block.cpp server/block.h \
+	server/txmempool.cpp server/txmempool.h server/coin.cpp \
+	server/chain.cpp server/matrix.cpp server/spring.c \
+	server/bloom.cpp server/global.cpp server/block_merkle.cpp \
+	server/wit_merkle.cpp server/crypter.cpp server/txidx.cpp \
+	server/init.cpp server/derkey.cpp server/hdkey.cpp \
+	server/keystore.cpp server/main.cpp server/script.cpp \
+	server/sync.cpp server/wallet.cpp server/txcreator.cpp \
+	server/walletdb.cpp server/scrypt.c server/addrman.h \
+	server/addrman.cpp server/base58.h server/base58.cpp \
+	wallet_iface.cpp block_iface.cpp server_iface.cpp shcoind.c \
+	shcoind_daemon.c shcoind_daemon.h shcoind_svc.c shcoind_svc.h
 am__objects_1 =
 am__objects_2 = shcoind-shcoind_rpc.$(OBJEXT) \
 	shcoind-shcoind_log.$(OBJEXT) shcoind-shcoind_opt.$(OBJEXT) \
@@ -131,17 +225,18 @@ am__objects_6 = shcoind-txfeerate.$(OBJEXT) $(am__objects_3) \
 	shcoind-addrman.$(OBJEXT) shcoind-base58.$(OBJEXT) \
 	shcoind-wallet_iface.$(OBJEXT) shcoind-block_iface.$(OBJEXT) \
 	shcoind-server_iface.$(OBJEXT)
+@WINDOWS_TRUE@am__objects_7 = shcoind-shcoind_svc.$(OBJEXT)
 am_shcoind_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_6) shcoind-shcoind.$(OBJEXT) \
-	shcoind-shcoind_daemon.$(OBJEXT)
+	shcoind-shcoind_daemon.$(OBJEXT) $(am__objects_7)
 shcoind_OBJECTS = $(am_shcoind_OBJECTS)
 am__DEPENDENCIES_1 =
 shcoind_DEPENDENCIES = $(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(am__append_5) $(am__DEPENDENCIES_1)
+	$(am__append_6) $(am__DEPENDENCIES_1)
 shcoind_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(shcoind_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_7 = test_shcoind-shcoind_rpc.$(OBJEXT) \
+am__objects_8 = test_shcoind-shcoind_rpc.$(OBJEXT) \
 	test_shcoind-shcoind_log.$(OBJEXT) \
 	test_shcoind-shcoind_opt.$(OBJEXT) \
 	test_shcoind-shcoind_signal.$(OBJEXT) \
@@ -157,24 +252,24 @@ am__objects_7 = test_shcoind-shcoind_rpc.$(OBJEXT) \
 	test_shcoind-unet_local.$(OBJEXT) \
 	test_shcoind-mnemonic.$(OBJEXT) test_shcoind-netbase.$(OBJEXT) \
 	test_shcoind-version.$(OBJEXT) test_shcoind-util.$(OBJEXT)
-am__objects_8 = test_shcoind-bc_block.$(OBJEXT) \
+am__objects_9 = test_shcoind-bc_block.$(OBJEXT) \
 	test_shcoind-bc_index.$(OBJEXT) \
 	test_shcoind-bc_table.$(OBJEXT) test_shcoind-bc_arch.$(OBJEXT) \
 	test_shcoind-bc_fmap.$(OBJEXT)
-am__objects_9 = test_shcoind-coin_proto.$(OBJEXT) \
+am__objects_10 = test_shcoind-coin_proto.$(OBJEXT) \
 	test_shcoind-shc_proto.$(OBJEXT) \
 	test_shcoind-usde_proto.$(OBJEXT) \
 	test_shcoind-emc2_proto.$(OBJEXT) \
 	test_shcoind-test_proto.$(OBJEXT)
-am__objects_10 = test_shcoind-stratum.$(OBJEXT) \
+am__objects_11 = test_shcoind-stratum.$(OBJEXT) \
 	test_shcoind-stratum_http.$(OBJEXT) \
 	test_shcoind-stratum_message.$(OBJEXT) \
 	test_shcoind-stratum_protocol.$(OBJEXT) \
 	test_shcoind-stratum_user.$(OBJEXT) \
 	test_shcoind-stratum_task.$(OBJEXT) \
 	test_shcoind-stratum_sync.$(OBJEXT)
-am__objects_11 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_8) \
-	$(am__objects_9) $(am__objects_10) \
+am__objects_12 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_9) \
+	$(am__objects_10) $(am__objects_11) \
 	test_shcoind-fractal.$(OBJEXT) \
 	test_shcoind-fractal_bmp.$(OBJEXT) \
 	test_shcoind-test_wallet.$(OBJEXT) \
@@ -226,8 +321,8 @@ am__objects_11 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_8) \
 	test_shcoind-wallet_iface.$(OBJEXT) \
 	test_shcoind-block_iface.$(OBJEXT) \
 	test_shcoind-server_iface.$(OBJEXT)
-am_test_shcoind_OBJECTS = $(am__objects_1) $(am__objects_7) \
-	$(am__objects_11) test_shcoind-CuTest.$(OBJEXT) \
+am_test_shcoind_OBJECTS = $(am__objects_1) $(am__objects_8) \
+	$(am__objects_12) test_shcoind-CuTest.$(OBJEXT) \
 	test_shcoind-test_shcoind.$(OBJEXT) \
 	test_shcoind-test_init.$(OBJEXT) \
 	test_shcoind-testcoin_key.$(OBJEXT) \
@@ -267,7 +362,7 @@ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(shcoind_SOURCES) $(test_shcoind_SOURCES)
-DIST_SOURCES = $(shcoind_SOURCES) $(test_shcoind_SOURCES)
+DIST_SOURCES = $(am__shcoind_SOURCES_DIST) $(test_shcoind_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -286,14 +381,14 @@ CCAS = @CCAS@
 CCASDEPMODE = @CCASDEPMODE@
 CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = @CFLAGS@ $(am__append_7) $(am__append_9)
+CFLAGS = @CFLAGS@ $(am__append_8) $(am__append_10)
 CP = @CP@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
-CXXFLAGS = @CXXFLAGS@ $(am__append_8) $(am__append_10)
+CXXFLAGS = @CXXFLAGS@ $(am__append_9) $(am__append_11)
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -666,15 +761,11 @@ test_shcoind_CXXFLAGS = -g -O0 -DTEST_SHCOIND $(am__append_3)
 #	$(common_includes) $(common_sources)
 #libshcoin_a_LIBADD = \
 #	$(top_builddir)/src/secp256k1/libsecp256k1.a
-shcoind_SOURCES = \
-	$(common_includes) $(common_sources) \
-	$(server_sources) \
-	shcoind.c \
-	shcoind_daemon.c \
-	shcoind_daemon.h
-
+shcoind_SOURCES = $(common_includes) $(common_sources) \
+	$(server_sources) shcoind.c shcoind_daemon.c shcoind_daemon.h \
+	$(am__append_5)
 shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(am__append_5) $(am__append_6) -lboost_system \
+	$(am__append_6) $(am__append_7) -lboost_system \
 	-lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
 @STATIC_LIBSHARE_TRUE@shcoind_CFLAGS = -I$(LIBSHARE)/include
 @STATIC_LIBSHARE_TRUE@shcoind_CXXFLAGS = -I$(LIBSHARE)/include
@@ -841,6 +932,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-shcoind_opt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-shcoind_rpc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-shcoind_signal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-shcoind_svc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-spring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_http.Po@am__quote@
@@ -1493,6 +1585,20 @@ shcoind-shcoind_daemon.obj: shcoind_daemon.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcoind_daemon.c' object='shcoind-shcoind_daemon.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-shcoind_daemon.obj `if test -f 'shcoind_daemon.c'; then $(CYGPATH_W) 'shcoind_daemon.c'; else $(CYGPATH_W) '$(srcdir)/shcoind_daemon.c'; fi`
+
+shcoind-shcoind_svc.o: shcoind_svc.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-shcoind_svc.o -MD -MP -MF $(DEPDIR)/shcoind-shcoind_svc.Tpo -c -o shcoind-shcoind_svc.o `test -f 'shcoind_svc.c' || echo '$(srcdir)/'`shcoind_svc.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/shcoind-shcoind_svc.Tpo $(DEPDIR)/shcoind-shcoind_svc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcoind_svc.c' object='shcoind-shcoind_svc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-shcoind_svc.o `test -f 'shcoind_svc.c' || echo '$(srcdir)/'`shcoind_svc.c
+
+shcoind-shcoind_svc.obj: shcoind_svc.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-shcoind_svc.obj -MD -MP -MF $(DEPDIR)/shcoind-shcoind_svc.Tpo -c -o shcoind-shcoind_svc.obj `if test -f 'shcoind_svc.c'; then $(CYGPATH_W) 'shcoind_svc.c'; else $(CYGPATH_W) '$(srcdir)/shcoind_svc.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/shcoind-shcoind_svc.Tpo $(DEPDIR)/shcoind-shcoind_svc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcoind_svc.c' object='shcoind-shcoind_svc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-shcoind_svc.obj `if test -f 'shcoind_svc.c'; then $(CYGPATH_W) 'shcoind_svc.c'; else $(CYGPATH_W) '$(srcdir)/shcoind_svc.c'; fi`
 
 test_shcoind-shcoind_rpc.o: shcoind_rpc.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-shcoind_rpc.o -MD -MP -MF $(DEPDIR)/test_shcoind-shcoind_rpc.Tpo -c -o test_shcoind-shcoind_rpc.o `test -f 'shcoind_rpc.c' || echo '$(srcdir)/'`shcoind_rpc.c

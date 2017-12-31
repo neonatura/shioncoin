@@ -47,7 +47,7 @@ void shcoind_signal_init(void)
   signal(SIGUSR1, shcoind_diag_signal);
 }
 
-#define DEFAULT_SHUTDOWN_CYCLES 5
+#define DEFAULT_SHUTDOWN_CYCLES 4
 int _shutdown_timer;
 void set_shutdown_timer(void)
 {

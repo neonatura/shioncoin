@@ -82,6 +82,12 @@ void usage_help(void)
       "Usage: shcoind [OPTIONS]\n"
       "Virtual currency daemon for the Share Library Suite.\n"
       "\n"
+#ifdef WINDOWS
+      "Service Options:\n"
+      "--install\tInstall the Share Coin service.\n"
+      "--remove\tRemove the Share Coin service.\n"
+      "\n"
+#endif
       "Network Options:\n"
       "\t--max-conn <#>\tThe maximum number of incoming coin-service connections. (default: 300)\n"
       "\t--no-seed\tPrevent pre-defined seed IP addresses from being used.\n"
@@ -100,7 +106,9 @@ void usage_help(void)
       "\n"
       "Diagnostic Options:\n"
       "\t--debug\t\tLog verbose debugging information.\n"
+#ifndef WINDOWS
       "\t-nf\t\tRun daemon in foreground (no fork).\n"
+#endif
       "\t--shc-rebuild-chain\tRestore the backup SHC block-chain.\n"
 #ifdef USDE_SERVICE
       "\t--usde-rebuild-chain\tRestore the backup USDE block-chain.\n"
@@ -137,7 +145,7 @@ void usage_version(void)
 extern void RegisterRPCOpDefaults(int ifaceIndex);
 
 
-int main(int argc, char *argv[])
+int shcoind_main(int argc, char *argv[])
 {
   CIface *iface;
   bc_t *bc;
@@ -314,6 +322,13 @@ int main(int argc, char *argv[])
 
   return (0);
 }
+
+#ifndef WINDOWS
+int main(int argc, char *argv[])
+{
+  return (shcoind_main(argc, argv));
+}
+#endif
 
 shpeer_t *shcoind_peer(void)
 {
