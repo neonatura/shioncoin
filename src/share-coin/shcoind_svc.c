@@ -176,8 +176,10 @@ int main(int argc, char **argv, char **envp)
 				args++;
 				bRemove = TRUE;
 			}
-			else if (strcasecmp("debug", &argv[ii][1]) == 0 ||
-			strcasecmp("-debug", &argv[ii][1]) == 0)
+      else if (strcasecmp("debug", &argv[ii][1]) == 0 ||
+          strcasecmp("-debug", &argv[ii][1]) == 0 ||
+          strcasecmp("nf", &argv[ii][1]) == 0 ||
+          strcasecmp("-no-fork", &argv[ii][1]) == 0)
 			{
 				args++;
 				bDebug = TRUE;
@@ -232,6 +234,7 @@ int main(int argc, char **argv, char **envp)
 	}
 	else if (bDebug)
 	{
+    change_core_directory();
 		SrvDebugService(argc, argv, envp);
 		exit(0);
 	}
@@ -1031,16 +1034,17 @@ static void change_core_directory(void)
 	char path[PATH_MAX+1];
 	char *str;
 
-	str = getenv("SHLIB_PATH");
-	if (str && *str) {
-		strcpy(path, str);
-	} else {
-		str = getenv("ProgramData");
-		if (!str)
-			return;
-		sprintf(path, "%s\\share\\", str);
-	}
+  str = getenv("ProgramData");
+  if (!str)
+	  str = "C:\\ProgramData";
 
+  sprintf(path, "%s\\share\\", str);
+  mkdir(path, 0777);
+  strcat(path, "blockchain\\");
+  mkdir(path, 0777);
 	SetCurrentDirectory(path);
+
+  strcat(path, "database\\");
+  mkdir(path, 0777);
 }
 

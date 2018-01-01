@@ -168,8 +168,6 @@ void FreeBlockTable(CIface *iface)
   size_t count;
   int ifaceIndex = GetCoinIndex(iface);
 
-fprintf(stderr, "DEBUG: FreeBlockTable(%s)\n", iface->name);
-
   blockIndex = GetBlockTable(ifaceIndex);
   if (!blockIndex)
     return;
