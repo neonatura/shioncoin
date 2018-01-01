@@ -2,15 +2,14 @@
 @echo off
 
 set PKG=ShareCoin
-set VER=2.29
+set VER=3.01
 
 set WIX="C:\program files (x86)\wix toolset v3.11\bin"
 set BUILD=C:\msys64\home\root\src\share-coin\build
 set RELEASE=C:\release\share-coin\bin
 
 copy /y %BUILD%\src\share-coin\.libs\shcoind.exe > nul
-copy /y %BUILD%\src\coin-console\.libs\shcointool.exe > nul
-move /y shcointool.exe shc.exe > nul
+copy /y %BUILD%\src\coin-console\.libs\shc.exe > nul
 move /y shcoind.exe %RELEASE% > nul
 move /y shc.exe %RELEASE% > nul
 

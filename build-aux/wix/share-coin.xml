@@ -3,22 +3,51 @@
     <Product Id="*" UpgradeCode="6cf616e4-8656-4460-b0eb-b7b9996e9c70" Version="3.1.0.0" Language="1033" Name="Share Coin Virtual Currency" Manufacturer="Neo Natura">
         <Package InstallerVersion="300" Compressed="yes"/>
         <Media Id="1" Cabinet="myapplication.cab" EmbedCab="yes" />
+	<Icon Id="shc.ico" SourceFile="shc.ico" />
+	<Property Id="ARPPRODUCTICON" Value="shc.ico" />
 
-        <!-- Step 1: Define the directory structure -->
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder">
-                <Directory Id="APPLICATIONROOTDIRECTORY" Name="ShareCoin"/>
+                <Directory Id="APPLICATIONROOTDIRECTORY" Name="ShareCoin" />
+
             </Directory>
+	   <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="Share Coin"/>
+            </Directory>
+          <Directory Id="DesktopFolder"/>
         </Directory>
 
-        <!-- Step 2: Add files to your installer package -->
         <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
+	    
             <Component Id="shcoind.exe" Guid="3021cf42-c56a-428e-be0d-5255d1cf0fb2">
-                <File Id="shcoind.exe" Source="C:\release\share-coin\bin\shcoind.exe" KeyPath="yes" Checksum="yes"/>
+                <File Id="shcoind.exe" Name="shcoind.exe" Source="C:\release\share-coin\bin\shcoind.exe" DiskId="1" KeyPath="yes" Checksum="yes" />
+		<ServiceInstall Id="ServiceInstaller" Type="ownProcess" Name="shcoind" DisplayName="Share Coin" Description="The share coin virtual currency service." Start="auto" Account="[SERVICEACCOUNT]" Password="[SERVICEPASSWORD]" ErrorControl="normal" />
+		<ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="shcoind" Wait="yes" />
             </Component>
             <Component Id="shc.exe" Guid="4021cf42-c56a-428e-be0d-5255d1cf0fb2">
-                <File Id="shc.exe" Source="C:\release\share-coin\bin\shc.exe" Checksum="yes"/>
-                <File Id="shc_console.bat" Source="C:\release\share-coin\bin\shc_console.bat" Checksum="yes"/>
+
+                <File Id="shc.exe" Source="C:\release\share-coin\bin\shc.exe" Checksum="yes" KeyPath="yes">
+
+			<Shortcut 
+        	        	Id="DesktopShortcut"
+				Advertise="yes"				
+		                Name="Share Coin"
+		                Directory="DesktopFolder"
+				Description="The Share Coin virtual currency console."
+				Arguments="--prompt"
+				WorkingDirectory="APPLICATIONROOTDIRECTORY"
+	                	Icon ="shc.ico" />
+
+		<Shortcut Id="ApplicationStartMenuShortcut" 
+				Advertise="yes"
+				Icon ="shc.ico"
+        	        	Name="Share Coin Console" 
+		                Directory="ApplicationProgramsFolder"
+                		Description="The Share Coin virtual currency console."
+	                	Arguments="--prompt"
+        	        	WorkingDirectory="APPLICATIONROOTDIRECTORY" />
+	                
+		</File>
             </Component>
             <Component Id="msys_dll" Guid="5021cf42-c56a-428e-be0d-5255d1cf0fb2">
                 <File Id="msys2_dll" Source="C:\msys64\usr\bin\msys-2.0.dll" Checksum="yes"/>
@@ -34,12 +63,28 @@
             </Component>
         </DirectoryRef>
 
-        <!-- Step 3: Tell WiX to install the files -->
+	<DirectoryRef Id="ApplicationProgramsFolder">
+
+
+
+
+		<Component Id="ApplicationShortcut" Guid="4021cf42-c56a-248e-be0d-5255d1cf0fb2">
+                <Shortcut Id="UninstallProduct"             
+                          Name="Uninstall Share Coin"
+                          Description="Uninstalls the Share Coin currency service."
+                          Target="[System64Folder]msiexec.exe"
+                          Arguments="/x [ProductCode]"/>
+                <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+<RegistryValue Root="HKCU" Key="Software\NeoNatura\ShareCoin" Name="installed" Type="integer" Value="1" KeyPath="yes"/>                		
+        	</Component>
+	</DirectoryRef>
+
         <Feature Id="MainApplication" Title="Main Application" Level="1">
             <ComponentRef Id="shcoind.exe" />
             <ComponentRef Id="shc.exe" />
             <ComponentRef Id="msys_dll" />
             <ComponentRef Id="boost_dll" />
+            <ComponentRef Id="ApplicationShortcut" />
         </Feature>
     </Product>
 </Wix>

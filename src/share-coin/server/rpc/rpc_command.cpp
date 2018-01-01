@@ -5163,8 +5163,9 @@ int ExecuteRPC(int ifaceIndex, shjson_t *json, shbuf_t *buff)
   if (!op) {
     op = GetRPCAlias(ifaceIndex, strMethod);
     if (!op) {
-      string help_str = rpc_command_help(iface, strMethod);
-      shbuf_catstr(buff, (char *)help_str.c_str());
+      Value result = rpc_command_help(iface, strMethod);
+      string json = JSONRPCReply(result, Value::null, Value::null);
+      shbuf_catstr(buff, (char *)json.c_str());
       return (0);
     }
   }
@@ -5172,8 +5173,9 @@ int ExecuteRPC(int ifaceIndex, shjson_t *json, shbuf_t *buff)
   int max_arg = GetRPCMaxArgs(op);
   if (ar_len < op->min_arg ||
       ar_len > max_arg) {
-    string help_str = rpc_command_help(iface, strMethod);
-    shbuf_catstr(buff, (char *)help_str.c_str());
+    Value result = rpc_command_help(iface, strMethod);
+    string json = JSONRPCReply(result, Value::null, Value::null);
+    shbuf_catstr(buff, (char *)json.c_str());
     return (0);
   }
 

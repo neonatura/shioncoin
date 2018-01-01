@@ -37,13 +37,22 @@
 #include <sys/select.h>
 #include "share.h"
 
+
+
+extern FILE *_shcon_fout;
+
+
+
+
 #include "shcon_init.h"
 #include "shcon_term.h"
 #include "shcon_log.h"
 #include "shcon_opt.h"
+#include "shcon_stream.h"
 #include "key/key.h"
 #include "net/net.h"
 #include "command/command.h"
+
 
 #endif
 

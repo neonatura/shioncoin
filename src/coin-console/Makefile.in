@@ -61,17 +61,18 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__emc2_SOURCES_DIST = shcon.c shcon.h shcon_init.c shcon_init.h \
 	shcon_term.c shcon_term.h shcon_opt.c shcon_opt.h shcon_log.c \
-	shcon_log.h net/net.c net/net.h net/net_conn.c net/net_read.c \
-	net/net_write.c key/key.c key/key.h key/key_dat.c \
-	key/key_auth.c command/command.c command/command.h \
-	command/command_print.c
+	shcon_log.h shcon_stream.c shcon_stream.h net/net.c net/net.h \
+	net/net_conn.c net/net_read.c net/net_write.c key/key.c \
+	key/key.h key/key_dat.c key/key_auth.c command/command.c \
+	command/command.h command/command_print.c
 am__objects_1 = emc2-shcon.$(OBJEXT) emc2-shcon_init.$(OBJEXT) \
 	emc2-shcon_term.$(OBJEXT) emc2-shcon_opt.$(OBJEXT) \
-	emc2-shcon_log.$(OBJEXT) emc2-net.$(OBJEXT) \
-	emc2-net_conn.$(OBJEXT) emc2-net_read.$(OBJEXT) \
-	emc2-net_write.$(OBJEXT) emc2-key.$(OBJEXT) \
-	emc2-key_dat.$(OBJEXT) emc2-key_auth.$(OBJEXT) \
-	emc2-command.$(OBJEXT) emc2-command_print.$(OBJEXT)
+	emc2-shcon_log.$(OBJEXT) emc2-shcon_stream.$(OBJEXT) \
+	emc2-net.$(OBJEXT) emc2-net_conn.$(OBJEXT) \
+	emc2-net_read.$(OBJEXT) emc2-net_write.$(OBJEXT) \
+	emc2-key.$(OBJEXT) emc2-key_dat.$(OBJEXT) \
+	emc2-key_auth.$(OBJEXT) emc2-command.$(OBJEXT) \
+	emc2-command_print.$(OBJEXT)
 @EMC2_SERVICE_TRUE@am_emc2_OBJECTS = $(am__objects_1)
 emc2_OBJECTS = $(am_emc2_OBJECTS)
 @STATIC_LIBSHARE_TRUE@am__DEPENDENCIES_1 =  \
@@ -82,10 +83,10 @@ emc2_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 am__objects_2 = shc-shcon.$(OBJEXT) shc-shcon_init.$(OBJEXT) \
 	shc-shcon_term.$(OBJEXT) shc-shcon_opt.$(OBJEXT) \
-	shc-shcon_log.$(OBJEXT) shc-net.$(OBJEXT) \
-	shc-net_conn.$(OBJEXT) shc-net_read.$(OBJEXT) \
-	shc-net_write.$(OBJEXT) shc-key.$(OBJEXT) \
-	shc-key_dat.$(OBJEXT) shc-key_auth.$(OBJEXT) \
+	shc-shcon_log.$(OBJEXT) shc-shcon_stream.$(OBJEXT) \
+	shc-net.$(OBJEXT) shc-net_conn.$(OBJEXT) \
+	shc-net_read.$(OBJEXT) shc-net_write.$(OBJEXT) \
+	shc-key.$(OBJEXT) shc-key_dat.$(OBJEXT) shc-key_auth.$(OBJEXT) \
 	shc-command.$(OBJEXT) shc-command_print.$(OBJEXT)
 am_shc_OBJECTS = $(am__objects_2)
 shc_OBJECTS = $(am_shc_OBJECTS)
@@ -95,17 +96,18 @@ shc_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 am__usde_SOURCES_DIST = shcon.c shcon.h shcon_init.c shcon_init.h \
 	shcon_term.c shcon_term.h shcon_opt.c shcon_opt.h shcon_log.c \
-	shcon_log.h net/net.c net/net.h net/net_conn.c net/net_read.c \
-	net/net_write.c key/key.c key/key.h key/key_dat.c \
-	key/key_auth.c command/command.c command/command.h \
-	command/command_print.c
+	shcon_log.h shcon_stream.c shcon_stream.h net/net.c net/net.h \
+	net/net_conn.c net/net_read.c net/net_write.c key/key.c \
+	key/key.h key/key_dat.c key/key_auth.c command/command.c \
+	command/command.h command/command_print.c
 am__objects_3 = usde-shcon.$(OBJEXT) usde-shcon_init.$(OBJEXT) \
 	usde-shcon_term.$(OBJEXT) usde-shcon_opt.$(OBJEXT) \
-	usde-shcon_log.$(OBJEXT) usde-net.$(OBJEXT) \
-	usde-net_conn.$(OBJEXT) usde-net_read.$(OBJEXT) \
-	usde-net_write.$(OBJEXT) usde-key.$(OBJEXT) \
-	usde-key_dat.$(OBJEXT) usde-key_auth.$(OBJEXT) \
-	usde-command.$(OBJEXT) usde-command_print.$(OBJEXT)
+	usde-shcon_log.$(OBJEXT) usde-shcon_stream.$(OBJEXT) \
+	usde-net.$(OBJEXT) usde-net_conn.$(OBJEXT) \
+	usde-net_read.$(OBJEXT) usde-net_write.$(OBJEXT) \
+	usde-key.$(OBJEXT) usde-key_dat.$(OBJEXT) \
+	usde-key_auth.$(OBJEXT) usde-command.$(OBJEXT) \
+	usde-command_print.$(OBJEXT)
 @USDE_SERVICE_TRUE@am_usde_OBJECTS = $(am__objects_3)
 usde_OBJECTS = $(am_usde_OBJECTS)
 @USDE_SERVICE_TRUE@usde_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -289,6 +291,8 @@ console_sources = \
 	shcon_opt.h \
 	shcon_log.c \
 	shcon_log.h \
+	shcon_stream.c \
+	shcon_stream.h \
 	net/net.c \
 	net/net.h \
 	net/net_conn.c \
@@ -417,6 +421,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_opt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_term.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-command_print.Po@am__quote@
@@ -431,6 +436,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_opt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_term.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-command_print.Po@am__quote@
@@ -445,6 +451,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_opt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_term.Po@am__quote@
 
 .c.o:
@@ -537,6 +544,20 @@ emc2-shcon_log.obj: shcon_log.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcon_log.c' object='emc2-shcon_log.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -c -o emc2-shcon_log.obj `if test -f 'shcon_log.c'; then $(CYGPATH_W) 'shcon_log.c'; else $(CYGPATH_W) '$(srcdir)/shcon_log.c'; fi`
+
+emc2-shcon_stream.o: shcon_stream.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -MT emc2-shcon_stream.o -MD -MP -MF $(DEPDIR)/emc2-shcon_stream.Tpo -c -o emc2-shcon_stream.o `test -f 'shcon_stream.c' || echo '$(srcdir)/'`shcon_stream.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/emc2-shcon_stream.Tpo $(DEPDIR)/emc2-shcon_stream.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcon_stream.c' object='emc2-shcon_stream.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -c -o emc2-shcon_stream.o `test -f 'shcon_stream.c' || echo '$(srcdir)/'`shcon_stream.c
+
+emc2-shcon_stream.obj: shcon_stream.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -MT emc2-shcon_stream.obj -MD -MP -MF $(DEPDIR)/emc2-shcon_stream.Tpo -c -o emc2-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/emc2-shcon_stream.Tpo $(DEPDIR)/emc2-shcon_stream.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcon_stream.c' object='emc2-shcon_stream.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -c -o emc2-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
 
 emc2-net.o: net/net.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -MT emc2-net.o -MD -MP -MF $(DEPDIR)/emc2-net.Tpo -c -o emc2-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c
@@ -734,6 +755,20 @@ shc-shcon_log.obj: shcon_log.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-shcon_log.obj `if test -f 'shcon_log.c'; then $(CYGPATH_W) 'shcon_log.c'; else $(CYGPATH_W) '$(srcdir)/shcon_log.c'; fi`
 
+shc-shcon_stream.o: shcon_stream.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -MT shc-shcon_stream.o -MD -MP -MF $(DEPDIR)/shc-shcon_stream.Tpo -c -o shc-shcon_stream.o `test -f 'shcon_stream.c' || echo '$(srcdir)/'`shcon_stream.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/shc-shcon_stream.Tpo $(DEPDIR)/shc-shcon_stream.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcon_stream.c' object='shc-shcon_stream.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-shcon_stream.o `test -f 'shcon_stream.c' || echo '$(srcdir)/'`shcon_stream.c
+
+shc-shcon_stream.obj: shcon_stream.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -MT shc-shcon_stream.obj -MD -MP -MF $(DEPDIR)/shc-shcon_stream.Tpo -c -o shc-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/shc-shcon_stream.Tpo $(DEPDIR)/shc-shcon_stream.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcon_stream.c' object='shc-shcon_stream.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
+
 shc-net.o: net/net.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -MT shc-net.o -MD -MP -MF $(DEPDIR)/shc-net.Tpo -c -o shc-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/shc-net.Tpo $(DEPDIR)/shc-net.Po
@@ -929,6 +964,20 @@ usde-shcon_log.obj: shcon_log.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcon_log.c' object='usde-shcon_log.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -c -o usde-shcon_log.obj `if test -f 'shcon_log.c'; then $(CYGPATH_W) 'shcon_log.c'; else $(CYGPATH_W) '$(srcdir)/shcon_log.c'; fi`
+
+usde-shcon_stream.o: shcon_stream.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-shcon_stream.o -MD -MP -MF $(DEPDIR)/usde-shcon_stream.Tpo -c -o usde-shcon_stream.o `test -f 'shcon_stream.c' || echo '$(srcdir)/'`shcon_stream.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/usde-shcon_stream.Tpo $(DEPDIR)/usde-shcon_stream.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcon_stream.c' object='usde-shcon_stream.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -c -o usde-shcon_stream.o `test -f 'shcon_stream.c' || echo '$(srcdir)/'`shcon_stream.c
+
+usde-shcon_stream.obj: shcon_stream.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-shcon_stream.obj -MD -MP -MF $(DEPDIR)/usde-shcon_stream.Tpo -c -o usde-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/usde-shcon_stream.Tpo $(DEPDIR)/usde-shcon_stream.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='shcon_stream.c' object='usde-shcon_stream.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -c -o usde-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
 
 usde-net.o: net/net.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-net.o -MD -MP -MF $(DEPDIR)/usde-net.Tpo -c -o usde-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c

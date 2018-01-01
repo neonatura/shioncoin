@@ -2,7 +2,7 @@
 /*
  * @copyright
  *
- *  Copyright 2014 Neo Natura
+ *  Copyright 2017 Neo Natura
  *
  *  This file is part of the Share Library.
  *  (https://github.com/neonatura/share)
@@ -23,48 +23,15 @@
  *  @endcopyright
  */  
 
-#ifndef __SHCON_OPT_H__
-#define __SHCON_OPT_H__
+#ifndef __COIN_CONSOLE__SHCON_STREAM_H__
+#define __COIN_CONSOLE__SHCON_STREAM_H__
 
 
-
-#define OPT_IFACE "shcon.iface"
-
-#define OPT_QUIET "shcon.quiet"
-
-#define OPT_VERBOSE "shcon.verbose"
-
-#define OPT_OUTPUT "shcon.output"
-
-#define OPT_PORT "shcoind.stratum.port"
-
-#define OPT_HOSTNAME "shcon.hostname"
-
-#define OPT_PROMPT "shcon.prompt"
+/** 
+ * Perform a batch set of RPC commands from a file stream.
+ */
+void shcon_stream_cycle(FILE *stream);
 
 
-int shcon_opt_init(void);
+#endif /* ndef __COIN_CONSOLE__SHCON_STREAM_H__ */
 
-void shcon_opt_term(void);
-
-const char *opt_str(char *opt_name);
-
-int opt_num(char *opt_name);
-
-double opt_fnum(char *opt_name);
-
-int opt_bool(char *opt_name);
-
-void opt_str_set(char *opt_name, char *opt_value);
-
-void opt_num_set(char *opt_name, int num);
-
-void opt_fnum_set(char *opt_name, double num);
-
-void opt_bool_set(char *opt_name, int b);
-
-/** The current coin interface being utilized. */
-const char *opt_iface(void);
-
-
-#endif /* ndef __SHCON_OPT_H__ */

@@ -60,7 +60,6 @@ int stratum_send_message(user_t *user, shjson_t *msg)
   if (text) {
     unet_write(user->fd, text, strlen(text));
     unet_write(user->fd, "\n", 1);
-//fprintf(stderr, "DEBUG: stratum_send_message: %s\n", text); 
     free(text);
   }
 

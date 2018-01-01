@@ -29,6 +29,8 @@ console_sources = \
 	shcon_opt.h \
 	shcon_log.c \
 	shcon_log.h \
+	shcon_stream.c \
+	shcon_stream.h \
 	net/net.c \
 	net/net.h \
 	net/net_conn.c \

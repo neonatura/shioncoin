@@ -221,8 +221,10 @@ int shcoind_main(int argc, char *argv[])
     }
   }
 
+#ifndef WINDOWS
   if (!opt_no_fork)
     daemon(0, 1);
+#endif
 
   /* process signal handling */
   shcoind_signal_init();

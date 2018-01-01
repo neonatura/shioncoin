@@ -27,6 +27,8 @@
 
 #define SHCON_MAX_ARGS 64
 
+FILE *_shcon_fout;
+
 void shcon_tool_version(char *prog_name)
 {
   fprintf(stdout,
@@ -43,6 +45,9 @@ void shcon_tool_usage(char *prog_name)
   fprintf(stdout,
       "Usage: %s [COMMAND] [PARAMS]\n"
       "Perform RPC operations on the share-coin daemon.\n"
+      "\n"
+      "Options:\n"
+      "\t--prompt\tInteractively run commands from a console.\n"
       "\n"
       "Commands:\n"
       "\tUse the \"help\" command in order to list all available RPC operations.\n"
@@ -63,6 +68,8 @@ int main(int argc, char *argv[])
   int arg_idx;
   int err;
   int i;
+
+  _shcon_fout = stdout;
 
   for (i = 1; i < argc; i++) {
     if (0 == strcmp(argv[i], "-v") ||
@@ -100,11 +107,18 @@ int main(int argc, char *argv[])
       if (0 == strcmp(argv[i], "-V") ||
           0 == strcmp(argv[i], "--verbose")) {
         opt_bool_set(OPT_VERBOSE, TRUE);
+        continue;
       }
       if (0 == strcmp(argv[i], "-q") ||
           0 == strcmp(argv[i], "--quiet")) {
         opt_bool_set(OPT_QUIET, TRUE);
+        continue;
       }
+      if (0 == strcmp(argv[i], "--prompt")) {
+        opt_bool_set(OPT_PROMPT, TRUE);
+        continue;
+      }
+
 /* DEBUG: TODO: "--output", "--input", "--host", "--port" */
       continue;
     }
@@ -113,19 +127,23 @@ int main(int argc, char *argv[])
   }
   args[++arg_idx] = NULL;
 
-  if (arg_idx == 0) {
-/* DEBUG: TODO: command-line interpreter mode. */
-    shcon_tool_usage(argv[0]);
-    return (1);
-  }
+  if (!opt_bool(OPT_PROMPT)) {
+    if (arg_idx == 0) {
+      shcon_tool_usage(argv[0]);
+      return (1);
+    }
 
-  resp = NULL;
-  err = shcon_command(args, arg_idx, &resp);
-  if (err) {
-    shcon_log(err, "send command");
-  } else if (resp) {
-    command_print(stdout, resp);
-  }  
+    resp = NULL;
+    err = shcon_command(args, arg_idx, &resp);
+    if (err) {
+      shcon_log(err, "send command");
+    } else if (resp) {
+      command_print(_shcon_fout, resp);
+    }  
+  } else {
+    /* interactive prompt */
+    shcon_stream_cycle(stdin);
+  }
 
   shcon_term();
 
