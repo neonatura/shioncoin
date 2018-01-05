@@ -243,9 +243,9 @@ int shcoind_main(int argc, char *argv[])
   shapp_listen(TX_SESSION, server_peer);
   shapp_listen(TX_BOND, server_peer);
 
-  if (opt_bool_set(OPT_SHC_BACKUP_RESTORE, TRUE) ||
-      opt_bool_set(OPT_USDE_BACKUP_RESTORE, TRUE) ||
-      opt_bool_set(OPT_EMC2_BACKUP_RESTORE, TRUE)) {
+  if (opt_bool(OPT_SHC_BACKUP_RESTORE) ||
+      opt_bool(OPT_USDE_BACKUP_RESTORE) ||
+      opt_bool(OPT_EMC2_BACKUP_RESTORE)) {
     unlink_chain();
   }
 
@@ -283,11 +283,13 @@ int shcoind_main(int argc, char *argv[])
     bc_chain_idle();
   }
 
-  if (opt_bool_set(OPT_SHC_BACKUP_RESTORE, TRUE) ||
-      opt_bool_set(OPT_USDE_BACKUP_RESTORE, TRUE) ||
-      opt_bool_set(OPT_EMC2_BACKUP_RESTORE, TRUE)) {
+  if (opt_bool(OPT_SHC_BACKUP_RESTORE) ||
+      opt_bool(OPT_USDE_BACKUP_RESTORE) ||
+      opt_bool(OPT_EMC2_BACKUP_RESTORE)) {
     printf ("The block-chain has been restored.");
-    CloseBlockChains();
+    server_shutdown();
+    TERM_SECP256K1();
+    opt_term();
     return (0);
   }
 

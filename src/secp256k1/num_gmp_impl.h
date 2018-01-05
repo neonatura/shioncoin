@@ -236,6 +236,18 @@ static void secp256k1_num_sub(secp256k1_num *r, const secp256k1_num *a, const se
     secp256k1_num_subadd(r, a, b, 1);
 }
 
+#ifndef HAVE_MPN_COPYI
+static void mpn_copyi(mp_ptr rp, mp_srcptr up, mp_size_t n)
+{
+  mp_size_t i;
+
+  up += n;
+  rp += n;
+  for (i = -n; i != 0; i++)
+    rp[i] = up[i];
+}
+#endif
+
 static void secp256k1_num_mul(secp256k1_num *r, const secp256k1_num *a, const secp256k1_num *b) {
     mp_limb_t tmp[2*NUM_LIMBS+1];
     secp256k1_num_sanity(a);

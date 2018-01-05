@@ -632,7 +632,6 @@ _TEST(identtx)
 
   certFee = GetCertOpFee(iface, GetBestHeight(iface)) + COIN;
   err = init_ident_donate_tx(iface, strAccount, certFee, hashCert, wtx);  
-if (err) fprintf(stderr, "DEBUG: TEST: init_ident_donate: error %d\n", err);
   _TRUE(err == 0);
   _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
   _TRUE(VerifyIdent(wtx, mode) == true);
@@ -663,7 +662,6 @@ if (err) fprintf(stderr, "DEBUG: TEST: init_ident_donate: error %d\n", err);
   CWalletTx csend_tx;
   certFee = GetCertOpFee(iface, GetBestHeight(iface));
   err = init_ident_certcoin_tx(iface, strAccount, certFee, hashCert, addr, csend_tx);
-if (err) fprintf(stderr, "DEBUG: IDENT-TX(cert coin): err == %d\n", err);
   _TRUE(err == 0);
   _TRUE(csend_tx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
   _TRUE(VerifyIdent(csend_tx, mode) == true);
@@ -706,7 +704,6 @@ _TEST(certtx)
   {
     string hexSeed;
     err = init_cert_tx(iface, wtx, strLabel, "SHCOIND TEST CA", hexSeed, 1);
-if (err) fprintf(stderr, "DEBUG: TEST: init_cert_tx: error %d\n", err);
     _TRUE(0 == err);
   }
   uint160 hashCert = wtx.certificate.GetHash();
@@ -734,7 +731,6 @@ if (err) fprintf(stderr, "DEBUG: TEST: init_cert_tx: error %d\n", err);
   CWalletTx chain_wtx;
   string strTitle("SHCOIND TEST CHAIN");
   err = derive_cert_tx(iface, chain_wtx, hashCert, strLabel, strTitle);
-if (err) fprintf(stderr, "DEBUG: certtx: error (%d) derive cert tx\n", err); 
   _TRUE(err == 0);
   _TRUE(chain_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
   _TRUE(VerifyCert(iface, chain_wtx, nBestHeight) == true);
@@ -805,7 +801,6 @@ _TEST(ctxtx)
     string strName = "test context name";
     cbuff vchValue(payload, payload + strlen(payload));
     err = init_ctx_tx(iface, wtx, strLabel, strName, vchValue);
-if (err) fprintf(stderr, "DEBUG: TEST: init_ctx_tx: error %d\n", err);
     _TRUE(0 == err);
   }
   CContext ctx(wtx.certificate);
@@ -1331,12 +1326,12 @@ static void _init_exectx_sx(char *src_path, char *sx_path)
   /* compile source code */
   sprintf(sysbuf, "sxc -o \"%s\" \"%s\"", sx_path, src_path);
   system(sysbuf);
-
 }
 
 
 _TEST(exectx)
 {
+#ifdef USE_SEXE
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   CWallet *wallet = GetWallet(iface);
   string strAccount("");
@@ -1393,6 +1388,7 @@ if (err) fprintf(stderr, "DEBUG: %d = generate_exec_tx()\n", err);
 
   unlink(src_path);
   unlink(sx_path);
+#endif
 }
 
 _TEST(scriptid)

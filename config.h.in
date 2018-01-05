@@ -206,14 +206,8 @@
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
 
-/* Define to 1 if you have the `share' library (-lshare). */
+/* Define if you have the libshare library installed */
 #undef HAVE_LIBSHARE
-
-/* Define to 1 if you have the `share_sexe' library (-lshare_sexe). */
-#undef HAVE_LIBSHARE_SEXE
-
-/* Define to 1 if you have the `ssl' library (-lssl). */
-#undef HAVE_LIBSSL
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
@@ -254,6 +248,9 @@
 
 /* Define to 1 if you have a working `mmap' system call. */
 #undef HAVE_MMAP
+
+/* Define to 1 if you have the `mpn_copyi' function. */
+#undef HAVE_MPN_COPYI
 
 /* Define to 1 if you have the `msync' function. */
 #undef HAVE_MSYNC
@@ -575,6 +572,9 @@
 
 /* Define to enable the USDE coin service. */
 #undef USDE_SERVICE
+
+/* Define to enable execution of SEXE programs. */
+#undef USE_SEXE
 
 /* Version number of package */
 #undef VERSION

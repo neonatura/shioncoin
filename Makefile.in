@@ -145,6 +145,7 @@ FGREP = @FGREP@
 GCJ = @GCJ@
 GCJDEPMODE = @GCJDEPMODE@
 GCJFLAGS = @GCJFLAGS@
+GIT = @GIT@
 GREP = @GREP@
 HELP2MAN = @HELP2MAN@
 INITD_DIR = @INITD_DIR@
@@ -179,7 +180,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PERL = @PERL@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -253,7 +253,7 @@ with_kernel = @with_kernel@
 with_kerneldir = @with_kerneldir@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src/secp256k1 src/share-coin src/coin-console doc bin 
+SUBDIRS = depend src/secp256k1 src/coin-console src/share-coin doc bin 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

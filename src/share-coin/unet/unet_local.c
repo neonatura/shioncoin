@@ -136,7 +136,7 @@ static int external_local_discover_raw(char *serv_hostname, struct in_addr *net_
   return (0);
 }
 
-void unet_local_set(const char *ipaddr)
+void unet_local_set(char *ipaddr)
 {
 
   if (!ipaddr || !*ipaddr)
@@ -149,7 +149,7 @@ void unet_local_set(const char *ipaddr)
 }
 
 /* todo: retain lat/lon returned in response */
-int unet_local_discover1(double *lat_p, double *lon_p) /* ipv4 */
+int unet_local_discover1(shnum_t *lat_p, shnum_t *lon_p) /* ipv4 */
 {
   struct in_addr addr;
   struct sockaddr_in sin;

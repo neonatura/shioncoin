@@ -229,29 +229,33 @@ AC_CHECK_LIB([m], [fabs], ,
 AC_CHECK_LIB([gmp], [__gmp_version], ,
   AC_MSG_ERROR("libgmp (math library) is required")
 )
+AC_CHECK_FUNCS([mpn_copyi])
 
 AC_CHECK_LIB([crypto], [BN_new])
 
-AC_CHECK_LIB([ssl], [SSL_version], ,
-  AC_MSG_ERROR("libssl (crypt library) is required")
-)
+#AC_CHECK_LIB([ssl], [SSL_version], ,
+#  AC_MSG_ERROR("libssl (crypt library) is required")
+#)
 
 #AC_CHECK_LIB([boost_filesystem], [boost], ,
 #  AC_MSG_ERROR("libboost (runtime library) is required")
 #)
-
 AC_ARG_WITH([libshare],
   [AS_HELP_STRING([--with-libshare],
   [specify a path to the libshare build directory])],
   [],
   [with_libshare=yes])
 LIBSHARE=
-AS_IF([test "x$with_libshare" ! "xyes"],
-  AC_CHECK_LIB([share], [get_libshare_version])
-  AC_CHECK_LIB([share_sexe], [sexe_load])
+AS_IF([test "x$with_libshare" = "xyes"],
+  AC_CHECK_LIB([share_sexe], [sexe_exec_prun],
+    AC_DEFINE_UNQUOTED([HAVE_LIBSHARE], [1], [Define if you have the libshare library installed]),
+    AC_CHECK_PROGS([GIT], [git])
+    [with_libshare=../../depend/share/build]
+  )
 )
 AC_SUBST([LIBSHARE], $with_libshare)
 AM_CONDITIONAL([STATIC_LIBSHARE], test x"$with_libshare" != x"yes") 
+AM_CONDITIONAL([GIT_LIBSHARE], test x"$with_libshare" = x"../../depend/share/build") 
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -320,7 +324,8 @@ AC_SUBST(INITD_DIR)
 #AC_SUBST(OPENSSL_DIR, "openssl-1.0.1g")
 AC_CHECK_PROGS([CP], [cp])
 
-AC_CHECK_PROGS([PERL], [perl])
+#AC_CHECK_PROGS([PERL], [perl])
+
 
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
 if test -z "$DOXYGEN";
@@ -362,6 +367,13 @@ AS_HELP_STRING([--enable-debug],
 esac], [debug=false])
 AM_CONDITIONAL(DEBUG, test x"$debug" = x"true")
 
+AC_ARG_ENABLE([sexe],
+  AS_HELP_STRING([--enable-sexe], [Enable execution of SEXE programs.]))
+AM_CONDITIONAL(USE_SEXE, [test "x$enable_sexe" = "xyes"])
+if test "x$enable_sexe" = "xyes" ; then
+  AC_DEFINE_UNQUOTED([USE_SEXE], 1, [Define to enable execution of SEXE programs.])
+fi
+
 AC_ARG_ENABLE([usde],
   AS_HELP_STRING([--enable-usde], [Enable USDE coin service.]))
 AM_CONDITIONAL(USDE_SERVICE, [test "x$enable_usde" = "xyes"])
@@ -394,5 +406,5 @@ fi
 #AM_CONDITIONAL(ENABLE_WALLET, [test "x$enable_wallet" != "xno"])
 #AM_CONDITIONAL([ENABLE_WALLET], 1, [Define to share-wallet functionality.])
 
-AC_OUTPUT(Makefile src/secp256k1/Makefile src/share-coin/Makefile src/coin-console/Makefile doc/Makefile bin/Makefile)
+AC_OUTPUT(Makefile depend/Makefile src/secp256k1/Makefile src/coin-console/Makefile src/share-coin/Makefile doc/Makefile bin/Makefile)
 

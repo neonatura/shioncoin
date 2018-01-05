@@ -180,7 +180,8 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
     bc_map_free(map);
   }
 
-  if (sizeof(bc_hdr_t) + map_of + len >= st.st_size) {
+  if (size < BC_MAP_BLOCK_SIZE ||
+      sizeof(bc_hdr_t) + map_of + len >= st.st_size) {
     /* enlarge map size */
     size = st.st_size + len;
     size = size + (size / 10); /* + 10% */
@@ -191,7 +192,6 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
       shcoind_log(errbuf);
       return (-errno);
     }
-
   }
 
   /* quash cache */
