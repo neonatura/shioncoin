@@ -1012,23 +1012,23 @@ fprintf(stderr, "DEBUG: emc2_ProcessMessage[inv/tx]: pfrom->PushTx('%s', %d)\n",
   }
 
   else if (strCommand == "sendcmpct") {
-fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'sendcmpct'\n");
+//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'sendcmpct'\n");
  
   }
 
   else if (strCommand == "cmpctblock") {
-fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'cmpctblock'\n");
+//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'cmpctblock'\n");
   }
 
   else if (strCommand == "getblocktxn") {
-fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'getblocktxn'\n");
+//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'getblocktxn'\n");
   }
 
   else if (strCommand == "blocktxn") {
-fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'blocktxn'\n");
+//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'blocktxn'\n");
   }
   else if (strCommand == "headers") {
-fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'headers'\n");
+//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'headers'\n");
   }
 
   else if (strCommand == "reject") { /* remote peer is reporting block/tx error */
@@ -1056,7 +1056,7 @@ fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'headers'\n");
     int64 newFeeFilter = 0;
     vRecv >> newFeeFilter;
 
-fprintf(stderr, "DEBUG: emc2_ProcessMessage: \"feefilter\": %f coins.\n", ((double)newFeeFilter/COIN));
+//fprintf(stderr, "DEBUG: emc2_ProcessMessage: \"feefilter\": %f coins.\n", ((double)newFeeFilter/COIN));
     if (MoneyRange(iface, newFeeFilter) &&
         newFeeFilter >= EMC2_MIN_TX_FEE &&
         newFeeFilter < EMC2_MAX_TX_FEE) {
@@ -1135,13 +1135,13 @@ bool emc2_ProcessMessages(CIface *iface, CNode* pfrom)
     {
       if ((int)vRecv.size() > nHeaderSize)
       {
-        fprintf(stderr, "DEBUG: EMC2_PROCESSMESSAGE MESSAGESTART NOT FOUND\n");
+//fprintf(stderr, "DEBUG: EMC2_PROCESSMESSAGE MESSAGESTART NOT FOUND\n");
         vRecv.erase(vRecv.begin(), vRecv.end() - nHeaderSize);
       }
       break;
     }
     if (pstart - vRecv.begin() > 0)
-      fprintf(stderr, "DEBUG: PROCESSMESSAGE SKIPPED %d BYTES\n\n", pstart - vRecv.begin());
+//fprintf(stderr, "DEBUG: PROCESSMESSAGE SKIPPED %d BYTES\n\n", pstart - vRecv.begin());
     vRecv.erase(vRecv.begin(), pstart);
 
     // Read header
@@ -1150,7 +1150,7 @@ bool emc2_ProcessMessages(CIface *iface, CNode* pfrom)
     vRecv >> hdr;
     if (!hdr.IsValid())
     {
-      fprintf(stderr, "DEBUG: EMC2: PROCESSMESSAGE: ERRORS IN HEADER %s\n", hdr.GetCommand().c_str());
+//fprintf(stderr, "DEBUG: EMC2: PROCESSMESSAGE: ERRORS IN HEADER %s\n", hdr.GetCommand().c_str());
       continue;
     }
     string strCommand = hdr.GetCommand();
@@ -1159,7 +1159,7 @@ bool emc2_ProcessMessages(CIface *iface, CNode* pfrom)
     unsigned int nMessageSize = hdr.nMessageSize;
     if (nMessageSize > MAX_SIZE)
     {
-      fprintf(stderr, "emc2_ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
+//fprintf(stderr, "emc2_ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
       continue;
     }
     if (nMessageSize > vRecv.size())
@@ -1175,7 +1175,7 @@ bool emc2_ProcessMessages(CIface *iface, CNode* pfrom)
     memcpy(&nChecksum, &hash, sizeof(nChecksum));
     if (nChecksum != hdr.nChecksum)
     {
-      fprintf(stderr, "DEBUG: emc2_ProcessMessages(%s, msg is %u bytes, buff is %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x buff nVersion=%u\n", strCommand.c_str(), nMessageSize, (unsigned int)vRecv.size(), nChecksum, hdr.nChecksum, (unsigned int)vRecv.nVersion);
+//"emc2_ProcessMessages(%s, msg is %u bytes, buff is %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x buff nVersion=%u\n", strCommand.c_str(), nMessageSize, (unsigned int)vRecv.size(), nChecksum, hdr.nChecksum, (unsigned int)vRecv.nVersion);
       continue;
     }
 

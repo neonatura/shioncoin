@@ -99,7 +99,7 @@ static int emc2_init(CIface *iface, void *_unused_)
   }
 
   if (!emc2_LoadWallet()) {
-    fprintf(stderr, "error: emc2_proto: unable to load wallet.\n");
+    error(SHERR_INVAL, "emc2_proto: unable to load wallet.\n");
     return (SHERR_INVAL);
   }
 
@@ -230,7 +230,7 @@ static int emc2_block_templ(CIface *iface, CBlock **block_p)
 
   const CPubKey& pubkey = emc2_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
-fprintf(stderr, "DEBUG: emc2_block_templ: error obtaining main pubkey.\n"); 
+    error(SHERR_INVAL, "emc2_block_templ: error obtaining main pubkey.\n"); 
     return (NULL);
   }
 

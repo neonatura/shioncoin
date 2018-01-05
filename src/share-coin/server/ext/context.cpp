@@ -662,7 +662,7 @@ void CContext::NotifySharenet(int ifaceIndex)
 
   /* context payload */
   memcpy(data + data_len, vContext.data(), vContext.size());
-fprintf(stderr, "DEBUG: CContext:NotifySharenet: key '%s' = '%s'\n", shkey_print(&key), (data + data_len));
+//fprintf(stderr, "DEBUG: CContext:NotifySharenet: key '%s' = '%s'\n", shkey_print(&key), (data + data_len));
   data_len += vContext.size();
 
   shnet_inform(iface, TX_CONTEXT, data, data_len);
@@ -699,7 +699,7 @@ bool FormatGeoContext(CIface *iface, string& strGeo, shnum_t& lat, shnum_t& lon)
   sprintf(buf, "geo:%-5.5Lf,%-5.5Lf", lat, lon);
   strGeo = string(buf);
 
-fprintf(stderr, "DEBUG: FormatGeoContext: lat(%Lf) lon(%Lf)\n", lat, lon);
+//fprintf(stderr, "DEBUG: FormatGeoContext: lat(%Lf) lon(%Lf)\n", lat, lon);
 
   return (true);
 }
@@ -744,7 +744,7 @@ void share_geo_save(CContext *ctx, string label)
 
   err = shgeodb_loc_set(&ctx->geo, &loc);    
   if (err) {
-fprintf(stderr, "DEBUG: %d = shgeodb_loc_set(%Lf,%Lf)\n", err, lat, lon);
+//fprintf(stderr, "DEBUG: %d = shgeodb_loc_set(%Lf,%Lf)\n", err, lat, lon);
   }
 
 }

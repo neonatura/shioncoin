@@ -314,7 +314,6 @@ bool AddLocal(int ifaceIndex, const CService& addr, int nScore)
     SetReachable(addr.GetNetwork());
   }
 
-fprintf(stderr, "DEBUG: AddLocal: would of added '%s'\n", addr.ToString().c_str()); 
   AdvertizeLocal(ifaceIndex);
 
   return true;
@@ -1102,8 +1101,7 @@ bool usde_coin_server_recv_msg(CIface *iface, CNode* pfrom)
   unsigned int nChecksum = 0;
   memcpy(&nChecksum, &hash, sizeof(nChecksum));
   if (nChecksum != hdr.nChecksum) {
-    fprintf(stderr, "DEBUG: ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n",
-        strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
+    error(SHERR_INVAL, "ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
     return (false);
   }
 
@@ -1156,7 +1154,7 @@ int usde_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
 
   /* verify magic sequence */
   if (0 != memcmp(hdr.magic, iface->hdr_magic, 4)) {
-fprintf(stderr, "DEBUG: invalid header magic: {%-2.2x} {%-2.2x} {%-2.2x} {%-2.2x}\n", data[0], data[1], data[2], data[3]);
+//fprintf(stderr, "DEBUG: invalid header magic: {%-2.2x} {%-2.2x} {%-2.2x} {%-2.2x}\n", data[0], data[1], data[2], data[3]);
     shbuf_clear(buff);
     return (SHERR_ILSEQ);
   }
@@ -1403,8 +1401,7 @@ bool shc_coin_server_recv_msg(CIface *iface, CNode* pfrom)
   unsigned int nChecksum = 0;
   memcpy(&nChecksum, &hash, sizeof(nChecksum));
   if (nChecksum != hdr.nChecksum) {
-    fprintf(stderr, "DEBUG: ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n",
-        strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
+    error(SHERR_INVAL, "ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
     return (false);
   }
 
@@ -2788,8 +2785,7 @@ bool emc2_coin_server_recv_msg(CIface *iface, CNode* pfrom)
   unsigned int nChecksum = 0;
   memcpy(&nChecksum, &hash, sizeof(nChecksum));
   if (nChecksum != hdr.nChecksum) {
-    fprintf(stderr, "DEBUG: ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n",
-        strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
+    error(SHERR_INVAL, "ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
     return (false);
   }
 

@@ -300,7 +300,7 @@ void USDEWallet::ReacceptWalletTransactions()
         if (!wtx.IsCoinBase()) {
           if (!wtx.AcceptWalletTransaction(txdb, false)) {
 
-fprintf(stderr, "DEBUG: !wtx.AcceptWalletTransaction()\n");
+//fprintf(stderr, "DEBUG: !wtx.AcceptWalletTransaction()\n");
           }
         }
 //DEBUG: EraseFromWallet if dup

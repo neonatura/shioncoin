@@ -54,7 +54,6 @@ int GetCoinIndex(coin_iface_t *iface)
   int idx;
 
   if (!iface) {
-    fprintf(stderr, "DEBUG: error: GetCoinIndex(NULL)\n");
     return (-1);
   }
 

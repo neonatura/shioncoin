@@ -278,7 +278,7 @@ bool VerifyChannel(CTransaction& tx)
 
   /* core verification */
   if (!IsChannelTx(tx)) {
-fprintf(stderr, "DEBUG: VerifyChannel: !IsChannelTx\n");
+//fprintf(stderr, "DEBUG: VerifyChannel: !IsChannelTx\n");
     return (false); /* tx not flagged as channel */
 }
 
@@ -707,7 +707,7 @@ error(SHERR_INVAL, "!origin->GetPubKey");
     return (false);
 }
   if (origin->hdpubkey != buff) {
-fprintf(stderr, "DEBUG: CChanel.VerifyPubKey: origin->hdpubkey(%s) != buff(%s)", HexStr(origin->hdpubkey).c_str(), HexStr(buff).c_str());
+//fprintf(stderr, "DEBUG: CChanel.VerifyPubKey: origin->hdpubkey(%s) != buff(%s)", HexStr(origin->hdpubkey).c_str(), HexStr(buff).c_str());
     return (false);
 }
 
@@ -737,12 +737,12 @@ int init_channel_tx(CIface *iface, string strAccount, int64 nValue, CCoinAddr& r
     return (SHERR_INVAL);
 
   if (nValue <= (iface->min_tx_fee*2)) {
-fprintf(stderr, "DEBUG: init_channel_tx: nValue(%llu) < min-fee*2\n", nValue);
+//fprintf(stderr, "DEBUG: init_channel_tx: nValue(%llu) < min-fee*2\n", nValue);
     return (SHERR_INVAL);
 }
 
   if (!rem_addr.IsValid()) {
-fprintf(stderr, "DEBUG: init_channel_tx: !rem_addr.IsValid()\n");
+//fprintf(stderr, "DEBUG: init_channel_tx: !rem_addr.IsValid()\n");
     return (SHERR_INVAL);
 }
 
@@ -758,7 +758,7 @@ fprintf(stderr, "DEBUG: init_channel_tx: !rem_addr.IsValid()\n");
   wtx.strFromAccount = strAccount; /* originating account for payment */
   channel = wtx.CreateChannel(addr, rem_addr, nValue - iface->min_tx_fee); 
   if (!channel) {
-fprintf(stderr, "DEBUG: init_channel_tx:  !wtx.CreateChannel()\n");
+//fprintf(stderr, "DEBUG: init_channel_tx:  !wtx.CreateChannel()\n");
     return (SHERR_INVAL);
 }
 
@@ -898,7 +898,7 @@ int pay_channel_tx(CIface *iface, string strAccount, uint160 hChan, CCoinAddr pa
     return (SHERR_OPNOTSUPP);
 
 	if (!GetOpenChannel(ifaceIndex, hChan, txIn)) {
-fprintf(stderr, "DEBUG: GetOpenChannel: failure opening hChan '%s'\n", hChan.GetHex().c_str());
+//fprintf(stderr, "DEBUG: GetOpenChannel: failure opening hChan '%s'\n", hChan.GetHex().c_str());
 		return (SHERR_NOENT);
 }
 
@@ -959,7 +959,7 @@ error(SHERR_NOENT, "pay_channel_tx: unknown destination address specified.");
   }
 
   if (!channel->GeneratePubKey()) {
-fprintf(stderr, "DEBUG: pay_channel_tx: !channel->GeneratePubKey\n"); 
+//fprintf(stderr, "DEBUG: pay_channel_tx: !channel->GeneratePubKey\n"); 
 return (SHERR_INVAL);
 }
 
@@ -1205,7 +1205,7 @@ int validate_channel_tx(CIface *iface, CTransaction *txCommit, CWalletTx& wtx)
   const uint160& hash = channel->GetHash();
   cbuff vchHash(hash.begin(), hash.end());
   scriptPubKey << OP_HASH160 << vchHash << OP_EQUAL;
-fprintf(stderr, "DEBUG: validate_channel_tx: scriptPubKey: \"%s\"\n", scriptPubKey.ToString().c_str()); 
+//fprintf(stderr, "DEBUG: validate_channel_tx: scriptPubKey: \"%s\"\n", scriptPubKey.ToString().c_str()); 
   wtx.vout.push_back(CTxOut(nTotalValue - nCounterValue, scriptPubKey)); 
 
   /* half-sign input */
@@ -1245,12 +1245,12 @@ int generate_channel_tx(CIface *iface, uint160 hChan, CWalletTx& wtx)
     return (SHERR_OPNOTSUPP);
 
   if (!GetOpenChannel(ifaceIndex, hChan, txIn)) {
-    fprintf(stderr, "DEBUG: generate_channel_tx: !GetOpenChannel()\n"); 
+//fprintf(stderr, "DEBUG: generate_channel_tx: !GetOpenChannel()\n"); 
     return (SHERR_NOENT);
   }
 
   if (!GetSpentChannel(ifaceIndex, hChan, txSpentIn)) {
-    fprintf(stderr, "DEBUG: generate_channel_tx: !GetSpentChannel(%s)\n", hChan.GetHex().c_str()); 
+//fprintf(stderr, "DEBUG: generate_channel_tx: !GetSpentChannel(%s)\n", hChan.GetHex().c_str()); 
     return (SHERR_AGAIN); /* nothing has been committed .. use remove instead */
   }
 
@@ -1259,7 +1259,7 @@ int generate_channel_tx(CIface *iface, uint160 hChan, CWalletTx& wtx)
     return (SHERR_INVAL);
   if (!DecodeChannelHash(txSpentIn.vout[nOut].scriptPubKey, txInMode, hChan) ||
       txInMode != OP_EXT_PAY) {
-    fprintf(stderr, "DEBUG: generate_channel_tx: txInMode(%d) != OP_EXT_PAY\n", txInMode);
+//fprintf(stderr, "DEBUG: generate_channel_tx: txInMode(%d) != OP_EXT_PAY\n", txInMode);
     return (SHERR_INVAL);
   }
 
@@ -1285,7 +1285,7 @@ int generate_channel_tx(CIface *iface, uint160 hChan, CWalletTx& wtx)
   CCoinAddr addr(ifaceIndex);
   addr.Set(dest);
   if (!GetCoinAddr(wallet, addr, strAccount)) {
-    fprintf(stderr, "DEBUG: generate_channel_tx: !GetCoinAddr()\n"); 
+//fprintf(stderr, "DEBUG: generate_channel_tx: !GetCoinAddr()\n"); 
     return (SHERR_REMOTE);
   }
 

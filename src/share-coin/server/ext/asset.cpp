@@ -414,7 +414,7 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   CCoinAddr addr = GetAccountAddress(wallet, strAccount, false);
 
   if (!addr.IsValid()) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
     return (SHERR_NOENT);
   }
 
@@ -422,7 +422,7 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   string strExtAccount = "@" + strAccount;
   CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
   if (!extAddr.IsValid()) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !extAddr.IsValid\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !extAddr.IsValid\n");
     return (SHERR_INVAL);
   }
 
@@ -487,11 +487,11 @@ int activate_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset
   /* verify original asset */
   CTransaction tx;
   if (!GetTxOfAsset(iface, hashAsset, tx)) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !GetTxOfAsset\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !GetTxOfAsset\n");
     return (SHERR_NOENT);
   }
   if(!IsLocalAsset(iface, tx)) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !IsLocalAsset\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !IsLocalAsset\n");
     return (SHERR_REMOTE);
   }
 
@@ -504,7 +504,7 @@ int activate_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset
   /* establish account */
   CCoinAddr addr = GetAccountAddress(wallet, strAccount, false);
   if (!addr.IsValid()) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
     return (SHERR_NOENT);
   }
 
@@ -512,7 +512,7 @@ int activate_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset
   string strExtAccount = "@" + strAccount;
   CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
   if (!extAddr.IsValid()) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !extAddr.IsValid\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !extAddr.IsValid\n");
     return (SHERR_INVAL);
   }
 
@@ -588,11 +588,11 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   /* verify original asset */
   CTransaction tx;
   if (!GetTxOfAsset(iface, hashAsset, tx)) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !GetTxOfAsset\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !GetTxOfAsset\n");
     return (SHERR_NOENT);
   }
   if(!IsLocalAsset(iface, tx)) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !IsLocalAsset\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !IsLocalAsset\n");
     return (SHERR_REMOTE);
   }
 
@@ -605,7 +605,7 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   /* establish account */
   CCoinAddr addr = GetAccountAddress(wallet, strAccount, false);
   if (!addr.IsValid()) {
-    fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
+//fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
     return (SHERR_NOENT);
   }
 

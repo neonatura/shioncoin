@@ -50,7 +50,9 @@ void get_rpc_cred(char *username, char *password)
     err = set_rpc_dat_password(NULL, key);
     shkey_free(&key);
     if (err) {
-      fprintf(stderr, "DEBUG: get_rpc_cred: !set_rpc_dat_password (%d)\n", err);
+      char buf[256];
+      sprintf(buf, "warning: get_rpc_cred: !set_rpc_dat_password (%d)\n", err);
+      shcoind_log(buf);
     }
 
     in_pass = shkey_print(key);
@@ -220,7 +222,6 @@ uint32_t get_rpc_pin(char *host)
   key = get_rpc_dat_password(host);
   if (!key)
     return (0);
-fprintf(stderr, "DEBUG: get_rpc_pin: '%s'\n", shkey_print(key));
 
   raw = ((unsigned char *)key) + sizeof(uint32_t);
   ret_pin = shsha_2fa_bin(SHALG_SHA224, raw, CRED_SECRET_LEN, FIVE_MINUTES);
@@ -228,7 +229,6 @@ fprintf(stderr, "DEBUG: get_rpc_pin: '%s'\n", shkey_print(key));
   if (ret_pin == 0)
     return (0);
 
-fprintf(stderr, "DEBUG: get_rpc_pin: PIN %u\n", ret_pin);
   return (ret_pin);
 }
 
@@ -239,17 +239,13 @@ int verify_rpc_pin(char *host, uint32_t pin)
   int err;
 
   key = get_rpc_dat_password(host);
-  if (!key) {
-fprintf(stderr, "DEBUG: verify_rpc_pin: ERR_NOENT\n");
+  if (!key)
     return (SHERR_NOENT); 
-}
-fprintf(stderr, "DEBUG: verify_rpc_pin: '%s' [pin %u]\n", shkey_print(key), pin);
 
   raw = ((unsigned char *)key) + sizeof(uint32_t);
   err = shsha_2fa_bin_verify(SHALG_SHA224, 
       raw, CRED_SECRET_LEN, FIVE_MINUTES, pin);
   shkey_free(&key);
-fprintf(stderr, "DEBUG: verify_rpc_pin: 2fa_bin_verify err %d\n", err);
 
   return (err);
 }

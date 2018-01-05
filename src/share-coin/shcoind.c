@@ -144,6 +144,10 @@ void usage_version(void)
 
 extern void RegisterRPCOpDefaults(int ifaceIndex);
 
+static void unlink_chain(void)
+{
+/* move *.idx, *.tab, and *.# to a "archive/" sub-directory. */
+}
 
 int shcoind_main(int argc, char *argv[])
 {
@@ -212,12 +216,6 @@ int shcoind_main(int argc, char *argv[])
       opt_bool_set(OPT_USDE_BACKUP_RESTORE, TRUE);
     } else if (0 == strcmp(argv[i], "--emc2-rebuild-chain")) {
       opt_bool_set(OPT_EMC2_BACKUP_RESTORE, TRUE);
-
-    
-#if 0
-    } else if (0 == strcmp(argv[i], "--rescan")) {
-      SoftSetBoolArg("-rescan", true);
-#endif
     }
   }
 
@@ -244,6 +242,12 @@ int shcoind_main(int argc, char *argv[])
   shapp_listen(TX_IDENT, server_peer);
   shapp_listen(TX_SESSION, server_peer);
   shapp_listen(TX_BOND, server_peer);
+
+  if (opt_bool_set(OPT_SHC_BACKUP_RESTORE, TRUE) ||
+      opt_bool_set(OPT_USDE_BACKUP_RESTORE, TRUE) ||
+      opt_bool_set(OPT_EMC2_BACKUP_RESTORE, TRUE)) {
+    unlink_chain();
+  }
 
   /* initialize coin interface's block-chain */
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
@@ -279,6 +283,13 @@ int shcoind_main(int argc, char *argv[])
     bc_chain_idle();
   }
 
+  if (opt_bool_set(OPT_SHC_BACKUP_RESTORE, TRUE) ||
+      opt_bool_set(OPT_USDE_BACKUP_RESTORE, TRUE) ||
+      opt_bool_set(OPT_EMC2_BACKUP_RESTORE, TRUE)) {
+    printf ("The block-chain has been restored.");
+    CloseBlockChains();
+    return (0);
+  }
 
   /* initialize coin interface's network service */
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {

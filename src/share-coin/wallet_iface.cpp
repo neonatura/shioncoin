@@ -128,6 +128,42 @@ static uint256 get_private_key_hash(CWallet *wallet, CKeyID keyId)
   return (phash);
 }
 
+static bool valid_pkey_hash(string strAccount, uint256 in_pkey)
+{
+  CWallet *wallet;
+  uint256 acc_pkey;
+  int ifaceIndex;
+  int valid;
+
+  valid = 0;
+  for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+    wallet = GetWallet(ifaceIndex);
+    if (!wallet) 
+      continue;
+
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
+    {
+      const CCoinAddr& address = CCoinAddr(ifaceIndex, item.first);
+      const string& strName = item.second;
+      CKeyID keyID;
+
+      if (strName != strAccount)
+        continue;
+      if (!address.GetKeyID(keyID))
+        continue;
+
+      acc_pkey = get_private_key_hash(wallet, keyID);
+      if (acc_pkey == in_pkey)
+        valid++;
+    }
+  }
+
+  if (valid > 0)
+    return (true);
+  return (false);
+}
+
+
 
 Object JSONAddressInfo(int ifaceIndex, CCoinAddr address, bool show_priv)
 {
@@ -405,6 +441,294 @@ static const char *cpp_stratum_walletkeylist(int ifaceIndex, const char *acc_nam
   return (walletkeylist_json.c_str());
 }
 
+static string AccountFromString(const string strAccount)
+{
+    if (strAccount == "*")
+      throw JSONRPCError(-11, "Invalid account name");
+    if (strAccount.length() > 0 && strAccount.at(0) == '@')
+      throw JSONRPCError(-11, "Invalid account name");
+
+    return strAccount;
+}
+static void GetAccountAddresses(CWallet *wallet, string strAccount, set<CTxDestination>& setAddress)
+{
+  BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
+  {
+    const CTxDestination& address = item.first;
+    const string& strName = item.second;
+    if (strName == strAccount)
+      setAddress.insert(address);
+  }
+}
+
+/* how expensive is this? */
+static Value account_alias_list(int ifaceIndex, int max_alias)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  Object ret;
+  alias_list *list;
+  int nBestHeight;
+
+  list = GetAliasTable(ifaceIndex);
+
+  nBestHeight = GetBestHeight(iface);
+  ret.push_back(Pair("fee",
+        ValueFromAmount(GetAliasOpFee(iface, nBestHeight))));
+
+  ret.push_back(Pair("total", (int)list->size()));
+
+  Object alias_list;
+  BOOST_FOREACH(PAIRTYPE(const string, uint256)& r, *list) {
+    const string& label = r.first;
+    uint256& hTx = r.second;
+    CTransaction tx;
+    uint256 hBlock;
+
+    if (!GetTransaction(iface, hTx, tx, NULL))
+      continue;
+
+    alias_list.push_back(Pair(tx.alias.GetHash().GetHex(), label));
+  }
+  ret.push_back(Pair("alias", alias_list));
+
+  return (ret);
+}
+
+/* obtain alias from alias hash */
+static Value account_alias_get(int ifaceIndex, char *alias_hash)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  Array ret;
+  alias_list *list;
+  uint160 hash;
+
+  hash = uint160(string(alias_hash));
+
+  list = GetAliasTable(ifaceIndex);
+  BOOST_FOREACH(PAIRTYPE(const string, uint256)& r, *list) {
+    const string& label = r.first;
+    uint256& hTx = r.second;
+    CTransaction tx;
+    uint256 hBlock;
+
+    if (!GetTransaction(iface, hTx, tx, NULL))
+      continue;
+
+    if (tx.alias.GetHash() == hash) {
+      ret.push_back(tx.alias.ToValue(ifaceIndex));
+      break;
+    }
+  }
+
+  return (ret);
+}
+
+static Value account_alias_set(int ifaceIndex, char *alias_name, char *alias_addr)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CCoinAddr addr(ifaceIndex);
+  CTransaction in_tx;
+  CWalletTx wtx;
+  int err;
+
+  const string alias_addr_str(alias_addr);
+  addr = CCoinAddr(alias_addr_str);
+
+  CAlias *alias = GetAliasByName(iface, alias_name, in_tx);
+  if (!alias) {
+    err = init_alias_addr_tx(iface, alias_name, addr, wtx);
+    if (err)
+      throw JSONRPCError(err, "alias address [create]");
+  } else {
+    err = update_alias_addr_tx(iface, alias_name, addr, wtx);
+    if (err)
+      throw JSONRPCError(err, "alias address [update]");
+  }
+    
+  return (wtx.ToValue(ifaceIndex));
+}
+
+#define DEFAULT_MAX_ALIAS 10000 /* for now */
+static string accountalias_json;
+static const char *cpp_accountalias(int ifaceIndex, char *account, char *pkey_str, char *mode, char *alias_name, char *alias_addr)
+{
+  string strAccount(account);
+  uint256 in_pkey;
+
+  in_pkey.SetHex(pkey_str);
+  if (!valid_pkey_hash(strAccount, in_pkey)) {
+    throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified for account.");
+  }
+
+  Value ret = Value::null;
+  if (!mode) {
+    /* .. */
+  } else if (0 == strcmp(mode, "list")) { 
+    ret = account_alias_list(ifaceIndex, DEFAULT_MAX_ALIAS);
+  } else if (0 == strcmp(mode, "get")) {
+    /* obtain alias via it's "alias hash" */
+    ret = account_alias_get(ifaceIndex, alias_name);
+  } else if (0 == strcmp(mode, "set")) {
+    ret = account_alias_set(ifaceIndex, alias_name, alias_addr); 
+  }
+
+  accountalias_json = JSONRPCReply(ret, Value::null, Value::null);
+  return (accountalias_json.c_str());
+}
+
+static Value account_context_list(int ifaceIndex, char *account, int max_context)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
+  set<CTxDestination> setAddress;
+  string strAccount(account);
+  Object ret;
+  ctx_list *list;
+  int nBestHeight;
+
+  list = GetContextTable(ifaceIndex);
+
+  nBestHeight = GetBestHeight(iface);
+  ret.push_back(Pair("fee",
+        ValueFromAmount(GetContextOpFee(iface, nBestHeight))));
+
+  ret.push_back(Pair("total", (int)list->size()));
+
+  strAccount = AccountFromString(strAccount);
+
+  /* get set of pub keys assigned to extended account. */
+  string strExtAccount = "@" + strAccount;
+  GetAccountAddresses(wallet, strExtAccount, setAddress);
+  if (setAddress.size() == 0) {
+    return (ret);
+  }
+
+  Array ctx_list;
+  BOOST_FOREACH(const PAIRTYPE(uint160, uint256)& r, *list) {
+    const uint160& hContext = r.first;
+    const uint256& hTx = r.second;
+    CTransaction tx;
+
+    if (!GetTransaction(iface, hTx, tx, NULL))
+      continue;
+
+    /* filter by account name. */
+    int nOut = IndexOfExtOutput(tx);
+    if (nOut == -1)
+      continue;
+
+    CTxDestination dest;
+    const CTxOut& txout = tx.vout[nOut];
+    if (!ExtractDestination(txout.scriptPubKey, dest))
+      continue;
+
+    if (setAddress.count(dest) == 0)
+      continue;
+
+    ctx_list.push_back(hContext.GetHex());
+  }
+  ret.push_back(Pair("context", ctx_list));
+
+  return (ret);
+}
+
+static Value account_context_get(int ifaceIndex, char *account, char *ctx_name)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CContext *ctx;
+  CTransaction tx;
+  set<CTxDestination> setAddress;
+  ctx_list *list;
+  string strAccount;
+  int nBestHeight;
+
+  string ctxNameStr(ctx_name);
+  uint160 hContext(ctxNameStr);
+  ctx = GetContextByHash(iface, hContext, tx);
+  if (!ctx) {
+    throw JSONRPCError(-5, string("unknown context hash"));
+  }
+
+  Object obj = ctx->ToValue();
+  obj.push_back(Pair("tx", tx.GetHash().GetHex()));
+  return (obj);
+}
+
+static Value account_context_set(int ifaceIndex, char *account, char *ctx_name, char *ctx_value)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  string strAccount(account);
+  string strName(ctx_name);
+  string strValue(ctx_value);
+  CContext *ctx;
+  CWalletTx wtx;
+  int err;
+
+  cbuff vchValue(strValue.begin(), strValue.end());
+  err = init_ctx_tx(iface, wtx, strAccount, strName, vchValue);
+  if (err) {
+    throw JSONRPCError(err, string(sherrstr(err)));
+  }
+
+  ctx = (CContext *)&wtx.certificate;
+  Object obj = ctx->ToValue();
+  obj.push_back(Pair("tx", wtx.GetHash().GetHex()));
+  return (obj);
+}
+
+#define DEFAULT_MAX_CONTEXT 10000 /* for now */
+static string accountcontext_json;
+static const char *cpp_accountcontext(int ifaceIndex, char *account, char *pkey_str, char *mode, char *ctx_name, char *ctx_value)
+{
+  string strAccount(account);
+  uint256 in_pkey;
+
+  in_pkey.SetHex(pkey_str);
+  if (!valid_pkey_hash(strAccount, in_pkey)) {
+    throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified for account.");
+  }
+
+  Value ret = Value::null;
+  if (!mode) {
+    /* .. */
+  } else if (0 == strcmp(mode, "list")) { 
+    ret = account_context_list(ifaceIndex, account, DEFAULT_MAX_CONTEXT);
+  } else if (0 == strcmp(mode, "get")) {
+    /* obtain context via it's "context hash" */
+    ret = account_context_get(ifaceIndex, account, ctx_name);
+  } else if (0 == strcmp(mode, "set")) {
+    ret = account_context_set(ifaceIndex, account, ctx_name, ctx_value); 
+  }
+
+  accountcontext_json = JSONRPCReply(ret, Value::null, Value::null);
+  return (accountcontext_json.c_str());
+}
+
+#define DEFAULT_MAX_CONTEXT 10000 /* for now */
+static string accountcertificate_json;
+static const char *cpp_accountcertificate(int ifaceIndex, char *account, char *pkey_str, char *mode, char *cert_name, char *cert_issuer, double fee)
+{
+  string strAccount(account);
+  uint256 in_pkey;
+
+  in_pkey.SetHex(pkey_str);
+  if (!valid_pkey_hash(strAccount, in_pkey)) {
+    throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified for account.");
+  }
+
+  Value ret = Value::null;
+
+  if (!mode) {
+    /* .. */
+  } else if (0 == strcmp(mode, "list")) {
+  } else if (0 == strcmp(mode, "get")) {
+  } else if (0 == strcmp(mode, "set")) {
+  }
+
+  accountcertificate_json = JSONRPCReply(ret, Value::null, Value::null);
+  return (accountcertificate_json.c_str());
+}
+
 /**
  * Sends a reward to a particular address.
  */
@@ -423,17 +747,18 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
   bool found = false;
   int64 nBalance;
 
+#if 0
   if (pwalletMain->IsLocked()) {
-fprintf(stderr, "DEBUG: c_setblockreward: wallet is locked\n");
     return (-13);
   }
+#endif
 
   if (dAmount <= 0)
     return (SHERR_INVAL);
 
   const CCoinAddr address = GetAddressByAccount(pwalletMain, accountName, found);
   if (!found) {
-fprintf(stderr, "DEBUG: c_setblockreward[iface #%d]: account '%s' not found\n", ifaceIndex, accountName);
+    error(SHERR_INVAL, "warning: c_setblockreward[iface #%d]: account '%s' not found\n", ifaceIndex, accountName);
     return (-5);
   }
   if (!address.IsValid()) {
@@ -465,7 +790,7 @@ fprintf(stderr, "DEBUG: c_setblockreward[iface #%d]: account '%s' not found\n", 
   wtx.mapValue["comment"] = strComment;
   string strError = pwalletMain->SendMoneyToDestination(address.Get(), nAmount, wtx);
   if (strError != "") {
-fprintf(stderr, "DEBUG: '%s' = SendMoneyTo: amount %d\n", strError.c_str(), (int)nAmount);
+//fprintf(stderr, "DEBUG: '%s' = SendMoneyTo: amount %d\n", strError.c_str(), (int)nAmount);
     //throw JSONRPCError(-4, strError);
     return (-4);
   }
@@ -491,10 +816,11 @@ int c_addblockreward(int ifaceIndex, const char *accountName, double dAmount)
   int nMinConfirmDepth = 1; /* single confirmation requirement */
   int64 nBalance;
 
+#if 0
   if (pwalletMain->IsLocked()) {
-fprintf(stderr, "DEBUG: c_setblockreward: wallet is locked\n");
     return (-13);
   }
+#endif
 
   if (dAmount <= 0)
     return (-3);
@@ -648,14 +974,14 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
   }
 
   if (dAmount <= 0.0 || dAmount > 84000000.0) {
-    fprintf(stderr, "DEBUG: invalid amount (%f)\n", dAmount);
+    //fprintf(stderr, "DEBUG: invalid amount (%f)\n", dAmount);
     //throw JSONRPCError(-3, "Invalid amount");
     return (-3);
   }
 
   nAmount = roundint64(dAmount * COIN);
   if (!MoneyRange(ifaceIndex, nAmount)) {
-    fprintf(stderr, "DEBUG: invalid amount: !MoneyRange(%d)\n", (int)nAmount);
+    //fprintf(stderr, "DEBUG: invalid amount: !MoneyRange(%d)\n", (int)nAmount);
     //throw JSONRPCError(-3, "Invalid amount");
     return (-3);
   }
@@ -663,14 +989,14 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
 
   nBalance  = GetAccountBalance(ifaceIndex, walletdb, strMainAccount, nMinConfirmDepth);
   if (nAmount > nBalance) {
-    fprintf(stderr, "DEBUG: account has insufficient funds\n");
+    //fprintf(stderr, "DEBUG: account has insufficient funds\n");
     //throw JSONRPCError(-6, "Account has insufficient funds");
     return (-6);
   }
 
   //address = GetAddressByAccount(accountName);
   if (!address.IsValid()) {
-    fprintf(stderr, "DEBUG: invalid usde address destination\n");
+    //fprintf(stderr, "DEBUG: invalid usde address destination\n");
     //throw JSONRPCError(-5, "Invalid usde address");
     return (-5);
   }
@@ -680,7 +1006,7 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
   wtx.mapValue["comment"] = strComment;
   string strError = pwalletMain->SendMoneyToDestination(address.Get(), nAmount, wtx);
   if (strError != "") {
-    fprintf(stderr, "DEBUG: '%s' = SendMoneyTo: amount %d\n", strError.c_str(), (int)nAmount);
+    //fprintf(stderr, "DEBUG: '%s' = SendMoneyTo: amount %d\n", strError.c_str(), (int)nAmount);
     return (-4);
   }
 
@@ -699,40 +1025,6 @@ double c_getaccountbalance(int ifaceIndex, const char *accountName)
   return ((double)nBalance / (double)COIN);
 }
 
-static bool valid_pkey_hash(string strAccount, uint256 in_pkey)
-{
-  CWallet *wallet;
-  uint256 acc_pkey;
-  int ifaceIndex;
-  int valid;
-
-  valid = 0;
-  for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-    wallet = GetWallet(ifaceIndex);
-    if (!wallet) 
-      continue;
-
-    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
-    {
-      const CCoinAddr& address = CCoinAddr(ifaceIndex, item.first);
-      const string& strName = item.second;
-      CKeyID keyID;
-
-      if (strName != strAccount)
-        continue;
-      if (!address.GetKeyID(keyID))
-        continue;
-
-      acc_pkey = get_private_key_hash(wallet, keyID);
-      if (acc_pkey == in_pkey)
-        valid++;
-    }
-  }
-
-  if (valid > 0)
-    return (true);
-  return (false);
-}
 
 bool GetStratumKeyAccount(uint256 in_pkey, string& strAccount)
 {
@@ -775,37 +1067,34 @@ bool GetStratumKeyAccount(uint256 in_pkey, string& strAccount)
  * @returns json string format 
  */
 string accounttransactioninfo_json;
-void ListTransactions(int ifaceIndex, const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret);
-static const char *json_getaccounttransactioninfo(int ifaceIndex, const char *tx_account, const char *pkey_str, int duration)
+static const char *json_getaccounttransactioninfo(int ifaceIndex, const char *tx_account, const char *pkey_str)
 {
-  CWallet *pwalletMain = GetWallet(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
   string strAccount(tx_account);
   uint256 in_pkey = 0;
-  Array result;
-  int64 min_t;
-  int max = 100;
-  int idx;
 
+  Array result;
   try {
     in_pkey.SetHex(pkey_str);
     if (!valid_pkey_hash(strAccount, in_pkey)) {
       throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified.");
     }
 
-    min_t = time(NULL) - duration;
-    CWalletDB walletdb(pwalletMain->strWalletFile);
-    //for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it) {
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.end(); it != pwalletMain->mapWallet.begin(); --it) {
-      CWalletTx* wtx = &((*it).second);
+    vector<COutput> vecOutputs;
+    wallet->AvailableAccountCoins(strAccount, vecOutputs, false);
+    BOOST_FOREACH(const COutput& out, vecOutputs) {
+      int64 nValue = out.tx->vout[out.i].nValue;
+      const CScript& pk = out.tx->vout[out.i].scriptPubKey;
 
-      if (wtx->GetTxTime() < min_t)
-        continue;
-
-      ListTransactions(ifaceIndex, *wtx, strAccount, 0, true, result);
-
-      idx++;
-      if (idx > max)
-        break;
+      Object entry;
+      entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
+      entry.push_back(Pair("hash", out.tx->GetWitnessHash().GetHex()));
+      entry.push_back(Pair("vout", out.i));
+      entry.push_back(Pair("script", pk.ToString()));
+      entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
+      entry.push_back(Pair("amount",ValueFromAmount(nValue)));
+      entry.push_back(Pair("confirmations",out.nDepth));
+      result.push_back(entry);
     }
   } catch(Object& objError) {
     SetStratumError(objError);
@@ -914,7 +1203,7 @@ bool VerifyLocalAddress(CWallet *wallet, CKeyID vchAddress)
 string createaccount_json;
 static const char *json_stratum_create_account(int ifaceIndex, const char *acc_name)
 {
-  CWallet *pwalletMain = GetWallet(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
   string strAccount(acc_name);
   string coinAddr = "";
   uint256 phash = 0;
@@ -947,6 +1236,7 @@ static const char *json_stratum_create_account(int ifaceIndex, const char *acc_n
       if (!wallet)
         continue;
 
+#if 0
       /* Generate a new key that is added to wallet. */
       if (!wallet->GetKeyFromPool(newKey, false)) {
         if (!wallet->IsLocked())
@@ -956,12 +1246,15 @@ static const char *json_stratum_create_account(int ifaceIndex, const char *acc_n
           return (NULL);
         }
       }
+#endif
+      newKey = GetAccountPubKey(wallet, strAccount, true);
+
 
       CKeyID keyId = newKey.GetID();
       wallet->SetAddressBookName(keyId, strAccount);
       if (ifaceIndex == idx) {
         coinAddr = CCoinAddr(keyId).ToString();
-        phash = get_private_key_hash(pwalletMain, keyId);
+        phash = get_private_key_hash(wallet, keyId);
       }
     }
   } catch(Object& objError) {
@@ -1285,11 +1578,11 @@ int wallet_account_transfer(int ifaceIndex, const char *sourceAccountName, const
   return (c_wallet_account_transfer(ifaceIndex, sourceAccountName, accountName, comment, amount));
 }
 
-const char *getaccounttransactioninfo(int ifaceIndex, const char *account, const char *pkey_str, int duration)
+const char *getaccounttransactioninfo(int ifaceIndex, const char *account, const char *pkey_str)
 {
   if (!account)
     return (NULL);
-  return (json_getaccounttransactioninfo(ifaceIndex, account, pkey_str, duration));
+  return (json_getaccounttransactioninfo(ifaceIndex, account, pkey_str));
 }
 
 const char *stratum_getaddressinfo(int ifaceIndex, const char *addr_hash)
@@ -1539,6 +1832,22 @@ const char *stratum_call_rpc(int ifaceIndex, const char *account, const char *pk
   return (cpp_stratum_call_rpc(ifaceIndex, account, pkey_str, json));
 }
 #endif
+
+const char *stratum_accountalias(int ifaceIndex, char *account, char *pkey, char *mode, char *alias_name, char *alias_addr)
+{
+  return (cpp_accountalias(ifaceIndex, account, pkey, mode, alias_name, alias_addr));
+}
+
+const char *stratum_accountcontext(int ifaceIndex, char *account, char *pkey, char *mode, char *ctx_name, char *ctx_value)
+{
+  return (cpp_accountcontext(ifaceIndex, account, pkey, mode, ctx_name, ctx_value));
+}
+
+const char *stratum_accountcertificate(int ifaceIndex, char *account, char *pkey, char *mode, char *cert_name, char *cert_issuer, double fee)
+{
+  return (cpp_accountcertificate(ifaceIndex, account, pkey, mode, cert_name, cert_issuer, fee));
+}
+
 
 #ifdef __cplusplus
 }

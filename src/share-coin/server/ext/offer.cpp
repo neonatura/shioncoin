@@ -219,19 +219,19 @@ bool GetTxOfOffer(CIface *iface, const uint160& hashOffer, CTransaction& tx)
   bool ret;
 
   if (offeres->count(hashOffer) == 0) {
-fprintf(stderr, "DEBUG: GetTxOfOffer: invalid offer\n");
+//fprintf(stderr, "DEBUG: GetTxOfOffer: invalid offer\n");
     return false; /* nothing by that name, sir */
   }
 
   uint256 hashTx = (*offeres)[hashOffer];
   ret = GetTransaction(iface, hashTx, tx, NULL);
   if (!ret) {
-fprintf(stderr, "DEBUG: GetTxOfOffer: invalid tx\n");
+//fprintf(stderr, "DEBUG: GetTxOfOffer: invalid tx\n");
     return false;
   }
 
   if (!IsOfferTx(tx)) { 
-    fprintf(stderr, "DEBUG: GetTxOfOffer: not offer\n");
+//fprintf(stderr, "DEBUG: GetTxOfOffer: not offer\n");
     return false; /* inval; not an offer tx */
   }
 
@@ -290,14 +290,14 @@ bool VerifyOffer(CTransaction& tx)
 
   /* core verification */
   if (!IsOfferTx(tx)) {
-fprintf(stderr, "DEBUG: VerifyOffer: !IsOfferTx()\n");
+//fprintf(stderr, "DEBUG: VerifyOffer: !IsOfferTx()\n");
     return (false); /* tx not flagged as offer */
 }
 
   /* verify hash in pub-script matches offer hash */
   nOut = IndexOfExtOutput(tx);
   if (nOut == -1) {
-fprintf(stderr, "DEBUG: VerifyOffer: nOut == -1\n");
+//fprintf(stderr, "DEBUG: VerifyOffer: nOut == -1\n");
     return (false); /* no extension output */
 }
 
@@ -375,7 +375,7 @@ bool GenerateOffers(CIface *iface, COffer *offer)
 
     COfferAccept& accept = ((COfferAccept&) tx.offer);
     if (accept.hashOffer != hashOffer) {
-fprintf(stderr, "DEBUG: wrong offer '%s' for accept '%s'\n", accept.hashOffer.GetHex().c_str(), hashAccept.GetHex().c_str());
+//fprintf(stderr, "DEBUG: wrong offer '%s' for accept '%s'\n", accept.hashOffer.GetHex().c_str(), hashAccept.GetHex().c_str());
       continue; /* wrong offer */
 }
 
@@ -420,7 +420,7 @@ static int FindOfferTxOut(int ifaceIndex, uint256 hashTx, CWalletTx& alt_wtxIn, 
   bool ret;
 
   if (wallet->mapWallet.count(hashTx) == 0) {
-fprintf(stderr, "DEBUG: FindOfferTxOut: no local tx '%s'\n", hashTx.GetHex().c_str());
+//fprintf(stderr, "DEBUG: FindOfferTxOut: no local tx '%s'\n", hashTx.GetHex().c_str());
     return (SHERR_REMOTE);
   }
 
@@ -619,7 +619,7 @@ int init_offer_tx(CIface *iface, std::string strAccount, int64 srcValue, int des
     CIface *altIface = GetCoinByIndex(destIndex);
     string strError = OfferHoldAltCoin(altIface, strAccount, offer, destValue);
     if (strError != "") {
-fprintf(stderr, "DEBUG: (%s) offer->hXferTx '%s'\n", strError.c_str(), offer->hXferTx.GetHex().c_str());
+//fprintf(stderr, "DEBUG: (%s) offer->hXferTx '%s'\n", strError.c_str(), offer->hXferTx.GetHex().c_str());
       return (SHERR_CANCELED);
     }
   }
@@ -665,7 +665,7 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
   int64 nFee = GetOfferOpFee(iface) + MAX(0, srcValue);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
-fprintf(stderr, "DEBUG: bal(%lu) < nFee(%lu)\nn", (unsigned long)bal, (unsigned long)nFee);
+//fprintf(stderr, "DEBUG: bal(%lu) < nFee(%lu)\nn", (unsigned long)bal, (unsigned long)nFee);
     return (SHERR_AGAIN);
   }
 
@@ -680,11 +680,11 @@ fprintf(stderr, "DEBUG: bal(%lu) < nFee(%lu)\nn", (unsigned long)bal, (unsigned 
   int destIndex;
   if (offer->nPayCoin == GetCoinIndex(iface)) { /* accept sending shc */
     if (srcValue <= 0 || srcValue > abs(offer->nPayValue)) {
-      fprintf(stderr, "DEBUG: srcValue < offer->nPayvalue\n");
+//fprintf(stderr, "DEBUG: srcValue < offer->nPayvalue\n");
       return (SHERR_INVAL);
     }
     if (destValue >= 0 || abs(destValue) > offer->nXferValue) {
-      fprintf(stderr, "DEBUG: destValue > offer->nXfervalue\n");
+//fprintf(stderr, "DEBUG: destValue > offer->nXfervalue\n");
       return (SHERR_INVAL);
     }
 
@@ -692,11 +692,11 @@ fprintf(stderr, "DEBUG: bal(%lu) < nFee(%lu)\nn", (unsigned long)bal, (unsigned 
     destIndex = offer->nXferCoin;
   } else /* accept sending alt-coin */{
     if (srcValue >= 0 || abs(srcValue) > offer->nXferValue) {
-      fprintf(stderr, "DEBUG: srcValue < offer->nPayvalue\n");
+//fprintf(stderr, "DEBUG: srcValue < offer->nPayvalue\n");
       return (SHERR_INVAL);
     }
     if (destValue <= 0 || destValue > abs(offer->nPayValue)) {
-      fprintf(stderr, "DEBUG: destValue > offer->nXfervalue\n");
+//fprintf(stderr, "DEBUG: destValue > offer->nXfervalue\n");
       return (SHERR_INVAL);
     }
 
@@ -767,7 +767,7 @@ fprintf(stderr, "DEBUG: accept->hXferTx '%s'\n", offer->hXferTx.GetHex().c_str()
     CIface *altIface = GetCoinByIndex(destIndex);
     string strError = OfferHoldAltCoin(altIface, strAccount, accept, destValue);
     if (strError != "") {
-fprintf(stderr, "DEBUG: accept_offer_tx: (%s) offer->hXferTx '%s'\n", strError.c_str(), accept->hXferTx.GetHex().c_str());
+//fprintf(stderr, "DEBUG: accept_offer_tx: (%s) offer->hXferTx '%s'\n", strError.c_str(), accept->hXferTx.GetHex().c_str());
       return (SHERR_CANCELED);
     }
   }
@@ -850,7 +850,7 @@ return (SHERR_NOENT);
       return (SHERR_INVAL);
 
     BOOST_FOREACH(COfferAccept& accept, offer->accepts) {
-fprintf(stderr, "DEBUG: vecSend.insert/1: offer->accept.nPayValue = %f\n", ((double)accept.nPayValue/(double)COIN));
+//fprintf(stderr, "DEBUG: vecSend.insert/1: offer->accept.nPayValue = %f\n", ((double)accept.nPayValue/(double)COIN));
       int64 nValue = MAX(0, -1 * accept.nPayValue);
 
       /* output - send SHC to accept addr */
@@ -863,7 +863,7 @@ fprintf(stderr, "DEBUG: vecSend.insert/1: offer->accept.nPayValue = %f\n", ((dou
         destPubKey.SetDestination(destAddr.Get());
         vecSend.insert(vecSend.begin(), make_pair(destPubKey, nValue));
       }
-fprintf(stderr, "DEBUG: vecSend.insert/1: '%s' @ %f\n", destAddr.ToString().c_str(), ((double)nValue/(double)COIN));
+//fprintf(stderr, "DEBUG: vecSend.insert/1: '%s' @ %f\n", destAddr.ToString().c_str(), ((double)nValue/(double)COIN));
 
       nFeeValue -= nValue;
       
@@ -885,7 +885,7 @@ fprintf(stderr, "DEBUG: vecSend.insert/1: '%s' @ %f\n", destAddr.ToString().c_st
 
     /* offer sending alt */
     if (!offer->GetXferAddr(altIndex, payAddr, strPayAccount)) {
-      fprintf(stderr, "DEBUG: generate_offer_tx: !offer->GetXferAddr()\n"); 
+//fprintf(stderr, "DEBUG: generate_offer_tx: !offer->GetXferAddr()\n"); 
       return (SHERR_INVAL);
     }
 
@@ -895,7 +895,7 @@ fprintf(stderr, "DEBUG: vecSend.insert/1: '%s' @ %f\n", destAddr.ToString().c_st
     // bool ret = GetTransaction(altIface, hashTx, tx, NULL);
     int nTxOut = FindOfferTxOut(altIndex, hashTx, alt_wtxIn, payAddr);
     if (nTxOut < 0) {
-      fprintf(stderr, "DEBUG: generate_offer_tx: nTxOut 'tx %s' error (%d)\n", hashTx.GetHex().c_str(), nTxOut);
+//fprintf(stderr, "DEBUG: generate_offer_tx: nTxOut 'tx %s' error (%d)\n", hashTx.GetHex().c_str(), nTxOut);
       return (SHERR_INVAL);
     }
 
@@ -913,7 +913,7 @@ int calcFee;
       CScript destPubKey;
       destPubKey.SetDestination(destAddr.Get());
       vecSend.insert(vecSend.begin(), make_pair(destPubKey, nValue));
-fprintf(stderr, "DEBUG: vecSend.insert/2: '%s' @ %f\n", destAddr.ToString().c_str(), ((double)nValue/(double)COIN));
+//fprintf(stderr, "DEBUG: vecSend.insert/2: '%s' @ %f\n", destAddr.ToString().c_str(), ((double)nValue/(double)COIN));
 
       calcFee += nValue;
     }

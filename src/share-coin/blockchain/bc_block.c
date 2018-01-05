@@ -780,43 +780,26 @@ int bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, int data_len)
  */
 bc_t *GetBlockChain(CIface *iface)
 {
-  int err;
 
   if (!iface->bc_block) {
     char name[256];
 
     sprintf(name, "%s_block", iface->name);
-    err = bc_open(name, &iface->bc_block);
-#if 0
-if (err) {
-fprintf(stderr, "DEBUG: GetBlockChain: %d = bc_open(\"%s\")\n", err, name);
-return (NULL); /* DEBUG: */
-}
-#endif
+    (void)bc_open(name, &iface->bc_block);
   }
 
   return (iface->bc_block);
 }
 
 
-/**
- * Opens a specific database of block references. 
- */
 bc_t *GetBlockTxChain(CIface *iface)
 {
-  int err;
 
   if (!iface->bc_tx) {
     char name[256];
 
     sprintf(name, "%s_tx", iface->name);
-    err = bc_open(name, &iface->bc_tx);
-#if 0
-if (err) {
-fprintf(stderr, "DEBUG: GetBlockTxChain: %d = bc_open(\"%s\")\n", err, name);
-return (NULL); /* DEBUG: */
-}
-#endif
+    (void)bc_open(name, &iface->bc_tx);
   }
 
   return (iface->bc_tx);
@@ -826,7 +809,7 @@ bc_t *GetBlockCoinChain(CIface *iface)
 {
 
   if (!iface->bc_coin) {
-    char name[4096];
+    char name[256];
 
     sprintf(name, "%s_coin", iface->name);
     bc_open(name, &iface->bc_coin);

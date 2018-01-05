@@ -538,7 +538,6 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 {
   CIface *iface = GetCoinByIndex(block->ifaceIndex);
   CWallet *wallet = GetWallet(iface);
-  bc_t *bc = GetBlockTxChain(iface);
   int err;
 
   int64 nFees = 0;

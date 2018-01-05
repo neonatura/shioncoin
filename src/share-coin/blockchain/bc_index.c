@@ -99,6 +99,7 @@ static int _bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_po
   bc_hash_t t_hash;
   bc_idx_t *idx;
   bcsize_t len;
+  char errbuf[256];
   uint64_t pos;
   int pos_high;
   int tab_hash;
@@ -111,7 +112,7 @@ static int _bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_po
   if (ret_pos)
     *ret_pos = -1;
 
-  pos_high = -1;
+  pos_high = pos = -1;
   err = bc_table_get(bc, hash, &pos);
   if (err == SHERR_NOENT)
     return (SHERR_NOENT);
@@ -121,8 +122,11 @@ static int _bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_po
   }
 
   err = bc_idx_open(bc);
-  if (err)
+  if (err) {
+    sprintf(errbuf, "bc_idx_find: error opening database: %s [err %d].", sherrstr(err), err);
+    shcoind_log(errbuf);
     return (err);
+  }
 
   idx = (bc_idx_t *)bc->idx_map.raw;
 

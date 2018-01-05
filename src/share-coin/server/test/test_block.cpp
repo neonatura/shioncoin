@@ -723,10 +723,11 @@ void TESTBlock::InvalidChainFound(CBlockIndex* pindexNew)
       pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S",
         pindexNew->GetBlockTime()).c_str());
   CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE); 
-  fprintf(stderr, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", 
-GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(TEST_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
-    unet_log(TEST_COIN_IFACE, "InvalidChainFound: WARNING: Displayed transactions may not be correct!  You may need to upgrade, or other nodes may need to upgrade.\n");
+  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6) {
+    char errbuf[1024];
+    sprintf(errbuf, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(TEST_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
+    unet_log(TEST_COIN_IFACE, errbuf);
+  }
 }
 
 #ifdef USE_LEVELDB_TXDB
@@ -1512,7 +1513,6 @@ bool TESTBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     return false;
 
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  bc_t *bc = GetBlockTxChain(iface);
   unsigned int nFile = TEST_COIN_IFACE;
   unsigned int nBlockPos = pindex->nHeight;;
   bc_hash_t b_hash;
@@ -1590,7 +1590,7 @@ return false;
   if (pindex->pprev)
   {
     if (pindex->pprev->nHeight + 1 != pindex->nHeight) {
-      fprintf(stderr, "DEBUG: test_ConnectBlock: block-index for hash '%s' height changed from %d to %d.\n", pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight, (pindex->pprev->nHeight + 1));
+//fprintf(stderr, "DEBUG: test_ConnectBlock: block-index for hash '%s' height changed from %d to %d.\n", pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight, (pindex->pprev->nHeight + 1));
       pindex->nHeight = pindex->pprev->nHeight + 1;
     }
     timing_init("WriteBlock", &ts);

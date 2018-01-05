@@ -307,8 +307,7 @@ void EMC2Wallet::ReacceptWalletTransactions()
         // Reaccept any txes of ours that aren't already in a block
         if (!wtx.IsCoinBase()) {
           if (!wtx.AcceptWalletTransaction(txdb, false)) {
-
-            fprintf(stderr, "DEBUG: !wtx.AcceptWalletTransaction()\n");
+//fprintf(stderr, "DEBUG: !wtx.AcceptWalletTransaction()\n");
           }
         }
         //DEBUG: EraseFromWallet if dup

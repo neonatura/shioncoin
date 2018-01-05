@@ -83,7 +83,7 @@ static int usde_init(CIface *iface, void *_unused_)
   }
 
   if (!usde_LoadWallet()) {
-    fprintf(stderr, "error: usde_proto: unable to load wallet.\n");
+error(SHERR_INVAL, "usde_proto: unable to load wallet.\n");
     return (SHERR_INVAL);
   }
 
@@ -215,7 +215,7 @@ static int usde_block_templ(CIface *iface, CBlock **block_p)
 
   const CPubKey& pubkey = usde_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
-fprintf(stderr, "DEBUG: usde_block_templ: error obtaining main pubkey.\n");
+error(SHERR_INVAL, "usde_block_templ: error obtaining main pubkey.\n");
     return (NULL);
   }
 

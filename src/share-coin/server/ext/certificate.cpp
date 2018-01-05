@@ -1688,7 +1688,7 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
   CIdent& s_cert = (CIdent&)tx.certificate;
   ident = wtx.CreateIdent(&s_cert);
   if (!ident) {
-    fprintf(stderr, "DEBUG: init_ident_donate_tx: !ident\n");
+//fprintf(stderr, "DEBUG: init_ident_donate_tx: !ident\n");
     return (SHERR_INVAL);
   }
 
@@ -1729,7 +1729,7 @@ CTransaction *tx = (CTransaction *)&wtx;
   destPubKey.SetDestination(addrDest.Get());
   
   if (!SendMoneyWithExtTx(iface, wtx, t_wtx, destPubKey, vecSend, nMinValue)) { 
-    fprintf(stderr, "DEBUG: init_ident_donate_tx:: !SendMoneyWithExtTx()\n");
+//fprintf(stderr, "DEBUG: init_ident_donate_tx:: !SendMoneyWithExtTx()\n");
     return (SHERR_INVAL);
   }
 

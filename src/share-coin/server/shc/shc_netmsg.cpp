@@ -273,7 +273,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     // Each connection can only send one version message
     if (pfrom->nVersion != 0)
     {
-fprintf(stderr, "DEBUG: ProcessMessage: pfrom->nVersion (already) %d\n", pfrom->nVersion); 
+//fprintf(stderr, "DEBUG: ProcessMessage: pfrom->nVersion (already) %d\n", pfrom->nVersion); 
       pfrom->Misbehaving(1);
       return false;
     }
@@ -391,7 +391,7 @@ fprintf(stderr, "DEBUG: ProcessMessage: pfrom->nVersion (already) %d\n", pfrom->
 
   else if (pfrom->nVersion == 0)
   {
-fprintf(stderr, "DEBUG: ProcessMessage: Must have a version message before anything else\n");
+//fprintf(stderr, "DEBUG: ProcessMessage: Must have a version message before anything else\n");
     // Must have a version message before anything else
     pfrom->Misbehaving(1);
     return false;
@@ -657,7 +657,7 @@ fprintf(stderr, "DEBUG: ProcessMessage: Must have a version message before anyth
       {
         // When this block is requested, we'll send an inv that'll make them
         // getblocks the next batch of inventory.
-        fprintf(stderr, "DEBUG:  getblocks stopping at limit %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(0,20).c_str());
+//fprintf(stderr, "DEBUG:  getblocks stopping at limit %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(0,20).c_str());
         pfrom->hashContinue = pindex->GetBlockHash();
         break;
       }
@@ -689,7 +689,7 @@ fprintf(stderr, "DEBUG: ProcessMessage: Must have a version message before anyth
 
     vector<CBlockHeader> vHeaders;
     int nLimit = 2000;
-fprintf(stderr, "DEBUG: getheaders %d to %s\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(0,20).c_str());
+//fprintf(stderr, "DEBUG: getheaders %d to %s\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(0,20).c_str());
     for (; pindex; pindex = pindex->pnext)
     {
       vHeaders.push_back(pindex->GetBlockHeader());
@@ -1039,7 +1039,7 @@ bool shc_ProcessMessages(CIface *iface, CNode* pfrom)
       break;
     }
     if (pstart - vRecv.begin() > 0)
-      fprintf(stderr, "PROCESSMESSAGE SKIPPED %d BYTES\n", pstart - vRecv.begin());
+//fprintf(stderr, "PROCESSMESSAGE SKIPPED %d BYTES\n", pstart - vRecv.begin());
     vRecv.erase(vRecv.begin(), pstart);
 
     // Read header
@@ -1073,8 +1073,7 @@ bool shc_ProcessMessages(CIface *iface, CNode* pfrom)
     memcpy(&nChecksum, &hash, sizeof(nChecksum));
     if (nChecksum != hdr.nChecksum)
     {
-      fprintf(stderr, "DEBUG: ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n",
-          strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
+//fprintf(stderr, "DEBUG: ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
       continue;
     }
 

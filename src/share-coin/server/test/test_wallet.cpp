@@ -404,7 +404,7 @@ bool TESTWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
     nValue += s.second;
   }
   if (vecSend.empty() || nValue < 0) {
-fprintf(stderr, "DEBUG: CreateTransaction: zero outputs specified failure\n");
+//fprintf(stderr, "DEBUG: CreateTransaction: zero outputs specified failure\n");
     return false;
 }
 
@@ -430,7 +430,7 @@ fprintf(stderr, "DEBUG: CreateTransaction: zero outputs specified failure\n");
         set<pair<const CWalletTx*,unsigned int> > setCoins;
         int64 nValueIn = 0;
         if (!SelectCoins(nTotalValue, setCoins, nValueIn)) {
-fprintf(stderr, "DEBUG: CreateTransaction: !SelectCoins\n"); 
+//fprintf(stderr, "DEBUG: CreateTransaction: !SelectCoins\n"); 
           return false;
 }
         BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
@@ -604,7 +604,7 @@ bool TESTWallet::CreateAccountTransaction(string strFromAccount, const vector<pa
 
   wtxNew.strFromAccount = strFromAccount;
 
-fprintf(stderr, "DEBUG: TestWallet.CreateAccountTransaction()\n"); 
+//fprintf(stderr, "DEBUG: TestWallet.CreateAccountTransaction()\n"); 
 
   int64 nValue = 0;
   BOOST_FOREACH (const PAIRTYPE(CScript, int64)& s, vecSend)

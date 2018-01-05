@@ -38,5 +38,7 @@ int bc_idx_reset(bc_t *bc, bcsize_t pos, bc_idx_t *idx);
 
 int bc_idx_open(bc_t *bc);
 
+void bc_idx_close(bc_t *bc);
+
 
 #endif /* ndef __BLOCKCHAIN__BC_INDEX_H__  */

@@ -74,7 +74,6 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
-  bc_t *tx_bc = GetBlockTxChain(iface);
   CBlockIndex *pindexBest;
   CBlockIndex *lastIndex;
   SHCBlock block;
@@ -267,12 +266,12 @@ static bool shc_LoadBlockIndex()
     pindexBest = GetBestBlockIndex(iface);
     if (!pindexBest)
       return error(SHERR_INVAL, "SHCTxDB::LoadBlockIndex() : SHCBlock::hashBestChain not found in the block index");
-    fprintf(stderr, "DEBUG: LoadBlockIndex: falling back to highest block height %d\n", pindexBest->nHeight);
+//fprintf(stderr, "DEBUG: LoadBlockIndex: falling back to highest block height %d\n", pindexBest->nHeight);
     hashBestChain = pindexBest->GetBlockHash();
   }
 
   if (!pindexBest) {
-    fprintf(stderr, "DEBUG: SHCTxDB::LoadBlockIndex: error: hashBestChain '%s' not found in block index table\n", (hashBestChain).GetHex().c_str());
+//fprintf(stderr, "DEBUG: SHCTxDB::LoadBlockIndex: error: hashBestChain '%s' not found in block index table\n", (hashBestChain).GetHex().c_str());
   }
 
   SetBestBlockIndex(SHC_COIN_IFACE, pindexBest);
@@ -303,7 +302,7 @@ static bool shc_LoadBlockIndex()
       break;
     SHCBlock block;
     if (!block.ReadFromDisk(pindex)) {
-      fprintf(stderr, "DEBUG: SHCBlock::LoadBlockIndex() : block.ReadFromDisk failed");
+//fprintf(stderr, "DEBUG: SHCBlock::LoadBlockIndex() : block.ReadFromDisk failed");
       pindexFork = pindex->pprev;
       continue;
     }
@@ -326,7 +325,7 @@ static bool shc_LoadBlockIndex()
   if (pindexFork && !fRequestShutdown)
   {
     // Reorg back to the fork
-    fprintf(stderr, "DEBUG: LoadBlockIndex() : *** moving best chain pointer back to block %d '%s'\n", pindexFork->nHeight, pindexFork->GetBlockHash().GetHex().c_str());
+//fprintf(stderr, "DEBUG: LoadBlockIndex() : *** moving best chain pointer back to block %d '%s'\n", pindexFork->nHeight, pindexFork->GetBlockHash().GetHex().c_str());
     SHCBlock block;
     if (!block.ReadFromDisk(pindexFork))
       return error(SHERR_INVAL, "LoadBlockIndex() : block.ReadFromDisk failed");

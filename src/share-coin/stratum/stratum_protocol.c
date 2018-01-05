@@ -369,14 +369,14 @@ static int stratum_request_account_import(int ifaceIndex, user_t *user, char *ha
   return (err);
 }
 
-#if 0
-static int stratum_request_account_transactions(int ifaceIndex, user_t *user, int idx, char *account, char *pkey_str, int duration)
+static int stratum_request_account_tx(int ifaceIndex, user_t *user, char *account, char *pkey_str)
 {
   shjson_t *reply;
+  int idx = atoi(user->cur_id);
   int err;
 
   if (account) {
-    reply = stratum_json(getaccounttransactioninfo(ifaceIndex, account, pkey_str, duration));
+    reply = stratum_json(getaccounttransactioninfo(ifaceIndex, account, pkey_str));
     if (!reply)
       reply = stratum_json(stratum_error_get(idx));
   } else {
@@ -389,7 +389,6 @@ static int stratum_request_account_transactions(int ifaceIndex, user_t *user, in
 
   return (err);
 }
-#endif
 
 static int stratum_request_account_transfer(int ifaceIndex, user_t *user, char *account, char *pkey_str, char *dest, double amount)
 {
@@ -418,6 +417,72 @@ static int stratum_request_account_info(int ifaceIndex, user_t *user, char *acco
 
   if (account && pkey_str) {
     reply = stratum_json(stratum_getaccountinfo(ifaceIndex, account, pkey_str));
+    if (!reply)
+      reply = stratum_json(stratum_error_get(atoi(user->cur_id)));
+  } else {
+    reply = stratum_generic_error();
+  }
+
+  err = stratum_send_message(user, reply);
+  shjson_free(&reply);
+
+  return (err);
+}
+
+static int stratum_request_account_alias(int ifaceIndex, user_t *user, char *account, char *pkey_str, char *mode, char *alias_name, char *alias_addr)
+{
+  shjson_t *reply;
+  int err;
+
+  if (!alias_name) alias_name = "";
+  if (!alias_addr) alias_addr = "";
+
+  if (account && pkey_str) {
+    reply = stratum_json(stratum_accountalias(ifaceIndex, account, pkey_str, mode, alias_name, alias_addr));
+    if (!reply)
+      reply = stratum_json(stratum_error_get(atoi(user->cur_id)));
+  } else {
+    reply = stratum_generic_error();
+  }
+
+  err = stratum_send_message(user, reply);
+  shjson_free(&reply);
+
+  return (err);
+}
+
+static int stratum_request_account_context(int ifaceIndex, user_t *user, char *account, char *pkey_str, char *mode, char *ctx_name, char *ctx_value)
+{
+  shjson_t *reply;
+  int err;
+
+  if (!ctx_name) ctx_name = "";
+  if (!ctx_value) ctx_value = "";
+
+  if (account && pkey_str) {
+    reply = stratum_json(stratum_accountcontext(ifaceIndex, account, pkey_str, mode, ctx_name, ctx_value));
+    if (!reply)
+      reply = stratum_json(stratum_error_get(atoi(user->cur_id)));
+  } else {
+    reply = stratum_generic_error();
+  }
+
+  err = stratum_send_message(user, reply);
+  shjson_free(&reply);
+
+  return (err);
+}
+
+static int stratum_request_account_certificate(int ifaceIndex, user_t *user, char *account, char *pkey_str, char *mode, char *ctx_name, char *ctx_issuer, double ctx_fee)
+{
+  shjson_t *reply;
+  int err;
+
+  if (!ctx_name) ctx_name = "";
+  if (!ctx_issuer) ctx_issuer = "";
+
+  if (account && pkey_str) {
+    reply = stratum_json(stratum_accountcertificate(ifaceIndex, account, pkey_str, mode, ctx_name, ctx_issuer, ctx_fee));
     if (!reply)
       reply = stratum_json(stratum_error_get(atoi(user->cur_id)));
   } else {
@@ -905,28 +970,29 @@ int stratum_request_message(user_t *user, shjson_t *json)
       return (stratum_request_account_create(ifaceIndex, user,
             shjson_array_astr(json, "params", 0)));
     }
-  #if 0
-    if (0 == strcmp(method, "account.transactions")) {
-      return (stratum_request_account_transactions(ifaceIndex, user, idx, 
+    if (0 == strcmp(method, "account.tx")) {
+      return (stratum_request_account_tx(ifaceIndex, user,
             shjson_array_astr(json, "params", 0),
-            shjson_array_astr(json, "params", 1),
-            shjson_array_num(json, "params", 2)));
+            shjson_array_astr(json, "params", 1)));
     }
-  #endif
     if (0 == strcmp(method, "account.address")) {
       return (stratum_request_account_address(ifaceIndex, user,
             shjson_array_astr(json, "params", 0)));
     }
+#if 0
     if (0 == strcmp(method, "account.secret")) {
       return (stratum_request_account_secret(ifaceIndex, user,
             shjson_array_astr(json, "params", 0),
             shjson_array_astr(json, "params", 1)));
     }
+#endif
+#if 0
     if (0 == strcmp(method, "account.import")) {
       return (stratum_request_account_import(ifaceIndex, user,
             shjson_array_astr(json, "params", 0),
             shjson_array_astr(json, "params", 1)));
     }
+#endif
     if (0 == strcmp(method, "account.transfer")) {
       return (stratum_request_account_transfer(ifaceIndex, user,
             shjson_array_astr(json, "params", 0),
@@ -938,6 +1004,35 @@ int stratum_request_message(user_t *user, shjson_t *json)
       return (stratum_request_account_info(ifaceIndex, user,
             shjson_array_astr(json, "params", 0),
             shjson_array_astr(json, "params", 1)));
+    }
+    if (0 == strcmp(method, "account.alias")) {
+      return (stratum_request_account_alias(ifaceIndex, user,
+            shjson_array_astr(json, "params", 0),
+            shjson_array_astr(json, "params", 1),
+            shjson_array_astr(json, "params", 2),
+            shjson_array_astr(json, "params", 3),
+            shjson_array_astr(json, "params", 4)));
+    }
+    if (0 == strcmp(method, "account.context")) {
+      return (stratum_request_account_context(ifaceIndex, user,
+            shjson_array_astr(json, "params", 0),
+            shjson_array_astr(json, "params", 1),
+            shjson_array_astr(json, "params", 2),
+            shjson_array_astr(json, "params", 3),
+            shjson_array_astr(json, "params", 4)));
+    }
+    if (0 == strcmp(method, "account.certificate")) {
+      return (stratum_request_account_certificate(ifaceIndex, user,
+            shjson_array_astr(json, "params", 0),
+            shjson_array_astr(json, "params", 1),
+            shjson_array_astr(json, "params", 2), /* mode */
+            shjson_array_astr(json, "params", 3), /* title */
+            shjson_array_astr(json, "params", 4), /* issuer */
+            shjson_array_num(json, "params", 5))); /* fee */
+    }
+    if (0 == strcmp(method, "account.context")) {
+    }
+    if (0 == strcmp(method, "account.certificate")) {
     }
 
   #if 0

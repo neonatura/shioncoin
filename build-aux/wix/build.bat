@@ -13,7 +13,7 @@ copy /y %BUILD%\src\coin-console\.libs\shc.exe > nul
 move /y shcoind.exe %RELEASE% > nul
 move /y shc.exe %RELEASE% > nul
 
-%WIX%\candle -nologo share-coin.xml
-%WIX%\light -nologo share-coin.wixobj
+%WIX%\candle -nologo -ext "c:\Program Files (x86)\WiX Toolset v3.11\bin\WixUtilExtension.dll" share-coin.xml
+%WIX%\light -nologo -ext "c:\Program Files (x86)\WiX Toolset v3.11\bin\WixUtilExtension.dll" share-coin.wixobj
 move /y share-coin.msi %PKG%-%VER%.msi
 move /y %PKG%-%VER%.msi %RELEASE%

@@ -736,7 +736,7 @@ int ProcessExecGenerateTx(CIface *iface, CExec *execIn, CExecCall *exec)
   err = sexe_exec_pcall(S, method, json);
   shjson_free(&json);
   if (err) {
-fprintf(stderr, "DEBUG: ProcessExecGenerateTx: %d = sexe_exec_pcall('%s')\n", err, method);
+//fprintf(stderr, "DEBUG: ProcessExecGenerateTx: %d = sexe_exec_pcall('%s')\n", err, method);
 
 #if 0
 {
@@ -951,7 +951,7 @@ int init_exec_tx(CIface *iface, string strAccount, string strPath, int64 nExecFe
   int64 nFee = GetExecOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
-fprintf(stderr, "DEBUG: init_exec_tx: insufficient balance (%llu) .. %llu required\n", bal, nFee);
+//fprintf(stderr, "DEBUG: init_exec_tx: insufficient balance (%llu) .. %llu required\n", bal, nFee);
     return (SHERR_AGAIN);
   }
 
@@ -1035,11 +1035,11 @@ int update_exec_tx(CIface *iface, const uint160& hashExec, string strPath, CWall
   /* verify original exec */
   CTransaction tx;
   if (!GetTxOfExec(iface, hashExec, tx)) {
-fprintf(stderr, "DEBUG: update_exec_tx: !GetTxOfExec\n");
+//fprintf(stderr, "DEBUG: update_exec_tx: !GetTxOfExec\n");
     return (SHERR_NOENT);
 }
   if(!IsLocalExec(iface, tx)) {
-fprintf(stderr, "DEBUG: update_exec_tx: !IsLocalExec\n");
+//fprintf(stderr, "DEBUG: update_exec_tx: !IsLocalExec\n");
     return (SHERR_REMOTE);
 }
 
@@ -1108,7 +1108,7 @@ fprintf(stderr, "DEBUG: update_exec_tx: !IsLocalExec\n");
 
   vector<pair<CScript, int64> > vecSend;
   if (!SendMoneyWithExtTx(iface, wtxIn, wtx, scriptPubKey, vecSend)) {
-    fprintf(stderr, "DEBUG: update_exec_tx: !SendMoneyWithExtTx\n"); 
+//fprintf(stderr, "DEBUG: update_exec_tx: !SendMoneyWithExtTx\n"); 
     return (SHERR_INVAL);
   }
 
@@ -1138,7 +1138,7 @@ int generate_exec_tx(CIface *iface, string strAccount, uint160 hExec, string str
   int64 nFee = MAX(iface->min_tx_fee, execIn.GetFee() - iface->min_tx_fee);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < (nFee + (int64)iface->min_tx_fee)) {
-fprintf(stderr, "DEBUG: generate_exec_tx: insufficient balance (%llu) .. %llu required\n", bal, nFee);
+//fprintf(stderr, "DEBUG: generate_exec_tx: insufficient balance (%llu) .. %llu required\n", bal, nFee);
     return (SHERR_AGAIN);
   }
 
@@ -1244,12 +1244,12 @@ int remove_exec_tx(CIface *iface, const uint160& hashExec, CWalletTx& wtx)
   /* verify original exec */
   CTransaction tx;
   if (!GetTxOfExec(iface, hashExec, tx)) {
-    fprintf(stderr, "DEBUG: update_exec_tx: !GetTxOfExec\n");
+//fprintf(stderr, "DEBUG: update_exec_tx: !GetTxOfExec\n");
     return (SHERR_NOENT);
   }
 
   if(!IsLocalExec(iface, tx)) {
-    fprintf(stderr, "DEBUG: update_exec_tx: !IsLocalExec\n");
+//fprintf(stderr, "DEBUG: update_exec_tx: !IsLocalExec\n");
     return (SHERR_REMOTE);
   }
 

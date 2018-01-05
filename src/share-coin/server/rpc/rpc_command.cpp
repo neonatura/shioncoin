@@ -603,10 +603,14 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("txsubmit",  (int)iface->stat.tot_tx_submit));
   obj.push_back(Pair("txaccept",  (int)iface->stat.tot_tx_accept));
 
-  bc = GetBlockChain(iface);
-  obj.push_back(Pair("blockfmaps", (int)bc_fmap_total(bc)));
-  bc = GetBlockTxChain(iface); 
-  obj.push_back(Pair("txfmaps", (int)bc_fmap_total(bc)));
+  {
+    bc = GetBlockChain(iface);
+    obj.push_back(Pair("blockfmaps", (int)bc_fmap_total(bc)));
+  }
+  {
+    bc = GetBlockTxChain(iface); 
+    obj.push_back(Pair("txfmaps", (int)bc_fmap_total(bc)));
+  }
 
 #if 0
   /* transaction blockchain index cache */

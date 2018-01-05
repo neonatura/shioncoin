@@ -35,7 +35,7 @@
 #endif
 
 
-#define BC_MAP_BLOCK_SIZE 16384
+#define BC_MAP_BLOCK_SIZE 65536
 
 static int bc_iface_index(char *name)
 {
@@ -65,21 +65,25 @@ static int _bc_map_open(bc_t *bc, bc_map_t *map)
   }
 
   sprintf(path, "%s/%s.%s", bc_path_base(), bc_name(bc), map->ext);
+#ifdef WINDOWS
+  fd = open(path, O_RDWR | O_CREAT, 00777);
+#else
   fd = open(path, O_RDWR | O_CREAT, 00700);
+#endif
   if (fd == -1) {
-perror("bc_map_open [open]");
+    perror("bc_map_open [open]");
     return (-errno);
-}
+  }
 
   memset(&st, 0, sizeof(st));
   err = fstat(fd, &st);
   if (err) {
-perror("bc_map_open [fstat]");
+    //perror("bc_map_open [fstat]");
     close(fd);
     return (-errno);
-}
+  }
   if (!S_ISREG(st.st_mode)) {
-perror("bc_map_open [!reg]");
+    //perror("bc_map_open [!reg]");
     close(fd);
     return (SHERR_ISDIR);
   }
@@ -93,8 +97,8 @@ perror("bc_map_open [!reg]");
     st.st_size = BC_MAP_BLOCK_SIZE;
     err = ftruncate(fd, st.st_size);
     if (err) {
-      perror("bc_map_open [truncate]");
-    close(fd);
+      //perror("bc_map_open [truncate]");
+      close(fd);
       return (-errno);
     }
 
@@ -187,7 +191,11 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
       shcoind_log(errbuf);
       return (-errno);
     }
+
   }
+
+  /* quash cache */
+  fsync(map->fd);
 
   /* map disk to memory */
   raw = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, map->fd, 0); 

@@ -601,7 +601,7 @@ int stratum_sync_userlist_resp(user_t *user, shjson_t *tree)
       if ((r_user->flags & USER_SYNC))
         continue;
       if (r_user && !(r_user->flags & USER_REMOTE)) {
-fprintf(stderr, "DEBUG: stratum_sync_userlist_resp: skipping \"%s\" due to netid not being USER_REMOTE [found username \"%s\"]\n", worker, r_user->worker);
+//fprintf(stderr, "DEBUG: stratum_sync_userlist_resp: skipping \"%s\" due to netid not being USER_REMOTE [found username \"%s\"]\n", worker, r_user->worker);
         continue; /* already registered */
       }
     }
@@ -613,7 +613,7 @@ fprintf(stderr, "DEBUG: stratum_sync_userlist_resp: skipping \"%s\" due to netid
         shcoind_log(errbuf);
         return (SHERR_NOMEM);
       }
-fprintf(stderr, "DEBUG: stratum_sync_userlist_resp: creating new remote stratum user '%s'\n", worker); 
+//fprintf(stderr, "DEBUG: stratum_sync_userlist_resp: creating new remote stratum user '%s'\n", worker); 
 
       memcpy(&r_user->netid, &net_id, sizeof(user->netid));
       r_user->flags = USER_REMOTE; /* sync'd reward stats */
@@ -823,10 +823,10 @@ int stratum_sync_resp(user_t *user, shjson_t *tree)
     if (shjson_array_num(tree, "error", 0) != 0) {
       {
         char *text = shjson_print(tree); 
-        fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP_ELEVATE: %s\n", text); 
+//fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP_ELEVATE: %s\n", text); 
         free(text);
       }
-fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP_ELEVATE: detected error -- canceling wallet modes.\n");
+//fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP_ELEVATE: detected error -- canceling wallet modes.\n");
       /* remove wallet modes */
       user->sync_flags &= ~SYNC_WALLET_ADDR;
       user->sync_flags &= ~SYNC_WALLET_SET; 
@@ -870,7 +870,7 @@ fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP_ELEVATE: detected error -- 
     if (err) {
       { /* DEBUG: TEST: remove me*/
         char *text = shjson_print(tree); 
-fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP_WALLET_SET: %s\n", text); 
+//fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP_WALLET_SET: %s\n", text); 
         free(text);
       }
 
@@ -904,7 +904,7 @@ fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP_WALLET_SET: %s\n", text);
 
   { /* DEBUG: */
     char *text = shjson_print(tree); 
-fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP[unknown response]: %s\n", text); 
+//fprintf(stderr, "DEBUG: stratum_sync_resp: SYNC_RESP[unknown response]: %s\n", text); 
     free(text);
   }
 

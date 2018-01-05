@@ -99,7 +99,7 @@ const char *gettransactioninfo(int ifaceIndex, const char *hash);
 //const char *getlastblockinfo(int height);
 const char *getlastblockinfo(int ifaceIndex, int height);
 
-const char *getaccounttransactioninfo(int ifaceIndex, const char *account, const char *pkey_str, int duration);
+const char *getaccounttransactioninfo(int ifaceIndex, const char *account, const char *pkey_str);
 
 const char *stratum_getaddressinfo(int ifaceIndex, const char *addr_hash);
 
@@ -182,6 +182,12 @@ void stratum_listaddrkey(int ifaceIndex, char *account, shjson_t *obj);
 int stratum_getaddrkey(int ifaceIndex, char *account, char *pubkey, char *ret_pkey);
 
 int stratum_setdefaultkey(int ifaceIndex, char *account, char *pub_key);
+
+const char *stratum_accountalias(int ifaceIndex, char *account, char *pkey, char *mode, char *alias_name, char *alias_addr);
+
+const char *stratum_accountcontext(int ifaceIndex, char *account, char *pkey, char *mode, char *name, char *value);
+
+const char *stratum_accountcertificate(int ifaceIndex, char *account, char *pkey, char *mode, char *cert_name, char *cert_issuer, double fee);
 
 
 

@@ -83,7 +83,6 @@ bool usde_FillBlockIndex()
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(USDE_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
-  bc_t *tx_bc = GetBlockTxChain(iface);
   CBlockIndex *lastIndex;
   USDEBlock block;
   uint256 hash;
@@ -106,18 +105,18 @@ bool usde_FillBlockIndex()
     if (0 != bc_idx_get(bc, nHeight, NULL))
       break;
     if (!block.ReadBlock(nHeight)) {
-fprintf(stderr, "DEBUG: usde_FillBlockIndex: error reading block height %d in main chain.\n", nHeight);
+//fprintf(stderr, "DEBUG: usde_FillBlockIndex: error reading block height %d in main chain.\n", nHeight);
       break;
     }
     hash = block.GetHash();
 
     if (nHeight == 0) {
       if (hash != usde_hashGenesisBlock) {
-fprintf(stderr, "DEBUG: usde_FillBlockIndex: stopping at invalid genesis '%s' @ height %d\n", hash.GetHex().c_str(), nHeight);
+//fprintf(stderr, "DEBUG: usde_FillBlockIndex: stopping at invalid genesis '%s' @ height %d\n", hash.GetHex().c_str(), nHeight);
         break; /* invalid genesis */
       }
     } else if (blockIndex->count(block.hashPrevBlock) == 0) {
-fprintf(stderr, "DEBUG: usde_FillBlockIndex: stopping at orphan '%s' @ height %d\n", hash.GetHex().c_str(), nHeight);
+//fprintf(stderr, "DEBUG: usde_FillBlockIndex: stopping at orphan '%s' @ height %d\n", hash.GetHex().c_str(), nHeight);
       break;
     }
 
@@ -325,7 +324,7 @@ static bool usde_LoadBlockIndex()
   }
 
   if (!pindexBest) {
-    fprintf(stderr, "DEBUG: USDETxDB::LoadBlockIndex: error: hashBestChain '%s' not found in block index table\n", (hashBestChain).GetHex().c_str());
+//fprintf(stderr, "DEBUG: USDETxDB::LoadBlockIndex: error: hashBestChain '%s' not found in block index table\n", (hashBestChain).GetHex().c_str());
   }
 
   SetBestBlockIndex(USDE_COIN_IFACE, pindexBest);
@@ -517,8 +516,6 @@ bool usde_InitBlockIndex()
 bool usde_RestoreBlockIndex()
 {
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
-  bc_t *chain = GetBlockChain(iface);
-  bc_t *chain_tx = GetBlockTxChain(iface);
   bc_t *bc;
   char path[PATH_MAX+1];
   unsigned char *sBlockData;
@@ -557,8 +554,15 @@ fprintf(stderr, "DEBUG: usde_RestoreBlockIndex: erased current block-chain index
     return (false);
 
   /* reset hash-map tables */
+  bc_t *chain = GetBlockChain(iface);
+  bc_t *chain_tx = GetBlockTxChain(iface);
   bc_table_clear(chain);
   bc_table_clear(chain_tx);
+  {
+    bc_t *coin_chain = GetBlockCoinChain(iface);
+    bc_table_clear(coin_chain);
+  }
+
 
 #ifdef USE_LEVELDB_COINDB
   USDETxDB txdb;

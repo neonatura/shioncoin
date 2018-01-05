@@ -103,9 +103,11 @@ unet_table_t *t;
     shjson_t *json = shjson_init(json_str);
     unsigned long height = 0;
 
+#if 0
 if (!json) {
 fprintf(stderr, "DEBUG: stratum_http_request: NULL json for idx #%d: %s\n", idx, json_str);
 }
+#endif
 
     if (json)
       height = shjson_array_num(json, "result", 0);

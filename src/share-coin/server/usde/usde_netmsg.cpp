@@ -353,7 +353,7 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
     CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
     if (pindexBest) {
       InitServiceBlockEvent(USDE_COIN_IFACE, pfrom->nStartingHeight);
-fprintf(stderr, "DEBUG: USDE: (VER) requesting blocks up to height %d\n", pfrom->nStartingHeight);
+//fprintf(stderr, "DEBUG: USDE: (VER) requesting blocks up to height %d\n", pfrom->nStartingHeight);
     }
 
 
@@ -506,7 +506,7 @@ fprintf(stderr, "DEBUG: USDE: (VER) requesting blocks up to height %d\n", pfrom-
         pfrom->AskFor(inv);
       else if (inv.type == MSG_BLOCK && USDE_mapOrphanBlocks.count(inv.hash)) {
         CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
-if (pindexBest) fprintf(stderr, "DEBUG: inv.type == MSG_BLOCK, request blocks from height %d\n", pindexBest->nHeight);
+//if (pindexBest) fprintf(stderr, "DEBUG: inv.type == MSG_BLOCK, request blocks from height %d\n", pindexBest->nHeight);
         pfrom->PushGetBlocks(pindexBest, usde_GetOrphanRoot(USDE_mapOrphanBlocks[inv.hash]));
       } else if (nInv == nLastBlock) {
 
@@ -923,13 +923,13 @@ bool usde_ProcessMessages(CIface *iface, CNode* pfrom)
     {
       if ((int)vRecv.size() > nHeaderSize)
       {
-        fprintf(stderr, "DEBUG: USDE_PROCESSMESSAGE MESSAGESTART NOT FOUND\n");
+//fprintf(stderr, "DEBUG: USDE_PROCESSMESSAGE MESSAGESTART NOT FOUND\n");
         vRecv.erase(vRecv.begin(), vRecv.end() - nHeaderSize);
       }
       break;
     }
     if (pstart - vRecv.begin() > 0)
-      fprintf(stderr, "DEBUG: PROCESSMESSAGE SKIPPED %d BYTES\n\n", pstart - vRecv.begin());
+//fprintf(stderr, "DEBUG: PROCESSMESSAGE SKIPPED %d BYTES\n\n", pstart - vRecv.begin());
     vRecv.erase(vRecv.begin(), pstart);
 
     // Read header
@@ -938,7 +938,7 @@ bool usde_ProcessMessages(CIface *iface, CNode* pfrom)
     vRecv >> hdr;
     if (!hdr.IsValid())
     {
-      fprintf(stderr, "DEBUG: USDE: PROCESSMESSAGE: ERRORS IN HEADER %s\n", hdr.GetCommand().c_str());
+//fprintf(stderr, "DEBUG: USDE: PROCESSMESSAGE: ERRORS IN HEADER %s\n", hdr.GetCommand().c_str());
       continue;
     }
     string strCommand = hdr.GetCommand();
@@ -947,7 +947,7 @@ bool usde_ProcessMessages(CIface *iface, CNode* pfrom)
     unsigned int nMessageSize = hdr.nMessageSize;
     if (nMessageSize > MAX_SIZE)
     {
-      fprintf(stderr, "usde_ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
+//fprintf(stderr, "usde_ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
       continue;
     }
     if (nMessageSize > vRecv.size())
@@ -963,7 +963,7 @@ bool usde_ProcessMessages(CIface *iface, CNode* pfrom)
     memcpy(&nChecksum, &hash, sizeof(nChecksum));
     if (nChecksum != hdr.nChecksum)
     {
-      fprintf(stderr, "DEBUG: usde_ProcessMessages(%s, msg is %u bytes, buff is %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x buff nVersion=%u\n", strCommand.c_str(), nMessageSize, (unsigned int)vRecv.size(), nChecksum, hdr.nChecksum, (unsigned int)vRecv.nVersion);
+      error(SHERR_INVAL, "DEBUG: usde_ProcessMessages(%s, msg is %u bytes, buff is %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x buff nVersion=%u\n", strCommand.c_str(), nMessageSize, (unsigned int)vRecv.size(), nChecksum, hdr.nChecksum, (unsigned int)vRecv.nVersion);
       continue;
     }
 
@@ -988,7 +988,7 @@ bool usde_ProcessMessages(CIface *iface, CNode* pfrom)
       if (strstr(e.what(), "end of data"))
       {
         // Allow exceptions from underlength message on vRecv
-       fprintf(stderr, "DEBUG: USDE: ProcessMessages(%s, %u bytes) : Exception '%s' caught, normally caused by a message being shorter than its stated length [addr: %s] [recv-size: %d] [cmd: %s]", strCommand.c_str(), nMessageSize, e.what(), pfrom->addr.ToString().c_str(), (int)vRecv.size(), strCommand.c_str());
+//fprintf(stderr, "DEBUG: USDE: ProcessMessages(%s, %u bytes) : Exception '%s' caught, normally caused by a message being shorter than its stated length [addr: %s] [recv-size: %d] [cmd: %s]", strCommand.c_str(), nMessageSize, e.what(), pfrom->addr.ToString().c_str(), (int)vRecv.size(), strCommand.c_str());
       }
       else if (strstr(e.what(), "size too large"))
       {

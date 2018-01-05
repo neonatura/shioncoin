@@ -1,12 +1,12 @@
 Name:           share-coin
-Version:        2.28
-Release:        4%{?dist}
+Version:        3.01
+Release:        1%{?dist}
 Summary:        The share-coin virtual currency server.
 
 Group:          System Environment/Libraries
 License:        GPLv3+
 URL:            http://www.sharelib.net/
-Source0:        http://www.sharelib.net/release/share-coin-2.28.tar.gz
+Source0:        http://www.sharelib.net/release/share-coin-3.01.tar.gz
 
 #BuildRequires:  gcc
 #Requires:       info 
@@ -54,5 +54,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_docdir}/share-coin/shcoin_html.tar.gz
 
 %changelog
-* Sat Nov 26 2016 Neo Natura <support@neo-natura.com> - 2.28
+* Fri Jan 04 2018 Neo Natura <support@neo-natura.com> - 3.01
 - The RPM release version of this package.

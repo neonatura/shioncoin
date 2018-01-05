@@ -210,7 +210,7 @@ static int shc_block_templ(CIface *iface, CBlock **block_p)
 
   const CPubKey& pubkey = shc_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
-fprintf(stderr, "DEBUG: shc_block_templ: error obtaining main pubkey.\n");
+error(SHERR_INVAL, "shc_block_templ: error obtaining main pubkey.\n");
     return (NULL);
   }
 

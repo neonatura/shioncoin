@@ -1106,7 +1106,7 @@ void SHCBlock::InvalidChainFound(CBlockIndex* pindexNew)
 
   CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
 
-  fprintf(stderr, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(SHC_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
+//fprintf(stderr, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(SHC_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
   if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
     unet_log(SHC_COIN_IFACE, "InvalidChainFound: WARNING: Displayed transactions may not be correct!  You may need to upgrade, or other nodes may need to upgrade.\n");
 }
@@ -1121,7 +1121,7 @@ bool shc_SetBestChainInner(CBlock *block, CTxDB& txdb, CBlockIndex *pindexNew)
   // Adding to current best branch
   if (!block->ConnectBlock(txdb, pindexNew) || !txdb.WriteHashBestChain(hash))
   {
-fprintf(stderr, "DEBUG: SHCBlock::SetBestChainInner: error connecting block.\n");
+//fprintf(stderr, "DEBUG: SHCBlock::SetBestChainInner: error connecting block.\n");
 /* truncate block-chain to failed block height. */
 // bc_truncate(bc, pindexNew->nHeight);
     txdb.TxnAbort();
@@ -1862,7 +1862,6 @@ bool SHCBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     return false;
 
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-  bc_t *bc = GetBlockTxChain(iface);
   unsigned int nFile = SHC_COIN_IFACE;
   unsigned int nBlockPos = pindex->nHeight;;
   bc_hash_t b_hash;
@@ -1881,7 +1880,7 @@ bool SHCBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
       if (txdb.ReadTxIndex(hashTx, txindexOld)) {
         BOOST_FOREACH(CDiskTxPos &pos, txindexOld.vSpent)
           if (tx.IsSpentTx(pos)) {
-fprintf(stderr, "DEBUG: SHCBlock::ConnectBlock: null disk pos, ret false BIP30\n");
+//fprintf(stderr, "DEBUG: SHCBlock::ConnectBlock: null disk pos, ret false BIP30\n");
             return false;
           }
       }
@@ -1892,7 +1891,7 @@ fprintf(stderr, "DEBUG: SHCBlock::ConnectBlock: null disk pos, ret false BIP30\n
     if (!tx.IsCoinBase()) {
       bool fInvalid;
       if (!tx.FetchInputs(txdb, mapQueuedChanges, this, false, mapInputs, fInvalid)) {
-fprintf(stderr, "DEBUG: SHCBlock::ConnectBlock: shc_FetchInputs()\n"); 
+//fprintf(stderr, "DEBUG: SHCBlock::ConnectBlock: shc_FetchInputs()\n"); 
         return false;
       }
     }
@@ -1906,7 +1905,7 @@ fprintf(stderr, "DEBUG: SHCBlock::ConnectBlock: shc_FetchInputs()\n");
       nFees += tx.GetValueIn(mapInputs)-tx.GetValueOut();
 
       if (!shc_ConnectInputs(&tx, mapInputs, mapQueuedChanges, posThisTx, pindex, true, false)) {
-fprintf(stderr, "DEBUG: shc_ConnectInputs failure\n");
+//fprintf(stderr, "DEBUG: shc_ConnectInputs failure\n");
         return false;
       }
     }
@@ -1930,14 +1929,14 @@ return false;
 #endif
 
   if (vtx[0].GetValueOut() > shc_GetBlockValue(pindex->nHeight, nFees)) {
-fprintf(stderr, "DEBUG: SHCBlock::ConnectBlock: critical: coinbaseValueOut(%llu) > BlockValue(%llu) @ height %d [fee %llu]\n", (unsigned long long)vtx[0].GetValueOut(), (unsigned long long)shc_GetBlockValue(pindex->nHeight, nFees), pindex->nHeight, (unsigned long long)nFees); 
+//fprintf(stderr, "DEBUG: SHCBlock::ConnectBlock: critical: coinbaseValueOut(%llu) > BlockValue(%llu) @ height %d [fee %llu]\n", (unsigned long long)vtx[0].GetValueOut(), (unsigned long long)shc_GetBlockValue(pindex->nHeight, nFees), pindex->nHeight, (unsigned long long)nFees); 
     return false;
   }
 
   if (pindex->pprev)
   {
     if (pindex->pprev->nHeight + 1 != pindex->nHeight) {
-      fprintf(stderr, "DEBUG: shc_ConnectBlock: block-index for hash '%s' height changed from %d to %d.\n", pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight, (pindex->pprev->nHeight + 1));
+//fprintf(stderr, "DEBUG: shc_ConnectBlock: block-index for hash '%s' height changed from %d to %d.\n", pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight, (pindex->pprev->nHeight + 1));
       pindex->nHeight = pindex->pprev->nHeight + 1;
     }
     if (!WriteBlock(pindex->nHeight)) {

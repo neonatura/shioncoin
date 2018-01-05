@@ -168,10 +168,10 @@ const char *c_getblocktemplate(int ifaceIndex)
   try {
     pblock = CreateBlockTemplate(iface);
   } catch (std::exception& e) {
-fprintf(stderr, "DEBUG: c_getblocktemplate: CreateBlockTemplate: %s\n", e.what()); 
+    error(SHERR_INVAL, "c_getblocktemplate: CreateBlockTemplate: %s", e.what()); 
  }
   if (!pblock) {
-fprintf(stderr, "DEBUG: c_getblocktemplate: error creating block template\n"); 
+    error(SHERR_INVAL, "c_getblocktemplate: error creating block template."); 
     return (NULL);
 }
 
@@ -332,7 +332,7 @@ int c_processblock(CBlock* pblock)
 
   if (bestIndex->nHeight < iface->blockscan_max) {
     /* still downloading blocks. */
-fprintf(stderr, "DEBUG: processblock: still downloading blocks.. skipping submitted block.\n"); 
+//fprintf(stderr, "DEBUG: processblock: still downloading blocks.. skipping submitted block.\n"); 
     return (0);
   }
 
