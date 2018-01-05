@@ -176,8 +176,7 @@ int main(int argc, char **argv, char **envp)
 				args++;
 				bRemove = TRUE;
 			}
-      else if (strcasecmp("debug", &argv[ii][1]) == 0 ||
-          strcasecmp("-debug", &argv[ii][1]) == 0 ||
+      else if (
           strcasecmp("nf", &argv[ii][1]) == 0 ||
           strcasecmp("-no-fork", &argv[ii][1]) == 0)
 			{
@@ -432,7 +431,7 @@ static void SrvUsage(void)
 #if 0
 	printf("%s --install	Install the service\n", SrvProgName);
 	printf("%s --remove	Remove the service\n", SrvProgName);
-	printf("%s --debug 	Run as a command-line app\n", SrvProgName);
+	printf("%s --no-fork 	Run as a command-line app\n", SrvProgName);
 #endif
 
 #if defined(SRV_USAGE_FUNCTION)

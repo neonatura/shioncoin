@@ -598,14 +598,19 @@ fprintf(stderr, "DEBUG: usde_RestoreBlockIndex: erased current block-chain index
       /* write tx ref's */
       BOOST_FOREACH(CTransaction& tx, block.vtx) {
         tx.WriteTx(USDE_COIN_IFACE, height);
+      }
 
-#ifdef USE_LEVELDB_COINDB
-        nBlockPos = nTxPos = -1;
-        (void)bc_idx_find(chain, hash.GetRaw(), NULL, &nBlockPos);
-        (void)bc_idx_find(chain_tx, tx.GetHash().GetRaw(), NULL, &nTxPos);
-        CDiskTxPos posThisTx(USDE_COIN_IFACE, nBlockPos, nTxPos);
-        txdb.AddTxIndex(tx, posThisTx, height);
-#endif
+      /* mark spent coins */
+      BOOST_FOREACH(CTransaction& tx, block.vtx) {
+        if (tx.IsCoinBase())
+          continue;
+
+        const uint256& tx_hash = tx.GetHash();
+        BOOST_FOREACH(const CTxIn& in, tx.vin) {
+          CTransaction in_tx;
+          if (GetTransaction(iface, in.prevout.hash, in_tx, NULL))
+            in_tx.WriteCoins(USDE_COIN_IFACE, in.prevout.n, tx_hash);
+        }
       }
 
     }

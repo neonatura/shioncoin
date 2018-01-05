@@ -35,7 +35,11 @@
 #endif
 
 
+#ifdef WINDOWS
 #define BC_MAP_BLOCK_SIZE 65536
+#else
+#define BC_MAP_BLOCK_SIZE 16384
+#endif
 
 static int bc_iface_index(char *name)
 {
@@ -194,8 +198,9 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
     }
   }
 
-  /* quash cache */
-  fsync(map->fd);
+#ifdef WINDOWS
+  fsync(map->fd); /* quash cache */
+#endif
 
   /* map disk to memory */
   raw = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, map->fd, 0); 

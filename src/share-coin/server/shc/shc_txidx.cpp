@@ -658,6 +658,7 @@ fprintf(stderr, "DEBUG: shc_RestoreBlockIndex: erased current block-chain index 
       BOOST_FOREACH(CTransaction& tx, block.vtx) {
         tx.WriteTx(SHC_COIN_IFACE, height);
 
+#if 0
 #ifdef USE_LEVELDB_COINDB
         nBlockPos = nTxPos = -1;
         (void)bc_idx_find(chain, hash.GetRaw(), NULL, &nBlockPos);
@@ -667,6 +668,20 @@ fprintf(stderr, "DEBUG: shc_RestoreBlockIndex: erased current block-chain index 
 #else
         EraseTxCoins(iface, tx.GetHash());
 #endif
+#endif
+      }
+
+      /* mark spent coins */
+      BOOST_FOREACH(CTransaction& tx, block.vtx) {
+        if (tx.IsCoinBase())
+          continue;
+
+        const uint256& tx_hash = tx.GetHash();
+        BOOST_FOREACH(const CTxIn& in, tx.vin) {
+          CTransaction in_tx;
+          if (GetTransaction(iface, in.prevout.hash, in_tx, NULL))
+            in_tx.WriteCoins(SHC_COIN_IFACE, in.prevout.n, tx_hash);
+        }
       }
     }
     Debug("shc_RestoreBlocKIndex: database rebuilt -- wrote %d blocks", height);

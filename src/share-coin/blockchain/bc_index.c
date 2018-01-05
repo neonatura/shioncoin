@@ -25,7 +25,6 @@
 
 #include "shcoind.h"
 
-#define BC_INDEX_PAGE_SIZE 8096
 
 #ifdef linux
 #include <stdio.h>
@@ -112,7 +111,8 @@ static int _bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_po
   if (ret_pos)
     *ret_pos = -1;
 
-  pos_high = pos = -1;
+  pos = 0;
+  pos_high = -1;
   err = bc_table_get(bc, hash, &pos);
   if (err == SHERR_NOENT)
     return (SHERR_NOENT);

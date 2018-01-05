@@ -33,6 +33,7 @@ shbuf_t *server_msg_buff;
 shtime_t server_start_t;
 
 static int opt_no_fork;
+static int opt_restore;
 
 extern bc_t *GetBlockChain(CIface *iface);
 extern void opt_print(void);
@@ -212,15 +213,18 @@ int shcoind_main(int argc, char *argv[])
       }
     } else if (0 == strcmp(argv[i], "--shc-rebuild-chain")) {
       opt_bool_set(OPT_SHC_BACKUP_RESTORE, TRUE);
+      opt_restore = TRUE;
     } else if (0 == strcmp(argv[i], "--usde-rebuild-chain")) {
       opt_bool_set(OPT_USDE_BACKUP_RESTORE, TRUE);
+      opt_restore = TRUE;
     } else if (0 == strcmp(argv[i], "--emc2-rebuild-chain")) {
       opt_bool_set(OPT_EMC2_BACKUP_RESTORE, TRUE);
+      opt_restore = TRUE;
     }
   }
 
 #ifndef WINDOWS
-  if (!opt_no_fork)
+  if (!opt_no_fork && !opt_restore)
     daemon(0, 1);
 #endif
 
@@ -243,9 +247,7 @@ int shcoind_main(int argc, char *argv[])
   shapp_listen(TX_SESSION, server_peer);
   shapp_listen(TX_BOND, server_peer);
 
-  if (opt_bool(OPT_SHC_BACKUP_RESTORE) ||
-      opt_bool(OPT_USDE_BACKUP_RESTORE) ||
-      opt_bool(OPT_EMC2_BACKUP_RESTORE)) {
+  if (opt_restore) {
     unlink_chain();
   }
 
@@ -283,9 +285,7 @@ int shcoind_main(int argc, char *argv[])
     bc_chain_idle();
   }
 
-  if (opt_bool(OPT_SHC_BACKUP_RESTORE) ||
-      opt_bool(OPT_USDE_BACKUP_RESTORE) ||
-      opt_bool(OPT_EMC2_BACKUP_RESTORE)) {
+  if (opt_restore) {
     printf ("The block-chain has been restored.");
     server_shutdown();
     TERM_SECP256K1();

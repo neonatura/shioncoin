@@ -25,14 +25,10 @@
 
 #include "shcoind.h"
 
-#define BC_INDEX_PAGE_SIZE 8096
 
 #ifdef linux
 #include <stdio.h>
 #endif
-
-
-
 
 
 int bc_table_hash(bc_hash_t hash)
