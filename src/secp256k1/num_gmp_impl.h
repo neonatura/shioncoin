@@ -237,7 +237,7 @@ static void secp256k1_num_sub(secp256k1_num *r, const secp256k1_num *a, const se
 }
 
 #ifndef HAVE_MPN_COPYI
-static void mpn_copyi(mp_ptr rp, mp_srcptr up, mp_size_t n)
+static void _mpn_copyi(mp_ptr rp, mp_srcptr up, mp_size_t n)
 {
   mp_size_t i;
 
@@ -246,6 +246,8 @@ static void mpn_copyi(mp_ptr rp, mp_srcptr up, mp_size_t n)
   for (i = -n; i != 0; i++)
     rp[i] = up[i];
 }
+#else
+#define _mpn_copyi mpn_copyi
 #endif
 
 static void secp256k1_num_mul(secp256k1_num *r, const secp256k1_num *a, const secp256k1_num *b) {
@@ -270,7 +272,7 @@ static void secp256k1_num_mul(secp256k1_num *r, const secp256k1_num *a, const se
         r->limbs--;
     }
     VERIFY_CHECK(r->limbs <= 2*NUM_LIMBS);
-    mpn_copyi(r->data, tmp, r->limbs);
+    _mpn_copyi(r->data, tmp, r->limbs);
     r->neg = a->neg ^ b->neg;
     memset(tmp, 0, sizeof(tmp));
 }
