@@ -112,6 +112,8 @@ const char *stratum_create_account(int ifaceIndex, const char *acc_name);
 
 const char *stratum_create_transaction(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount);
 
+const char *stratum_verify_transaction(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount);
+
 const char *stratum_getaccountinfo(int ifaceIndex, const char *account, const char *pkey_str);
 
 const char *stratum_error_get(int req_id);

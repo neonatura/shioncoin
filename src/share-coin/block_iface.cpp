@@ -916,7 +916,31 @@ static CBlockIndex *findTransaction(int ifaceIndex, uint256 hashTx, CTransaction
 
 
 
+const char *c_gettransactioninfo(int ifaceIndex, const char *tx_id)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CTransaction tx;
+  Object result;
+  uint256 hashBlock;
+  uint256 hashTx;
 
+  if (!iface || !iface->enabled)
+    return (NULL);
+
+  hashTx.SetHex(tx_id);
+  if (!GetTransaction(iface, hashTx, tx, &hashBlock))
+    return (NULL);
+
+  result = tx.ToValue(ifaceIndex);
+  result.push_back(Pair("blockhash", hashBlock.GetHex()));
+  result.push_back(Pair("amount", ValueFromAmount(tx.GetValueOut())));
+  if (!tx.IsCoinBase())
+    result.push_back(Pair("fee", ValueFromAmount(GetTxFee(ifaceIndex, tx))));
+
+  transactioninfo_json = JSONRPCReply(result, Value::null, Value::null);
+  return (transactioninfo_json.c_str());
+}
+#if 0
 #define MAX_HISTORY_TIME 10454400 /* 1/3 year */
 const char *c_gettransactioninfo(int ifaceIndex, const char *tx_id)
 {
@@ -940,20 +964,6 @@ const char *c_gettransactioninfo(int ifaceIndex, const char *tx_id)
     return (NULL);
 
   hashTx = tx.GetHash();
-#if 0
-//  pblockindex = transactionMap[hashTx]; /* check tx map */
-  if (!pblockindex) {
-    pblockindex = findTransaction(ifaceIndex, hashTx, tx);
-    if (!pblockindex)
-      return (NULL);
-
-    hashTx = tx.GetHash();
-  } else {
-    err = findBlockTransaction(pblockindex, tx_id, tx, MAX_HISTORY_TIME);
-    if (err)
-      return (NULL);
-  }
-#endif
 
   hashBlock = 0;
   if (pblockindex)
@@ -1002,6 +1012,9 @@ const char *c_gettransactioninfo(int ifaceIndex, const char *tx_id)
   }
   result.push_back(Pair("vin", vin));
 
+  vector<uint256> vOuts;
+  tx.ReadCoins(ifaceIndex, vOuts);
+
   Array vout;
   for (unsigned int i = 0; i < tx.vout.size(); i++)
   {
@@ -1010,6 +1023,10 @@ const char *c_gettransactioninfo(int ifaceIndex, const char *tx_id)
     out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
     out.push_back(Pair("n", (boost::int64_t)i));
     ScriptPubKeyToJSON(ifaceIndex, txout.scriptPubKey, out);
+
+    if (i < vOuts.size() && !vOuts[i].IsNull())
+      out.push_back(Pair("spent-tx", vOuts[i].GetHex()));
+
     vout.push_back(out);
   }
   result.push_back(Pair("vout", vout));
@@ -1017,6 +1034,7 @@ const char *c_gettransactioninfo(int ifaceIndex, const char *tx_id)
   transactioninfo_json = JSONRPCReply(result, Value::null, Value::null);
   return (transactioninfo_json.c_str());
 }
+#endif
 #if 0
 const char *c_gettransactioninfo(const char *tx_id)
 {

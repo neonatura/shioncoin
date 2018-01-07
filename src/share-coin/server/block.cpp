@@ -1937,6 +1937,7 @@ Object CTransaction::ToValue(int ifaceIndex)
 {
   Object obj = CTransactionCore::ToValue(ifaceIndex);
 
+  /* primary identification */
   obj.push_back(Pair("txid", GetHash().GetHex()));
   obj.push_back(Pair("hash", GetWitnessHash().GetHex()));
 
@@ -1953,11 +1954,7 @@ Object CTransaction::ToValue(int ifaceIndex)
     } else {
       in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
       in.push_back(Pair("vout", (boost::int64_t)txin.prevout.n));
-      Object o;
-      o.push_back(Pair("asm", txin.scriptSig.ToString()));
-//      o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
-      in.push_back(Pair("scriptSig", o));
-
+      in.push_back(Pair("scriptSig", txin.scriptSig.ToString()));
     }   
 
     /* segwit */

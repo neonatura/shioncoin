@@ -31,6 +31,7 @@
 #include "util.h"
 #include "ui_interface.h"
 #include "rpc_proto.h"
+#include "txcreator.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -317,6 +318,8 @@ int c_LoadPeers(void)
 
 CCoinAddr GetNewAddress(CWallet *wallet, string strAccount)
 {
+
+#if 0
   if (!wallet->IsLocked())
     wallet->TopUpKeyPool();
 
@@ -326,10 +329,11 @@ CCoinAddr GetNewAddress(CWallet *wallet, string strAccount)
     throw JSONRPCError(-12, "Error: Keypool ran out, please call keypoolrefill first");
   }
   CKeyID keyID = newKey.GetID();
-
   wallet->SetAddressBookName(keyID, strAccount);
-
   return CCoinAddr(keyID);
+#endif
+
+  return GetAccountAddress(wallet, strAccount, true);
 }
 
 string getnewaddr_str;
@@ -444,9 +448,9 @@ static const char *cpp_stratum_walletkeylist(int ifaceIndex, const char *acc_nam
 static string AccountFromString(const string strAccount)
 {
     if (strAccount == "*")
-      throw JSONRPCError(-11, "Invalid account name");
+      return ("");
     if (strAccount.length() > 0 && strAccount.at(0) == '@')
-      throw JSONRPCError(-11, "Invalid account name");
+      return ("");
 
     return strAccount;
 }
@@ -595,6 +599,8 @@ static Value account_context_list(int ifaceIndex, char *account, int max_context
   ret.push_back(Pair("total", (int)list->size()));
 
   strAccount = AccountFromString(strAccount);
+  if (strAccount == "")
+    return (Value::null);
 
   /* get set of pub keys assigned to extended account. */
   string strExtAccount = "@" + strAccount;
@@ -646,7 +652,7 @@ static Value account_context_get(int ifaceIndex, char *account, char *ctx_name)
   uint160 hContext(ctxNameStr);
   ctx = GetContextByHash(iface, hContext, tx);
   if (!ctx) {
-    throw JSONRPCError(-5, string("unknown context hash"));
+    return (Value::null);//throw JSONRPCError(-5, string("unknown context hash"));
   }
 
   Object obj = ctx->ToValue();
@@ -790,7 +796,6 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
   wtx.mapValue["comment"] = strComment;
   string strError = pwalletMain->SendMoneyToDestination(address.Get(), nAmount, wtx);
   if (strError != "") {
-//fprintf(stderr, "DEBUG: '%s' = SendMoneyTo: amount %d\n", strError.c_str(), (int)nAmount);
     //throw JSONRPCError(-4, strError);
     return (-4);
   }
@@ -974,14 +979,12 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
   }
 
   if (dAmount <= 0.0 || dAmount > 84000000.0) {
-    //fprintf(stderr, "DEBUG: invalid amount (%f)\n", dAmount);
     //throw JSONRPCError(-3, "Invalid amount");
     return (-3);
   }
 
   nAmount = roundint64(dAmount * COIN);
   if (!MoneyRange(ifaceIndex, nAmount)) {
-    //fprintf(stderr, "DEBUG: invalid amount: !MoneyRange(%d)\n", (int)nAmount);
     //throw JSONRPCError(-3, "Invalid amount");
     return (-3);
   }
@@ -989,14 +992,12 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
 
   nBalance  = GetAccountBalance(ifaceIndex, walletdb, strMainAccount, nMinConfirmDepth);
   if (nAmount > nBalance) {
-    //fprintf(stderr, "DEBUG: account has insufficient funds\n");
     //throw JSONRPCError(-6, "Account has insufficient funds");
     return (-6);
   }
 
   //address = GetAddressByAccount(accountName);
   if (!address.IsValid()) {
-    //fprintf(stderr, "DEBUG: invalid usde address destination\n");
     //throw JSONRPCError(-5, "Invalid usde address");
     return (-5);
   }
@@ -1006,7 +1007,6 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
   wtx.mapValue["comment"] = strComment;
   string strError = pwalletMain->SendMoneyToDestination(address.Get(), nAmount, wtx);
   if (strError != "") {
-    //fprintf(stderr, "DEBUG: '%s' = SendMoneyTo: amount %d\n", strError.c_str(), (int)nAmount);
     return (-4);
   }
 
@@ -1269,6 +1269,8 @@ static const char *json_stratum_create_account(int ifaceIndex, const char *acc_n
   return (createaccount_json.c_str());
 }
 
+char *transferaccount_json;
+#if 0
 /**
  * Creates an coin transaction for a single user account. 
  * @note charges 0.1 coins per each transaction to "bank" account.
@@ -1290,7 +1292,8 @@ static const char *c_stratum_account_transfer(int ifaceIndex, char *account, cha
   uint256 in_pkey;
   int nMinDepth;
   int64 nBalance;
-  int64 nFee = COIN / 10;
+  int64 nFee = 0;
+  //int64 nFee = COIN / 10;
   int64 nTxFee = 0;
 
   try {
@@ -1325,19 +1328,24 @@ static const char *c_stratum_account_transfer(int ifaceIndex, char *account, cha
     bool bankAddressFound = false;
     CScript scriptPubKey;
 
+#if 0
     /* send fee to main account */
     CCoinAddr bankAddress = GetAddressByAccount(pwalletMain, "", bankAddressFound);
     if (!bankAddressFound || !bankAddress.IsValid()) {
       nFee = 0;
     }
+#endif
 
     wtx.strFromAccount = strAccount;
-    wtx.mapValue["comment"] = "sharelib.net";
+    //wtx.mapValue["comment"] = "sharelib.net";
+    wtx.mapValue["comment"] = "";
+#if 0
     /* bank */
     if (nFee) {
       scriptPubKey.SetDestination(bankAddress.Get());
       vecSend.push_back(make_pair(scriptPubKey, nFee));
     }
+#endif
     /* user */
     string strError;
     scriptPubKey.SetDestination(dest_address.Get());
@@ -1363,6 +1371,375 @@ static const char *c_stratum_account_transfer(int ifaceIndex, char *account, cha
   transferaccount_json = JSONRPCReply(result, Value::null, Value::null);
   return (transferaccount_json.c_str());
 }
+#endif
+static const char *c_stratum_account_transfer(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(iface);
+  string strAccount(account);
+  const int nMinDepth = 1;
+  int64 nFee = 0;
+  int64 nSent;
+  int64 nValue;
+  int nBytes;
+  int nInputs;
+
+  if (!iface || !wallet || !iface->enabled) {
+    return (NULL); //throw JSONRPCError(STERR_INVAL, "invalid coin service");
+  }
+
+  string strDestAddress(dest);
+
+  std::vector<unsigned char> vchTemp;
+  DecodeBase58Check(strDestAddress, vchTemp);
+  if (vchTemp.empty()) {
+    return (NULL);//throw JSONRPCError(STERR_INVAL, "invalid coin address");
+  }
+
+  CCoinAddr address(strDestAddress);
+  if (!address.IsValid()) {
+    return (NULL);//throw JSONRPCError(STERR_INVAL, "invalid coin address");
+  }
+  if (address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex)) {
+    return (NULL);//throw JSONRPCError(-5, "Invalid address for coin service.");
+  }
+
+  uint256 in_pkey = 0;
+  in_pkey.SetHex(pkey_str);
+  if (!valid_pkey_hash(strAccount, in_pkey)) {
+    return (NULL);//throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified.");
+  }
+
+  int64 nAmount = roundint64(amount * COIN);
+  if (!MoneyRange(ifaceIndex, nAmount) || nAmount <= nFee) {
+    return (NULL);//throw JSONRPCError(STERR_INVAL_AMOUNT, "Invalid coin amount.");
+  }
+
+  int64 nBalance = GetAccountBalance(ifaceIndex, strAccount, nMinDepth);
+  if (nAmount > nBalance)
+    return (NULL);//throw JSONRPCError(-6, "Account has insufficient funds");
+
+  /* init batch tx creator */
+  CScript scriptPub;
+  scriptPub.SetDestination(address.Get());
+  CTxBatchCreator b_tx(wallet, strAccount, scriptPub, nAmount); 
+
+  if (!b_tx.Generate()) {
+    string strError = b_tx.GetError();
+    if (strError == "")
+      strError = "An unknown error occurred while generating the transactions.";
+    return (NULL);//throw JSONRPCError(-6, strError);
+  } 
+
+  if (!b_tx.Send()) {
+    return (NULL);
+  }
+
+  int64 nValueOut = 0;
+  int64 nChangeOut = 0;
+  int64 nValueIn = 0;
+  int64 nTxSize = 0;
+  int nInputTotal = 0;
+  int64 nSigTotal = 0;
+
+  vector<CWalletTx>& tx_list = b_tx.GetTxList();
+
+  tx_cache inputs;
+  BOOST_FOREACH(CWalletTx& wtx, tx_list) {
+    nInputTotal += wtx.vin.size();
+    nSigTotal += wtx.GetLegacySigOpCount();
+
+    wallet->FillInputs(wtx, inputs);
+    nTxSize += wallet->GetVirtualTransactionSize(wtx);
+  }
+  BOOST_FOREACH(CWalletTx& wtx, tx_list) {
+    BOOST_FOREACH(const CTxIn& txin, wtx.vin) {
+      CTxOut out;
+      if (!wtx.GetOutputFor(txin, inputs, out)) {
+        continue;
+      }
+
+      nValueIn += out.nValue;
+    }
+  }
+
+  BOOST_FOREACH(CWalletTx& wtx, tx_list) {
+    BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
+      if (txout.scriptPubKey == scriptPub) {
+        nValueOut += txout.nValue;
+      } else {
+        nChangeOut += txout.nValue;
+      }
+    }
+  }
+
+  /* calculate fee & new projected balance */
+  nFee = nValueIn - nValueOut - nChangeOut;
+  nBalance = MAX(0, nBalance - (nValueOut + nFee));
+
+  Object ret;
+  ret.push_back(Pair("fee", ValueFromAmount(nFee)));
+  ret.push_back(Pair("input-value", ValueFromAmount(nValueIn)));
+  ret.push_back(Pair("total-tx", (int)tx_list.size()));
+  ret.push_back(Pair("total-inputs", (int)nInputTotal));
+  ret.push_back(Pair("total-sigops", (int)nSigTotal));
+  ret.push_back(Pair("total-size", (int)nTxSize));
+
+  Object ret_out;
+  ret_out.push_back(Pair("account", strAccount));
+  ret_out.push_back(Pair("balance", ValueFromAmount(nBalance)));
+  ret_out.push_back(Pair("output-value", ValueFromAmount(nValueOut)));
+  ret_out.push_back(Pair("change-value", ValueFromAmount(nChangeOut)));
+  ret_out.push_back(Pair("target-value", ValueFromAmount(nAmount)));
+  ret.push_back(Pair("out", ret_out));
+
+  Array ar;
+  BOOST_FOREACH(CWalletTx& wtx, tx_list) {
+    ar.push_back(wtx.GetHash().GetHex());
+  }
+  ret.push_back(Pair("tx", ar));
+
+  if (transferaccount_json)
+    free(transferaccount_json);
+  string strJson = JSONRPCReply(ret, Value::null, Value::null);
+  transferaccount_json = strdup(strJson.c_str());
+  return ((const char *)transferaccount_json);
+}
+
+char *verifytransferaccount_json;
+#if 0
+static const char *c_stratum_account_verify_transfer(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount)
+{
+  CWallet *pwalletMain = GetWallet(ifaceIndex);
+  CWalletDB walletdb(pwalletMain->strWalletFile);
+  string strAccount(account);
+  string strDestAddress(dest);
+  CWalletTx wtx;
+  int64 nAmount;
+  string strAddress;
+  CKeyID keyID;
+  CSecret vchSecret;
+  bool fCompressed;
+  uint256 acc_pkey;
+  uint256 in_pkey;
+  int nMinDepth;
+  int64 nBalance;
+  int64 nFee = 0;
+  //int64 nFee = COIN / 10;
+  int64 nTxFee = 0;
+
+  if (!pwalletMain) {
+    throw JSONRPCError(STERR_INVAL, "invalid coin service");
+  }
+
+  try {
+    in_pkey = 0;
+    nMinDepth = 1;
+
+#if 0
+    if (pwalletMain->IsLocked()) {
+      throw JSONRPCError(STERR_ACCESS_NOKEY, "Account transactions are not currently available.");
+    }
+#endif
+
+    CCoinAddr dest_address(strDestAddress);
+    if (!dest_address.IsValid()) {
+      throw JSONRPCError(STERR_INVAL, "invalid coin address");
+    }
+
+    in_pkey.SetHex(pkey_str);
+    if (!valid_pkey_hash(strAccount, in_pkey)) {
+      throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified.");
+    }
+
+    nAmount = roundint64(amount * COIN);
+    if (!MoneyRange(ifaceIndex, nAmount) || nAmount <= nFee) {
+      throw JSONRPCError(STERR_INVAL_AMOUNT, "Invalid coin amount.");
+    }
+
+    nBalance = GetAccountBalance(ifaceIndex, walletdb, strAccount, nMinDepth);
+    if (nAmount > nBalance) {
+      throw JSONRPCError(STERR_FUND_UNAVAIL, "Account has insufficient funds.");
+    }
+
+    vector<pair<CScript, int64> > vecSend;
+    bool bankAddressFound = false;
+    CScript scriptPubKey;
+
+#if 0
+    /* send fee to main account */
+    CCoinAddr bankAddress = GetAddressByAccount(pwalletMain, "", bankAddressFound);
+    if (!bankAddressFound || !bankAddress.IsValid()) {
+      nFee = 0;
+    }
+#endif
+
+    wtx.strFromAccount = strAccount;
+    //wtx.mapValue["comment"] = "sharelib.net";
+    wtx.mapValue["comment"] = "";
+#if 0
+    /* bank */
+    if (nFee) {
+      scriptPubKey.SetDestination(bankAddress.Get());
+      vecSend.push_back(make_pair(scriptPubKey, nFee));
+    }
+#endif
+    /* user */
+    string strError;
+    scriptPubKey.SetDestination(dest_address.Get());
+    vecSend.push_back(make_pair(scriptPubKey, nAmount - nFee));
+    if (!pwalletMain->CreateAccountTransaction(strAccount, vecSend, wtx, strError, nTxFee)) {
+      if (nAmount + nTxFee > pwalletMain->GetBalance()) {
+        throw JSONRPCError(STERR_FUND_UNAVAIL, "Insufficient funds for transaction.");
+      }
+      throw JSONRPCError(STERR_ACCESS_UNAVAIL, "Transaction creation failure.");
+    }
+  } catch(Object& objError) {
+    SetStratumError(objError);
+    return (NULL);
+  }
+
+  Object result;
+  result.push_back(Pair("txid", wtx.GetHash().GetHex()));
+  result.push_back(Pair("fee", ValueFromAmount(nFee + nTxFee)));
+  result.push_back(Pair("amount", ValueFromAmount(nAmount - nFee - nTxFee)));
+  verifytransferaccount_json = JSONRPCReply(result, Value::null, Value::null);
+  return (verifytransferaccount_json.c_str());
+}
+#endif
+static const char *c_stratum_account_verify_transfer(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(iface);
+  string strAccount(account);
+  const int nMinDepth = 1;
+  int64 nFee = 0;
+  int64 nSent;
+  int64 nValue;
+  int nBytes;
+  int nInputs;
+
+  if (!iface || !wallet || !iface->enabled) {
+    return (NULL); //throw JSONRPCError(STERR_INVAL, "invalid coin service");
+  }
+
+  string strDestAddress(dest);
+
+  std::vector<unsigned char> vchTemp;
+  DecodeBase58Check(strDestAddress, vchTemp);
+  if (vchTemp.empty()) {
+    return (NULL);//throw JSONRPCError(STERR_INVAL, "invalid coin address");
+  }
+
+  CCoinAddr address(strDestAddress);
+  if (!address.IsValid()) {
+    return (NULL);//throw JSONRPCError(STERR_INVAL, "invalid coin address");
+  }
+  if (address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex)) {
+    return (NULL);//throw JSONRPCError(-5, "Invalid address for coin service.");
+  }
+
+  uint256 in_pkey = 0;
+  in_pkey.SetHex(pkey_str);
+  if (!valid_pkey_hash(strAccount, in_pkey)) {
+    return (NULL);//throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified.");
+  }
+
+  int64 nAmount = roundint64(amount * COIN);
+  if (!MoneyRange(ifaceIndex, nAmount) || nAmount <= nFee) {
+    return (NULL);//throw JSONRPCError(STERR_INVAL_AMOUNT, "Invalid coin amount.");
+  }
+
+  int64 nBalance = GetAccountBalance(ifaceIndex, strAccount, nMinDepth);
+  if (nAmount > nBalance)
+    return (NULL);//throw JSONRPCError(-6, "Account has insufficient funds");
+
+  /* init batch tx creator */
+  CScript scriptPub;
+  scriptPub.SetDestination(address.Get());
+  CTxBatchCreator b_tx(wallet, strAccount, scriptPub, nAmount); 
+
+  if (!b_tx.Generate()) {
+    string strError = b_tx.GetError();
+    if (strError == "")
+      strError = "An unknown error occurred while generating the transactions.";
+    return (NULL);//throw JSONRPCError(-6, strError);
+  } 
+
+  /* suppress Send() for verification.. */
+
+  int64 nValueOut = 0;
+  int64 nChangeOut = 0;
+  int64 nValueIn = 0;
+  int64 nTxSize = 0;
+  int nInputTotal = 0;
+  int64 nSigTotal = 0;
+
+  vector<CWalletTx>& tx_list = b_tx.GetTxList();
+
+  tx_cache inputs;
+  BOOST_FOREACH(CWalletTx& wtx, tx_list) {
+    nInputTotal += wtx.vin.size();
+    nSigTotal += wtx.GetLegacySigOpCount();
+
+    wallet->FillInputs(wtx, inputs);
+    nTxSize += wallet->GetVirtualTransactionSize(wtx);
+  }
+  BOOST_FOREACH(CWalletTx& wtx, tx_list) {
+    BOOST_FOREACH(const CTxIn& txin, wtx.vin) {
+      CTxOut out;
+      if (!wtx.GetOutputFor(txin, inputs, out)) {
+        continue;
+      }
+
+      nValueIn += out.nValue;
+    }
+  }
+
+  BOOST_FOREACH(CWalletTx& wtx, tx_list) {
+    BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
+      if (txout.scriptPubKey == scriptPub) {
+        nValueOut += txout.nValue;
+      } else {
+        nChangeOut += txout.nValue;
+      }
+    }
+  }
+
+  /* calculate fee & new projected balance */
+  nFee = nValueIn - nValueOut - nChangeOut;
+  nBalance = MAX(0, nBalance - (nValueOut + nFee));
+
+  Object ret;
+  ret.push_back(Pair("fee", ValueFromAmount(nFee)));
+  ret.push_back(Pair("input-value", ValueFromAmount(nValueIn)));
+  ret.push_back(Pair("total-tx", (int)tx_list.size()));
+  ret.push_back(Pair("total-inputs", (int)nInputTotal));
+  ret.push_back(Pair("total-sigops", (int)nSigTotal));
+  ret.push_back(Pair("total-size", (int)nTxSize));
+
+  Object ret_out;
+  ret_out.push_back(Pair("account", strAccount));
+  ret_out.push_back(Pair("balance", ValueFromAmount(nBalance)));
+  ret_out.push_back(Pair("output-value", ValueFromAmount(nValueOut)));
+  ret_out.push_back(Pair("change-value", ValueFromAmount(nChangeOut)));
+  ret_out.push_back(Pair("target-value", ValueFromAmount(nAmount)));
+  ret.push_back(Pair("out", ret_out));
+
+#if 0
+  Array ar;
+  BOOST_FOREACH(CWalletTx& wtx, tx_list) {
+    ar.push_back(wtx.ToValue(ifaceIndex));    
+  }
+  ret.push_back(Pair("tx", ar));
+#endif
+
+  if (verifytransferaccount_json)
+    free(verifytransferaccount_json);
+  string strJson = JSONRPCReply(ret, Value::null, Value::null);
+  verifytransferaccount_json = strdup(strJson.c_str());
+  return ((const char *)verifytransferaccount_json);
+}
 
 string accountinfo_json;
 static const char *c_stratum_account_info(int ifaceIndex, const char *acc_name, const char *pkey_str)
@@ -1380,7 +1757,7 @@ static const char *c_stratum_account_info(int ifaceIndex, const char *acc_name, 
 
   try {
     if (strAccount == "" || strAccount == "*") {
-      throw JSONRPCError(STERR_INVAL_PARAM, "The account name specified is invalid.");
+      return (NULL);//throw JSONRPCError(STERR_INVAL_PARAM, "The account name specified is invalid.");
     }
 
     if (pkey_str) {
@@ -1388,7 +1765,7 @@ static const char *c_stratum_account_info(int ifaceIndex, const char *acc_name, 
 
       in_pkey.SetHex(pkey_str);
       if (!valid_pkey_hash(strAccount, in_pkey)) {
-        throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified for account.");
+        return (NULL);//throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified for account.");
       }
     }
 
@@ -1445,7 +1822,7 @@ static const char *json_stratum_account_import(int ifaceIndex, const char *acc_n
   try {
     ok = vchSecret.SetString(strSecret);
     if (!ok) {
-      throw JSONRPCError(STERR_INVAL, "Invalid private key specified.");
+      return (NULL);//throw JSONRPCError(STERR_INVAL, "Invalid private key specified.");
     }
 
     CKey key;
@@ -1455,7 +1832,7 @@ static const char *json_stratum_account_import(int ifaceIndex, const char *acc_n
     vchAddress = key.GetPubKey().GetID();
 
     if (VerifyLocalAddress(pwalletMain, vchAddress)) {
-      throw JSONRPCError(STERR_INVAL_PARAM, "Address already registered to local account.");
+      return (NULL);//throw JSONRPCError(STERR_INVAL_PARAM, "Address already registered to local account.");
     }
 
     {
@@ -1612,6 +1989,13 @@ const char *stratum_create_transaction(int ifaceIndex, char *account, char *pkey
   return (c_stratum_account_transfer(ifaceIndex, account, pkey_str, dest, amount));
 }
 
+const char *stratum_verify_transaction(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount)
+{
+  if (!account || !pkey_str || !dest)
+    return (NULL);
+  return (c_stratum_account_verify_transfer(ifaceIndex, account, pkey_str, dest, amount));
+}
+
 const char *stratum_getaccountinfo(int ifaceIndex, const char *account, const char *pkey_str)
 {
   if (!account)
@@ -1727,16 +2111,16 @@ void stratum_listaddrkey(int ifaceIndex, char *account, shjson_t *obj)
 
     const CCoinAddr& address = CCoinAddr(ifaceIndex, entry.first);
     if (!address.IsValid())
-      throw JSONRPCError(-5, "Invalid address");
+      continue;
 
     CKeyID keyID;
     if (!address.GetKeyID(keyID))
-      throw JSONRPCError(-3, "Address does not refer to a key");
+      continue;
 
     CSecret vchSecret;
     bool fCompressed;
     if (!wallet->GetSecret(keyID, vchSecret, fCompressed))
-      throw JSONRPCError(-4,"Private key for address is not known");
+      continue;
 
     string priv_str = CCoinSecret(ifaceIndex, vchSecret, fCompressed).ToString();
     shjson_str_add(obj, NULL, (char *)priv_str.c_str());
@@ -1771,7 +2155,7 @@ int stratum_getaddrkey(int ifaceIndex, char *account, char *pubkey, char *ret_pk
 
     const CCoinAddr& address = CCoinAddr(ifaceIndex, entry.first);
     if (!address.IsValid())
-      throw JSONRPCError(-5, "Invalid address");
+      continue;
 
     string addrStr = address.ToString();
     if (pubkey) {

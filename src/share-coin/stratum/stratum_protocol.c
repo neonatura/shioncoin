@@ -409,6 +409,25 @@ static int stratum_request_account_transfer(int ifaceIndex, user_t *user, char *
 
   return (err);
 }
+static int stratum_request_account_verify_transfer(int ifaceIndex, user_t *user, char *account, char *pkey_str, char *dest, double amount)
+{
+  shjson_t *reply;
+  const char *json_data = "{\"result\":null,\"error\":null}";
+  int err;
+
+  if (account && pkey_str && dest) {
+    reply = stratum_json(stratum_verify_transaction(ifaceIndex, account, pkey_str, dest, amount));
+    if (!reply)
+      reply = stratum_json(stratum_error_get(atoi(user->cur_id)));
+  } else {
+    reply = stratum_generic_error();
+  }
+
+  err = stratum_send_message(user, reply);
+  shjson_free(&reply);
+
+  return (err);
+}
 
 static int stratum_request_account_info(int ifaceIndex, user_t *user, char *account, char *pkey_str)
 {
@@ -1000,6 +1019,13 @@ int stratum_request_message(user_t *user, shjson_t *json)
             shjson_array_astr(json, "params", 2),
             shjson_array_num(json, "params", 3)));
     }
+    if (0 == strcmp(method, "account.verify_transfer")) {
+      return (stratum_request_account_verify_transfer(ifaceIndex, user,
+            shjson_array_astr(json, "params", 0),
+            shjson_array_astr(json, "params", 1),
+            shjson_array_astr(json, "params", 2),
+            shjson_array_num(json, "params", 3)));
+    }
     if (0 == strcmp(method, "account.info")) {
       return (stratum_request_account_info(ifaceIndex, user,
             shjson_array_astr(json, "params", 0),
@@ -1029,10 +1055,6 @@ int stratum_request_message(user_t *user, shjson_t *json)
             shjson_array_astr(json, "params", 3), /* title */
             shjson_array_astr(json, "params", 4), /* issuer */
             shjson_array_num(json, "params", 5))); /* fee */
-    }
-    if (0 == strcmp(method, "account.context")) {
-    }
-    if (0 == strcmp(method, "account.certificate")) {
     }
 
   #if 0
