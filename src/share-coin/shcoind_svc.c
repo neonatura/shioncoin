@@ -1047,10 +1047,5 @@ static void change_core_directory(void)
   strcat(path, "database\\");
   mkdir(path, 0777);
 
-  /* quash stdin/stdout confusoin */
-  (void)open(".tmp-1", O_RDWR | O_CREAT, 0777);
-  (void)open(".tmp-2", O_RDWR | O_CREAT, 0777);
-  (void)open(".tmp-3", O_RDWR | O_CREAT, 0777);
-
 }
 

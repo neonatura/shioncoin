@@ -107,9 +107,7 @@ void usage_help(void)
       "\n"
       "Diagnostic Options:\n"
       "\t--debug\t\tLog verbose debugging information.\n"
-#ifndef WINDOWS
       "\t-nf\t\tRun daemon in foreground (no fork).\n"
-#endif
       "\t--shc-rebuild-chain\tRestore the backup SHC block-chain.\n"
 #ifdef USDE_SERVICE
       "\t--usde-rebuild-chain\tRestore the backup USDE block-chain.\n"
@@ -174,6 +172,13 @@ int shcoind_main(int argc, char *argv[])
   }
 
   server_start_t = shtime();
+
+#if WINDOWS 
+  /* quash stdin/stdout confusion for windows service. */
+  (void)open(".tmp-1", O_RDWR | O_CREAT, 0777);
+  (void)open(".tmp-2", O_RDWR | O_CREAT, 0777);
+  (void)open(".tmp-3", O_RDWR | O_CREAT, 0777);
+#endif
 
   /* initialize options */
   opt_init();

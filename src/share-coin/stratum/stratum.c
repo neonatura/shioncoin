@@ -219,13 +219,17 @@ static void stratum_timer(void)
       /* init */
       attr.flags |= TASKF_RESET;
     } else if (blk_iface && is_new) {
-      /* new block */
+      /* new block on a coin chain */
       attr.blk_stamp[blk_iface] = time(NULL);
+      if (blk_iface == attr.ifaceIndex) /* currently mining */
+        attr.flags |= TASKF_RESET;
+#if 0
       if (blk_iface == attr.ifaceIndex || /* currently mining */
           attr.mine_stamp[attr.ifaceIndex] <= attr.blk_stamp[blk_iface]) {
         /* safe to switch coin iface */
         attr.flags |= TASKF_RESET;
       }
+#endif
     }
 
 #if 0

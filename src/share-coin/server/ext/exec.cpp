@@ -944,6 +944,9 @@ bool CExec::SetAccount(int ifaceIndex, string& strAccount)
 
 int init_exec_tx(CIface *iface, string strAccount, string strPath, int64 nExecFee, CWalletTx& wtx)
 {
+#ifndef USE_SEXE
+  return (SHERR_OPNOTSUPP);
+#endif
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   CExec *exec;
@@ -1029,6 +1032,9 @@ cbuff data;
 /* prob should require removal of original first to update */
 int update_exec_tx(CIface *iface, const uint160& hashExec, string strPath, CWalletTx& wtx)
 {
+#ifndef USE_SEXE
+  return (SHERR_OPNOTSUPP);
+#endif
   int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(iface);
 
@@ -1124,6 +1130,9 @@ int update_exec_tx(CIface *iface, const uint160& hashExec, string strPath, CWall
  */
 int generate_exec_tx(CIface *iface, string strAccount, uint160 hExec, string strFunc, CWalletTx& wtx)
 {
+#ifndef USE_SEXE
+  return (SHERR_OPNOTSUPP);
+#endif
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   char buf[256];
@@ -1238,6 +1247,9 @@ int transfer_exec_tx(CIface *iface, uint160 hExec, string strAccount, CWalletTx&
  */
 int remove_exec_tx(CIface *iface, const uint160& hashExec, CWalletTx& wtx)
 {
+#ifndef USE_SEXE
+  return (SHERR_OPNOTSUPP);
+#endif
   int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(iface);
 

@@ -236,6 +236,7 @@ int stratum_validate_submit(user_t *user, shjson_t *json)
     /* user's block was accepted by network. */
     user->block_acc++;
     strncpy(user->block_hash, submit_hash, sizeof(user->block_hash) - 1);
+    user->block_height = (uint64_t)getblockheight(user->ifaceIndex) - 1;
   }
 
   return (0);

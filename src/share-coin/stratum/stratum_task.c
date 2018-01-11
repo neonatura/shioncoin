@@ -35,6 +35,8 @@
 #define MAX_SERVER_NONCE 4
 #define MAX_ROUND_TIME 600
 
+#define POST_BLOCK_TIME 15
+
 //static task_t *task_list;
 static user_t *sys_user;
 static int work_reset[MAX_COIN_IFACE];
@@ -823,6 +825,18 @@ void stratum_task_gen(task_attr_t *attr)
 
 
 
+static uint64_t stratum_user_max_height(void)
+{
+  user_t *user;
+  uint64_t ret_height = 0;
+
+  for (user = client_list; user; user = user->next) {
+    if (user->block_height > ret_height)
+      ret_height = user->block_height;
+  }
+
+  return (ret_height);
+}
 
 void stratum_task_weight(task_attr_t *attr)
 {
@@ -844,15 +858,24 @@ void stratum_task_weight(task_attr_t *attr)
     nHeight = getblockheight(idx); 
 
     if (attr->ifaceIndex != idx) {
-      /* primary - "how long we ago pool was mined" */
+      /* primary - "how long ago pool was mined" */
       weight += MAX(0.01, MIN(900, (double)(now - attr->mine_stamp[idx])));
     }
 
-    /* secondary - "how long was block accepted" */
+    /* secondary - "how long ago was block accepted" */
     weight += MAX(0.01, MIN(600, (double)(now - iface->net_valid)));
 
     /* trinary - "how difficult is next block" */
-    weight += MAX(0.01, MIN(300, dDiff / 10));
+    attr->avg_diff[idx] = (dDiff + (attr->avg_diff[idx] * 3)) / 4;
+    weight += MAX(0.01, MIN(300, attr->avg_diff[idx] / 10));
+
+    /* bonus - current mined coin post-submit period. */ 
+    if (attr->ifaceIndex == idx) {
+      if ((now - iface->net_valid) < POST_BLOCK_TIME) {
+        /* more weight based on blocks since last aquired block. */
+        weight += MAX(0.01, MIN(100, (double)(nHeight - stratum_user_max_height())));
+      }
+    }
 
     /* calculate running average */
     weight = MAX(0.001, weight);

@@ -51,7 +51,7 @@ using namespace std;
 using namespace boost;
 using namespace json_spirit;
 
-#define MAX_NONCE_SEQUENCE 16
+#define MAX_NONCE_SEQUENCE 24
 
 //std::map<uint256, CBlockIndex*> transactionMap;
 
@@ -412,9 +412,15 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
   }
 
   pblock = mapWork[workId];
+
   if (pblock->nNonce == nNonce) {
+    /* same as last nonce submitted */
     return (SHERR_ALREADY);
   }
+
+  CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
+  if (!iface || !iface->enabled)
+    return (SHERR_OPNOTSUPP); /* sanity */
 
   pblock->nTime = nTime;
   pblock->nNonce = nNonce;
@@ -422,7 +428,6 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
   SetExtraNonce(pblock, xn_hex);
   pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
-  timing_init("ProcessBlock/Nonce", &ts);
   hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
   for (idx = 0; idx < MAX_NONCE_SEQUENCE; idx++) {
     pblock->nNonce = nNonce + idx;
@@ -444,30 +449,31 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
       break;
     }
   }
-  timing_term(pblock->ifaceIndex, "ProcessBlock/Nonce", &ts);
 
   if (idx == MAX_NONCE_SEQUENCE) {
+    /* retain for dup check */
+    pblock->nNonce = nNonce;
+ 
 #if SUBMIT_ALT_BLOCK_CHAIN
     /* try nonce on alt coins */ 
     c_processaltblock(pblock->ifaceIndex, nNonce, xn_hex);
 #endif
   } else {
-    err = c_processblock(pblock);
-if (pblock->ifaceIndex == EMC2_COIN_IFACE) { Debug("DEBUG: (emc2) c_submitblock: %d = c_processblock()\n", err); }
-    if (!err) {
-      string submit_block_hash;
-      char errbuf[1024];
+    char errbuf[1024];
 
-      submit_block_hash = pblock->GetHash().GetHex();
+    err = c_processblock(pblock);
+    if (!err) {
+      string submit_block_hash = pblock->GetHash().GetHex();
       if (ret_hash)
         strcpy(ret_hash, submit_block_hash.c_str());
 
-      sprintf(errbuf, "submitblock[iface #%d]: mined block (%s) generated %s coins.\n", pblock->ifaceIndex, submit_block_hash.c_str(), FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
+      sprintf(errbuf, "submitblock[iface #%d (%s)]: mined block (%s) generated %s coins.", pblock->ifaceIndex, iface->name, submit_block_hash.c_str(), FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
       shcoind_log(errbuf);
-      pblock->print();
+    } else {
+      shcoind_err(err, iface->name, "submit block");
     }
-
   }
+
   return (0);
 }
 

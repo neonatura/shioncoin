@@ -103,12 +103,6 @@ unet_table_t *t;
     shjson_t *json = shjson_init(json_str);
     unsigned long height = 0;
 
-#if 0
-if (!json) {
-fprintf(stderr, "DEBUG: stratum_http_request: NULL json for idx #%d: %s\n", idx, json_str);
-}
-#endif
-
     if (json)
       height = shjson_array_num(json, "result", 0);
 
@@ -154,11 +148,11 @@ fprintf(stderr, "DEBUG: stratum_http_request: NULL json for idx #%d: %s\n", idx,
     if (json) {
       sprintf(html,
           "<div style=\"float : left; margin-left : 16px; margin-right : 16px; font-size : 16px;\">%s</div>\r\n"
-          "<div style=\"float : left; margin-left : 16px;\">Block Height: %lu</div>\r\n"
-          "<div style=\"float : left; margin-left : 16px;\">Difficulty: %-4.4f</div>\r\n"
-          "<div style=\"float : left; margin-left : 16px;\">Global Speed: %-3.3fmh/s</div>\r\n"
-          "<div style=\"float : left; margin-left : 16px;\">Max Coins: %lu</div>\r\n"
-          "<div style=\"float : left; margin-left : 16px;\">Mined Coins: %-1.1f/sec</div>\r\n"
+          "<div style=\"float : left; margin-left : 16px; font-size : 12px;\">Block Height: %lu</div>\r\n"
+          "<div style=\"float : left; margin-left : 16px; font-size : 12px;\">Difficulty: %-4.4f</div>\r\n"
+          "<div style=\"float : left; margin-left : 16px; font-size : 12px;\">Global Speed: %-3.3fmh/s</div>\r\n"
+          "<div style=\"float : left; margin-left : 16px; font-size : 12px;\">Max Coins: %lu</div>\r\n"
+          "<div style=\"float : left; margin-left : 16px; font-size : 12px;\">Mined Coins: %-1.1f/sec</div>\r\n"
           "<div style=\"clear : both;\"></div>\r\n"
           "</div>\r\n"
           "<hr></hr>\r\n",
@@ -478,7 +472,7 @@ void stratum_http_block_html(int ifaceIndex, shbuf_t *buff)
 #if 0
   char mine[256];
 #endif
-  double rounds;
+  double shares;
   double speed;
   int i;
 
@@ -487,7 +481,7 @@ void stratum_http_block_html(int ifaceIndex, shbuf_t *buff)
       continue;
 
     for (i = 0; i < MAX_ROUNDS_PER_HOUR; i++) {
-      rounds += user->block_avg[i];
+      shares += user->block_avg[i];
     }
     speed = stratum_user_speed(user);
   }
@@ -500,19 +494,23 @@ void stratum_http_block_html(int ifaceIndex, shbuf_t *buff)
       strncpy(mine, mine_iface->name, sizeof(mine)-1);
   }
 #endif
+  shbuf_catstr(buff,
+      "<div style=\"float : right; margin-top : 8px; margin-right : 8px;\">\n");
+  sprintf(ret_html,
+      "<div style=\"margin-top : 4px; margin-right : 64px; float : right; font-size : 11px; width : 100px; background-color : #ddd;\">%-1.1f shares/sec</div>\n"
+      "<div style=\"margin-top : 4px; margin-right : 64px; float : right; font-size : 11px; width : 100px; background-color : #ddd;\">%-1.1f hashes/sec</div>\n"
+"</div><div style=\"clear : both;\"></div>"
 
+,
+      (shares/3600), (speed/3600));
+  shbuf_catstr(buff, ret_html);
+
+  if (ifaceIndex != SHC_COIN_IFACE)
+    return;
 
   shbuf_catstr(buff,
-      "<div style=\"float : right; height : 15px; transform : rotate(270deg);\"><span style=\"font-size : 11px; font-variant : small-caps;\">Validation Matrix</span></div>\n"
-      "<div style=\"float : right;\"><img id=\"validate_matrix_img\" name=\"validate_matrix_img\" src=\"/image/validate_matrix.bmp?span=1.0&x=128&y=128\" style=\"width : 256px; height : 256px; border : 0; padding : 0 0 0 0; margin : 0 0 0 0;\"></div>\n"
-      "<div style=\"clear : right; margin-top : 4px;\">\n");
-  sprintf(ret_html,
-//      "<div style=\"margin-top : 4px; margin-right : 32px; float : right; font-size : 11px; width : 90px; background-color : #ddd;\">mining: %s</div>\n"
-      "<div style=\"margin-top : 4px; margin-right : 32px; float : right; font-size : 11px; width : 90px; background-color : #ddd;\">%-1.1f shares/sec</div>\n"
-      "<div style=\"margin-top : 4px; margin-right : 32px; float : right; font-size : 11px; width : 90px; background-color : #ddd;\">%-1.1f hashes/sec</div>\n",
-//      mine,
- (rounds/3600), (speed/3600));
-  shbuf_catstr(buff, ret_html);
+      "<div style=\"float : right; height : 15px; transform : rotate(270deg); margin-top : 64px;\"><span style=\"font-size : 11px; font-variant : small-caps;\">Validation Matrix</span></div>\n"
+      "<div style=\"float : right;\"><img id=\"validate_matrix_img\" name=\"validate_matrix_img\" src=\"/image/validate_matrix.bmp?span=0.5&x=128&y=128\" style=\"width : 256px; height : 256px; border : 0; padding : 0 0 0 0; margin : 0 0 0 0;\"></div>\n");
 
 }
 
@@ -533,10 +531,12 @@ void stratum_http_main_html(unsigned int sk, char *url, shbuf_t *buff)
 
   shbuf_catstr(buff, "<div style=\"clear : both;\"></div>");
 
+  stratum_http_block_html(ifaceIndex, buff); 
+
   shbuf_catstr(buff, 
-      "<div style=\"width : 80%; margin-left : auto; margin-right : auto; font-size : 13px; width : 90%;\">" 
-      "<table cellspacing=1 style=\"width : 100%; linear-gradient(to bottom, #1e9957,#29d889,#20ca7c,#8de8b9); color : #666;\">"
-      "<tr style=\"background-color : lime; color : #999;\"><td>Worker</td><td>Speed</td><td>Shares</td><td>Blocks Submitted</td></tr>");
+      "<div style=\"margin-left : 64px; float : left; width : 60%; font-size : 13px;\">" 
+      "<table cellspacing=2 style=\"width : 100%; linear-gradient(to bottom, #1e9957,#29d889,#20ca7c,#8de8b9); color : #666;\">"
+      "<tr style=\"background-color : rgba(128,128,128,0.5); color : #eee;\"><td>Worker</td><td>Speed</td><td>Shares</td><td>Blocks Submitted</td></tr>");
   for (user = client_list; user; user = user->next) {
     if (!*user->worker)
       continue;
@@ -553,14 +553,7 @@ void stratum_http_main_html(unsigned int sk, char *url, shbuf_t *buff)
   shbuf_catstr(buff, "</table>\r\n");
 
 
-  stratum_http_block_html(ifaceIndex, buff); 
 
-#if 0
-  if (ifaceIndex == SHC_COIN_IFACE) {
-    /* attach image of the SHC validation matrix */
-    stratum_http_validate_img_html(buff);
-  }
-#endif
 
   shbuf_catstr(buff, "</div>\r\n");
   shbuf_catstr(buff, "</body></html>\r\n"); 

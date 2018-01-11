@@ -97,7 +97,9 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_aliastx);
   SUITE_ADD_TEST(suite, TEST_certtx);
   SUITE_ADD_TEST(suite, TEST_assettx);
+#ifndef USE_SEXE
   SUITE_ADD_TEST(suite, TEST_exectx);
+#endif
   SUITE_ADD_TEST(suite, TEST_ctxtx);
 //  SUITE_ADD_TEST(suite, TEST_channeltx);
 //  SUITE_ADD_TEST(suite, TEST_offertx);

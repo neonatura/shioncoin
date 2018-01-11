@@ -264,8 +264,6 @@ void stratum_user_block(user_t *user, double share_diff)
       user->speed[step] = (user->speed[step] + speed) / 2;
     }
 
-//  fprintf(stderr, "stratum_user_block: worker '%s' submitted diff %6.6f block with speed %fkh/s (avg %fkh/s) [%lu/x%d]\n", user->worker, diff, speed, stratum_user_speed(user), (unsigned long)user->block_tot, user->block_cnt);
-
     user->block_freq = (span + user->block_freq) / 2;
     if (user->block_freq < 1) { 
       if (user->work_diff < 16384)
@@ -278,7 +276,6 @@ void stratum_user_block(user_t *user, double share_diff)
   user->block_tm = cur_t;
 
 }
-
 
 int stratum_user_broadcast_task(task_t *task, task_attr_t *attr)
 {

@@ -76,7 +76,8 @@ typedef struct user_t
 {
   scrypt_peer peer;
 
-  /** last aquired usde block */
+  /** last aquired block by stratum user */
+  uint64_t block_height;
   char block_hash[256];
 
   char worker[128];
@@ -179,6 +180,7 @@ typedef struct task_t
 typedef struct task_attr_t
 {
   double weight[MAX_COIN_IFACE];
+  double avg_diff[MAX_COIN_IFACE];
   time_t blk_stamp[MAX_COIN_IFACE];
   time_t commit_stamp[MAX_COIN_IFACE];
   time_t mine_stamp[MAX_COIN_IFACE];
