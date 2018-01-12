@@ -392,213 +392,26 @@ static int64_t shc_GetTxWeight(const CTransaction& tx)
   return (weight);
 }
 
-
-#if 0
-CBlock* shc_CreateNewBlock(const CPubKey& rkey)
+static void shc_IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
-  CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-  CBlockIndex* pindexPrev = GetBestBlockIndex(iface);
-  bool fWitnessEnabled = false;
+  static uint256 hashPrevBlock;
 
-  if (!pindexPrev) {
-    shcoind_log("shc_CreateNewBlock: error: no Best Block Index established.");
-    return (NULL);
-  }
-
-  // Create new block
-  //auto_ptr<CBlock> pblock(new CBlock());
-  auto_ptr<SHCBlock> pblock(new SHCBlock());
-  if (!pblock.get())
-    return NULL;
-
-  fWitnessEnabled = IsWitnessEnabled(iface, pindexPrev);
-
-  // Create coinbase tx
-  CTransaction txNew;
-  txNew.vin.resize(1);
-  txNew.vin[0].prevout.SetNull();
-  txNew.vout.resize(1);
-  txNew.vout[0].scriptPubKey << rkey << OP_CHECKSIG;
-
-  // Add our coinbase tx as first transaction
-  pblock->vtx.push_back(txNew);
-
-  // Collect memory pool transactions into the block
-  int64 nFees = 0;
+  if (hashPrevBlock != pblock->hashPrevBlock)
   {
-    LOCK2(cs_main, SHCBlock::mempool.cs);
-
-    // Priority order to process transactions
-    list<SHCOrphan> vOrphan; // list memory doesn't move
-    map<uint256, vector<SHCOrphan*> > mapDependers;
-    multimap<double, CTransaction*> mapPriority;
-    for (map<uint256, CTransaction>::iterator mi = SHCBlock::mempool.mapTx.begin(); mi != SHCBlock::mempool.mapTx.end(); ++mi)
-    {
-      CTransaction& tx = (*mi).second;
-      if (tx.IsCoinBase() || !tx.IsFinal(SHC_COIN_IFACE))
-        continue;
-
-      if (!fWitnessEnabled && !tx.wit.IsNull()) {
-        /* cannot reference a witness-enabled tx from a non-witness block */
-        continue;
-      }
-
-      SHCOrphan* porphan = NULL;
-      double dPriority = 0;
-      BOOST_FOREACH(const CTxIn& txin, tx.vin)
-      {
-        // Read prev transaction
-        CTransaction txPrev;
-        if (!txPrev.ReadTx(SHC_COIN_IFACE, txin.prevout.hash)) {
-          // Has to wait for dependencies
-          if (!porphan)
-          {
-            // Use list for automatic deletion
-            vOrphan.push_back(SHCOrphan(&tx));
-            porphan = &vOrphan.back();
-          }
-          mapDependers[txin.prevout.hash].push_back(porphan);
-          porphan->setDependsOn.insert(txin.prevout.hash);
-          continue;
-        }
-if (txPrev.vout.size() <= txin.prevout.n) {
-fprintf(stderr, "DEBUG: shc_CreateNewBlock: txPrev.vout.size() %d <= txin.prevout.n %d [tx %s]\n", 
- txPrev.vout.size(),
- txin.prevout.n,
-txPrev.GetHash().GetHex().c_str());
-continue;
-}
-        int64 nValueIn = txPrev.vout[txin.prevout.n].nValue;
-
-        // Read block header
-        //int nConf = txindex.GetDepthInMainChain();
-        int nConf = GetTxDepthInMainChain(iface, txPrev.GetHash());
-
-        dPriority += (double)nValueIn * nConf;
-      }
-
-      // Priority is sum(valuein * age) / txsize
-      dPriority /= ::GetSerializeSize(tx, SER_NETWORK, SHC_PROTOCOL_VERSION);
-
-      if (porphan)
-        porphan->dPriority = dPriority;
-      else
-        mapPriority.insert(make_pair(-dPriority, &(*mi).second));
-    }
-
-    // Collect transactions into block
-    map<uint256, CTxIndex> mapTestPool;
-    uint64 nBlockSize = 1000;
-    uint64 nBlockTx = 0;
-    int nSigOpCost = 100;
-    int64_t nBlockWeight = 4000;
-    while (!mapPriority.empty())
-    {
-      // Take highest priority transaction off priority queue
-      double dPriority = -(*mapPriority.begin()).first;
-      CTransaction& tx = *(*mapPriority.begin()).second;
-      mapPriority.erase(mapPriority.begin());
-
-      int64_t nTxWeight = shc_GetTxWeight(tx);
-      if (nBlockWeight + nTxWeight > MAX_BLOCK_WEIGHT(iface))
-        continue; /* too many puppies */
-
-      // Size limits
-      unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, SHC_PROTOCOL_VERSION);
-
-      // Transaction fee required depends on block size
-      // shc: Reduce the exempted free transactions to 500 bytes (from Bitcoin's 3000 bytes)
-      CWallet *wallet = GetWallet(SHC_COIN_IFACE);
-      //bool fAllowFree = (nBlockSize + nTxSize < 1500 || wallet->AllowFree(dPriority));
-      //int64 nMinFee = tx.GetMinFee(nBlockSize, fAllowFree, GMF_BLOCK);
-
-      // Connecting shouldn't fail due to dependency on other memory pool transactions
-      // because we're already processing them in order of dependency
-      map<uint256, CTxIndex> mapTestPoolTmp(mapTestPool);
-      MapPrevTx mapInputs;
-      bool fInvalid;
-      {
-        SHCTxDB txdb;
-        bool ok;
-
-        ok = tx.FetchInputs(txdb, 
-            mapTestPoolTmp, NULL, true, mapInputs, fInvalid);
-        txdb.Close();
-        if (!ok)
-          continue;
-      }
-
-      int64 nMinFee = 0;
-      if (!wallet->AllowFree(wallet->GetPriority(tx, mapInputs)))
-        nMinFee = wallet->CalculateFee(tx);
-
-      int64 nTxFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
-      if (nTxFees < nMinFee)
-        continue;
-
-      /* restrict maximum sigops. */
-      int64_t nCost = tx.GetSigOpCost(mapInputs);
-      if (nCost > MAX_TX_SIGOP_COST(iface))
-        continue;
-      if (nSigOpCost + nCost > MAX_BLOCK_SIGOP_COST(iface))
-        continue;
-
-      if (!shc_ConnectInputs(&tx, mapInputs, mapTestPoolTmp, CDiskTxPos(0,0,0), pindexPrev, false, true))
-        continue;
-      mapTestPoolTmp[tx.GetHash()] = CTxIndex(CDiskTxPos(0,0,0), tx.vout.size());
-      swap(mapTestPool, mapTestPoolTmp);
-
-      // Added
-      pblock->vtx.push_back(tx);
-      nBlockSize += nTxSize;
-      nBlockWeight += nTxWeight;
-      ++nBlockTx;
-      nSigOpCost += nCost;
-      nFees += nTxFees;
-
-      // Add transactions that depend on this one to the priority queue
-      uint256 hash = tx.GetHash();
-      if (mapDependers.count(hash))
-      {
-        BOOST_FOREACH(SHCOrphan* porphan, mapDependers[hash])
-        {
-          if (!porphan->setDependsOn.empty())
-          {
-            porphan->setDependsOn.erase(hash);
-            if (porphan->setDependsOn.empty())
-              mapPriority.insert(make_pair(-porphan->dPriority, porphan->ptx));
-          }
-        }
-      }
-    }
+    nExtraNonce = 0;
+    hashPrevBlock = pblock->hashPrevBlock;
   }
 
-  /* established base reward for miners */
-  bool ret = false;
-  int64 reward = shc_GetBlockValue(pindexPrev->nHeight+1, nFees);
-  if (pblock->vtx.size() == 1)
-    ret = BlockGenerateValidateMatrix(iface, pblock->vtx[0], reward);
-  if (!ret)
-    ret = BlockGenerateSpringMatrix(iface, pblock->vtx[0], reward);
-  pblock->vtx[0].vout[0].nValue = reward; 
-
-  /* fill block header */
-  pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-  pblock->hashMerkleRoot = pblock->BuildMerkleTree();
-  pblock->UpdateTime(pindexPrev);
-  pblock->nBits          = pblock->GetNextWorkRequired(pindexPrev);
-  pblock->nNonce         = 0;
-
-  core_GenerateCoinbaseCommitment(iface, *pblock, pindexPrev);
-
-  return pblock.release();
+  ++nExtraNonce;
+  unsigned int nHeight = pindexPrev ? (pindexPrev->nHeight+1) : 0;
+  pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CScriptNum(nExtraNonce)) + SHC_COINBASE_FLAGS;
 }
-#endif
 
 CBlock* shc_CreateNewBlock(const CPubKey& rkey)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
+  unsigned int nExtraNonce = 0;
 
   auto_ptr<SHCBlock> pblock(new SHCBlock());
   if (!pblock.get())
@@ -637,6 +450,9 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
     ret = BlockGenerateSpringMatrix(iface, pblock->vtx[0], reward);
   pblock->vtx[0].vout[0].nValue = reward; 
 
+  /* fill coinbase signature (BIP34) */
+  shc_IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
+
   /* define core header */
   pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
   pblock->hashMerkleRoot = pblock->BuildMerkleTree();
@@ -645,7 +461,9 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
   pblock->nNonce         = 0;
 
   /* declare consensus attributes. */
-  //core_GenerateCoinbaseCommitment(iface, *pblock, pindexPrev);
+/* not needed yet.. 
+  core_GenerateCoinbaseCommitment(iface, pblock.get(), pindexPrev);
+*/
 
   return pblock.release();
 }

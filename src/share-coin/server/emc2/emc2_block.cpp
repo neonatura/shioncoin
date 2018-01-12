@@ -401,222 +401,27 @@ static int64_t emc2_GetTxWeight(const CTransaction& tx)
   return (weight);
 }
 
-#if 0
-CBlock* emc2_CreateNewBlock(const CPubKey& rkey)
+static void emc2_IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
-  CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
-  CBlockIndex* pindexPrev = GetBestBlockIndex(iface);
-  const int nHeight = GetBestHeight(iface);
-  bool fWitnessEnabled = false;
+  static uint256 hashPrevBlock;
 
-  // Create new block
-  //auto_ptr<CBlock> pblock(new CBlock());
-  auto_ptr<EMC2Block> pblock(new EMC2Block());
-  if (!pblock.get())
-    return NULL;
-
-  fWitnessEnabled = IsWitnessEnabled(iface, pindexPrev);
-
-  /* create emc2 coinbase tx */
-  CTransaction txNew;
-  txNew.vin.resize(1);
-  txNew.vin[0].prevout.SetNull();
-  txNew.vout.resize(2);
-  txNew.vout[0].scriptPubKey = EMC2_CHARITY_SCRIPT;
-  txNew.vout[1].scriptPubKey << rkey << OP_CHECKSIG;
-  txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
-
-  // Add our coinbase tx as first transaction
-  pblock->vtx.push_back(txNew);
-
-  // Collect memory pool transactions into the block
-  int64 nFees = 0;
+  if (hashPrevBlock != pblock->hashPrevBlock)
   {
-    LOCK2(cs_main, EMC2Block::mempool.cs);
-
-    // Priority order to process transactions
-    list<EMC2Orphan> vOrphan; // list memory doesn't move
-    map<uint256, vector<EMC2Orphan*> > mapDependers;
-    multimap<double, CTransaction*> mapPriority;
-    for (map<uint256, CTransaction>::iterator mi = EMC2Block::mempool.mapTx.begin(); mi != EMC2Block::mempool.mapTx.end(); ++mi)
-    {
-      CTransaction& tx = (*mi).second;
-      if (tx.IsCoinBase() || !tx.IsFinal(EMC2_COIN_IFACE))
-        continue;
-
-      if (!fWitnessEnabled && !tx.wit.IsNull()) {
-        /* cannot reference a witness-enabled tx from a non-witness block */
-        continue;
-      }
-
-      EMC2Orphan* porphan = NULL;
-      double dPriority = 0;
-      BOOST_FOREACH(const CTxIn& txin, tx.vin)
-      {
-        // Read prev transaction
-        CTransaction txPrev;
-        if (!txPrev.ReadTx(EMC2_COIN_IFACE, txin.prevout.hash)) {
-          // Has to wait for dependencies
-          if (!porphan)
-          {
-            // Use list for automatic deletion
-            vOrphan.push_back(EMC2Orphan(&tx));
-            porphan = &vOrphan.back();
-          }
-          mapDependers[txin.prevout.hash].push_back(porphan);
-          porphan->setDependsOn.insert(txin.prevout.hash);
-          continue;
-        }
-
-#if 0
-if (txPrev.vout.size() <= txin.prevout.n) {
-fprintf(stderr, "DEBUG: emc2_CreateNewBlock: txPrev.vout.size() %d <= txin.prevout.n %d [tx %s]\n", 
- txPrev.vout.size(),
- txin.prevout.n,
-txPrev.GetHash().GetHex().c_str());
-continue;
-}
-#endif
-
-        int64 nValueIn = txPrev.vout[txin.prevout.n].nValue;
-
-        // Read block header
-        int nConf = GetTxDepthInMainChain(iface, txPrev.GetHash());
-
-        dPriority += (double)nValueIn * nConf;
-      }
-
-      // Priority is sum(valuein * age) / txsize
-      dPriority /= ::GetSerializeSize(tx, SER_NETWORK, EMC2_PROTOCOL_VERSION);
-
-      if (porphan)
-        porphan->dPriority = dPriority;
-      else
-        mapPriority.insert(make_pair(-dPriority, &(*mi).second));
-    }
-
-    // Collect transactions into block
-    map<uint256, CTxIndex> mapTestPool;
-    uint64 nBlockSize = 1000;
-    uint64 nBlockTx = 0;
-    int nSigOpCost = 100;
-    int64_t nBlockWeight = 4000;
-    while (!mapPriority.empty())
-    {
-      // Take highest priority transaction off priority queue
-      double dPriority = -(*mapPriority.begin()).first;
-      CTransaction& tx = *(*mapPriority.begin()).second;
-      mapPriority.erase(mapPriority.begin());
-
-      int64_t nTxWeight = emc2_GetTxWeight(tx);
-      if (nBlockWeight + nTxWeight > MAX_BLOCK_WEIGHT(iface))
-        continue; /* too many puppies */
-
-      CWallet *wallet = GetWallet(EMC2_COIN_IFACE);
-#if 0
-      bool fAllowFree = false;
-      if (nBlockSize <= 1000 && 
-/* DEBUG: estimateSmartPriority */
-          wallet->AllowFree(dPriority)) {
-        fAllowFree = true;
-      }
-      int64 nMinFee = tx.GetMinFee(EMC2_COIN_IFACE, nBlockSize, fAllowFree, GMF_BLOCK);
-#endif
-
-      // Connecting shouldn't fail due to dependency on other memory pool transactions
-      // because we're already processing them in order of dependency
-      map<uint256, CTxIndex> mapTestPoolTmp(mapTestPool);
-      MapPrevTx mapInputs;
-      bool fInvalid;
-      {
-        EMC2TxDB txdb; 
-        bool ok;
-
-        ok = tx.FetchInputs(txdb, 
-            mapTestPoolTmp, NULL, true, mapInputs, fInvalid);
-        txdb.Close();
-        if (!ok)
-          continue;
-      }
-
-      int64 nMinFee = 0;
-      if (!wallet->AllowFree(wallet->GetPriority(tx, mapInputs))) 
-        nMinFee = wallet->CalculateFee(tx);
-
-      int64 nTxFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
-      if (nTxFees < nMinFee)
-        continue;
-
-      /* restrict maximum sigops. */
-      int64_t nCost = tx.GetSigOpCost(mapInputs);
-      if (nCost > MAX_TX_SIGOP_COST(iface))
-        continue;
-      if (nSigOpCost + nCost > MAX_BLOCK_SIGOP_COST(iface))
-        continue;
-
-      if (!emc2_ConnectInputs(&tx, mapInputs, mapTestPoolTmp, CDiskTxPos(0,0,0), pindexPrev, false, true))
-        continue;
-      mapTestPoolTmp[tx.GetHash()] = CTxIndex(CDiskTxPos(0,0,0), tx.vout.size());
-      swap(mapTestPool, mapTestPoolTmp);
-
-      // Added
-      pblock->vtx.push_back(tx);
-      nBlockSize += ::GetSerializeSize(tx, SER_NETWORK, EMC2_PROTOCOL_VERSION);
-      nBlockWeight += nTxWeight;
-      ++nBlockTx;
-      nSigOpCost += nCost;
-      nFees += nTxFees;
-
-      // Add transactions that depend on this one to the priority queue
-      uint256 hash = tx.GetHash();
-      if (mapDependers.count(hash))
-      {
-        BOOST_FOREACH(EMC2Orphan* porphan, mapDependers[hash])
-        {
-          if (!porphan->setDependsOn.empty())
-          {
-            porphan->setDependsOn.erase(hash);
-            if (porphan->setDependsOn.empty())
-              mapPriority.insert(make_pair(-porphan->dPriority, porphan->ptx));
-          }
-        }
-      }
-    }
-
-
-#if 0
-    nLastBlockTx = nBlockTx;
-    nLastBlockSize = nBlockSize;
-    //printf("CreateNewBlock(): total size %lu\n", nBlockSize);
-#endif
-
+    nExtraNonce = 0;
+    hashPrevBlock = pblock->hashPrevBlock;
   }
 
-  /* assign reward(s) */
-  int64 nReward = emc2_GetBlockValue(pindexPrev->nHeight+1, 0);
-  int64 nCharity = nReward * 2.5 / 100;
-  pblock->vtx[0].vout[0].nValue = nCharity;
-  pblock->vtx[0].vout[1].nValue = (nReward - nCharity) + nFees;
-
-  // Fill in header
-  pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-  pblock->hashMerkleRoot = pblock->BuildMerkleTree();
-  pblock->UpdateTime(pindexPrev);
-  pblock->nBits          = pblock->GetNextWorkRequired(pindexPrev);
-  pblock->nNonce         = 0;
-  pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
-
-  core_GenerateCoinbaseCommitment(iface, *pblock, pindexPrev);
-
-  return pblock.release();
+  ++nExtraNonce;
+  unsigned int nHeight = pindexPrev->nHeight+1; // Height first in coinbase required for block.version=2
+  pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CScriptNum(nExtraNonce)) + EMC2_COINBASE_FLAGS;
 }
-#endif
+ 
 
 CBlock* emc2_CreateNewBlock(const CPubKey& rkey)
 {
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
   CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
-  const int nHeight = GetBestHeight(iface);
+  unsigned int nExtraNonce = 0;
 
   // Create new block
   //auto_ptr<CBlock> pblock(new CBlock());
@@ -631,7 +436,6 @@ CBlock* emc2_CreateNewBlock(const CPubKey& rkey)
   txNew.vout.resize(2);
   txNew.vout[0].scriptPubKey = EMC2_CHARITY_SCRIPT;
   txNew.vout[1].scriptPubKey << rkey << OP_CHECKSIG;
-  txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
   pblock->vtx.push_back(txNew);
 
   /* attributes */
@@ -651,11 +455,16 @@ CBlock* emc2_CreateNewBlock(const CPubKey& rkey)
     }
   }
 
+  unsigned int nHeight = pindexPrev->nHeight + 1;
+
   /* assign reward(s) */
-  int64 nReward = emc2_GetBlockValue(pindexPrev->nHeight+1, 0);
+  int64 nReward = emc2_GetBlockValue(nHeight, 0);
   int64 nCharity = nReward * 2.5 / 100;
   pblock->vtx[0].vout[0].nValue = nCharity;
   pblock->vtx[0].vout[1].nValue = (nReward - nCharity) + nFees;
+
+  /* fill coinbase signature (BIP34) */
+  emc2_IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);  
 
   // Fill in header
   pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
@@ -663,9 +472,8 @@ CBlock* emc2_CreateNewBlock(const CPubKey& rkey)
   pblock->UpdateTime(pindexPrev);
   pblock->nBits          = pblock->GetNextWorkRequired(pindexPrev);
   pblock->nNonce         = 0;
-  pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
 
-  core_GenerateCoinbaseCommitment(iface, *pblock, pindexPrev);
+  core_GenerateCoinbaseCommitment(iface, pblock.get(), pindexPrev);
 
   return pblock.release();
 }
@@ -805,6 +613,7 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
   int ifaceIndex = EMC2_COIN_IFACE;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
+  CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
   shtime_t ts;
 
   // Check for duplicate
@@ -816,10 +625,9 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return Debug("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
 
   if (pblock->vtx.size() != 0 && pblock->vtx[0].wit.IsNull()) {
-    CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
     if (pindexPrev && IsWitnessEnabled(iface, pindexPrev) &&
         -1 != GetWitnessCommitmentIndex(*pblock)) {
-      core_UpdateUncommittedBlockStructures(iface, *pblock, pindexPrev);
+      core_UpdateUncommittedBlockStructures(iface, pblock, pindexPrev);
       Debug("(emc2) ProcessBlock: warning: received block \"%s\" with null witness commitment [height %d].", hash.GetHex().c_str(), (int)pindexPrev->nHeight);
     }
   }
@@ -830,22 +638,28 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return error(SHERR_INVAL, "(emc2) ProcessBlock: failure verifying block '%s'.", hash.GetHex().c_str());
   }
 
-#if 0 /* unimp'd */
+
+  bool checkHeightMismatch = false;
   if (pblock->nVersion >= 2) {
-    CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
-    if (emc2_IsSuperMajority(3, pindexPrev, 2375)) {
-      const int nHeight = (int)pindexPrev->nHeight;
-      CScript expect = CScript() << nHeight;
-      if (pblock->vtx[0].vin[0].scriptSig.size() < expect.size() ||
-          !std::equal(expect.begin(), expect.end(), pblock->vtx[0].vin[0].scriptSig.begin())) {
-        if (pfrom)
-          pfrom->Misbehaving(10);
-  pblock->print();
-        return error(SHERR_INVAL, "ProcessBlock: height mismatch.");
+    // Mainnet - Einsteinium: enforce together with BIP66 because this part was forgotten in the previos code and V1 blocks are being mined, change can be ignored in future
+    if (emc2_IsSuperMajority(3, pindexPrev, 2375))
+      checkHeightMismatch = true;
+  }
+  if (checkHeightMismatch) {
+    const int nHeight = pindexPrev ? (int)pindexPrev->nHeight + 1 : 0;
+    CScript expect = CScript() << nHeight;
+    if (pblock->vtx[0].vin[0].scriptSig.size() < expect.size() ||
+        !std::equal(expect.begin(), expect.end(), 
+          pblock->vtx[0].vin[0].scriptSig.begin())) {
+      if (pfrom) {
+        unsigned char rejectCode = 0x10;
+        string bad_cb_height = "bad-cb-height";
+        string command = "block";
+        pfrom->PushMessage("reject", command, rejectCode, bad_cb_height, pblock->GetHash()); 
       }
+      return error(SHERR_INVAL, "emc2_ProcessBlock: block has invalid commit height (next block height is %d).", nHeight);
     }
   }
-#endif
 
   CBlockIndex* pcheckpoint = EMC2_Checkpoints::GetLastCheckpoint(*blockIndex);
   if (pcheckpoint && pblock->hashPrevBlock != GetBestBlockChain(iface))
@@ -969,6 +783,18 @@ bool EMC2Block::CheckBlock()
       return (trust(-100, "(emc2) CheckBlock: more than one coinbase in transaction"));
     }
   }
+
+#if 0
+  if (nVersion >= 2) {
+    CBlockIndex* pindexPrev = GetBestBlockIndex(EMC2_COIN_IFACE);
+    const int nHeight = pindexPrev ? (pindexPrev->nHeight + 1) : 0;
+    CScript expect = CScript() << nHeight;
+    if (block.vtx[0].vin[0].scriptSig.size() < expect.size() ||
+        !std::equal(expect.begin(), expect.end(), block.vtx[0].vin[0].scriptSig.begin())) {
+      return (trust(-10, "(emc2) CheckBlock: block \"%s\" height mismatch in coinbase", ));
+    }
+  }
+#endif
 
   // Check transactions
   BOOST_FOREACH(CTransaction& tx, vtx) {
@@ -1347,17 +1173,6 @@ int ifaceIndex = EMC2_COIN_IFACE;
   free(sBlockData);
 
   uint256 cur_hash = GetHash();
-#if 0
-  {
-    uint256 t_hash;
-    bc_hash_t b_hash;
-    memcpy(b_hash, cur_hash.GetRaw(), sizeof(bc_hash_t));
-    t_hash.SetRaw(b_hash);
-    if (!bc_hash_cmp(t_hash.GetRaw(), cur_hash.GetRaw())) {
-      fprintf(stderr, "DEBUG: ReadBlock: error comparing self-hash ('%s' / '%s')\n", cur_hash.GetHex().c_str(), t_hash.GetHex().c_str());
-    }
-  }
-#endif
   {
     uint256 db_hash;
     bc_hash_t ret_hash;
@@ -1423,7 +1238,6 @@ bool EMC2Block::ReadArchBlock(uint256 hash)
   free(sBlockData);
 
 if (hash != GetHash()) {
-//fprintf(stderr, "DEBUG: ARCH: Invalid arch loaded:\n"); print();
 return (false);
 }
 

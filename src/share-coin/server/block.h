@@ -1733,17 +1733,17 @@ ValidIndexSet *GetValidIndexSet(int ifaceIndex);
 
 bool IsWitnessEnabled(CIface *iface, const CBlockIndex* pindexPrev);
 
-bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock& block, CBlockIndex *pindexPrev);
-
 bool core_CheckBlockWitness(CIface *iface, CBlock *pblock, CBlockIndex *pindexPrev);
 
 int GetWitnessCommitmentIndex(const CBlock& block);
 
-void core_UpdateUncommittedBlockStructures(CIface *iface, CBlock& block, const CBlockIndex* pindexPrev);
-
 int core_ComputeBlockVersion(CIface *params, CBlockIndex *pindexPrev);
 
 CBlockIndex *GetBlockIndexByTx(CIface *iface, const uint256 hash);
+
+void core_UpdateUncommittedBlockStructures(CIface *iface, CBlock *block, const CBlockIndex* pindexPrev);
+
+bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock *block, CBlockIndex *pindexPrev);
 
 
 

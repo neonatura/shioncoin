@@ -2633,26 +2633,26 @@ int GetWitnessCommitmentIndex(const CBlock& block)
   return commitpos;
 }
 
-void core_UpdateUncommittedBlockStructures(CIface *iface, CBlock& block, const CBlockIndex* pindexPrev)
+void core_UpdateUncommittedBlockStructures(CIface *iface, CBlock *block, const CBlockIndex* pindexPrev)
 {
-  int commitpos = GetWitnessCommitmentIndex(block);
+  int commitpos = GetWitnessCommitmentIndex(*block);
   static const std::vector<unsigned char> nonce(32, 0x00);
-  if (commitpos != -1 && IsWitnessEnabled(iface, pindexPrev) && block.vtx[0].wit.IsEmpty()) {
-    block.vtx[0].wit.vtxinwit.resize(1);
-    block.vtx[0].wit.vtxinwit[0].scriptWitness.stack.resize(1);
-    block.vtx[0].wit.vtxinwit[0].scriptWitness.stack[0] = nonce;
+  if (commitpos != -1 && IsWitnessEnabled(iface, pindexPrev) && block->vtx[0].wit.IsEmpty()) {
+    block->vtx[0].wit.vtxinwit.resize(1);
+    block->vtx[0].wit.vtxinwit[0].scriptWitness.stack.resize(1);
+    block->vtx[0].wit.vtxinwit[0].scriptWitness.stack[0] = nonce;
   }
 }
 
-bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock& block, CBlockIndex *pindexPrev)
+bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock *block, CBlockIndex *pindexPrev)
 {
   // std::vector<unsigned char> commitment;
-  int commitpos = GetWitnessCommitmentIndex(block);
+  int commitpos = GetWitnessCommitmentIndex(*block);
   std::vector<unsigned char> ret(32, 0x00);
 
   if (iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout != 0) {
     if (commitpos == -1) {
-      uint256 witnessroot = BlockWitnessMerkleRoot(block, NULL);
+      uint256 witnessroot = BlockWitnessMerkleRoot(*block, NULL);
       uint256 hashCommit;
 
       CTxOut out;
@@ -2670,7 +2670,7 @@ bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock& block, CBlockIndex *
       memcpy(&out.scriptPubKey[6], hashCommit.begin(), 32);
       
       //      commitment = std::vector<unsigned char>(out.scriptPubKey.begin(), out.scriptPubKey.end());
-      const_cast<std::vector<CTxOut>*>(&block.vtx[0].vout)->push_back(out);   
+      const_cast<std::vector<CTxOut>*>(&block->vtx[0].vout)->push_back(out);   
       //      block.vtx[0].UpdateHash();
     }
   }
@@ -2680,8 +2680,6 @@ bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock& block, CBlockIndex *
 
   return (false);
 }
-
-
 
 
 int core_ComputeBlockVersion(CIface *params, CBlockIndex *pindexPrev)

@@ -225,7 +225,7 @@ CBlock* test_CreateNewBlock(const CPubKey& rkey, CBlockIndex *pindexPrev)
   pblock->nNonce         = 0;
 
   /* declare consensus attributes. */
-  core_GenerateCoinbaseCommitment(iface, *pblock, pindexPrev);
+  core_GenerateCoinbaseCommitment(iface, pblock.get(), pindexPrev);
 
   return pblock.release();
 }

@@ -92,8 +92,10 @@ bool shc_LoadWallet(void)
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   std::ostringstream strErrors;
 
+#if 0
   const char* pszP2SH = "/P2SH/";
   SHC_COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
+#endif
 
 #if 0
   if (!bitdb.Open(GetDataDir()))

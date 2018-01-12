@@ -704,10 +704,27 @@ continue;
 }
 #endif
 
+static void usde_IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
+{
+  static uint256 hashPrevBlock;
+
+  if (hashPrevBlock != pblock->hashPrevBlock)
+  {
+    nExtraNonce = 0;
+    hashPrevBlock = pblock->hashPrevBlock;
+  }
+
+  ++nExtraNonce;
+  pblock->vtx[0].vin[0].scriptSig = (CScript() << pblock->nTime << CBigNum(nExtraNonce)) + USDE_COINBASE_FLAGS;
+}
+
+
+
 CBlock* usde_CreateNewBlock(const CPubKey& rkey)
 {
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
   CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
+  unsigned int nExtraNonce = 0;
 
   auto_ptr<USDEBlock> pblock(new USDEBlock());
   if (!pblock.get())
@@ -746,13 +763,11 @@ CBlock* usde_CreateNewBlock(const CPubKey& rkey)
 
   /* define core header */
   pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
+  usde_IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
   pblock->hashMerkleRoot = pblock->BuildMerkleTree();
   pblock->UpdateTime(pindexPrev);
   pblock->nBits          = pblock->GetNextWorkRequired(pindexPrev);
   pblock->nNonce         = 0;
-
-  /* declare consensus attributes. */
-//  core_GenerateCoinbaseCommitment(iface, *pblock, pindexPrev);
 
   return pblock.release();
 }
