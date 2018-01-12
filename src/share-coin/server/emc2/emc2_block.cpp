@@ -403,6 +403,7 @@ static int64_t emc2_GetTxWeight(const CTransaction& tx)
 
 static void emc2_IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
+#if 0
   static uint256 hashPrevBlock;
 
   if (hashPrevBlock != pblock->hashPrevBlock)
@@ -414,6 +415,10 @@ static void emc2_IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPr
   ++nExtraNonce;
   unsigned int nHeight = pindexPrev->nHeight+1; // Height first in coinbase required for block.version=2
   pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CScriptNum(nExtraNonce)) + EMC2_COINBASE_FLAGS;
+#endif
+
+  unsigned int nHeight = pindexPrev ? pindexPrev->nHeight + 1 : 0; 
+  pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << ParseHex("0000000000000000")) + EMC2_COINBASE_FLAGS;
 }
  
 

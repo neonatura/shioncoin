@@ -225,8 +225,10 @@ const char *c_getblocktemplate(int ifaceIndex)
     result.push_back(Pair("height", (int64_t)nHeight));
   }
 
+#if 0
   /* dummy nExtraNonce */
   SetExtraNonce(pblock, "f0000000f0000000");
+#endif
 
   /* coinbase */
   CTransaction coinbaseTx = pblock->vtx[0];
@@ -425,7 +427,18 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
   pblock->nTime = nTime;
   pblock->nNonce = nNonce;
 
-  SetExtraNonce(pblock, xn_hex);
+  if (pblock->ifaceIndex == USDE_COIN_IFACE) {
+    pblock->vtx[0].vin[0].scriptSig = (CScript() << pblock->nTime << ParseHex(xn_hex)) + pblock->GetCoinbaseFlags();
+    //pblock->vtx[0].vin[0].scriptSig = (CScript() << CBigNum(pblock->nTime) << ParseHex(xn_hex)) + pblock->GetCoinbaseFlags();
+  } else {
+    CBlockIndex *pindexPrev = GetBestBlockIndex(pblock->ifaceIndex);
+    unsigned int nHeight = pindexPrev ? (pindexPrev->nHeight + 1) : 0;
+//    int64_t num = strtoll(xn_hex, NULL, 16);
+    pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << ParseHex(xn_hex)) + pblock->GetCoinbaseFlags();
+    //pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CScriptNum(num)) + pblock->GetCoinbaseFlags();
+  }
+//  SetExtraNonce(pblock, xn_hex);
+
   pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
   hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();

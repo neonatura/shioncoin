@@ -552,17 +552,30 @@ task_t *task_init(task_attr_t *attr)
   strncpy(sig, shjson_astr(block, "coinbaseflags", ""), sizeof(sig) - 1);
   //strncpy(sig, shjson_astr(block, "sigScript", "03a55a0704b4b0b000062f503253482f"), sizeof(sig) - 1);
 
-  ptr = strstr(coinbase, sig);
-  if (!ptr) {
-    sprintf(errbuf, "task_init: coinbase does not contain sigScript (coinbase:%s, sig:%s)\n", coinbase, sig);
-    shcoind_log(errbuf);
+  memset(task->cb2, 0, sizeof(task->cb2));
 
-    shjson_free(&tree);
-    task_free(&task);
-    return (NULL);
+  if (strlen(sig) == 0) {
+    strncpy(task->cb1, coinbase, MAX(0, strlen(coinbase) - 16) /* xnonce */);
+  } else {
+    ptr = strstr(coinbase, sig);
+    if (!ptr) {
+      sprintf(errbuf, "task_init: coinbase does not contain sigScript (coinbase:%s, sig:%s)\n", coinbase, sig);
+      shcoind_log(errbuf);
+
+      shjson_free(&tree);
+      task_free(&task);
+      return (NULL);
+    }
+
+    strncpy(task->cb1, coinbase, strlen(coinbase) - strlen(ptr) - 16 /* xnonce */);
+
+    if (strlen(ptr) >= sizeof(task->cb2)) {
+      shcoind_log("task_init: error: coinbase is too large for stratum\n");
+      return (NULL);
+    }
+
+    strncpy(task->cb2, ptr, sizeof(task->cb2)-1);
   }
-
-  strncpy(task->cb1, coinbase, strlen(coinbase) - strlen(ptr) - 16 /* xnonce */);
 //static int xn_len = 8;
   //xn_len = user->peer.n1_len + user->peer.n2_len;
 //  sprintf(task->cb1 + strlen(task->cb1), "%-2.2x", xn_len);
@@ -570,14 +583,6 @@ task_t *task_init(task_attr_t *attr)
 //  sprintf(task->xnonce2, "%-8.8x", shjson_astr(block, "extraNonce", 0));
 //  strncpy(task->xnonce2, ptr + 2, 8); /* template xnonce */
 
-
-  if (strlen(ptr) >= sizeof(task->cb2)) {
-    shcoind_log("task_init: error: coinbase is too large for stratum\n");
-    return (NULL);
-  }
-  memset(task->cb2, 0, sizeof(task->cb2));
-  strncpy(task->cb2, ptr, sizeof(task->cb2)-1);
-  //strcpy(task->cb2, ptr);
 
   task->merkle_len = shjson_array_count(block, "transactions");
   task->merkle = (char **)calloc(task->merkle_len + 1, sizeof(char *));

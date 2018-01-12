@@ -394,6 +394,7 @@ static int64_t shc_GetTxWeight(const CTransaction& tx)
 
 static void shc_IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
+#if 0
   static uint256 hashPrevBlock;
 
   if (hashPrevBlock != pblock->hashPrevBlock)
@@ -405,6 +406,10 @@ static void shc_IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPre
   ++nExtraNonce;
   unsigned int nHeight = pindexPrev ? (pindexPrev->nHeight+1) : 0;
   pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CScriptNum(nExtraNonce)) + SHC_COINBASE_FLAGS;
+#endif
+ 
+  unsigned int nHeight = pindexPrev ? pindexPrev->nHeight + 1 : 0; 
+  pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << ParseHex("0000000000000000")) + SHC_COINBASE_FLAGS;
 }
 
 CBlock* shc_CreateNewBlock(const CPubKey& rkey)

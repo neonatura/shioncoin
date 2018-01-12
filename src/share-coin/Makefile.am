@@ -258,7 +258,7 @@ test_shcoind_LDADD += \
 test_shcoind_CFLAGS += -I$(LIBSHARE)/include
 test_shcoind_CXXFLAGS += -I$(LIBSHARE)/include
 else
-test_shcoind_LDADD += -lshare_sexe
+test_shcoind_LDADD += -lshare -lshare_sexe
 endif
 test_shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
 
@@ -290,7 +290,7 @@ shcoind_LDADD += \
 shcoind_CFLAGS = -I$(LIBSHARE)/include
 shcoind_CXXFLAGS = -I$(LIBSHARE)/include
 else
-shcoind_LDADD += -lshare_sexe
+shcoind_LDADD += -lshare -lshare_sexe
 endif
 shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
 

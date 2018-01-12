@@ -43,7 +43,7 @@ sbin_PROGRAMS = shcoind$(EXEEXT)
 
 @STATIC_LIBSHARE_TRUE@am__append_2 = -I$(LIBSHARE)/include
 @STATIC_LIBSHARE_TRUE@am__append_3 = -I$(LIBSHARE)/include
-@STATIC_LIBSHARE_FALSE@am__append_4 = -lshare_sexe
+@STATIC_LIBSHARE_FALSE@am__append_4 = -lshare -lshare_sexe
 @WINDOWS_TRUE@am__append_5 = \
 @WINDOWS_TRUE@	shcoind_svc.c \
 @WINDOWS_TRUE@	shcoind_svc.h
@@ -52,7 +52,7 @@ sbin_PROGRAMS = shcoind$(EXEEXT)
 @STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/share-lib/libshare.a \
 @STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/sexe/libshare_sexe.a
 
-@STATIC_LIBSHARE_FALSE@am__append_7 = -lshare_sexe
+@STATIC_LIBSHARE_FALSE@am__append_7 = -lshare -lshare_sexe
 @DEBUG_TRUE@am__append_8 = -g3 
 @DEBUG_TRUE@am__append_9 = -g3
 @DEBUG_FALSE@am__append_10 = -O2

@@ -278,7 +278,7 @@ CBlock *test_GenerateBlock(CBlockIndex *pindexPrev)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   static unsigned int nNonceIndex;
-  static unsigned int nXIndex = 0xf0000000;
+//  static unsigned int nXIndex = 0xf0000000;
 //  CBlockIndex *bestIndex = GetBestBlockIndex(TEST_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
   char xn_hex[128];
@@ -297,9 +297,13 @@ CBlock *test_GenerateBlock(CBlockIndex *pindexPrev)
 //reservekey.KeepKey();
 //wallet->SetAddressBookName(reservekey.GetReservedKey().GetID(), sysAccount); 
 
+#if 0
   nXIndex++;
   sprintf(xn_hex, "%-8.8x%-8.8x", nXIndex, nXIndex);
-  SetExtraNonce(block, xn_hex);
+#endif
+  unsigned int nHeight = pindexPrev ? pindexPrev->nHeight + 1 : 0; 
+  block->vtx[0].vin[0].scriptSig = (CScript() << nHeight << ParseHex("0000000000000000")) + CScript();
+  //SetExtraNonce(block, xn_hex);
 
 //  block->vtx.push_back(txNew);
 // if (bestIndex) block->hashPrevBlock = bestIndex->GetBlockHash();

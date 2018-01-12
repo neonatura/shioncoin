@@ -566,6 +566,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }
 
+#if 0
 void SetExtraNonce(CBlock* pblock, const char *xn_hex)
 {
 
@@ -579,6 +580,7 @@ void SetExtraNonce(CBlock* pblock, const char *xn_hex)
   }
 
 }
+#endif
 
 
 void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1)
