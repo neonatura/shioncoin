@@ -2908,7 +2908,7 @@ void core_SetExtraNonce(CBlock* pblock, const char *xn_hex)
     qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
   }
 
-  sprintf(hex, "%s%s", GetSiteExtraNonce(), xn_hex);
+  sprintf(hex, "%s%s", GetSiteExtraNonceHex(), xn_hex);
   string hexStr = hex;
   pblock->vtx[0].vin[0].scriptSig = 
     (CScript() << qual << ParseHex(hexStr)) + 
