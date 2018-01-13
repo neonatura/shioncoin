@@ -401,32 +401,11 @@ static int64_t emc2_GetTxWeight(const CTransaction& tx)
   return (weight);
 }
 
-static void emc2_IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
-{
-#if 0
-  static uint256 hashPrevBlock;
-
-  if (hashPrevBlock != pblock->hashPrevBlock)
-  {
-    nExtraNonce = 0;
-    hashPrevBlock = pblock->hashPrevBlock;
-  }
-
-  ++nExtraNonce;
-  unsigned int nHeight = pindexPrev->nHeight+1; // Height first in coinbase required for block.version=2
-  pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CScriptNum(nExtraNonce)) + EMC2_COINBASE_FLAGS;
-#endif
-
-  unsigned int nHeight = pindexPrev ? pindexPrev->nHeight + 1 : 0; 
-  pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << ParseHex("0000000000000000")) + EMC2_COINBASE_FLAGS;
-}
  
-
 CBlock* emc2_CreateNewBlock(const CPubKey& rkey)
 {
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
   CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
-  unsigned int nExtraNonce = 0;
 
   // Create new block
   //auto_ptr<CBlock> pblock(new CBlock());
@@ -468,17 +447,18 @@ CBlock* emc2_CreateNewBlock(const CPubKey& rkey)
   pblock->vtx[0].vout[0].nValue = nCharity;
   pblock->vtx[0].vout[1].nValue = (nReward - nCharity) + nFees;
 
-  /* fill coinbase signature (BIP34) */
-  emc2_IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);  
 
   // Fill in header
   pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-  pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+//  pblock->hashMerkleRoot = pblock->BuildMerkleTree();
   pblock->UpdateTime(pindexPrev);
   pblock->nBits          = pblock->GetNextWorkRequired(pindexPrev);
   pblock->nNonce         = 0;
 
   core_GenerateCoinbaseCommitment(iface, pblock.get(), pindexPrev);
+
+  /* fill coinbase signature (BIP34) */
+  core_IncrementExtraNonce(pblock.get(), pindexPrev);
 
   return pblock.release();
 }
@@ -644,27 +624,6 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
   }
 
 
-  bool checkHeightMismatch = false;
-  if (pblock->nVersion >= 2) {
-    // Mainnet - Einsteinium: enforce together with BIP66 because this part was forgotten in the previos code and V1 blocks are being mined, change can be ignored in future
-    if (emc2_IsSuperMajority(3, pindexPrev, 2375))
-      checkHeightMismatch = true;
-  }
-  if (checkHeightMismatch) {
-    const int nHeight = pindexPrev ? (int)pindexPrev->nHeight + 1 : 0;
-    CScript expect = CScript() << nHeight;
-    if (pblock->vtx[0].vin[0].scriptSig.size() < expect.size() ||
-        !std::equal(expect.begin(), expect.end(), 
-          pblock->vtx[0].vin[0].scriptSig.begin())) {
-      if (pfrom) {
-        unsigned char rejectCode = 0x10;
-        string bad_cb_height = "bad-cb-height";
-        string command = "block";
-        pfrom->PushMessage("reject", command, rejectCode, bad_cb_height, pblock->GetHash()); 
-      }
-      return error(SHERR_INVAL, "emc2_ProcessBlock: block has invalid commit height (next block height is %d).", nHeight);
-    }
-  }
 
   CBlockIndex* pcheckpoint = EMC2_Checkpoints::GetLastCheckpoint(*blockIndex);
   if (pcheckpoint && pblock->hashPrevBlock != GetBestBlockChain(iface))
@@ -703,6 +662,30 @@ pblock->print();
       pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(orphan));
     }
     return true;
+  }
+
+  bool checkHeightMismatch = false;
+  if (pblock->nVersion >= 2) {
+    // Mainnet - Einsteinium: enforce together with BIP66 because this part was forgotten in the previos code and V1 blocks are being mined, change can be ignored in future
+    if (emc2_IsSuperMajority(3, pindexPrev, 2375))
+      checkHeightMismatch = true;
+  }
+  if (checkHeightMismatch) {
+    unsigned int nHeight = pindexPrev ? (int)pindexPrev->nHeight + 1 : 0;
+    CScript expect;
+
+    expect << nHeight;
+    if (pblock->vtx[0].vin[0].scriptSig.size() < expect.size() ||
+        !std::equal(expect.begin(), expect.end(), 
+          pblock->vtx[0].vin[0].scriptSig.begin())) {
+      if (pfrom && pindexPrev->GetBlockHash() == pblock->hashPrevBlock) {
+        unsigned char rejectCode = 0x10;
+        string bad_cb_height = "bad-cb-height";
+        string command = "block";
+        pfrom->PushMessage("reject", command, rejectCode, bad_cb_height, pblock->GetHash()); 
+      }
+      return error(SHERR_INVAL, "emc2_ProcessBlock: submit block \"%s\" has invalid commit height (next block height is %u).", pblock->GetHash().GetHex().c_str(), nHeight);
+    }
   }
 
   /* store to disk */

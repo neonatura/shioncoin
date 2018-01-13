@@ -392,31 +392,10 @@ static int64_t shc_GetTxWeight(const CTransaction& tx)
   return (weight);
 }
 
-static void shc_IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
-{
-#if 0
-  static uint256 hashPrevBlock;
-
-  if (hashPrevBlock != pblock->hashPrevBlock)
-  {
-    nExtraNonce = 0;
-    hashPrevBlock = pblock->hashPrevBlock;
-  }
-
-  ++nExtraNonce;
-  unsigned int nHeight = pindexPrev ? (pindexPrev->nHeight+1) : 0;
-  pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CScriptNum(nExtraNonce)) + SHC_COINBASE_FLAGS;
-#endif
- 
-  unsigned int nHeight = pindexPrev ? pindexPrev->nHeight + 1 : 0; 
-  pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << ParseHex("0000000000000000")) + SHC_COINBASE_FLAGS;
-}
-
 CBlock* shc_CreateNewBlock(const CPubKey& rkey)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
-  unsigned int nExtraNonce = 0;
 
   auto_ptr<SHCBlock> pblock(new SHCBlock());
   if (!pblock.get())
@@ -455,8 +434,6 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
     ret = BlockGenerateSpringMatrix(iface, pblock->vtx[0], reward);
   pblock->vtx[0].vout[0].nValue = reward; 
 
-  /* fill coinbase signature (BIP34) */
-  shc_IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
   /* define core header */
   pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
@@ -469,6 +446,9 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
 /* not needed yet.. 
   core_GenerateCoinbaseCommitment(iface, pblock.get(), pindexPrev);
 */
+
+  /* fill coinbase signature (BIP34) */
+  core_IncrementExtraNonce(pblock.get(), pindexPrev);
 
   return pblock.release();
 }
@@ -1149,6 +1129,7 @@ bool SHCBlock::AcceptBlock()
   return (core_AcceptBlock(this, pindexPrev));
 }
 
+/* remove me */
 CScript SHCBlock::GetCoinbaseFlags()
 {
   return (SHC_COINBASE_FLAGS);

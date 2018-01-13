@@ -2860,6 +2860,65 @@ int64_t CTransaction::GetSigOpCost(MapPrevTx& mapInputs, int flags)
   return nSigOps;
 }
 
+CScript GetCoinbaseFlags(int ifaceIndex)
+{
+  const char* pszXN = "/XN/";
+  CScript script;
+  script << std::vector<unsigned char>(pszXN, pszXN+strlen(pszXN));
+  return (script);
+}
+
+
+void core_IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev)
+{
+  CScript COINBASE_FLAGS = GetCoinbaseFlags(pblock->ifaceIndex);
+  char hex[256];
+  unsigned int qual;
+
+  /* qualifier */ 
+  if (pblock->ifaceIndex == USDE_COIN_IFACE) {
+    qual = pblock->nTime;
+  } else {
+    qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
+  }
+
+  sprintf(hex, "%sf0000000", GetSiteExtraNonceHex());
+  string hexStr(hex, hex + strlen(hex));
+  pblock->vtx[0].vin[0].scriptSig = 
+    (CScript() << qual << ParseHex(hexStr)) + 
+    COINBASE_FLAGS;
+  if (pblock->vtx[0].vin[0].scriptSig.size() > 100) {
+    error(SHERR_2BIG, "warning: coinbase signature exceeds 100 characters.");
+  }
+
+  pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+}
+
+void core_SetExtraNonce(CBlock* pblock, const char *xn_hex)
+{
+  CScript COINBASE_FLAGS = GetCoinbaseFlags(pblock->ifaceIndex);
+  CBlockIndex *pindexPrev = GetBestBlockIndex(pblock->ifaceIndex);
+  char hex[256];
+  unsigned int qual;
+
+  /* qualifier */ 
+  if (pblock->ifaceIndex == USDE_COIN_IFACE) {
+    qual = pblock->nTime;
+  } else {
+    qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
+  }
+
+  sprintf(hex, "%s%s", GetSiteExtraNonce(), xn_hex);
+  string hexStr = hex;
+  pblock->vtx[0].vin[0].scriptSig = 
+    (CScript() << qual << ParseHex(hexStr)) + 
+    COINBASE_FLAGS;
+  if (pblock->vtx[0].vin[0].scriptSig.size() > 100) {
+    error(SHERR_2BIG, "warning: coinbase signature exceeds 100 characters.");
+  }
+
+  pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+}
 
 
 

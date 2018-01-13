@@ -201,7 +201,8 @@ int stratum_validate_submit(user_t *user, shjson_t *json)
 
 
   memset(submit_hash, '\000', sizeof(submit_hash));
-  sprintf(xn_hex, "%s%s", user->peer.nonce1, extranonce2);
+  //sprintf(xn_hex, "%s%s", user->peer.nonce1, extranonce2);
+  sprintf(xn_hex, "%s", extranonce2);
   timing_init("submitblock", &ts);
   ret_err = submitblock(task_id, le_ntime, le_nonce, xn_hex,
       submit_hash, &share_diff);

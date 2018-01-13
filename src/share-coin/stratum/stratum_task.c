@@ -384,7 +384,7 @@ task_t *task_init(task_attr_t *attr)
   shjson_t *tree;
   task_t *task;
   const char *templ_json;
-  char coinbase[512];
+  char coinbase[1024];
   char sig[256];
   char *ptr;
   char target[32];
@@ -554,28 +554,24 @@ task_t *task_init(task_attr_t *attr)
 
   memset(task->cb2, 0, sizeof(task->cb2));
 
-  if (strlen(sig) == 0) {
-    strncpy(task->cb1, coinbase, MAX(0, strlen(coinbase) - 16) /* xnonce */);
-  } else {
-    ptr = strstr(coinbase, sig);
-    if (!ptr) {
-      sprintf(errbuf, "task_init: coinbase does not contain sigScript (coinbase:%s, sig:%s)\n", coinbase, sig);
-      shcoind_log(errbuf);
+  ptr = strstr(coinbase, sig);
+  if (!ptr) {
+    sprintf(errbuf, "task_init: coinbase does not contain sigScript (coinbase:%s, sig:%s)\n", coinbase, sig);
+    shcoind_log(errbuf);
 
-      shjson_free(&tree);
-      task_free(&task);
-      return (NULL);
-    }
-
-    strncpy(task->cb1, coinbase, strlen(coinbase) - strlen(ptr) - 16 /* xnonce */);
-
-    if (strlen(ptr) >= sizeof(task->cb2)) {
-      shcoind_log("task_init: error: coinbase is too large for stratum\n");
-      return (NULL);
-    }
-
-    strncpy(task->cb2, ptr, sizeof(task->cb2)-1);
+    shjson_free(&tree);
+    task_free(&task);
+    return (NULL);
   }
+
+  strncpy(task->cb1, coinbase, strlen(coinbase) - strlen(ptr) - 16 /* xnonce */);
+
+  if (strlen(ptr) >= sizeof(task->cb2)) {
+    shcoind_log("task_init: error: coinbase is too large for stratum\n");
+    return (NULL);
+  }
+
+  strncpy(task->cb2, ptr, sizeof(task->cb2)-1);
 //static int xn_len = 8;
   //xn_len = user->peer.n1_len + user->peer.n2_len;
 //  sprintf(task->cb1 + strlen(task->cb1), "%-2.2x", xn_len);
@@ -757,7 +753,8 @@ sprintf(ntime, "%-8.8x", (unsigned int)task->curtime);
         char xn_hex[256];
         uint32_t be_nonce =  htobe32(task->work.nonce);
 
-        sprintf(xn_hex, "%s%s", sys_user->peer.nonce1, task->work.xnonce2);
+        //sprintf(xn_hex, "%s%s", sys_user->peer.nonce1, task->work.xnonce2);
+        sprintf(xn_hex, "%s", task->work.xnonce2);
         submitblock(task->task_id, task->curtime, task->work.nonce, xn_hex, NULL, NULL);
       }
     }
@@ -874,6 +871,7 @@ void stratum_task_weight(task_attr_t *attr)
     attr->avg_diff[idx] = (dDiff + (attr->avg_diff[idx] * 3)) / 4;
     weight += MAX(0.01, MIN(300, attr->avg_diff[idx] / 10));
 
+#if 0
     /* bonus - current mined coin post-submit period. */ 
     if (attr->ifaceIndex == idx) {
       if ((now - iface->net_valid) < POST_BLOCK_TIME) {
@@ -881,6 +879,7 @@ void stratum_task_weight(task_attr_t *attr)
         weight += MAX(0.01, MIN(100, (double)(nHeight - stratum_user_max_height())));
       }
     }
+#endif
 
     /* calculate running average */
     weight = MAX(0.001, weight);

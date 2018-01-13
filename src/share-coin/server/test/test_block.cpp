@@ -227,6 +227,9 @@ CBlock* test_CreateNewBlock(const CPubKey& rkey, CBlockIndex *pindexPrev)
   /* declare consensus attributes. */
   core_GenerateCoinbaseCommitment(iface, pblock.get(), pindexPrev);
 
+  /* set default coinbase sig-script */
+  core_IncrementExtraNonce(pblock.get(), pindexPrev);
+
   return pblock.release();
 }
 
@@ -297,22 +300,16 @@ CBlock *test_GenerateBlock(CBlockIndex *pindexPrev)
 //reservekey.KeepKey();
 //wallet->SetAddressBookName(reservekey.GetReservedKey().GetID(), sysAccount); 
 
-#if 0
-  nXIndex++;
-  sprintf(xn_hex, "%-8.8x%-8.8x", nXIndex, nXIndex);
-#endif
-  unsigned int nHeight = pindexPrev ? pindexPrev->nHeight + 1 : 0; 
-  block->vtx[0].vin[0].scriptSig = (CScript() << nHeight << ParseHex("0000000000000000")) + CScript();
-  //SetExtraNonce(block, xn_hex);
 
 //  block->vtx.push_back(txNew);
 // if (bestIndex) block->hashPrevBlock = bestIndex->GetBlockHash();
-  block->hashMerkleRoot = block->BuildMerkleTree();
+//  block->hashMerkleRoot = block->BuildMerkleTree();
 //  block->nVersion = TESTBlock::CURRENT_VERSION;
 //  block->nTime    = time(NULL);
 //  block->nBits    = block->GetNextWorkRequired(bestIndex);
   block->nNonce   = ++nNonceIndex;
 
+  block->hashMerkleRoot = block->BuildMerkleTree();
 
   {
     uint256 hashTarget = CBigNum().SetCompact(block->nBits).getuint256();

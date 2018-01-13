@@ -236,7 +236,7 @@ const char *c_getblocktemplate(int ifaceIndex)
   ssTx << coinbaseTx;
   result.push_back(Pair("coinbase", HexStr(ssTx.begin(), ssTx.end())));
   //  result.push_back(Pair("sigScript", HexStr(pblock->vtx[0].vin[0].scriptSig.begin(), pblock->vtx[0].vin[0].scriptSig.end())));
-  CScript COINBASE_FLAGS = pblock->GetCoinbaseFlags();
+  CScript COINBASE_FLAGS = GetCoinbaseFlags(pblock->ifaceIndex);
   result.push_back(Pair("coinbaseflags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
 
   blocktemplate_json = JSONRPCReply(result, Value::null, Value::null);
@@ -427,19 +427,8 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
   pblock->nTime = nTime;
   pblock->nNonce = nNonce;
 
-  if (pblock->ifaceIndex == USDE_COIN_IFACE) {
-    pblock->vtx[0].vin[0].scriptSig = (CScript() << pblock->nTime << ParseHex(xn_hex)) + pblock->GetCoinbaseFlags();
-    //pblock->vtx[0].vin[0].scriptSig = (CScript() << CBigNum(pblock->nTime) << ParseHex(xn_hex)) + pblock->GetCoinbaseFlags();
-  } else {
-    CBlockIndex *pindexPrev = GetBestBlockIndex(pblock->ifaceIndex);
-    unsigned int nHeight = pindexPrev ? (pindexPrev->nHeight + 1) : 0;
-//    int64_t num = strtoll(xn_hex, NULL, 16);
-    pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << ParseHex(xn_hex)) + pblock->GetCoinbaseFlags();
-    //pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CScriptNum(num)) + pblock->GetCoinbaseFlags();
-  }
-//  SetExtraNonce(pblock, xn_hex);
-
-  pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+  core_SetExtraNonce(pblock, xn_hex);
+//pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
   hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
   for (idx = 0; idx < MAX_NONCE_SEQUENCE; idx++) {
@@ -1263,6 +1252,30 @@ double GetNextDifficulty(int ifaceIndex)
   return (iface->blk_diff);
 }
 
+static int64_t _nExtraNonce;
+extern shpeer_t *shcoind_peer(void);
+
+unsigned int GetSiteExtraNonce()
+{
+  shpeer_t *peer;
+  shkey_t *kpub;
+
+  if (_nExtraNonce == 0) {
+    /* generate unique site nonce. */
+    peer = shcoind_peer();
+    kpub = shpeer_kpub(peer);
+    _nExtraNonce = (unsigned int)shcrc32(kpub, sizeof(shkey_t)); 
+  }
+
+  return (_nExtraNonce);
+}
+
+const char *GetSiteExtraNonceHex()
+{
+  static char ret_buf[256];
+  sprintf(ret_buf, "%-8.8x", GetSiteExtraNonce());
+  return ((const char *)ret_buf);
+}
 
 #ifdef __cplusplus
 }

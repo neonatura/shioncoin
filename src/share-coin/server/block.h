@@ -1745,6 +1745,15 @@ void core_UpdateUncommittedBlockStructures(CIface *iface, CBlock *block, const C
 
 bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock *block, CBlockIndex *pindexPrev);
 
+/** obtain the coinbase flags for a coin interface. */
+CScript GetCoinbaseFlags(int ifaceIndex);
+
+/** assign a default coinbae signature for current node. */
+void core_IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev); 
+
+/** set a 4-byte (8 character) hex string from stratum miner on the block's coinbase signature. */
+void core_SetExtraNonce(CBlock* pblock, const char *xn_hex);
+
 
 
 #endif /* ndef __SERVER_BLOCK_H__ */

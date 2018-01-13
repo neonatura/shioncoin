@@ -107,6 +107,7 @@ int stratum_send_error(user_t *user, int err_code)
 
 int stratum_send_subscribe(user_t *user)
 {
+  const char *nonce_hex = GetSiteExtraNonceHex(); //shjson_str_add(data, NULL, user->peer.nonce1);
   shjson_t *reply;
   shjson_t *data;
   shjson_t *data2;
@@ -114,14 +115,15 @@ int stratum_send_subscribe(user_t *user)
   char key_str[64];
   int err;
 
+
   reply = shjson_init(NULL);
   shjson_null_add(reply, "error");
   data = shjson_array_add(reply, "result");
   data2 = shjson_array_add(data, NULL);
   shjson_str_add(data2, NULL, "mining.notify");
   shjson_str_add(data2, NULL, 
-      (char *)shkey_print(ashkey_str(user->peer.nonce1)));
-  shjson_str_add(data, NULL, user->peer.nonce1);
+      (char *)shkey_print(ashkey_str(nonce_hex)));
+  shjson_str_add(data, NULL, nonce_hex);
   shjson_num_add(data, NULL, 4);
 //  shjson_str_add(data, NULL, stratum_runtime_session());
   err = stratum_send_message(user, reply);

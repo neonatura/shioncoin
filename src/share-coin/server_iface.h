@@ -191,6 +191,10 @@ const char *stratum_accountcontext(int ifaceIndex, char *account, char *pkey, ch
 
 const char *stratum_accountcertificate(int ifaceIndex, char *account, char *pkey, char *mode, char *cert_name, char *cert_issuer, double fee);
 
+unsigned int GetSiteExtraNonce();
+
+const char *GetSiteExtraNonceHex();
+
 
 
 

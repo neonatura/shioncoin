@@ -1001,8 +1001,7 @@ Value rpc_block_work(CIface *iface, const Array& params, bool fStratum)
     pblock->nNonce = 0;
 
     // Update nExtraNonce
-    static unsigned int nExtraNonce = 0;
-    IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+    core_IncrementExtraNonce(pblock, pindexPrev);
 
     // Save
     mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
@@ -1112,8 +1111,7 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
     pblock->nNonce = 0;
 
     // Update nExtraNonce
-    static unsigned int nExtraNonce = 0;
-    IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+    core_IncrementExtraNonce(pblock, pindexPrev);
 
     // Save
     mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);

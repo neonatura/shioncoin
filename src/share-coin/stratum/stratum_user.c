@@ -194,8 +194,11 @@ user_t *stratum_user_init(int fd)
   user->fd = fd;
   user->round_stamp = time(NULL);
 
+#if 0
   seed = htonl(shrand() & 0xFFFF);
   sprintf(nonce1, "%-8.8x", (unsigned int)seed);
+#endif
+  strcpy(nonce1, GetSiteExtraNonceHex());
 
   shscrypt_peer(&user->peer, nonce1, MIN_SHARE_DIFFICULTY);
   //shscrypt_peer_gen(&user->peer, MIN_SHARE_DIFFICULTY);
