@@ -239,12 +239,10 @@ int c_LoadWallet(void)
 
   if (!bitdb.Open(GetDataDir()))
   {
-    fprintf(stderr, "error: unable to open data directory.\n");
     return (-1);
   }
 
   if (!LoadBlockIndex(iface)) {
-    fprintf(stderr, "error: unable to open load block index.\n");
     return (-1);
   }
 

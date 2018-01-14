@@ -3267,8 +3267,67 @@ static void CopyNodeStats(CIface *iface, std::vector<CNodeStats>& vstats)
   }
 }
 
+Value rpc_peer_importdat(CIface *iface, const Array& params, bool fStratum)
+{
+
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+
+  if (fHelp || params.size() != 1)
+    throw runtime_error(
+        "peer.importdat <path>\n"
+        "Import a legacy 'peers.dat' datafile.");
+
+  std::string strPath = params[0].get_str();
+
+  int ifaceIndex = GetCoinIndex(iface);
+  char addr_str[256];
+  shpeer_t *peer;
+  shpeer_t *serv_peer;
+
+  if (!iface)
+    throw runtime_error("peer db not available.");
+
+//  serv_peer = shapp_init("shcoind", NULL, SHAPP_LOCAL);
+
+  CAddrMan addrman;
+  {
+    long nStart = GetTimeMillis();
+    {
+      CAddrDB adb(strPath.c_str());
+      if (!adb.Read(addrman))
+        throw runtime_error("specified path is not a peers.dat database.");
+    }
+    Debug("Exported %d addresses from peers.dat  %dms\n",
+        (int)addrman.size(), (int)(GetTimeMillis() - nStart));
+  }
+
+  vector<CAddress> vAddr = addrman.GetAddr();
+
+  unet_bind_t *bind = unet_bind_table(ifaceIndex);
+  if (bind) {// && bind->peer_db) {
+    BOOST_FOREACH(const CAddress &addr, vAddr) {
+      sprintf(addr_str, "%s %d", addr.ToStringIP().c_str(), addr.GetPort());
+      peer = shpeer_init(iface->name, addr_str);
+      //unet_peer_track_add(bind->peer_db, peer);
+      unet_peer_track_add(ifaceIndex, peer);
+      shpeer_free(&peer);
+    }
+  }
+
+
+  Object result;
+  result.push_back(Pair("mode", "peer.importdat"));
+  result.push_back(Pair("path", strPath.c_str()));
+  result.push_back(Pair("state", "success"));
+
+  return (result);
+}
+
 Value rpc_peer_export(CIface *iface, const Array& params, bool fStratum)
 {
+  int ifaceIndex = GetCoinIndex(iface); 
+  int err;
 
   if (fStratum)
     throw runtime_error("unsupported operation");
@@ -3280,34 +3339,9 @@ Value rpc_peer_export(CIface *iface, const Array& params, bool fStratum)
 
   std::string strPath = params[0].get_str();
 
-  {
-    FILE *fl;
-//    shpeer_t *serv_peer;
-    shjson_t *json;
-    shdb_t *db;
-    char *text;
-
-//    serv_peer = shapp_init("shcoind", NULL, SHAPP_LOCAL);
-
-    db = shnet_track_open(iface->name);
-    if (!db) 
-      throw JSONRPCError(-5, "Error opening peer track database.");
-    json = shdb_json_write(db, SHPREF_TRACK, 0, 0);
-    text = shjson_print(json);
-    shjson_free(&json);
-    shnet_track_close(db);
-
-    fl = fopen(strPath.c_str(), "wb");
-    if (fl) {
-      if (text)
-        fwrite(text, sizeof(char), strlen(text), fl);
-      fclose(fl);
-    }
-    free(text);
-
-//    shpeer_free(&serv_peer);
-  }
-
+  err = unet_peer_export_path(ifaceIndex, (char *)strPath.c_str());
+  if (err)
+    throw JSONRPCError(err, "unet peer export");
 
   Object result;
   result.push_back(Pair("mode", "peer.export"));
@@ -3315,48 +3349,6 @@ Value rpc_peer_export(CIface *iface, const Array& params, bool fStratum)
   result.push_back(Pair("state", "finished"));
 
   return (result);
-}
-
-Value rpc_peer_remove(CIface *iface, const Array& params, bool fStratum)
-{
-  int ifaceIndex = GetCoinIndex(iface);
-  shpeer_t *peer;
-  char host[MAXHOSTNAMELEN+1];
-  char *ptr;
-  int err;
-  int sk;
-
-  if (fStratum)
-    throw runtime_error("unsupported exception");
-
-  if (params.size() != 1)
-    throw runtime_error("invalid parameters");
-
-  unet_bind_t *bind = unet_bind_table(ifaceIndex);
-  if (!bind || !bind->peer_db)
-    throw JSONRPCError(-5, "peer not found");
-
-  memset(host, 0, sizeof(host));
-  strncpy(host, params[0].get_str().c_str(), sizeof(host)-1);
-
-  ptr = strchr(host, ':');
-  if (ptr)
-    *ptr = ' ';
-
-  peer = shpeer_init(iface->name, host);
-  err = shnet_track_remove(bind->peer_db, peer);
-  if (err) {
-    shpeer_free(&peer);
-    throw JSONRPCError(-5, "peer not found");
-  } 
-
-  sk = unet_peer_find(ifaceIndex, shpeer_addr(peer)); 
-  shpeer_free(&peer);
-  if (sk) {
-    unet_shutdown(sk); 
-  }
-
-  return (Value::null);
 }
 
 Value rpc_peer_import(CIface *iface, const Array& params, bool fStratum)
@@ -3370,10 +3362,13 @@ Value rpc_peer_import(CIface *iface, const Array& params, bool fStratum)
   struct stat st;
   shpeer_t *peer;
   shjson_t *json;
+  shjson_t *tree;
   shjson_t *node;
   shdb_t *db;
   char hostname[PATH_MAX+1];
+  char errbuf[256];
   char *text;
+  int total;
 
   if (fHelp || params.size() != 1)
     throw runtime_error(
@@ -3382,6 +3377,7 @@ Value rpc_peer_import(CIface *iface, const Array& params, bool fStratum)
 
   std::string strPath = params[0].get_str();
 
+  total = 0;
   {
     fl = fopen(strPath.c_str(), "rb");
     if (!fl)
@@ -3407,17 +3403,19 @@ Value rpc_peer_import(CIface *iface, const Array& params, bool fStratum)
       throw runtime_error("file is not is JSON format.");
     }
 
-    if (json->child) {
+    tree = shjson_obj_get(json, "track");
+    if (tree->child) {
       unet_bind_t *bind = unet_bind_table(ifaceIndex);
-      if (bind && bind->peer_db) {
-        for (node = json->child; node; node = node->next) {
+      if (bind) {
+        for (node = tree->child; node; node = node->next) {
           char *host = shjson_astr(node, "host", "");
           char *label = shjson_astr(node, "label", "");
           if (!*host || !*label) continue;
 
           peer = shpeer_init(label, host);
-          shnet_track_add(bind->peer_db, peer);
+          unet_peer_track_add(ifaceIndex, peer);
           shpeer_free(&peer);
+          total++;
         }
       }
     }
@@ -3425,14 +3423,63 @@ Value rpc_peer_import(CIface *iface, const Array& params, bool fStratum)
     shjson_free(&json);
   }
 
+  sprintf(errbuf, "rpc_peer_import: imported x%d %s peers.", total, iface->name);
+  shcoind_log(errbuf);
 
   Object result;
   result.push_back(Pair("mode", "peer-import"));
   result.push_back(Pair("path", strPath.c_str()));
+  result.push_back(Pair("total", total));
   result.push_back(Pair("state", "finished"));
 
   return (result);
 }
+
+Value rpc_peer_remove(CIface *iface, const Array& params, bool fStratum)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+  shpeer_t *peer;
+  char host[MAXHOSTNAMELEN+1];
+  char *ptr;
+  int err;
+  int sk;
+
+  if (fStratum)
+    throw runtime_error("unsupported exception");
+
+  if (params.size() != 1)
+    throw runtime_error("invalid parameters");
+
+  unet_bind_t *bind = unet_bind_table(ifaceIndex);
+  if (!bind)
+    throw JSONRPCError(-5, "peer not found");
+
+  memset(host, 0, sizeof(host));
+  strncpy(host, params[0].get_str().c_str(), sizeof(host)-1);
+
+  ptr = strchr(host, ':');
+  if (ptr)
+    *ptr = ' ';
+
+  peer = shpeer_init(iface->name, host);
+#if 0
+  err = shnet_track_remove(bind->peer_db, peer);
+  if (err) {
+    shpeer_free(&peer);
+    throw JSONRPCError(-5, "peer not found");
+  } 
+#endif
+  (void)unet_peer_track_remove(ifaceIndex, peer); 
+
+  sk = unet_peer_find(ifaceIndex, shpeer_addr(peer)); 
+  shpeer_free(&peer);
+  if (sk) {
+    unet_shutdown(sk); 
+  }
+
+  return (Value::null);
+}
+
 
 
 Value rpc_peer_list(CIface *iface, const Array& params, bool fStratum)
@@ -3472,61 +3519,6 @@ Value rpc_peer_list(CIface *iface, const Array& params, bool fStratum)
   return ret;
 }
 
-Value rpc_peer_importdat(CIface *iface, const Array& params, bool fStratum)
-{
-
-  if (fStratum)
-    throw runtime_error("unsupported operation");
-
-  if (fHelp || params.size() != 1)
-    throw runtime_error(
-        "peer.importdat <path>\n"
-        "Import a legacy 'peers.dat' datafile.");
-
-  std::string strPath = params[0].get_str();
-
-  int ifaceIndex = GetCoinIndex(iface);
-  char addr_str[256];
-  shpeer_t *peer;
-  shpeer_t *serv_peer;
-
-  if (!iface)
-    throw runtime_error("peer db not available.");
-
-//  serv_peer = shapp_init("shcoind", NULL, SHAPP_LOCAL);
-
-  CAddrMan addrman;
-  {
-    long nStart = GetTimeMillis();
-    {
-      CAddrDB adb(strPath.c_str());
-      if (!adb.Read(addrman))
-        throw runtime_error("specified path is not a peers.dat database.");
-    }
-    Debug("Exported %d addresses from peers.dat  %dms\n",
-        (int)addrman.size(), (int)(GetTimeMillis() - nStart));
-  }
-
-  vector<CAddress> vAddr = addrman.GetAddr();
-
-  unet_bind_t *bind = unet_bind_table(ifaceIndex);
-  if (bind && bind->peer_db) {
-    BOOST_FOREACH(const CAddress &addr, vAddr) {
-      sprintf(addr_str, "%s %d", addr.ToStringIP().c_str(), addr.GetPort());
-      peer = shpeer_init(iface->name, addr_str);
-      shnet_track_add(bind->peer_db, peer);
-      shpeer_free(&peer);
-    }
-  }
-
-
-  Object result;
-  result.push_back(Pair("mode", "peer.importdat"));
-  result.push_back(Pair("path", strPath.c_str()));
-  result.push_back(Pair("state", "success"));
-
-  return (result);
-}
 
 
 
@@ -3745,7 +3737,6 @@ Value rpc_tx_prune(CIface *iface, const Array& params, bool fStratum)
             continue;
           }
 
-/* DEBUG: TODO: load wallet tx from db */
 #if 0
           CWalletTx wtx(wallet, prevtx);
           if (wtx.IsSpent(in.prevout.n)) {

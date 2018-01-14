@@ -334,8 +334,7 @@ void unet_local_add(char *ipaddr_in)
     inet_ntop(AF_INET6, &sin, ipaddr, sizeof(ipaddr)-1);
   }
   if (!*ipaddr) {
-//fprintf(stderr, "DEBUG: skipping invalid addr '%s'\n", ipaddr_in);
-  return;
+    return;
   }
   
   if ((ipaddr_index + 1) < MAX_IPADDR_TABLE_SIZE) {

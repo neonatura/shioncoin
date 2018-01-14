@@ -1506,7 +1506,9 @@ int CWallet::LoadWallet(bool& fFirstRunRet)
         return nLoadWalletRet;
     fFirstRunRet = !vchDefaultKey.IsValid();
 
+#if 0
     CreateThread(ThreadFlushWalletDB, &strWalletFile);
+#endif
     return DB_LOAD_OK;
 }
 

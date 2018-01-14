@@ -1408,6 +1408,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
     return (pblock->trust(-100, "(core) AcceptBlock: rejected by checkpoint lockin at height %u", nHeight));
   }
 
+
   ret = pblock->AddToBlockIndex();
   if (!ret) {
     pblock->print();
@@ -2131,6 +2132,8 @@ int CTransaction::GetDepthInMainChain(int ifaceIndex, CBlockIndex* &pindexRet) c
 
 CChannel *CTransaction::CreateChannel(CCoinAddr& src_addr, CCoinAddr& dest_addr, int64 nValue)
 {
+
+Debug("CreatChannel()");
 
   if (isFlag(CTransaction::TXF_CHANNEL))
     return (NULL); /* already established */

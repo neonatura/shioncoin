@@ -266,6 +266,13 @@ const char *unet_local_host(void);
 
 const char *unet_netaddr_str(struct sockaddr *addr);
 
+shpeer_t **unet_peer_track_list(int ifaceIndex, int max_peer);
+
+int unet_peer_export_path(int ifaceIndex, char *path);
+
+void unet_peer_track_add(int ifaceIndex, shpeer_t *peer);
+
+void unet_peer_track_remove(int ifaceIndex, shpeer_t *peer);
 
 
 #ifdef __cplusplus

@@ -78,9 +78,9 @@ int fractal_render(char *img_path, double in_seed, double zoom, double span, dou
       } else {
         K = fabs(Z*C);
         val = 4294967296 % (uint32_t)(K+1);
-        r = (val >> 16) & 0xff;
-        g = (val >> 8) & 0xff;
-        b = val & 0xff;
+        g = (val >> 16) & 0xff;
+        b = (val >> 8) & 0xff;
+        r = val & 0xff;
 
         r = MIN(255, r + idx);
         g = MIN(255, g + idx);

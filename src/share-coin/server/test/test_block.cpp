@@ -65,6 +65,9 @@ multimap<uint256, TESTBlock*> TEST_mapOrphanBlocksByPrev;
 map<uint256, map<uint256, CDataStream*> > TEST_mapOrphanTransactionsByPrev;
 map<uint256, CDataStream*> TEST_mapOrphanTransactions;
 
+#define TEST_MAJORITY_WINDOW 2500
+
+
 
 class TESTOrphan
 {
@@ -893,6 +896,20 @@ bool TESTBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 }
 #endif
 
+static bool test_IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned nRequired)
+{
+  unsigned int nFound = 0;
+
+  for (int i = 0; i < TEST_MAJORITY_WINDOW &&
+      nFound < nRequired && pstart != NULL; i++) {
+    if (pstart->nVersion >= minVersion)
+      ++nFound;
+    pstart = pstart->pprev;
+  }
+
+  return (nFound >= nRequired);
+}
+
 bool TESTBlock::IsBestChain()
 {
   CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
@@ -919,6 +936,26 @@ bool TESTBlock::AcceptBlock()
   if (GetBlockTime() <= pindexPrev->GetBlockTime() - TEST_MAX_DRIFT_TIME) {
     print();
     return error(SHERR_INVAL, "(test) AcceptBlock: block's timestamp more than fifteen minutes old.");
+  }
+
+  bool checkHeightMismatch = false;
+  if (nVersion >= 2) {
+    /* enforce BIP34 with BIP66 */
+    if (test_IsSuperMajority(3, pindexPrev, 2375))
+      checkHeightMismatch = true;
+  }
+  if (checkHeightMismatch) {
+    CScript expect;
+    unsigned int nHeight;
+
+    nHeight = pindexPrev ? (pindexPrev->nHeight + 1) : NULL;
+    expect << nHeight;
+
+    if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
+        !std::equal(expect.begin(), expect.end(),
+          vtx[0].vin[0].scriptSig.begin())) {
+      return error(SHERR_INVAL, "test_AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", GetHash().GetHex().c_str(), nHeight);
+    }
   }
 
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
@@ -948,7 +985,6 @@ static void test_UpdatedTransaction(const uint256& hashTx)
 
   pwallet->UpdatedTransaction(hashTx);
 }
-
 
 bool TESTBlock::AddToBlockIndex()
 {

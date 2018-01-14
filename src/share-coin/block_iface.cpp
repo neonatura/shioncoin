@@ -334,7 +334,6 @@ int c_processblock(CBlock* pblock)
 
   if (bestIndex->nHeight < iface->blockscan_max) {
     /* still downloading blocks. */
-//fprintf(stderr, "DEBUG: processblock: still downloading blocks.. skipping submitted block.\n"); 
     return (0);
   }
 
@@ -369,31 +368,6 @@ int c_processblock(CBlock* pblock)
   return (0);
 }
 
-#if 0
-static bool QuickCheckWork(CBlock* pblock, double *ret_diff)
-{
-  uint256 hash = pblock->GetPoWHash();
-  uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
-//  uint256 bhash = Hash(BEGIN(pblock->nVersion), END(pblock->nNonce));
-
-  if (ret_diff)
-    *ret_diff = GetBitsDifficulty(hash.GetCompact());
-
-  if (hash > hashTarget)
-    return false;
-
-fprintf(stderr, "generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
-
-  return true;
-}
-#endif
-
-#if 0
-  CTransaction coinbaseTx = pblock->vtx[0];
-  CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
-  ssTx << coinbaseTx;
-  fprintf(stderr, "DEBUG: submitblock: coinbase %s\n", HexStr(ssTx.begin(), ssTx.end()).c_str());
-#endif
 int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, char *xn_hex, char *ret_hash, double *ret_diff)
 {
   CBlock *pblock;

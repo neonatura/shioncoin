@@ -352,6 +352,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
   return DB_LOAD_OK;
 }
 
+#if 0
 void ThreadFlushWalletDB(void* parg)
 {
     // Make this thread recognisable as the wallet flushing thread
@@ -411,6 +412,7 @@ void ThreadFlushWalletDB(void* parg)
         }
     }
 }
+#endif
 
 #if 0
 bool BackupWallet(const CWallet& wallet, const string& strDest)

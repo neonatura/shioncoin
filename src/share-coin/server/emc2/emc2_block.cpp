@@ -664,30 +664,6 @@ pblock->print();
     return true;
   }
 
-  bool checkHeightMismatch = false;
-  if (pblock->nVersion >= 2) {
-    // Mainnet - Einsteinium: enforce together with BIP66 because this part was forgotten in the previos code and V1 blocks are being mined, change can be ignored in future
-    if (emc2_IsSuperMajority(3, pindexPrev, 2375))
-      checkHeightMismatch = true;
-  }
-  if (checkHeightMismatch) {
-    unsigned int nHeight = pindexPrev ? (int)pindexPrev->nHeight + 1 : 0;
-    CScript expect;
-
-    expect << nHeight;
-    if (pblock->vtx[0].vin[0].scriptSig.size() < expect.size() ||
-        !std::equal(expect.begin(), expect.end(), 
-          pblock->vtx[0].vin[0].scriptSig.begin())) {
-      if (pfrom && pindexPrev->GetBlockHash() == pblock->hashPrevBlock) {
-        unsigned char rejectCode = 0x10;
-        string bad_cb_height = "bad-cb-height";
-        string command = "block";
-        pfrom->PushMessage("reject", command, rejectCode, bad_cb_height, pblock->GetHash()); 
-      }
-      return error(SHERR_INVAL, "emc2_ProcessBlock: submit block \"%s\" has invalid commit height (next block height is %u).", pblock->GetHash().GetHex().c_str(), nHeight);
-    }
-  }
-
   /* store to disk */
   if (!pblock->AcceptBlock()) {
     iface->net_invalid = time(NULL);
@@ -1112,6 +1088,32 @@ bool EMC2Block::AcceptBlock()
   if (GetBlockTime() <= pindexPrev->GetBlockTime() - EMC2_MAX_DRIFT_TIME) {
     print();
     return error(SHERR_INVAL, "(emc2) AcceptBlock() : block's timestamp too far in the pas.");
+  }
+
+  bool checkHeightMismatch = false;
+  if (nVersion >= 2) {
+    /* enforce BIP34 with BIP66 */
+    if (emc2_IsSuperMajority(3, pindexPrev, 2375))
+      checkHeightMismatch = true;
+  }
+  if (checkHeightMismatch) {
+    CScript expect;
+    unsigned int nHeight;
+
+    nHeight = pindexPrev ? (pindexPrev->nHeight + 1) : NULL;
+    expect << nHeight;
+
+    if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
+        !std::equal(expect.begin(), expect.end(),
+          vtx[0].vin[0].scriptSig.begin())) {
+      if (originPeer) {
+        unsigned char rejectCode = 0x10;
+        string bad_cb_height = "bad-cb-height";
+        string command = "block";
+        originPeer->PushMessage("reject", command, rejectCode, bad_cb_height, GetHash());
+      }
+      return error(SHERR_INVAL, "emc2_AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", GetHash().GetHex().c_str(), nHeight);
+    }
   }
 
   return (core_AcceptBlock(this, pindexPrev));

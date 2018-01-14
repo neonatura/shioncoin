@@ -69,7 +69,9 @@ int unet_bind(int mode, int port, int flag)
   memcpy(&_unet_bind[mode].peer, peer, sizeof(shpeer_t));
   shpeer_free(&peer);
 
+#if 0
   _unet_bind[mode].peer_db = shnet_track_open(unet_mode_label(mode));
+#endif
 
   descriptor_claim(sk, mode, DF_LISTEN);
 
@@ -103,11 +105,13 @@ int unet_unbind(int mode)
   /* close listen (bind) socket */
   descriptor_release(_unet_bind[mode].fd);
 
+#if 0
   /* close net track db */
   if (_unet_bind[mode].peer_db) {
     shnet_track_close(_unet_bind[mode].peer_db);
     _unet_bind[mode].peer_db = NULL;
   }
+#endif
 
   /* clear variables */
   _unet_bind[mode].fd = UNDEFINED_SOCKET;

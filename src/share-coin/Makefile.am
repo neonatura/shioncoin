@@ -125,7 +125,7 @@ common_sources = \
 	unet/unet.h \
 	unet/unet_io.c \
 	unet/unet_timer.c \
-	unet/unet_peer.c \
+	unet/unet_peerdb.c \
 	unet/unet_event.c \
 	unet/unet_local.c \
 	server/mnemonic.cpp \
