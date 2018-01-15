@@ -83,13 +83,15 @@ static bc_t *peerdb_open(int mode)
 
 static peerdb_t *peerdb_new(int mode, shpeer_t *peer)
 {
-  static peerdb_t ret_peer;
+  peerdb_t *ret_peer;
 
-  memset(&ret_peer, 0, sizeof(ret_peer));
-  ret_peer.birth = (uint32_t)time(NULL);
-  memcpy(&ret_peer.peer, peer, sizeof(shpeer_t));
+  ret_peer = (peerdb_t *)calloc(1, sizeof(peerdb_t));
 
-  return (&ret_peer);
+  memset(ret_peer, 0, sizeof(ret_peer));
+  ret_peer->birth = (uint32_t)time(NULL);
+  memcpy(&ret_peer->peer, peer, sizeof(shpeer_t));
+
+  return (ret_peer);
 }
 
 static peerdb_t *peerdb_new_host(int mode, char *hostname, unsigned int port)
@@ -528,6 +530,7 @@ void unet_peer_decr(int mode, shpeer_t *peer)
 
   p->trust -= 1;
   peerdb_write(db, p);
+  free(p);
 }
 
 void unet_peer_incr(int mode, shpeer_t *peer)
@@ -560,6 +563,7 @@ void unet_peer_incr(int mode, shpeer_t *peer)
   }
   p->trust += 1;
   peerdb_write(db, p);
+  free(p);
 }
 
 shpeer_t **unet_peer_track_list(int mode, int max_peer)
