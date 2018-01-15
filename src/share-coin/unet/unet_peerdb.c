@@ -146,27 +146,27 @@ static int peerdb_read(bc_t *db, shkey_t *key, peerdb_t **peer_p)
 
 static int peerdb_sort_cmp(void *a_p, void *b_p)
 {
-  peerdb_t *a = (peerdb_t *)a_p;
-  peerdb_t *b = (peerdb_t *)b_p;
+  peerdb_t *a = *((peerdb_t **)a_p);
+  peerdb_t *b = *((peerdb_t **)b_p);
 
   return (b->trust - a->trust);
 }
-
 static int peerdb_sort_revcmp(void *a_p, void *b_p)
 {
-  peerdb_t *a = (peerdb_t *)a_p;
-  peerdb_t *b = (peerdb_t *)b_p;
+  peerdb_t *a = *((peerdb_t **)a_p);
+  peerdb_t *b = *((peerdb_t **)b_p);
 
   return (a->trust - b->trust);
 }
 
 
+
 static void peerdb_sort(peerdb_t **ret_list, size_t ret_size, int fact)
 {
   if (fact > 0)
-    qsort(ret_list, ret_size, sizeof(peerdb_t), peerdb_sort_cmp); 
+    qsort(ret_list, ret_size, sizeof(peerdb_t *), peerdb_sort_cmp); 
   else
-    qsort(ret_list, ret_size, sizeof(peerdb_t), peerdb_sort_revcmp); 
+    qsort(ret_list, ret_size, sizeof(peerdb_t *), peerdb_sort_revcmp); 
 }
 
 static peerdb_t **peerdb_track_scan(bc_t *db, int max)

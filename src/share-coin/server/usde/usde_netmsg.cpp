@@ -383,6 +383,25 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
   else if (strCommand == "verack")
   {
     pfrom->vRecv.SetVersion(min(pfrom->nVersion, USDE_PROTOCOL_VERSION));
+
+    vector<CTransaction> pool_list = pool->GetActiveTx();
+    BOOST_FOREACH(const CTransaction& tx, pool_list) {
+      const uint256& hash = tx.GetHash();
+      if (pwalletMain->mapWallet.count(hash) == 0)
+        continue;
+
+      CWalletTx& wtx = pwalletMain->mapWallet[hash];
+      if (wtx.IsCoinBase())
+        continue;
+
+      const uint256& wtx_hash = wtx.GetHash();
+      if (VerifyTxHash(iface, wtx_hash))
+        continue; /* is known */
+
+      CInv inv(ifaceIndex, MSG_TX, wtx_hash);
+      pfrom->PushInventory(inv);
+    }
+
   }
 
 

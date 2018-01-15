@@ -432,11 +432,13 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
     }
 #endif
 
-    /* relay old wallet tx's */
-    BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, 
-        pwalletMain->mapWallet) {
+    vector<CTransaction> pool_list = pool->GetActiveTx();
+    BOOST_FOREACH(const CTransaction& tx, pool_list) {
+      const uint256& hash = tx.GetHash();
+      if (pwalletMain->mapWallet.count(hash) == 0)
+        continue;
 
-      CWalletTx& wtx = item.second;
+      CWalletTx& wtx = pwalletMain->mapWallet[hash];
       if (wtx.IsCoinBase()) 
         continue;
 
@@ -446,7 +448,6 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
       CInv inv(ifaceIndex, MSG_TX, wtx_hash);
       pfrom->PushInventory(inv);
-
     }
 
   }
