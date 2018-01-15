@@ -111,8 +111,8 @@ int unet_accept(int mode, unsigned int *sk_p)
   if (mode < MAX_UNET_COIN_MODES) {
     /* only one connection allowed per origin IP address for coin services */
     if (unet_peer_find(mode, shaddr(cli_fd))) {
-      sprintf(buf, "unet_accept: disconnecting non-unique IP origin: %s", shaddr_print(shaddr(cli_fd))); 
-      shcoind_info(unet_mode_label(mode), buf);
+      sprintf(buf, "unet_accept: disconnecting non-unique %s origin \"%s\".", unet_mode_label(mode), shaddr_print(shaddr(cli_fd)));
+      shcoind_log(buf);
 
       /* only one IP origin address per coin service allowed */
       shnet_close(cli_fd);
