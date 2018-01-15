@@ -118,7 +118,7 @@ typedef struct unet_bind_t
   shtime_t scan_stamp;
 
   /** the net track database of peers */
-  shdb_t *peer_db;
+  bc_t *peer_db;
 
   /** the timer callback */
   unet_op op_timer;

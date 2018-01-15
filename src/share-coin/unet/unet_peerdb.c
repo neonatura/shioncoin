@@ -39,6 +39,18 @@ typedef struct peerdb_t
   int64_t trust;
 } peerdb_t;
 
+static void peerdb_list_free(peerdb_t **p_list)
+{
+  int i;
+
+  for (i = 0; p_list[i]; i++) {
+    if (p_list[i])
+      free(p_list[i]);
+  }
+
+  free(p_list);
+}
+
 static void peerdb_key_hash(shkey_t *key, bc_hash_t *hash_p)
 {
   memset(hash_p, 0, sizeof(bc_hash_t));
@@ -54,15 +66,19 @@ char *peerdb_mode_label(int mode)
 
 static bc_t *peerdb_open(int mode)
 {
+  unet_bind_t *bind;
   bc_t *bc;
   int err;
 
-  bc = NULL;
-  err = bc_open(peerdb_mode_label(mode), &bc);
-  if (err)
+  bind = unet_bind_table(mode);
+  if (!bind)
     return (NULL);
 
-  return (bc);
+  if (bind->peer_db == NULL) {
+    (void)bc_open(peerdb_mode_label(mode), &bind->peer_db);
+  }
+
+  return (bind->peer_db);
 }
 
 static peerdb_t *peerdb_new(int mode, shpeer_t *peer)
@@ -151,11 +167,6 @@ static void peerdb_sort(peerdb_t **ret_list, size_t ret_size, int fact)
     qsort(ret_list, ret_size, sizeof(peerdb_t), peerdb_sort_revcmp); 
 }
 
-static int peerdb_close(bc_t *db)
-{
-  bc_close(db);
-}
-
 static peerdb_t **peerdb_track_scan(bc_t *db, int max)
 {
   static int _scan_index;
@@ -167,10 +178,8 @@ static peerdb_t **peerdb_track_scan(bc_t *db, int max)
   int i;
 
   ret_list = (peerdb_t **)calloc(max+1, sizeof(peerdb_t));
-  if (!ret_list) {
-    peerdb_close(db);
+  if (!ret_list)
     return (NULL);
-  }
 
   ret_cnt = 0;
   db_max = bc_idx_next(db); 
@@ -186,7 +195,6 @@ static peerdb_t **peerdb_track_scan(bc_t *db, int max)
       _scan_index++;
     }
   }
-  peerdb_close(db);
 
   return (ret_list);
 }
@@ -227,7 +235,7 @@ static void peerdb_prune(bc_t *db)
       bc_clear(db, pos); 
   }
 
-  free(p_list);
+  peerdb_list_free(p_list);
 }
 
 static int peerdb_write(bc_t *db, peerdb_t *p)
@@ -327,7 +335,6 @@ static peerdb_t **peerdb_track_list(int mode, int ret_max)
 
   db_max = bc_idx_next(db); 
   db_max = MIN(db_max, MAX_PEERDB_TRACK_LIST_SIZE);
-  peerdb_close(db);
 
   ret_list = peerdb_track_scan(db, db_max);
   if (!ret_list)
@@ -357,7 +364,6 @@ static void peerdb_del(int mode, shkey_t *key)
   if (!err)
     bc_clear(db, pos); 
 
-  peerdb_close(db);
 }
 
 
@@ -388,7 +394,6 @@ void unet_peer_scan(void)
     db = peerdb_open(mode);
     if (!db) continue;
     peers = peerdb_track_scan(db, MAX_UNET_PEER_SCAN_SIZE);
-    peerdb_close(db);
     if (!peers) continue; 
 
     for (i = 0; i < MAX_UNET_PEER_SCAN_SIZE; i++) {
@@ -400,7 +405,7 @@ void unet_peer_scan(void)
       memcpy(peer, &peers[i]->peer, sizeof(shpeer_t));
       create_uevent_verify_peer(mode, peer);
     }
-    free(peers);
+    peerdb_list_free(peers);
   }
 
 }
@@ -459,9 +464,8 @@ void unet_peer_fill(int mode)
   if (!bind)
     return;
 
-  peer_list = peerdb_track_list(mode, INIT_UNET_PEER_SCAN_SIZE);
-
   i = 0;
+  peer_list = peerdb_track_list(mode, INIT_UNET_PEER_SCAN_SIZE);
   if (peer_list) {
     for (; peer_list[i] && i < INIT_UNET_PEER_SCAN_SIZE; i++) {
       /* The event will de-allocate the peer. */
@@ -469,7 +473,7 @@ void unet_peer_fill(int mode)
       memcpy(peer, &peer_list[i]->peer, sizeof(shpeer_t));
       create_uevent_connect_peer(mode, peer);
     }
-    free(peer_list);
+    peerdb_list_free(peer_list);
   }
   if (i == 0) {
     char buf[256];
@@ -493,8 +497,6 @@ unsigned int unet_peer_total(int mode)
     return (0);
 
   ret_tot = bc_idx_next(db);
-  peerdb_close(db);
-
   return (ret_tot);
 }
 
@@ -518,18 +520,14 @@ void unet_peer_decr(int mode, shpeer_t *peer)
   db = peerdb_open(mode);
   err = peerdb_read(db, shpeer_kpriv(peer), &p);
   if (err) {
-    if (err != SHERR_NOENT) {
-      peerdb_close(db);
+    if (err != SHERR_NOENT)
       return;
-    }
 
     p = peerdb_new(mode, peer);
   }
 
   p->trust -= 1;
   peerdb_write(db, p);
-
-  peerdb_close(db);
 }
 
 void unet_peer_incr(int mode, shpeer_t *peer)
@@ -555,17 +553,13 @@ void unet_peer_incr(int mode, shpeer_t *peer)
     return;
   err = peerdb_read(db, shpeer_kpriv(peer), &p);
   if (err) {
-    if (err != SHERR_NOENT) {
-      peerdb_close(db);
+    if (err != SHERR_NOENT)
       return;
-    }
 
     p = peerdb_new(mode, peer);
   }
   p->trust += 1;
-  err = peerdb_write(db, p);
-
-  peerdb_close(db);
+  peerdb_write(db, p);
 }
 
 shpeer_t **unet_peer_track_list(int mode, int max_peer)
@@ -588,7 +582,7 @@ shpeer_t **unet_peer_track_list(int mode, int max_peer)
 
   peer_list = (shpeer_t **)calloc(max + 1, sizeof(shpeer_t *));
   if (!peer_list) {
-    free(peers);
+    peerdb_list_free(peers);
     return (NULL);
   }
  
@@ -596,7 +590,7 @@ shpeer_t **unet_peer_track_list(int mode, int max_peer)
     peer_list[i] = (shpeer_t *)calloc(1, sizeof(shpeer_t));
     memcpy(peer_list[i], &peers[i]->peer, sizeof(shpeer_t));
   }
-  free(peers);
+  peerdb_list_free(peers);
 
   return (peer_list);
 }
@@ -628,10 +622,8 @@ int unet_peer_export_path(int ifaceIndex, char *path)
   db_max = bc_idx_next(db);
   for (idx = 0; idx < db_max; idx++) {
     err = peerdb_read_index(db, idx, &p);
-    if (err) {
-      peerdb_close(db);
+    if (err)
       return (err);
-    }
 
     port = 0;
     memset(hostname, 0, sizeof(hostname));
@@ -644,7 +636,6 @@ int unet_peer_export_path(int ifaceIndex, char *path)
     shjson_str_add(node, "host", hostname);
     shjson_str_add(node, "label", (char *)iface);
   }
-  peerdb_close(db);
 
   text = shjson_print(root);
   shjson_free(&root);
