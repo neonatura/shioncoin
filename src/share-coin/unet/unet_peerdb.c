@@ -188,13 +188,12 @@ static peerdb_t **peerdb_track_scan(bc_t *db, int max)
   if (db_max != 0) {
     for (i = 0; i < max; i++) {
       err = peerdb_read_index(db, (_scan_index % db_max), &p);
+      _scan_index++;
       if (err)
         break;
 
       ret_list[ret_cnt] = p;
       ret_cnt++;
-
-      _scan_index++;
     }
   }
 
@@ -337,6 +336,7 @@ static peerdb_t **peerdb_track_list(int mode, int ret_max)
 
   db_max = bc_idx_next(db); 
   db_max = MIN(db_max, MAX_PEERDB_TRACK_LIST_SIZE);
+  db_max = MIN(db_max, ret_max);
 
   ret_list = peerdb_track_scan(db, db_max);
   if (!ret_list)

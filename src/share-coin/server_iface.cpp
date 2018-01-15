@@ -1735,10 +1735,12 @@ vector <CAddress> GetAddresses(CIface *iface, int max_peer)
     peer = addr_list[idx];
 
     shpeer_host(peer, hostname, &port);
+    shpeer_free(&peer);
+
     CAddress addr(CService(hostname, port));
     vAddr.push_back(addr);
 
-    shpeer_free(&peer);
+    free(peer);
   }
   free(addr_list);
 
