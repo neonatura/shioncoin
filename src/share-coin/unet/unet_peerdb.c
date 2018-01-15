@@ -223,9 +223,10 @@ static void peerdb_prune(bc_t *db)
   peerdb_sort(p_list, db_max, -1);
 
   del_max = MAX(1, db_max - MAX_PEERDB_TRACK_LIST_SIZE);
+  del_max = MIN(del_max, db_max);
   del_max = MIN(del_max, MAX_PEERDB_TRACK_PRUNE_SIZE);
   for (idx = 0; idx < del_max; idx++) {
-    if (p_list[idx]->trust > 0)
+    if (!p_list[idx] || p_list[idx]->trust > 0)
       break;
 
     /* delete stale entry */
