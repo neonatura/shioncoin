@@ -292,20 +292,26 @@ static shjson_t *stratum_generic_error(void)
 
 static int stratum_request_account_create(int ifaceIndex, user_t *user, char *account)
 {
+  CIface *iface;
   shjson_t *reply;
   const char *json_data = "{\"result\":null,\"error\":null}";
   int err;
 
   reply = NULL;
-  if (account) {
+  iface = GetCoinByIndex(ifaceIndex);
+  if (iface && iface->enabled && account) {
+    const char *text;
+
     /* creates a usde address for an account name */
     /* providing account does not exist; returns usde address and sha of private key */
-    reply = stratum_json(stratum_create_account(ifaceIndex, account));
-    if (!reply)
-      reply = stratum_json(stratum_error_get(atoi(user->cur_id)));
-  } else {
-    reply = stratum_generic_error();
+    text = stratum_create_account(ifaceIndex, account);
+    if (!text)
+      text = stratum_error_get(atoi(user->cur_id));
+    if (text)
+      reply = stratum_json(text);
   }
+  if (!reply)
+    reply = stratum_generic_error();
 
   err = stratum_send_message(user, reply);
   shjson_free(&reply);
@@ -315,16 +321,22 @@ static int stratum_request_account_create(int ifaceIndex, user_t *user, char *ac
 
 static int stratum_request_account_address(int ifaceIndex, user_t *user, char *hash)
 {
+  CIface *iface;
   shjson_t *reply;
   int err;
 
-  if (hash) {
-    reply = stratum_json(stratum_getaddressinfo(ifaceIndex, hash));
-    if (!reply)
-      reply = stratum_json(stratum_error_get(atoi(user->cur_id)));
-  } else {
-    reply = stratum_generic_error();
+  reply = NULL;
+  iface = GetCoinByIndex(ifaceIndex);
+  if (iface && iface->enabled && hash) {
+    const char *text = NULL;
+    text = stratum_getaddressinfo(ifaceIndex, hash);
+    if (!text)
+      text = stratum_error_get(atoi(user->cur_id));
+    if (text)
+      reply = stratum_json(text);
   }
+  if (!reply)
+    reply = stratum_generic_error();
 
   err = stratum_send_message(user, reply);
   shjson_free(&reply);
@@ -334,16 +346,23 @@ static int stratum_request_account_address(int ifaceIndex, user_t *user, char *h
 
 static int stratum_request_account_secret(int ifaceIndex, user_t *user, char *hash, const char *pkey_str)
 {
+  CIface *iface;
   shjson_t *reply;
   int err;
 
-  if (hash) {
-    reply = stratum_json(stratum_getaddresssecret(ifaceIndex, hash, pkey_str));
-    if (!reply)
-      reply = stratum_json(stratum_error_get(atoi(user->cur_id)));
-  } else {
-    reply = stratum_generic_error();
+  reply = NULL;
+  iface = GetCoinByIndex(ifaceIndex);
+  if (iface && iface->enabled && hash) {
+    const char *text;
+
+    text = stratum_getaddresssecret(ifaceIndex, hash, pkey_str);
+    if (!text)
+      text = stratum_error_get(atoi(user->cur_id));
+    if (text)
+      reply = stratum_json(text);
   }
+  if (!reply)
+    reply = stratum_generic_error();
 
   err = stratum_send_message(user, reply);
   shjson_free(&reply);
