@@ -3309,7 +3309,6 @@ Value rpc_peer_importdat(CIface *iface, const Array& params, bool fStratum)
     BOOST_FOREACH(const CAddress &addr, vAddr) {
       sprintf(addr_str, "%s %d", addr.ToStringIP().c_str(), addr.GetPort());
       peer = shpeer_init(iface->name, addr_str);
-      //unet_peer_track_add(bind->peer_db, peer);
       unet_peer_track_add(ifaceIndex, peer);
       shpeer_free(&peer);
     }
@@ -5005,6 +5004,7 @@ static bool _verify_rpc_auth(const uint256& auth_key, unsigned int auth_pin)
     string key_hash_str((const char *)ret_str);
     local_site_key = uint256(key_hash_str);
     memcpy(&s_key, skey, sizeof(s_key));
+    shkey_free(&skey);
   }
 
   if (auth_key != local_site_key) {

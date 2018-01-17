@@ -124,6 +124,7 @@ now = shtime();
     create_uevent_connect_peer(e->mode, peer);
     e->data = NULL; /* prevent event data from being free'd */
 
+    shnet_close(e->fd);
     e->fd = 0;
     return (0); /* dispose of event */
   }

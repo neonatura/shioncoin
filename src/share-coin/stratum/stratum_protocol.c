@@ -32,6 +32,8 @@
 
 #define DEFAULT_WORK_DIFFICULTY 256
 
+#define WORK_ROUND_OFFSET 400000 
+
 char *stratum_runtime_session(void)
 {
   static char buf[32];
@@ -608,6 +610,66 @@ int stratum_default_iface(void)
   return (ifaceIndex);
 }
 
+shjson_t *getminingroundsinfo(void)
+{
+  shjson_t *reply;
+  shjson_t *data;
+  shjson_t *node;
+  user_t *user;
+  double rounds[MAX_ROUNDS_PER_HOUR];
+  int miners[MAX_ROUNDS_PER_HOUR];
+  double speed;
+  char err_msg[256];
+  char idx_str[256];
+  char buf[256];
+  time_t now;
+  int r_idx;
+  int idx;
+  int err_code;
+  int hour;
+
+  err_code = 0;
+  memset(err_msg, 0, sizeof(err_msg));
+
+  reply = shjson_init(NULL);
+  
+  now = time(NULL);
+  hour = ((now / 3600) % MAX_ROUNDS_PER_HOUR);
+
+  for (idx = 0; idx < MAX_ROUNDS_PER_HOUR; idx++) {   
+    rounds[idx] = 0;
+    miners[idx] = 0;
+  }
+
+  data = shjson_array_add(reply, "result");
+  for (idx = 0; idx < MAX_ROUNDS_PER_HOUR; idx++) {   
+    r_idx = (hour - idx) % MAX_ROUNDS_PER_HOUR;
+    for (user = client_list; user; user = user->next) {
+      if (user->block_avg[idx] < 0.000001)
+        continue;
+
+      rounds[r_idx] += user->block_avg[idx];
+      miners[r_idx]++;
+    }
+  }
+  speed = 0;
+  for (user = client_list; user; user = user->next) {
+    speed += stratum_user_speed(user);
+  }
+  for (idx = 0; idx < MAX_ROUNDS_PER_HOUR; idx++) {
+    node = shjson_obj_add(data, NULL);
+    shjson_num_add(node, "round", (now/3600) - idx - WORK_ROUND_OFFSET);
+    shjson_num_add(node, "stamp", ((now/3600) - idx) * 3600);
+    shjson_num_add(node, "shares", rounds[idx]);
+    shjson_num_add(node, "workers", miners[idx]);
+    if (idx == 0)
+      shjson_num_add(node, "speed", speed);
+  }
+
+  shjson_null_add(reply, "error");
+
+  return (reply);
+}
 
 /**
  * @todo: leave stale worker users (without open fd) until next round reset. current behavior does not payout if connection is severed.
@@ -635,7 +697,7 @@ int stratum_request_message(user_t *user, shjson_t *json)
   if (val) {
     sprintf(user->cur_id, "%u", (unsigned int)val);
   } else {
-    text = shjson_str(json, "id", "");
+    text = shjson_astr(json, "id", "");
     if (text && *text)
       strncpy(user->cur_id, text, sizeof(user->cur_id)-1);
   }
@@ -932,6 +994,14 @@ int stratum_request_message(user_t *user, shjson_t *json)
     }
     if (0 == strcmp(method, "mining.info")) {
       reply = shjson_init(getmininginfo(ifaceIndex));
+      if (reply) {
+        err = stratum_send_message(user, reply);
+        shjson_free(&reply);
+        return (err);
+      }
+    }
+    if (0 == strcmp(method, "mining.rounds")) {
+      reply = getminingroundsinfo();
       if (reply) {
         err = stratum_send_message(user, reply);
         shjson_free(&reply);

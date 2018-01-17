@@ -668,47 +668,6 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
         }
       }
 
-#if 0
-      else if (inv.type == MSG_TX || inv.type == MSG_WITNESS_TX)
-      {
-        bool pushed = false;
-        if (EMC2Block::mempool.exists(inv.hash)) {
-          CTransaction tx = EMC2Block::mempool.lookup(inv.hash);
-          pfrom->PushTx(tx, 
-              (inv.type == MSG_TX) ? SERIALIZE_TRANSACTION_NO_WITNESS : 0);
-fprintf(stderr, "DEBUG: emc2_ProcessMessage[inv/tx]: pfrom->PushTx('%s', %d)\n", tx.GetHash().GetHex().c_str(), inv.type); 
-          pushed = true;
-        }
-#endif
-
-#if 0
-        // Send stream from relay memory
-        bool pushed = false;
-        {
-          LOCK(cs_mapRelay);
-          map<CInv, CDataStream>::iterator mi = mapRelay.find(inv);
-          if (mi != mapRelay.end()) {
-            string cmd = inv.GetCommand()
-            pfrom->PushMessage(cmd.c_str(), (*mi).second);
-            pushed = true;
-          }
-        }
-        if (!pushed && inv.type == MSG_TX) {
-          LOCK(EMC2Block::mempool.cs);
-          if (EMC2Block::mempool.exists(inv.hash)) {
-            CTransaction tx = EMC2Block::mempool.lookup(inv.hash);
-            pfrom->PushTx(tx, 
-                (inv.type == MSG_TX) ? SERIALIZE_TRANSACTION_NO_WITNESS : 0);
-            pushed = true;
-          }
-        }
-
-        if (!pushed) {
-          vNotFound.push_back(inv);
-        }
-      }
-#endif
-
       // Track requests for our stuff
       Inventory(inv.hash);
     }
@@ -1013,23 +972,23 @@ fprintf(stderr, "DEBUG: emc2_ProcessMessage[inv/tx]: pfrom->PushTx('%s', %d)\n",
   }
 
   else if (strCommand == "sendcmpct") {
-//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'sendcmpct'\n");
+    Debug("emc2_ProcessBlock: received 'sendcmpct'");
  
   }
 
   else if (strCommand == "cmpctblock") {
-//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'cmpctblock'\n");
+    Debug("emc2_ProcessBlock: received 'cmpctblock'");
   }
 
   else if (strCommand == "getblocktxn") {
-//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'getblocktxn'\n");
+    Debug("emc2_ProcessBlock: received 'getblocktxn'");
   }
 
   else if (strCommand == "blocktxn") {
-//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'blocktxn'\n");
+    Debug("emc2_ProcessBlock: receveed 'blocktxn'");
   }
   else if (strCommand == "headers") {
-//fprintf(stderr, "DEBUG: emc2_ProcessBlock: receveed 'headers'\n");
+    Debug("emc2_ProcessBlock: receveed 'headers'");
   }
 
   else if (strCommand == "reject") { /* remote peer is reporting block/tx error */
@@ -1057,12 +1016,15 @@ fprintf(stderr, "DEBUG: emc2_ProcessMessage[inv/tx]: pfrom->PushTx('%s', %d)\n",
     int64 newFeeFilter = 0;
     vRecv >> newFeeFilter;
 
-//fprintf(stderr, "DEBUG: emc2_ProcessMessage: \"feefilter\": %f coins.\n", ((double)newFeeFilter/COIN));
+    Debug("(emc2) ProcessMessage[feefilter]: info: min fee %f", (double)newFeeFilter/COIN); 
+#if 0
+
     if (MoneyRange(iface, newFeeFilter) &&
         newFeeFilter >= EMC2_MIN_TX_FEE &&
         newFeeFilter < EMC2_MAX_TX_FEE) {
       pfrom->nMinFee = newFeeFilter;
     }
+#endif
   }
 
   else if (strCommand == "notfound") {
@@ -1136,13 +1098,15 @@ bool emc2_ProcessMessages(CIface *iface, CNode* pfrom)
     {
       if ((int)vRecv.size() > nHeaderSize)
       {
-//fprintf(stderr, "DEBUG: EMC2_PROCESSMESSAGE MESSAGESTART NOT FOUND\n");
+        Debug("(emc2) warning: PROCESSMESSAGE MESSAGESTART NOT FOUND");
         vRecv.erase(vRecv.begin(), vRecv.end() - nHeaderSize);
       }
       break;
     }
+
     if (pstart - vRecv.begin() > 0)
-//fprintf(stderr, "DEBUG: PROCESSMESSAGE SKIPPED %d BYTES\n\n", pstart - vRecv.begin());
+      Debug("(emc2) warning: PROCESSMESSAGE SKIPPED %d BYTES", pstart - vRecv.begin());
+
     vRecv.erase(vRecv.begin(), pstart);
 
     // Read header

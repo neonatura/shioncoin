@@ -1251,6 +1251,19 @@ const char *GetSiteExtraNonceHex()
   return ((const char *)ret_buf);
 }
 
+/* remove all pending work */
+void map_work_term(void)
+{
+  /* prune worker blocks (< 5 min) */
+  vector<unsigned int> vDelete;
+  for (work_map::const_iterator mi = mapWork.begin(); mi != mapWork.end(); ++mi) {
+    CBlock *tblock = mi->second;
+    unsigned int id = (unsigned int)mi->first;
+    delete tblock;
+  }
+  mapWork.clear();
+}
+
 #ifdef __cplusplus
 }
 #endif

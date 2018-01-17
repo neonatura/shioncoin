@@ -442,21 +442,17 @@ int txdb_hashlist_cb(void *p, int arg_nr, char **args, char **cols)
 
 bool CTxDB::ReadTxIndex(uint256 hash, CTxIndex& txindex)
 {
-    assert(!fClient);
     txindex.SetNull();
     return Read(make_pair(string("tx"), hash), txindex);
 }
 
 bool CTxDB::UpdateTxIndex(uint256 hash, const CTxIndex& txindex)
 {
-    assert(!fClient);
     return Write(make_pair(string("tx"), hash), txindex);
 }
 
 bool CTxDB::AddTxIndex(const CTransaction& tx, const CDiskTxPos& pos, int nHeight)
 {
-    assert(!fClient);
-
     // Add to tx index
     uint256 hash = tx.GetHash();
     CTxIndex txindex(pos, tx.vout.size());
@@ -465,17 +461,12 @@ bool CTxDB::AddTxIndex(const CTransaction& tx, const CDiskTxPos& pos, int nHeigh
 
 bool CTxDB::EraseTxIndex(const CTransaction& tx)
 {
-    assert(!fClient);
     uint256 hash = tx.GetHash();
-
-//    Debug("EraseTxIndex: removing tx '%s' from block-chain.", tx.GetHash().GetHex().c_str());
-
     return Erase(make_pair(string("tx"), hash));
 }
 
 bool CTxDB::ContainsTx(uint256 hash)
 {
-    assert(!fClient);
     return Exists(make_pair(string("tx"), hash));
 }
 

@@ -845,7 +845,16 @@ static void _bc_chain_idle(void)
 
 void bc_chain_idle(void)
 {
+  static time_t l_time;
+  time_t now;
+
+  now = time(NULL);
+  if (l_time == now)
+    return;
+
   bc_lock();
   _bc_chain_idle();
   bc_unlock();
+
+  l_time = now;
 }

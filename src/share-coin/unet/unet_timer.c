@@ -38,6 +38,10 @@ int unet_timer_set(int mode, unet_op timer_f)
   if (!bind)
     return (SHERR_INVAL);
 
+  if (bind->peer_db) {
+    bc_idle(bind->peer_db);
+  }
+
   bind->timer_stamp = shtime();
   bind->op_timer = timer_f;
 

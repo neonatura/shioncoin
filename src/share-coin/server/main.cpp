@@ -377,7 +377,7 @@ string GetWarnings(int ifaceIndex, string strFor)
     return strStatusBar;
   else if (strFor == "rpc")
     return strRPC;
-  assert(!"GetWarnings() : invalid parameter");
+  //assert(!"GetWarnings() : invalid parameter");
   return "error";
 }
 

@@ -97,9 +97,9 @@
 
   public:
       mutable CCriticalSection cs_wallet;
-      mutable int ifaceIndex;
-      mutable unsigned int nScanHeight;
-      mutable unsigned int nValidateHeight;
+      int ifaceIndex;
+      unsigned int nScanHeight;
+      unsigned int nValidateHeight;
 
       mutable std::map<std::string, uint256> mapAlias;
       mutable std::map<uint256, std::string> mapAliasArch;
@@ -152,7 +152,8 @@
           nMasterKeyMaxID = 0;
           pwalletdbEncryption = NULL;
           ifaceIndex = index;
-  nScanHeight = 0;
+          nScanHeight = 0;
+          nValidateHeight = 0;
       }
       CWallet(int index, std::string strWalletFileIn)
       {
@@ -163,7 +164,8 @@
           nMasterKeyMaxID = 0;
           pwalletdbEncryption = NULL;
           ifaceIndex = index;
-  nScanHeight = 0;
+          nScanHeight = 0;
+          nValidateHeight = 0;
       }
 
       std::map<uint256, CWalletTx> mapWallet;

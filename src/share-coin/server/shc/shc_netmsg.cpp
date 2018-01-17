@@ -65,6 +65,46 @@ extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
 
 #define SHC_COIN_HEADER_SIZE SIZEOF_COINHDR_T
 
+#define LIMITED_STRING(obj,n) REF(LimitedString< n >(REF(obj)))
+
+template<size_t Limit>
+class LimitedString
+{
+  protected:
+    std::string& string;
+
+  public:
+    LimitedString(std::string& string) : string(string) {}
+
+    template<typename Stream>
+      void Unserialize(Stream& s, int, int=0)
+      {
+        size_t size = ReadCompactSize(s);
+        if (size > Limit) {
+          throw std::ios_base::failure("String length limit exceeded");
+        }
+        string.resize(size);
+        if (size != 0)
+          s.read((char*)&string[0], size);
+      }
+
+    template<typename Stream>
+      void Serialize(Stream& s, int, int=0) const
+      {
+        WriteCompactSize(s, string.size());
+        if (!string.empty())
+          s.write((char*)&string[0], string.size());
+      }
+
+    unsigned int GetSerializeSize(int, int=0) const
+    {
+      return GetSizeOfCompactSize(string.size()) + string.size();
+    }
+};
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // dispatching functions
@@ -1006,6 +1046,54 @@ fprintf(stderr, "DEBUG: ProcessMessage[tx]: block.nDoS = %d\n", block.nDoS);
     }
   }
 
+  else if (strCommand == "sendheaders") {
+    /* not implemented */
+    pfrom->fPreferHeaders = true;
+  }
+
+  else if (strCommand == "sendcmpct") {
+    /* not implemented */
+    Debug("shc_ProcessBlock: received 'sendcmpct'");
+
+  }
+
+  else if (strCommand == "cmpctblock") {
+    Debug("shc_ProcessBlock: received 'cmpctblock'");
+  }
+
+  else if (strCommand == "getblocktxn") {
+    Debug("shc_ProcessBlock: received 'getblocktxn'");
+  }
+
+  else if (strCommand == "blocktxn") {
+    Debug("shc_ProcessBlock: receveed 'blocktxn'");
+  }
+
+  else if (strCommand == "headers") {
+    Debug("shc_ProcessBlock: receveed 'headers'");
+  }
+
+  else if (strCommand == "reject") { /* remote peer is reporting block/tx error */
+    string strMsg;
+    unsigned char ccode;
+    string strReason;
+
+    vRecv >> LIMITED_STRING(strMsg, 12) >> ccode >> LIMITED_STRING(strReason, 111);
+    ostringstream ss;
+    ss << strMsg << " SHC code " << itostr(ccode) << ": " << strReason;
+
+    if (strMsg == "block" || strMsg == "tx") {
+      uint256 hash;
+      vRecv >> hash;
+      ss << ": hash " << hash.ToString();
+
+      if (strMsg == "tx") {
+        /* DEBUG: TODO: pool.DecrPriority(hash) */
+      }
+    }
+    error(SHERR_REMOTE, ss.str().c_str());
+  }
+
 
   else
   {
@@ -1052,13 +1140,14 @@ bool shc_ProcessMessages(CIface *iface, CNode* pfrom)
     {
       if ((int)vRecv.size() > nHeaderSize)
       {
-        printf("\n\nPROCESSMESSAGE MESSAGESTART NOT FOUND\n\n");
+        Debug("(shc) warning: PROCESSMESSAGE MESSAGESTART NOT FOUND");
         vRecv.erase(vRecv.begin(), vRecv.end() - nHeaderSize);
       }
       break;
     }
     if (pstart - vRecv.begin() > 0)
-//fprintf(stderr, "PROCESSMESSAGE SKIPPED %d BYTES\n", pstart - vRecv.begin());
+      Debug("(shc) warning: PROCESSMESSAGE SKIPPED %d BYTES", pstart - vRecv.begin());
+
     vRecv.erase(vRecv.begin(), pstart);
 
     // Read header

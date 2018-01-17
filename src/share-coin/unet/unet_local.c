@@ -127,8 +127,10 @@ static int external_local_discover_raw(char *serv_hostname, struct in_addr *net_
   }
 
   strtok(text, "\n");
-  if (inet_aton(text, net_addr) == 0)
+  if (inet_aton(text, net_addr) == 0) {
+    shnet_close(sk);
     return (SHERR_INVAL);
+  }
 
   shbuf_clear(buff);
   shnet_close(sk);

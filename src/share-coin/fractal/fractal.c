@@ -107,7 +107,7 @@ int fractal_render(char *img_path, double in_seed, double zoom, double span, dou
   mkdir(dir_path, 0777);
   
   BMP_WriteFile(bmp, img_path);
-  BMP_CHECK_ERROR(stderr, -2);
+//  BMP_CHECK_ERROR(stderr, -2);
   BMP_Free( bmp );
 
   return 0;

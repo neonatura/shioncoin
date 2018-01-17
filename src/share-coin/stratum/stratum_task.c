@@ -683,7 +683,7 @@ void stratum_round_reset(time_t stamp)
       continue; /* unknwown user */
 
     user->block_avg[hour] = 
-      (user->block_avg[hour] + (double)user->block_tot) / 2;
+      (user->block_avg[hour] + ((double)user->block_tot * 2)) / 3;
     user->round_stamp = stamp;
     user->block_tot = 0;
     user->block_cnt = 0;

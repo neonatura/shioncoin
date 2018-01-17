@@ -910,10 +910,16 @@ void server_shutdown(void)
 //  Shutdown2();
 }
 #endif
+
+extern void map_work_term(void);
+
 void server_shutdown(void)
 {
+  map_work_term();
   CloseBlockChains();
   fShutdown = true;
+
+
 }
 
 #ifdef __cplusplus

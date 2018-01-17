@@ -89,6 +89,7 @@ const char *get_rpc_password(char *host)
 
   memset(ret_str, 0, sizeof(ret_str));
   strncpy(ret_str, shkey_print(key), sizeof(ret_str)-1);
+  shkey_free(&key);
 
   return (ret_str);
 }
