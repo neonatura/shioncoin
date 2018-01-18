@@ -509,8 +509,8 @@ void stratum_http_block_html(int ifaceIndex, shbuf_t *buff)
     return;
 
   shbuf_catstr(buff,
-      "<div style=\"float : right; height : 15px; transform : rotate(270deg); margin-top : 64px;\"><span style=\"font-size : 11px; font-variant : small-caps;\">Validation Matrix</span></div>\n"
-      "<div style=\"float : right;\"><img id=\"validate_matrix_img\" name=\"validate_matrix_img\" src=\"/image/validate_matrix.bmp?span=0.5&x=128&y=128\" style=\"width : 256px; height : 256px; border : 0; padding : 0 0 0 0; margin : 0 0 0 0;\"></div>\n");
+      "<div style=\"float : right; height : 15px; transform : rotate(270deg); margin-top : 64px; margin-left : -22px;\"><span style=\"font-size : 11px; font-variant : small-caps;\">Validation Matrix</span></div>\n"
+      "<div style=\"float : right;\"><img id=\"validate_matrix_img\" name=\"validate_matrix_img\" src=\"/image/validate_matrix.bmp?span=0.5&x=128&y=128\" style=\"width : 256px; height : 256px; border : 0; padding : 0 0 0 0; margin-top : 18px;\"></div>\n");
 
 }
 
@@ -536,7 +536,7 @@ void stratum_http_main_html(unsigned int sk, char *url, shbuf_t *buff)
   shbuf_catstr(buff, 
       "<div style=\"margin-left : 64px; float : left; width : 60%; font-size : 13px;\">" 
       "<table cellspacing=2 style=\"width : 100%; linear-gradient(to bottom, #1e9957,#29d889,#20ca7c,#8de8b9); color : #666;\">"
-      "<tr style=\"background-color : rgba(128,128,128,0.5); color : #eee;\"><td>Worker</td><td>Speed</td><td>Shares</td><td>Blocks Submitted</td></tr>");
+      "<tr style=\"background-color : rgba(128,128,128,0.5); color : #eee;\"><td>Worker</td><td>Speed</td><td>Shares</td><td>Blocks</td></tr>");
   for (user = client_list; user; user = user->next) {
     if (!*user->worker)
       continue;
