@@ -1084,7 +1084,16 @@ static const char *json_getaccounttransactioninfo(int ifaceIndex, const char *tx
       int64 nValue = out.tx->vout[out.i].nValue;
       const CScript& pk = out.tx->vout[out.i].scriptPubKey;
 
-      Object entry;
+      CTxDestination address;
+      if (!ExtractDestination(pk, address) || 
+          !IsMine(*wallet, address))
+        continue;
+
+      const CTransaction& tx = *out.tx;
+      int nTxSize = (int)wallet->GetVirtualTransactionSize(tx);
+      CCoinAddr c_addr(ifaceIndex, address);
+
+      Object entry = JSONAddressInfo(ifaceIndex, c_addr, false);
       entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
       entry.push_back(Pair("hash", out.tx->GetWitnessHash().GetHex()));
       entry.push_back(Pair("vout", out.i));
@@ -1092,6 +1101,7 @@ static const char *json_getaccounttransactioninfo(int ifaceIndex, const char *tx
       entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
       entry.push_back(Pair("amount",ValueFromAmount(nValue)));
       entry.push_back(Pair("confirmations",out.nDepth));
+      entry.push_back(Pair("total-size", nTxSize)); 
       result.push_back(entry);
     }
   } catch(Object& objError) {

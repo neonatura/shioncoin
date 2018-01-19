@@ -54,9 +54,6 @@ static int emc2_init(CIface *iface, void *_unused_)
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
-fprintf(stderr, "DEBUG: size of CScritNum(0x1) = %d\n", (CScript() << CScriptNum(0x1)).size());
-fprintf(stderr, "DEBUG: size of CScritNum(0xfff..) = %d\n", (CScript() << CScriptNum(0xffffffffff)).size());
-
   iface->nRuleChangeActivationThreshold = 15120; // 75% of 20160
   iface->nMinerConfirmationWindow = 20160; /* aprox */
 
