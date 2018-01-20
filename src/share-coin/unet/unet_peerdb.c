@@ -29,7 +29,7 @@
 #define INIT_UNET_PEER_SCAN_SIZE 8
 #define MAX_UNET_PEER_SCAN_SIZE 64
 
-#define MAX_PEERDB_TRACK_LIST_SIZE 5000
+#define MAX_PEERDB_TRACK_LIST_SIZE 1000
 #define MAX_PEERDB_TRACK_PRUNE_SIZE 100
 
 typedef struct peerdb_t
@@ -188,6 +188,7 @@ static peerdb_t **peerdb_track_scan(bc_t *db, int max)
 
   db_max = bc_idx_next(db); 
   max = MIN(max, db_max);
+  max = MIN(max, MAX_PEERDB_TRACK_LIST_SIZE);
   if (max == 0) {
     ret_list = (peerdb_t **)calloc(1, sizeof(peerdb_t));
     return (ret_list);
@@ -347,7 +348,6 @@ static peerdb_t **peerdb_track_list(int mode, int ret_max)
     return (NULL);
 
   db_max = bc_idx_next(db); 
-  db_max = MIN(db_max, MAX_PEERDB_TRACK_LIST_SIZE);
   db_max = MIN(db_max, ret_max);
 
   ret_list = peerdb_track_scan(db, db_max);
@@ -419,6 +419,7 @@ void unet_peer_scan(void)
       memcpy(peer, &peers[i]->peer, sizeof(shpeer_t));
       create_uevent_verify_peer(mode, peer);
     }
+
     peerdb_list_free(peers);
   }
 
@@ -639,7 +640,7 @@ int unet_peer_export_path(int ifaceIndex, char *path)
   for (idx = 0; idx < db_max; idx++) {
     err = peerdb_read_index(db, idx, &p);
     if (err)
-      return (err);
+      continue;
 
     port = 0;
     memset(hostname, 0, sizeof(hostname));

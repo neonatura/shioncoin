@@ -682,7 +682,6 @@ void shc_server_close(int fd, struct sockaddr *addr)
 
 }
 
-list<CNode*> vNodesDisconnected;
 void usde_close_free(void)
 {
   NodeList &vNodes = GetNodeList(USDE_COIN_IFACE);
@@ -690,6 +689,7 @@ void usde_close_free(void)
 
   LOCK(cs_vNodes);
   vector<CNode*> vNodesCopy = vNodes;
+  list<CNode*> vNodesDisconnected;
 
   // Disconnect unused nodes
   BOOST_FOREACH(CNode* pnode, vNodesCopy)
@@ -714,8 +714,7 @@ void usde_close_free(void)
   }
 
   // Delete disconnected nodes
-  list<CNode*> vNodesDisconnectedCopy = vNodesDisconnected;
-  BOOST_FOREACH(CNode* pnode, vNodesDisconnectedCopy)
+  BOOST_FOREACH(CNode* pnode, vNodesDisconnected)
   {
     delete pnode;
   }
@@ -1140,6 +1139,7 @@ static void shc_close_free(void)
 
   LOCK(cs_vNodes);
   vector<CNode*> vNodesCopy = vNodes;
+vector<CNode*> shc_vNodesDisconnected;
 
   // Disconnect unused nodes
   BOOST_FOREACH(CNode* pnode, vNodesCopy)
@@ -1164,8 +1164,7 @@ static void shc_close_free(void)
   }
 
   // Delete disconnected nodes
-  list<CNode*> shc_vNodesDisconnectedCopy = shc_vNodesDisconnected;
-  BOOST_FOREACH(CNode* pnode, shc_vNodesDisconnectedCopy)
+  BOOST_FOREACH(CNode* pnode, shc_vNodesDisconnected)
   {
     delete pnode;
   }
@@ -1841,6 +1840,7 @@ void emc2_close_free(void)
 
   LOCK(cs_vNodes);
   vector<CNode*> vNodesCopy = vNodes;
+  vector<CNode*> vNodesDisconnected;
 
   // Disconnect unused nodes
   BOOST_FOREACH(CNode* pnode, vNodesCopy)
@@ -1865,8 +1865,7 @@ void emc2_close_free(void)
   }
 
   // Delete disconnected nodes
-  list<CNode*> vNodesDisconnectedCopy = vNodesDisconnected;
-  BOOST_FOREACH(CNode* pnode, vNodesDisconnectedCopy)
+  BOOST_FOREACH(CNode* pnode, vNodesDisconnected)
   {
     delete pnode;
   }
