@@ -481,7 +481,7 @@ bool ServicePeerEvent(int ifaceIndex)
   BOOST_FOREACH(CNode *node, vNodes) {
     if (node->fGetAddr)
       continue; /* already asked peer for addresses */
-    if (!node->fInbound)
+    if (node->fInbound)
       continue; /* mitigate fingerprinting */
     if (node->nVersion == 0)
       continue; /* stream not initialized */
