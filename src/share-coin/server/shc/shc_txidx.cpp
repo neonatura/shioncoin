@@ -371,14 +371,17 @@ static bool shc_LoadBlockIndex()
     const CTransaction& m_tx = block->vtx[0];
     const CTxMatrix& matrix = m_tx.matrix;
 
-    if (matrix.nHeight > pindexBest->nHeight)
+    if (matrix.nHeight > pindexBest->nHeight) {
+      delete block;
       break;
+    }
 
     CBlockIndex *tindex = pindex;
     while (tindex->pprev && tindex->nHeight > matrix.nHeight)
       tindex = tindex->pprev;
 
     matrixValidate.Append(tindex->nHeight, tindex->GetBlockHash()); 
+    delete block;
   }
 
   /* ident */
@@ -650,9 +653,9 @@ fprintf(stderr, "DEBUG: shc_RestoreBlockIndex: erased current block-chain index 
       hash = block.GetHash();
 
       err = bc_write(chain, height, hash.GetRaw(), sBlockData, sBlockLen);
+      free(sBlockData);
       if (err < 0)
         return error(SHERR_INVAL, "block-chain write: %s", sherrstr(n_height));
-      free(sBlockData);
 
       /* write tx ref's */
       BOOST_FOREACH(CTransaction& tx, block.vtx) {

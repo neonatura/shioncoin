@@ -1146,7 +1146,6 @@ bool SHCBlock::ReadBlock(uint64_t nHeight)
 {
 int ifaceIndex = SHC_COIN_IFACE;
   CIface *iface = GetCoinByIndex(ifaceIndex);
-  CDataStream sBlock(SER_DISK, CLIENT_VERSION);
   size_t sBlockLen;
   unsigned char *sBlockData;
   char errbuf[1024];
@@ -1166,8 +1165,11 @@ int ifaceIndex = SHC_COIN_IFACE;
   }
 
   /* serialize binary data into block */
-  sBlock.write((const char *)sBlockData, sBlockLen);
-  sBlock >> *this;
+  {
+    CDataStream sBlock(SER_DISK, CLIENT_VERSION);
+    sBlock.write((const char *)sBlockData, sBlockLen);
+    sBlock >> *this;
+  }
   free(sBlockData);
 
 #if 0

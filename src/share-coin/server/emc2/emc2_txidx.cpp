@@ -644,9 +644,9 @@ bool emc2_RestoreBlockIndex()
       hash = block.GetHash();
 
       err = bc_write(chain, height, hash.GetRaw(), sBlockData, sBlockLen);
+      free(sBlockData);
       if (err < 0)
         return error(SHERR_INVAL, "block-chain write: %s", sherrstr(n_height));
-      free(sBlockData);
 
       /* write tx ref's */
       BOOST_FOREACH(CTransaction& tx, block.vtx) {

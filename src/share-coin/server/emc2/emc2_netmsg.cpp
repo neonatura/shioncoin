@@ -277,14 +277,15 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
   char errbuf[256];
   shtime_t ts;
 
+#if 0
   Debug("EMC2:ProcessMessage: received '%s' (%d bytes from %s)\n", strCommand.c_str(), vRecv.size(), pfrom->addr.ToString().c_str());
-
   RandAddSeedPerfmon();
   if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
   {
     printf("dropmessagestest DROPPING RECV MESSAGE\n");
     return true;
   }
+#endif
 
   if (strCommand == "version")
   {
@@ -1124,7 +1125,7 @@ bool emc2_ProcessMessages(CIface *iface, CNode* pfrom)
     unsigned int nMessageSize = hdr.nMessageSize;
     if (nMessageSize > MAX_SIZE)
     {
-//fprintf(stderr, "emc2_ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
+      error(SHERR_2BIG, "emc2_ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
       continue;
     }
     if (nMessageSize > vRecv.size())

@@ -997,8 +997,7 @@ void LogException(std::exception* pex, const char* pszThread)
 void PrintException(std::exception* pex, const char* pszThread)
 {
     std::string message = FormatException(pex, pszThread);
-    printf("\n\n************************\n%s\n", message.c_str());
-    fprintf(stderr, "\n\n************************\n%s\n", message.c_str());
+    error(SHERR_INVAL, "exception: %s", message.c_str());
     strMiscWarning = message;
     throw;
 }
@@ -1006,8 +1005,7 @@ void PrintException(std::exception* pex, const char* pszThread)
 void PrintExceptionContinue(std::exception* pex, const char* pszThread)
 {
     std::string message = FormatException(pex, pszThread);
-    printf("\n\n************************\n%s\n", message.c_str());
-    fprintf(stderr, "\n\n************************\n%s\n", message.c_str());
+    error(SHERR_INVAL, "exception: %s", message.c_str());
     strMiscWarning = message;
 }
 
@@ -1245,16 +1243,15 @@ void AddTimeData(const CNetAddr& ip, int64 nTime)
                     fDone = true;
                     string strMessage = _("Warning: Please check that your computer's date and time are correct.  If your clock is wrong the daemon will not work properly.");
                     strMiscWarning = strMessage;
-                    printf("*** %s\n", strMessage.c_str());
+                    //printf("*** %s\n", strMessage.c_str());
                 }
             }
         }
         if (fDebug) {
-            BOOST_FOREACH(int64 n, vSorted)
-                printf("%+"PRI64d"  ", n);
-            printf("|  ");
+            //BOOST_FOREACH(int64 n, vSorted) printf("%+"PRI64d"  ", n);
+            //printf("|  ");
         }
-        printf("nTimeOffset = %+"PRI64d"  (%+"PRI64d" minutes)\n", nTimeOffset, nTimeOffset/60);
+        //printf("nTimeOffset = %+"PRI64d"  (%+"PRI64d" minutes)\n", nTimeOffset, nTimeOffset/60);
     }
 }
 
@@ -1313,7 +1310,7 @@ boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate)
         return fs::path(pszPath);
     }
 
-    printf("SHGetSpecialFolderPathA() failed, could not obtain requested path.\n");
+    //printf("SHGetSpecialFolderPathA() failed, could not obtain requested path.\n");
     return fs::path("");
 }
 #endif
@@ -1321,8 +1318,7 @@ boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate)
 void runCommand(std::string strCommand)
 {
     int nErr = ::system(strCommand.c_str());
-    if (nErr)
-        printf("runCommand error: system(%s) returned %d\n", strCommand.c_str(), nErr);
+//    if (nErr) printf("runCommand error: system(%s) returned %d\n", strCommand.c_str(), nErr);
 }
 
 void RenameThread(const char* name)

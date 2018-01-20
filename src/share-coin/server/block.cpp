@@ -510,6 +510,7 @@ bool CTransaction::ReadTx(int ifaceIndex, uint256 txHash, uint256 *hashBlock)
   }
   if (data_len != sizeof(uint64_t)) {
     sprintf(errbuf, "CTransaction::ReadTx: block reference has invalid size (%d).", data_len);
+    free(data);
     return error(SHERR_INVAL, errbuf);
   }
   memcpy(&blockHeight, data, sizeof(blockHeight));

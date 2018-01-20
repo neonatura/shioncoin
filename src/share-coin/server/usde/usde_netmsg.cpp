@@ -966,7 +966,7 @@ bool usde_ProcessMessages(CIface *iface, CNode* pfrom)
     unsigned int nMessageSize = hdr.nMessageSize;
     if (nMessageSize > MAX_SIZE)
     {
-//fprintf(stderr, "usde_ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
+      error(SHERR_2BIG, "usde_ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
       continue;
     }
     if (nMessageSize > vRecv.size())

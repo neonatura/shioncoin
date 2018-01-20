@@ -304,8 +304,10 @@ int64 TESTWallet::GetTxFee(CTransaction tx)
   int64 nFees;
   int i;
 
-  if (tx.IsCoinBase())
+  if (tx.IsCoinBase()) {
+    if (pblock) delete pblock;
     return (0);
+  }
 
   nFees = 0;
 #ifdef USE_LEVELDB_COINDB

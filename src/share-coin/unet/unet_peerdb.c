@@ -117,12 +117,19 @@ static int peerdb_read_index(bc_t *db, int pos, peerdb_t **peer_p)
   size_t data_len;
   int err;
 
+  /* does index exist? (redundant) */
+  err = bc_idx_get(db, pos, NULL);
+  if (err)
+    return (err);
+
   err = bc_get(db, pos, (unsigned char **)&data, &data_len);
   if (err)
     return (err);
 
   if (peer_p)
     *peer_p = (peerdb_t *)data;
+  else
+    free(data);
 
   return (0);
 }
@@ -179,22 +186,26 @@ static peerdb_t **peerdb_track_scan(bc_t *db, int max)
   int err;
   int i;
 
+  db_max = bc_idx_next(db); 
+  max = MIN(max, db_max);
+  if (max == 0) {
+    ret_list = (peerdb_t **)calloc(1, sizeof(peerdb_t));
+    return (ret_list);
+  } 
+
   ret_list = (peerdb_t **)calloc(max+1, sizeof(peerdb_t));
   if (!ret_list)
     return (NULL);
 
   ret_cnt = 0;
-  db_max = bc_idx_next(db); 
-  if (db_max != 0) {
-    for (i = 0; i < max; i++) {
-      err = peerdb_read_index(db, (_scan_index % db_max), &p);
-      _scan_index++;
-      if (err)
-        break;
+  for (i = 0; i < max; i++) {
+    err = peerdb_read_index(db, (_scan_index % db_max), &p);
+    _scan_index++;
+    if (err)
+      break;
 
-      ret_list[ret_cnt] = p;
-      ret_cnt++;
-    }
+    ret_list[ret_cnt] = p;
+    ret_cnt++;
   }
 
   return (ret_list);

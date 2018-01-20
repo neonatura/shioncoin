@@ -639,8 +639,8 @@ void task_free(task_t **task_p)
 
 //  shmap_free(&task->share_list);
 
-  if (task->merkle && task->merkle_len) {
-    for (i = 0; i < task->merkle_len; i++) {
+  if (task->merkle) {
+    for (i = 0; task->merkle[i]; i++) {
       free(task->merkle[i]);
     }
     free(task->merkle);

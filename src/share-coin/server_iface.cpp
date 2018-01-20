@@ -717,37 +717,7 @@ void usde_close_free(void)
   list<CNode*> vNodesDisconnectedCopy = vNodesDisconnected;
   BOOST_FOREACH(CNode* pnode, vNodesDisconnectedCopy)
   {
-#if 0
-    // wait until threads are done using it
-    if (pnode->GetRefCount() <= 0)
-    {
-#endif
-      bool fDelete = false;
-      {
-        TRY_LOCK(pnode->cs_vSend, lockSend);
-        if (lockSend)
-        {
-          TRY_LOCK(pnode->cs_vRecv, lockRecv);
-          if (lockRecv)
-          {
-            TRY_LOCK(pnode->cs_mapRequests, lockReq);
-            if (lockReq)
-            {
-              TRY_LOCK(pnode->cs_inventory, lockInv);
-              if (lockInv)
-                fDelete = true;
-            }
-          }
-        }
-      }
-      if (fDelete)
-      {
-        vNodesDisconnected.remove(pnode);
-        delete pnode;
-      }
-#if 0
-    }
-#endif
+    delete pnode;
   }
 }
 
@@ -944,6 +914,10 @@ bool usde_coin_server_recv_msg(CIface *iface, CNode* pfrom)
   /* check checksum */
   string strCommand = hdr.GetCommand();
   unsigned int nMessageSize = hdr.nMessageSize;
+  if (nMessageSize > MAX_SIZE) {
+    error(SHERR_2BIG, "(usde) ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE", strCommand.c_str(), nMessageSize);
+    return (false);
+  }
 
   /* verify checksum */
   uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);
@@ -1193,37 +1167,7 @@ static void shc_close_free(void)
   list<CNode*> shc_vNodesDisconnectedCopy = shc_vNodesDisconnected;
   BOOST_FOREACH(CNode* pnode, shc_vNodesDisconnectedCopy)
   {
-#if 0
-    // wait until threads are done using it
-    if (pnode->GetRefCount() <= 0)
-    {
-#endif
-      bool fDelete = false;
-      {
-        TRY_LOCK(pnode->cs_vSend, lockSend);
-        if (lockSend)
-        {
-          TRY_LOCK(pnode->cs_vRecv, lockRecv);
-          if (lockRecv)
-          {
-            TRY_LOCK(pnode->cs_mapRequests, lockReq);
-            if (lockReq)
-            {
-              TRY_LOCK(pnode->cs_inventory, lockInv);
-              if (lockInv)
-                fDelete = true;
-            }
-          }
-        }
-      }
-      if (fDelete)
-      {
-        shc_vNodesDisconnected.remove(pnode);
-        delete pnode;
-      }
-#if 0
-    }
-#endif
+    delete pnode;
   }
 }
 
@@ -1243,6 +1187,10 @@ bool shc_coin_server_recv_msg(CIface *iface, CNode* pfrom)
   /* check checksum */
   string strCommand = hdr.GetCommand();
   unsigned int nMessageSize = hdr.nMessageSize;
+  if (nMessageSize > MAX_SIZE) {
+    error(SHERR_2BIG, "(shc) ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE", strCommand.c_str(), nMessageSize);
+    return (false);
+  }
 
   /* verify checksum */
   uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);
@@ -1920,29 +1868,7 @@ void emc2_close_free(void)
   list<CNode*> vNodesDisconnectedCopy = vNodesDisconnected;
   BOOST_FOREACH(CNode* pnode, vNodesDisconnectedCopy)
   {
-    bool fDelete = false;
-    {
-      TRY_LOCK(pnode->cs_vSend, lockSend);
-      if (lockSend)
-      {
-        TRY_LOCK(pnode->cs_vRecv, lockRecv);
-        if (lockRecv)
-        {
-          TRY_LOCK(pnode->cs_mapRequests, lockReq);
-          if (lockReq)
-          {
-            TRY_LOCK(pnode->cs_inventory, lockInv);
-            if (lockInv)
-              fDelete = true;
-          }
-        }
-      }
-    }
-    if (fDelete)
-    {
-      vNodesDisconnected.remove(pnode);
-      delete pnode;
-    }
+    delete pnode;
   }
 
 }
@@ -2052,6 +1978,10 @@ bool emc2_coin_server_recv_msg(CIface *iface, CNode* pfrom)
   /* check checksum */
   string strCommand = hdr.GetCommand();
   unsigned int nMessageSize = hdr.nMessageSize;
+  if (nMessageSize > MAX_SIZE) {
+    error(SHERR_2BIG, "(emc2) ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE", strCommand.c_str(), nMessageSize);
+    return (false);
+  }
 
   /* verify checksum */
   uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);

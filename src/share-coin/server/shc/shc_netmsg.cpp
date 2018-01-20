@@ -299,6 +299,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
   char errbuf[256];
   shtime_t ts;
 
+#if 0
   RandAddSeedPerfmon();
   if (fDebug)
     printf("received: %s (%d bytes)\n", strCommand.c_str(), vRecv.size());
@@ -307,6 +308,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     printf("dropmessagestest DROPPING RECV MESSAGE\n");
     return true;
   }
+#endif
 
   if (strCommand == "version")
   {
@@ -1165,7 +1167,7 @@ bool shc_ProcessMessages(CIface *iface, CNode* pfrom)
     unsigned int nMessageSize = hdr.nMessageSize;
     if (nMessageSize > MAX_SIZE)
     {
-      printf("ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
+      error(SHERR_2BIG, "ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
       continue;
     }
     if (nMessageSize > vRecv.size())

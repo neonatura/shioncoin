@@ -176,7 +176,6 @@ void daemon_server(void)
   run_mode = RUN_CYCLE;
   while (run_mode != RUN_SHUTDOWN) {
     if (_shutdown_timer == 1) {
-      printf("info: shcoind daemon shutting down.\n");
       run_mode = RUN_SHUTDOWN;
     } else if (_shutdown_timer > 1) {
       _shutdown_timer--;

@@ -1176,6 +1176,13 @@ class CBlock : public CBlockHeader
       *((CBlockHeader*)this) = header;
     }
 
+    CBlock(const CBlock& in_block)
+    {
+      SetNull();
+      *((CBlockHeader*)this) = (CBlockHeader)in_block;
+      vtx = in_block.vtx;
+    }
+
     IMPLEMENT_SERIALIZE
       (
        READWRITE(*(CBlockHeader*)this);

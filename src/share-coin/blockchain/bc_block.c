@@ -447,16 +447,17 @@ static int _bc_get(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_
   }
 
 /* .. deal with idx.size == 0, i.e. prevent write of 0 */
-
-  data = (unsigned char *)calloc(idx.size, sizeof(char)); 
+  data = (unsigned char *)malloc(MAX(1, idx.size));
   if (!data)
     return (SHERR_NOMEM);
 
   /* read in serialized binary data */
+  memset(data, '\000', idx.size);
   err = bc_read(bc, pos, data, idx.size);
   if (err) {
     sprintf(errbuf, "bc_get: bc_read <%d bytes> error: %s [pos %d].", idx.size, sherrstr(err), (int)pos);
     shcoind_log(errbuf);
+    free(data);
     return (err); 
   }
 
@@ -506,7 +507,6 @@ int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
     return (err);
   }
 
-/* .. deal with idx.size == 0, i.e. prevent write of 0 */
   data_len = idx.size;
   data = (unsigned char *)calloc(data_len, sizeof(char)); 
   if (!data)
@@ -514,8 +514,10 @@ int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
 
   /* ensure journal is allocated */
   err = bc_alloc(bc, idx.jrnl);
-  if (err)
+  if (err) {
+    free(data);
     return (err);
+  }
 
   /* read in serialized binary data */
   memset(data, 0, data_len);

@@ -115,7 +115,8 @@ static int _bc_map_open(bc_t *bc, bc_map_t *map)
 
   map->fd = fd;
   map->size = st.st_size;
-  map->hdr = map->raw = NULL;
+  map->hdr = NULL;
+  map->raw = NULL;
 
   descriptor_claim(fd, bc_iface_index(bc->name), DF_MAP);
 
@@ -276,6 +277,7 @@ void bc_map_free(bc_map_t *map)
   if (map->hdr) {
     if (bc_lock()) {
       munmap((void *)map->hdr, map->size); 
+
       map->hdr = NULL;
       map->raw = NULL;
       map->size = 0;
@@ -395,7 +397,7 @@ int bc_map_read(bc_t *bc, bc_map_t *map, unsigned char *data, bcsize_t data_of, 
   return (0);
 }
 
-#define BCMAP_IDLE_TIME 300
+#define BCMAP_IDLE_TIME 240
 int bc_map_idle(bc_t *bc, bc_map_t *map)
 {
   time_t now;
