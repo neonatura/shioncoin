@@ -186,6 +186,7 @@ static peerdb_t **peerdb_track_scan(bc_t *db, int max)
   int err;
   int i;
 
+
   db_max = bc_idx_next(db); 
   max = MIN(max, db_max);
   max = MIN(max, MAX_PEERDB_TRACK_LIST_SIZE);
@@ -329,7 +330,7 @@ int unet_peer_wait(unet_bind_t *bind)
 {
   double dur;
 
-  dur = MAX(4, MIN(600, 600 * bind->scan_freq));
+  dur = MAX(4, MIN(540, 540 * bind->scan_freq));
   if (shtime_after(shtime(), shtime_adj(bind->scan_stamp, dur)))
     return (FALSE);
 
@@ -520,6 +521,7 @@ void unet_peer_decr(int mode, shpeer_t *peer)
   unet_bind_t *bind;
   peerdb_t *p;
   bc_t *db;
+  char ibuf[256];
   int err;
 
   if (mode < 0 || mode >= MAX_UNET_MODES)
@@ -543,6 +545,11 @@ void unet_peer_decr(int mode, shpeer_t *peer)
 
   p->trust -= 1;
   peerdb_write(db, p);
+
+  sprintf(ibuf, "peer: trust %d (-1), peer \"%s\".",
+      p->trust, shpeer_print(&p->peer));
+  unet_log(mode, ibuf);
+
   free(p);
 }
 
@@ -551,6 +558,7 @@ void unet_peer_incr(int mode, shpeer_t *peer)
   unet_bind_t *bind;
   peerdb_t *p;
   bc_t *db;
+  char ibuf[256];
   int err;
 
   if (mode < 0 || mode >= MAX_UNET_MODES)
@@ -576,6 +584,11 @@ void unet_peer_incr(int mode, shpeer_t *peer)
   }
   p->trust += 1;
   peerdb_write(db, p);
+
+  sprintf(ibuf, "peer: trust %d (+1), peer \"%s\".",
+      p->trust, shpeer_print(&p->peer));
+  unet_log(mode, ibuf);
+
   free(p);
 }
 

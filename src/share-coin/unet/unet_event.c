@@ -202,9 +202,8 @@ int uevent_cycle_peer_verify(uevent_t *e)
 
   bind->scan_stamp = shtime();
 
-  unet_peer_incr(e->mode, peer);
-
   if (unet_peer_find(e->mode, shpeer_addr(peer))) {
+    unet_peer_incr(e->mode, peer);
     goto fin; /* already connected */
   }
 

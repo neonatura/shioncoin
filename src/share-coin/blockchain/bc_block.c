@@ -211,9 +211,10 @@ static int _bc_rewrite(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, i
   if (err)
     return (err);
 
-  if (idx.size != data_len)
+  if (idx.size < data_len)
     return (SHERR_EXIST);
 
+  idx.size = data_len;
   idx.crc = shcrc32(data, data_len);
 
   /* store fresh block index */
@@ -290,16 +291,16 @@ static int _bc_write(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int
     }
     if (err)
       return (err);
-  }
-
-  /* store serialized block data */
-  err = bc_map_append(bc, map, data, data_len);
-  if (err) { /* uh oh */
-    sprintf(errbuf, "bc_write: error: bc_map_append failure: %s.", sherrstr(err));
-    shcoind_log(errbuf);
-    bc_idx_clear(bc, pos);
-    bc_table_reset(bc, hash);
-    return (err);
+  } else {
+    /* store serialized block data */
+    err = bc_map_append(bc, map, data, data_len);
+    if (err) { /* uh oh */
+      sprintf(errbuf, "bc_write: error: bc_map_append failure: %s.", sherrstr(err));
+      shcoind_log(errbuf);
+      bc_idx_clear(bc, pos);
+      bc_table_reset(bc, hash);
+      return (err);
+    }
   }
 
   return (0);
