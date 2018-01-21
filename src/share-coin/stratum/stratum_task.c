@@ -37,6 +37,8 @@
 
 #define POST_BLOCK_TIME 15
 
+#define CPUMINER_WORKER "system.anonymous"
+
 //static task_t *task_list;
 static user_t *sys_user;
 static int work_reset[MAX_COIN_IFACE];
@@ -200,7 +202,7 @@ static void check_payout(int ifaceIndex)
         continue; /* rpc user */
       if (!*user->worker) 
         continue; /* unknown */
-      if (0 == strncmp(user->worker, "anonymous.", strlen("anonymous.")))
+      if (0 == strncmp(user->worker, "system.", strlen("system.")))
         continue; /* public */
 
       reward = 0;
@@ -242,7 +244,7 @@ static void commit_payout(int ifaceIndex, int block_height)
     return;
 
   for (user = client_list; user; user = user->next) {
-    if (0 == strncmp(user->worker, "anonymous.", strlen("anonymous.")))
+    if (0 == strncmp(user->worker, "system.", strlen("system.")))
       continue; /* public */
 
     if (user->balance[ifaceIndex] < 5.0)
@@ -265,7 +267,7 @@ static void commit_payout(int ifaceIndex, int block_height)
   bal = getaccountbalance(ifaceIndex, "");
   min_input = (double)iface->min_tx_fee / (double)COIN;
   for (user = client_list; user; user = user->next) {
-    if (0 == strncmp(user->worker, "anonymous.", strlen("anonymous.")))
+    if (0 == strncmp(user->worker, "system.", strlen("system.")))
       continue; /* public */
 
     memset(uname, 0, sizeof(uname));
@@ -714,7 +716,7 @@ void stratum_task_work(task_t *task)
   if (!sys_user) {
     /* track server's mining stats. */
     sys_user = stratum_user_init(-1);
-    strncpy(sys_user->worker, "anonymous.system", sizeof(sys_user->worker) - 1);
+    strncpy(sys_user->worker, CPUMINER_WORKER, sizeof(sys_user->worker) - 1);
     sys_user->flags |= USER_SYSTEM;
     sys_user->next = client_list;
     client_list = sys_user;

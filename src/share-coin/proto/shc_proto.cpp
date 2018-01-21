@@ -184,8 +184,12 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
           addr.ToString().c_str()); 
     }
 
+    /* mining pool fees */
     string strBankAccount("bank");
     GetAccountAddress(wallet, strBankAccount, false);
+    /* cpu miner */
+    string strSystemAccount("system");
+    GetAccountAddress(wallet, strSystemAccount, false);
   }
 
   return (ret_key);

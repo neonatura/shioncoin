@@ -661,6 +661,7 @@ static Value account_context_get(int ifaceIndex, char *account, char *ctx_name)
 static Value account_context_set(int ifaceIndex, char *account, char *ctx_name, char *ctx_value)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
   string strAccount(account);
   string strName(ctx_name);
   string strValue(ctx_value);
@@ -677,6 +678,19 @@ static Value account_context_set(int ifaceIndex, char *account, char *ctx_name, 
   ctx = (CContext *)&wtx.certificate;
   Object obj = ctx->ToValue();
   obj.push_back(Pair("tx", wtx.GetHash().GetHex()));
+
+  int nBestHeight = GetBestHeight(iface);
+  int nTxSize = (int)wallet->GetVirtualTransactionSize(wtx);
+  int64_t nFee = MIN_TX_FEE(iface);
+  int64_t nOutValue = wtx.GetValueOut();
+  int64_t nContextFee = nOutValue - nFee;
+
+  obj.push_back(Pair("account", strAccount));
+  obj.push_back(Pair("fee", ValueFromAmount(nFee)));
+  obj.push_back(Pair("context-fee", ValueFromAmount(nContextFee)));
+  obj.push_back(Pair("output-value", ValueFromAmount(nOutValue)));
+  obj.push_back(Pair("total-size", nTxSize));
+
   return (obj);
 }
 
