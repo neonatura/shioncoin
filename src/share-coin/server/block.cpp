@@ -3459,3 +3459,38 @@ bool CBlock::DisconnectBlock(CBlockIndex *pindex)
 #endif /* USE_LEVELDB_COINDB */
 
 
+void CTransaction::Init(const CTransaction& tx)
+{
+  int i;
+
+  nFlag = tx.nFlag;
+  vin = tx.vin;
+  vout = tx.vout;
+  wit = tx.wit;
+  nLockTime = tx.nLockTime;
+
+  vin.resize(tx.vin.size());
+  for (i = 0; i < tx.vin.size(); i++)
+    vin[i] = tx.vin[i]; 
+  vout.resize(tx.vout.size());
+  for (i = 0; i < tx.vout.size(); i++)
+    vout[i] = tx.vout[i]; 
+
+  if ((this->nFlag & TXF_IDENT) ||
+      (this->nFlag & TXF_CERTIFICATE) ||
+      (this->nFlag & TXF_LICENSE) ||
+      (this->nFlag & TXF_ASSET) ||
+      (this->nFlag & TXF_EXEC) ||
+      (this->nFlag & TXF_CONTEXT))
+    certificate = tx.certificate;
+  if (this->nFlag & TXF_ALIAS)
+    alias = tx.alias;
+  if ((this->nFlag & TXF_OFFER) ||
+      (this->nFlag & TXF_OFFER_ACCEPT))
+    offer = tx.offer;
+  if (this->nFlag & TXF_MATRIX)
+    matrix = tx.matrix;
+  if (this->nFlag & TXF_CHANNEL)
+    channel = tx.channel;
+
+}

@@ -624,15 +624,6 @@ class CTransactionCore
         nLockTime = 0;
     }
 
-    void Init(CTransactionCore tx)
-    {
-      nFlag = tx.nFlag;
-      vin = tx.vin;
-      vout = tx.vout;
-      wit = tx.wit;
-      nLockTime = tx.nLockTime;
-    }
-
     bool IsNull() const
     {
         return (vin.empty() && vout.empty());
@@ -697,26 +688,7 @@ class CTransaction : public CTransactionCore
         READWRITE(channel);
     )
 
-    void Init(const CTransaction& tx)
-    {
-      CTransactionCore::Init(tx);
-      if ((this->nFlag & TXF_IDENT) ||
-          (this->nFlag & TXF_CERTIFICATE) ||
-          (this->nFlag & TXF_LICENSE) ||
-          (this->nFlag & TXF_ASSET) ||
-          (this->nFlag & TXF_EXEC) ||
-          (this->nFlag & TXF_CONTEXT))
-        certificate = tx.certificate;
-      if (this->nFlag & TXF_ALIAS)
-        alias = tx.alias;
-      if ((this->nFlag & TXF_OFFER) ||
-          (this->nFlag & TXF_OFFER_ACCEPT))
-        offer = tx.offer;
-      if (this->nFlag & TXF_MATRIX)
-        matrix = tx.matrix;
-      if (this->nFlag & TXF_CHANNEL)
-        channel = tx.channel;
-    }
+    void Init(const CTransaction& tx);
 
     void SetNull()
     {

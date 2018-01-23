@@ -139,25 +139,18 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom)
 
   /* verify fee */
   CalculateFee(ptx);
-  bool fAllowFree = IsFreeRelay(ptx.GetTx(), ptx.GetInputs());
-  if (!fAllowFree && ptx.nFee < MIN_RELAY_TX_FEE(iface)) {
-    /* invalid fee rate */
-    AddInvalTx(ptx);
-    return (false);
-  }
-
-#if 0
-  /* dependent tx's initially start in overflow. */
-  for (unsigned int i = 0; i < tx.vin.size(); i++) {
-    COutPoint prevout = tx.vin[i].prevout;
-    if (exists(prevout.hash)) {
-      Debug("CPool.FillInputs: info: tx \"%s\" has input \"%s\" in mempool.", ptx.GetHash().GetHex().c_str(), prevout.hash.GetHex().c_str());
-      /* wait until mempool tx is processed. */
-      ptx.SetFlag(POOL_DEPENDENCY);
-      return (AddOverflowTx(ptx));
+  if (ptx.nFee < MIN_RELAY_TX_FEE(iface)) {
+    if (ptx.nWeight > MAX_FREE_TX_SIZE(iface)) {
+      /* quick check for minimum fee */
+      AddInvalTx(ptx);
+      return (false);
+    }
+    if (!IsFreeRelay(ptx.GetTx(), ptx.GetInputs())) {
+      /* invalid fee rate */
+      AddInvalTx(ptx);
+      return (false);
     }
   }
-#endif
 
   if (!ptx.IsLocal() && !VerifySoftLimits(ptx)) {
     /* initial breach of soft limits [non-local] starts in overflow queue. */
@@ -167,7 +160,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom)
   }
 
   /* check for preferred minimum fee on initial pool acceptance */
-  if (!fAllowFree) {
+  if (ptx.nFee >= MIN_RELAY_TX_FEE(iface)) {
     int64 nSoftFee = CalculateSoftFee(ptx.GetTx());
     if (ptx.nFee < nSoftFee) {
       Debug("CPool.FillInputs: info: tx \"%s\" has insufficient soft fee.", ptx.GetHash().GetHex().c_str());
@@ -182,8 +175,6 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom)
     /* wait until transaction is finalized. */
     Debug("CPool.AddActiveTx: tx \"%s\" is not finalized.", ptx.GetHash().GetHex().c_str());
     ptx.SetFlag(POOL_NOT_FINAL);
-
-/* DEBUG: TODO: special case -- RelayTransaction so others may queue it as pending. */
     return (AddOverflowTx(ptx));
   }
   ptx.UnsetFlag(POOL_NOT_FINAL);
@@ -684,18 +675,34 @@ void CPool::PurgeActiveTx()
 {
   vector<CPoolTx> vRemove;
 
-  if (active.size() == 0) {
-    if (stale.size() != 0) {
-      /* bring back one stale */
-      pool_map::iterator it = stale.begin();
-      std::advance(it, (shrand() % stale.size()));
-      if (it != stale.end()) {
-        CPoolTx& o_ptx = it->second;
-        AddActiveTx(o_ptx);
-      }
+Debug("DEBUG: PurgeActiveTx: x%d active tx's", (int)active.size());
+Debug("DEBUG: PurgeActiveTx: x%d overflow tx's", (int)overflow.size());
+  if (overflow.size() != 0) {
+    vector<CPoolTx> vPoolTx;
+    for (pool_map::iterator it = overflow.begin(); it != overflow.end(); ++it) {
+      CPoolTx& ptx = it->second;
+      vPoolTx.push_back(ptx);
     }
-    
-    /* no active tx's to process. */
+    sort(vPoolTx.begin(), vPoolTx.end());
+
+    BOOST_FOREACH(CPoolTx& ptx, vPoolTx) {
+      if (!ptx.GetTx().IsFinal(ifaceIndex)) 
+        continue;
+      if (GetActiveWeight() + ptx.GetWeight() >= GetMaxWeight())
+        continue;
+
+      CPoolTx new_ptx(ptx);
+      RemoveTx(ptx.GetHash());
+
+      if (!AddActiveTx(new_ptx)) {
+        Debug("CPool.ActiveTx: expired tx \"%s\" from overflow queue.", new_ptx.GetHash().GetHex().c_str());
+      } else {
+        Debug("CPool.ActiveTx: transitioned tx \"%s\" from overflow to active queue.", new_ptx.GetHash().GetHex().c_str());
+      }
+      break;
+    }
+  }
+  if (active.size() == 0) {
     return; 
   }
 

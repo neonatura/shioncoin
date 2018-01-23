@@ -101,7 +101,7 @@ extern "C" {
 #define COIN_SERVICES(_iface) \
   ((_iface)->services)
 
-#define MAX_FREE_TX_SIZE(_size) \
+#define MAX_FREE_TX_SIZE(_iface) \
   ((_iface)->max_free_tx_size)
 
 

@@ -167,11 +167,12 @@ int64 USDE_CTxMemPool::IsFreeRelay(CTransaction& tx, tx_cache& mapInputs)
 
   nBytes = ::GetSerializeSize(tx, SER_NETWORK, 
       PROTOCOL_VERSION(iface) | SERIALIZE_TRANSACTION_NO_WITNESS);
-  if (nBytes < 1500) {
-    double dPriority = wallet->GetPriority(tx, mapInputs);
-    if (dPriority > wallet->AllowFreeThreshold())
-      return (true);
-  }
+  if (nBytes < 1500)
+    return (true);
+
+  double dPriority = wallet->GetPriority(tx, mapInputs);
+  if (dPriority > wallet->AllowFreeThreshold())
+    return (true);
 
   return (false);
 }

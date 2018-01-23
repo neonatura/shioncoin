@@ -111,6 +111,16 @@ bool EMC2_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
     }
     //Debug("(emc2) CTxMemPool.VerifyCoinStandards: info: (BIP 66) verified DER signature <%d bytes>.", (int)tx.vin[i].scriptSig.size());
   }
+
+  CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
+  CWallet *wallet = GetWallet(iface);
+  int64 nTxFee = wallet->GetTxFee(tx);
+  if (nTxFee < MIN_TX_FEE(iface)) {
+    error(SHERR_INVAL, "(emc2) CTxMemPool.VerifyCoinStandards: rejecting low-fee (%f) transaction.", (double)nTxFee/COIN);
+    return (false);
+  }
+
+
   return (true);
 }
 
