@@ -653,7 +653,7 @@ void CContext::NotifySharenet(int ifaceIndex)
   /* context name */
   memcpy(&key, hashIssuer.GetKey(), sizeof(shkey_t));
   memcpy(data, &key, sizeof(shkey_t)); 
-  data_len += sizeof(shkey_t); 
+  data_len = sizeof(shkey_t); 
 
   /* context size */
   val = htonl((uint32_t)vContext.size());
