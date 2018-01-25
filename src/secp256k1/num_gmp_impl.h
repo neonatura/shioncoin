@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <gmp.h>
 
-#include "util.h"
+#include "secp256k1_util.h"
 #include "num.h"
 
 #ifdef VERIFY
