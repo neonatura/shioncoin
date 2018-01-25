@@ -77,8 +77,7 @@ int shcon_log(int err_code, const char *format, ...)
   if (!text)
     return (SHERR_INVAL);
 
-  fprintf(_shcon_log_fout, shcon_log_timestamp());
-  fprintf(_shcon_log_fout, "%s", text);
+  fprintf(_shcon_log_fout, "%s%s", shcon_log_timestamp(), text);
   if (err_code)
     fprintf(_shcon_log_fout, ": %s (err %d)", sherrstr(err_code), err_code);
   fprintf(_shcon_log_fout, "\n");
@@ -101,8 +100,7 @@ int shcon_info(const char *format, ...)
   if (!text)
     return (SHERR_INVAL);
 
-  fprintf(_shcon_log_fout, shcon_log_timestamp());
-  fprintf(_shcon_log_fout, "info: %s\n", text);
+  fprintf(_shcon_log_fout, "%sinfo: %s\n", shcon_log_timestamp(), text);
 
   free(text);
   return (0);
