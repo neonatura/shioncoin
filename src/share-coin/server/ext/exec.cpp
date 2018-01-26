@@ -324,7 +324,8 @@ bool GetTxOfExec(CIface *iface, const uint160& hashExec, CTransaction& tx)
   if (!IsExecTx(txIn)) 
     return false; /* inval; not an exec tx */
 
-  if (txIn.exec.IsExpired()) {
+  CExec exec(txIn.certificate);
+  if (exec.IsExpired()) {
     return false;
   }
 
@@ -357,6 +358,7 @@ bool IsLocalExec(CIface *iface, const CTransaction& tx)
 bool VerifyExec(CTransaction& tx, int& mode)
 {
   uint160 hashExec;
+  time_t now;
   int nOut;
 
   /* core verification */

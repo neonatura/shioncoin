@@ -295,7 +295,7 @@ bool VerifyAlias(CTransaction& tx)
   if (alias->GetLabel().size() > 135)
     return error(SHERR_INVAL, "VerifyAlias: label exceeds 135 characters.");
 
-  if (alias.tExpire == SHTIME_UNDEFINED) {
+  if (alias->tExpire == SHTIME_UNDEFINED) {
     return error(SHERR_INVAL, "VerifyAlias: alias has no expiration date.");
   }
 

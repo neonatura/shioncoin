@@ -752,7 +752,7 @@ bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight)
     return error(SHERR_INVAL, "VerifyCert: error: cert has no issuer and is also marked chained.");
 
   now = time(NULL);
-  if (cert.GetExpireTime() > (now + SHARE_DEFAULT_EXPIRE_TIME))
+  if (cert->GetExpireTime() > (now + SHARE_DEFAULT_EXPIRE_TIME))
     return error(SHERR_INVAL, "invalid expiration time");
 
   return (true);
