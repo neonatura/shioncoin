@@ -717,6 +717,7 @@ bool VerifyIdent(CTransaction& tx, int& mode)
 bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight)
 {
   uint160 hashCert;
+  time_t now;
   int nOut;
 
   /* core verification */
@@ -749,6 +750,10 @@ bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight)
   if (cert->hashIssuer.IsNull() &&
       (cert->nFlag & SHCERT_CERT_CHAIN))
     return error(SHERR_INVAL, "VerifyCert: error: cert has no issuer and is also marked chained.");
+
+  now = time(NULL);
+  if (cert.GetExpireTime() > (now + SHARE_DEFAULT_EXPIRE_TIME))
+    return error(SHERR_INVAL, "invalid expiration time");
 
   return (true);
 }
@@ -953,7 +958,6 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
   wtx.SetNull();
   cert = wtx.CreateCert(ifaceIndex, strTitle.c_str(), addr, hexSeed, nLicenseFee);
   wtx.strFromAccount = strAccount; /* originating account for payment */
- 
 
   int64 nFee = GetCertOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);

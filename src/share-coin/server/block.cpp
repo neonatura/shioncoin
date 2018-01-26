@@ -1507,9 +1507,8 @@ CAlias *CTransaction::CreateAlias(std::string name, const uint160& hash, int typ
 {
   nFlag |= CTransaction::TXF_ALIAS;
 
-  //alias = CAlias(name, hash);
   alias = CAlias();
-  alias.SetExpireSpan((double)DEFAULT_ALIAS_LIFESPAN);
+  alias.SetExpireSpan((double)DEFAULT_ALIAS_LIFESPAN); /* 12yr */
   alias.SetLabel(name);
   alias.SetType(type);
 
@@ -1559,6 +1558,7 @@ CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr
 
   nFlag |= CTransaction::TXF_CERTIFICATE;
   certificate = CCert(strTitle);
+  certificate.SetExpireTime();
   certificate.SetSerialNumber();
   shgeo_local(&certificate.geo, SHGEO_PREC_DISTRICT);
   certificate.SetFee(nLicenseFee);

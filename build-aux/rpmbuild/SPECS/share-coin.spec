@@ -8,7 +8,7 @@ License:        GPLv3+
 URL:            http://www.shcoins.com/
 Source0:        ftp://ftp.shcoins.com/release/share-coin/share-coin-3.01.tar.gz
 
-#BuildRequires:  gcc
+Requires:       libshare
 #Requires:       info 
 
 %description
@@ -49,8 +49,6 @@ rm -rf $RPM_BUILD_ROOT
 %doc
 %{_sbindir}/shcoind
 %{_bindir}/shc
-%{_bindir}/usde
-%{_bindir}/emc2
 %{_docdir}/share-coin/shcoin_html.tar.gz
 
 %changelog

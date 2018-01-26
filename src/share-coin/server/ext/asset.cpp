@@ -251,12 +251,6 @@ bool GetTxOfAsset(CIface *iface, const uint160& hashAsset, CTransaction& tx)
   if (!IsAssetTx(txIn)) 
     return false; /* inval; not an asset tx */
 
-#if 0
-  if (txIn.asset.IsExpired()) {
-    return false;
-  }
-#endif
-
   tx.Init(txIn);
   return true;
 }

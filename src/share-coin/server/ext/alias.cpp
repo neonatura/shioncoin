@@ -292,12 +292,18 @@ bool VerifyAlias(CTransaction& tx)
     return (false); /* alias hash mismatch */
   }
 
-  now = time(NULL);
-  if (alias->GetExpireTime() > (now + DEFAULT_ALIAS_LIFESPAN))
-    return error(SHERR_INVAL, "VerifyAlias: expiration exceeds %d years.", (DEFAULT_ALIAS_LIFESPAN/31536000));
-
   if (alias->GetLabel().size() > 135)
     return error(SHERR_INVAL, "VerifyAlias: label exceeds 135 characters.");
+
+  if (alias.tExpire == SHTIME_UNDEFINED) {
+    return error(SHERR_INVAL, "VerifyAlias: alias has no expiration date.");
+  }
+
+  now = time(NULL);
+  if (alias->GetExpireTime() > (now + DEFAULT_ALIAS_LIFESPAN)) {
+    return error(SHERR_KEYEXPIRED, "VerifyAlias: expiration exceeds %d years.",
+        (DEFAULT_ALIAS_LIFESPAN/31536000));
+  }
 
   return (true);
 }

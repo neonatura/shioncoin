@@ -324,11 +324,9 @@ bool GetTxOfExec(CIface *iface, const uint160& hashExec, CTransaction& tx)
   if (!IsExecTx(txIn)) 
     return false; /* inval; not an exec tx */
 
-#if 0
   if (txIn.exec.IsExpired()) {
     return false;
   }
-#endif
 
   tx.Init(txIn);
   return true;
@@ -385,6 +383,12 @@ bool VerifyExec(CTransaction& tx, int& mode)
   CExec exec(tx.certificate);
   if (hashExec != exec.GetHash())
     return error(SHERR_INVAL, "exec hash mismatch");
+
+  now = time(NULL);
+  if (exec.tExpire == SHTIME_UNDEFINED ||
+      exec.GetExpireTime() > (now + DEFAULT_EXEC_LIFESPAN)) {
+    return error(SHERR_INVAL, "invalid exec expiration time");
+  }
 
   return (true);
 }
