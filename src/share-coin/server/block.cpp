@@ -3230,16 +3230,17 @@ bool core_CommitBlock(CTxDB& txdb, CBlock *pblock, CBlockIndex *pindexNew)
     CBlockIndex *pindex = r.first;
     CBlock *block = r.second;
 
+    /* ensure block tx's are available for connect. */
+    BOOST_FOREACH(CTransaction& tx, block->vtx) {
+      tx.WriteTx(pblock->ifaceIndex, pindex->nHeight); 
+    }
+
     if (!block->ConnectBlock(txdb, pindex)) {
       error(SHERR_INVAL, "Reorganize() : ConnectBlock %s failed", pindex->GetBlockHash().ToString().c_str());
       fValid = false;
       break;
     }
 
-#if 0
-    /* remove connectd block tx's from pool */ 
-    pool->Commit(*block);
-#endif
   }
   if (!fValid)
     goto fin;
