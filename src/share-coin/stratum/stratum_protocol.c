@@ -34,6 +34,9 @@
 
 #define WORK_ROUND_OFFSET 400000 
 
+extern shjson_t *shjson_null_add(shjson_t *tree, char *name);
+
+
 char *stratum_runtime_session(void)
 {
   static char buf[32];
@@ -632,6 +635,7 @@ shjson_t *getminingroundsinfo(void)
   memset(err_msg, 0, sizeof(err_msg));
 
   reply = shjson_init(NULL);
+  shjson_null_add(reply, "error");
   
   now = time(NULL);
   hour = ((now / 3600) % MAX_ROUNDS_PER_HOUR);
@@ -666,7 +670,6 @@ shjson_t *getminingroundsinfo(void)
       shjson_num_add(node, "speed", speed);
   }
 
-  shjson_null_add(reply, "error");
 
   return (reply);
 }
