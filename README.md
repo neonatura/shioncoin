@@ -130,7 +130,7 @@ A fee may also be associated with a certificate allowing for certificates derive
 
 A certificate may also be derived into a license. Licensing can be used with SEXE scripts and also can be integrated into a application key via the libshare suite thereby requiring a license to be purchased from the sharecoin network in order to be executed.
 
-Asset transactions may be created and optionally signed with a certificate. These transactions are meant to be used in order to provide a record for physical items such as property or equipment.
+Asset transactions may be created and optionally signed with a certificate. These transactions are meant to be used in order to provide a record for physical items such as property or equipment. An asset transaction will not expire.
 
 Creating a certificate initially cost around 10 SHC, and this fee goes down in cost over time. Certificate transactions will expire after 48 years, and cannot be updated after creation.
 
