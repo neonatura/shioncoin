@@ -220,26 +220,20 @@ Run "shc help" to list command-line arguments:
 <h4>Sending and receiving a funds transfer transaction</h4>
 ```
 shc wallet.new test
-<small>RzpBMp4xE4GgCdoECqd9GpW32Fkxcpqa3u</small>
 shc wallet.listaddr test
-<small>["RzpBMp4xE4GgCdoECqd9GpW32Fkxcpqa3u"]</small>
 ```
 
 <h4>Send 1 SHC to address generated</h4>
 ```
 shc wallet.balance test
 shc wallet.new test2
-<small>S9cXrHRUoDSJdNvBANSUVPKrMxCWGxHMuH</small>
 shc wallet.send test S9cXrHRUoDSJdNvBANSUVPKrMxCWGxHMuH 0.9998
-<small>b82ce47f65ac5f15101a84ef7c89c8e0acec52db93feb4f78cf5d12f49368bcb</small>
 ```
 
 <h4>Wait for transaction to be committed to a block</h4>
 ```
 shc wallet.unspent test
-<small>[]</small>
 shc wallet.balance test2
-<small>0.9998</small>
 ```
 
 Windows Build Instructions
