@@ -217,20 +217,20 @@ Client Utility Program
 
 Run "shc help" to list command-line arguments:
 
-<h4>Sending and receiving a funds transfer transaction</h4>
+Sending and receiving a funds transfer transaction:
 ```
 shc wallet.new test
 shc wallet.listaddr test
 ```
 
-<h4>Send 1 SHC to address generated</h4>
+Send 1 SHC to address generated:
 ```
 shc wallet.balance test
 shc wallet.new test2
 shc wallet.send test S9cXrHRUoDSJdNvBANSUVPKrMxCWGxHMuH 0.9998
 ```
 
-<h4>Wait for transaction to be committed to a block</h4>
+Wait for transaction to be committed to a block:
 ```
 shc wallet.unspent test
 shc wallet.balance test2
