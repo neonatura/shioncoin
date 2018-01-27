@@ -654,12 +654,19 @@ pblock->print();
    */
   if (pblock->hashPrevBlock != 0 &&
       !blockIndex->count(pblock->hashPrevBlock)) {
+    Debug("(usde) ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
+#if 0 /* DEBUG: ORPHAN */
     /* Accept orphan if origin is known. */ 
     if (pfrom) {
       EMC2Block* orphan = new EMC2Block(*pblock);
       EMC2_mapOrphanBlocks.insert(make_pair(hash, orphan));
       EMC2_mapOrphanBlocksByPrev.insert(make_pair(orphan->hashPrevBlock, orphan));
       pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(orphan));
+    }
+#endif
+    if (pfrom) {
+      CBlockIndex *prevIndex = GetBestBlockIndex(iface);
+      InitServiceBlockEvent(ifaceIndex, prevIndex->nHeight - 1);
     }
     return true;
   }
@@ -671,6 +678,7 @@ pblock->print();
   }
   ServiceBlockEventUpdate(EMC2_COIN_IFACE);
 
+#if 0 /* DEBUG: ORPHAN */
   // Recursively process any orphan blocks that depended on this one
   vector<uint256> vWorkQueue;
   vWorkQueue.push_back(hash);
@@ -691,6 +699,7 @@ pblock->print();
     }
     EMC2_mapOrphanBlocksByPrev.erase(hashPrev);
   }
+#endif
 
   return true;
 }

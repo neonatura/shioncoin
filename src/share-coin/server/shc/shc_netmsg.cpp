@@ -315,7 +315,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     // Each connection can only send one version message
     if (pfrom->nVersion != 0)
     {
-//fprintf(stderr, "DEBUG: ProcessMessage: pfrom->nVersion (already) %d\n", pfrom->nVersion); 
       pfrom->Misbehaving(1);
       return false;
     }
@@ -433,7 +432,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 
   else if (pfrom->nVersion == 0)
   {
-//fprintf(stderr, "DEBUG: ProcessMessage: Must have a version message before anything else\n");
     // Must have a version message before anything else
     pfrom->Misbehaving(1);
     return false;
@@ -855,7 +853,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       mapAlreadyAskedFor.erase(inv);
 #if 0
     if (block.nDoS) {
-fprintf(stderr, "DEBUG: ProcessMessage[tx]: block.nDoS = %d\n", block.nDoS); 
       pfrom->Misbehaving(block.nDoS);
     }
 #endif

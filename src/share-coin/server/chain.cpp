@@ -231,7 +231,7 @@ bool LoadExternalBlockchainFile()
     try {
       FILE *fl = fopen(chain.path, "rb");
       if (!fl) {
-        fprintf(stderr, "DEBUG: error open '%s': %s\n", chain.path, strerror(errno));
+//        fprintf(stderr, "DEBUG: error open '%s': %s\n", chain.path, strerror(errno));
         return (false);
       }
       CAutoFile blkdat(fl, SER_DISK, DISK_VERSION);
@@ -261,7 +261,7 @@ bool LoadExternalBlockchainFile()
             chain.pos += ((unsigned char*)nFind - pchData) + 1;
           }
           else {
-fprintf(stderr, "DEBUG: pchMessage not found\n");
+//fprintf(stderr, "DEBUG: pchMessage not found\n");
             chain.pos += sizeof(pchData) - sizeof(iface->hdr_magic) + 1;
 }
         } while(!fRequestShutdown);
@@ -283,7 +283,7 @@ if (bestBlock->GetBlockHash() != block->hashPrevBlock)
 #endif
 
           if (!ProcessBlock(NULL,block)) {
-fprintf(stderr, "DEBUG: IMPORT: block '%s' failed.\n", block->GetHash().GetHex().c_str());
+//fprintf(stderr, "DEBUG: IMPORT: block '%s' failed.\n", block->GetHash().GetHex().c_str());
             delete block;
             continue;
           }
@@ -318,7 +318,6 @@ fprintf(stderr, "DEBUG: IMPORT: block '%s' was not accepted.\n", block->GetHash(
 
         nIndex++;
         if (249 == (nIndex % 250)) {
-fprintf(stderr, "DEBUG: ProcessBlock info: fseek(blkdat, %d, SEEK_SET)\n", chain.pos);
           /* continue later */
           nIndex++;
           return (true);
@@ -326,7 +325,7 @@ fprintf(stderr, "DEBUG: ProcessBlock info: fseek(blkdat, %d, SEEK_SET)\n", chain
       }
     }
     catch (std::exception &e) {
-      fprintf(stderr, "DEBUG: %s() : Deserialize or I/O error caught during load: %s\n", __PRETTY_FUNCTION__, e.what());
+      //fprintf(stderr, "DEBUG: %s() : Deserialize or I/O error caught during load: %s\n", __PRETTY_FUNCTION__, e.what());
       chain.pos += 4;
       return (true);
     }
@@ -348,7 +347,7 @@ bool SaveExternalBlockchainFile()
     try {
       FILE *fl = fopen(chain.path, "ab");
       if (!fl) {
-        fprintf(stderr, "DEBUG: error open '%s': %s\n", chain.path, strerror(errno));
+//        fprintf(stderr, "DEBUG: error open '%s': %s\n", chain.path, strerror(errno));
         return (false);
       }
       CAutoFile blkdat(fl, SER_DISK, DISK_VERSION);

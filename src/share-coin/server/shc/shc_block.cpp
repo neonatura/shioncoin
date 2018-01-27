@@ -604,7 +604,7 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
   if (pblock->hashPrevBlock != 0 &&
       !blockIndex->count(pblock->hashPrevBlock)) {
     Debug("(shc) ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
-
+#if 0 /* DEBUG: ORPHAN */
     /* Accept orphan if origin is known. */
     if (pfrom) {
       SHCBlock* orphan = new SHCBlock(*pblock);
@@ -617,6 +617,11 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
         Debug("(shc) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str()); 
         pfrom->PushGetBlocks(GetBestBlockIndex(SHC_COIN_IFACE), shc_GetOrphanRoot(orphan));
       }
+    }
+#endif
+    if (pfrom) {
+      CBlockIndex *prevIndex = GetBestBlockIndex(iface);
+      InitServiceBlockEvent(ifaceIndex, prevIndex->nHeight - 1); 
     }
     return true;
   }
@@ -633,6 +638,7 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
   }
   ServiceBlockEventUpdate(SHC_COIN_IFACE);
 
+#if 0 /* DEBUG: ORPHAN */
   // Recursively process any orphan blocks that depended on this one
   vector<uint256> vWorkQueue;
   vWorkQueue.push_back(hash);
@@ -653,6 +659,7 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
     }
     SHC_mapOrphanBlocksByPrev.erase(hashPrev);
   }
+#endif
 
   return true;
 

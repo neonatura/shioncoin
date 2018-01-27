@@ -736,13 +736,10 @@ int ProcessExecGenerateTx(CIface *iface, CExec *execIn, CExecCall *exec)
   strncpy(method, (char *)exec->vContext.data(), sizeof(method)-1);
   strtok(method, " ");
 
-//fprintf(stderr, "DEBUG: ProcessExecGenerateTx: SEXE_EXEC_CALL[%s]: %s\n", method, shjson_print(json));
-
   /* execute method */
   err = sexe_exec_pcall(S, method, json);
   shjson_free(&json);
   if (err) {
-//fprintf(stderr, "DEBUG: ProcessExecGenerateTx: %d = sexe_exec_pcall('%s')\n", err, method);
 
 #if 0
 {
@@ -780,7 +777,6 @@ if (err) {
 
     if (!wallet->CommitTransaction(wtx))
       return (SHERR_CANCELED);
-//fprintf(stderr, "DEBUG: ProcessExecGenerateTx: COMMIT: %s\n", wtx.ToString().c_str()); 
   }
 
   return (0);

@@ -528,7 +528,7 @@ bool CTransaction::ReadTx(int ifaceIndex, uint256 txHash, uint256 *hashBlock)
 
   const CTransaction *tx = block->GetTx(txHash);
   if (!tx) {
-    sprintf(errbuf, "CTransaction::ReadTx: block height %d does not contain tx.", blockHeight);
+    sprintf(errbuf, "CTransaction::ReadTx: block height %d does not contain tx '%s'.", blockHeight, txHash.GetHex().c_str());
     delete block;
     return error(SHERR_INVAL, errbuf);
   }
@@ -875,7 +875,38 @@ CBlockIndex* CBlockLocator::GetBlockIndex()
   return (GetGenesisBlockIndex(iface));
 }
 
+void CBlockLocator::Set(const CBlockIndex* pindex)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  int nStep = 1;
 
+  vHave.clear();
+  vHave.reserve(32);
+
+  if (!pindex)
+    pindex = GetBestBlockIndex(iface);
+
+  while (pindex) {
+    vHave.push_back(pindex->GetBlockHash());
+
+    // Stop when we have added the genesis block.
+    if (pindex->nHeight == 0)
+      break;
+
+    if (vHave.size() > 500) {
+      pindex = pindex->GetAncestor(pindex->nHeight);
+    } else {
+      // Exponentially larger steps back, plus the genesis block.
+      int nHeight = std::max(pindex->nHeight - nStep, 0);
+      pindex = GetBlockIndexByHeight(ifaceIndex, nHeight);
+      if (vHave.size() > 10)
+        nStep *= 2;
+    }
+  }
+  Debug("(%s) CBlockLocator: bundled x%d blocks.", iface->name, vHave.size());
+}
+
+#if 0
 void CBlockLocator::Set(const CBlockIndex* pindex)
 {
   vHave.clear();
@@ -892,6 +923,7 @@ void CBlockLocator::Set(const CBlockIndex* pindex)
   }
   vHave.push_back(GetGenesisBlockHash(ifaceIndex));
 }
+#endif
 #if 0
 void CBlockLocator::Set(const CBlockIndex* pindex)
 {

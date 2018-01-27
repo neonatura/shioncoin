@@ -912,9 +912,10 @@ pblock->print();
   /*
    * USDE: unknown previous hash 
    */
-  if (!blockIndex->count(pblock->hashPrevBlock)) {
+  if (pblock->hashPrevBlock != 0 &&
+      !blockIndex->count(pblock->hashPrevBlock)) {
     Debug("(usde) ProcessBlock: warning: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
-
+#if 0 /* DEBUG: ORPHAN */
     USDEBlock* orphan = new USDEBlock(*pblock);
     USDE_mapOrphanBlocks.insert(make_pair(hash, orphan));
     USDE_mapOrphanBlocksByPrev.insert(make_pair(orphan->hashPrevBlock, orphan));
@@ -926,7 +927,11 @@ pblock->print();
         pfrom->PushGetBlocks(pindexBest, usde_GetOrphanRoot(orphan));
       }
     }
-
+#endif
+    if (pfrom) {
+      CBlockIndex *prevIndex = GetBestBlockIndex(iface);
+      InitServiceBlockEvent(ifaceIndex, prevIndex->nHeight - 1);
+    }
     return true;
   }
 
@@ -937,6 +942,7 @@ pblock->print();
   }
   ServiceBlockEventUpdate(USDE_COIN_IFACE);
 
+#if 0 /* DEBUG: ORPHAN */
   // Recursively process any orphan blocks that depended on this one
   vector<uint256> vWorkQueue;
   vWorkQueue.push_back(hash);
@@ -957,6 +963,7 @@ pblock->print();
     }
     USDE_mapOrphanBlocksByPrev.erase(hashPrev);
   }
+#endif
 
   return true;
 }

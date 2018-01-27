@@ -446,7 +446,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
   if (pblock->hashPrevBlock != 0 && 
       !blockIndex->count(pblock->hashPrevBlock)) {
     Debug("(test) ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
-
+#if 0 /* DEBUG: ORPHAN */
     TESTBlock* pblock2 = new TESTBlock(*pblock);
     TEST_mapOrphanBlocks.insert(make_pair(hash, pblock2));
     TEST_mapOrphanBlocksByPrev.insert(make_pair(pblock2->hashPrevBlock, pblock2));
@@ -455,8 +455,12 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
     if (pfrom) {
       pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock2));
 }
-
     iface->net_invalid = time(NULL);
+#endif
+    if (pfrom) {
+      CBlockIndex *prevIndex = GetBestBlockIndex(iface);
+      InitServiceBlockEvent(ifaceIndex, prevIndex->nHeight - 1);
+    }
     return true;
   }
 
@@ -471,6 +475,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
   }
   ServiceBlockEventUpdate(TEST_COIN_IFACE);
 
+#if 0 /* DEBUG: ORPHAN */
   // Recursively process any orphan blocks that depended on this one
   vector<uint256> vWorkQueue;
   vWorkQueue.push_back(hash);
@@ -491,6 +496,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
     }
     TEST_mapOrphanBlocksByPrev.erase(hashPrev);
   }
+#endif
 
   return true;
 }

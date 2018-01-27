@@ -857,10 +857,12 @@ vector<CTransaction> CPool::GetActiveTx()
   BOOST_FOREACH(CPoolTx& ptx, vPoolTx) {
     CTransaction& tx = ptx.GetTx();
 
+#if 0
     /* redundant check performed after prioritization */
     nWeight += ptx.nWeight;
     if (nWeight >= nMaxWeight)
       break;
+#endif
 
     vTx.insert(vTx.end(), tx);
   }
