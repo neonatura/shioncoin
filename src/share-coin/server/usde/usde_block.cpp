@@ -59,31 +59,6 @@ using namespace boost;
 uint256 usde_hashGenesisBlock("0x33abc26f9a026f1279cb49600efdd63f42e7c2d3a15463ad8090505d3e967752");
 static CBigNum USDE_bnProofOfWorkLimit(~uint256(0) >> 20); // usde: starting difficulty is 1 / 2^12
 
-map<uint256, USDEBlock*> USDE_mapOrphanBlocks;
-multimap<uint256, USDEBlock*> USDE_mapOrphanBlocksByPrev;
-map<uint256, map<uint256, CDataStream*> > USDE_mapOrphanTransactionsByPrev;
-map<uint256, CDataStream*> USDE_mapOrphanTransactions;
-
-class USDEOrphan
-{
-  public:
-    CTransaction* ptx;
-    set<uint256> setDependsOn;
-    double dPriority;
-
-    USDEOrphan(CTransaction* ptxIn)
-    {
-      ptx = ptxIn;
-      dPriority = 0;
-    }
-
-    void print() const
-    {
-      printf("USDEOrphan(hash=%s, dPriority=%.1f)\n", ptx->GetHash().ToString().substr(0,10).c_str(), dPriority);
-      BOOST_FOREACH(uint256 hash, setDependsOn)
-        printf("   setDependsOn %s\n", hash.ToString().substr(0,10).c_str());
-    }
-};
 
 static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) 
 {
@@ -156,6 +131,114 @@ static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBloc
 
   return bnNew.GetCompact();
 }
+
+/* ** BLOCK ORPHANS ** */
+
+typedef map<uint256, uint256> orphan_map;
+static orphan_map USDE_mapOrphanBlocksByPrev;
+
+bool usde_IsOrphanBlock(const uint256& hash)
+{
+  CBlockIndex *pindex;
+  USDEBlock block;
+  uint256 prevHash;
+  bool ok;
+
+  if (usde_GetOrphanPrevHash(hash, prevHash)) {
+    /* already mapped. */
+    return (true);
+  }
+
+  pindex = GetBlockIndexByHash(USDE_COIN_IFACE, hash);
+  if (pindex) {
+    if (GetBestHeight(USDE_COIN_IFACE) >= pindex->nHeight &&
+        block.ReadFromDisk(pindex))
+      return (false); /* present in block-chain */
+  }
+
+  if (!block.ReadArchBlock(hash))
+    return (false); /* no record in archive db */
+
+  return (true);
+}
+
+void usde_AddOrphanBlock(CBlock *block)
+{
+
+  USDE_mapOrphanBlocksByPrev.insert(
+      make_pair(block->hashPrevBlock, block->GetHash()));
+  block->WriteArchBlock();
+
+}
+
+void usde_RemoveOrphanBlock(const uint256& hash)
+{
+  bool found;
+
+  orphan_map::iterator it = USDE_mapOrphanBlocksByPrev.begin(); 
+  while (it != USDE_mapOrphanBlocksByPrev.end()) {
+    found = (it->second == hash);
+    if (found)
+      break;
+    ++it;
+  }
+  if (it != USDE_mapOrphanBlocksByPrev.end()) {
+    USDE_mapOrphanBlocksByPrev.erase(it);
+  }
+  
+}
+
+bool usde_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash)
+{
+  bool found;
+
+  orphan_map::iterator it = USDE_mapOrphanBlocksByPrev.begin(); 
+  while (it != USDE_mapOrphanBlocksByPrev.end()) {
+    found = (it->second == hash);
+    if (found) {
+      retPrevHash = it->first;
+      return (true);
+    }
+    ++it;
+  }
+
+  return (false);
+}
+
+bool usde_GetOrphanNextHash(const uint256& hash, uint256& retNextHash)
+{
+  bool found;
+
+  orphan_map::iterator it = USDE_mapOrphanBlocksByPrev.find(hash);
+  if (it != USDE_mapOrphanBlocksByPrev.end()) {
+    retNextHash = it->second;
+    return (true);
+  }
+  return (false);
+}
+
+CBlock *usde_GetOrphanBlock(const uint256& hash)
+{
+  USDEBlock block;  
+
+  if (!block.ReadArchBlock(hash))
+    return (NULL);
+
+  return (new USDEBlock(block));
+}
+
+uint256 usde_GetOrphanRoot(uint256 hash)
+{
+  uint256 prevHash;
+
+  while (usde_GetOrphanPrevHash(hash, prevHash)) {
+    hash = prevHash;
+  }
+  return (hash);
+}
+
+
+
 
 unsigned int USDEBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
@@ -835,16 +918,6 @@ static void usde_EraseFromWallets(uint256 hash)
 }
 
 
-uint256 usde_GetOrphanRoot(const CBlock* pblock)
-{
-
-  // Work back to the first block in the orphan chain
-  while (USDE_mapOrphanBlocks.count(pblock->hashPrevBlock))
-    pblock = USDE_mapOrphanBlocks[pblock->hashPrevBlock];
-  return pblock->GetHash();
-
-}
-
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
@@ -866,6 +939,7 @@ static unsigned int usde_ComputeMinWork(unsigned int nBase, int64 nTime)
 
 bool usde_ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
+  CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
   int ifaceIndex = USDE_COIN_IFACE;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
@@ -874,10 +948,14 @@ bool usde_ProcessBlock(CNode* pfrom, CBlock* pblock)
   // Check for duplicate
   uint256 hash = pblock->GetHash();
 
-  if (blockIndex->count(hash))
-    return Debug("ProcessBlock() : already have block %s", hash.GetHex().c_str());
-  if (USDE_mapOrphanBlocks.count(hash))
-    return Debug("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
+  if (blockIndex->count(hash)) {
+    return Debug("(usde) ProcessBlock: already have block %s", hash.GetHex().c_str());
+  }
+  if (pindexBest && 
+      pblock->hashPrevBlock != pindexBest->GetBlockHash() &&
+      usde_IsOrphanBlock(hash)) {
+    return Debug("(usde) ProcessBlock: already have block (orphan) %s", hash.ToString().c_str());
+  }
 
   // Preliminary checks
   if (!pblock->CheckBlock()) {
@@ -915,22 +993,16 @@ pblock->print();
   if (pblock->hashPrevBlock != 0 &&
       !blockIndex->count(pblock->hashPrevBlock)) {
     Debug("(usde) ProcessBlock: warning: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
-#if 0 /* DEBUG: ORPHAN */
-    USDEBlock* orphan = new USDEBlock(*pblock);
-    USDE_mapOrphanBlocks.insert(make_pair(hash, orphan));
-    USDE_mapOrphanBlocksByPrev.insert(make_pair(orphan->hashPrevBlock, orphan));
-
     if (pfrom) {
+      usde_AddOrphanBlock(pblock);
+      STAT_BLOCK_ORPHAN(iface)++;
+
+      /* request missing blocks */
       CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
       if (pindexBest) {
-//fprintf(stderr, "DEBUG: usde_ProcessBlocks: requsesting missing blocks from height %d\n", pindexBest->nHeight); 
-        pfrom->PushGetBlocks(pindexBest, usde_GetOrphanRoot(orphan));
+        Debug("(usde) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
+        pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(pblock->GetHash()));
       }
-    }
-#endif
-    if (pfrom) {
-      CBlockIndex *prevIndex = GetBestBlockIndex(iface);
-      InitServiceBlockEvent(ifaceIndex, prevIndex->nHeight - 1);
     }
     return true;
   }
@@ -940,30 +1012,19 @@ pblock->print();
     iface->net_invalid = time(NULL);
     return error(SHERR_INVAL, "ProcessBlock() : AcceptBlock FAILED");
   }
-  ServiceBlockEventUpdate(USDE_COIN_IFACE);
 
-#if 0 /* DEBUG: ORPHAN */
-  // Recursively process any orphan blocks that depended on this one
-  vector<uint256> vWorkQueue;
-  vWorkQueue.push_back(hash);
-  for (unsigned int i = 0; i < vWorkQueue.size(); i++)
-  {
-    uint256 hashPrev = vWorkQueue[i];
-    for (multimap<uint256, USDEBlock*>::iterator mi = USDE_mapOrphanBlocksByPrev.lower_bound(hashPrev);
-        mi != USDE_mapOrphanBlocksByPrev.upper_bound(hashPrev);
-        ++mi)
-    {
-      CBlock* pblockOrphan = (*mi).second;
-      if (pblockOrphan->AcceptBlock())
-        vWorkQueue.push_back(pblockOrphan->GetHash());
+  uint256 nextHash;
+  while (usde_GetOrphanNextHash(hash, nextHash)) {
+    hash = nextHash;
+    CBlock *block = usde_GetOrphanBlock(hash);
+    if (!block || !block->AcceptBlock())
+      break;
 
-      USDE_mapOrphanBlocks.erase(pblockOrphan->GetHash());
-
-      delete pblockOrphan;
-    }
-    USDE_mapOrphanBlocksByPrev.erase(hashPrev);
+    usde_RemoveOrphanBlock(hash);
+    STAT_BLOCK_ORPHAN(iface)--;
   }
-#endif
+
+  ServiceBlockEventUpdate(USDE_COIN_IFACE);
 
   return true;
 }
@@ -1691,16 +1752,7 @@ Debug("ARCH: loaded block '%s'\n", GetHash().GetHex().c_str());
 
 bool USDEBlock::IsOrphan()
 {
-  blkidx_t *blockIndex = GetBlockTable(USDE_COIN_IFACE);
-  uint256 hash = GetHash();
-
-  if (blockIndex->count(hash))
-    return (false);
-
-  if (!USDE_mapOrphanBlocks.count(hash))
-    return (false);
-
-  return (true);
+  return (usde_IsOrphanBlock(GetHash()));
 }
 
 #ifdef USE_LEVELDB_COINDB
@@ -2364,7 +2416,10 @@ bool USDEBlock::SetBestChain(CBlockIndex* pindexNew)
 
 bool USDEBlock::ConnectBlock(CBlockIndex* pindex)
 {
-  return (core_ConnectBlock(this, pindex));
+  bool ok = core_ConnectBlock(this, pindex);
+  if (ok)
+    usde_RemoveOrphanBlock(pindex->GetBlockHash());
+  return (ok);
 }
 
 bool USDEBlock::DisconnectBlock(CBlockIndex* pindex)

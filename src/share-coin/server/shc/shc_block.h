@@ -149,12 +149,6 @@ extern CBigNum SHC_bnBestInvalidWork;
 extern uint256 SHC_hashBestChain;
 extern int64 SHC_nTimeBestReceived;
 
-extern std::map<uint256, SHCBlock*> SHC_mapOrphanBlocks;
-extern std::multimap<uint256, SHCBlock*> SHC_mapOrphanBlocksByPrev;
-extern std::map<uint256, std::map<uint256, CDataStream*> > SHC_mapOrphanTransactionsByPrev;
-extern std::map<uint256, CDataStream*> SHC_mapOrphanTransactions;
-
-
 /**
  * Create a block template with pending inventoried transactions.
  */
@@ -175,12 +169,15 @@ bool shc_SetBestChain(CBlock *block);
  */
 bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock);
 
-/**
- * Get the first block in the best "alternate" chain not currently in the main block-chain.
- */
-uint256 shc_GetOrphanRoot(const CBlock* pblock);
 
 int64 shc_GetBlockValue(int nHeight, int64 nFees);
+
+bool shc_IsOrphanBlock(const uint256& hash);
+void shc_AddOrphanBlock(CBlock *block);
+void shc_RemoveOrphanBlock(const uint256& hash);
+bool shc_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash);
+CBlock *shc_GetOrphanBlock(const uint256& hash);
+uint256 shc_GetOrphanRoot(uint256 hash);
 
 
 /**

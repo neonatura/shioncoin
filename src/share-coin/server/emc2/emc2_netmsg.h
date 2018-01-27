@@ -45,17 +45,7 @@ extern "C"
 #endif
 }
 
-
-//extern map<uint256, CDataStream*> mapOrphanTransactions;
-//extern map<uint256, CBlock*> mapOrphanBlocks;
-
 bool emc2_ProcessMessages(CIface *iface, CNode* pfrom);
 bool emc2_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle);
-
-bool emc2_AddOrphanTx(const CDataStream& vMsg);
-
-unsigned int emc2_LimitOrphanTxSize(unsigned int nMaxOrphans);
-
-
 
 #endif /* ndef __EMC2_NETMGSG_H__ */

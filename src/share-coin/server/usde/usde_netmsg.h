@@ -45,17 +45,7 @@ extern "C"
 #endif
 }
 
-
-//extern map<uint256, CDataStream*> mapOrphanTransactions;
-//extern map<uint256, CBlock*> mapOrphanBlocks;
-
 bool usde_ProcessMessages(CIface *iface, CNode* pfrom);
 bool usde_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle);
-
-bool usde_AddOrphanTx(const CDataStream& vMsg);
-
-unsigned int usde_LimitOrphanTxSize(unsigned int nMaxOrphans);
-
-
 
 #endif /* ndef __USDE_NETMGSG_H__ */

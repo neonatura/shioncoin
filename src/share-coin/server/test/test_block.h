@@ -120,14 +120,7 @@ extern CBigNum TEST_bnBestInvalidWork;
 extern uint256 TEST_hashBestChain;
 extern CBlockIndex* TEST_pindexBest;
 extern int64 TEST_nTimeBestReceived;
-
-extern std::map<uint256, TESTBlock*> TEST_mapOrphanBlocks;
-extern std::multimap<uint256, TESTBlock*> TEST_mapOrphanBlocksByPrev;
-extern std::map<uint256, std::map<uint256, CDataStream*> > TEST_mapOrphanTransactionsByPrev;
-extern std::map<uint256, CDataStream*> TEST_mapOrphanTransactions;
 extern uint256 test_hashGenesisBlock;
-
-
 
 CBlock* test_CreateNewBlock(const CPubKey& rkey, CBlockIndex *pindexPrev = NULL);
 
@@ -142,11 +135,17 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock);
 
 bool test_CheckBlock(CBlock *block);
 
-uint256 test_GetOrphanRoot(const CBlock* pblock);
-
 void test_SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
 
 int64 test_GetBlockValue(int nHeight, int64 nFees);
+
+bool test_IsOrphanBlock(const uint256& hash); 
+void test_AddOrphanBlock(CBlock *block); 
+void test_RemoveOrphanBlock(const uint256& hash); 
+bool test_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash); 
+CBlock *test_GetOrphanBlock(const uint256& hash); 
+uint256 test_GetOrphanRoot(uint256 hash); 
+
 
 
 #endif /* ndef __TEST__TEST_BLOCK_H__ */

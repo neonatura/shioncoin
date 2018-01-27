@@ -60,35 +60,117 @@ uint256 test_hashGenesisBlock("0xf4e533069fcce5b4a3488b4363caa24e9f3265b26086879
 uint256 test_hashGenesisMerkle("0x96f34a50bdbe2f2f50308b52ee2a5fd9dba09824d95df16798fabad0de3a7f67");
 static CBigNum TEST_bnProofOfWorkLimit(~uint256(0) >> 9);
 
-map<uint256, TESTBlock*> TEST_mapOrphanBlocks;
-multimap<uint256, TESTBlock*> TEST_mapOrphanBlocksByPrev;
-map<uint256, map<uint256, CDataStream*> > TEST_mapOrphanTransactionsByPrev;
-map<uint256, CDataStream*> TEST_mapOrphanTransactions;
 
 #define TEST_MAJORITY_WINDOW 2500
 
 
+/* ** BLOCK ORPHANS ** */
 
-class TESTOrphan
+typedef map<uint256, uint256> orphan_map;
+static orphan_map TEST_mapOrphanBlocksByPrev;
+
+bool test_IsOrphanBlock(const uint256& hash)
 {
-  public:
-    CTransaction* ptx;
-    set<uint256> setDependsOn;
-    double dPriority;
+  CBlockIndex *pindex;
+  TESTBlock block;
+  uint256 prevHash;
+  bool ok;
 
-    TESTOrphan(CTransaction* ptxIn)
-    {
-      ptx = ptxIn;
-      dPriority = 0;
-    }
+  if (test_GetOrphanPrevHash(hash, prevHash)) {
+    /* already mapped. */
+    return (true);
+  }
 
-    void print() const
-    {
-      printf("TESTOrphan(hash=%s, dPriority=%.1f)\n", ptx->GetHash().ToString().substr(0,10).c_str(), dPriority);
-      BOOST_FOREACH(uint256 hash, setDependsOn)
-        printf("   setDependsOn %s\n", hash.ToString().substr(0,10).c_str());
+  pindex = GetBlockIndexByHash(TEST_COIN_IFACE, hash);
+  if (pindex) {
+    if (GetBestHeight(TEST_COIN_IFACE) >= pindex->nHeight &&
+        block.ReadFromDisk(pindex))
+      return (false); /* present in block-chain */
+  }
+
+  if (!block.ReadArchBlock(hash))
+    return (false); /* no record in archive db */
+
+  return (true);
+}
+
+void test_AddOrphanBlock(CBlock *block)
+{
+
+  TEST_mapOrphanBlocksByPrev.insert(
+      make_pair(block->hashPrevBlock, block->GetHash()));
+  block->WriteArchBlock();
+
+}
+
+void test_RemoveOrphanBlock(const uint256& hash)
+{
+  bool found;
+
+  orphan_map::iterator it = TEST_mapOrphanBlocksByPrev.begin(); 
+  while (it != TEST_mapOrphanBlocksByPrev.end()) {
+    found = (it->second == hash);
+    if (found)
+      break;
+    ++it;
+  }
+  if (it != TEST_mapOrphanBlocksByPrev.end()) {
+    TEST_mapOrphanBlocksByPrev.erase(it);
+  }
+  
+}
+
+bool test_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash)
+{
+  bool found;
+
+  orphan_map::iterator it = TEST_mapOrphanBlocksByPrev.begin(); 
+  while (it != TEST_mapOrphanBlocksByPrev.end()) {
+    found = (it->second == hash);
+    if (found) {
+      retPrevHash = it->first;
+      return (true);
     }
-};
+    ++it;
+  }
+
+  return (false);
+}
+
+bool test_GetOrphanNextHash(const uint256& hash, uint256& retNextHash)
+{
+  bool found;
+
+  orphan_map::iterator it = TEST_mapOrphanBlocksByPrev.find(hash);
+  if (it != TEST_mapOrphanBlocksByPrev.end()) {
+    retNextHash = it->second;
+    return (true);
+  }
+  return (false);
+}
+
+CBlock *test_GetOrphanBlock(const uint256& hash)
+{
+  TESTBlock block;  
+
+  if (!block.ReadArchBlock(hash))
+    return (NULL);
+
+  return (new TESTBlock(block));
+}
+
+uint256 test_GetOrphanRoot(uint256 hash)
+{
+  uint256 prevHash;
+
+  while (test_GetOrphanPrevHash(hash, prevHash)) {
+    hash = prevHash;
+  }
+  return (hash);
+}
+
+
+
 
 
 unsigned int TESTBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
@@ -369,16 +451,6 @@ static void test_EraseFromWallets(uint256 hash)
 }
 
 
-uint256 test_GetOrphanRoot(const CBlock* pblock)
-{
-
-  // Work back to the first block in the orphan chain
-  while (TEST_mapOrphanBlocks.count(pblock->hashPrevBlock))
-    pblock = TEST_mapOrphanBlocks[pblock->hashPrevBlock];
-  return pblock->GetHash();
-
-}
-
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
@@ -401,6 +473,7 @@ static unsigned int test_ComputeMinWork(unsigned int nBase, int64 nTime)
 bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
   int ifaceIndex = TEST_COIN_IFACE;
+  CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
   CIface *iface = GetCoinByIndex(ifaceIndex);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
   shtime_t ts;
@@ -408,10 +481,14 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
   // Check for duplicate
   uint256 hash = pblock->GetHash();
 
-  if (blockIndex->count(hash))
-    return Debug("ProcessBlock() : already have block %s", hash.GetHex().c_str());
-  if (TEST_mapOrphanBlocks.count(hash))
-    return Debug("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
+  if (blockIndex->count(hash)) {
+    return Debug("(test) ProcessBlock: already have block %s", hash.GetHex().c_str());
+  }
+  if (pindexBest && 
+      pblock->hashPrevBlock != pindexBest->GetBlockHash() && 
+      test_IsOrphanBlock(hash)) {
+    return Debug("(test) ProcessBlock: already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
+  }
 
   // Preliminary checks
   if (!pblock->CheckBlock()) {
@@ -446,20 +523,16 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
   if (pblock->hashPrevBlock != 0 && 
       !blockIndex->count(pblock->hashPrevBlock)) {
     Debug("(test) ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
-#if 0 /* DEBUG: ORPHAN */
-    TESTBlock* pblock2 = new TESTBlock(*pblock);
-    TEST_mapOrphanBlocks.insert(make_pair(hash, pblock2));
-    TEST_mapOrphanBlocksByPrev.insert(make_pair(pblock2->hashPrevBlock, pblock2));
+    if (pfrom) {
+      test_AddOrphanBlock(pblock);
+      STAT_BLOCK_ORPHAN(iface)++;
 
-    // Ask this guy to fill in what we're missing
-    if (pfrom) {
-      pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock2));
-}
-    iface->net_invalid = time(NULL);
-#endif
-    if (pfrom) {
-      CBlockIndex *prevIndex = GetBestBlockIndex(iface);
-      InitServiceBlockEvent(ifaceIndex, prevIndex->nHeight - 1);
+      /* request missing blocks */
+      CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
+      if (pindexBest) {
+        Debug("(test) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
+        pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock->GetHash()));
+      }
     }
     return true;
   }
@@ -473,30 +546,19 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
     iface->net_invalid = time(NULL);
     return error(SHERR_IO, "TESTBlock::AcceptBlock: error adding block '%s'.", pblock->GetHash().GetHex().c_str());
   }
-  ServiceBlockEventUpdate(TEST_COIN_IFACE);
 
-#if 0 /* DEBUG: ORPHAN */
-  // Recursively process any orphan blocks that depended on this one
-  vector<uint256> vWorkQueue;
-  vWorkQueue.push_back(hash);
-  for (unsigned int i = 0; i < vWorkQueue.size(); i++)
-  {
-    uint256 hashPrev = vWorkQueue[i];
-    for (multimap<uint256, TESTBlock*>::iterator mi = TEST_mapOrphanBlocksByPrev.lower_bound(hashPrev);
-        mi != TEST_mapOrphanBlocksByPrev.upper_bound(hashPrev);
-        ++mi)
-    {
-      CBlock* pblockOrphan = (*mi).second;
-      if (pblockOrphan->AcceptBlock())
-        vWorkQueue.push_back(pblockOrphan->GetHash());
+  uint256 nextHash;
+  while (test_GetOrphanNextHash(hash, nextHash)) {
+    hash = nextHash;
+    CBlock *block = test_GetOrphanBlock(hash);
+    if (!block || !block->AcceptBlock())
+      break;
 
-      TEST_mapOrphanBlocks.erase(pblockOrphan->GetHash());
-
-      delete pblockOrphan;
-    }
-    TEST_mapOrphanBlocksByPrev.erase(hashPrev);
+    test_RemoveOrphanBlock(hash);
+    STAT_BLOCK_ORPHAN(iface)--;
   }
-#endif
+
+  ServiceBlockEventUpdate(TEST_COIN_IFACE);
 
   return true;
 }
@@ -1155,16 +1217,7 @@ bool TESTBlock::ReadArchBlock(uint256 hash)
 
 bool TESTBlock::IsOrphan()
 {
-  blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
-  uint256 hash = GetHash();
-
-  if (blockIndex->count(hash))
-    return (false);
-
-  if (!TEST_mapOrphanBlocks.count(hash))
-    return (false);
-
-  return (true);
+  return (test_IsOrphanBlock(GetHash()));
 }
 
 #ifdef USE_LEVELDB_COINDB
@@ -1840,7 +1893,10 @@ bool TESTBlock::SetBestChain(CBlockIndex* pindexNew)
 
 bool TESTBlock::ConnectBlock(CBlockIndex* pindex)
 {
-  return (core_ConnectBlock(this, pindex));
+  bool ok = core_ConnectBlock(this, pindex);
+  if (ok)
+    test_RemoveOrphanBlock(pindex->GetBlockHash());
+  return (ok);
 }
 
 bool TESTBlock::DisconnectBlock(CBlockIndex* pindex)

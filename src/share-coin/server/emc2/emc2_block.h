@@ -150,14 +150,6 @@ extern CBigNum EMC2_bnBestInvalidWork;
 extern uint256 EMC2_hashBestChain;
 extern int64 EMC2_nTimeBestReceived;
 
-extern std::map<uint256, EMC2Block*> EMC2_mapOrphanBlocks;
-extern std::multimap<uint256, EMC2Block*> EMC2_mapOrphanBlocksByPrev;
-extern std::map<uint256, std::map<uint256, CDataStream*> > EMC2_mapOrphanTransactionsByPrev;
-extern std::map<uint256, CDataStream*> EMC2_mapOrphanTransactions;
-
-
-
-
 /**
  * Create a block template with pending inventoried transactions.
  */
@@ -178,14 +170,17 @@ bool emc2_SetBestChain(CBlock *block);
  */
 bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock);
 
-/**
- * Get the first block in the best "alternate" chain not currently in the main block-chain.
- */
-uint256 emc2_GetOrphanRoot(const CBlock* pblock);
-
 int64 emc2_GetBlockValue(int nHeight, int64 nFees);
 
 CBlockIndex *emc2_GetLastCheckpoint();
+
+bool emc2_IsOrphanBlock(const uint256& hash); 
+void emc2_AddOrphanBlock(CBlock *block); 
+void emc2_RemoveOrphanBlock(const uint256& hash); 
+bool emc2_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash); 
+CBlock *emc2_GetOrphanBlock(const uint256& hash); 
+uint256 emc2_GetOrphanRoot(uint256 hash); 
+
 
 
 /**

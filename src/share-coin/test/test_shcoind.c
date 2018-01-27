@@ -45,6 +45,8 @@ extern TEST_txmempool_inval(CuTest*);
 extern TEST_respend(CuTest*);
 extern TEST_txmempool_depend(CuTest*);
 extern TEST_chainwork(CuTest*);
+extern TEST_orphan_block(CuTest*);
+
 
 
 
@@ -111,6 +113,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_txmempool_inval);
   SUITE_ADD_TEST(suite, TEST_txmempool_depend);
   SUITE_ADD_TEST(suite, TEST_respend);
+  SUITE_ADD_TEST(suite, TEST_orphan_block);
 
   /* segwit tests */
   SUITE_ADD_TEST(suite, TEST_segwit);

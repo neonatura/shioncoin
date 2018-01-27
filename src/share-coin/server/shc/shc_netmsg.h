@@ -50,14 +50,9 @@ extern "C"
 }
 
 
-//extern map<uint256, CDataStream*> mapOrphanTransactions;
-//extern map<uint256, CBlock*> mapOrphanBlocks;
-
 bool shc_ProcessMessages(CIface *iface, CNode* pfrom);
 bool shc_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle);
 void shc_SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
-bool shc_AddOrphanTx(const CDataStream& vMsg);
-unsigned int shc_LimitOrphanTxSize(unsigned int nMaxOrphans);
 
 
 /**

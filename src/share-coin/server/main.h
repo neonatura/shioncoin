@@ -126,7 +126,6 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
 int GetNumBlocksOfPeers();
 bool IsInitialBlockDownload();
 std::string GetWarnings(int ifaceIndex, std::string strFor);
-uint256 GetOrphanRoot(const CBlock* pblock);
 
 
 

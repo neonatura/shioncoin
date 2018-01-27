@@ -55,34 +55,6 @@ uint256 shc_hashGenesisBlock("0xf4319e4e89b35b5f26ec0363a09d29703402f120cf1bf8e6
 static uint256 shc_hashGenesisMerkle("0xd3f4bbe7fe61bda819369b4cd3a828f3ad98d971dda0c20a466a9ce64846c321");
 static CBigNum SHC_bnGenesisProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum SHC_bnProofOfWorkLimit(~uint256(0) >> 21);
-
-map<uint256, SHCBlock*> SHC_mapOrphanBlocks;
-multimap<uint256, SHCBlock*> SHC_mapOrphanBlocksByPrev;
-map<uint256, map<uint256, CDataStream*> > SHC_mapOrphanTransactionsByPrev;
-map<uint256, CDataStream*> SHC_mapOrphanTransactions;
-
-
-class SHCOrphan
-{
-  public:
-    CTransaction* ptx;
-    set<uint256> setDependsOn;
-    double dPriority;
-
-    SHCOrphan(CTransaction* ptxIn)
-    {
-      ptx = ptxIn;
-      dPriority = 0;
-    }
-
-    void print() const
-    {
-      printf("SHCOrphan(hash=%s, dPriority=%.1f)\n", ptx->GetHash().ToString().substr(0,10).c_str(), dPriority);
-      BOOST_FOREACH(uint256 hash, setDependsOn)
-        printf("   setDependsOn %s\n", hash.ToString().substr(0,10).c_str());
-    }
-};
-
 static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) 
 {
   const CBlockIndex *BlockLastSolved	= pindexLast;
@@ -151,6 +123,116 @@ static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBloc
 
   return bnNew.GetCompact();
 }
+
+
+/* ** BLOCK ORPHANS ** */
+
+typedef map<uint256, uint256> orphan_map;
+static orphan_map SHC_mapOrphanBlocksByPrev;
+
+bool shc_IsOrphanBlock(const uint256& hash)
+{
+  CBlockIndex *pindex;
+  SHCBlock block;
+  uint256 prevHash;
+  bool ok;
+
+  if (shc_GetOrphanPrevHash(hash, prevHash)) {
+    /* already mapped. */
+    return (true);
+  }
+
+  pindex = GetBlockIndexByHash(SHC_COIN_IFACE, hash);
+  if (pindex) {
+    if (GetBestHeight(SHC_COIN_IFACE) >= pindex->nHeight &&
+        block.ReadFromDisk(pindex))
+      return (false); /* present in block-chain */
+  }
+
+  if (!block.ReadArchBlock(hash))
+    return (false); /* no record in archive db */
+
+  return (true);
+}
+
+void shc_AddOrphanBlock(CBlock *block)
+{
+
+  SHC_mapOrphanBlocksByPrev.insert(
+      make_pair(block->hashPrevBlock, block->GetHash()));
+  block->WriteArchBlock();
+
+}
+
+void shc_RemoveOrphanBlock(const uint256& hash)
+{
+  bool found;
+
+  orphan_map::iterator it = SHC_mapOrphanBlocksByPrev.begin(); 
+  while (it != SHC_mapOrphanBlocksByPrev.end()) {
+    found = (it->second == hash);
+    if (found)
+      break;
+    ++it;
+  }
+  if (it != SHC_mapOrphanBlocksByPrev.end()) {
+    SHC_mapOrphanBlocksByPrev.erase(it);
+  }
+  
+}
+
+bool shc_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash)
+{
+  bool found;
+
+  orphan_map::iterator it = SHC_mapOrphanBlocksByPrev.begin(); 
+  while (it != SHC_mapOrphanBlocksByPrev.end()) {
+    found = (it->second == hash);
+    if (found) {
+      retPrevHash = it->first;
+      return (true);
+    }
+    ++it;
+  }
+
+  return (false);
+}
+
+bool shc_GetOrphanNextHash(const uint256& hash, uint256& retNextHash)
+{
+  bool found;
+
+  orphan_map::iterator it = SHC_mapOrphanBlocksByPrev.find(hash);
+  if (it != SHC_mapOrphanBlocksByPrev.end()) {
+    retNextHash = it->second;
+    return (true);
+  }
+  return (false);
+}
+
+CBlock *shc_GetOrphanBlock(const uint256& hash)
+{
+  SHCBlock block;  
+
+  if (!block.ReadArchBlock(hash))
+    return (NULL);
+
+  return (new SHCBlock(block));
+}
+
+uint256 shc_GetOrphanRoot(uint256 hash)
+{
+  uint256 prevHash;
+
+  while (shc_GetOrphanPrevHash(hash, prevHash)) {
+    hash = prevHash;
+  }
+  return (hash);
+}
+
+
+
+
 
 unsigned int SHCBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
@@ -524,15 +606,6 @@ static void shc_EraseFromWallets(uint256 hash)
 }
 
 
-uint256 shc_GetOrphanRoot(const CBlock* pblock)
-{
-
-  // Work back to the first block in the orphan chain
-  while (SHC_mapOrphanBlocks.count(pblock->hashPrevBlock))
-    pblock = SHC_mapOrphanBlocks[pblock->hashPrevBlock];
-  return pblock->GetHash();
-
-}
 
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
@@ -558,6 +631,7 @@ static unsigned int shc_ComputeMinWork(unsigned int nBase, int64 nTime)
 
 bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
+  CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
   int ifaceIndex = SHC_COIN_IFACE;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
@@ -566,10 +640,14 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
   // Check for duplicate
   uint256 hash = pblock->GetHash();
 
-  if (blockIndex->count(hash))
-    return Debug("ProcessBlock() : already have block %s", hash.GetHex().c_str());
-  if (SHC_mapOrphanBlocks.count(hash))
-    return Debug("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
+  if (blockIndex->count(hash)) {
+    return Debug("(shc) ProcessBlock: already have block %s", hash.GetHex().c_str());
+  }
+  if (pindexBest && 
+      pblock->hashPrevBlock != pindexBest->GetBlockHash() &&
+      shc_IsOrphanBlock(hash)) {
+    return Debug("(shc) ProcessBlock: already have block (orphan) %s", hash.ToString().c_str());
+  }
 
   // Preliminary checks
   if (!pblock->CheckBlock()) {
@@ -604,24 +682,17 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
   if (pblock->hashPrevBlock != 0 &&
       !blockIndex->count(pblock->hashPrevBlock)) {
     Debug("(shc) ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
-#if 0 /* DEBUG: ORPHAN */
-    /* Accept orphan if origin is known. */
     if (pfrom) {
-      SHCBlock* orphan = new SHCBlock(*pblock);
-      SHC_mapOrphanBlocks.insert(make_pair(hash, orphan));
-      SHC_mapOrphanBlocksByPrev.insert(make_pair(orphan->hashPrevBlock, orphan));
+      shc_AddOrphanBlock(pblock);
+      STAT_BLOCK_ORPHAN(iface)++;
 
       /* request missing blocks */
       CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
       if (pindexBest) {
         Debug("(shc) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str()); 
-        pfrom->PushGetBlocks(GetBestBlockIndex(SHC_COIN_IFACE), shc_GetOrphanRoot(orphan));
+        pfrom->PushGetBlocks(GetBestBlockIndex(SHC_COIN_IFACE), shc_GetOrphanRoot(pblock->GetHash()));
+        //        ServiceBlockEventUpdate(SHC_COIN_IFACE);
       }
-    }
-#endif
-    if (pfrom) {
-      CBlockIndex *prevIndex = GetBestBlockIndex(iface);
-      InitServiceBlockEvent(ifaceIndex, prevIndex->nHeight - 1); 
     }
     return true;
   }
@@ -636,33 +707,20 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
     iface->net_invalid = time(NULL);
     return error(SHERR_IO, "SHCBlock::AcceptBlock: error adding block '%s'.", pblock->GetHash().GetHex().c_str());
   }
+
+  uint256 nextHash;
+  while (shc_GetOrphanNextHash(hash, nextHash)) {
+    hash = nextHash;
+    CBlock *block = shc_GetOrphanBlock(hash);
+    if (!block || !block->AcceptBlock())
+      break;
+    shc_RemoveOrphanBlock(hash);
+    STAT_BLOCK_ORPHAN(iface)--;
+  }
+
   ServiceBlockEventUpdate(SHC_COIN_IFACE);
 
-#if 0 /* DEBUG: ORPHAN */
-  // Recursively process any orphan blocks that depended on this one
-  vector<uint256> vWorkQueue;
-  vWorkQueue.push_back(hash);
-  for (unsigned int i = 0; i < vWorkQueue.size(); i++)
-  {
-    uint256 hashPrev = vWorkQueue[i];
-    for (multimap<uint256, SHCBlock*>::iterator mi = SHC_mapOrphanBlocksByPrev.lower_bound(hashPrev);
-        mi != SHC_mapOrphanBlocksByPrev.upper_bound(hashPrev);
-        ++mi)
-    {
-      CBlock* pblockOrphan = (*mi).second;
-      if (pblockOrphan->AcceptBlock())
-        vWorkQueue.push_back(pblockOrphan->GetHash());
-
-      SHC_mapOrphanBlocks.erase(pblockOrphan->GetHash());
-
-      delete pblockOrphan;
-    }
-    SHC_mapOrphanBlocksByPrev.erase(hashPrev);
-  }
-#endif
-
   return true;
-
 }
 
 CBlockIndex *shc_GetLastCheckpoint()
@@ -1261,16 +1319,7 @@ bool SHCBlock::ReadArchBlock(uint256 hash)
 
 bool SHCBlock::IsOrphan()
 {
-  blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
-  uint256 hash = GetHash();
-
-  if (blockIndex->count(hash))
-    return (false);
-
-  if (!SHC_mapOrphanBlocks.count(hash))
-    return (false);
-
-  return (true);
+  return (shc_IsOrphanBlock(GetHash()));
 }
 
 #ifdef USE_LEVELDB_COINDB
@@ -1943,7 +1992,10 @@ bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
 
 bool SHCBlock::ConnectBlock(CBlockIndex* pindex)
 {
-  return (core_ConnectBlock(this, pindex));
+  bool ok = core_ConnectBlock(this, pindex);
+  if (ok)
+    shc_RemoveOrphanBlock(pindex->GetBlockHash());
+  return (ok);
 }
 
 bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
@@ -1981,3 +2033,7 @@ bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
 }
 
 #endif
+
+
+
+

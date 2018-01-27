@@ -1046,14 +1046,17 @@ void usde_server_timer(void)
       if (pchBuf) {
         TRY_LOCK(pnode->cs_vRecv, lockRecv);
         if (lockRecv) {
-          timing_init("recv msg", &ts);
-          err = usde_coin_server_recv(iface, pnode, pchBuf);
+          err = 0;
+          while (err == 0) {
+            timing_init("recv msg", &ts);
+            err = usde_coin_server_recv(iface, pnode, pchBuf);
+            timing_term(USDE_COIN_IFACE, "recv msg", &ts);
+          }
           if (err && err != SHERR_AGAIN) {
             error(err, "usde_coin_server_recv");
             pnode->CloseSocketDisconnect("usde_coin_server_recv");
             continue;
           }
-          timing_term(USDE_COIN_IFACE, "recv msg", &ts);
         }
       }
 
@@ -1321,14 +1324,17 @@ void shc_server_timer(void)
       if (pchBuf) {
         TRY_LOCK(pnode->cs_vRecv, lockRecv);
         if (lockRecv) {
-          timing_init("recv msg", &ts);
-          err = shc_coin_server_recv(iface, pnode, pchBuf);
+          err = 0;
+          while (err == 0) {
+            timing_init("recv msg", &ts);
+            err = shc_coin_server_recv(iface, pnode, pchBuf);
+            timing_term(SHC_COIN_IFACE, "recv msg", &ts);
+          }
           if (err && err != SHERR_AGAIN) {
             error(err, "shc_coin_server_recv");
             pnode->CloseSocketDisconnect("shc_coin_server_recv");
             continue;
           }
-          timing_term(SHC_COIN_IFACE, "recv msg", &ts);
         }
       }
 
@@ -2155,14 +2161,17 @@ void emc2_server_timer(void)
       if (pchBuf) {
         TRY_LOCK(pnode->cs_vRecv, lockRecv);
         if (lockRecv) {
-          timing_init("recv msg", &ts);
-          err = emc2_coin_server_recv(iface, pnode, pchBuf);
+          err = 0;
+          while (err == 0) {
+            timing_init("recv msg", &ts);
+            err = emc2_coin_server_recv(iface, pnode, pchBuf);
+            timing_term(EMC2_COIN_IFACE, "recv msg", &ts);
+          }
           if (err && err != SHERR_AGAIN) {
             error(err, "emc2_coin_server_recv");
             pnode->CloseSocketDisconnect("emc2_coin_server_recv");
             continue;
           }
-          timing_term(EMC2_COIN_IFACE, "recv msg", &ts);
         }
       }
 

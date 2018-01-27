@@ -522,28 +522,6 @@ unsigned int static ScanHash_CryptoPP(char* pmidstate, char* pdata, char* phash1
     }
 }
 
-// Some explaining would be appreciated
-class COrphan
-{
-public:
-    CTransaction* ptx;
-    set<uint256> setDependsOn;
-    double dPriority;
-
-    COrphan(CTransaction* ptxIn)
-    {
-        ptx = ptxIn;
-        dPriority = 0;
-    }
-
-    void print() const
-    {
-        printf("COrphan(hash=%s, dPriority=%.1f)\n", ptx->GetHash().ToString().substr(0,10).c_str(), dPriority);
-        BOOST_FOREACH(uint256 hash, setDependsOn)
-            printf("   setDependsOn %s\n", hash.ToString().substr(0,10).c_str());
-    }
-};
-
 
 uint64 nLastBlockTx = 0;
 uint64 nLastBlockSize = 0;

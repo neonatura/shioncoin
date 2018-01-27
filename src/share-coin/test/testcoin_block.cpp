@@ -1827,6 +1827,37 @@ _TEST(chainwork)
   }
 }
 
+_TEST(orphan_block)
+{
+  CBlock *block;
+
+  block = test_GenerateBlock();
+  _TRUEPTR(block);
+  _TRUE(ProcessBlock(NULL, block) == true);
+  uint256 phash = block->GetHash();
+  delete block;
+
+  block = test_GenerateBlock();
+  _TRUEPTR(block);
+  uint256 hash = block->GetHash();
+  {
+    uint256 prevHash;
+    test_AddOrphanBlock(block);
+    _TRUE(true == test_IsOrphanBlock(hash));
+    _TRUE(true == test_GetOrphanPrevHash(hash, prevHash));
+    _TRUE(phash == prevHash);
+
+    CBlock *orphan = test_GetOrphanBlock(hash);
+    _TRUEPTR(orphan);
+    _TRUE(orphan->GetHash() == hash);
+    delete orphan;
+  }
+  _TRUE(ProcessBlock(NULL, block) == true);
+  _TRUE(false == test_IsOrphanBlock(hash));
+  delete block;
+
+}
+
 
 #ifdef __cplusplus
 }

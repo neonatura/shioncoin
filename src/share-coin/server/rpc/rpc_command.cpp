@@ -600,6 +600,7 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   /* stats */
   obj.push_back(Pair("blocksubmit",  (int)iface->stat.tot_block_submit));
   obj.push_back(Pair("blockaccept",  (int)iface->stat.tot_block_accept));
+  obj.push_back(Pair("blockorphan",  (int)iface->stat.tot_block_orphan));
   obj.push_back(Pair("txsubmit",  (int)iface->stat.tot_tx_submit));
   obj.push_back(Pair("txaccept",  (int)iface->stat.tot_tx_accept));
 

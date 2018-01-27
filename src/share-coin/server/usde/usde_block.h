@@ -128,14 +128,7 @@ extern CBigNum USDE_bnBestInvalidWork;
 extern uint256 USDE_hashBestChain;
 extern CBlockIndex* USDE_pindexBest;
 extern int64 USDE_nTimeBestReceived;
-
-extern std::map<uint256, USDEBlock*> USDE_mapOrphanBlocks;
-extern std::multimap<uint256, USDEBlock*> USDE_mapOrphanBlocksByPrev;
-extern std::map<uint256, std::map<uint256, CDataStream*> > USDE_mapOrphanTransactionsByPrev;
-extern std::map<uint256, CDataStream*> USDE_mapOrphanTransactions;
 extern uint256 usde_hashGenesisBlock;
-
-
 
 CBlock* usde_CreateNewBlock(const CPubKey& rkey);
 
@@ -148,11 +141,17 @@ bool usde_ProcessBlock(CNode* pfrom, CBlock* pblock);
 
 bool usde_CheckBlock(CBlock *block);
 
-uint256 usde_GetOrphanRoot(const CBlock* pblock);
-
 void usde_SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
 
 int64 usde_GetBlockValue(int nHeight, int64 nFees);
+
+
+bool usde_IsOrphanBlock(const uint256& hash); 
+void usde_AddOrphanBlock(CBlock *block); 
+void usde_RemoveOrphanBlock(const uint256& hash); 
+bool usde_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash); 
+CBlock *usde_GetOrphanBlock(const uint256& hash); 
+uint256 usde_GetOrphanRoot(uint256 hash); 
 
 
 #endif /* ndef __USDE_BLOCK_H__ */

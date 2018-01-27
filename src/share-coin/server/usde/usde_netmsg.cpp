@@ -101,79 +101,6 @@ void static ResendWalletTransactions()
 
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// USDE_mapOrphanTransactions
-//
-
-bool usde_AddOrphanTx(const CDataStream& vMsg)
-{
-    CTransaction tx;
-    CDataStream(vMsg) >> tx;
-    uint256 hash = tx.GetHash();
-    if (USDE_mapOrphanTransactions.count(hash))
-        return false;
-
-    CDataStream* pvMsg = new CDataStream(vMsg);
-
-    // Ignore big transactions, to avoid a
-    // send-big-orphans memory exhaustion attack. If a peer has a legitimate
-    // large transaction with a missing parent then we assume
-    // it will rebroadcast it later, after the parent transaction(s)
-    // have been mined or received.
-    // 10,000 orphans, each of which is at most 5,000 bytes big is
-    // at most 500 megabytes of orphans:
-    if (pvMsg->size() > 4096)
-    {
-        error(SHERR_INVAL, "warning: ignoring large orphan tx (size: %u, hash: %s)\n", pvMsg->size(), hash.ToString().substr(0,10).c_str());
-        delete pvMsg;
-        return false;
-    }
-
-    USDE_mapOrphanTransactions[hash] = pvMsg;
-    BOOST_FOREACH(const CTxIn& txin, tx.vin)
-        USDE_mapOrphanTransactionsByPrev[txin.prevout.hash].insert(make_pair(hash, pvMsg));
-
-    printf("stored orphan tx %s (mapsz %u)\n", hash.ToString().substr(0,10).c_str(),
-        USDE_mapOrphanTransactions.size());
-    return true;
-}
-
-void static EraseOrphanTx(uint256 hash)
-{
-    if (!USDE_mapOrphanTransactions.count(hash))
-        return;
-    const CDataStream* pvMsg = USDE_mapOrphanTransactions[hash];
-    CTransaction tx;
-    CDataStream(*pvMsg) >> tx;
-    BOOST_FOREACH(const CTxIn& txin, tx.vin)
-    {
-        USDE_mapOrphanTransactionsByPrev[txin.prevout.hash].erase(hash);
-        if (USDE_mapOrphanTransactionsByPrev[txin.prevout.hash].empty())
-            USDE_mapOrphanTransactionsByPrev.erase(txin.prevout.hash);
-    }
-    delete pvMsg;
-    USDE_mapOrphanTransactions.erase(hash);
-}
-
-unsigned int usde_LimitOrphanTxSize(unsigned int nMaxOrphans)
-{
-    unsigned int nEvicted = 0;
-    while (USDE_mapOrphanTransactions.size() > nMaxOrphans)
-    {
-        // Evict a random orphan:
-        uint256 randomhash = GetRandHash();
-        map<uint256, CDataStream*>::iterator it = USDE_mapOrphanTransactions.lower_bound(randomhash);
-        if (it == USDE_mapOrphanTransactions.end())
-            it = USDE_mapOrphanTransactions.begin();
-        EraseOrphanTx(it->first);
-        ++nEvicted;
-    }
-    return nEvicted;
-}
-
-
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -211,13 +138,14 @@ static bool AlreadyHave(CIface *iface, const CInv& inv)
         if (fHave)
           return (true);
 
-        return (USDE_mapOrphanTransactions.count(inv.hash));
+        CTxMemPool *pool = GetTxMemPool(iface);
+        return (pool->IsPendingTx(inv.hash));
       }
 
     case MSG_BLOCK:
       blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
       return blockIndex->count(inv.hash) ||
-        USDE_mapOrphanBlocks.count(inv.hash);
+        usde_IsOrphanBlock(inv.hash);
   }
 
   // Don't know what it is, just say we already got one
@@ -523,10 +451,12 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
       if (!fAlreadyHave)
         pfrom->AskFor(inv);
-      else if (inv.type == MSG_BLOCK && USDE_mapOrphanBlocks.count(inv.hash)) {
+      else if (inv.type == MSG_BLOCK && usde_IsOrphanBlock(inv.hash)) {
+#if 0
         CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
-//if (pindexBest) fprintf(stderr, "DEBUG: inv.type == MSG_BLOCK, request blocks from height %d\n", pindexBest->nHeight);
         pfrom->PushGetBlocks(pindexBest, usde_GetOrphanRoot(USDE_mapOrphanBlocks[inv.hash]));
+#endif
+        ServiceBlockEventUpdate(USDE_COIN_IFACE);
       } else if (nInv == nLastBlock) {
 
         // In case we are on a very long side-chain, it is possible that we already have

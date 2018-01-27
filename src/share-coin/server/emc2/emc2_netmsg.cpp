@@ -104,80 +104,6 @@ void static ResendWalletTransactions()
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// EMC2_mapOrphanTransactions
-//
-
-bool emc2_AddOrphanTx(const CDataStream& vMsg)
-{
-    CTransaction tx;
-    CDataStream(vMsg) >> tx;
-    uint256 hash = tx.GetHash();
-    if (EMC2_mapOrphanTransactions.count(hash))
-        return false;
-
-    CDataStream* pvMsg = new CDataStream(vMsg);
-
-    // Ignore big transactions, to avoid a
-    // send-big-orphans memory exhaustion attack. If a peer has a legitimate
-    // large transaction with a missing parent then we assume
-    // it will rebroadcast it later, after the parent transaction(s)
-    // have been mined or received.
-    // 10,000 orphans, each of which is at most 5,000 bytes big is
-    // at most 500 megabytes of orphans:
-    if (pvMsg->size() > 4096)
-    {
-        error(SHERR_INVAL, "warning: ignoring large orphan tx (size: %u, hash: %s)\n", pvMsg->size(), hash.ToString().substr(0,10).c_str());
-        delete pvMsg;
-        return false;
-    }
-
-    EMC2_mapOrphanTransactions[hash] = pvMsg;
-    BOOST_FOREACH(const CTxIn& txin, tx.vin)
-        EMC2_mapOrphanTransactionsByPrev[txin.prevout.hash].insert(make_pair(hash, pvMsg));
-
-    printf("stored orphan tx %s (mapsz %u)\n", hash.ToString().substr(0,10).c_str(),
-        EMC2_mapOrphanTransactions.size());
-    return true;
-}
-
-void static EraseOrphanTx(uint256 hash)
-{
-    if (!EMC2_mapOrphanTransactions.count(hash))
-        return;
-    const CDataStream* pvMsg = EMC2_mapOrphanTransactions[hash];
-    CTransaction tx;
-    CDataStream(*pvMsg) >> tx;
-    BOOST_FOREACH(const CTxIn& txin, tx.vin)
-    {
-        EMC2_mapOrphanTransactionsByPrev[txin.prevout.hash].erase(hash);
-        if (EMC2_mapOrphanTransactionsByPrev[txin.prevout.hash].empty())
-            EMC2_mapOrphanTransactionsByPrev.erase(txin.prevout.hash);
-    }
-    delete pvMsg;
-    EMC2_mapOrphanTransactions.erase(hash);
-}
-
-unsigned int emc2_LimitOrphanTxSize(unsigned int nMaxOrphans)
-{
-    unsigned int nEvicted = 0;
-    while (EMC2_mapOrphanTransactions.size() > nMaxOrphans)
-    {
-        // Evict a random orphan:
-        uint256 randomhash = GetRandHash();
-        map<uint256, CDataStream*>::iterator it = EMC2_mapOrphanTransactions.lower_bound(randomhash);
-        if (it == EMC2_mapOrphanTransactions.end())
-            it = EMC2_mapOrphanTransactions.begin();
-        EraseOrphanTx(it->first);
-        ++nEvicted;
-    }
-    return nEvicted;
-}
-
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
 // Messages
 //
 
@@ -213,14 +139,15 @@ static bool AlreadyHave(CIface *iface, const CInv& inv)
         if (fHave)
           return (true);
 
-        return (EMC2_mapOrphanTransactions.count(inv.hash));
+        CTxMemPool *pool = GetTxMemPool(iface);
+        return (pool->IsPendingTx(inv.hash));
       }
 
     case MSG_BLOCK:
     case MSG_WITNESS_BLOCK:
       blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
       return blockIndex->count(inv.hash) ||
-        EMC2_mapOrphanBlocks.count(inv.hash);
+        emc2_IsOrphanBlock(inv.hash);
   }
 
   // Don't know what it is, just say we already got one
@@ -572,8 +499,9 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
       if (!fAlreadyHave)
         pfrom->AskFor(inv);
-      else if (inv.type == MSG_BLOCK && EMC2_mapOrphanBlocks.count(inv.hash)) {
-        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(EMC2_mapOrphanBlocks[inv.hash]));
+      else if (inv.type == MSG_BLOCK && emc2_IsOrphanBlock(inv.hash)) {
+//        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(EMC2_mapOrphanBlocks[inv.hash]));
+          ServiceBlockEventUpdate(EMC2_COIN_IFACE);
       } else if (nInv == nLastBlock) {
         // In case we are on a very long side-chain, it is possible that we already have
         // the last block in an inv bundle sent in response to getblocks. Try to detect

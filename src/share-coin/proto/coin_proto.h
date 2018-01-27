@@ -129,6 +129,7 @@ extern "C" {
 
 #define STAT_BLOCK_ACCEPTS(_iface) (_iface)->stat.tot_block_accept
 #define STAT_BLOCK_SUBMITS(_iface) (_iface)->stat.tot_block_submit
+#define STAT_BLOCK_ORPHAN(_iface) (_iface)->stat.tot_block_orphan
 #define STAT_TX_ACCEPTS(_iface) (_iface)->stat.tot_tx_accept
 #define STAT_TX_SUBMITS(_iface) (_iface)->stat.tot_tx_submit
 
@@ -230,6 +231,7 @@ typedef struct coin_iface_t
   struct coin_stat_t {
     uint64_t tot_block_submit;
     uint64_t tot_block_accept;
+    uint64_t tot_block_orphan;
     uint64_t tot_tx_submit;
     uint64_t tot_tx_accept;
     uint64_t tot_spring_submit;

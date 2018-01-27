@@ -893,17 +893,12 @@ void CBlockLocator::Set(const CBlockIndex* pindex)
     if (pindex->nHeight == 0)
       break;
 
-    if (vHave.size() > 500) {
-      pindex = pindex->GetAncestor(pindex->nHeight);
-    } else {
-      // Exponentially larger steps back, plus the genesis block.
-      int nHeight = std::max(pindex->nHeight - nStep, 0);
-      pindex = GetBlockIndexByHeight(ifaceIndex, nHeight);
-      if (vHave.size() > 10)
-        nStep *= 2;
-    }
+    // Exponentially larger steps back, plus the genesis block.
+    int nHeight = std::max(pindex->nHeight - nStep, 0);
+    pindex = GetBlockIndexByHeight(ifaceIndex, nHeight);
+    if (vHave.size() > 10)
+      nStep *= 2;
   }
-  Debug("(%s) CBlockLocator: bundled x%d blocks.", iface->name, vHave.size());
 }
 
 #if 0

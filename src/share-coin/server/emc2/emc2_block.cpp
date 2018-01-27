@@ -69,36 +69,7 @@ static const int64 emc2_nDiffChangeTarget = 56000; // Patch effective @ block 56
 
 
 
-map<uint256, EMC2Block*> EMC2_mapOrphanBlocks;
-multimap<uint256, EMC2Block*> EMC2_mapOrphanBlocksByPrev;
-map<uint256, map<uint256, CDataStream*> > EMC2_mapOrphanTransactionsByPrev;
-map<uint256, CDataStream*> EMC2_mapOrphanTransactions;
-
 extern CScript EMC2_CHARITY_SCRIPT;
-
-
-class EMC2Orphan
-{
-  public:
-    CTransaction* ptx;
-    set<uint256> setDependsOn;
-    double dPriority;
-
-    EMC2Orphan(CTransaction* ptxIn)
-    {
-      ptx = ptxIn;
-      dPriority = 0;
-    }
-
-    void print() const
-    {
-      printf("EMC2Orphan(hash=%s, dPriority=%.1f)\n", ptx->GetHash().ToString().substr(0,10).c_str(), dPriority);
-      BOOST_FOREACH(uint256 hash, setDependsOn)
-        printf("   setDependsOn %s\n", hash.ToString().substr(0,10).c_str());
-    }
-};
-
-
 
 
 static unsigned int emc2_KimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax)
@@ -200,6 +171,113 @@ static unsigned int emc2_DigiShield(const CBlockIndex* pindexLast, const CBlockH
 
   return bnNew.GetCompact();
 }
+
+/* ** BLOCK ORPHANS ** */
+
+typedef map<uint256, uint256> orphan_map;
+static orphan_map EMC2_mapOrphanBlocksByPrev;
+
+bool emc2_IsOrphanBlock(const uint256& hash)
+{
+  CBlockIndex *pindex;
+  EMC2Block block;
+  uint256 prevHash;
+  bool ok;
+
+  if (emc2_GetOrphanPrevHash(hash, prevHash)) {
+    /* already mapped. */
+    return (true);
+  }
+
+  pindex = GetBlockIndexByHash(EMC2_COIN_IFACE, hash);
+  if (pindex) {
+    if (GetBestHeight(EMC2_COIN_IFACE) >= pindex->nHeight &&
+        block.ReadFromDisk(pindex))
+      return (false); /* present in block-chain */
+  }
+
+  if (!block.ReadArchBlock(hash))
+    return (false); /* no record in archive db */
+
+  return (true);
+}
+
+void emc2_AddOrphanBlock(CBlock *block)
+{
+
+  EMC2_mapOrphanBlocksByPrev.insert(
+      make_pair(block->hashPrevBlock, block->GetHash()));
+  block->WriteArchBlock();
+
+}
+
+void emc2_RemoveOrphanBlock(const uint256& hash)
+{
+  bool found;
+
+  orphan_map::iterator it = EMC2_mapOrphanBlocksByPrev.begin(); 
+  while (it != EMC2_mapOrphanBlocksByPrev.end()) {
+    found = (it->second == hash);
+    if (found)
+      break;
+    ++it;
+  }
+  if (it != EMC2_mapOrphanBlocksByPrev.end()) {
+    EMC2_mapOrphanBlocksByPrev.erase(it);
+  }
+  
+}
+
+bool emc2_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash)
+{
+  bool found;
+
+  orphan_map::iterator it = EMC2_mapOrphanBlocksByPrev.begin(); 
+  while (it != EMC2_mapOrphanBlocksByPrev.end()) {
+    found = (it->second == hash);
+    if (found) {
+      retPrevHash = it->first;
+      return (true);
+    }
+    ++it;
+  }
+
+  return (false);
+}
+
+bool emc2_GetOrphanNextHash(const uint256& hash, uint256& retNextHash)
+{
+  bool found;
+
+  orphan_map::iterator it = EMC2_mapOrphanBlocksByPrev.find(hash);
+  if (it != EMC2_mapOrphanBlocksByPrev.end()) {
+    retNextHash = it->second;
+    return (true);
+  }
+  return (false);
+}
+
+CBlock *emc2_GetOrphanBlock(const uint256& hash)
+{
+  EMC2Block block;  
+
+  if (!block.ReadArchBlock(hash))
+    return (NULL);
+
+  return (new EMC2Block(block));
+}
+
+uint256 emc2_GetOrphanRoot(uint256 hash)
+{
+  uint256 prevHash;
+
+  while (emc2_GetOrphanPrevHash(hash, prevHash)) {
+    hash = prevHash;
+  }
+  return (hash);
+}
+
+
 
 unsigned int EMC2Block::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
@@ -537,20 +615,6 @@ static void emc2_EraseFromWallets(uint256 hash)
 }
 
 
-
-
-uint256 emc2_GetOrphanRoot(const CBlock* pblock)
-{
-
-  // Work back to the first block in the orphan chain
-  while (EMC2_mapOrphanBlocks.count(pblock->hashPrevBlock))
-    pblock = EMC2_mapOrphanBlocks[pblock->hashPrevBlock];
-  return pblock->GetHash();
-
-}
-
-
-
 /** minimum amount of work that could possibly be required nTime after minimum work required was nBase */
 unsigned int emc2_ComputeMinWork(unsigned int nBase, int64 nTime)
 {
@@ -595,6 +659,7 @@ static bool emc2_IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsi
 
 bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
+  CBlockIndex *pindexBest = GetBestBlockIndex(EMC2_COIN_IFACE);
   int ifaceIndex = EMC2_COIN_IFACE;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
@@ -604,10 +669,14 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
   // Check for duplicate
   uint256 hash = pblock->GetHash();
 
-  if (blockIndex->count(hash))
-    return Debug("ProcessBlock() : already have block %s", hash.GetHex().c_str());
-  if (EMC2_mapOrphanBlocks.count(hash))
-    return Debug("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
+  if (blockIndex->count(hash)) {
+    return Debug("(emc2) ProcessBlock: already have block %s", hash.GetHex().c_str());
+  }
+  if (pindexBest && 
+      pblock->hashPrevBlock != pindexBest->GetBlockHash() &&
+      emc2_IsOrphanBlock(hash)) {
+    return Debug("(emc2) ProcessBlock: already have block (orphan) %s", hash.ToString().c_str());
+  }
 
   if (pblock->vtx.size() != 0 && pblock->vtx[0].wit.IsNull()) {
     if (pindexPrev && IsWitnessEnabled(iface, pindexPrev) &&
@@ -655,19 +724,18 @@ pblock->print();
   if (pblock->hashPrevBlock != 0 &&
       !blockIndex->count(pblock->hashPrevBlock)) {
     Debug("(usde) ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
-#if 0 /* DEBUG: ORPHAN */
-    /* Accept orphan if origin is known. */ 
     if (pfrom) {
-      EMC2Block* orphan = new EMC2Block(*pblock);
-      EMC2_mapOrphanBlocks.insert(make_pair(hash, orphan));
-      EMC2_mapOrphanBlocksByPrev.insert(make_pair(orphan->hashPrevBlock, orphan));
-      pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(orphan));
+      emc2_AddOrphanBlock(pblock);
+      STAT_BLOCK_ORPHAN(iface)++;
+
+      /* request missing blocks */
+      CBlockIndex *pindexBest = GetBestBlockIndex(EMC2_COIN_IFACE);
+      if (pindexBest) {
+        Debug("(emc2) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
+        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(pblock->GetHash()));
+      }
     }
-#endif
-    if (pfrom) {
-      CBlockIndex *prevIndex = GetBestBlockIndex(iface);
-      InitServiceBlockEvent(ifaceIndex, prevIndex->nHeight - 1);
-    }
+
     return true;
   }
 
@@ -676,30 +744,19 @@ pblock->print();
     iface->net_invalid = time(NULL);
     return error(SHERR_INVAL, "ProcessBlock() : AcceptBlock FAILED");
   }
-  ServiceBlockEventUpdate(EMC2_COIN_IFACE);
 
-#if 0 /* DEBUG: ORPHAN */
-  // Recursively process any orphan blocks that depended on this one
-  vector<uint256> vWorkQueue;
-  vWorkQueue.push_back(hash);
-  for (unsigned int i = 0; i < vWorkQueue.size(); i++)
-  {
-    uint256 hashPrev = vWorkQueue[i];
-    for (multimap<uint256, EMC2Block*>::iterator mi = EMC2_mapOrphanBlocksByPrev.lower_bound(hashPrev);
-        mi != EMC2_mapOrphanBlocksByPrev.upper_bound(hashPrev);
-        ++mi)
-    {
-      CBlock* pblockOrphan = (*mi).second;
-      if (pblockOrphan->AcceptBlock())
-        vWorkQueue.push_back(pblockOrphan->GetHash());
+  uint256 nextHash;
+  while (emc2_GetOrphanNextHash(hash, nextHash)) {
+    hash = nextHash;
+    CBlock *block = emc2_GetOrphanBlock(hash);
+    if (!block || !block->AcceptBlock())
+      break;
 
-      EMC2_mapOrphanBlocks.erase(pblockOrphan->GetHash());
-
-      delete pblockOrphan;
-    }
-    EMC2_mapOrphanBlocksByPrev.erase(hashPrev);
+    emc2_RemoveOrphanBlock(hash);
+    STAT_BLOCK_ORPHAN(iface)--;
   }
-#endif
+
+  ServiceBlockEventUpdate(EMC2_COIN_IFACE);
 
   return true;
 }
@@ -1246,16 +1303,7 @@ Debug("ARCH: loaded block '%s'\n", GetHash().GetHex().c_str());
 
 bool EMC2Block::IsOrphan()
 {
-  blkidx_t *blockIndex = GetBlockTable(EMC2_COIN_IFACE);
-  uint256 hash = GetHash();
-
-  if (blockIndex->count(hash))
-    return (false);
-
-  if (!EMC2_mapOrphanBlocks.count(hash))
-    return (false);
-
-  return (true);
+  return (emc2_IsOrphanBlock(GetHash()));
 }
 
 
@@ -1936,7 +1984,10 @@ bool EMC2Block::SetBestChain(CBlockIndex* pindexNew)
 
 bool EMC2Block::ConnectBlock(CBlockIndex* pindex)
 {
-  return (core_ConnectBlock(this, pindex)); 
+  bool ok = core_ConnectBlock(this, pindex); 
+  if (ok)
+    emc2_RemoveOrphanBlock(pindex->GetBlockHash());
+  return (ok);
 }
 
 bool EMC2Block::DisconnectBlock(CBlockIndex* pindex)
