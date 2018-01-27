@@ -297,80 +297,6 @@ total++;
   }
 }
 
-#if USE_LEVELDB_COINDB
-void SHCWallet::ReacceptWalletTransactions()
-{
-  SHCTxDB txdb;
-  bool fRepeat = true;
-
-  while (fRepeat)
-  {
-    LOCK(cs_wallet);
-    fRepeat = false;
-    vector<CDiskTxPos> vMissingTx;
-    BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, mapWallet)
-    {
-      CWalletTx& wtx = item.second;
-      if (wtx.IsCoinBase()) {
-        bool fSpent = true;
-        for (unsigned int i = 0; i < wtx.vout.size(); i++) {
-          if (!wtx.IsSpent(i)) {
-            fSpent = false;
-            break;
-          }
-        }
-        if (fSpent)
-          continue;
-      }
-
-
-      CTxIndex txindex;
-      bool fUpdated = false;
-      if (txdb.ReadTxIndex(wtx.GetHash(), txindex))
-      {
-        // Update fSpent if a tx got spent somewhere else by a copy of wallet.dat
-        if (txindex.vSpent.size() != wtx.vout.size())
-        {
-          printf("ERROR: ReacceptWalletTransactions() : txindex.vSpent.size() %d != wtx.vout.size() %d\n", txindex.vSpent.size(), wtx.vout.size());
-          continue;
-        }
-        for (unsigned int i = 0; i < txindex.vSpent.size(); i++)
-        {
-          if (wtx.IsSpent(i))
-            continue;
-          if (!txindex.vSpent[i].IsNull() && IsMine(wtx.vout[i]))
-          {
-            wtx.MarkSpent(i);
-            fUpdated = true;
-            vMissingTx.push_back(txindex.vSpent[i]);
-          }
-        }
-        if (fUpdated)
-        {
-          Debug("ReacceptWalletTransactions found spent coin %sbc %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
-          wtx.MarkDirty();
-          wtx.WriteToDisk();
-        }
-      }
-      else
-      {
-        // Reaccept any txes of ours that aren't already in a block
-        if (!wtx.IsCoinBase()) {
-          if (wtx.AcceptWalletTransaction(txdb, false))
-            Debug("(shc) ReacceptWalletTransaction: reaccepting tx '%s' into pool (not in block)\n", wtx.GetHash().GetHex().c_str());
-        }
-      }
-    }
-    if (!vMissingTx.empty())
-    {
-      // TODO: optimize this to scan just part of the block chain?
-      if (ScanForWalletTransactions(SHCBlock::pindexGenesisBlock))
-        fRepeat = true;  // Found missing transactions: re-do Reaccept.
-    }
-  }
-  txdb.Close();
-}
-#else
 void SHCWallet::ReacceptWalletTransactions()
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -387,8 +313,13 @@ void SHCWallet::ReacceptWalletTransactions()
       CWalletTx& wtx = item.second;
       vector<uint256> vOuts; 
 
-      if (wtx.ReadCoins(ifaceIndex, vOuts) &&
-          VerifyTxHash(iface, wtx.GetHash())) { /* in block-chain */
+      if (!wtx.IsCoinBase() &&
+          !VerifyTxHash(iface, wtx.GetHash())) { /* !block-chain */
+        /* reaccept into mempool. */
+        if (!wtx.AcceptWalletTransaction()) {
+          error(SHERR_INVAL, "ReacceptWalletTransactions: !wtx.AcceptWalletTransaction()");
+        }
+      } else if (wtx.ReadCoins(ifaceIndex, vOuts)) {
         /* sanity */
         if (vOuts.size() != wtx.vout.size()) {
           error(SHERR_INVAL, "ReacceptWalletTransactions: txindex.vSpent.size() %d != wtx.vout.size() %d\n", vOuts.size(), wtx.vout.size());
@@ -413,11 +344,6 @@ void SHCWallet::ReacceptWalletTransactions()
             wtx.vfSpent[i] = spent;
             vMissingTx.push_back(wtx);
           }
-        }
-      } else if (!wtx.IsCoinBase()) {
-        /* reaccept into mempool. */
-        if (!wtx.AcceptWalletTransaction()) {
-          error(SHERR_INVAL, "ReacceptWalletTransactions: !wtx.AcceptWalletTransaction()");
         }
       }
     }
@@ -457,7 +383,6 @@ void SHCWallet::ReacceptWalletTransactions()
   }
 
 }
-#endif
 
 #if 0
 int SHCWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)

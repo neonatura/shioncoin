@@ -675,8 +675,6 @@ void CPool::PurgeActiveTx()
 {
   vector<CPoolTx> vRemove;
 
-Debug("DEBUG: PurgeActiveTx: x%d active tx's", (int)active.size());
-Debug("DEBUG: PurgeActiveTx: x%d overflow tx's", (int)overflow.size());
   if (overflow.size() != 0) {
     vector<CPoolTx> vPoolTx;
     for (pool_map::iterator it = overflow.begin(); it != overflow.end(); ++it) {
@@ -846,27 +844,25 @@ int CPool::GetActiveTotal()
 vector<CTransaction> CPool::GetActiveTx()
 {
   vector<CPoolTx> vPoolTx;
-  vector<uint256> vRemove;
   vector<CTransaction> vTx;
+  int64_t nMaxWeight = GetMaxWeight();
+  int64_t nWeight = 0;
 
   for (pool_map::iterator it = active.begin(); it != active.end(); ++it) {
     CPoolTx& ptx = it->second;
-#if 0
-    if (AreInputsSpent(ptx)) {
-      vRemove.push_back(ptx.GetHash());
-      continue;
-    }
-#endif
     vPoolTx.push_back(ptx);
   }
   sort(vPoolTx.begin(), vPoolTx.end()); 
 
   BOOST_FOREACH(CPoolTx& ptx, vPoolTx) {
     CTransaction& tx = ptx.GetTx();
+
+    /* redundant check performed after prioritization */
+    nWeight += ptx.nWeight;
+    if (nWeight >= nMaxWeight)
+      break;
+
     vTx.insert(vTx.end(), tx);
-  }
-  BOOST_FOREACH(uint256& hash, vRemove) {
-    RemoveTx(hash);
   }
 
   return (vTx);
@@ -1249,3 +1245,14 @@ CTxMemPool *GetTxMemPool(CIface *iface)
   return (pool);
 }
 
+bool CPoolTx::IsDependent(const CPoolTx& ptx) const
+{
+  const uint256& tx_hash = GetHash();
+  const tx_cache& inputs = ptx.mapInputs;
+  int i;
+
+  if (inputs.count(tx_hash))
+    return (true);
+
+  return (false);
+}

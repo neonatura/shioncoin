@@ -249,73 +249,6 @@ void USDEWallet::ResendWalletTransactions()
   }
 }
 
-#ifdef USE_LEVELDB_COINDB
-void USDEWallet::ReacceptWalletTransactions()
-{
-  USDETxDB txdb;
-  bool fRepeat = true;
-
-  while (fRepeat)
-  {
-    LOCK(cs_wallet);
-    fRepeat = false;
-    vector<CDiskTxPos> vMissingTx;
-    BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, mapWallet)
-    {
-      CWalletTx& wtx = item.second;
-      if (wtx.IsCoinBase() && wtx.IsSpent(0))
-        continue;
-
-      CTxIndex txindex;
-      bool fUpdated = false;
-      if (txdb.ReadTxIndex(wtx.GetHash(), txindex))
-      {
-        // Update fSpent if a tx got spent somewhere else by a copy of wallet.dat
-        if (txindex.vSpent.size() != wtx.vout.size())
-        {
-          printf("ERROR: ReacceptWalletTransactions() : txindex.vSpent.size() %d != wtx.vout.size() %d\n", txindex.vSpent.size(), wtx.vout.size());
-          continue;
-        }
-        for (unsigned int i = 0; i < txindex.vSpent.size(); i++)
-        {
-          if (wtx.IsSpent(i))
-            continue;
-          if (!txindex.vSpent[i].IsNull() && IsMine(wtx.vout[i]))
-          {
-            wtx.MarkSpent(i);
-            fUpdated = true;
-            vMissingTx.push_back(txindex.vSpent[i]);
-          }
-        }
-        if (fUpdated)
-        {
-          printf("ReacceptWalletTransactions found spent coin %sbc %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
-          wtx.MarkDirty();
-          wtx.WriteToDisk();
-        }
-      }
-      else
-      {
-        // Reaccept any txes of ours that aren't already in a block
-        if (!wtx.IsCoinBase()) {
-          if (!wtx.AcceptWalletTransaction(txdb, false)) {
-
-//fprintf(stderr, "DEBUG: !wtx.AcceptWalletTransaction()\n");
-          }
-        }
-//DEBUG: EraseFromWallet if dup
-      }
-    }
-    if (!vMissingTx.empty())
-    {
-      // TODO: optimize this to scan just part of the block chain?
-      if (ScanForWalletTransactions(USDEBlock::pindexGenesisBlock))
-        fRepeat = true;  // Found missing transactions: re-do Reaccept.
-    }
-  }
-  txdb.Close();
-}
-#else
 void USDEWallet::ReacceptWalletTransactions()
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -332,8 +265,13 @@ void USDEWallet::ReacceptWalletTransactions()
       CWalletTx& wtx = item.second;
       vector<uint256> vOuts; 
 
-      if (wtx.ReadCoins(ifaceIndex, vOuts) &&
-          VerifyTxHash(iface, wtx.GetHash())) { /* in block-chain */
+      if (!wtx.IsCoinBase() &&
+          !VerifyTxHash(iface, wtx.GetHash())) { /* !block-chain */
+        /* reaccept into mempool. */
+        if (!wtx.AcceptWalletTransaction()) {
+          error(SHERR_INVAL, "ReacceptWalletTransactions: !wtx.AcceptWalletTransaction()");
+        }
+      } else if (wtx.ReadCoins(ifaceIndex, vOuts)) {
         /* sanity */
         if (vOuts.size() != wtx.vout.size()) {
           error(SHERR_INVAL, "ReacceptWalletTransactions: txindex.vSpent.size() %d != wtx.vout.size() %d\n", vOuts.size(), wtx.vout.size());
@@ -358,11 +296,6 @@ void USDEWallet::ReacceptWalletTransactions()
             wtx.vfSpent[i] = spent;
             vMissingTx.push_back(wtx);
           }
-        }
-      } else if (!wtx.IsCoinBase()) {
-        /* reaccept into mempool. */
-        if (!wtx.AcceptWalletTransaction()) {
-          error(SHERR_INVAL, "ReacceptWalletTransactions: !wtx.AcceptWalletTransaction()");
         }
       }
     }
@@ -402,7 +335,6 @@ void USDEWallet::ReacceptWalletTransactions()
   }
 
 }
-#endif
 
 int USDEWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {

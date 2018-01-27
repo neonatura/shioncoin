@@ -205,12 +205,16 @@ b.GetHash())
 
     bool operator < (const CPoolTx& ptx) const
     {
-      return (dFeePriority < ptx.dFeePriority);
+      if (IsDependent(ptx))
+        return (-1); /* move towards head of list */
+      return (dFeePriority > ptx.dFeePriority);
     }
 
     bool operator > (const CPoolTx& ptx) const
     {
-      return (dFeePriority > ptx.dFeePriority);
+      if (IsDependent(ptx))
+        return (1); /* move towards tail of list */
+      return (dFeePriority < ptx.dFeePriority);
     }
 
     void Init(const CTransaction& txIn)
@@ -283,8 +287,10 @@ b.GetHash())
       mapInputs.clear();
     }
 
-
     void CalculateModifiedSize();
+
+    bool IsDependent(const CPoolTx& ptx) const; 
+
 };
 
 typedef map<const uint256, CPoolTx> pool_map;
