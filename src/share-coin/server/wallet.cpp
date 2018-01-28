@@ -1038,6 +1038,18 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
     vDest.push_back(item.first);
   }
 
+  if (strAccount.length() == 0) {
+    /* include coinbase (non-mapped) pub-keys */
+    std::set<CKeyID> keys;
+    GetKeys(keys);
+    BOOST_FOREACH(const CKeyID& key, keys) {
+      if (mapAddressBook.count(key) == 0) { /* loner */
+        CCoinAddr addr(ifaceIndex, key);
+        vDest.push_back(addr.Get());
+      }
+    }
+  }
+
 #if 0
   {
     std::set<CKeyID> keys;
@@ -1059,11 +1071,18 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
       if (!pcoin->IsFinal(ifaceIndex))
         continue;
 
-      if (fOnlyConfirmed && !pcoin->IsConfirmed())
-        continue;
-
-      if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity(ifaceIndex) > 0)
-        continue;
+      if (fOnlyConfirmed) {
+        if (!pcoin->IsConfirmed()) {
+//fprintf(stderr, "DEBUG: AvailableAccountCoins: skipping non-confirmed '%s'\n", pcoin->GetHash().GetHex().c_str()); 
+          continue;
+}
+int mat;
+        if (pcoin->IsCoinBase() && 
+            (mat=pcoin->GetBlocksToMaturity(ifaceIndex)) > 0) {
+//fprintf(stderr, "DEBUG: AvailableAccountCoins: skipping non-mature '%s' [depth %d]\n", pcoin->GetHash().GetHex().c_str(), mat); 
+          continue;
+}
+      }
 
       // If output is less than minimum value, then don't include transaction.
       // This is to help deal with dust spam clogging up create transactions.
@@ -1095,13 +1114,15 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
 
         if ( std::find(vDest.begin(), vDest.end(), dest) != vDest.end() ) {
           vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain(ifaceIndex)));
-        } else if (pcoin->strFromAccount == strAccount && 
+        } 
+#if 0
+else if (pcoin->strFromAccount == strAccount && 
             0 == mapAddressBook.count(dest)) {
           if (::IsMine(*this, dest)) {
-//fprintf(stderr, "DEBUG: AvailableAccountCoins: found change for '%s'\n", pcoin->strFromAccount.c_str());
             vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain(ifaceIndex)));
           }
         }
+#endif
 
       }
     }
@@ -1825,8 +1846,10 @@ int64 GetAccountBalance(int ifaceIndex, CWalletDB& walletdb, const string& strAc
     nBalance += out.tx->vout[out.i].nValue;
   }
 
+#if 0
   /* internal accounting entries */
   nBalance += walletdb.GetAccountCreditDebit(strAccount);
+#endif
 
   return nBalance;
 }
@@ -2454,6 +2477,9 @@ bool IsAccountValid(CIface *iface, std::string strAccount)
   if (!wallet)
     return (false);
 
+  if (strAccount.length() == 0)
+    return (true);
+
   total = 0;
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
   {
@@ -2887,9 +2913,9 @@ bool core_UnacceptWalletTransaction(CIface *iface, const CTransaction& tx)
       continue;
 
     if (!wallet->IsMine(prevtx)) {
-fprintf(stderr, "DEBUG: core_UnacceptWalletTransaction: abandoning tx '%s' -- not owner\n", prevhash.GetHex().c_str()); 
+      error(SHERR_REMOTE, "warning: core_UnacceptWalletTransaction: abandoning tx '%s' -- not owner\n", prevhash.GetHex().c_str()); 
       continue; /* no longer owner */
-}
+    }
 
     CWalletTx wtx;
 

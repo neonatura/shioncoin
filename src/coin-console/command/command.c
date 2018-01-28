@@ -32,7 +32,7 @@ static int is_numeric_string(char *str)
   int c_dash;
   int c_dot;
 
-  if (len > 20)
+  if (len == 0 || len > 20)
     return (FALSE);
 
   c_dash = c_dot = 0;
@@ -75,11 +75,14 @@ int shcon_command_send(char **args, int arg_nr)
 
   param = shjson_array_add(j, "params");
   for (i = 1; i < arg_nr; i++) {
+#if 0
     if (is_numeric_string(args[i])) {
       shjson_num_add(param, NULL, atof(args[i]));
     } else {
       shjson_str_add(param, NULL, args[i]);
     }
+#endif
+    shjson_str_add(param, NULL, args[i]);
   }
 
   err = net_json_send(j);

@@ -171,6 +171,7 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 
   if (!ret_key.IsValid()) {
     string strAccount("");
+    GetAccountAddress(wallet, strAccount, false);
 
     ret_key = GetAccountPubKey(wallet, strAccount);
     if (!ret_key.IsValid()) {

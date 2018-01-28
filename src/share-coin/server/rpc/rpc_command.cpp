@@ -235,13 +235,14 @@ void WalletTxToJSON(int ifaceIndex, const CWalletTx& wtx, Object& entry)
 
 string AccountFromValue(const Value& value)
 {
-    string strAccount = value.get_str();
-    if (strAccount == "*")
-      throw JSONRPCError(-11, "Invalid account name");
-    if (strAccount.length() > 0 && strAccount.at(0) == '@')
-      throw JSONRPCError(-11, "Invalid account name");
+  string strAccount = value.get_str();
 
-    return strAccount;
+  if (strAccount == "*")
+    throw JSONRPCError(-11, "Invalid account name");
+  if (strAccount.length() > 0 && strAccount.at(0) == '@')
+    throw JSONRPCError(-11, "Invalid account name");
+
+  return strAccount;
 }
 
 
@@ -1884,7 +1885,8 @@ Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum)
     int64 nTotal = 0;
 
     vector<COutput> vCoins;
-    wallet->AvailableAccountCoins(strAccount, vCoins);
+    wallet->AvailableAccountCoins(strAccount, vCoins, 
+        (nMinDepth == 0 ? false : true));
     BOOST_FOREACH(const COutput& out, vCoins) {
       nTotal += out.tx->vout[out.i].nValue;
     }
@@ -1892,12 +1894,14 @@ Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum)
     mapAccountBalances[strAccount] = nTotal;
   }
 
+#if 0
   /* ?? */
   list<CAccountingEntry> acentries;
   CWalletDB(wallet->strWalletFile).ListAccountCreditDebit("*", acentries);
   BOOST_FOREACH(const CAccountingEntry& entry, acentries) {
     mapAccountBalances[entry.strAccount] += entry.nCreditDebit;
   }
+#endif
 
   Object ret;
   BOOST_FOREACH(const PAIRTYPE(string, int64)& accountBalance, mapAccountBalances) {
@@ -2591,12 +2595,12 @@ Value rpc_wallet_setkeyphrase(CIface *iface, const Array& params, bool fStratum)
 Value rpc_wallet_unspent(CIface *iface, const Array& params, bool fStratum)
 {
 
-  if (params.size() == 0)
+  if (params.size() == 0 || params.size() > 2)
     throw runtime_error("unsupported operation");
 
   CWallet *pwalletMain = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
-  string strAccount = params[0].get_str();
+  string strAccount = AccountFromValue(params[0]);
 
   int nMinDepth = 1;
   if (params.size() > 1)
@@ -2604,7 +2608,8 @@ Value rpc_wallet_unspent(CIface *iface, const Array& params, bool fStratum)
 
   Array results;
   vector<COutput> vecOutputs;
-  pwalletMain->AvailableAccountCoins(strAccount, vecOutputs, false);
+  pwalletMain->AvailableAccountCoins(strAccount, vecOutputs, 
+      (nMinDepth == 0 ? false : true));
   BOOST_FOREACH(const COutput& out, vecOutputs)
   {
     if (out.nDepth < nMinDepth)
@@ -2897,6 +2902,17 @@ Value rpc_wallet_addrlist(CIface *iface, const Array& params, bool fStratum)
     const string& strName = item.second;
     if (strName == strAccount)
       ret.push_back(address.ToString());
+  }
+
+  if (strAccount.length() == 0) {
+    std::set<CKeyID> keys;
+    pwalletMain->GetKeys(keys);
+    BOOST_FOREACH(const CKeyID& key, keys) {
+      if (pwalletMain->mapAddressBook.count(key) == 0) { /* loner */
+        CCoinAddr addr(ifaceIndex, key);
+        ret.push_back(addr.ToString());
+      }
+    }
   }
 
   return ret;
@@ -5180,6 +5196,9 @@ int ExecuteRPC(int ifaceIndex, shjson_t *json, shbuf_t *buff)
       if (pstr) {
         string p_str(pstr);
         param.push_back(p_str);
+      } else if (op->arg[i] == RPC_ACCOUNT || RPC_STRING) {
+        string p_str();
+        param.push_back(p_str);
       } else {
         char buf[256];
         if (op->arg[i] == RPC_DOUBLE) 
@@ -5209,6 +5228,7 @@ int ExecuteRPC(int ifaceIndex, shjson_t *json, shbuf_t *buff)
     return (0);
   } catch (std::exception& e) {
     /* .. */
+//fprintf(stderr, "DEBUG: ExecuteRPC: EXCEPTION: %s\n", e.what()); 
   }
   
   return (SHERR_INVAL);
