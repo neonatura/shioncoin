@@ -189,6 +189,7 @@ bool emc2_IsOrphanBlock(const uint256& hash)
     return (true);
   }
 
+#if 0
   pindex = GetBlockIndexByHash(EMC2_COIN_IFACE, hash);
   if (pindex) {
     if (GetBestHeight(EMC2_COIN_IFACE) >= pindex->nHeight &&
@@ -198,8 +199,10 @@ bool emc2_IsOrphanBlock(const uint256& hash)
 
   if (!block.ReadArchBlock(hash))
     return (false); /* no record in archive db */
-
   return (true);
+#endif
+
+  return (false);
 }
 
 void emc2_AddOrphanBlock(CBlock *block)
@@ -732,7 +735,9 @@ pblock->print();
       CBlockIndex *pindexBest = GetBestBlockIndex(EMC2_COIN_IFACE);
       if (pindexBest) {
         Debug("(emc2) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
-        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(pblock->GetHash()));
+//        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(pblock->GetHash()));
+        ServiceBlockEventUpdate(EMC2_COIN_IFACE);
+
       }
     }
 
@@ -740,7 +745,10 @@ pblock->print();
   }
 
   /* store to disk */
-  if (!pblock->AcceptBlock()) {
+  timing_init("ProcessBlock/AcceptBlock", &ts);
+  bool ok = pblock->AcceptBlock();
+  timing_term(EMC2_COIN_IFACE, "ProcessBlock/AcceptBlock", &ts);
+  if (!ok) {
     iface->net_invalid = time(NULL);
     return error(SHERR_INVAL, "ProcessBlock() : AcceptBlock FAILED");
   }

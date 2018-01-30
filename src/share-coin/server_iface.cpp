@@ -985,7 +985,7 @@ int usde_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
     return (SHERR_INVAL);
   }
 
-  if (hdr.size > sizeof(hdr) + size)
+  if (size < SIZEOF_COINHDR_T + hdr.size)
     return (SHERR_AGAIN);
 
   CDataStream& vRecv = pnode->vRecv;
@@ -1051,6 +1051,10 @@ void usde_server_timer(void)
             timing_init("recv msg", &ts);
             err = usde_coin_server_recv(iface, pnode, pchBuf);
             timing_term(USDE_COIN_IFACE, "recv msg", &ts);
+
+            double diff = shtime_diff(ts, shtime());
+            if (diff > 0.25)
+              break;
           }
           if (err && err != SHERR_AGAIN) {
             error(err, "usde_coin_server_recv");
@@ -1263,7 +1267,7 @@ int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
     return (SHERR_INVAL);
   }
 
-  if (hdr.size > sizeof(hdr) + size)
+  if (size < SIZEOF_COINHDR_T + hdr.size)
     return (SHERR_AGAIN);
 
   CDataStream& vRecv = pnode->vRecv;
@@ -1329,6 +1333,10 @@ void shc_server_timer(void)
             timing_init("recv msg", &ts);
             err = shc_coin_server_recv(iface, pnode, pchBuf);
             timing_term(SHC_COIN_IFACE, "recv msg", &ts);
+
+            double diff = shtime_diff(ts, shtime());
+            if (diff > 0.25)
+              break;
           }
           if (err && err != SHERR_AGAIN) {
             error(err, "shc_coin_server_recv");
@@ -2055,7 +2063,7 @@ int emc2_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
     return (SHERR_INVAL);
   }
 
-  if (hdr.size > sizeof(hdr) + size)
+  if (size < SIZEOF_COINHDR_T + hdr.size)
     return (SHERR_AGAIN);
 
   /* transfer to cli buffer */
@@ -2166,6 +2174,10 @@ void emc2_server_timer(void)
             timing_init("recv msg", &ts);
             err = emc2_coin_server_recv(iface, pnode, pchBuf);
             timing_term(EMC2_COIN_IFACE, "recv msg", &ts);
+
+            double diff = shtime_diff(ts, shtime());
+            if (diff > 0.25)
+              break;
           }
           if (err && err != SHERR_AGAIN) {
             error(err, "emc2_coin_server_recv");

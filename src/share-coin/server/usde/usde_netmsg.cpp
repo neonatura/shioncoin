@@ -173,13 +173,14 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
 //fprintf(stderr, "USDE:ProcessMessage: received '%s' (%d bytes from %s)\n", strCommand.c_str(), vRecv.size(), pfrom->addr.ToString().c_str());
 
-
+#if 0
   RandAddSeedPerfmon();
   if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
   {
     printf("dropmessagestest DROPPING RECV MESSAGE\n");
     return true;
   }
+#endif
 
   if (strCommand == "version")
   {

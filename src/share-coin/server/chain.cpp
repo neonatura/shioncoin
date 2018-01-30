@@ -402,6 +402,15 @@ bool ServiceBlockEvent(int ifaceIndex)
   if (iface->blockscan_max == 0)
     return (true); /* keep trying */
 
+  {
+    /* wait until all pending incoming data has been processed. */
+    NodeList &vNodes = GetNodeList(ifaceIndex);
+    BOOST_FOREACH(CNode* pnode, vNodes) {
+      if (!pnode->vRecv.empty())
+        return (true); /* keep trying */
+    }
+  }
+
   if (pindexBest->nHeight >= iface->blockscan_max) {
     ServiceBlockEventUpdate(ifaceIndex);
     Debug("(%s) ServiceBlockEvent: finished at height %d.\n", 
@@ -409,7 +418,7 @@ bool ServiceBlockEvent(int ifaceIndex)
     return (false);
   }
 
-  expire_t = time(NULL) - 60;
+  expire_t = time(NULL) - 20;
   if (iface->net_valid < expire_t) { /* done w/ last round */
     if (iface->net_valid < iface->net_invalid) {
       return (false); /* give up */
@@ -519,7 +528,7 @@ bool ServicePeerEvent(int ifaceIndex)
 #endif
   pfrom->PushMessage("getaddr");
   pfrom->fGetAddr = true;
-  Debug("ServicePeerEvent: requesting node address list for iface #%d (known: %d).\n", ifaceIndex, tot);
+  Debug("ServicePeerEvent: requesting node address list for iface #%d.\n", ifaceIndex);
 
 #if 0
   if (!pfrom->fInbound) {

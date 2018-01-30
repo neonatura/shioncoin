@@ -182,7 +182,7 @@ void daemon_server(void)
     }
 
     /* handle network communication. */
-    unet_cycle(0.2); /* max idle 200ms */
+    unet_cycle(0.25); /* max idle 250ms */
 
     bc_chain_idle();
 

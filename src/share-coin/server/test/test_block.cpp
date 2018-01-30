@@ -81,6 +81,7 @@ bool test_IsOrphanBlock(const uint256& hash)
     return (true);
   }
 
+#if 0
   pindex = GetBlockIndexByHash(TEST_COIN_IFACE, hash);
   if (pindex) {
     if (GetBestHeight(TEST_COIN_IFACE) >= pindex->nHeight &&
@@ -92,6 +93,8 @@ bool test_IsOrphanBlock(const uint256& hash)
     return (false); /* no record in archive db */
 
   return (true);
+#endif
+  return (false);
 }
 
 void test_AddOrphanBlock(CBlock *block)
@@ -531,7 +534,8 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
       CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
       if (pindexBest) {
         Debug("(test) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
-        pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock->GetHash()));
+//        pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock->GetHash()));
+        ServiceBlockEventUpdate(TEST_COIN_IFACE);
       }
     }
     return true;

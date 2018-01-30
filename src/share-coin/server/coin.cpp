@@ -538,6 +538,7 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 {
   CIface *iface = GetCoinByIndex(block->ifaceIndex);
   CWallet *wallet = GetWallet(iface);
+  shtime_t ts;
   int err;
 
   int64 nFees = 0;
@@ -575,15 +576,20 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
   if (pindex->pprev)
   {
     pindex->nHeight = pindex->pprev->nHeight + 1;
-    if (!block->WriteBlock(pindex->nHeight)) {
-      return (error(SHERR_INVAL, "shc_ConnectBlock: error writing block hash '%s' to height %d\n", pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight));
+    timing_init("ConnectBlock/WriteBlock", &ts);
+    bool ok = block->WriteBlock(pindex->nHeight);
+    timing_term(block->ifaceIndex, "ConnectBlock/WriteBlock", &ts);
+    if (!ok) {
+      return (error(SHERR_INVAL, "(%s) ConnectBlock: error writing block hash '%s' to height %d\n", iface->name, pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight));
     }
   }
 
   /* update wallet */
+  timing_init("ConnectBlock/AddToWallet", &ts);
   BOOST_FOREACH(CTransaction& tx, block->vtx) {
     wallet->AddToWalletIfInvolvingMe(tx, block, true); 
   }
+  timing_term(block->ifaceIndex, "ConnectBlock/AddToWallet", &ts);
 
   return true;
 }
@@ -764,7 +770,9 @@ bool ReadHashBestChain(CIface *iface, uint256& ret_hash)
   return (!ret_hash.IsNull());
 }
 
-
+/*
+ * todo: potentially wipe arch rec. erase pblockindex chain
+ */
 bool core_Truncate(CIface *iface, uint256 hash)
 {
   if (!iface || !iface->enabled) return (false);

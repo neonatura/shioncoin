@@ -149,6 +149,7 @@ bool usde_IsOrphanBlock(const uint256& hash)
     return (true);
   }
 
+#if 0
   pindex = GetBlockIndexByHash(USDE_COIN_IFACE, hash);
   if (pindex) {
     if (GetBestHeight(USDE_COIN_IFACE) >= pindex->nHeight &&
@@ -160,6 +161,8 @@ bool usde_IsOrphanBlock(const uint256& hash)
     return (false); /* no record in archive db */
 
   return (true);
+#endif
+  return (false);
 }
 
 void usde_AddOrphanBlock(CBlock *block)
@@ -1001,7 +1004,8 @@ pblock->print();
       CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
       if (pindexBest) {
         Debug("(usde) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
-        pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(pblock->GetHash()));
+//        pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(pblock->GetHash()));
+        ServiceBlockEventUpdate(USDE_COIN_IFACE);
       }
     }
     return true;
