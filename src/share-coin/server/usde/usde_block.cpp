@@ -1004,7 +1004,7 @@ pblock->print();
       CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
       if (pindexBest) {
         Debug("(usde) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
-//        pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(pblock->GetHash()));
+        pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(pblock->GetHash()));
         ServiceBlockEventUpdate(USDE_COIN_IFACE);
       }
     }

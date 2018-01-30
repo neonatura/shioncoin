@@ -534,7 +534,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
       CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
       if (pindexBest) {
         Debug("(test) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
-//        pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock->GetHash()));
+        pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock->GetHash()));
         ServiceBlockEventUpdate(TEST_COIN_IFACE);
       }
     }

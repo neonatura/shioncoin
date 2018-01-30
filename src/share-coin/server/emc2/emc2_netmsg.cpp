@@ -146,8 +146,7 @@ static bool AlreadyHave(CIface *iface, const CInv& inv)
     case MSG_BLOCK:
     case MSG_WITNESS_BLOCK:
       blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
-      return blockIndex->count(inv.hash) ||
-        emc2_IsOrphanBlock(inv.hash);
+      return blockIndex->count(inv.hash);// || emc2_IsOrphanBlock(inv.hash);
   }
 
   // Don't know what it is, just say we already got one
@@ -501,7 +500,7 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
         pfrom->AskFor(inv);
       else if (inv.type == MSG_BLOCK && emc2_IsOrphanBlock(inv.hash)) {
 //        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(EMC2_mapOrphanBlocks[inv.hash]));
-          ServiceBlockEventUpdate(EMC2_COIN_IFACE);
+        ServiceBlockEventUpdate(EMC2_COIN_IFACE);
       } else if (nInv == nLastBlock) {
         // In case we are on a very long side-chain, it is possible that we already have
         // the last block in an inv bundle sent in response to getblocks. Try to detect

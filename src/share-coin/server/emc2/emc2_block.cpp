@@ -735,7 +735,7 @@ pblock->print();
       CBlockIndex *pindexBest = GetBestBlockIndex(EMC2_COIN_IFACE);
       if (pindexBest) {
         Debug("(emc2) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
-//        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(pblock->GetHash()));
+        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(pblock->GetHash()));
         ServiceBlockEventUpdate(EMC2_COIN_IFACE);
 
       }

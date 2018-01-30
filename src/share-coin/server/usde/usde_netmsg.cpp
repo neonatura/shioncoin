@@ -144,8 +144,7 @@ static bool AlreadyHave(CIface *iface, const CInv& inv)
 
     case MSG_BLOCK:
       blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
-      return blockIndex->count(inv.hash) ||
-        usde_IsOrphanBlock(inv.hash);
+      return blockIndex->count(inv.hash);// || usde_IsOrphanBlock(inv.hash);
   }
 
   // Don't know what it is, just say we already got one
@@ -453,10 +452,7 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
       if (!fAlreadyHave)
         pfrom->AskFor(inv);
       else if (inv.type == MSG_BLOCK && usde_IsOrphanBlock(inv.hash)) {
-#if 0
-        CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
-        pfrom->PushGetBlocks(pindexBest, usde_GetOrphanRoot(USDE_mapOrphanBlocks[inv.hash]));
-#endif
+//        pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(inv.hash));
         ServiceBlockEventUpdate(USDE_COIN_IFACE);
       } else if (nInv == nLastBlock) {
 
