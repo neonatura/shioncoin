@@ -2963,7 +2963,7 @@ bool core_DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex, CBlock *pblock)
   if (!iface || !iface->enabled)
     return error(SHERR_INVAL, "coin interface not enabled.");
 
-  Debug("DisonnectBlock[%s]: disconnect block '%s' (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), (int)pindex->nHeight);
+  Debug("DisconnectBlock[%s]: disconnect block '%s' (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), (int)pindex->nHeight);
 
   // Disconnect in reverse order
   for (int i = pblock->vtx.size()-1; i >= 0; i--)
@@ -3327,7 +3327,7 @@ bool core_DisconnectBlock(CBlockIndex* pindex, CBlock *pblock)
   if (!iface || !iface->enabled)
     return error(SHERR_INVAL, "coin interface not enabled.");
 
-  Debug("DisonnectBlock[%s]: disconnect block '%s' (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), (int)pindex->nHeight);
+  Debug("DisconnectBlock[%s]: disconnect block '%s' (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), (int)pindex->nHeight);
 
   // Disconnect in reverse order
   for (int i = pblock->vtx.size()-1; i >= 0; i--)
@@ -3346,8 +3346,8 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   CTxMemPool *pool = GetTxMemPool(iface);
   vector<CBlockIndex*> vConnect;
   vector<CBlockIndex*> vDisconnect;
-  map<CBlockIndex *, CBlock *> mConnectBlocks;
-  map<CBlockIndex *, CBlock *> mDisconBlocks;
+  map<uint256, CBlock *> mConnectBlocks;
+  map<uint256, CBlock *> mDisconBlocks;
   vector<CBlock *> vFree;
   bool fValid = true;
 
@@ -3374,7 +3374,7 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
       break;
     }
 
-    mDisconBlocks[pindex] = block;
+    mDisconBlocks[hash] = block;
     vFree.push_back(block);
   }
   if (!fValid)
@@ -3400,15 +3400,14 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
       break;
     }
 
-    mConnectBlocks[pindex] = block;
+    mConnectBlocks[hash] = block;
   }
   if (!fValid)
     goto fin;
 
   /* perform discon */
-  BOOST_FOREACH(PAIRTYPE(CBlockIndex *, CBlock *) r, mDisconBlocks) {
-    CBlockIndex *pindex = r.first;
-    CBlock *block = r.second;
+  BOOST_FOREACH(CBlockIndex* pindex, vDisconnect) {
+    CBlock *block = mDisconBlocks[pindex->GetBlockHash()];
 
     if (!block->DisconnectBlock(pindex)) {
       error(SHERR_INVAL, "Reorganize() : DisonnectBlock %s failed", pindex->GetBlockHash().ToString().c_str());
@@ -3421,9 +3420,8 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
     goto fin;
 
   /* perform connect */
-  BOOST_FOREACH(PAIRTYPE(CBlockIndex *, CBlock *) r, mConnectBlocks) {
-    CBlockIndex *pindex = r.first;
-    CBlock *block = r.second;
+  BOOST_FOREACH(CBlockIndex *pindex, vConnect) {
+    CBlock *block = mConnectBlocks[pindex->GetBlockHash()];
 
     if (!block->ConnectBlock(pindex)) {
       error(SHERR_INVAL, "Reorganize() : ConnectBlock %s failed", pindex->GetBlockHash().ToString().c_str());
@@ -3448,8 +3446,8 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
       pindex->pprev->pnext = pindex;
 
   /* add discon block tx's into pending pool */
-  BOOST_FOREACH(PAIRTYPE(CBlockIndex *, CBlock *) r, mDisconBlocks) {
-    CBlock *block = r.second;
+  BOOST_FOREACH(CBlockIndex* pindex, vDisconnect) {
+    CBlock *block = mDisconBlocks[pindex->GetBlockHash()];
 
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
       if (tx.IsCoinBase())
@@ -3459,8 +3457,8 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   }
 
   /* remove connectd block tx's from pool */ 
-  BOOST_FOREACH(PAIRTYPE(CBlockIndex *, CBlock *) r, mConnectBlocks) {
-    CBlock *block = r.second;
+  BOOST_FOREACH(CBlockIndex* pindex, vConnect) {
+    CBlock *block = mConnectBlocks[pindex->GetBlockHash()];
     pool->Commit(*block);
   }
 
