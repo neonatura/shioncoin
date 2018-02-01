@@ -701,7 +701,6 @@ void unet_peer_prune(int mode)
 {
   peerdb_t **peer_list;
   unet_bind_t *bind;
-  shpeer_t *peer;
   bc_t *db;
   char buf[256];
   double diff;
@@ -744,7 +743,7 @@ void unet_peer_prune(int mode)
       continue; /* may live another day */
 
     /* debug */
-    sprintf(buf, "unet_peer_prune: purging peer \"%s\" [trust %d].", shpeer_print(peer), peer_list[i]->trust);
+    sprintf(buf, "unet_peer_prune: purging peer \"%s\" [trust %d].", shpeer_print(&peer_list[i]->peer), peer_list[i]->trust);
     unet_log(mode, buf);
 
     /* remove peer from database */
