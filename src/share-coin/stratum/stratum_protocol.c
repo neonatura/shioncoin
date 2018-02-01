@@ -623,7 +623,6 @@ shjson_t *getminingroundsinfo(void)
   int miners[MAX_ROUNDS_PER_HOUR];
   double speed;
   char err_msg[256];
-  char idx_str[256];
   char buf[256];
   time_t now;
   int r_idx;
@@ -647,7 +646,8 @@ shjson_t *getminingroundsinfo(void)
 
   data = shjson_array_add(reply, "result");
   for (idx = 0; idx < MAX_ROUNDS_PER_HOUR; idx++) {   
-    r_idx = (hour - idx) % MAX_ROUNDS_PER_HOUR;
+    r_idx = hour - idx;
+    if (r_idx < 0) r_idx = MAX_ROUNDS_PER_HOUR + r_idx;
     for (user = client_list; user; user = user->next) {
       if (user->block_avg[idx] < 0.000001)
         continue;
@@ -669,7 +669,6 @@ shjson_t *getminingroundsinfo(void)
     if (idx == 0)
       shjson_num_add(node, "speed", speed);
   }
-
 
   return (reply);
 }
@@ -783,8 +782,8 @@ int stratum_request_message(user_t *user, shjson_t *json)
 
       if (!t_user) {
         reply = shjson_init(NULL);
-        set_stratum_error(reply, -2, "unknown user");
         shjson_bool_add(reply, "result", FALSE);
+        set_stratum_error(reply, -2, "unknown user");
         err = stratum_send_message(user, reply);
         shjson_free(&reply);
         return (err);
@@ -997,19 +996,25 @@ int stratum_request_message(user_t *user, shjson_t *json)
     }
     if (0 == strcmp(method, "mining.info")) {
       reply = shjson_init(getmininginfo(ifaceIndex));
-      if (reply) {
-        err = stratum_send_message(user, reply);
-        shjson_free(&reply);
-        return (err);
+      if (!reply) {
+        reply = shjson_init(NULL);
+        shjson_null_add(reply, "result");
+        set_stratum_error(reply, -5, "invalid");
       }
+      err = stratum_send_message(user, reply);
+      shjson_free(&reply);
+      return (err);
     }
     if (0 == strcmp(method, "mining.rounds")) {
       reply = getminingroundsinfo();
-      if (reply) {
-        err = stratum_send_message(user, reply);
-        shjson_free(&reply);
-        return (err);
+      if (!reply) {
+        reply = shjson_init(NULL);
+        shjson_null_add(reply, "result");
+        set_stratum_error(reply, -5, "invalid");
       }
+      err = stratum_send_message(user, reply);
+      shjson_free(&reply);
+      return (err);
     }
     if (0 == strcmp(method, "mining.get_transactions")) {
       char *work_id_str;
