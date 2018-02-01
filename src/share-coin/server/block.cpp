@@ -2085,6 +2085,8 @@ Object CBlockHeader::ToValue()
   obj.push_back(Pair("nonce", (boost::uint64_t)nNonce));
   obj.push_back(Pair("bits", HexBits(nBits)));
 
+  obj.push_back(Pair("previousblockhash", hashPrevBlock.GetHex().c_str()));
+
   if (iface)
     obj.push_back(Pair("confirmations", GetBlockDepthInMainChain(iface, hash)));
 
@@ -2095,8 +2097,6 @@ Object CBlockHeader::ToValue()
 
     obj.push_back(Pair("chainwork", pindex->bnChainWork.ToString()));
 
-    if (pindex->pprev)
-      obj.push_back(Pair("previousblockhash", pindex->pprev->GetBlockHash().GetHex()));
     if (pindex->pnext)
       obj.push_back(Pair("nextblockhash", pindex->pnext->GetBlockHash().GetHex()));
   }

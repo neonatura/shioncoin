@@ -178,14 +178,13 @@ static void peerdb_sort(peerdb_t **ret_list, size_t ret_size, int fact)
 
 static peerdb_t **peerdb_track_scan(bc_t *db, int max)
 {
-  static int _scan_index;
+  static uint32_t _scan_index;
   peerdb_t **ret_list;
   peerdb_t *p;
   int ret_cnt;
   int db_max;
   int err;
   int i;
-
 
   db_max = bc_idx_next(db); 
   max = MIN(max, db_max);
@@ -213,6 +212,7 @@ static peerdb_t **peerdb_track_scan(bc_t *db, int max)
   return (ret_list);
 }
 
+#if 0
 static void peerdb_prune(bc_t *db)
 {
   peerdb_t **p_list;
@@ -252,6 +252,7 @@ static void peerdb_prune(bc_t *db)
 
   peerdb_list_free(p_list);
 }
+#endif
 
 static int peerdb_write(bc_t *db, peerdb_t *p)
 {
@@ -262,7 +263,7 @@ static int peerdb_write(bc_t *db, peerdb_t *p)
   int pos;
   int err;
 
-  peerdb_prune(db);
+//  peerdb_prune(db);
 
   data = (unsigned char *)p;
   data_len = sizeof(peerdb_t);
@@ -419,6 +420,9 @@ void unet_peer_scan(void)
       peer = (shpeer_t *)calloc(1, sizeof(shpeer_t));
       memcpy(peer, &peers[i]->peer, sizeof(shpeer_t));
       create_uevent_verify_peer(mode, peer);
+
+      sprintf(buf, "unet_peer_scan: verifying peer \"%s\".", shpeer_print(peer));
+      unet_log(mode, buf);
     }
 
     peerdb_list_free(peers);
@@ -474,6 +478,7 @@ void unet_peer_fill(int mode)
   peerdb_t **peer_list;
   unet_bind_t *bind;
   shpeer_t *peer;
+  char buf[256];
   int i;
 
   bind = unet_bind_table(mode);
@@ -481,13 +486,16 @@ void unet_peer_fill(int mode)
     return;
 
   i = 0;
-  peer_list = peerdb_track_list(mode, INIT_UNET_PEER_SCAN_SIZE);
+  peer_list = peerdb_track_list(mode, MAX_PEERDB_TRACK_LIST_SIZE);
   if (peer_list) {
     for (; peer_list[i] && i < INIT_UNET_PEER_SCAN_SIZE; i++) {
       /* The event will de-allocate the peer. */
       peer = (shpeer_t *)calloc(1, sizeof(shpeer_t)); 
       memcpy(peer, &peer_list[i]->peer, sizeof(shpeer_t));
       create_uevent_connect_peer(mode, peer);
+
+      sprintf(buf, "unet_peer_fill: adding peer \"%s\" [trust %d].", shpeer_print(peer), peer_list[i]->trust);
+      unet_log(mode, buf);
     }
     peerdb_list_free(peer_list);
   }
@@ -536,12 +544,8 @@ void unet_peer_decr(int mode, shpeer_t *peer)
 
   db = peerdb_open(mode);
   err = peerdb_read(db, shpeer_kpriv(peer), &p);
-  if (err) {
-    if (err != SHERR_NOENT)
-      return;
-
-    p = peerdb_new(mode, peer);
-  }
+  if (err)
+    return; /* must exist before it can be 'untrusted'. */
 
   p->trust -= 1;
   peerdb_write(db, p);
@@ -691,5 +695,63 @@ void unet_peer_track_add(int ifaceIndex, shpeer_t *peer)
 void unet_peer_track_remove(int ifaceIndex, shpeer_t *peer)
 {
   peerdb_del(ifaceIndex, shpeer_kpriv(peer)); 
+}
+
+void unet_peer_prune(int mode)
+{
+  peerdb_t **peer_list;
+  unet_bind_t *bind;
+  shpeer_t *peer;
+  bc_t *db;
+  char buf[256];
+  double diff;
+  double deg;
+  time_t now;
+  int db_max;
+  int i;
+
+  bind = unet_bind_table(mode);
+  if (!bind)
+    return;
+
+  db = peerdb_open(mode);
+  if (!db)
+    return;
+
+  peer_list = peerdb_track_scan(db, MAX_PEERDB_TRACK_LIST_SIZE);
+  if (!peer_list)
+    return;
+
+  /* reverse sort by trust */
+  for (db_max = 0; peer_list[db_max]; db_max++);
+  peerdb_sort(peer_list, db_max, -1);
+
+  now = time(NULL);
+  for (i = 0; peer_list[i] && i < MAX_PEERDB_TRACK_PRUNE_SIZE; i++) {
+    if (peer_list[i]->trust >= 0) {
+      break; /* not in un-healthy condition. */
+    }
+
+    if (peer_list[i]->birth > (now - 172800)) {
+      /* record is fresh (less than two days), keep trying. */
+      continue;
+    }
+
+    /* older records weight as healthier */
+    diff = (double)(peer_list[i]->birth - now);
+    deg = 10800 / diff * (double)peer_list[i]->trust;
+    if (deg < 1.0)
+      continue; /* may live another day */
+
+    /* debug */
+    sprintf(buf, "unet_peer_prune: purging peer \"%s\" [trust %d].", shpeer_print(peer), peer_list[i]->trust);
+    unet_log(mode, buf);
+
+    /* remove peer from database */
+    unet_peer_track_remove(mode, &peer_list[i]->peer);
+  }
+
+  peerdb_list_free(peer_list);
+
 }
 

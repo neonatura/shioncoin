@@ -448,12 +448,15 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
       pfrom->AddInventoryKnown(inv);
 
       bool fAlreadyHave = AlreadyHave(iface, inv);
+      Debug("(usde) INVENTORY: %s(%s) [%s]",
+          inv.GetCommand().c_str(), inv.hash.GetHex().c_str(),
+          fAlreadyHave ? "have" : "new");
 
       if (!fAlreadyHave)
         pfrom->AskFor(inv);
       else if (inv.type == MSG_BLOCK && usde_IsOrphanBlock(inv.hash)) {
-//        pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(inv.hash));
-        ServiceBlockEventUpdate(USDE_COIN_IFACE);
+        pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(inv.hash));
+//        ServiceBlockEventUpdate(USDE_COIN_IFACE);
       } else if (nInv == nLastBlock) {
 
         // In case we are on a very long side-chain, it is possible that we already have

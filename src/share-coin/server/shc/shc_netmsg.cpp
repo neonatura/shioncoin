@@ -508,8 +508,9 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
         if (!fAlreadyHave)
           pfrom->AskFor(inv);
         else if (inv.type == MSG_BLOCK && shc_IsOrphanBlock(inv.hash)) {
-//          pfrom->PushGetBlocks(GetBestBlockIndex(SHC_COIN_IFACE), shc_GetOrphanRoot(inv.hash));
-          ServiceBlockEventUpdate(SHC_COIN_IFACE);
+          Debug("(shc) ProcessMessage[inv]: received known orphan \"%s\", requesting blocks.", inv.hash.GetHex().c_str());
+          pfrom->PushGetBlocks(GetBestBlockIndex(SHC_COIN_IFACE), shc_GetOrphanRoot(inv.hash));
+//          ServiceBlockEventUpdate(SHC_COIN_IFACE);
         } else if (nInv == nLastBlock) {
 
           // In case we are on a very long side-chain, it is possible that we already have
@@ -527,6 +528,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 
         // Track requests for our stuff
         Inventory(inv.hash);
+        Debug("(shc) ProcessBlock: processed %d inventory items.", vInv.size());
       }
     }
   }

@@ -427,6 +427,7 @@ CNode* FindNode(int ifaceIndex, unsigned int sk)
   return NULL;
 }
 
+#if 0
 CNode* ConnectNode(int ifaceIndex, CAddress addrConnect, const char *pszDest, int64 nTimeout)
 {
   if (pszDest == NULL) {
@@ -481,6 +482,7 @@ CNode* ConnectNode(int ifaceIndex, CAddress addrConnect, const char *pszDest, in
 
   return pnode;
 }
+#endif
 
 void CNode::CloseSocketDisconnect(const char *reason)
 {

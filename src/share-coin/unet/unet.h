@@ -274,6 +274,8 @@ void unet_peer_track_add(int ifaceIndex, shpeer_t *peer);
 
 void unet_peer_track_remove(int ifaceIndex, shpeer_t *peer);
 
+void unet_peer_prune(int mode);
+
 
 #ifdef __cplusplus
 }

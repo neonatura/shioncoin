@@ -119,6 +119,7 @@ void unet_bind_flag_set(int mode, int flags)
   _unet_bind[mode].flag |= flags;
 
   if (flags & UNETF_PEER_SCAN) {
+    unet_peer_prune(mode);
     unet_peer_fill(mode);
   }
 }

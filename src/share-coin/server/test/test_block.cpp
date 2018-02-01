@@ -484,6 +484,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
   // Check for duplicate
   uint256 hash = pblock->GetHash();
 
+#if 0
   if (blockIndex->count(hash)) {
     return Debug("(test) ProcessBlock: already have block %s", hash.GetHex().c_str());
   }
@@ -492,6 +493,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
       test_IsOrphanBlock(hash)) {
     return Debug("(test) ProcessBlock: already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
   }
+#endif
 
   // Preliminary checks
   if (!pblock->CheckBlock()) {
@@ -535,7 +537,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
       if (pindexBest) {
         Debug("(test) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
         pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock->GetHash()));
-        ServiceBlockEventUpdate(TEST_COIN_IFACE);
+//        ServiceBlockEventUpdate(TEST_COIN_IFACE);
       }
     }
     return true;

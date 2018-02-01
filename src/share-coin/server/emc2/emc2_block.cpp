@@ -672,6 +672,7 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
   // Check for duplicate
   uint256 hash = pblock->GetHash();
 
+#if 0
   if (blockIndex->count(hash)) {
     return Debug("(emc2) ProcessBlock: already have block %s", hash.GetHex().c_str());
   }
@@ -680,6 +681,7 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
       emc2_IsOrphanBlock(hash)) {
     return Debug("(emc2) ProcessBlock: already have block (orphan) %s", hash.ToString().c_str());
   }
+#endif
 
   if (pblock->vtx.size() != 0 && pblock->vtx[0].wit.IsNull()) {
     if (pindexPrev && IsWitnessEnabled(iface, pindexPrev) &&
@@ -726,7 +728,7 @@ pblock->print();
    */
   if (pblock->hashPrevBlock != 0 &&
       !blockIndex->count(pblock->hashPrevBlock)) {
-    Debug("(usde) ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
+    Debug("(emc2) ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.GetHex().c_str());
     if (pfrom) {
       emc2_AddOrphanBlock(pblock);
       STAT_BLOCK_ORPHAN(iface)++;
@@ -736,8 +738,6 @@ pblock->print();
       if (pindexBest) {
         Debug("(emc2) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
         pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(pblock->GetHash()));
-        ServiceBlockEventUpdate(EMC2_COIN_IFACE);
-
       }
     }
 

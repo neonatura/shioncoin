@@ -495,12 +495,16 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
       pfrom->AddInventoryKnown(inv);
 
       bool fAlreadyHave = AlreadyHave(iface, inv);
+      Debug("(emc2) INVENTORY: %s(%s) [%s]",
+          inv.GetCommand().c_str(), inv.hash.GetHex().c_str(),
+          fAlreadyHave ? "have" : "new");
 
       if (!fAlreadyHave)
         pfrom->AskFor(inv);
       else if (inv.type == MSG_BLOCK && emc2_IsOrphanBlock(inv.hash)) {
-//        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(EMC2_mapOrphanBlocks[inv.hash]));
-        ServiceBlockEventUpdate(EMC2_COIN_IFACE);
+        Debug("(emc2) ProcessMessage[inv]: received known orphan \"%s\", requesting blocks.", inv.hash.GetHex().c_str());
+        pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(inv.hash));
+//        ServiceBlockEventUpdate(EMC2_COIN_IFACE);
       } else if (nInv == nLastBlock) {
         // In case we are on a very long side-chain, it is possible that we already have
         // the last block in an inv bundle sent in response to getblocks. Try to detect
@@ -744,6 +748,9 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
   {
     EMC2Block block;
     vRecv >> block;
+    uint256 hash = block.GetHash();
+
+    Debug("(emc2) ProcessBlock: received block \"%s\" from \"%s\".", hash.GetHex().c_str(), pfrom->addr.ToString().c_str());
 
     CInv inv(ifaceIndex, MSG_BLOCK, block.GetHash());
     pfrom->AddInventoryKnown(inv);
