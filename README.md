@@ -71,12 +71,12 @@ Building the share-coin programs:
   make install
 </pre></small></i>
 
-The binaries can be found under src/share-coin as "shc", "usde", and "shcoind". Performing a 'make install' will install these programs into the bin and sbin directories respectively. The "shc" and "usde" programs must be ran as the same user as the "shcoind" daemon. The daemons supplied with the share library suite (shared, shlogd, shfsyncd) and base libraries can be installed by running 'make install' in the libshare directory built from the instructions above. 
+The binaries can be found under src/share-coin as "shc" and "shcoind". Performing a 'make install' will install these programs into the bin and sbin directories respectively. The "shc" client program must be ran on the same machine as the "shcoind" daemon. 
 
 When installed on a unix-like systems that supports the traditional /etc/init.d/rc.d/ hierarchy a 'shcoind' daemon will be registered with the system to load upon startup as the root user. 
 Note: The client utility programs "shc" must be ran as the same user as the 'shcoind' daemon.
 
-The shcoind daemon and client programs store data in the "/var/lib/share/blockchain/" directory on linux and the "%APPDATA%\share\blockchain\" directory on windows. These programs will not [automatically] attempt to read the contents of the traditional currency hierarchy (i.e. "~/.usde/") used by many other coins. Commands are provided in order to import or export in either a legacy and/or optimized manner for the entire block-chain, wallet transactions, and network peer addresses. No RPC access is permitted except via the local machine and only with the automatically generated rpc credentials (see "rpc.dat" file). 
+The shcoind daemon and client programs store data in the "/var/lib/share/blockchain/" directory on linux and the "%APPDATA%\share\blockchain\" directory on windows. These programs will not [automatically] attempt to read the contents of the traditional currency hierarchy (i.e. "~/.shc/") used by many other coins. Commands are provided in order to import or export in either a legacy and/or optimized manner for the entire block-chain, wallet transactions, and network peer addresses. No RPC access is permitted except via the local machine and only with the automatically generated rpc credentials (see "rpc.dat" file). 
 
 <h3>Features</h3>
 
