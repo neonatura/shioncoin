@@ -1,5 +1,5 @@
-share-coin (3.01) stable; urgency=low
+share-coin (3.02) stable; urgency=low
 
-  * Debian release (Closes: #4)
+  * Debian release (Closes: #5)
 
- -- Neo Natura <support@neo-natura.com>  Fri, 04, Jan 2018 23:00:59 -0600
+ -- Neo Natura <support@neo-natura.com>  Fri, 04 Jan 2018 23:00:59 -0600

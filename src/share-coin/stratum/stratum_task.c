@@ -233,21 +233,23 @@ static void commit_payout(int ifaceIndex, int block_height)
 {
   CIface *iface;
   user_t *user;
-  char uname[256];
-  char buf[256];
   double min_input;
   double coin_val;
   double bal;
+  time_t now;
+  char uname[256];
+  char buf[256];
 
   iface = GetCoinByIndex(ifaceIndex);
   if (!iface || !iface->enabled)
     return;
 
+  now = time(NULL);
   for (user = client_list; user; user = user->next) {
     if (0 == strncmp(user->worker, "system.", strlen("system.")))
       continue; /* public */
 
-    if (user->balance[ifaceIndex] < 5.0)
+    if (user->balance[ifaceIndex] < 1.0)
       continue;
 
     memset(uname, 0, sizeof(uname));
@@ -255,6 +257,9 @@ static void commit_payout(int ifaceIndex, int block_height)
     strtok(uname, ".");
     if (!*uname)
       continue;
+
+    if (user->reward_time < (now - MAX_ROUND_TIME))
+      break; /* waiting more than 10min for reward. */ 
 
     coin_val = floor(user->balance[ifaceIndex] * 1000) / 1000;
     if (coin_val > (user->balance_avg[ifaceIndex] * 8)) {
@@ -698,7 +703,7 @@ void stratum_round_reset(time_t stamp)
  * Generate MAX_SERVER_NONCE scrypt hashes against a work task.
  * @note Submits a block 
  */
-void stratum_task_work(task_t *task)
+void stratum_task_work(task_t *task, task_attr_t *attr)
 {
   static int luck = 2;
   static int idx;
@@ -727,6 +732,9 @@ void stratum_task_work(task_t *task)
     stratum_round_reset(now);
     round_stamp = now;
   }
+
+	/* sync up with current task iface */
+	sys_user->ifaceIndex = attr->ifaceIndex;
   
   /* generate block hash */
 /*
@@ -821,7 +829,7 @@ void stratum_task_gen(task_attr_t *attr)
   /* notify subscribed clients of new task. */
   stratum_user_broadcast_task(task, attr);
 
-  stratum_task_work(task);
+  stratum_task_work(task, attr);
 
   task_free(&task);
 }

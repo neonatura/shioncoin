@@ -236,13 +236,16 @@ int stratum_validate_submit(user_t *user, shjson_t *json)
   stratum_user_block(user, share_diff);
 
   if (*submit_hash) {
-    sprintf(errbuf, "stratum_validate_submit: submitted block \"%s\" for \"%s\" [iface #%d]\n", submit_hash, user->worker, user->ifaceIndex);
-    unet_log(UNET_STRATUM, errbuf);
+  	CIface *iface = GetCoinByIndex(user->ifaceIndex);
+		if (iface && iface->enabled) { /* ensure they are subscribed */
+			sprintf(errbuf, "(%s) stratum_validate_submit: submitted block \"%s\" for \"%s\".\n", iface->name, submit_hash, user->worker);
+			unet_log(UNET_STRATUM, errbuf);
 
-    /* user's block was accepted by network. */
-    user->block_acc++;
-    strncpy(user->block_hash, submit_hash, sizeof(user->block_hash) - 1);
-    user->block_height = (uint64_t)getblockheight(user->ifaceIndex) - 1;
+			/* user's block was accepted by network. */
+			user->block_acc++;
+			strncpy(user->block_hash, submit_hash, sizeof(user->block_hash) - 1);
+			user->block_height = (uint64_t)getblockheight(user->ifaceIndex) - 1;
+		}
   }
 
   return (0);

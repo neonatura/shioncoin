@@ -1073,6 +1073,33 @@ bool GetStratumKeyAccount(uint256 in_pkey, string& strAccount)
   return (false);
 }
 
+static bool IsSentFromAccount(CIface *iface, string strAccount, const CTxIn& in)
+{
+  CWallet *wallet = GetWallet(iface);
+  CTransaction tx;
+
+  if (!GetTransaction(iface, in.prevout.hash, tx, NULL))
+    return (FALSE);
+ 
+  const CTxOut& out = tx.vout[in.prevout.n];
+  const CScript& pk = out.scriptPubKey;
+  CTxDestination address;
+
+  if (!ExtractDestination(pk, address))
+    return (FALSE);
+
+  BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook) {
+    const string& account = item.second;
+    if (account != strAccount)
+      continue;
+
+    if (address == item.first)
+      return (TRUE);
+  }
+
+  return (FALSE);
+}
+
 /**
  * local up to 100 transactions associated with account name.
  * @param duration The range in the past to search for account transactions (in seconds).
@@ -1081,6 +1108,7 @@ bool GetStratumKeyAccount(uint256 in_pkey, string& strAccount)
 string accounttransactioninfo_json;
 static const char *json_getaccounttransactioninfo(int ifaceIndex, const char *tx_account, const char *pkey_str)
 {
+  CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(ifaceIndex);
   string strAccount(tx_account);
   uint256 in_pkey = 0;
@@ -1099,9 +1127,15 @@ static const char *json_getaccounttransactioninfo(int ifaceIndex, const char *tx
       const CScript& pk = out.tx->vout[out.i].scriptPubKey;
 
       CTxDestination address;
-      if (!ExtractDestination(pk, address) || 
-          !IsMine(*wallet, address))
-        continue;
+      if (!ExtractDestination(pk, address))
+        continue;  
+
+      BOOST_FOREACH(const CTxIn& in, out.tx->vin) {
+        if (IsSentFromAccount(iface, strAccount, in)) {
+          /* do not list change */
+          continue;
+        }
+      }
 
       const CTransaction& tx = *out.tx;
       int nTxSize = (int)wallet->GetVirtualTransactionSize(tx);
