@@ -144,10 +144,35 @@ static bool ServiceWalletEvent(int ifaceIndex)
       CBlock *block = GetBlockByHeight(iface, nHeight);
       if (!block) continue;
 
+
+
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
 /* opt_bool(OPT_WALLET_REACCEPT */
-        wallet->AddToWalletIfInvolvingMe(tx, block, false, false);
+
+				if (wallet->mapWallet.count(tx.GetHash()) == 0) {
+					/* check for a known relationship */
+					wallet->AddToWalletIfInvolvingMe(tx, block, false, false);
+				}
+
+#if 0
+				if (wallet->mapWallet.count(tx.GetHash()) == 0) {
+					/* check whether this a local tx */
+					BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+						CTxDestination address;
+
+						if (!ExtractDestination(txout.scriptPubKey, address) || 
+								!IsMine(*wallet, address))
+							continue;
+
+						CWalletTx wtx(wallet, tx);
+			      wallet->AddToWallet(wtx);
+						break;
+					}
+				}
+#endif
+
       }
+
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
         /* enforce validity on wallet & recent tx's spent chain */
         chain_UpdateWalletCoins(ifaceIndex, tx);
