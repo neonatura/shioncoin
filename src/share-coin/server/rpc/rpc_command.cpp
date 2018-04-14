@@ -2117,6 +2117,7 @@ Value rpc_wallet_rescan(CIface *iface, const Array& params, bool fStratum)
   minHeight = bestHeight + 1;
   minTime = time(NULL) + 1;
 
+fprintf(stderr, "DEBUG: wallet.rescan/start prev-hier\n");
   /* scan wallet's 'previous hiearchy' */
   for (map<uint256, CWalletTx>::const_iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it)
   {
@@ -2127,6 +2128,7 @@ Value rpc_wallet_rescan(CIface *iface, const Array& params, bool fStratum)
     const CTransaction& pcoin_tx = (CTransaction)pcoin;
     inputs[pcoin_hash] = pcoin_tx;
 
+#if 0
     BOOST_FOREACH(const CTxIn& txin, pcoin.vin) {
       CTransaction tx;
       if (inputs.count(txin.prevout.hash) != 0) {
@@ -2140,14 +2142,17 @@ Value rpc_wallet_rescan(CIface *iface, const Array& params, bool fStratum)
 
       wallet->FillInputs(tx, inputs);
     }
+#endif
 
     if (bhash != 0 && 
         find(hash_list.begin(), hash_list.end(), bhash) != hash_list.end()) {
         hash_list.insert(hash_list.end(), bhash);
     }
   }
+fprintf(stderr, "DEBUG: wallet.rescan/end prev-hier\n");
 
   /* scan wallet's 'next hiearchy' */
+fprintf(stderr, "DEBUG: wallet.rescan/start next-hier\n");
   for (tx_cache::iterator it = inputs.begin(); it != inputs.end(); ++it) {
     CTransaction& tx = (*it).second;
     vector<uint256> vOuts;
@@ -2159,24 +2164,36 @@ Value rpc_wallet_rescan(CIface *iface, const Array& params, bool fStratum)
 
     
     BOOST_FOREACH(const uint256& tx_hash, vOuts) {
+      if (find(hash_list.begin(), hash_list.end(), bhash) != hash_list.end())
+				continue; /* dup */
+
       uint256 bhash;
       if (!::GetTransaction(iface, tx_hash, tx, &bhash)) 
         continue;
 
       if (inputs.count(tx_hash) == 0)
         inputs[tx_hash] = tx;
-      if (find(hash_list.begin(), hash_list.end(), bhash) != hash_list.end())
-        hash_list.insert(hash_list.end(), bhash);
+      //if (find(hash_list.begin(), hash_list.end(), bhash) != hash_list.end())
+			hash_list.insert(hash_list.end(), bhash);
 
-      wallet->FillInputs(tx, inputs);
+#if 0
+			wallet->FillInputs(tx, inputs);
+#endif
     }
   }
+fprintf(stderr, "DEBUG: wallet.rescan/end next-hier\n");
 
+fprintf(stderr, "DEBUG: wallet.rescan/start add-wallet\n");
   /* add any missing wallet tx's */
   for (tx_cache::const_iterator it = inputs.begin(); it != inputs.end(); ++it) {
+    const uint256& tx_hash = (*it).first;
+		if (wallet->mapWallet.count(tx_hash))
+			continue;
+
     const CTransaction& tx = (*it).second;
     wallet->AddToWalletIfInvolvingMe(tx, NULL, true);
   }
+fprintf(stderr, "DEBUG: wallet.rescan/end add-wallet\n");
 
   /* find earliest block inovolved. */
   BOOST_FOREACH(const uint256& bhash, hash_list) {
@@ -2188,20 +2205,6 @@ Value rpc_wallet_rescan(CIface *iface, const Array& params, bool fStratum)
     if (pindex->nTime < minTime)
       minTime = pindex->nTime;
   }
-
-#if 0
-  /* find near-reach hierarchial parents of wallet-txs */
-  for (map<uint256, CWalletTx>::const_iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it)
-  {
-    const CWalletTx& pcoin = (*it).second;
-    BOOST_FOREACH(const CTxIn& txin, pcoin.vin) {
-      CTransaction tx;
-      if (!::GetTransaction(iface, txin.prevout.hash, tx, &bhash))
-        continue;
-      wallet->AddToWalletIfInvolvingMe(tx, NULL, true);
-    }
-  }
-#endif
 
   minHeight = MIN(bestHeight, minHeight);
   if (minHeight != bestHeight) {

@@ -363,6 +363,7 @@ bool VerifyContextTx(CIface *iface, CTransaction& tx, int& mode)
   uint160 hashContext;
   time_t now;
   int nOut;
+	int err;
 
   /* core verification */
   if (!IsContextTx(tx)) {
@@ -385,6 +386,10 @@ bool VerifyContextTx(CIface *iface, CTransaction& tx, int& mode)
   CContext ctx(tx.certificate);
   if (hashContext != ctx.GetHash())
     return error(SHERR_INVAL, "ctx hash mismatch");
+
+	err = ctx_context_verify(ctx.vContext);
+	if (err)
+		return (error(err, "context verification failure"));
 
   int64 nFee = GetContextOpFee(iface, GetBestHeight(iface), ctx.vContext.size());
   if (tx.vout[nOut].nValue < nFee)
@@ -699,8 +704,6 @@ bool FormatGeoContext(CIface *iface, string& strGeo, shnum_t& lat, shnum_t& lon)
   sprintf(buf, "geo:%-5.5Lf,%-5.5Lf", lat, lon);
   strGeo = string(buf);
 
-//fprintf(stderr, "DEBUG: FormatGeoContext: lat(%Lf) lon(%Lf)\n", lat, lon);
-
   return (true);
 }
 
@@ -749,11 +752,46 @@ void share_geo_save(CContext *ctx, string label)
 
 }
 
+int ctx_context_verify(cbuff vchValue)
+{
+	static const unsigned char *gzip = (unsigned char *)"\037\213";
+	static const unsigned char *bz2 = (unsigned char *)"\102\132\150\071\061\101\131\046";
+	static const unsigned char *rar = (unsigned char *)"Rar!";
+	static const unsigned char *jpeg = (unsigned char *)"\377\330\377\341";
+	static const unsigned char *zip = (unsigned char *)"\120\113\003\004";
+	static const unsigned char *xz = (unsigned char *)"\xFD" "7zXZ";
+	static const unsigned char *shz = (unsigned char *)"\132\123\042\042";
+	static const unsigned char *gif = (unsigned char *)"GIF89a";
+	static const unsigned char *png = (unsigned char *)"\211PNG\015\012\032\012";
+	static const unsigned char *winexe = (unsigned char *)"MZ";
+
+	if (vchValue.size() <= 8)
+		return (0);
+
+	if (std::equal(vchValue.begin(), vchValue.begin()+2, gzip) ||
+			std::equal(vchValue.begin(), vchValue.begin()+8, bz2) ||
+			std::equal(vchValue.begin(), vchValue.begin()+4, rar) ||
+			std::equal(vchValue.begin(), vchValue.begin()+4, jpeg) || 
+			std::equal(vchValue.begin(), vchValue.begin()+4, zip) ||
+			std::equal(vchValue.begin(), vchValue.begin()+5, xz) ||
+			std::equal(vchValue.begin(), vchValue.begin()+4, shz) ||
+			std::equal(vchValue.begin(), vchValue.begin()+6, gif) ||
+			std::equal(vchValue.begin(), vchValue.begin()+8, png) ||
+			std::equal(vchValue.begin(), vchValue.begin()+2, winexe)) {
+		/* suppress common images, executables, and archives. */
+		return (SHERR_ILSEQ);
+	}
+
+	/* context permitted */
+	return (0);
+}
+
 int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fAddr)
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   CContext *ctx;
+	int err;
 
   if (strName.length() < 3) {
     return (SHERR_INVAL);
@@ -764,6 +802,10 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
   if (vchValue.size() > CContext::MAX_VALUE_SIZE) {
     return (SHERR_INVAL);
   }
+
+	err = ctx_context_verify(vchValue);
+	if (err)
+		return (err);
 
   int64 nFee = GetContextOpFee(iface, GetBestHeight(iface), vchValue.size());
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
@@ -840,6 +882,7 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   CContext *ctx;
+	int err;
 
   if (strName.length() < 3) {
     return (SHERR_INVAL);
@@ -850,6 +893,10 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
   if (vchValue.size() > CContext::MAX_VALUE_SIZE) {
     return (SHERR_INVAL);
   }
+
+	err = ctx_context_verify(vchValue);
+	if (err)
+		return (err);
 
   CTransaction txIn;
   CContext *ctxIn = GetContextByName(iface, strName, txIn);

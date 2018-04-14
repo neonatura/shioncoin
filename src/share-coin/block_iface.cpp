@@ -132,9 +132,9 @@ const char *c_getblocktemplate(int ifaceIndex)
   if (iface->blockscan_max > pindexPrev->nHeight)
     return (NULL); /* downloading blocks */
 
-  /* prune worker blocks (< 5 min) */
+  /* prune worker blocks more than ten minutes old */
   vector<unsigned int> vDelete;
-  time_t timeExpire = GetAdjustedTime() - 360;
+  time_t timeExpire = GetAdjustedTime() - 600;
   for (work_map::const_iterator mi = mapWork.begin(); mi != mapWork.end(); ++mi) {
     CBlock *tblock = mi->second;
     if (tblock->nTime < timeExpire) {
@@ -1254,14 +1254,14 @@ const char *GetSiteExtraNonceHex()
 /* remove all pending work */
 void map_work_term(void)
 {
-  /* prune worker blocks (< 5 min) */
-  vector<unsigned int> vDelete;
+
   for (work_map::const_iterator mi = mapWork.begin(); mi != mapWork.end(); ++mi) {
     CBlock *tblock = mi->second;
     unsigned int id = (unsigned int)mi->first;
     delete tblock;
   }
   mapWork.clear();
+
 }
 
 #ifdef __cplusplus

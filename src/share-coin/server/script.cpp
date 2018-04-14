@@ -1481,7 +1481,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
     return true;
   }
 
-fprintf(stderr, "DEBUG: Solver: no script template found matching \"%s\"\n", scriptPubKey.ToString().c_str()); 
+//fprintf(stderr, "DEBUG: Solver: no script template found matching \"%s\"\n", scriptPubKey.ToString().c_str()); 
   vSolutionsRet.clear();
   typeRet = TX_NONSTANDARD;
   return false;

@@ -157,8 +157,7 @@ static bool ServiceWalletEvent(int ifaceIndex)
       wallet->nScanHeight = nHeight;
     }
   }
-  Debug("ServiceValidateEvent: scanned blocks %d .. %d", nStartHeight, nHeight);
-  //pfrom->PushMessage("getaddr");
+  Debug("ServiceWalletEvent: scanned blocks %d .. %d", nStartHeight, nHeight);
 
   if (nHeight >= nBestHeight) {
     /* service event has completed task. */
@@ -611,7 +610,7 @@ void ResetServiceWalletEvent(CWallet *wallet)
   if (serv_state(iface, COINF_WALLET_SCAN))
     unset_serv_state(iface, COINF_WALLET_SCAN);
 
-  if (serv_state(iface, COINF_VALIDATE_SYNC))
+  if (serv_state(iface, COINF_WALLET_SYNC))
     unset_serv_state(iface, COINF_WALLET_SYNC);
 
   wallet->nScanHeight = 0;
@@ -638,7 +637,7 @@ void InitServiceWalletEvent(CWallet *wallet, uint64_t nHeight)
     return; /* up-to-date, 'service wallet event' is redundant scan. */
   }
 
-  if (serv_state(iface, COINF_VALIDATE_SYNC))
+  if (serv_state(iface, COINF_WALLET_SYNC))
     unset_serv_state(iface, COINF_WALLET_SYNC);
 
   if (wallet->nScanHeight == 0)

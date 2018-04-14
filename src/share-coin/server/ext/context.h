@@ -137,6 +137,11 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
 
 int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fAddr = false);
 
+/**
+ * Verify that the context payload has a valid value.
+ */
+int ctx_context_verify(cbuff vchValue);
+
 
 #endif /* ndef __CONTEXT_H__ */
 

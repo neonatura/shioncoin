@@ -309,7 +309,7 @@ Value rpc_ctx_getfile(CIface *iface, const Array& params, bool fStratum)
 
   ctx = GetContextByName(iface, strName, tx);
   if (!ctx) {
-    throw JSONRPCError(-5, string("unknown context hash"));
+    throw JSONRPCError(SHERR_NOENT, string("unknown context hash"));
   }
 
   shbuf_t *buff = shbuf_init();
@@ -748,7 +748,7 @@ Value rpc_ctx_findloc(CIface *iface, const Array& params, bool fStratum)
         static char buf[256];
 
         shgeo_loc(&geo, &lat, &lon, NULL);
-        sprintf(buf, "%-5.5Lf,%-5.5Lf", lat, lon);
+        sprintf(buf, "geo:%-5.5Lf,%-5.5Lf", lat, lon);
         strId = string(buf);
       }
     }
@@ -756,7 +756,7 @@ Value rpc_ctx_findloc(CIface *iface, const Array& params, bool fStratum)
   }
 
   if (!FormatGeoContext(iface, strId, lat, lon))
-    throw JSONRPCError(err, string("invalid geodetic format"));
+    throw JSONRPCError(SHERR_INVAL, string("invalid geodetic format"));
 
   CTransaction tx;
   ctx = GetContextByName(iface, strId, tx);

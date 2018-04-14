@@ -567,7 +567,7 @@ int stratum_sync_userlist_resp(user_t *user, shjson_t *tree)
     memset(worker, 0, sizeof(worker));
     text = shjson_array_astr(node, NULL, 0);
     if (text) strncpy(worker, text, sizeof(worker)-1);
-    if (!*worker) {
+    if (strlen(worker) < 40) {
       /* not registered miner */ 
       continue; 
     }

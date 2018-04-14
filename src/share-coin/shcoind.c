@@ -126,7 +126,7 @@ void usage_help(void)
       "\n"
       "Note: Run \"shpref <name> <val>\" to set persistent preferences.\n"
       "\n"
-      "Visit 'http://docs.sharelib.net/' for libshare API documentation."
+      "Visit 'https://shcoins.com/' for additional information.\n"
       "Report bugs to <support@neo-natura.com>.\n"
       );
 //      "\t--rescan\t\tRescan blocks for missing wallet transactions.\n"
@@ -188,6 +188,8 @@ int shcoind_main(int argc, char *argv[])
   for (i = 1; i < argc; i++) {
     if (0 == strcmp(argv[i], "-nf")) {
       opt_no_fork = TRUE;
+		} else if (0 == strcmp(argv[i], "--debug")) {
+			opt_bool_set(OPT_DEBUG, TRUE);
     } else if (0 == strcmp(argv[i], "--max-conn")) {
       if (i + 1 < argc && isdigit(argv[i+1][0])) {
         i++;

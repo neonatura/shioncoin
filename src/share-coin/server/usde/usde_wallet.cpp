@@ -251,11 +251,14 @@ void USDEWallet::ResendWalletTransactions()
 
 void USDEWallet::ReacceptWalletTransactions()
 {
+	core_ReacceptWalletTransactions(this);
+#if 0
   CIface *iface = GetCoinByIndex(ifaceIndex);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex);
   vector<CWalletTx> vMissingTx;
   bool fRepeat = true;
   bool spent;
+	int i;
 
   {
     LOCK(cs_wallet);
@@ -264,6 +267,14 @@ void USDEWallet::ReacceptWalletTransactions()
     {
       CWalletTx& wtx = item.second;
       vector<uint256> vOuts; 
+
+			for (i = 0; i < wtx.vfSpent.size(); i++) {
+				if (wtx.vfSpent[i])
+					break;
+			}
+			if (i != wtx.vfSpent.size())
+				continue; /* already [at least partially] spent. */
+/* DEBUG: TODO: need to be careful here to still add supporting tx's */
 
       if (!wtx.IsCoinBase() &&
           !VerifyTxHash(iface, wtx.GetHash())) { /* !block-chain */
@@ -333,7 +344,7 @@ void USDEWallet::ReacceptWalletTransactions()
       }
     }
   }
-
+#endif
 }
 
 int USDEWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)

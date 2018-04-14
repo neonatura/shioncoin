@@ -236,7 +236,7 @@ const RPCOp CTX_GETFILE = {
   &rpc_ctx_getfile, 2, {RPC_STRING, RPC_STRING},
   "Syntax: <name> <path>\n"
   "\n"
-  "Write the binary contents of a given context to the path specified."
+  "Write the specified context's data to the path specified."
 };
 
 const RPCOp CTX_SETSTR = {
