@@ -99,9 +99,6 @@ static void chain_UpdateWalletCoins(int ifaceIndex, const CTransaction& tx)
   CWallet *wallet = GetWallet(iface);
   uint256 tx_hash = tx.GetHash();
 
-  if (tx.IsCoinBase())
-    return;
-
   BOOST_FOREACH(const CTxIn& txin, tx.vin) {
     const uint256& hash = txin.prevout.hash;
     int nOut = txin.prevout.n;
@@ -109,6 +106,8 @@ static void chain_UpdateWalletCoins(int ifaceIndex, const CTransaction& tx)
     if (wallet->mapWallet.count(hash) != 0) {
       vector<uint256> vOuts;
       CWalletTx& wtx = wallet->mapWallet[hash];
+
+			/* coin db */
       if (wtx.ReadCoins(ifaceIndex, vOuts) &&
           nOut < vOuts.size() && vOuts[nOut].IsNull()) {
         vOuts[nOut] = tx_hash;
@@ -116,8 +115,13 @@ static void chain_UpdateWalletCoins(int ifaceIndex, const CTransaction& tx)
           Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
         }
       }
+
+			/* wallet db */
+			if (!wtx.IsSpent(nOut) && wallet->IsMine(wtx.vout[nOut])) {
+				wtx.MarkSpent(nOut);
+				wtx.WriteToDisk();
+			}
     }
-  
   }
  
 }
@@ -135,7 +139,7 @@ static bool ServiceWalletEvent(int ifaceIndex)
   unsigned int nBestHeight = GetBestHeight(iface);
   unsigned int nStartHeight = wallet->nScanHeight;
   unsigned int nHeight = wallet->nScanHeight;
-  unsigned int nMaxHeight = nHeight + 2048;
+  unsigned int nMaxHeight = nHeight + 1024;
 
   if (nHeight <= nBestHeight) {
     LOCK(wallet->cs_wallet);
@@ -144,38 +148,38 @@ static bool ServiceWalletEvent(int ifaceIndex)
       CBlock *block = GetBlockByHeight(iface, nHeight);
       if (!block) continue;
 
-
-
+			/* check for new wallet tx's */
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
+				if (wallet->mapWallet.count(tx.GetHash()) != 0)
+					continue;
 /* opt_bool(OPT_WALLET_REACCEPT */
 
+#if 0
 				if (wallet->mapWallet.count(tx.GetHash()) == 0) {
 					/* check for a known relationship */
 					wallet->AddToWalletIfInvolvingMe(tx, block, false, false);
 				}
-
-#if 0
-				if (wallet->mapWallet.count(tx.GetHash()) == 0) {
-					/* check whether this a local tx */
-					BOOST_FOREACH(const CTxOut& txout, tx.vout) {
-						CTxDestination address;
-
-						if (!ExtractDestination(txout.scriptPubKey, address) || 
-								!IsMine(*wallet, address))
-							continue;
-
-						CWalletTx wtx(wallet, tx);
-			      wallet->AddToWallet(wtx);
-						break;
-					}
-				}
 #endif
 
+				/* check whether this a local tx */
+				BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+					CTxDestination address;
+
+					if (!ExtractDestination(txout.scriptPubKey, address) || 
+							!IsMine(*wallet, address))
+						continue;
+
+					CWalletTx wtx(wallet, tx);
+					wtx.SetMerkleBranch(block);
+					wallet->AddToWallet(wtx);
+					break;
+				}
       }
 
+			/* enforce validity on wallet & recent tx's spent chain */
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
-        /* enforce validity on wallet & recent tx's spent chain */
-        chain_UpdateWalletCoins(ifaceIndex, tx);
+				if (!tx.IsCoinBase())
+					chain_UpdateWalletCoins(ifaceIndex, tx);
       }
 
       delete block;
@@ -201,7 +205,7 @@ static bool ServiceValidateEvent(int ifaceIndex)
   unsigned int nBestHeight = GetBestHeight(iface);
   unsigned int nStartHeight = wallet->nValidateHeight;
   unsigned int nHeight = wallet->nValidateHeight;
-  unsigned int nMaxHeight = nHeight + 64;
+  unsigned int nMaxHeight = nHeight + 32;
 
   if (nHeight <= nBestHeight) {
     for (; nHeight <= nBestHeight && nHeight < nMaxHeight; nHeight++) {
