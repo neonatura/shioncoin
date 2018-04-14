@@ -251,7 +251,10 @@ void USDEWallet::ResendWalletTransactions()
 
 void USDEWallet::ReacceptWalletTransactions()
 {
-	core_ReacceptWalletTransactions(this);
+	{
+		LOCK(cs_wallet);
+		core_ReacceptWalletTransactions(this);
+	}
 #if 0
   CIface *iface = GetCoinByIndex(ifaceIndex);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex);

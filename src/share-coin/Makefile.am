@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = foreign
 TESTS = test_shcoind
 noinst_PROGRAMS = test_shcoind
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/secp256k1/include \
 	-I$(top_srcdir)/src/share-lib \
 	-I$(srcdir)/proto \

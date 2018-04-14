@@ -819,7 +819,7 @@ version_patch = @version_patch@
 with_kernel = @with_kernel@
 with_kerneldir = @with_kerneldir@
 AUTOMAKE_OPTIONS = foreign
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/secp256k1/include \
 	-I$(top_srcdir)/src/share-lib \
 	-I$(srcdir)/proto \

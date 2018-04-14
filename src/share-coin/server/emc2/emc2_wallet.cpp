@@ -250,7 +250,10 @@ void EMC2Wallet::ResendWalletTransactions()
 
 void EMC2Wallet::ReacceptWalletTransactions()
 {
-	core_ReacceptWalletTransactions(this);
+	{
+		LOCK(cs_wallet);
+		core_ReacceptWalletTransactions(this);
+	}
 }
 
 int EMC2Wallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)

@@ -3609,41 +3609,40 @@ void core_ReacceptWalletTransactions(CWallet *wallet)
 		return;
 
   min_pindex = NULL;
-  {
-    LOCK(cs_wallet);
-    BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, wallet->mapWallet)
-    {
-      const uint256& tx_hash = item.first;
-      CWalletTx& wtx = item.second;
-      vector<uint256> vOuts;
 
-      if (wtx.IsCoinBase())
-        continue; /* not applicable */
+	BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, wallet->mapWallet) {
+		const uint256& tx_hash = item.first;
+		CWalletTx& wtx = item.second;
+		vector<uint256> vOuts;
 
-      /* need to be careful here to still add supporting tx's */
-      for (i = 0; i < wtx.vfSpent.size(); i++) {
-        if (wtx.vfSpent[i])
-          break;
-      }
-      if (i != wtx.vfSpent.size())
-        continue; /* already [at least partially] spent. */
+		if (wtx.IsCoinBase())
+			continue; /* not applicable */
 
-      pindex = GetBlockIndexByTx(iface, tx_hash);
-      if (!pindex) {
-        /* reaccept into mempool. */
-        if (!wtx.AcceptWalletTransaction()) {
-          error(SHERR_INVAL, "core_ReacceptWalletTransactions: !wtx.AcceptWalletTransaction()");
-        }
-      } else {
-        /* reference highest block with stored wallet tx */
-        if (!min_pindex || min_pindex->nHeight < pindex->nHeight)
-          min_pindex = pindex;
-      }
-    }
-  }
+		/* need to be careful here to still add supporting tx's */
+		for (i = 0; i < wtx.vfSpent.size(); i++) {
+			if (wtx.vfSpent[i])
+				break;
+		}
+		if (i != wtx.vfSpent.size())
+			continue; /* already [at least partially] spent. */
+
+		pindex = GetBlockIndexByTx(iface, tx_hash);
+		if (!pindex) {
+			/* reaccept into mempool. */
+			if (!wtx.AcceptWalletTransaction()) {
+				error(SHERR_INVAL, "core_ReacceptWalletTransactions: !wtx.AcceptWalletTransaction()");
+			}
+		} else {
+			/* reference highest block with stored wallet tx */
+			if (!min_pindex || min_pindex->nHeight < pindex->nHeight)
+				min_pindex = pindex;
+		}
+	}
 
 	/* rescan from height of newest wallet tx */
 	if (min_pindex)
 		wallet->ScanForWalletTransactions(min_pindex);
 
 }
+
+
