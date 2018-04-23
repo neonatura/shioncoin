@@ -32,7 +32,7 @@
 
 #define BLOCK_VERSION 1
 //#define MAX_SERVER_NONCE 128
-#define MAX_SERVER_NONCE 4
+#define MAX_SERVER_NONCE 8
 #define MAX_ROUND_TIME 600
 
 #define POST_BLOCK_TIME 15
@@ -298,7 +298,7 @@ static void commit_payout(int ifaceIndex, int block_height)
     }
   }
 
-  if (nBankFee[ifaceIndex] > 100.0) {
+  if (nBankFee[ifaceIndex] > 10.0) {
     if (bal > nBankFee[ifaceIndex]) {
       if (0 == addblockreward(ifaceIndex, "bank", nBankFee[ifaceIndex])) {
         sprintf(buf, "(%s) commit_payout: 'bank' account tax'd %f coins.\n", iface->name, nBankFee[ifaceIndex]); 
@@ -800,25 +800,18 @@ int is_stratum_task_pending(int *ret_iface)
     if (ret_iface)
       *ret_iface = ifaceIndex;
 
-#if 0
-    sprintf(errbuf, "(%s) is_stratum_task_pending: new block detected at height %d", iface->name, (int)block_height);
-    shcoind_log(errbuf);
-#endif
-
     return (TRUE);
   }
 
   return (FALSE);
 }
 
-/**
- * @note This function is spaced 1 second apart being called intentionally as to avoid producing orphans.
- */
 void stratum_task_gen(task_attr_t *attr)
 {
   task_t *task;
   scrypt_peer peer;
   unsigned int last_nonce;
+	char ebuf[256];
   int time;
   int err;
 
@@ -829,6 +822,7 @@ void stratum_task_gen(task_attr_t *attr)
   /* notify subscribed clients of new task. */
   stratum_user_broadcast_task(task, attr);
 
+	/* cpuminer (8 cycles) */
   stratum_task_work(task, attr);
 
   task_free(&task);

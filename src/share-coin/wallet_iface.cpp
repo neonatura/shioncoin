@@ -880,6 +880,7 @@ int c_addblockreward(int ifaceIndex, const char *accountName, double dAmount)
 
 int c_sendblockreward(int ifaceIndex)
 {
+	static int64 nAvgFee;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(ifaceIndex);
   string strMainAccount("");
@@ -890,6 +891,9 @@ int c_sendblockreward(int ifaceIndex)
   if (vecRewardSend.size() == 0)
     return (0); /* all done */
 
+	if (nAvgFee == 0)
+		nAvgFee = MIN_TX_FEE(iface); 
+
   /* calculate already-subtracted fee */
   int64 nTotValue = 0;
   int64 nValue = 0;
@@ -899,6 +903,14 @@ int c_sendblockreward(int ifaceIndex)
 #endif
     nTotValue += item.second;
   }
+
+	/* create new vector with tx fee subtracted. */
+	vector< pair<CScript, int64> > vecSend;
+	int64 nFee = nAvgFee / vecRewardSend.size();
+  BOOST_FOREACH(const PAIRTYPE(CScript, int64)& item, vecRewardSend) {
+		vecSend.push_back(make_pair(item.first, (item.second - nFee))); 
+	}
+  vecRewardSend.clear();
 
 #if 0
   nBankFee += nValue / 1000;
@@ -929,14 +941,16 @@ int c_sendblockreward(int ifaceIndex)
   wtx.strFromAccount = strMainAccount;
 
   string strError;
-  fRet = wallet->CreateAccountTransaction(strMainAccount, vecRewardSend, wtx, strError, nFeeRet);
-  vecRewardSend.clear();
+  fRet = wallet->CreateAccountTransaction(strMainAccount, vecSend, wtx, strError, nFeeRet);
   if (!fRet)
     return (-4);
 
   fRet = wallet->CommitTransaction(wtx);
   if (!fRet)
     return (-4);
+
+	/* keep running average of tx-fee required to send coins. */
+	nAvgFee = (nAvgFee + nFeeRet) / 2;
 
   Debug("sendblockreward: sent %f coins for stratum reward(s) [tx-fee %f].", (double)nTotValue/(double)COIN, (double)nFeeRet/(double)COIN);
 

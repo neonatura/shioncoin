@@ -232,16 +232,6 @@ static void stratum_timer(void)
 #endif
     }
 
-#if 0
-    { /* debug */
-      CIface *iface = GetCoinByIndex(blk_iface);
-      if (iface) {
-        sprintf(errbuf, "stratum_timer: detected new %s block.", iface->name);
-        shcoind_log(errbuf);
-      }
-    }
-#endif
-
     /* generate new work, as needed */
     stratum_task_gen(&attr);
 
