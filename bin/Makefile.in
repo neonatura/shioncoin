@@ -79,11 +79,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@USDE_SERVICE_TRUE@am__append_1 = .usde$(EXEEXT)
-@EMC2_SERVICE_TRUE@am__append_2 = .emc2$(EXEEXT)
+@HAVE_GIT_TRUE@am__append_1 = ChangeLog
+@USDE_SERVICE_TRUE@am__append_2 = .usde$(EXEEXT)
+@EMC2_SERVICE_TRUE@am__append_3 = .emc2$(EXEEXT)
 subdir = bin
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/build-aux/depcomp
+	$(top_srcdir)/build-aux/depcomp ChangeLog
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac-path-kernel-source.m4 \
 	$(top_srcdir)/m4/largefile.m4 $(top_srcdir)/m4/libtool.m4 \
@@ -253,6 +254,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SYSTEMCTL = @SYSTEMCTL@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
@@ -319,8 +321,8 @@ version_info = @version_info@
 version_patch = @version_patch@
 with_kernel = @with_kernel@
 with_kerneldir = @with_kerneldir@
-noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXEEXT)
-noinst_SCRIPTS = $(am__append_1) $(am__append_2)
+noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXEEXT) 
+noinst_SCRIPTS = $(am__append_1) $(am__append_2) $(am__append_3)
 all: all-am
 
 .SUFFIXES:
@@ -605,6 +607,8 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am
 
+@HAVE_GIT_TRUE@ChangeLog:
+@HAVE_GIT_TRUE@	git --git-dir ../.git log > ChangeLog || touch ChangeLog
 
 @USDE_SERVICE_TRUE@.usde$(EXEEXT):
 @USDE_SERVICE_TRUE@	ln -sf $(top_builddir)/src/coin-console/usde$(EXEEXT)

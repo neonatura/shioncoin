@@ -140,8 +140,9 @@ static int _bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_po
   for (i = len; i >= 0; i--) {
     if (idx[i].size == 0) continue;
 
-    if (bc_table_hash(idx[i].hash) == tab_hash)
-      pos_high = MAX(pos_high, i);
+		if (i > pos_high &&
+				bc_table_hash(idx[i].hash) == tab_hash)
+      pos_high = i;
 
     if (bc_hash_cmp(hash, idx[i].hash))
       break;

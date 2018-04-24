@@ -233,6 +233,10 @@ AC_CHECK_FUNCS([mpn_copyi])
 
 AC_CHECK_LIB([crypto], [BN_new])
 
+AC_CHECK_PROGS([SYSTEMCTL], [systemctl])
+AM_CONDITIONAL([HAVE_SYSTEMCTL], [test -n "$SYSTEMCTL"])
+
+
 #AC_CHECK_LIB([ssl], [SSL_version], ,
 #  AC_MSG_ERROR("libssl (crypt library) is required")
 #)
@@ -245,11 +249,12 @@ AC_ARG_WITH([libshare],
   [specify a path to the libshare build directory])],
   [],
   [with_libshare=yes])
+AC_CHECK_PROGS([GIT], [git])
+AM_CONDITIONAL([HAVE_GIT], [test -n "$GIT"])
 LIBSHARE=
 AS_IF([test "x$with_libshare" = "xyes"],
   AC_CHECK_LIB([share_sexe], [sexe_exec_prun],
     AC_DEFINE_UNQUOTED([HAVE_LIBSHARE], [1], [Define if you have the libshare library installed]),
-    AC_CHECK_PROGS([GIT], [git])
     [with_libshare=../../depend/share/build]
   )
 )

@@ -1,7 +1,13 @@
 
 
-noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXEEXT)
+noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXEEXT) 
 noinst_SCRIPTS =
+
+if HAVE_GIT
+noinst_SCRIPTS += ChangeLog
+ChangeLog:
+	git --git-dir ../.git log > ChangeLog || touch ChangeLog
+endif
 
 if USDE_SERVICE
 noinst_SCRIPTS += .usde$(EXEEXT)

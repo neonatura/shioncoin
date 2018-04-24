@@ -195,6 +195,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SYSTEMCTL = @SYSTEMCTL@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
@@ -457,7 +458,7 @@ uninstall-am:
 @GIT_LIBSHARE_TRUE@share:
 @GIT_LIBSHARE_TRUE@	git clone https://github.com/neonatura/share
 @GIT_LIBSHARE_TRUE@	mkdir -p share/build
-@GIT_LIBSHARE_TRUE@	cd share/build && ../configure --disable-java && make
+@GIT_LIBSHARE_TRUE@	cd share/build && ../configure && make
 @GIT_LIBSHARE_TRUE@clean-local:
 @GIT_LIBSHARE_TRUE@	rm -rf share
 

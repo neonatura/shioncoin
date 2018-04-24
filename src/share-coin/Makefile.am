@@ -294,42 +294,22 @@ shcoind_LDADD += -lshare -lshare_sexe
 endif
 shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
 
-
-
-
-if HAVE_INITD_DIR
-EXTRA_DIST = $(top_builddir)/scripts/initd/shcoind
+if HAVE_SYSTEMCTL
+SYSD_FILE = /etc/systemd/system/shcoind.service
 
 install-exec-hook:
-	[ "`grep ^shc /etc/services`" != "" ] || echo "shc             24104/tcp       shcoind # SHC virtual currency" >> /etc/services
-	rm -f $(INITD_DIR)/init.d/shcoind  
-	rm -f $(INITD_DIR)/rc3.d/S87shcoind  
-	rm -f $(INITD_DIR)/rc3.d/K87shcoind  
-	rm -f $(INITD_DIR)/rc4.d/S87shcoind  
-	rm -f $(INITD_DIR)/rc4.d/K87shcoind  
-	rm -f $(INITD_DIR)/rc5.d/S87shcoind  
-	rm -f $(INITD_DIR)/rc5.d/K87shcoind  
-	cp $(top_builddir)/scripts/initd/shcoind $(INITD_DIR)/init.d/
-	cd $(INITD_DIR)/rc3.d && $(LN_S) ../init.d/shcoind S87shcoind
-	cd $(INITD_DIR)/rc3.d && $(LN_S) ../init.d/shcoind K87shcoind
-	cd $(INITD_DIR)/rc4.d && $(LN_S) ../init.d/shcoind S87shcoind
-	cd $(INITD_DIR)/rc4.d && $(LN_S) ../init.d/shcoind K87shcoind
-	cd $(INITD_DIR)/rc5.d && $(LN_S) ../init.d/shcoind S87shcoind
-	cd $(INITD_DIR)/rc5.d && $(LN_S) ../init.d/shcoind K87shcoind
+	echo "[Unit]" > $(SYSD_FILE) 
+	echo "Description=ShareCoin" >> $(SYSD_FILE) 
+	echo "After=network.target" >> $(SYSD_FILE) 
+	echo "[Service]" >> $(SYSD_FILE) 
+	echo "ExecStart=$(sbindir)/shcoind -nf" >> $(SYSD_FILE)
+	systemctl daemon-reload 
+	@echo "Run 'systemctl enable shcoind' to enable on startup."
 
 uninstall-hook:
-	rm -f $(INITD_DIR)/init.d/shcoind  
-	rm -f $(INITD_DIR)/rc3.d/S87shcoind  
-	rm -f $(INITD_DIR)/rc3.d/K87shcoind  
-	rm -f $(INITD_DIR)/rc4.d/S87shcoind  
-	rm -f $(INITD_DIR)/rc4.d/K87shcoind  
-	rm -f $(INITD_DIR)/rc5.d/S87shcoind  
-	rm -f $(INITD_DIR)/rc5.d/K87shcoind  
-else
-install-exec-hook:
-	[ "`grep ^shc /etc/services`" != "" ] || echo "shc             24104/tcp       shcoind # SHC virtual currency" >> /etc/services
+	rm -f $(SYSD_FILE)
+	systemctl daemon-reload 
 endif
-
 
 if DEBUG
 CFLAGS += -g3 

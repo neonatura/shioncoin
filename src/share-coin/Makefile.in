@@ -752,6 +752,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SYSTEMCTL = @SYSTEMCTL@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
@@ -1077,7 +1078,7 @@ shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
 	-lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
 @STATIC_LIBSHARE_TRUE@shcoind_CFLAGS = -I$(LIBSHARE)/include
 @STATIC_LIBSHARE_TRUE@shcoind_CXXFLAGS = -I$(LIBSHARE)/include
-@HAVE_INITD_DIR_TRUE@EXTRA_DIST = $(top_builddir)/scripts/initd/shcoind
+@HAVE_SYSTEMCTL_TRUE@SYSD_FILE = /etc/systemd/system/shcoind.service
 all: all-am
 
 .SUFFIXES:
@@ -4805,7 +4806,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@HAVE_INITD_DIR_FALSE@uninstall-hook:
+@HAVE_SYSTEMCTL_FALSE@install-exec-hook:
+@HAVE_SYSTEMCTL_FALSE@uninstall-hook:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
@@ -4898,33 +4900,18 @@ uninstall-am: uninstall-sbinPROGRAMS
 	uninstall-sbinPROGRAMS
 
 
-@HAVE_INITD_DIR_TRUE@install-exec-hook:
-@HAVE_INITD_DIR_TRUE@	[ "`grep ^shc /etc/services`" != "" ] || echo "shc             24104/tcp       shcoind # SHC virtual currency" >> /etc/services
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/init.d/shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc3.d/S87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc3.d/K87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc4.d/S87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc4.d/K87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc5.d/S87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc5.d/K87shcoind  
-@HAVE_INITD_DIR_TRUE@	cp $(top_builddir)/scripts/initd/shcoind $(INITD_DIR)/init.d/
-@HAVE_INITD_DIR_TRUE@	cd $(INITD_DIR)/rc3.d && $(LN_S) ../init.d/shcoind S87shcoind
-@HAVE_INITD_DIR_TRUE@	cd $(INITD_DIR)/rc3.d && $(LN_S) ../init.d/shcoind K87shcoind
-@HAVE_INITD_DIR_TRUE@	cd $(INITD_DIR)/rc4.d && $(LN_S) ../init.d/shcoind S87shcoind
-@HAVE_INITD_DIR_TRUE@	cd $(INITD_DIR)/rc4.d && $(LN_S) ../init.d/shcoind K87shcoind
-@HAVE_INITD_DIR_TRUE@	cd $(INITD_DIR)/rc5.d && $(LN_S) ../init.d/shcoind S87shcoind
-@HAVE_INITD_DIR_TRUE@	cd $(INITD_DIR)/rc5.d && $(LN_S) ../init.d/shcoind K87shcoind
+@HAVE_SYSTEMCTL_TRUE@install-exec-hook:
+@HAVE_SYSTEMCTL_TRUE@	echo "[Unit]" > $(SYSD_FILE) 
+@HAVE_SYSTEMCTL_TRUE@	echo "Description=ShareCoin" >> $(SYSD_FILE) 
+@HAVE_SYSTEMCTL_TRUE@	echo "After=network.target" >> $(SYSD_FILE) 
+@HAVE_SYSTEMCTL_TRUE@	echo "[Service]" >> $(SYSD_FILE) 
+@HAVE_SYSTEMCTL_TRUE@	echo "ExecStart=$(sbindir)/shcoind -nf" >> $(SYSD_FILE)
+@HAVE_SYSTEMCTL_TRUE@	systemctl daemon-reload 
+@HAVE_SYSTEMCTL_TRUE@	@echo "Run 'systemctl enable shcoind' to enable on startup."
 
-@HAVE_INITD_DIR_TRUE@uninstall-hook:
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/init.d/shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc3.d/S87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc3.d/K87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc4.d/S87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc4.d/K87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc5.d/S87shcoind  
-@HAVE_INITD_DIR_TRUE@	rm -f $(INITD_DIR)/rc5.d/K87shcoind  
-@HAVE_INITD_DIR_FALSE@install-exec-hook:
-@HAVE_INITD_DIR_FALSE@	[ "`grep ^shc /etc/services`" != "" ] || echo "shc             24104/tcp       shcoind # SHC virtual currency" >> /etc/services
+@HAVE_SYSTEMCTL_TRUE@uninstall-hook:
+@HAVE_SYSTEMCTL_TRUE@	rm -f $(SYSD_FILE)
+@HAVE_SYSTEMCTL_TRUE@	systemctl daemon-reload 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
