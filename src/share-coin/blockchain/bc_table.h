@@ -33,18 +33,19 @@ extern "C" {
 #endif
  
 
-#define BC_TABLE_SIZE 262144
+//#define BC_TABLE_SIZE 262144 /* 64bit */
+#define BC_TABLE_SIZE 1048576 /* 4meg "tmp" table file */
 
-#define BC_TABLE_POS_MASK 0xFFFFFFFFFFFFFFF0
-#define BC_TABLE_NULL_POS 0xFFFFFFFFFFFFFFF1
+#define BC_TABLE_POS_MASK 0xFFFFFFF0
+#define BC_TABLE_NULL_POS 0xFFFFFFF1
 #define BC_TABLE_SEARCH_POS 0x0
 
-#define BC_TABLE_EXTENSION "tab"
+#define BC_TABLE_EXTENSION "tmp"
 
 
-int bc_table_find(bc_t *bc, bc_hash_t hash, uint64_t *ret_pos);
+int bc_table_find(bc_t *bc, bc_hash_t hash, bcpos_t *ret_pos);
 
-int bc_table_set(bc_t *bc, bc_hash_t hash, uint64_t pos);
+int bc_table_set(bc_t *bc, bc_hash_t hash, bcpos_t pos);
 
 
 /** Remove a hash from the index table. */
@@ -54,7 +55,7 @@ int bc_table_unset(bc_t *bc, bc_hash_t hash);
 int bc_table_reset(bc_t *bc, bc_hash_t hash);
 
 /** Obtain a reference to the index position table value */
-uint64_t *bc_table_pos(bc_t *bc, bc_hash_t hash);
+bcpos_t *bc_table_pos(bc_t *bc, bc_hash_t hash);
 
 /** Obtain a hash code identifying the table entry. */
 int bc_table_hash(bc_hash_t hash);

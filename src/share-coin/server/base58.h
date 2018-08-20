@@ -229,6 +229,7 @@ public:
 
       switch (ifaceIndex) {
         case SHC_COIN_IFACE:
+        case TESTNET_COIN_IFACE:
           return (PUBKEY_S_ADDRESS);
         case EMC2_COIN_IFACE:
           return (PUBKEY_E_ADDRESS);

@@ -23,16 +23,23 @@
  *  @endcopyright
  */  
 
-#define __STRATUM__USER_C__
-
 #include "shcoind.h"
-#include <math.h>
 #include "stratum/stratum.h"
+#include <math.h>
 
+/* maximum stratum connections per origin IP address. */
 #define MAX_STRATUM_USERS 32
+
+/* minimum difficulty for a single share to be considered valid. */
 #define MIN_SHARE_DIFFICULTY 0.03125 /* diff 1 */
 
+/* minimum miner work difficulty permitted. */
+#define MIN_USER_WORK_DIFFICULTY 128
 
+/* maximum miner work difficulty permitted. */
+#define MAX_USER_WORK_DIFFICULTY 1024000
+
+/* stratum connection user flags */
 #define MAX_USER_FLAGS 8
 static const char *user_flag_label[MAX_USER_FLAGS] = {
   "system",
@@ -181,8 +188,6 @@ user_t *stratum_user(user_t *user, char *username)
   return (user);
 }
 
-
-
 user_t *stratum_user_init(int fd)
 {
   struct sockaddr_in *addr;
@@ -269,11 +274,11 @@ void stratum_user_block(user_t *user, double share_diff)
 
     user->block_freq = (span + user->block_freq) / 2;
     if (user->block_freq < 1) { 
-      if (user->work_diff < 16384)
-        stratum_set_difficulty(user, user->work_diff + 16);
-    } else if (user->block_freq > 128) { 
-      if (user->work_diff > 128)
-        stratum_set_difficulty(user, user->work_diff - 8);
+      if (user->work_diff < MAX_USER_WORK_DIFFICULTY)
+        stratum_set_difficulty(user, user->work_diff + 64);
+    } else if (user->block_freq > 120) {
+      if (user->work_diff > MIN_USER_WORK_DIFFICULTY)
+        stratum_set_difficulty(user, user->work_diff - 64);
     }
   }
   user->block_tm = cur_t;

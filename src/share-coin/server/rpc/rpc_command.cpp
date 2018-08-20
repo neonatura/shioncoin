@@ -696,7 +696,15 @@ Value rpc_sys_config(CIface *iface, const Array& params, bool fStratum)
   add_sys_config_opt_bool(obj, OPT_PEER_SEED);
   add_sys_config_opt_num(obj, OPT_BAN_SPAN);
   add_sys_config_opt_num(obj, OPT_BAN_THRESHOLD);
+  add_sys_config_opt_bool(obj, OPT_ADMIN);
+#ifdef RPC_SERVICE
+  add_sys_config_opt_bool(obj, OPT_SERV_RPC);
   add_sys_config_opt_num(obj, OPT_RPC_PORT);
+#endif
+#ifdef RPC_SERVICE
+  add_sys_config_opt_bool(obj, OPT_SERV_STRATUM);
+  add_sys_config_opt_num(obj, OPT_STRATUM_PORT);
+#endif
 
   return obj;
 }
@@ -2097,133 +2105,7 @@ Value rpc_wallet_recvbyaddr(CIface *iface, const Array& params, bool fStratum)
 
 void ResetServiceWalletEvent(CWallet *wallet);
 
-#if 0
-Value rpc_wallet_rescan(CIface *iface, const Array& params, bool fStratum)
-{
-  CWallet *wallet = GetWallet(iface);
-  int ifaceIndex = GetCoinIndex(iface);
-  vector<uint256> hash_list;
-  tx_cache inputs;
-  uint256 bhash;
-  uint64_t bestHeight;
-  uint64_t minTime;
-  uint64_t minHeight;
-
-  if (fStratum)
-    throw runtime_error("unsupported operation");
-  if (fHelp || params.size() != 0)
-    throw runtime_error("wallet.rescan\nRescan coin inputs associated with local wallet transactions.\n");
-
-  bestHeight = GetBestHeight(iface);
-  minHeight = bestHeight + 1;
-  minTime = time(NULL) + 1;
-
-  /* scan wallet's 'previous hiearchy' */
-  for (map<uint256, CWalletTx>::const_iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it)
-  {
-    const CWalletTx& pcoin = (*it).second;
-    const uint256& pcoin_hash = pcoin.GetHash();
-    uint256 bhash = 0;
-
-    const CTransaction& pcoin_tx = (CTransaction)pcoin;
-    inputs[pcoin_hash] = pcoin_tx;
-
-#if 0
-    BOOST_FOREACH(const CTxIn& txin, pcoin.vin) {
-      CTransaction tx;
-      if (inputs.count(txin.prevout.hash) != 0) {
-        tx = inputs[txin.prevout.hash];
-      } else if (::GetTransaction(iface, txin.prevout.hash, tx, &bhash)) {
-        inputs[txin.prevout.hash] = tx;
-      } else {
-        /* unknown */
-        continue;
-      }
-
-      wallet->FillInputs(tx, inputs);
-    }
-#endif
-
-    if (bhash != 0 && 
-        find(hash_list.begin(), hash_list.end(), bhash) != hash_list.end()) {
-        hash_list.insert(hash_list.end(), bhash);
-    }
-  }
-
-  /* scan wallet's 'next hiearchy' */
-  for (tx_cache::iterator it = inputs.begin(); it != inputs.end(); ++it) {
-    CTransaction& tx = (*it).second;
-    vector<uint256> vOuts;
-
-    if (!tx.ReadCoins(ifaceIndex, vOuts))
-      continue; /* unknown */
-    if (tx.vout.size() > vOuts.size())
-      continue; /* invalid */
-
-    
-    BOOST_FOREACH(const uint256& tx_hash, vOuts) {
-      if (find(hash_list.begin(), hash_list.end(), bhash) != hash_list.end())
-				continue; /* dup */
-
-      uint256 bhash;
-      if (!::GetTransaction(iface, tx_hash, tx, &bhash)) 
-        continue;
-
-      if (inputs.count(tx_hash) == 0)
-        inputs[tx_hash] = tx;
-      //if (find(hash_list.begin(), hash_list.end(), bhash) != hash_list.end())
-			hash_list.insert(hash_list.end(), bhash);
-
-#if 0
-			wallet->FillInputs(tx, inputs);
-#endif
-    }
-  }
-
-  /* add any missing wallet tx's */
-  for (tx_cache::const_iterator it = inputs.begin(); it != inputs.end(); ++it) {
-    const uint256& tx_hash = (*it).first;
-		if (wallet->mapWallet.count(tx_hash))
-			continue;
-
-    const CTransaction& tx = (*it).second;
-    wallet->AddToWalletIfInvolvingMe(tx, NULL, true);
-  }
-
-  /* find earliest block inovolved. */
-  BOOST_FOREACH(const uint256& bhash, hash_list) {
-    CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, bhash);
-    if (!pindex) continue; /* unknown */ 
-
-    if (pindex->nHeight < minHeight)
-      minHeight = pindex->nHeight;
-    if (pindex->nTime < minTime)
-      minTime = pindex->nTime;
-  }
-
-  minHeight = MIN(bestHeight, minHeight);
-  if (minHeight != bestHeight) {
-    /* reset wallet-scan event state */
-    ResetServiceWalletEvent(wallet);
-    /* scan entire chain for corrections to wallet & coin-db. */
-    InitServiceWalletEvent(wallet, minHeight);
-  }
-
-  Object ret;
-  ret.push_back(Pair("scan-height", minHeight));
-#if 0
-  if (minHeight != bestHeight) {
-    ret.push_back(Pair("min-stamp", ToValue_date_format((time_t)minTime)));
-    ret.push_back(Pair("min-time", minTime));
-  }
-#endif
-  ret.push_back(Pair("prescan-tx", (int)inputs.size()));
-  ret.push_back(Pair("wallet-tx", (int)wallet->mapWallet.size()));
-
-  return (ret);
-}
-#endif
-Value rpc_wallet_rescan(CIface *iface, const Array& params, bool fStratum)
+Value rpc_wallet_verify(CIface *iface, const Array& params, bool fStratum)
 {
   CWallet *wallet = GetWallet(iface);
   Object ret;
@@ -2239,7 +2121,7 @@ Value rpc_wallet_rescan(CIface *iface, const Array& params, bool fStratum)
   if (fStratum)
     throw runtime_error("unsupported operation");
   if (fHelp || params.size() > 1)
-    throw runtime_error("wallet.rescan [<depth>]\nRescan coin inputs associated with local wallet transactions.\n");
+    throw runtime_error("wallet.verify [<depth>]\nRescan coin inputs associated with local wallet transactions.\n");
 
   if (params.size() == 1)
     nDepth = params[0].get_int();
@@ -4165,6 +4047,27 @@ Value rpc_block_verify(CIface *iface, const Array& params, bool fStratum)
   return (obj);
 }
 
+Value rpc_block_mine(CIface *iface, const Array& params, bool fStratum)
+{
+
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+
+  if (fHelp || params.size() > 1)
+    throw runtime_error(
+        "block.mine <iterations>\n"
+        "Mine a block on the block-chain. (default: 1024).\n");
+
+	uint64_t nIncr = 1024;
+	if (params.size() > 0) {
+		nIncr = (uint64_t)params[0].get_int();
+	}
+
+	InitServiceMinerEvent(GetCoinIndex(iface), nIncr);
+	
+	return (Value::null);
+}
+
 
 
 //
@@ -4430,6 +4333,12 @@ const RPCOp BLOCK_VERIFY = {
   "Default: 1024 blocks\n"
   "Verify a set of blocks from the tail of the block-chain."
 };
+const RPCOp BLOCK_MINE = {
+  &rpc_block_mine, 0, {RPC_INT64},
+  "Default: 1024 intervals\n"
+  "Mine a block on the block-chain with an ongoing event.\n"
+  "Note: Intended primary for use with the testnet network."
+};
 const RPCOp BLOCK_WORK = {
   &rpc_block_work, 0, {RPC_STRING},
   "Syntax: <data>\n"
@@ -4656,8 +4565,8 @@ const RPCOp WALLET_RECVBYADDR = {
   "Syntax: <coin-address> [minconf=1]\n"
   "Returns the total amount received by <coin-address> in transactions with at least [minconf] confirmations."
 };
-const RPCOp WALLET_RESCAN = {
-  &rpc_wallet_rescan, 1, {RPC_INT64},
+const RPCOp WALLET_VERIFY = {
+  &rpc_wallet_verify, 1, {RPC_INT64},
   "Syntax: [<depth>]\n"
   "Rescan the block-chain for personal wallet transactions."
 };
@@ -4781,6 +4690,8 @@ void RegisterRPCOpDefaults(int ifaceIndex)
 
   RegisterRPCOp(ifaceIndex, "block.verify", BLOCK_VERIFY);
 
+  RegisterRPCOp(ifaceIndex, "block.mine", BLOCK_MINE);
+
   RegisterRPCOp(ifaceIndex, "block.work", BLOCK_WORK);
   RegisterRPCAlias(ifaceIndex, "getwork", BLOCK_WORK);
 
@@ -4889,7 +4800,7 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "wallet.recvbyaddr", WALLET_RECVBYADDR);
   RegisterRPCAlias(ifaceIndex, "getreceivedbyaddr", WALLET_RECVBYADDR);
 
-  RegisterRPCOp(ifaceIndex, "wallet.rescan", WALLET_RESCAN);
+  RegisterRPCOp(ifaceIndex, "wallet.verify", WALLET_VERIFY);
 
   RegisterRPCOp(ifaceIndex, "wallet.send", WALLET_SEND);
   RegisterRPCAlias(ifaceIndex, "sendfrom", WALLET_SEND);

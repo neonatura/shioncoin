@@ -83,6 +83,7 @@ class CAsset : public CCert
 
     CAsset operator=(const CAsset &b)
     {
+			SetNull();
       Init(b);
       return (*this);
     }

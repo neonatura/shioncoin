@@ -41,6 +41,9 @@
 #define BC_MAP_BLOCK_SIZE 16384
 #endif
 
+#define MAX_BC_MAP_SIZE 0xFFFFFFF0
+
+
 static int bc_iface_index(char *name)
 {
   int idx;
@@ -167,6 +170,9 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
 
   map_of = 0;
   size = st.st_size / BC_MAP_BLOCK_SIZE * BC_MAP_BLOCK_SIZE;
+	if (size >= MAX_BC_MAP_SIZE)
+		return (SHERR_OVERFLOW);
+
   if (!map->hdr) { /* map has not been allocated */
     bc_hdr_t hdr;
 

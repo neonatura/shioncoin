@@ -1,0 +1,1 @@
+sxc -o ShareEvent.sx BaseObject.lua BaseContext.lua BaseEvent.lua ShareEvent.lua

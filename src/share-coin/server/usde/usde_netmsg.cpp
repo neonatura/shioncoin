@@ -438,7 +438,7 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
     for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
     {
-      const CInv &inv = vInv[nInv];
+      CInv &inv = vInv[nInv];
 
       inv.ifaceIndex = USDE_COIN_IFACE;
 

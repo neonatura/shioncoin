@@ -628,8 +628,7 @@ int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalle
 #endif
   CTxCreator s_wtx(wallet, strAccount);
 
-  uint160 deprec_hash;
-  CAlias *alias = s_wtx.CreateAlias(strTitle, deprec_hash);
+  CAlias *alias = s_wtx.CreateAlias(strTitle);
   if (!alias)
     return (SHERR_INVAL);
 

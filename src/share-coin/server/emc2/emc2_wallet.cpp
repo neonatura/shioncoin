@@ -141,7 +141,7 @@ bool emc2_LoadWallet(void)
     Debug("(ecm2) LoadWallet: Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
     nStart = GetTimeMillis();
     emc2Wallet->ScanForWalletTransactions(pindexRescan, true);
-    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+//    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
 
   emc2_UpgradeWallet();

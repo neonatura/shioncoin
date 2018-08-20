@@ -123,15 +123,12 @@ int bc_arch_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_arch, bcsize_t *ret_pos
   return (SHERR_NOENT);
 }
 
-int bc_arch_get(bc_t *bc, bcsize_t pos, bc_idx_t *ret_arch)
+int bc_arch_get(bc_t *bc, bcpos_t pos, bc_idx_t *ret_arch)
 {
   bc_idx_t *arch;
   int err;
 
   if (!bc)
-    return (SHERR_INVAL);
-
-  if (pos < 0)
     return (SHERR_INVAL);
 
   err = bc_arch_open(bc);
@@ -155,31 +152,31 @@ int bc_arch_get(bc_t *bc, bcsize_t pos, bc_idx_t *ret_arch)
 /**
  * @returns The next record index.
  */
-bcsize_t bc_arch_next(bc_t *bc)
+int bc_arch_next(bc_t *bc, bcpos_t *pos_p)
 {
   bc_idx_t *arch;
   int err;
-
-  if (!bc)
-    return (SHERR_INVAL);
 
   err = bc_arch_open(bc);
   if (err)
     return (err);
 
-  return MAX(0, (bc->arch_map.hdr->of / sizeof(bc_idx_t)));
+	if (pos_p)
+		*pos_p = bc->arch_map.hdr->of / sizeof(bc_idx_t);
+
+	return (0);
 }
 
 /**
  * @todo consider clearing indexes which are brought back into main chain.
  */
-int bc_arch_set(bc_t *bc, bcsize_t pos, bc_idx_t *arch)
+int bc_arch_set(bc_t *bc, bcpos_t pos, bc_idx_t *arch)
 {
   bc_idx_t *f_arch;
   bcsize_t of;
   int err;
 
-  if (!bc || pos < 0) {
+  if (!bc) {
     return (SHERR_INVAL);
   }
 
@@ -211,6 +208,13 @@ int bc_arch_set(bc_t *bc, bcsize_t pos, bc_idx_t *arch)
 
 int bc_arch_add(bc_t *bc, bc_idx_t *arch)
 {
-  return (bc_arch_set(bc, bc_arch_next(bc), arch));
+	bcpos_t pos;
+	int err;
+
+	err = bc_arch_next(bc, &pos);
+	if (err)
+		return (err);
+
+  return (bc_arch_set(bc, pos, arch));
 }
 

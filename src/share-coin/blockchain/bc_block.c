@@ -285,12 +285,19 @@ static int _bc_write(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int
   /* store fresh block index */
   err = bc_idx_set(bc, pos, &idx);
   if (err) { 
-    if (err == SHERR_EXIST) {
-      /* record already existed */
-      err = _bc_rewrite(bc, pos, hash, raw_data, data_len); 
-    }
-    if (err)
+    if (err != SHERR_EXIST) {
+      sprintf(errbuf, "bc_write: error: bc_idx_set failure: %s.", sherrstr(err));
+      shcoind_log(errbuf);
+			return (err);
+		}
+
+		/* record already existed */
+		err = _bc_rewrite(bc, pos, hash, raw_data, data_len); 
+    if (err) {
+      sprintf(errbuf, "bc_write: error: bc_rewrite failure: %s.", sherrstr(err));
+      shcoind_log(errbuf);
       return (err);
+		}
   } else {
     /* store serialized block data */
     err = bc_map_append(bc, map, data, data_len);
@@ -328,7 +335,7 @@ static int _bc_append(bc_t *bc, bc_hash_t hash, void *data, size_t data_len)
   bc_idx_t idx;
   bc_map_t *map;
   char errbuf[256];
-  int pos;
+	bcpos_t pos;
   int err;
 
   err = bc_idx_open(bc);
@@ -338,11 +345,11 @@ static int _bc_append(bc_t *bc, bc_hash_t hash, void *data, size_t data_len)
     return (err);
   }
 
-  pos = bc_idx_next(bc);
-  if (pos < 0) {
+	err = bc_idx_next(bc, &pos);
+	if (err) {
     sprintf(errbuf, "bc_append: error positioning map index: %s.", sherrstr(err));
     shcoind_log(errbuf);
-    return (pos);
+    return (err);
   }
 
   err = bc_write(bc, pos, hash, data, data_len);
@@ -352,7 +359,7 @@ static int _bc_append(bc_t *bc, bc_hash_t hash, void *data, size_t data_len)
     return (err); 
   }
 
-  return (pos);
+  return (0);
 }
 
 int bc_append(bc_t *bc, bc_hash_t hash, void *data, size_t data_len)
@@ -370,7 +377,7 @@ int bc_append(bc_t *bc, bc_hash_t hash, void *data, size_t data_len)
 /**
  * Fills a pre-allocated binary segment with a specified size from a specified record position.
  */
-static int _bc_read(bc_t *bc, int pos, void *data, bcsize_t data_len)
+static int _bc_read(bc_t *bc, bcsize_t pos, void *data, bcsize_t data_len)
 {
   bc_map_t *map;
   bc_idx_t idx;
@@ -386,7 +393,7 @@ static int _bc_read(bc_t *bc, int pos, void *data, bcsize_t data_len)
   /* ensure journal is allocated */
   err = bc_alloc(bc, idx.jrnl);
   if (err) {
-    sprintf(errbuf, "bc_read: error allocating journal: %s.", sherrstr(err));
+    sprintf(errbuf, "bc_read: error allocating journal (%s): %s.", bc->name, sherrstr(err));
     shcoind_log(errbuf);
     return (err);
   }
@@ -395,6 +402,11 @@ static int _bc_read(bc_t *bc, int pos, void *data, bcsize_t data_len)
   data_len = MIN(data_len, idx.size); 
   
   map = bc->data_map + idx.jrnl;
+	if (idx.of >= map->size) {
+    sprintf(errbuf, "bc_read: error: invalid record offset %u [max %u]\n", idx.of, map->size);
+    shcoind_err(SHERR_ILSEQ, "bc_read", errbuf);
+		return (SHERR_IO);
+	}
 
   if (shcrc32(map->raw + idx.of, idx.size) != idx.crc) {
     sprintf(errbuf, "bc_read: error: invalid crc {map: %x, idx: %x} mismatch at pos %d\n", shcrc32(map->raw + idx.of, idx.size), idx.crc, pos);
@@ -407,7 +419,7 @@ static int _bc_read(bc_t *bc, int pos, void *data, bcsize_t data_len)
   return (0);
 }
 
-int bc_read(bc_t *bc, int pos, void *data, bcsize_t data_len)
+int bc_read(bc_t *bc, bcsize_t pos, void *data, bcsize_t data_len)
 {
   shkey_t *key;
   int err;
@@ -425,7 +437,7 @@ int bc_read(bc_t *bc, int pos, void *data, bcsize_t data_len)
 /**
  * Obtains an allocated binary segment stored at the specified record position. 
  */
-static int _bc_get(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
+static int _bc_get(bc_t *bc, bcpos_t pos, unsigned char **data_p, size_t *data_len_p)
 {
   bc_idx_t idx;
   unsigned char *data;
@@ -469,7 +481,7 @@ static int _bc_get(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_
   return (0);
 }
 
-int bc_get(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
+int bc_get(bc_t *bc, bcpos_t pos, unsigned char **data_p, size_t *data_len_p)
 {
   int err;
 
@@ -539,7 +551,7 @@ int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
   return (0);
 }
 
-int bc_get_hash(bc_t *bc, bcsize_t pos, bc_hash_t ret_hash)
+int bc_get_hash(bc_t *bc, bcpos_t pos, bc_hash_t ret_hash)
 {
   bc_idx_t idx;
   int err;
@@ -556,7 +568,7 @@ int bc_get_hash(bc_t *bc, bcsize_t pos, bc_hash_t ret_hash)
 /** 
  * Obtains the record position for a particular hash.
  */
-int bc_find(bc_t *bc, bc_hash_t hash, int *pos_p)
+int bc_find(bc_t *bc, bc_hash_t hash, bcpos_t *pos_p)
 {
   int err;
 
@@ -578,6 +590,7 @@ static int _bc_purge(bc_t *bc, bcsize_t pos)
   bc_idx_t idx;
   bc_idx_t t_idx;
   char errbuf[256];
+	bcpos_t max_rec;
   int err;
   int i;
 
@@ -604,15 +617,20 @@ static int _bc_purge(bc_t *bc, bcsize_t pos)
   }
 
   /* clear index of remaining entries */
-  for (i = (bc_idx_next(bc)-1); i >= pos; i--) {
-    bc_clear(bc, i);
+	max_rec = 0;
+	bc_idx_next(bc, &max_rec);
+	if (max_rec) {
+		bcpos_t t_pos;
 
-    err = bc_idx_get(bc, pos, &t_idx);
-    if (!err) {
-      bc_table_reset(bc, t_idx.hash);
-    }
-//    bc_idx_clear(bc, i);
-  }
+		for (t_pos = (max_rec-1); t_pos >= pos; t_pos--) {
+			bc_clear(bc, t_pos);
+
+			err = bc_idx_get(bc, t_pos, &t_idx);
+			if (!err) {
+				bc_table_reset(bc, t_idx.hash);
+			}
+		}
+	}
 
 #if 0
   /* truncate journal at offset */
@@ -720,7 +738,7 @@ int bc_clear(bc_t *bc, bcsize_t pos)
 }
 
 
-static int _bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, int data_len)
+static int _bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, bcsize_t data_len)
 {
   unsigned char *data = (unsigned char *)raw_data;
   bcsize_t pos;
@@ -731,8 +749,11 @@ static int _bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, int data_len
   int err;
 
   /* use last journal */
-  jrnl = bc_journal(bc_idx_next(bc));
+	err = bc_idx_next(bc, &pos);
+	if (err)
+		return (err);
 
+  jrnl = bc_journal(pos);
   err = bc_alloc(bc, jrnl);
   if (err)
     return (err);
@@ -762,7 +783,7 @@ static int _bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, int data_len
   return (0);
 }
 
-int bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, int data_len)
+int bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, bcsize_t data_len)
 {
   int err;
 

@@ -53,6 +53,7 @@ using namespace boost;
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; /* (bytes) */
 static const unsigned int MAX_INV_SZ = 50000;
 
+static const unsigned int EMC2_MAX_HEADERS_RESULTS = 2000;
 
 extern CMedianFilter<int> cPeerBlockCounts;
 //extern map<uint256, CAlert> mapAlerts;
@@ -485,7 +486,7 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
     for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
     {
-      const CInv &inv = vInv[nInv];
+      CInv &inv = vInv[nInv];
 
       inv.ifaceIndex = EMC2_COIN_IFACE;
 
@@ -550,10 +551,15 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
           EMC2Block block;
           if (block.ReadFromDisk(pindex) && block.CheckBlock() &&
               pindex->nHeight <= GetBestHeight(EMC2_COIN_IFACE)) {
-            if (inv.type == MSG_BLOCK ||
-                inv.type == MSG_WITNESS_BLOCK ||
-                inv.type == MSG_CMPCT_BLOCK) {
+            if (inv.type == MSG_BLOCK) {
+              pfrom->PushBlock(block, SERIALIZE_TRANSACTION_NO_WITNESS);
+						} else if (inv.type == MSG_WITNESS_BLOCK) {
               pfrom->PushBlock(block);
+						} else if (inv.type == MSG_CMPCT_BLOCK) {
+							if (pfrom->fHaveWitness)
+								pfrom->PushBlock(block);
+							else
+								pfrom->PushBlock(block, SERIALIZE_TRANSACTION_NO_WITNESS);
             } else if (inv.type == MSG_FILTERED_BLOCK ||
                 inv.type == MSG_FILTERED_WITNESS_BLOCK) { /* bloom */
               LOCK(pfrom->cs_filter);
@@ -922,8 +928,30 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
   else if (strCommand == "blocktxn") {
     Debug("emc2_ProcessBlock: receveed 'blocktxn'");
   }
+
   else if (strCommand == "headers") {
-    Debug("emc2_ProcessBlock: receveed 'headers'");
+		std::vector<CBlockHeader> headers;
+
+		unsigned int nCount = ReadCompactSize(vRecv);
+		if (nCount > EMC2_MAX_HEADERS_RESULTS) {
+			return error(SHERR_INVAL, "headers message size = %u", nCount);
+		}
+		if (nCount == 0)
+			return (true); /* all good */
+
+		for (unsigned int n = 0; n < nCount; n++) {
+			vRecv >> headers[n];
+			ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+		}
+
+		int nFetchFlags = 0;
+		if ((COIN_SERVICES(iface) & NODE_WITNESS) && pfrom->fHaveWitness)
+			nFetchFlags |= MSG_WITNESS_FLAG;
+
+		for (unsigned int n = 0; n < nCount; n++) {
+			CInv inv(EMC2_COIN_IFACE, MSG_BLOCK | nFetchFlags, headers[n].GetHash()); 
+			pfrom->AskFor(inv);
+		}
   }
 
   else if (strCommand == "reject") { /* remote peer is reporting block/tx error */

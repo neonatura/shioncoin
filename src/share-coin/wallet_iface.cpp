@@ -815,10 +815,8 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
   return (0);
 }
 
-vector< pair<CScript, int64> > vecRewardSend;
-#if 0
-int64 nBankFee = 0;
-#endif
+//vector< pair<CScript, int64> > vecRewardSend;
+map<string, int64> vecRewardSend;
 
 int c_addblockreward(int ifaceIndex, const char *accountName, double dAmount)
 {
@@ -833,24 +831,153 @@ int c_addblockreward(int ifaceIndex, const char *accountName, double dAmount)
   int nMinConfirmDepth = 1; /* single confirmation requirement */
   int64 nBalance;
 
+  if (dAmount <= 0.0 || dAmount > 84000000.0)
+    return (-3);
+  nAmount = roundint64(dAmount * COIN);
+  if (!MoneyRange(ifaceIndex, nAmount))
+    return (-3);
+
+	if (vecRewardSend.count(strAccount) != 0)
+		nAmount += vecRewardSend[strAccount];
+	vecRewardSend[strAccount] = nAmount; 
+
+	return (0);
+}
+
+void c_sendblockreward(int ifaceIndex)
+{
+	static int64 nAvgFee;
+//	static int64 nRunFee;
+  static const int nMinConfirmDepth = 1; /* single confirmation requirement */
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
+	map<string, int64> vecNewRewardSend;
+	string strMainAccount("");
+	int64 nTotal;
+
+	if (nAvgFee == 0)
+		nAvgFee = MIN_TX_FEE(iface); 
+
+
+	nTotal = 0;
+	vector< pair<CScript, int64> > vecReward;
+  BOOST_FOREACH(const PAIRTYPE(string, int64)& item, vecRewardSend) {
+		const string& strAccount = item.first;
+		const int64& nValue = item.second;
+
+		bool found = false;
+		CCoinAddr address = GetAddressByAccount(wallet, strAccount.c_str(), found);
+		if (!found || !address.IsValid()) {
+			continue;
+		}
+
+		if (nValue < MIN_TX_FEE(iface)) {
+			vecNewRewardSend[strAccount] = nValue;
+			continue;
+		}
+
+		CScript scriptPubKey;
+		scriptPubKey.SetDestination(address.Get());
+		vecReward.push_back(make_pair(scriptPubKey, nValue));
+
+		nTotal += nValue;
+	}
+
+	/* check main account balance. */
+  if (nTotal > MIN_INPUT_VALUE(iface)) {
+		CWalletDB walletdb(wallet->strWalletFile);
+
+		int64 nBalance  = GetAccountBalance(ifaceIndex, walletdb,
+				strMainAccount, nMinConfirmDepth);
+		if (nTotal > nBalance) {
+			shcoind_log("c_setblockreward: warning: main account has insufficient funds for block reward distribution.");
+			return;
+		}
+	}
+
+	/* clear pending payments. */
+	vecRewardSend = vecNewRewardSend;
+
+  if (vecReward.size() == 0)
+    return; /* all done */
+
+	/* create new vector with tx fee subtracted. */
+	int64 nFee = nAvgFee / vecReward.size();
+	vector< pair<CScript, int64> > vecSend;
+  BOOST_FOREACH(const PAIRTYPE(CScript, int64)& item, vecReward) {
+		int64 nValue = (item.second - nFee);
+		vecSend.push_back(make_pair(item.first, nValue));
+	}
+	
 #if 0
-  if (pwalletMain->IsLocked()) {
-    return (-13);
-  }
+	/* add in dest for non-spent tx fees. */
+	if (nRunFee > (MIN_TX_FEE(iface) * 2)) {
+		const char *strBankAccountName = "bank";
+		bool found = false;
+		CCoinAddr bankAddr = GetAddressByAccount(wallet, strBankAccountName, found);
+		if (found) {
+			CScript scriptPubKey;
+
+			/* send subsidy to "bank" account. */
+			scriptPubKey.SetDestination(bankAddr.Get());
+			vecSend.push_back(make_pair(scriptPubKey, nRunFee));
+
+			/* clear running total */
+			nRunFee = 0;
+		}
+	}
 #endif
+
+	/* commit the transaction. */
+	{
+		CWalletTx wtx;
+		string strError;
+		int64 nFeeRet;
+		bool fRet;
+
+		wtx.strFromAccount = strMainAccount;
+		fRet = wallet->CreateAccountTransaction(strMainAccount, vecSend, wtx, strError, nFeeRet);
+		if (!fRet)
+			return;
+
+		fRet = wallet->CommitTransaction(wtx);
+		if (!fRet)
+			return;
+
+#if 0
+		/* deduct the running fee not used to create tx's. */
+		nRunFee += MAX(0, nFee - nFeeRet);
+#endif
+
+		/* keep running average of tx-fee required to send coins. */
+		nAvgFee = MIN(MIN_TX_FEE(iface), (nAvgFee + nFeeRet) / 2);
+		nAvgFee = MAX(nAvgFee, (nTotal / 1000)); /* 0.001% stratum fee */
+
+		Debug("sendblockreward: sent %f coins for stratum reward(s) [tx-fee %f].", (double)nTotal/(double)COIN, (double)nFeeRet/(double)COIN);
+	}
+
+}
+
+#if 0
+int c_addblockreward(int ifaceIndex, const char *accountName, double dAmount)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *pwalletMain = GetWallet(ifaceIndex);
+  CWalletDB walletdb(pwalletMain->strWalletFile);
+  string strAccount(accountName);
+  string strMainAccount("");
+  int64 nAmount;
+  Array ret;
+  int nMinDepth = 1; /* single confirmation requirement */
+  int nMinConfirmDepth = 1; /* single confirmation requirement */
+  int64 nBalance;
 
   if (dAmount <= 0)
     return (-3);
 
-#if 0
-  CCoinAddr address;
-  if (!wallet->GetMergedAddress(accountName, "miner", address))
-    return (-5);
-#endif
   bool found = false;
   CCoinAddr address = GetAddressByAccount(pwalletMain, accountName, found);
   if (!found || !address.IsValid()) {
-//    error(SHERR_NOENT, "setblockreward: account '%s' has invalid %s coin address.", accountName, iface->name);
     return (-5);
   }
 
@@ -877,7 +1004,6 @@ int c_addblockreward(int ifaceIndex, const char *accountName, double dAmount)
 
   return (0);
 }
-
 int c_sendblockreward(int ifaceIndex)
 {
 	static int64 nAvgFee;
@@ -898,9 +1024,6 @@ int c_sendblockreward(int ifaceIndex)
   int64 nTotValue = 0;
   int64 nValue = 0;
   BOOST_FOREACH(const PAIRTYPE(CScript, int64)& item, vecRewardSend) {
-#if 0
-    nValue += item.second + (item.second / 1000);
-#endif
     nTotValue += item.second;
   }
 
@@ -911,22 +1034,6 @@ int c_sendblockreward(int ifaceIndex)
 		vecSend.push_back(make_pair(item.first, (item.second - nFee))); 
 	}
   vecRewardSend.clear();
-
-#if 0
-  nBankFee += nValue / 1000;
-
-  /* add in residual bank fee */
-  if (nBankFee > (MIN_TX_FEE(iface) * 10)) {
-    CCoinAddr address(ifaceIndex);
-    if (wallet->GetMergedAddress(strMainAccount, "bank", address)) {
-      CScript scriptPubKey;
-      scriptPubKey.SetDestination(address.Get());
-      vecRewardSend.push_back(make_pair(scriptPubKey, nBankFee));
-    }
-    nBankFee = 0;
-  }
-#endif
-
 
 #if 0
   /* double-check balance */
@@ -954,13 +1061,9 @@ int c_sendblockreward(int ifaceIndex)
 
   Debug("sendblockreward: sent %f coins for stratum reward(s) [tx-fee %f].", (double)nTotValue/(double)COIN, (double)nFeeRet/(double)COIN);
 
-#if 0
-  /* bank pays for all transaction fees */
-  nBankFee -= nFeeRet;
-#endif
-
   return (0);
 }
+#endif
 
 
 /**
@@ -2015,7 +2118,8 @@ int addblockreward(int ifaceIndex, const char *accountName, double amount)
 
 int sendblockreward(int ifaceIndex)
 {
-  return (c_sendblockreward(ifaceIndex));
+  c_sendblockreward(ifaceIndex);
+	return (0);
 }
 
 int wallet_account_transfer(int ifaceIndex, const char *sourceAccountName, const char *accountName, const char *comment, double amount)

@@ -97,6 +97,7 @@ class CAlias : public CIdent
 
     CAlias operator=(const CAlias &b)
     {
+			SetNull();
       Init(b);
       return *this;
     }

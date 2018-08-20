@@ -30,7 +30,7 @@
 #include "coin_proto.h"
 #include "rpc/rpc_proto.h"
 
-#define DEFAULT_WORK_DIFFICULTY 256
+#define DEFAULT_WORK_DIFFICULTY 1024
 
 #define WORK_ROUND_OFFSET 400000 
 
@@ -600,6 +600,7 @@ int stratum_default_iface(void)
   diff = 0;
   ifaceIndex = 0;
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
+		if (idx == TESTNET_COIN_IFACE) continue;
     iface = GetCoinByIndex(idx);
     if (!iface || !iface->enabled) continue;
 
@@ -984,11 +985,13 @@ int stratum_request_message(user_t *user, shjson_t *json)
 
         udata2 = shjson_array_add(udata, NULL);
         for (i = 1; i < MAX_COIN_IFACE; i++) {
+					if (i == TESTNET_COIN_IFACE) continue;
           shjson_num_add(udata2, NULL, stratum_addr_crc(i, t_user->worker));
         }
 
         udata2 = shjson_array_add(udata, NULL);
         for (i = 1; i < MAX_COIN_IFACE; i++) {
+					if (i == TESTNET_COIN_IFACE) continue;
           shjson_num_add(udata2, NULL, stratum_ext_addr_crc(i, t_user->worker));
         }
       }

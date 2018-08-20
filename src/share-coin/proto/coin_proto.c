@@ -38,6 +38,8 @@ extern coin_iface_t test_coin_iface;
 extern coin_iface_t shc_coin_iface;
 extern coin_iface_t usde_coin_iface;
 extern coin_iface_t emc2_coin_iface;
+extern coin_iface_t ltc_coin_iface;
+extern coin_iface_t testnet_coin_iface;
 
 
 
@@ -45,7 +47,9 @@ static coin_iface_t *_iface_table[MAX_COIN_IFACE] = {
   &test_coin_iface,
   &shc_coin_iface,
   &usde_coin_iface,
-  &emc2_coin_iface
+  &emc2_coin_iface,
+  &ltc_coin_iface,
+  &testnet_coin_iface
 };
 
 

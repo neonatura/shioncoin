@@ -636,6 +636,8 @@ RPC_SERVICE_FALSE
 RPC_SERVICE_TRUE
 STRATUM_SERVICE_FALSE
 STRATUM_SERVICE_TRUE
+TESTNET_SERVICE_FALSE
+TESTNET_SERVICE_TRUE
 EMC2_SERVICE_FALSE
 EMC2_SERVICE_TRUE
 USDE_SERVICE_FALSE
@@ -655,9 +657,6 @@ LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_FALSE
 LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_TRUE
 DOXYGEN
 CP
-INITD_DIR
-HAVE_INITD_DIR_FALSE
-HAVE_INITD_DIR_TRUE
 ALLOCA
 LIBOBJS
 GIT_LIBSHARE_FALSE
@@ -856,6 +855,7 @@ enable_debug
 enable_sexe
 enable_usde
 enable_emc2
+enable_testnet
 enable_stratum
 enable_rpc
 '
@@ -1508,9 +1508,10 @@ Optional Features:
   --disable-largefile     omit support for large files
   --enable-pthread        enable pthread library, default: no
   --enable-debug          enable debugging, default: no
-  --enable-sexe           Enable execution of SEXE programs.
+  --disable-sexe          Disable execution of SEXE programs.
   --enable-usde           Enable USDE coin service.
   --enable-emc2           Enable EMC2 coin service.
+  --disable-testnet       Disable testnet service.
   --disable-stratum       Disable stratum service.
   --disable-rpc           Disable RPC service.
 
@@ -20506,22 +20507,6 @@ else
 fi
 
 
-
-#AC_CHECK_LIB([ssl], [SSL_version], ,
-#  AC_MSG_ERROR("libssl (crypt library) is required")
-#)
-
-#AC_CHECK_LIB([boost_filesystem], [boost], ,
-#  AC_MSG_ERROR("libboost (runtime library) is required")
-#)
-
-# Check whether --with-libshare was given.
-if test "${with_libshare+set}" = set; then :
-  withval=$with_libshare;
-else
-  with_libshare=yes
-fi
-
 for ac_prog in git
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -20564,7 +20549,7 @@ fi
   test -n "$GIT" && break
 done
 
- if test -n "$GIT"; then
+ if test x"$GIT" = x"git"; then
   HAVE_GIT_TRUE=
   HAVE_GIT_FALSE='#'
 else
@@ -20572,11 +20557,28 @@ else
   HAVE_GIT_FALSE=
 fi
 
+
+#AC_CHECK_LIB([ssl], [SSL_version], ,
+#  AC_MSG_ERROR("libssl (crypt library) is required")
+#)
+
+#AC_CHECK_LIB([boost_filesystem], [boost], ,
+#  AC_MSG_ERROR("libboost (runtime library) is required")
+#)
+
+# Check whether --with-libshare was given.
+if test "${with_libshare+set}" = set; then :
+  withval=$with_libshare;
+else
+  with_libshare=yes
+fi
+
+
 LIBSHARE=
 if test "x$with_libshare" = "xyes"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sexe_exec_prun in -lshare_sexe" >&5
-$as_echo_n "checking for sexe_exec_prun in -lshare_sexe... " >&6; }
-if ${ac_cv_lib_share_sexe_sexe_exec_prun+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sexe_prun in -lshare_sexe" >&5
+$as_echo_n "checking for sexe_prun in -lshare_sexe... " >&6; }
+if ${ac_cv_lib_share_sexe_sexe_prun+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -20590,27 +20592,27 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char sexe_exec_prun ();
+char sexe_prun ();
 int
 main ()
 {
-return sexe_exec_prun ();
+return sexe_prun ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_share_sexe_sexe_exec_prun=yes
+  ac_cv_lib_share_sexe_sexe_prun=yes
 else
-  ac_cv_lib_share_sexe_sexe_exec_prun=no
+  ac_cv_lib_share_sexe_sexe_prun=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_share_sexe_sexe_exec_prun" >&5
-$as_echo "$ac_cv_lib_share_sexe_sexe_exec_prun" >&6; }
-if test "x$ac_cv_lib_share_sexe_sexe_exec_prun" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_share_sexe_sexe_prun" >&5
+$as_echo "$ac_cv_lib_share_sexe_sexe_prun" >&6; }
+if test "x$ac_cv_lib_share_sexe_sexe_prun" = xyes; then :
 
 cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBSHARE 1
@@ -21957,16 +21959,6 @@ _ACEOF
 fi
 
 
- if test -d /etc/rc.d; then
-  HAVE_INITD_DIR_TRUE=
-  HAVE_INITD_DIR_FALSE='#'
-else
-  HAVE_INITD_DIR_TRUE='#'
-  HAVE_INITD_DIR_FALSE=
-fi
-
-INITD_DIR="/etc/rc.d"
-
 
 #AC_SUBST(OPENSSL_DIR, "openssl-1.0.1g")
 for ac_prog in cp
@@ -22256,12 +22248,13 @@ else
 fi
 
 
+# SEXE Execution Transactions (enabled by default)
 # Check whether --enable-sexe was given.
 if test "${enable_sexe+set}" = set; then :
   enableval=$enable_sexe;
 fi
 
- if test "x$enable_sexe" = "xyes"; then
+ if test "x$enable_sexe" != "xno"; then
   USE_SEXE_TRUE=
   USE_SEXE_FALSE='#'
 else
@@ -22269,7 +22262,7 @@ else
   USE_SEXE_FALSE=
 fi
 
-if test "x$enable_sexe" = "xyes" ; then
+if test "x$enable_sexe" != "xno" ; then
 
 cat >>confdefs.h <<_ACEOF
 #define USE_SEXE 1
@@ -22315,6 +22308,27 @@ if test "x$enable_emc2" = "xyes" ; then
 
 cat >>confdefs.h <<_ACEOF
 #define EMC2_SERVICE 1
+_ACEOF
+
+fi
+
+# Check whether --enable-testnet was given.
+if test "${enable_testnet+set}" = set; then :
+  enableval=$enable_testnet;
+fi
+
+ if test "x$enable_testnet" != "xno"; then
+  TESTNET_SERVICE_TRUE=
+  TESTNET_SERVICE_FALSE='#'
+else
+  TESTNET_SERVICE_TRUE='#'
+  TESTNET_SERVICE_FALSE=
+fi
+
+if test "x$enable_testnet" != "xno" ; then
+
+cat >>confdefs.h <<_ACEOF
+#define TESTNET_SERVICE 1
 _ACEOF
 
 fi
@@ -22580,10 +22594,6 @@ if test -z "${GIT_LIBSHARE_TRUE}" && test -z "${GIT_LIBSHARE_FALSE}"; then
   as_fn_error $? "conditional \"GIT_LIBSHARE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${HAVE_INITD_DIR_TRUE}" && test -z "${HAVE_INITD_DIR_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_INITD_DIR\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_TRUE}" && test -z "${LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_FALSE}"; then
   as_fn_error $? "conditional \"LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -22614,6 +22624,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EMC2_SERVICE_TRUE}" && test -z "${EMC2_SERVICE_FALSE}"; then
   as_fn_error $? "conditional \"EMC2_SERVICE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${TESTNET_SERVICE_TRUE}" && test -z "${TESTNET_SERVICE_FALSE}"; then
+  as_fn_error $? "conditional \"TESTNET_SERVICE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${STRATUM_SERVICE_TRUE}" && test -z "${STRATUM_SERVICE_FALSE}"; then

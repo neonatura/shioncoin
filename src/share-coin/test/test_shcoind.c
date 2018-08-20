@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
 
   test_shcoind_init();
 
+#if 0
   /* core tests */
   SUITE_ADD_TEST(suite, TEST_coinaddr);
   SUITE_ADD_TEST(suite, TEST_bloom_create_insert_key);
@@ -87,6 +88,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_blockchain);
   SUITE_ADD_TEST(suite, TEST_matrix);
   SUITE_ADD_TEST(suite, TEST_serializetx);
+#endif
 
   /* block-chain transaction tests */
   SUITE_ADD_TEST(suite, TEST_reorganize);
@@ -99,9 +101,11 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_aliastx);
   SUITE_ADD_TEST(suite, TEST_certtx);
   SUITE_ADD_TEST(suite, TEST_assettx);
-#ifndef USE_SEXE
+#ifdef USE_SEXE
   SUITE_ADD_TEST(suite, TEST_exectx);
 #endif
+
+#if 0
   SUITE_ADD_TEST(suite, TEST_ctxtx);
 //  SUITE_ADD_TEST(suite, TEST_channeltx);
 //  SUITE_ADD_TEST(suite, TEST_offertx);
@@ -122,6 +126,7 @@ int main(int argc, char *argv[])
   /* finale */
   SUITE_ADD_TEST(suite, TEST_coin_table);
   SUITE_ADD_TEST(suite, TEST_coin_spendall);
+#endif
 
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);

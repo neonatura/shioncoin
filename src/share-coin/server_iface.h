@@ -160,6 +160,18 @@ void shc_server_accept(int hSocket, struct sockaddr *net_addr);
 
 void shc_server_close(int fd, struct sockaddr *addr);
 
+void testnet_server_timer(void);
+
+void testnet_server_accept(int hSocket, struct sockaddr *net_addr);
+
+void testnet_server_close(int fd, struct sockaddr *addr);
+
+void ltc_server_timer(void);
+
+void ltc_server_accept(int hSocket, struct sockaddr *net_addr);
+
+void ltc_server_close(int fd, struct sockaddr *addr);
+
 uint64_t getblockheight(int ifaceIndex);
 
 void ResetTemplateWeight(void);

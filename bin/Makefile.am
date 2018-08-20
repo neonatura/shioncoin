@@ -6,7 +6,7 @@ noinst_SCRIPTS =
 if HAVE_GIT
 noinst_SCRIPTS += ChangeLog
 ChangeLog:
-	git --git-dir ../.git log > ChangeLog || touch ChangeLog
+	git --git-dir $(top_srcdir)/.git log > ChangeLog || touch ChangeLog
 endif
 
 if USDE_SERVICE

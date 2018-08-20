@@ -512,25 +512,35 @@ public:
         }
     }
 
-    void AskFor(const CInv& inv)
-    {
-        // We're using mapAskFor as a priority queue,
-        // the key is the earliest time the request can be sent
-        int64& nRequestTime = mapAlreadyAskedFor[inv];
-        if (fDebugNet)
-            printf("askfor %s   %" PRI64d "\n", inv.ToString().c_str(), nRequestTime);
+    void AskFor(CInv& inv)
+		{
 
-        // Make sure not to reuse time indexes to keep things in the same order
-        int64 nNow = (GetTime() - 1) * 1000000;
-        static int64 nLastTime;
-        ++nLastTime;
-        nNow = std::max(nNow, nLastTime);
-        nLastTime = nNow;
+			/* Witness-enabled if local and remote nodes support it. */
+			if (inv.type == MSG_TX ||
+					inv.type == MSG_BLOCK) {
+				CIface *iface = GetCoinByIndex(ifaceIndex);
+				if (fHaveWitness && (COIN_SERVICES(iface) & NODE_WITNESS)) {
+					inv.type |= MSG_WITNESS_FLAG;
+				}
+			}
 
-        // Each retry is 2 minutes after the last
-        nRequestTime = std::max(nRequestTime + 2 * 60 * 1000000, nNow);
-        mapAskFor.insert(std::make_pair(nRequestTime, inv));
-    }
+			// We're using mapAskFor as a priority queue,
+			// the key is the earliest time the request can be sent
+			int64& nRequestTime = mapAlreadyAskedFor[inv];
+			if (fDebugNet)
+				printf("askfor %s   %" PRI64d "\n", inv.ToString().c_str(), nRequestTime);
+
+			// Make sure not to reuse time indexes to keep things in the same order
+			int64 nNow = (GetTime() - 1) * 1000000;
+			static int64 nLastTime;
+			++nLastTime;
+			nNow = std::max(nNow, nLastTime);
+			nLastTime = nNow;
+
+			// Each retry is 2 minutes after the last
+			nRequestTime = std::max(nRequestTime + 2 * 60 * 1000000, nNow);
+			mapAskFor.insert(std::make_pair(nRequestTime, inv));
+		}
 
 
 
@@ -606,8 +616,14 @@ public:
 
     void PushVersion();
 
-    void PushBlock(const CBlock& block)
+    void PushBlock(const CBlock& block, int nFlag = 0)
     {
+			CDataStream ss(SER_GETHASH, nFlag);
+			ss.reserve(4096);
+			ss << block;
+			cbuff vchBlock(ss.begin(), ss.end());
+			PushMessage("block", vchBlock);
+#if 0
       if (fHaveWitness) {
         PushMessage("block", block);
       } else {
@@ -617,7 +633,9 @@ public:
         cbuff vchBlock(ss.begin(), ss.end());
         PushMessage("block", block);
       }
+#endif
     }
+
     void PushTx(const CTransaction& tx, int flags = 0)
     {
 
@@ -625,7 +643,7 @@ public:
       ss.reserve(1024);
       ss << tx;
       cbuff vchTx(ss.begin(), ss.end());
-      PushMessage("tx", tx);
+      PushMessage("tx", vchTx);
 #if 0
       if (fHaveWitness) {
         PushMessage("tx", tx);

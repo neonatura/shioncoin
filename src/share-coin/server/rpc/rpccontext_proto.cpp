@@ -152,7 +152,7 @@ Value rpc_ctx_get(CIface *iface, const Array& params, bool fStratum)
   uint160 hContext(params[0].get_str());
   ctx = GetContextByHash(iface, hContext, tx);
   if (!ctx) {
-    throw JSONRPCError(-5, string("unknown context hash"));
+    throw JSONRPCError(SHERR_NOENT, string("unknown context hash"));
   }
 
   Object obj = ctx->ToValue();
@@ -273,7 +273,7 @@ Value rpc_ctx_getstr(CIface *iface, const Array& params, bool fStratum)
 
   ctx = GetContextByName(iface, params[0].get_str(), tx);
   if (!ctx) {
-    throw JSONRPCError(-5, string("unknown context hash"));
+    throw JSONRPCError(SHERR_NOENT, string("unknown context hash"));
   }
 
   return (stringFromVch(ctx->vContext));
@@ -289,7 +289,7 @@ Value rpc_ctx_getbin(CIface *iface, const Array& params, bool fStratum)
 
   ctx = GetContextByName(iface, params[0].get_str(), tx);
   if (!ctx) {
-    throw JSONRPCError(-5, string("unknown context hash"));
+    throw JSONRPCError(SHERR_NOENT, string("unknown context hash"));
   }
 
   return (HexStr(ctx->vContext));

@@ -43,7 +43,6 @@
 static user_t *sys_user;
 static int work_reset[MAX_COIN_IFACE];
 static uint64_t last_block_height[MAX_COIN_IFACE];
-static double nBankFee[MAX_COIN_IFACE];
 
 
 #if 0
@@ -102,8 +101,8 @@ void incr_task_work_time(void)
 }
 #endif
 
-static int work_idx = 0;
 #if 0
+static int work_idx = 0;
 int DefaultWorkIndex = 0;
 #endif
 static char last_payout_hash[MAX_COIN_IFACE][256];
@@ -262,7 +261,7 @@ static void commit_payout(int ifaceIndex, int block_height)
       break; /* waiting more than 10min for reward. */ 
 
     coin_val = floor(user->balance[ifaceIndex] * 1000) / 1000;
-    if (coin_val > (user->balance_avg[ifaceIndex] * 8)) {
+    if (coin_val > (user->balance_avg[ifaceIndex] * 10)) {
       break;
     }
   }
@@ -292,20 +291,8 @@ static void commit_payout(int ifaceIndex, int block_height)
       user->reward_time = time(NULL);
       user->reward_height = block_height;
       user->balance[ifaceIndex] = MAX(0.0, user->balance[ifaceIndex] - coin_val);
-
       bal -= coin_val;
-      nBankFee[ifaceIndex] += (coin_val * 0.001); /* 0.1% */
     }
-  }
-
-  if (nBankFee[ifaceIndex] > 10.0) {
-    if (bal > nBankFee[ifaceIndex]) {
-      if (0 == addblockreward(ifaceIndex, "bank", nBankFee[ifaceIndex])) {
-        sprintf(buf, "(%s) commit_payout: 'bank' account tax'd %f coins.\n", iface->name, nBankFee[ifaceIndex]); 
-        shcoind_log(buf);
-      }
-    }
-    nBankFee[ifaceIndex] = 0;
   }
 
   sendblockreward(ifaceIndex);
@@ -410,6 +397,7 @@ task_t *task_init(task_attr_t *attr)
     /* determine weightiest iface */
     stratum_task_weight(attr);
     for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
       iface = GetCoinByIndex(ifaceIndex);
       if (!iface || !iface->enabled) continue;
       if (max_weight == 0.00 || attr->weight[ifaceIndex] > max_weight) {
@@ -435,6 +423,7 @@ task_t *task_init(task_attr_t *attr)
 
     reset_idx = 0;
     for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
       if (!iface || !iface->enabled) continue;
 
       if (attr->commit_stamp[ifaceIndex] != attr->blk_stamp[ifaceIndex]) {
@@ -784,6 +773,7 @@ int is_stratum_task_pending(int *ret_iface)
   char errbuf[256];
 
   for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+		if (ifaceIndex == TESTNET_COIN_IFACE) continue;
     CIface *iface = GetCoinByIndex(ifaceIndex);
     if (!iface || !iface->enabled) 
       continue; /* iface not enabled */
@@ -856,6 +846,7 @@ void stratum_task_weight(task_attr_t *attr)
 
   now = time(NULL);
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
+		if (idx == TESTNET_COIN_IFACE) continue;
     iface = GetCoinByIndex(idx);
     if (!iface || !iface->enabled) continue;
 

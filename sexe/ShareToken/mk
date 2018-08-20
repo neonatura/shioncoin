@@ -1,0 +1,1 @@
+sxc -o ShareToken.sx BaseObject.lua BaseToken.lua ShareToken.lua

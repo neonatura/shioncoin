@@ -12,6 +12,7 @@ extern "C" {
 #define BCOP_EXPORT 2
 #define BCOP_DOWNLOAD 3
 #define BCOP_VALIDATE 4
+#define BCOP_MINER 5
 
 #include <stdio.h>
 
@@ -46,6 +47,10 @@ void ServiceBlockEventUpdate(int ifaceIndex);
 void ResetServiceWalletEvent(CWallet *wallet);
 
 void ResetServiceValidateEvent(CWallet *wallet);
+
+int InitServiceMinerEvent(int ifaceIndex, uint64_t nHeight);
+
+bool UpdateServiceMinerEvent(int ifaceIndex);
 
 
 #ifdef __cplusplus

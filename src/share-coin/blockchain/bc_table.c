@@ -45,12 +45,12 @@ int bc_table_hash(bc_hash_t hash)
   return ((int)(val % BC_TABLE_SIZE));
 }
 
-uint64_t *bc_table_pos(bc_t *bc, bc_hash_t hash)
+bcpos_t *bc_table_pos(bc_t *bc, bc_hash_t hash)
 {
-  uint64_t *tab;
+  bcpos_t *tab;
   int idx;
 
-  tab = (uint64_t *)bc->tab_map.raw;
+  tab = (bcpos_t *)bc->tab_map.raw;
   if (!tab)
     return (NULL);
 
@@ -58,9 +58,9 @@ uint64_t *bc_table_pos(bc_t *bc, bc_hash_t hash)
   return (&tab[idx]);
 }
 
-static int _bc_table_get(bc_t *bc, bc_hash_t hash, uint64_t *ret_pos)
+static int _bc_table_get(bc_t *bc, bc_hash_t hash, bcpos_t *ret_pos)
 {
-  uint64_t *pos_p;
+  bcpos_t *pos_p;
   int err;
   int i;
 
@@ -86,7 +86,7 @@ static int _bc_table_get(bc_t *bc, bc_hash_t hash, uint64_t *ret_pos)
   return (0);  
 }
 
-int bc_table_get(bc_t *bc, bc_hash_t hash, uint64_t *ret_pos)
+int bc_table_get(bc_t *bc, bc_hash_t hash, bcpos_t *ret_pos)
 {
   int err;
 
@@ -97,9 +97,9 @@ int bc_table_get(bc_t *bc, bc_hash_t hash, uint64_t *ret_pos)
   return (err);
 }
 
-static int _bc_table_set(bc_t *bc, bc_hash_t hash, uint64_t pos)
+static int _bc_table_set(bc_t *bc, bc_hash_t hash, bcpos_t pos)
 {
-  uint64_t *pos_p;
+  bcpos_t *pos_p;
   uint8_t a, b;
   int err;
 
@@ -122,7 +122,7 @@ static int _bc_table_set(bc_t *bc, bc_hash_t hash, uint64_t pos)
   return (0);
 }
 
-int bc_table_set(bc_t *bc, bc_hash_t hash, uint64_t pos)
+int bc_table_set(bc_t *bc, bc_hash_t hash, bcpos_t pos)
 {
   int err;
 
@@ -135,7 +135,7 @@ int bc_table_set(bc_t *bc, bc_hash_t hash, uint64_t pos)
 
 static int _bc_table_unset(bc_t *bc, bc_hash_t hash)
 {
-  uint64_t *pos_p;
+  bcpos_t *pos_p;
   uint8_t a, b;
   int err;
 
@@ -168,7 +168,7 @@ int bc_table_unset(bc_t *bc, bc_hash_t hash)
 
 static int _bc_table_reset(bc_t *bc, bc_hash_t hash)
 {
-  uint64_t *pos_p;
+  bcpos_t *pos_p;
   uint8_t a, b;
   int err;
 
@@ -222,7 +222,7 @@ static int _bc_table_open(bc_t *bc)
     return (err);
   }
 
-  err = bc_map_alloc(bc, &bc->tab_map, (BC_TABLE_SIZE * sizeof(uint64_t)));
+  err = bc_map_alloc(bc, &bc->tab_map, (BC_TABLE_SIZE * sizeof(bcpos_t)));
   if (err) {
     sprintf(errbuf, "bc_table_open: map alloc error: %s.", sherrstr(err));
     shcoind_log(errbuf);

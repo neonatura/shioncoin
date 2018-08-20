@@ -33,7 +33,7 @@ extern "C" {
 
 
 
-#define MAX_DESCRIPTORS 4096
+#define MAX_DESCRIPTORS 1024 /* default */
 
 #define DF_FILE (1 << 0)
 #define DF_SOCK (1 << 1)
@@ -93,6 +93,10 @@ shbuf_t *descriptor_rbuff(int fd);
 
 shbuf_t *descriptor_wbuff(int fd);
 
+/**
+ * @returns The maximum file/socket descriptors that can be created.
+ */
+int get_max_descriptors(void);
 
 
 #ifdef __cplusplus

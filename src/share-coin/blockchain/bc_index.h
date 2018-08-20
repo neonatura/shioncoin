@@ -32,7 +32,10 @@ int bc_idx_clear(bc_t *bc, bcsize_t pos);
 int bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_pos);
 int bc_idx_get(bc_t *bc, bcsize_t pos, bc_idx_t *ret_idx);
 
-bcsize_t bc_idx_next(bc_t *bc);
+/**
+ * @returns The next record index in the specified database.
+ */
+int bc_idx_next(bc_t *bc, bcpos_t *pos_p);
 
 int bc_idx_reset(bc_t *bc, bcsize_t pos, bc_idx_t *idx);
 

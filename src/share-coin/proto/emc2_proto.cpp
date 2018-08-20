@@ -108,11 +108,16 @@ static int emc2_init(CIface *iface, void *_unused_)
   return (0);
 }
 
+int get_emc2_bind_port(void)
+{
+	return ((int)opt_num(OPT_EMC2_PORT));
+}
+
 static int emc2_bind(CIface *iface, void *_unused_)
 {
   int err;
 
-  err = unet_bind(UNET_EMC2, EMC2_COIN_DAEMON_PORT, 0);
+  err = unet_bind(UNET_EMC2, get_emc2_bind_port(), NULL);
   if (err) { 
     error(err, "error binding EMC2 socket port");
     return (err);

@@ -86,37 +86,25 @@ bool usde_FillBlockIndex()
   CBlockIndex *lastIndex;
   USDEBlock block;
   uint256 hash;
-  int nHeight;
+	bcpos_t nMaxIndex;
+  bcpos_t nHeight;
   int err;
 
-#if USE_LEVELDB_COINDB
-  bool checkBest = false;
-  uint256 hashBestChain;
-  USDETxDB txdb;
-  if (txdb.ReadHashBestChain(hashBestChain))
-    checkBest = true;
-  txdb.Close();
-#endif
-
-  int nMaxIndex = bc_idx_next(bc);
+	nMaxIndex = 0;
+	(void)bc_idx_next(bc, &nMaxIndex);
 
   lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
-    if (0 != bc_idx_get(bc, nHeight, NULL))
-      break;
     if (!block.ReadBlock(nHeight)) {
-//fprintf(stderr, "DEBUG: usde_FillBlockIndex: error reading block height %d in main chain.\n", nHeight);
       break;
     }
     hash = block.GetHash();
 
     if (nHeight == 0) {
       if (hash != usde_hashGenesisBlock) {
-//fprintf(stderr, "DEBUG: usde_FillBlockIndex: stopping at invalid genesis '%s' @ height %d\n", hash.GetHex().c_str(), nHeight);
         break; /* invalid genesis */
       }
     } else if (blockIndex->count(block.hashPrevBlock) == 0) {
-//fprintf(stderr, "DEBUG: usde_FillBlockIndex: stopping at orphan '%s' @ height %d\n", hash.GetHex().c_str(), nHeight);
       break;
     }
 
@@ -124,9 +112,8 @@ bool usde_FillBlockIndex()
     if (nHeight == 0) {
       USDEBlock::pindexGenesisBlock = pindexNew;
     }
-    pindexNew->pprev = lastIndex;//InsertBlockIndex(blockIndex, block.hashPrevBlock);
+    pindexNew->pprev = lastIndex;
     if (lastIndex) lastIndex->pnext = pindexNew;
-//    if (lastIndex && lastIndex->pprev == pindexNew) pindexNew->pnext = InsertBlockIndex(blockIndex, lastIndex->GetBlockHash());   
 
     pindexNew->nHeight        = nHeight;
     pindexNew->nVersion       = block.nVersion;
@@ -144,87 +131,16 @@ bool usde_FillBlockIndex()
     if (nHeight == 0 && pindexNew->GetBlockHash() == usde_hashGenesisBlock)
       USDEBlock::pindexGenesisBlock = pindexNew;
 
-    lastIndex = pindexNew;
+		pindexNew->bnChainWork =
+			(lastIndex ? lastIndex->bnChainWork : 0) + 
+			pindexNew->GetBlockWork();
 
-#ifdef USE_LEVELDB_COINDB
-    if (checkBest && hash == hashBestChain) {
-      break;
-    } 
-#endif
+    lastIndex = pindexNew;
   }
   SetBestBlockIndex(iface, lastIndex);
 
   return true;
 }
-#if 0
-bool usde_FillBlockIndex()
-{
-  CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
-  blkidx_t *blockIndex = GetBlockTable(USDE_COIN_IFACE);
-  bc_t *bc = GetBlockChain(iface);
-  CBlockIndex *pindexBest;
-  CBlockIndex *lastIndex;
-  USDEBlock block;
-  uint256 hash;
-  int nBestIndex;
-  int nHeight;
-
-  int nMaxIndex = bc_idx_next(bc) - 1;
-  for (nBestIndex = 0; nBestIndex <= nMaxIndex; nBestIndex++) {
-    if (0 != bc_idx_get(bc, nBestIndex, NULL))
-      break;
-  }
-  nBestIndex--;
-
-  lastIndex = NULL;
-  pindexBest = NULL;
-  for (nHeight = nBestIndex; nHeight >= 0; nHeight--) {
-    if (!block.ReadBlock(nHeight))
-      continue;
-    hash = block.GetHash();
-
-    CBlockIndex* pindexNew = InsertBlockIndex(blockIndex, hash);
-    pindexNew->pprev = InsertBlockIndex(blockIndex, block.hashPrevBlock);
-    if (lastIndex && lastIndex->pprev == pindexNew)
-      pindexNew->pnext = InsertBlockIndex(blockIndex, lastIndex->GetBlockHash());   
-
-    pindexNew->nHeight        = nHeight;
-    pindexNew->nVersion       = block.nVersion;
-    pindexNew->hashMerkleRoot = block.hashMerkleRoot;
-    pindexNew->nTime          = block.nTime;
-    pindexNew->nBits          = block.nBits;
-    pindexNew->nNonce         = block.nNonce;
-
-    if (!pindexNew->CheckIndex())
-      return error(SHERR_INVAL, "LoadBlockIndex() : CheckIndex failed at height %d", pindexNew->nHeight);
-
-    if (nHeight == 0 && pindexNew->GetBlockHash() == usde_hashGenesisBlock)
-      USDEBlock::pindexGenesisBlock = pindexNew;
-
-    if (!pindexBest && lastIndex) {
-      if (lastIndex->pprev == pindexNew)
-        pindexBest = lastIndex;
-    }
-
-    lastIndex = pindexNew;
-  }
-
-  CBlockIndex *pindex;
-  if (USDEBlock::pindexGenesisBlock) {
-    nHeight = 0;
-    for (pindex = USDEBlock::pindexGenesisBlock; pindex && pindex->pnext; pindex = pindex->pnext) {
-      if (pindex->nHeight != nHeight)
-        fprintf(stderr, "DEBUG: FillBlockIndex: pindex->nHeight(%d) nHeight(%d)\n", pindex->nHeight, nHeight); 
-      pindex->nHeight = nHeight++;
-    }
-    if (pindex) {
-      SetBestBlockIndex(iface, pindex);
-    }
-  }
-
-  return true;
-}
-#endif
 
 static bool hasGenesisRoot(CBlockIndex *pindexBest)
 {
@@ -277,7 +193,7 @@ static bool usde_LoadBlockIndex()
   BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
   {
     CBlockIndex* pindex = item.second;
-    pindex->bnChainWork = (pindex->pprev ? pindex->pprev->bnChainWork : 0) + pindex->GetBlockWork();
+//    pindex->bnChainWork = (pindex->pprev ? pindex->pprev->bnChainWork : 0) + pindex->GetBlockWork();
   }
 
   // Load USDEBlock::hashBestChain pointer to end of best chain
@@ -520,9 +436,8 @@ bool usde_RestoreBlockIndex()
   char path[PATH_MAX+1];
   unsigned char *sBlockData;
   size_t sBlockLen;
-  unsigned int maxHeight;
-  bcsize_t height;
-  int nBlockPos, nTxPos;
+  bcpos_t maxHeight;
+  bcpos_t height;
   int err;
   bool ret;
 
@@ -575,7 +490,10 @@ fprintf(stderr, "DEBUG: usde_RestoreBlockIndex: erased current block-chain index
     if (err)
       return error(err, "usde_RestoreBlockIndex: error opening backup block-chain.");
 
-    maxHeight = bc_idx_next(bc);
+
+		maxHeight = 0;
+		(void)bc_idx_next(bc, &maxHeight);
+
     for (height = 1; height < maxHeight; height++) {
       int n_height;
 
@@ -621,15 +539,7 @@ fprintf(stderr, "DEBUG: usde_RestoreBlockIndex: erased current block-chain index
   bc_idle(chain);
   bc_idle(chain_tx);
 
-#ifdef USE_LEVELDB_COINDB
-  txdb.WriteHashBestChain(hash);
-  ret = txdb.LoadBlockIndex();
-  txdb.Close();
-  if (!ret)
-    return (false);
-#else
   WriteHashBestChain(iface, hash);
-#endif
 
   return (true);
 }

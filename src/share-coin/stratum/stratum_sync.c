@@ -492,6 +492,7 @@ void stratum_sync_cycle(CIface *iface, user_t *user)
 
 void stratum_sync(void)
 {
+#if 0 /* disabled */
   static int _index;
   struct sockaddr_in addr;
   shjson_t *data;
@@ -509,6 +510,8 @@ user_t *u_next;
 
   _sync_req_idx++;
   ifaceIndex = (_sync_req_idx % MAX_COIN_IFACE);
+	if (ifaceIndex == TESTNET_COIN_IFACE)
+		return;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   if (!iface || !iface->enabled)
     return;
@@ -528,6 +531,7 @@ user_t *u_next;
     user->work_stamp = time(NULL);
   }
 
+#endif
 }
 
 int stratum_sync_userlist_resp(user_t *user, shjson_t *tree)
@@ -645,6 +649,7 @@ int stratum_sync_userlist_resp(user_t *user, shjson_t *tree)
     udata = shjson_array_get(node, 12);
     if (udata) {
       for (j = 1; j < MAX_COIN_IFACE; j++) {
+				if (j == TESTNET_COIN_IFACE) continue;
         CIface *iface = GetCoinByIndex(j);
         if (!iface || !iface->enabled) continue;
 
@@ -669,6 +674,7 @@ int stratum_sync_userlist_resp(user_t *user, shjson_t *tree)
     udata = shjson_array_get(node, 13);
     if (udata) {
       for (j = 1; j < MAX_COIN_IFACE; j++) {
+				if (j == TESTNET_COIN_IFACE) continue;
         CIface *iface = GetCoinByIndex(j);
         if (!iface || !iface->enabled) continue;
 

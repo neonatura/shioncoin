@@ -101,7 +101,7 @@ CBlockIndex *GetBlockIndexByHash(int ifaceIndex, const uint256 hash)
 
 json_spirit::Value ValueFromAmount(int64 amount)
 {
-    return (double)amount / (double)COIN;
+	return (double)amount / (double)COIN;
 }
 
 
@@ -1112,7 +1112,7 @@ bool CBlock::ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   bc_t *bc;
-  int nHeight;
+  bcpos_t nHeight;
   int err;
 
   if (!iface)
@@ -1321,10 +1321,10 @@ bool CBlock::WriteArchBlock()
   if (!sBlockData)
     return error(SHERR_NOMEM, "allocating %d bytes for block data\n", (int)sBlockLen);
   sBlock.read(sBlockData, sBlockLen);
-  n_height = bc_arch_write(bc, hash.GetRaw(), sBlockData, sBlockLen);
+  err = bc_arch_write(bc, hash.GetRaw(), sBlockData, sBlockLen);
   free(sBlockData);
-  if (n_height < 0)
-    return error(SHERR_INVAL, "block-chain write: %s", sherrstr(n_height));
+  if (err < 0)
+    return error(err, "WriteArchBlock [%s]", hash.GetHex().c_str());
 
   Debug("WriteArchBlock: %s", ToString().c_str());
   return (true);
@@ -1348,7 +1348,7 @@ bool CTransaction::EraseTx(int ifaceIndex)
   CIface *iface = GetCoinByIndex(ifaceIndex);
   bc_t *bc = GetBlockTxChain(iface);
   uint256 hash = GetHash();
-  int posTx;
+  bcpos_t posTx;
   int err;
 
   err = bc_find(bc, hash.GetRaw(), &posTx);
@@ -1359,7 +1359,6 @@ bool CTransaction::EraseTx(int ifaceIndex)
   err = bc_idx_clear(bc, posTx);
   if (err)
     return error(err, "CTransaction::EraseTx: error clearing tx pos %d.", posTx);
-
 
 #if 0
   /* clear cache entry */
@@ -1395,6 +1394,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
   CIface *iface = GetCoinByIndex(ifaceIndex);
   uint256 hash = pblock->GetHash();
   shtime_t ts;
+	int mode;
   bool ret;
 
   if (!pblock || !pindexPrev) {
@@ -1436,7 +1436,6 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
     return (pblock->trust(-100, "(core) AcceptBlock: rejected by checkpoint lockin at height %u", nHeight));
   }
 
-
   ret = pblock->AddToBlockIndex();
   if (!ret) {
     pblock->print();
@@ -1446,7 +1445,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
   /* inventory relay */
   int nBlockEstimate = pblock->GetTotalBlocksEstimate();
   if (GetBestBlockChain(iface) == hash) {
-    timing_init("AcceptBlock:PushInventory", &ts);
+//    timing_init("AcceptBlock:PushInventory", &ts);
     NodeList &vNodes = GetNodeList(ifaceIndex);
     {
       LOCK(cs_vNodes);
@@ -1456,39 +1455,56 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
         }
       }
     }
-    timing_term(ifaceIndex, "AcceptBlock:PushInventory", &ts);
+//    timing_term(ifaceIndex, "AcceptBlock:PushInventory", &ts);
   }
 
   if (ifaceIndex == TEST_COIN_IFACE ||
+			ifaceIndex == TESTNET_COIN_IFACE ||
       ifaceIndex == SHC_COIN_IFACE) {
+		/* handle exec checkpoints */
     BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
-      if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
-        InsertCertTable(iface, tx, nHeight);
-      }
-      if (tx.isFlag(CTransaction::TXF_IDENT)) {
-        InsertIdentTable(iface, tx);
-      }
-      if (tx.isFlag(CTransaction::TXF_EXEC)) {
-        ProcessExecTx(iface, pblock->originPeer, tx);
-      }
-      if (tx.isFlag(CTransaction::TXF_ALIAS)) {
+			if (tx.isFlag(CTransaction::TXF_EXEC) &&
+					IsExecTx(tx, mode) && mode == OP_EXT_UPDATE) {
+        ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
+			}
+		}
+
+    BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
+      if (tx.isFlag(CTransaction::TXF_MATRIX)) {
+				/* handled in coinbase */
+			} else if (tx.isFlag(CTransaction::TXF_ALIAS)) {
         bool fRet = CommitAliasTx(iface, tx, nHeight);
         if (!fRet) {
           error(SHERR_INVAL, "CommitAliasTx failure");
         }
-      }
-      if (tx.isFlag(CTransaction::TXF_LICENSE)) {
-        bool fRet = CommitLicenseTx(iface, tx, nHeight);
-        if (!fRet) {
-          error(SHERR_INVAL, "CommitLicenseTx failure");
-        }
-      }
-      if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
+      } else if (tx.isFlag(CTransaction::TXF_ASSET)) {
+				/* not implemented. */
+			} else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
+        InsertCertTable(iface, tx, nHeight);
+      } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
         int err = CommitContextTx(iface, tx, nHeight);
         if (err) {
           error(err, "CommitContextTx failure");
         }
+      } else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
+				/* not implemented. */
+			} else if (tx.isFlag(CTransaction::TXF_IDENT)) {
+        InsertIdentTable(iface, tx);
+			} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
+        bool fRet = CommitLicenseTx(iface, tx, nHeight);
+        if (!fRet) {
+          error(SHERR_INVAL, "CommitLicenseTx failure");
+        }
+			} else if (tx.isFlag(CTransaction::TXF_OFFER) ||
+					tx.isFlag(CTransaction::TXF_OFFER)) {
+				/* not implemented. */
       }
+
+			/* non-exclusive */
+			if (tx.isFlag(CTransaction::TXF_EXEC) &&
+					IsExecTx(tx, mode) && mode != OP_EXT_UPDATE) {
+        ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
+			}
     }
   }
 
@@ -1530,7 +1546,7 @@ bool CTransaction::IsStandard() const
 
 
 
-CAlias *CTransaction::CreateAlias(std::string name, const uint160& hash, int type)
+CAlias *CTransaction::CreateAlias(std::string name, int type)
 {
   nFlag |= CTransaction::TXF_ALIAS;
 
@@ -1541,17 +1557,18 @@ CAlias *CTransaction::CreateAlias(std::string name, const uint160& hash, int typ
 
   return (&alias);
 }
+
 CAlias *CTransaction::UpdateAlias(std::string name, const uint160& hash)
 {
   nFlag |= CTransaction::TXF_ALIAS;
 
-//  alias = CAlias(name, hash);
   alias = CAlias();
   alias.SetExpireSpan((double)DEFAULT_ALIAS_LIFESPAN);
   alias.SetLabel(name);
 
   return (&alias);
 }
+
 CAlias *CTransaction::RemoveAlias(std::string name)
 {
   nFlag |= CTransaction::TXF_ALIAS;
@@ -1946,8 +1963,8 @@ Object CTransactionCore::ToValue(int ifaceIndex)
   Object obj;
 
   obj.push_back(Pair("version", 
-        isFlag(CTransaction::TX_VERSION) ? 1 : 
-        isFlag(CTransaction::TX_VERSION_2) ? 2 : 0));
+        (nFlag == 1 || isFlag(CTransaction::TX_VERSION)) ? 1 : 
+        (nFlag == 2 || isFlag(CTransaction::TX_VERSION_2)) ? 2 : 0));
   obj.push_back(Pair("flag", nFlag));
 
   if (nLockTime != 0) {
@@ -2025,15 +2042,28 @@ Object CTransaction::ToValue(int ifaceIndex)
     CLicense license(certificate);
     obj.push_back(Pair("license", license.ToValue()));
   }
+
   if (this->nFlag & TXF_ALIAS)
     obj.push_back(Pair("alias", alias.ToValue(ifaceIndex)));
+
   if (this->nFlag & TXF_ASSET) {
     CAsset asset(certificate);
     obj.push_back(Pair("asset", asset.ToValue()));
   }
   if (this->nFlag & TXF_EXEC) {
-    CExec exec(certificate);
-    obj.push_back(Pair("exec", exec.ToValue()));
+		int mode;
+		if (IsExecTx(*this, mode)) {
+			if (mode == OP_EXT_NEW) {
+				CExec *exec = GetExec();
+				obj.push_back(Pair("exec", exec->ToValue(ifaceIndex)));
+			} else if (mode == OP_EXT_UPDATE) {
+				CExecCheckpoint *cp = GetExecCheckpoint();
+				obj.push_back(Pair("exec-checkpoint", cp->ToValue(ifaceIndex)));
+			} else if (mode == OP_EXT_GENERATE) {
+				CExecCall *call = GetExecCall();
+				obj.push_back(Pair("exec-call", call->ToValue(ifaceIndex)));
+			}
+		}
   }
   if (this->nFlag & TXF_OFFER)
     obj.push_back(Pair("offer", offer.ToValue()));
@@ -2233,36 +2263,45 @@ CChannel *CTransaction::RemoveChannel(const CChannel& channelIn)
 
 CExec *CTransaction::CreateExec()
 {
-  CExec *exec;
+	CExec *exec;
 
   if (nFlag & CTransaction::TXF_EXEC)
     return (NULL);
 
   nFlag |= CTransaction::TXF_EXEC;
 
-  exec = (CExec *)&certificate;
+	exec = GetExec();
+	if (!exec)
+		return (NULL);
+
   exec->SetNull();
+	exec->nVersion = 3;
   exec->SetExpireSpan((double)DEFAULT_EXEC_LIFESPAN);
-  shgeo_local(&exec->geo, SHGEO_PREC_DISTRICT);
 
   return (exec);
 }
 
-CExec *CTransaction::UpdateExec(const CExec& execIn)
+CExecCheckpoint *CTransaction::UpdateExec(const CExec& execIn)
 {
-  CExec *exec;
+  CExecCheckpoint *cp;
 
   if (nFlag & CTransaction::TXF_EXEC)
     return (NULL);
 
   nFlag |= CTransaction::TXF_EXEC;
 
-  exec = (CExec *)&certificate;
-  exec->Init(execIn);
+	cp = GetExecCheckpoint();
+	if (!cp)
+		return (NULL);
 
-  return (exec);
+	cp->SetNull();
+	cp->nVersion = 3;
+	cp->tExpire = execIn.tExpire; /* Expiration Date */
+
+  return (cp);
 }
 
+#if 0
 CExec *CTransaction::ActivateExec(const CExec& execIn)
 {
   CExec *exec;
@@ -2277,9 +2316,11 @@ CExec *CTransaction::ActivateExec(const CExec& execIn)
 
   return (exec);
 }
+#endif
 
 CExec *CTransaction::TransferExec(const CExec& execIn)
 {
+#if 0
   CExec *exec;
 
   if (nFlag & CTransaction::TXF_EXEC)
@@ -2287,31 +2328,36 @@ CExec *CTransaction::TransferExec(const CExec& execIn)
 
   nFlag |= CTransaction::TXF_EXEC;
 
-  exec = (CExec *)&certificate;
+  exec = GetExec();
   exec->Init(execIn);
 
+	/* identical executable stack */
+	exec->vContext = execIn.vContext;
+
   return (exec);
+#endif
+	return (NULL);
 }
 
-CExecCall *CTransaction::GenerateExec(const CExec& execIn, CCoinAddr& sendAddr)
+CExecCall *CTransaction::GenerateExec(const CExec& execIn)
 {
-  CExecCall *exec;
 
   if (nFlag & CTransaction::TXF_EXEC)
     return (NULL);
 
   nFlag |= CTransaction::TXF_EXEC;
+	CExecCall *call = GetExecCall();
+	if (!call)
+		return (NULL);
 
-  exec = (CExecCall *)&certificate;
-  exec->Init(execIn);
-  exec->signature.SetNull();
-  exec->SetSendAddr(sendAddr);
-  exec->vContext.clear();
-  exec->nFee = 0;
+  call->SetNull();
+	call->nVersion = 3;
+	call->tExpire = execIn.tExpire; /* Expiration Date */
 
-  return (exec);
+  return (call);
 }
 
+#if 0
 CExec *CTransaction::RemoveExec(const CExec& execIn)
 {
   CExec *exec;
@@ -2327,6 +2373,7 @@ CExec *CTransaction::RemoveExec(const CExec& execIn)
   return (exec);
 
 }
+#endif
 
 CContext *CTransaction::CreateContext()
 {
@@ -2514,7 +2561,7 @@ int BackupBlockChain(CIface *iface, unsigned int maxHeight)
 {
   bc_t *bc;
   char path[PATH_MAX+1];
-  unsigned int height;
+	uint32_t height;
   unsigned int ten_per;
   int err;
   
@@ -2526,7 +2573,11 @@ int BackupBlockChain(CIface *iface, unsigned int maxHeight)
   if (err)
     return (err);
 
-  height = MAX(1, bc_idx_next(bc));
+	err = bc_idx_next(bc, &height);
+	if (err)
+		return (err);
+
+  height = MAX(1, height);
   ten_per = (maxHeight / 10); /* ten percent of max */
   maxHeight = MIN(maxHeight - ten_per, height + ten_per);
   for (; height < maxHeight; height++) {
@@ -2650,18 +2701,17 @@ bool IsWitnessEnabled(CIface *iface, const CBlockIndex* pindexPrev)
   return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_SEGWIT, *cache) == THRESHOLD_ACTIVE);
 }
 
-
 int GetWitnessCommitmentIndex(const CBlock& block)
 {
-  int commitpos = -1;
+	int commitpos = -1;
 
-  for (size_t o = 0; o < block.vtx[0].vout.size(); o++) {
-    if (block.vtx[0].vout[o].scriptPubKey.size() >= 38 && block.vtx[0].vout[o].scriptPubKey[0] == OP_RETURN && block.vtx[0].vout[o].scriptPubKey[1] == 0x24 && block.vtx[0].vout[o].scriptPubKey[2] == 0xaa && block.vtx[0].vout[o].scriptPubKey[3] == 0x21 && block.vtx[0].vout[o].scriptPubKey[4] == 0xa9 && block.vtx[0].vout[o].scriptPubKey[5] == 0xed) {
-      commitpos = o;
-    }
-  }
+	for (size_t o = 0; o < block.vtx[0].vout.size(); o++) {
+		if (block.vtx[0].vout[o].scriptPubKey.size() >= 38 && block.vtx[0].vout[o].scriptPubKey[0] == OP_RETURN && block.vtx[0].vout[o].scriptPubKey[1] == 0x24 && block.vtx[0].vout[o].scriptPubKey[2] == 0xaa && block.vtx[0].vout[o].scriptPubKey[3] == 0x21 && block.vtx[0].vout[o].scriptPubKey[4] == 0xa9 && block.vtx[0].vout[o].scriptPubKey[5] == 0xed) {
+			commitpos = o;
+		}
+	}
 
-  return commitpos;
+	return commitpos;
 }
 
 void core_UpdateUncommittedBlockStructures(CIface *iface, CBlock *block, const CBlockIndex* pindexPrev)
@@ -2749,13 +2799,16 @@ bool core_CheckBlockWitness(CIface *iface, CBlock *pblock, CBlockIndex *pindexPr
   if (IsWitnessEnabled(iface, pindexPrev)) {
     int commitpos = GetWitnessCommitmentIndex(*pblock);
     if (commitpos != -1) {
-      const CTransaction& commit_tx = pblock->vtx[0];
+
 #if 0
-      if (commit_tx.wit.vtxinwit.size() == 0) {
-        /* non-standard -- fill in missing witness block structure */
-        core_UpdateUncommittedBlockStructures(iface, *pblock, pindexPrev);
-        /* DEBUG: */ error(SHERR_INVAL, "(emc2) core_CheckBlockWitness: filled missing witness nonce for block '%s'.", pblock->GetHash().GetHex().c_str());
-      }
+			if (GetCoinIndex(iface) == EMC2_COIN_IFACE) {
+				const CTransaction& commit_tx = pblock->vtx[0];
+				if (commit_tx.wit.vtxinwit.size() == 0) {
+					/* non-standard -- fill in missing witness block structure */
+					core_UpdateUncommittedBlockStructures(iface, pblock, pindexPrev);
+					/* DEBUG: */ error(SHERR_INVAL, "(emc2) core_CheckBlockWitness: filled missing witness nonce for block '%s'.", pblock->GetHash().GetHex().c_str());
+				}
+			}
 #endif
 
       /* The malleation check is ignored; as the transaction tree itself already does not permit it, it is impossible to trigger in the witness tree. */
@@ -2765,7 +2818,8 @@ bool core_CheckBlockWitness(CIface *iface, CBlock *pblock, CBlockIndex *pindexPr
         return (error(SHERR_INVAL, "core_CheckBlockWitness: witness commitment validation error: \"%s\" [wit-size %d].", pblock->vtx[0].ToString(GetCoinIndex(iface)).c_str()), (int)pblock->vtx[0].wit.vtxinwit.size());
       }
 
-      uint256 hashWitness = BlockWitnessMerkleRoot(*pblock, NULL);
+			bool malleated = false;
+      uint256 hashWitness = BlockWitnessMerkleRoot(*pblock, &malleated);
       const cbuff& stack = pblock->vtx[0].wit.vtxinwit[0].scriptWitness.stack[0];
       hashWitness = Hash(hashWitness.begin(), hashWitness.end(), stack.begin(), stack.end());
 //      CHash256().Write(hashWitness.begin(), 32).Write(&block.vtx[0].wit.vtxinwit[0].scriptWitness.stack[0][0], 32).Finalize(hashWitness.begin());
@@ -3490,9 +3544,11 @@ void CTransaction::Init(const CTransaction& tx)
   int i;
 
   nFlag = tx.nFlag;
+	/*
   vin = tx.vin;
   vout = tx.vout;
   wit = tx.wit;
+	*/
   nLockTime = tx.nLockTime;
 
   vin.resize(tx.vin.size());
@@ -3501,22 +3557,32 @@ void CTransaction::Init(const CTransaction& tx)
   vout.resize(tx.vout.size());
   for (i = 0; i < tx.vout.size(); i++)
     vout[i] = tx.vout[i]; 
+  wit.vtxinwit.resize(tx.wit.vtxinwit.size());
+  for (i = 0; i < tx.wit.vtxinwit.size(); i++)
+    wit.vtxinwit[i] = tx.wit.vtxinwit[i]; 
 
-  if ((this->nFlag & TXF_IDENT) ||
-      (this->nFlag & TXF_CERTIFICATE) ||
-      (this->nFlag & TXF_LICENSE) ||
-      (this->nFlag & TXF_ASSET) ||
-      (this->nFlag & TXF_EXEC) ||
-      (this->nFlag & TXF_CONTEXT))
-    certificate = tx.certificate;
-  if (this->nFlag & TXF_ALIAS)
-    alias = tx.alias;
-  if ((this->nFlag & TXF_OFFER) ||
-      (this->nFlag & TXF_OFFER_ACCEPT))
-    offer = tx.offer;
-  if (this->nFlag & TXF_MATRIX)
-    matrix = tx.matrix;
-  if (this->nFlag & TXF_CHANNEL)
-    channel = tx.channel;
+	if (this->nFlag & TXF_MATRIX)
+		matrix = tx.matrix;
+	else if (this->nFlag & TXF_ALIAS)
+		alias = CAlias(tx.alias);
+	else if (this->nFlag & TXF_ASSET)
+		certificate = tx.certificate;
+	else if (this->nFlag & TXF_CERTIFICATE)
+		certificate = tx.certificate;
+	else if (this->nFlag & TXF_CHANNEL)
+		channel = tx.channel;
+	else if (this->nFlag & TXF_CONTEXT)
+		certificate = tx.certificate;
+	else if (this->nFlag & TXF_IDENT)
+		certificate = tx.certificate;
+	else if (this->nFlag & TXF_LICENSE)
+		certificate = tx.certificate;
+	else if ((this->nFlag & TXF_OFFER) ||
+			(this->nFlag & TXF_OFFER_ACCEPT))
+		offer = tx.offer;
+
+	/* non-exclusive */
+	if (this->nFlag & TXF_EXEC)
+		exec = tx.exec;
 
 }

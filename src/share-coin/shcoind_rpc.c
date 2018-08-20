@@ -37,6 +37,23 @@ extern void stratum_close(int fd, struct sockaddr *net_addr);
 extern user_t *stratum_register_client(int fd);
 
 
+static const char *rpc_dat_path(void)
+{
+	static char ret_path[PATH_MAX+1];
+	const char *path;
+
+	memset(ret_path, 0, sizeof(ret_path));
+
+	path = (const char *)opt_str(OPT_RPC_MAP);
+	if (!path || !*path) {
+		path = get_libshare_path();
+		snprintf(ret_path, sizeof(ret_path)-1, "%s/blockchain/rpc.dat", path);
+	} else {
+		strncpy(ret_path, path, sizeof(ret_path)-1);
+	}
+
+	return ((const char *)ret_path);
+}
 
 void get_rpc_cred(char *username, char *password)
 {
@@ -99,7 +116,6 @@ shkey_t *get_rpc_dat_password(char *host)
   shkey_t *key;
   shbuf_t *buff;
   char *tok_ctx;
-  char path[PATH_MAX+1];
   char *raw;
   char *key_str;
   char *tok;
@@ -108,11 +124,8 @@ shkey_t *get_rpc_dat_password(char *host)
   if (!host)
     host = "127.0.0.1";
 
-  sprintf(path, "%s/blockchain/rpc.dat", get_libshare_path());
-  chmod(path, 00400);
-
   buff = shbuf_init();
-  err = shfs_mem_read(path, buff);
+  err = shfs_mem_read(rpc_dat_path(), buff);
   if (!err) {
     raw = shbuf_data(buff);
     tok = strtok_r(raw, "\r\n", &tok_ctx);
@@ -149,22 +162,23 @@ int set_rpc_dat_password(char *host, shkey_t *in_key)
   shkey_t *key;
   shbuf_t *buff;
   shbuf_t *w_buff;
-  char path[PATH_MAX+1];
+	const char *path;
   char *raw;
   char *key_str;
   char *tok;
+	int first;
   int err;
 
   if (!host)
     host = "127.0.0.1";
 
-  sprintf(path, "%s/blockchain/rpc.dat", get_libshare_path());
-  chmod(path, 00400);
 
   w_buff = shbuf_init();
   shbuf_catstr(w_buff, "## Automatically Generated (do not modify) ##\n\n");
 
+	first = FALSE;
   buff = shbuf_init();
+	path = rpc_dat_path(); 
   err = shfs_mem_read(path, buff);
   if (!err) {
     raw = shbuf_data(buff);
@@ -196,7 +210,9 @@ int set_rpc_dat_password(char *host, shkey_t *in_key)
       tok = strtok(NULL, "\r\n");
     }
     shbuf_free(&buff);
-  }
+  } else {
+		first = TRUE;
+	}
 
   /* add updated record */
   shbuf_catstr(w_buff, host);
@@ -207,6 +223,11 @@ int set_rpc_dat_password(char *host, shkey_t *in_key)
   err = shfs_mem_write(path, w_buff);
   if (err)
     return (err);
+
+	if (first) {
+		/* owner-only / read-only */ 
+		(void)chmod(path, 00400);
+	}
   
   shbuf_free(&w_buff);
 
@@ -256,6 +277,18 @@ int get_rpc_service_port(void)
   return ((int)opt_num(OPT_RPC_PORT));
 }
 
+const char *get_rpc_service_host(void)
+{
+	char *val;
+
+	val = opt_str(OPT_RPC_HOST);
+	if (val && *val == '*')
+		val = NULL;
+
+	return (val);
+}
+
+
 static void rpc_accept(int fd, struct sockaddr *net_addr)
 {
   sa_family_t in_fam;
@@ -291,7 +324,8 @@ int rpc_init(void)
   int err;
 
   /* bind to loop-back local-host device */
-  err = unet_bind(UNET_RPC, get_rpc_service_port(), UNET_BIND_LOCAL);
+  err = unet_bind(UNET_RPC, 
+			get_rpc_service_port(), get_rpc_service_host());
   if (err)
     return (err);
 

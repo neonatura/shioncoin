@@ -728,10 +728,10 @@ bool AppInit2()
     }
     if (pindexBest != pindexRescan)
     {
-        printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
+//        printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
         nStart = GetTimeMillis();
         pwalletMain->ScanForWalletTransactions(pindexRescan, true);
-        printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+//        printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
     }
 
     // ********************************************************* Step 8: import blocks

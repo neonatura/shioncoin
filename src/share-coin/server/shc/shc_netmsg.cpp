@@ -268,7 +268,9 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     if (!vRecv.empty())
       vRecv >> pfrom->nStartingHeight;
 
-    if (0 != strncmp(pfrom->strSubVer.c_str(), "/SHC", 4)) {
+		/** The ShareCoin currency interface shares the same "magic" prefix used for node commands as the USDE protocol. Previously, an enforcement was made that the node's version label start with "/SHC". This has been changed to something more flexible which simply rejects "/USDE" prefixes. */
+		if (pfrom->strSubVer.length() >= 5 &&
+				0 == strncmp(pfrom->strSubVer.c_str(), "/USDE", 5)) {
       sprintf(errbuf, "(shc) ProcessMessage: connect from wrong coin interface '%s' (%s)", pfrom->addr.ToString().c_str(), pfrom->strSubVer.c_str());
       pfrom->CloseSocketDisconnect(errbuf);
       return true;
@@ -492,7 +494,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     {
       for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
       {
-        const CInv &inv = vInv[nInv];
+        CInv &inv = vInv[nInv];
 
         inv.ifaceIndex = SHC_COIN_IFACE;
 
@@ -552,13 +554,21 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       inv.ifaceIndex = SHC_COIN_IFACE;
       if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK) {
         CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, inv.hash);
-        if (pindex) {
-          SHCBlock block;
-          if (block.ReadFromDisk(pindex) && block.CheckBlock() &&
-              pindex->nHeight <= GetBestHeight(SHC_COIN_IFACE)) {
-            if (inv.type == MSG_BLOCK) {
-              pfrom->PushMessage("block", block);
-            } else if (inv.type == MSG_FILTERED_BLOCK) { /* bloom */
+				if (pindex) {
+					SHCBlock block;
+					if (block.ReadFromDisk(pindex) && block.CheckBlock() &&
+							pindex->nHeight <= GetBestHeight(SHC_COIN_IFACE)) {
+						if (inv.type == MSG_BLOCK) {
+							pfrom->PushBlock(block, SERIALIZE_TRANSACTION_NO_WITNESS);
+						} else if (inv.type == MSG_WITNESS_BLOCK) {
+							pfrom->PushBlock(block);
+						} else if (inv.type == MSG_CMPCT_BLOCK) {
+							if (pfrom->fHaveWitness)
+								pfrom->PushBlock(block);
+							else
+								pfrom->PushBlock(block, SERIALIZE_TRANSACTION_NO_WITNESS);
+            } else if (inv.type == MSG_FILTERED_BLOCK ||
+								inv.type == MSG_FILTERED_WITNESS_BLOCK) { /* bloom */
               LOCK(pfrom->cs_filter);
               CBloomFilter *filter = pfrom->GetBloomFilter();
               if (filter) {

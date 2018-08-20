@@ -1,10 +1,10 @@
 ** share-coin v3.02
- * Added TestNet via "shcoind --test-net".
- * Removed requirement that peer "proto label" start with "/ShareCoin"
  * Added BITCOIN-RPC inbound and outbound connection for external program use. (./configure --enable-bitrpc).
  * Public release of compiling, deploying, and calling SEXE script programs on the block-chain.
  * Added "shcoind --port" option to control ShareCoin interface's listen port.
- * Optimized the "wallet.rescan" rpc command. 
+ * Added "ShareCoin TestNet" via "shcoind --testnet".
+ * Removed requirement that peer "proto label" start with "/SHC"
+ * Optimized the "block.verify" and "wallet.verify" rpc command. 
 ** share-coin v3.01
  * Public release (topic url: https://bitcointalk.org/index.php?topic=3180570.0)
 ** share-coin v2.25

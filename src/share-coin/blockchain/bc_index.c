@@ -68,6 +68,9 @@ int bc_idx_open(bc_t *bc)
 {
   int err;
 
+	if (!bc)
+		return (SHERR_INVAL);
+
   bc_lock();
   err = _bc_idx_open(bc);
   bc_unlock();
@@ -392,24 +395,19 @@ int bc_idx_clear(bc_t *bc, bcsize_t pos)
   return (err);
 }
 
-
-
-/**
- * @returns The next record index.
- */
-bcsize_t bc_idx_next(bc_t *bc)
+int bc_idx_next(bc_t *bc, bcpos_t *pos_p)
 {
   bc_idx_t *idx;
   int err;
-
-  if (!bc)
-    return (SHERR_INVAL);
 
   err = bc_idx_open(bc);
   if (err)
     return (err);
 
-  return MAX(0, (bc->idx_map.hdr->of / sizeof(bc_idx_t)));
+	if (pos_p)
+		*pos_p = (bc->idx_map.hdr->of / sizeof(bc_idx_t));
+
+	return (0);
 }
 
 uint32_t bc_idx_crc(bc_hash_t hash)

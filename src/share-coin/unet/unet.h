@@ -35,10 +35,10 @@ extern "C" {
 #define UNET_SHC 1
 #define UNET_USDE 2
 #define UNET_EMC2 3
-#define UNET_RESERVED_1 4
-#define UNET_RESERVED_2 5
-#define UNET_RESERVED_3 6
+#define UNET_LTC 4
+#define UNET_TESTNET 5
 
+#define UNET_RESERVED_3 6
 #define UNET_RESERVED_4 7
 
 #define MAX_UNET_COIN_MODES 8
@@ -54,9 +54,6 @@ extern "C" {
 
 /* maximum number of unet services */
 #define MAX_UNET_MODES 11
-
-
-#define UNET_BIND_LOCAL (1 << 0)
 
 
 #define UNETF_SHUTDOWN DF_SHUTDOWN
@@ -169,7 +166,8 @@ typedef struct uevent_t
   void *data;
 } uevent_t;
 
-
+typedef void *(*uthread_t)(void *);
+#define UTHREAD(_a) ((uthread_t)(_a))
 
 
 
@@ -191,6 +189,8 @@ int unet_mode(unsigned int sk);
 
 
 unet_bind_t *unet_bind_table(int mode);
+
+int unet_bind(int mode, int port, char *host);
 
 
 
@@ -218,7 +218,6 @@ void unet_timer_unset(int mode);
 int unet_connect(int mode, struct sockaddr *net_addr, unsigned int *sk_p);
 
 
-int unet_bind(int mode, int port, int flag);
 
 int unet_unbind(int mode);
 void unet_bind_flag_set(int mode, int flags);

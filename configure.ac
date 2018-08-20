@@ -236,6 +236,8 @@ AC_CHECK_LIB([crypto], [BN_new])
 AC_CHECK_PROGS([SYSTEMCTL], [systemctl])
 AM_CONDITIONAL([HAVE_SYSTEMCTL], [test -n "$SYSTEMCTL"])
 
+AC_CHECK_PROGS([GIT], [git])
+AM_CONDITIONAL(HAVE_GIT, [test x"$GIT" = x"git"])
 
 #AC_CHECK_LIB([ssl], [SSL_version], ,
 #  AC_MSG_ERROR("libssl (crypt library) is required")
@@ -249,11 +251,10 @@ AC_ARG_WITH([libshare],
   [specify a path to the libshare build directory])],
   [],
   [with_libshare=yes])
-AC_CHECK_PROGS([GIT], [git])
-AM_CONDITIONAL([HAVE_GIT], [test -n "$GIT"])
+
 LIBSHARE=
 AS_IF([test "x$with_libshare" = "xyes"],
-  AC_CHECK_LIB([share_sexe], [sexe_exec_prun],
+  AC_CHECK_LIB([share_sexe], [sexe_prun],
     AC_DEFINE_UNQUOTED([HAVE_LIBSHARE], [1], [Define if you have the libshare library installed]),
     [with_libshare=../../depend/share/build]
   )
@@ -322,9 +323,6 @@ AC_CHECK_DECL([_PATH_DEVNULL],,AC_DEFINE_UNQUOTED([_PATH_DEVNULL], "/dev/null", 
 #endif
 ])
 
-AM_CONDITIONAL(HAVE_INITD_DIR, [test -d /etc/rc.d])
-INITD_DIR="/etc/rc.d"
-AC_SUBST(INITD_DIR)
 
 #AC_SUBST(OPENSSL_DIR, "openssl-1.0.1g")
 AC_CHECK_PROGS([CP], [cp])
@@ -372,10 +370,11 @@ AS_HELP_STRING([--enable-debug],
 esac], [debug=false])
 AM_CONDITIONAL(DEBUG, test x"$debug" = x"true")
 
+# SEXE Execution Transactions (enabled by default)
 AC_ARG_ENABLE([sexe],
-  AS_HELP_STRING([--enable-sexe], [Enable execution of SEXE programs.]))
-AM_CONDITIONAL(USE_SEXE, [test "x$enable_sexe" = "xyes"])
-if test "x$enable_sexe" = "xyes" ; then
+  AS_HELP_STRING([--disable-sexe], [Disable execution of SEXE programs.]))
+AM_CONDITIONAL(USE_SEXE, [test "x$enable_sexe" != "xno"])
+if test "x$enable_sexe" != "xno" ; then
   AC_DEFINE_UNQUOTED([USE_SEXE], 1, [Define to enable execution of SEXE programs.])
 fi
 
@@ -391,6 +390,13 @@ AC_ARG_ENABLE([emc2],
 AM_CONDITIONAL(EMC2_SERVICE, [test "x$enable_emc2" = "xyes"])
 if test "x$enable_emc2" = "xyes" ; then
   AC_DEFINE_UNQUOTED([EMC2_SERVICE], 1, [Define to enable the EMC2 coin service.])
+fi
+
+AC_ARG_ENABLE([testnet],
+  AS_HELP_STRING([--disable-testnet], [Disable testnet service.]))
+AM_CONDITIONAL(TESTNET_SERVICE, [test "x$enable_testnet" != "xno"])
+if test "x$enable_testnet" != "xno" ; then
+  AC_DEFINE_UNQUOTED([TESTNET_SERVICE], 1, [Define to enable ShareCoin (SHC) Test Network.])
 fi
 
 AC_ARG_ENABLE([stratum],

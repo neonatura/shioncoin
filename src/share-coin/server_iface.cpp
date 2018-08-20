@@ -35,6 +35,8 @@
 #include "shc/shc_netmsg.h"
 #include "usde/usde_netmsg.h"
 #include "emc2/emc2_netmsg.h"
+#include "ltc/ltc_netmsg.h"
+#include "testnet/testnet_netmsg.h"
 #include "chain.h"
 
 #ifdef WIN32_VC
@@ -792,8 +794,10 @@ void usde_server_accept(int hSocket, struct sockaddr *net_addr)
     vNodes.push_back(pnode);
   }
 
+#if 0
   /* submit address to shared daemon */
   shared_addr_submit(shaddr_print(net_addr));
+#endif
 }
 
 void usde_MessageHandler(CIface *iface)
@@ -1055,7 +1059,7 @@ void usde_server_timer(void)
             timing_term(USDE_COIN_IFACE, "recv msg", &ts);
 
             double diff = shtime_diff(ts, shtime());
-            if (diff > 0.25)
+            if (diff >= 0.4)
               break;
           }
           if (err && err != SHERR_AGAIN) {
@@ -1112,34 +1116,6 @@ void usde_server_timer(void)
 
 
 
-int usde_server_init(void)
-{
-  int err;
-
-  err = unet_bind(UNET_USDE, USDE_COIN_DAEMON_PORT, 0);
-  if (err)
-    return (err);
-
-  unet_timer_set(UNET_USDE, usde_server_timer); /* x10/s */
-  unet_connop_set(UNET_USDE, usde_server_accept);
-  unet_disconnop_set(UNET_USDE, usde_server_close);
-
-  /* automatically connect to peers of 'usde' service. */
-  unet_bind_flag_set(UNET_USDE, UNETF_PEER_SCAN); 
-
-  return (0);
-}
-
-#if 0
-void usde_server_term(void)
-{
-  unet_unbind(UNET_USDE);
-}
-void shc_server_term(void)
-{
-  unet_unbind(UNET_SHC);
-}
-#endif
 
 list<CNode*> shc_vNodesDisconnected;
 static void shc_close_free(void)
@@ -1242,6 +1218,32 @@ bool shc_coin_server_recv_msg(CIface *iface, CNode* pfrom)
   return (fRet);
 }
 
+#if 0
+void *shc_coin_server_recv_msg_thread(CNode *pfrom)
+{
+	CIface *iface;
+	bool fRet;
+
+	if (!pfrom)
+		return;
+
+	{
+		LOCK(pnode->cs_vRecv);
+
+		fRet = false;
+		iface = GetCoinByIndex(pfrom->ifaceIndex);
+		if (iface)
+			fRet = shc_coin_server_recv_msg(iface, pfrom); 
+	}
+
+	if (!fRet) {
+		/* .. */
+	}
+
+	return (NULL);
+}
+#endif
+
 int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
 {
   coinhdr_t hdr;
@@ -1282,15 +1284,14 @@ int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   memcpy(&vRecv[0], data, sizeof(hdr) + hdr.size);
   shbuf_trim(buff, sizeof(hdr) + hdr.size);
 
+#if 0
+	unet_thread_run(GetCoinIndex(iface), 
+			UTHREAD(shc_coin_server_recv_msg_thread), pnode);
+#endif
   bool fRet = shc_coin_server_recv_msg(iface, pnode);
   if (!fRet) {
     error(SHERR_INVAL, "shc_coin_server_recv: shc_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
   }
-
-#if 0
-  vRecv.erase(vRecv.begin(), vRecv.end());
-  vRecv.Compact();
-#endif
 
   pnode->nLastRecv = GetTime();
   return (0);
@@ -1337,7 +1338,7 @@ void shc_server_timer(void)
             timing_term(SHC_COIN_IFACE, "recv msg", &ts);
 
             double diff = shtime_diff(ts, shtime());
-            if (diff > 0.25)
+            if (diff >= 0.4)
               break;
           }
           if (err && err != SHERR_AGAIN) {
@@ -1463,9 +1464,409 @@ void shc_server_accept(int hSocket, struct sockaddr *net_addr)
     vNodes.push_back(pnode);
   }
 
+#if 0
   /* submit address to shared daemon */
   shared_addr_submit(shaddr_print(net_addr));
+#endif
 }
+
+list<CNode*> testnet_vNodesDisconnected;
+static void testnet_close_free(void)
+{
+  NodeList &vNodes = GetNodeList(TESTNET_COIN_IFACE);
+
+  LOCK(cs_vNodes);
+  vector<CNode*> vNodesCopy = vNodes;
+vector<CNode*> testnet_vNodesDisconnected;
+
+  // Disconnect unused nodes
+  BOOST_FOREACH(CNode* pnode, vNodesCopy)
+  {
+    if (pnode->fDisconnect ||
+        (pnode->GetRefCount() <= 0 && pnode->vRecv.empty() && pnode->vSend.empty()))
+    {
+      // remove from vNodes
+      vNodes.erase(remove(vNodes.begin(), vNodes.end(), pnode), vNodes.end());
+
+      // release outbound grant (if any)
+      pnode->grantOutbound.Release();
+
+      pnode->Cleanup();
+
+      // hold in disconnected pool until all refs are released
+      pnode->nReleaseTime = max(pnode->nReleaseTime, GetTime() + 15 * 60);
+      if (pnode->fNetworkNode || pnode->fInbound)
+        pnode->Release();
+      testnet_vNodesDisconnected.push_back(pnode);
+    }
+  }
+
+  // Delete disconnected nodes
+  BOOST_FOREACH(CNode* pnode, testnet_vNodesDisconnected)
+  {
+    delete pnode;
+  }
+}
+
+extern bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStream& vRecv);
+bool testnet_coin_server_recv_msg(CIface *iface, CNode* pfrom)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+  CDataStream& vRecv = pfrom->vRecv;
+  shtime_t ts;
+
+  if (vRecv.empty())
+    return (true);
+
+  CMessageHeader hdr;
+  vRecv >> hdr;
+
+  /* check checksum */
+  string strCommand = hdr.GetCommand();
+  unsigned int nMessageSize = hdr.nMessageSize;
+  if (nMessageSize > MAX_SIZE) {
+    error(SHERR_2BIG, "(testnet) ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE", strCommand.c_str(), nMessageSize);
+    return (false);
+  }
+
+  /* verify checksum */
+  uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);
+  unsigned int nChecksum = 0;
+  memcpy(&nChecksum, &hash, sizeof(nChecksum));
+  if (nChecksum != hdr.nChecksum) {
+    error(SHERR_INVAL, "ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
+    return (false);
+  }
+
+  bool fRet = false;
+  try {
+    char *cmd = (char *)strCommand.c_str();
+    timing_init(cmd, &ts);
+    {
+//      LOCK(cs_main);
+      fRet = testnet_ProcessMessage(iface, pfrom, strCommand, vRecv);
+    }
+    timing_term(TESTNET_COIN_IFACE, cmd, &ts);
+  } catch (std::ios_base::failure& e) {
+    if (strstr(e.what(), "end of data"))
+    {
+      // Allow exceptions from underlength message on vRecv
+      error(SHERR_INVAL, "(testnet) ProcessMessages(%s, %u bytes) : Exception '%s' caught, normally caused by a message being shorter than its stated length\n", strCommand.c_str(), nMessageSize, e.what());
+    }
+    else if (strstr(e.what(), "size too large"))
+    {
+      // Allow exceptions from overlong size
+      error(SHERR_INVAL, "(testnet) ProcessMessages(%s, %u bytes) : Exception '%s' caught\n", strCommand.c_str(), nMessageSize, e.what());
+    }
+    else
+    {
+      PrintExceptionContinue(&e, "(testnet) ProcessMessage");
+    }
+  } catch (std::exception& e) {
+    PrintExceptionContinue(&e, "ProcessMessages()");
+  } catch (...) {
+    PrintExceptionContinue(NULL, "ProcessMessages()");
+  }
+
+  return (fRet);
+}
+
+int testnet_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
+{
+  coinhdr_t hdr;
+  unsigned char *data;
+  int size;
+
+  size = shbuf_size(buff);
+  if (size < SIZEOF_COINHDR_T)
+    return (SHERR_AGAIN);
+
+  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+    return (SHERR_AGAIN);
+
+  data = (unsigned char *)shbuf_data(buff);
+  mempcpy(&hdr, data, SIZEOF_COINHDR_T);
+
+  /* verify magic sequence */
+  if (0 != memcmp(hdr.magic, iface->hdr_magic, 4)) {
+    shbuf_clear(buff);
+    return (SHERR_ILSEQ);
+  }
+
+  if (hdr.size > MAX_SIZE) {
+    shbuf_clear(buff);
+    return (SHERR_INVAL);
+  }
+
+  if (size < SIZEOF_COINHDR_T + hdr.size)
+    return (SHERR_AGAIN);
+
+  CDataStream& vRecv = pnode->vRecv;
+
+  /* clear previous contents */
+  vRecv.clear();
+
+  /* transfer to cli buffer */
+  vRecv.resize(sizeof(hdr) + hdr.size);
+  memcpy(&vRecv[0], data, sizeof(hdr) + hdr.size);
+  shbuf_trim(buff, sizeof(hdr) + hdr.size);
+
+  bool fRet = testnet_coin_server_recv_msg(iface, pnode);
+  if (!fRet) {
+    error(SHERR_INVAL, "testnet_coin_server_recv: testnet_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
+  }
+
+#if 0
+  vRecv.erase(vRecv.begin(), vRecv.end());
+  vRecv.Compact();
+#endif
+
+  pnode->nLastRecv = GetTime();
+  return (0);
+}
+
+void testnet_MessageHandler(CIface *iface)
+{
+  NodeList &vNodes = GetNodeList(iface);
+  shtime_t ts;
+
+  vector<CNode*> vNodesCopy;
+  {
+    LOCK(cs_vNodes);
+    vNodesCopy = vNodes;
+    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+      pnode->AddRef();
+  }
+
+  // Poll the connected nodes for messages
+  CNode* pnodeTrickle = NULL;
+#if 0
+  if (!vNodesCopy.empty())
+    pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
+#endif
+  BOOST_FOREACH(CNode* pnode, vNodesCopy)
+  {
+#if 0
+    // Receive messages
+    {
+      TRY_LOCK(pnode->cs_vRecv, lockRecv);
+      if (lockRecv)
+        testnet_ProcessMessages(iface, pnode);
+    }
+    if (fShutdown)
+      return;
+#endif
+
+    // Send messages
+    timing_init("SendMessages", &ts);
+    {
+      TRY_LOCK(pnode->cs_vSend, lockSend);
+      if (lockSend)
+        testnet_SendMessages(iface, pnode, pnode == pnodeTrickle);
+    }
+    timing_term(TESTNET_COIN_IFACE, "SendMessages", &ts);
+    if (fShutdown)
+      return;
+  }
+
+  {
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+      pnode->Release();
+  }
+
+
+}
+
+
+void testnet_server_timer(void)
+{
+  static int verify_idx;
+  CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
+  NodeList &vNodes = GetNodeList(TESTNET_COIN_IFACE);
+  shtime_t ts;
+  bc_t *bc;
+  int err;
+
+  if (fShutdown)
+    return;
+
+  testnet_close_free();
+
+  //
+  // Service each socket
+  {
+    vector<CNode*> vNodesCopy;
+    {
+      LOCK(cs_vNodes);
+      vNodesCopy = vNodes;
+      BOOST_FOREACH(CNode* pnode, vNodesCopy)
+        pnode->AddRef();
+    }
+
+    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+    {
+      if (fShutdown)
+        return;
+
+      shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
+      if (pchBuf) {
+        TRY_LOCK(pnode->cs_vRecv, lockRecv);
+        if (lockRecv) {
+          err = 0;
+          while (err == 0) {
+            timing_init("recv msg", &ts);
+            err = testnet_coin_server_recv(iface, pnode, pchBuf);
+            timing_term(TESTNET_COIN_IFACE, "recv msg", &ts);
+
+            double diff = shtime_diff(ts, shtime());
+            if (diff >= 0.4)
+              break;
+          }
+          if (err && err != SHERR_AGAIN) {
+            error(err, "testnet_coin_server_recv");
+            pnode->CloseSocketDisconnect("testnet_coin_server_recv");
+            continue;
+          }
+        }
+      }
+
+      {
+        LOCK(pnode->cs_vSend);
+        /* transmit pending outgoing data */
+        CDataStream& vSend = pnode->vSend;
+        if (!vSend.empty())
+        {
+          size_t nBytes = vSend.size();
+          int err = unet_write(pnode->hSocket, &vSend[0], nBytes);
+          if (!err) {
+            vSend.erase(vSend.begin(), vSend.begin() + nBytes);
+            pnode->nLastSend = GetTime();
+          }
+        }
+      }
+    }
+
+    {
+      LOCK(cs_vNodes);
+      BOOST_FOREACH(CNode* pnode, vNodesCopy)
+        pnode->Release();
+    }
+  }
+
+  timing_init("MessageHandler", &ts);
+  testnet_MessageHandler(iface);
+  timing_term(TESTNET_COIN_IFACE, "MessageHandler", &ts);
+
+  event_cycle_chain(TESTNET_COIN_IFACE); /* DEBUG: TODO: uevent */
+
+#if 0
+  if (0 == (verify_idx % 20)) {
+    bc = GetBlockTxChain(iface);
+    if (bc)
+      bc_idle(bc);
+
+    bc = GetBlockChain(iface);
+    if (bc)
+      bc_idle(bc);
+  }
+  verify_idx++;
+#endif
+
+}
+
+void testnet_server_accept(int hSocket, struct sockaddr *net_addr)
+{
+  NodeList &vNodes = GetNodeList(TESTNET_COIN_IFACE);
+#ifdef USE_IPV6
+  struct sockaddr_storage sockaddr;
+#else
+  struct sockaddr sockaddr;
+#endif
+  CAddress addr;
+  int nInbound = 0;
+  bool inBound = false;
+  unet_table_t *t = get_unet_table(hSocket);
+
+  if (t && (t->flag & UNETF_INBOUND))
+    inBound = true;
+
+  addr.SetSockAddr(net_addr);
+
+  if (inBound) {
+    {
+      LOCK(cs_vNodes);
+      BOOST_FOREACH(CNode* pnode, vNodes)
+        if (pnode->fInbound)
+          nInbound++;
+    }
+
+    if (nInbound >= opt_num(OPT_MAX_CONN) - MAX_OUTBOUND_CONNECTIONS)
+    {
+      {
+        LOCK(cs_setservAddNodeAddresses);
+        if (!setservAddNodeAddresses.count(addr)) {
+          unet_close(hSocket, "inbound limit");
+        }
+      }
+    }
+
+    if (CNode::IsBanned(addr))
+    {
+      unet_close(hSocket, "banned");
+      return;
+    }
+  } else {
+    if (CNode::IsBanned(addr)) {
+      /* force clear ban list due to manual connection initiation. */
+      CNode::ClearBanned();
+    }
+  }
+
+  if (inBound) {
+    Debug("(testnet) testnet_server_accept: accepted connection '%s'.", 
+        addr.ToString().c_str());
+  } else {
+    Debug("(testnet) testnet_server_accept: initialized connection '%s'.",
+        addr.ToString().c_str());
+  }
+
+
+  CNode* pnode = new CNode(TESTNET_COIN_IFACE, hSocket, addr, 
+      shaddr_print(shaddr(hSocket)), inBound);
+
+  //if (inBound)
+    pnode->AddRef();
+
+  if (!inBound)
+    pnode->fNetworkNode = true;
+
+  {
+    LOCK(cs_vNodes);
+    vNodes.push_back(pnode);
+  }
+
+#if 0
+  /* submit address to shared daemon */
+  shared_addr_submit(shaddr_print(net_addr));
+#endif
+}
+
+void testnet_server_close(int fd, struct sockaddr *addr)
+{
+  NodeList &vNodes = GetNodeList(TESTNET_COIN_IFACE);
+
+  LOCK(cs_vNodes);
+  vector<CNode*> vNodesCopy = vNodes;
+  BOOST_FOREACH(CNode* pnode, vNodesCopy)
+  {
+    if (pnode->hSocket == fd) {
+      pnode->fDisconnect = true;
+    }
+  }
+
+}
+
 
 void static Discover()
 {
@@ -1632,6 +2033,7 @@ void flush_addrman_db(void)
 }
 #endif
 
+#if 0
 void shared_addr_submit(const char *net_addr)
 {
   shpeer_t *peer;
@@ -1643,6 +2045,7 @@ void shared_addr_submit(const char *net_addr)
   shapp_listen(TX_APP, peer);
   shpeer_free(&peer); 
 }
+#endif
 
 #if 0
 int GetRandomAddress(CIface *iface, char *hostname, int *port_p)
@@ -1958,8 +2361,10 @@ void emc2_server_accept(int hSocket, struct sockaddr *net_addr)
     vNodes.push_back(pnode);
   }
 
+#if 0
   /* submit address to shared daemon */
   shared_addr_submit(shaddr_print(net_addr));
+#endif
 }
 
 void emc2_server_close(int fd, struct sockaddr *addr)
@@ -2178,7 +2583,7 @@ void emc2_server_timer(void)
             timing_term(EMC2_COIN_IFACE, "recv msg", &ts);
 
             double diff = shtime_diff(ts, shtime());
-            if (diff > 0.25)
+            if (diff >= 0.4)
               break;
           }
           if (err && err != SHERR_AGAIN) {
@@ -2220,3 +2625,403 @@ void emc2_server_timer(void)
 
 }
 
+
+
+
+
+list<CNode*> ltc_vNodesDisconnected;
+static void ltc_close_free(void)
+{
+  NodeList &vNodes = GetNodeList(LTC_COIN_IFACE);
+
+  LOCK(cs_vNodes);
+  vector<CNode*> vNodesCopy = vNodes;
+vector<CNode*> ltc_vNodesDisconnected;
+
+  // Disconnect unused nodes
+  BOOST_FOREACH(CNode* pnode, vNodesCopy)
+  {
+    if (pnode->fDisconnect ||
+        (pnode->GetRefCount() <= 0 && pnode->vRecv.empty() && pnode->vSend.empty()))
+    {
+      // remove from vNodes
+      vNodes.erase(remove(vNodes.begin(), vNodes.end(), pnode), vNodes.end());
+
+      // release outbound grant (if any)
+      pnode->grantOutbound.Release();
+
+      pnode->Cleanup();
+
+      // hold in disconnected pool until all refs are released
+      pnode->nReleaseTime = max(pnode->nReleaseTime, GetTime() + 15 * 60);
+      if (pnode->fNetworkNode || pnode->fInbound)
+        pnode->Release();
+      ltc_vNodesDisconnected.push_back(pnode);
+    }
+  }
+
+  // Delete disconnected nodes
+  BOOST_FOREACH(CNode* pnode, ltc_vNodesDisconnected)
+  {
+    delete pnode;
+  }
+}
+
+extern bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStream& vRecv);
+bool ltc_coin_server_recv_msg(CIface *iface, CNode* pfrom)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+  CDataStream& vRecv = pfrom->vRecv;
+  shtime_t ts;
+
+  if (vRecv.empty())
+    return (true);
+
+  CMessageHeader hdr;
+  vRecv >> hdr;
+
+  /* check checksum */
+  string strCommand = hdr.GetCommand();
+  unsigned int nMessageSize = hdr.nMessageSize;
+  if (nMessageSize > MAX_SIZE) {
+    error(SHERR_2BIG, "(ltc) ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE", strCommand.c_str(), nMessageSize);
+    return (false);
+  }
+
+  /* verify checksum */
+  uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);
+  unsigned int nChecksum = 0;
+  memcpy(&nChecksum, &hash, sizeof(nChecksum));
+  if (nChecksum != hdr.nChecksum) {
+    error(SHERR_INVAL, "ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
+    return (false);
+  }
+
+  bool fRet = false;
+  try {
+    char *cmd = (char *)strCommand.c_str();
+    timing_init(cmd, &ts);
+    {
+//      LOCK(cs_main);
+      fRet = ltc_ProcessMessage(iface, pfrom, strCommand, vRecv);
+    }
+    timing_term(LTC_COIN_IFACE, cmd, &ts);
+  } catch (std::ios_base::failure& e) {
+    if (strstr(e.what(), "end of data"))
+    {
+      // Allow exceptions from underlength message on vRecv
+      error(SHERR_INVAL, "(ltc) ProcessMessages(%s, %u bytes) : Exception '%s' caught, normally caused by a message being shorter than its stated length\n", strCommand.c_str(), nMessageSize, e.what());
+    }
+    else if (strstr(e.what(), "size too large"))
+    {
+      // Allow exceptions from overlong size
+      error(SHERR_INVAL, "(ltc) ProcessMessages(%s, %u bytes) : Exception '%s' caught\n", strCommand.c_str(), nMessageSize, e.what());
+    }
+    else
+    {
+      PrintExceptionContinue(&e, "(ltc) ProcessMessage");
+    }
+  } catch (std::exception& e) {
+    PrintExceptionContinue(&e, "ProcessMessages()");
+  } catch (...) {
+    PrintExceptionContinue(NULL, "ProcessMessages()");
+  }
+
+  return (fRet);
+}
+
+int ltc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
+{
+  coinhdr_t hdr;
+  unsigned char *data;
+  int size;
+
+  size = shbuf_size(buff);
+  if (size < SIZEOF_COINHDR_T)
+    return (SHERR_AGAIN);
+
+  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+    return (SHERR_AGAIN);
+
+  data = (unsigned char *)shbuf_data(buff);
+  mempcpy(&hdr, data, SIZEOF_COINHDR_T);
+
+  /* verify magic sequence */
+  if (0 != memcmp(hdr.magic, iface->hdr_magic, 4)) {
+    shbuf_clear(buff);
+    return (SHERR_ILSEQ);
+  }
+
+  if (hdr.size > MAX_SIZE) {
+    shbuf_clear(buff);
+    return (SHERR_INVAL);
+  }
+
+  if (size < SIZEOF_COINHDR_T + hdr.size)
+    return (SHERR_AGAIN);
+
+  CDataStream& vRecv = pnode->vRecv;
+
+  /* clear previous contents */
+  vRecv.clear();
+
+  /* transfer to cli buffer */
+  vRecv.resize(sizeof(hdr) + hdr.size);
+  memcpy(&vRecv[0], data, sizeof(hdr) + hdr.size);
+  shbuf_trim(buff, sizeof(hdr) + hdr.size);
+
+  bool fRet = ltc_coin_server_recv_msg(iface, pnode);
+  if (!fRet) {
+    error(SHERR_INVAL, "ltc_coin_server_recv: ltc_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
+  }
+
+#if 0
+  vRecv.erase(vRecv.begin(), vRecv.end());
+  vRecv.Compact();
+#endif
+
+  pnode->nLastRecv = GetTime();
+  return (0);
+}
+
+void ltc_MessageHandler(CIface *iface)
+{
+  NodeList &vNodes = GetNodeList(iface);
+  shtime_t ts;
+
+  vector<CNode*> vNodesCopy;
+  {
+    LOCK(cs_vNodes);
+    vNodesCopy = vNodes;
+    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+      pnode->AddRef();
+  }
+
+  // Poll the connected nodes for messages
+  CNode* pnodeTrickle = NULL;
+#if 0
+  if (!vNodesCopy.empty())
+    pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
+#endif
+  BOOST_FOREACH(CNode* pnode, vNodesCopy)
+  {
+#if 0
+    // Receive messages
+    {
+      TRY_LOCK(pnode->cs_vRecv, lockRecv);
+      if (lockRecv)
+        ltc_ProcessMessages(iface, pnode);
+    }
+    if (fShutdown)
+      return;
+#endif
+
+    // Send messages
+    timing_init("SendMessages", &ts);
+    {
+      TRY_LOCK(pnode->cs_vSend, lockSend);
+      if (lockSend)
+        ltc_SendMessages(iface, pnode, pnode == pnodeTrickle);
+    }
+    timing_term(LTC_COIN_IFACE, "SendMessages", &ts);
+    if (fShutdown)
+      return;
+  }
+
+  {
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+      pnode->Release();
+  }
+
+
+}
+
+
+void ltc_server_timer(void)
+{
+  static int verify_idx;
+  CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
+  NodeList &vNodes = GetNodeList(LTC_COIN_IFACE);
+  shtime_t ts;
+  bc_t *bc;
+  int err;
+
+  if (fShutdown)
+    return;
+
+  ltc_close_free();
+
+  //
+  // Service each socket
+  {
+    vector<CNode*> vNodesCopy;
+    {
+      LOCK(cs_vNodes);
+      vNodesCopy = vNodes;
+      BOOST_FOREACH(CNode* pnode, vNodesCopy)
+        pnode->AddRef();
+    }
+
+    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+    {
+      if (fShutdown)
+        return;
+
+      shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
+      if (pchBuf) {
+        TRY_LOCK(pnode->cs_vRecv, lockRecv);
+        if (lockRecv) {
+          err = 0;
+          while (err == 0) {
+            timing_init("recv msg", &ts);
+            err = ltc_coin_server_recv(iface, pnode, pchBuf);
+            timing_term(LTC_COIN_IFACE, "recv msg", &ts);
+
+            double diff = shtime_diff(ts, shtime());
+            if (diff >= 0.4)
+              break;
+          }
+          if (err && err != SHERR_AGAIN) {
+            error(err, "ltc_coin_server_recv");
+            pnode->CloseSocketDisconnect("ltc_coin_server_recv");
+            continue;
+          }
+        }
+      }
+
+      {
+        LOCK(pnode->cs_vSend);
+        /* transmit pending outgoing data */
+        CDataStream& vSend = pnode->vSend;
+        if (!vSend.empty())
+        {
+          size_t nBytes = vSend.size();
+          int err = unet_write(pnode->hSocket, &vSend[0], nBytes);
+          if (!err) {
+            vSend.erase(vSend.begin(), vSend.begin() + nBytes);
+            pnode->nLastSend = GetTime();
+          }
+        }
+      }
+    }
+
+    {
+      LOCK(cs_vNodes);
+      BOOST_FOREACH(CNode* pnode, vNodesCopy)
+        pnode->Release();
+    }
+  }
+
+  timing_init("MessageHandler", &ts);
+  ltc_MessageHandler(iface);
+  timing_term(LTC_COIN_IFACE, "MessageHandler", &ts);
+
+  event_cycle_chain(LTC_COIN_IFACE); /* DEBUG: TODO: uevent */
+
+#if 0
+  if (0 == (verify_idx % 20)) {
+    bc = GetBlockTxChain(iface);
+    if (bc)
+      bc_idle(bc);
+
+    bc = GetBlockChain(iface);
+    if (bc)
+      bc_idle(bc);
+  }
+  verify_idx++;
+#endif
+
+}
+
+void ltc_server_accept(int hSocket, struct sockaddr *net_addr)
+{
+  NodeList &vNodes = GetNodeList(LTC_COIN_IFACE);
+#ifdef USE_IPV6
+  struct sockaddr_storage sockaddr;
+#else
+  struct sockaddr sockaddr;
+#endif
+  CAddress addr;
+  int nInbound = 0;
+  bool inBound = false;
+  unet_table_t *t = get_unet_table(hSocket);
+
+  if (t && (t->flag & UNETF_INBOUND))
+    inBound = true;
+
+  addr.SetSockAddr(net_addr);
+
+  if (inBound) {
+    {
+      LOCK(cs_vNodes);
+      BOOST_FOREACH(CNode* pnode, vNodes)
+        if (pnode->fInbound)
+          nInbound++;
+    }
+
+    if (nInbound >= opt_num(OPT_MAX_CONN) - MAX_OUTBOUND_CONNECTIONS)
+    {
+      {
+        LOCK(cs_setservAddNodeAddresses);
+        if (!setservAddNodeAddresses.count(addr)) {
+          unet_close(hSocket, "inbound limit");
+        }
+      }
+    }
+
+    if (CNode::IsBanned(addr))
+    {
+      unet_close(hSocket, "banned");
+      return;
+    }
+  } else {
+    if (CNode::IsBanned(addr)) {
+      /* force clear ban list due to manual connection initiation. */
+      CNode::ClearBanned();
+    }
+  }
+
+  if (inBound) {
+    Debug("(ltc) ltc_server_accept: accepted connection '%s'.", 
+        addr.ToString().c_str());
+  } else {
+    Debug("(ltc) ltc_server_accept: initialized connection '%s'.",
+        addr.ToString().c_str());
+  }
+
+
+  CNode* pnode = new CNode(LTC_COIN_IFACE, hSocket, addr, 
+      shaddr_print(shaddr(hSocket)), inBound);
+
+  //if (inBound)
+    pnode->AddRef();
+
+  if (!inBound)
+    pnode->fNetworkNode = true;
+
+  {
+    LOCK(cs_vNodes);
+    vNodes.push_back(pnode);
+  }
+
+#if 0
+  /* submit address to shared daemon */
+  shared_addr_submit(shaddr_print(net_addr));
+#endif
+}
+
+void ltc_server_close(int fd, struct sockaddr *addr)
+{
+  NodeList &vNodes = GetNodeList(LTC_COIN_IFACE);
+
+  LOCK(cs_vNodes);
+  vector<CNode*> vNodesCopy = vNodes;
+  BOOST_FOREACH(CNode* pnode, vNodesCopy)
+  {
+    if (pnode->hSocket == fd) {
+      pnode->fDisconnect = true;
+    }
+  }
+
+}

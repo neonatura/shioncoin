@@ -69,37 +69,34 @@ CBlockIndex static * InsertBlockIndex(uint256 hash)
 }
 
 typedef vector<CBlockIndex*> txlist;
-bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext)
+bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
-  CBlockIndex *pindexBest;
   CBlockIndex *lastIndex;
   SHCBlock block;
   uint256 hash;
-  int nBestIndex;
-  int nHeight;
+	bcpos_t nMaxIndex;
+  bcpos_t nHeight;
+	int mode;
   int err;
 
-  int nMaxIndex = bc_idx_next(bc) - 1;
-  for (nBestIndex = 0; nBestIndex <= nMaxIndex; nBestIndex++) {
-    if (0 != bc_idx_get(bc, nBestIndex, NULL))
-      break;
-  }
-  nBestIndex--;
+	nMaxIndex = 0;
+	bc_idx_next(bc, &nMaxIndex);
+	nMaxIndex = MAX(1, nMaxIndex) - 1;
 
-  lastIndex = NULL;
-  pindexBest = NULL;
-  for (nHeight = nBestIndex; nHeight >= 0; nHeight--) {
+	lastIndex = NULL;
+	for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
     if (!block.ReadBlock(nHeight))
-      continue;
+      break;
+
     hash = block.GetHash();
 
     CBlockIndex* pindexNew = InsertBlockIndex(blockIndex, hash);
-    pindexNew->pprev = InsertBlockIndex(blockIndex, block.hashPrevBlock);
-    if (lastIndex && lastIndex->pprev == pindexNew)
-      pindexNew->pnext = InsertBlockIndex(blockIndex, lastIndex->GetBlockHash());
+		pindexNew->pprev = lastIndex;
+		if (lastIndex) lastIndex->pnext = pindexNew;
+
     pindexNew->nHeight        = nHeight;
     pindexNew->nVersion       = block.nVersion;
     pindexNew->hashMerkleRoot = block.hashMerkleRoot;
@@ -116,47 +113,56 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
     if (nHeight == 0)
       SHCBlock::pindexGenesisBlock = pindexNew;
 
-    if (!pindexBest && lastIndex) {
-      if (lastIndex->pprev == pindexNew)
-        pindexBest = lastIndex;
-    }
+		pindexNew->bnChainWork = 
+			(lastIndex ? lastIndex->bnChainWork : 0) + 
+			pindexNew->GetBlockWork();
 
     BOOST_FOREACH(CTransaction& tx, block.vtx) {
       /* register extended transactions. */
-      if (tx.IsCoinBase() &&
-          tx.isFlag(CTransaction::TXF_MATRIX)) {
-        int mode;
-        if (VerifyMatrixTx(tx, mode)) {
-          if (mode == OP_EXT_VALIDATE)
-            vMatrix.push_back(pindexNew);
-          else if (mode == OP_EXT_PAY)
-            vSpring.push_back(pindexNew);
-        }
-      }
-      if (tx.isFlag(CTransaction::TXF_IDENT)) {
-        vIdent.push_back(pindexNew);
-      }
-      if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
-        if (VerifyCert(iface, tx, nHeight))
+      if (tx.isFlag(CTransaction::TXF_MATRIX)) {
+				if (tx.IsCoinBase()) {
+					int mode;
+					if (VerifyMatrixTx(tx, mode)) {
+						if (mode == OP_EXT_VALIDATE)
+							vMatrix.push_back(pindexNew);
+						else if (mode == OP_EXT_PAY)
+							vSpring.push_back(pindexNew);
+					}
+				}
+      } else if (tx.isFlag(CTransaction::TXF_ALIAS)) {
+				if (IsAliasTx(tx))
+					vAlias.push_back(pindexNew);
+      } else if (tx.isFlag(CTransaction::TXF_ASSET)) {
+				/* not implemented. */
+      } else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
+				if (IsCertTx(tx))
           vCert.push_back(pindexNew);
+      } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
+				if (IsContextTx(tx))
+					vContext.push_back(pindexNew);
+      } else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
+				/* not implemented */
+      } else if (tx.isFlag(CTransaction::TXF_IDENT)) {
+				if (IsIdentTx(tx))
+					vIdent.push_back(pindexNew);
+      } else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
+				if (IsLicenseTx(tx))
+					vLicense.push_back(pindexNew);
+      } else if (tx.isFlag(CTransaction::TXF_OFFER) ||
+					tx.isFlag(CTransaction::TXF_OFFER_ACCEPT)) {
+				/* not implemented */
       }
-      if (tx.isFlag(CTransaction::TXF_ALIAS) &&
-          IsAliasTx(tx)) {
-        vAlias.push_back(pindexNew);
-      }
-      if (tx.isFlag(CTransaction::TXF_LICENSE) &&
-          IsLicenseTx(tx)) {
-        vLicense.push_back(pindexNew);
-      }
-      if (tx.isFlag(CTransaction::TXF_CONTEXT) &&
-          IsContextTx(tx)) {
-        vContext.push_back(pindexNew);
-      }
+
+			/* non-exclusive */
+      if (tx.isFlag(CTransaction::TXF_EXEC)) {
+				if (IsExecTx(tx, mode))
+					vExec.push_back(pindexNew);
+			}
     } /* FOREACH (tx) */
 
     lastIndex = pindexNew;
   }
-  SetBestBlockIndex(iface, pindexBest);
+  SetBestBlockIndex(iface, lastIndex);
 
   return true;
 }
@@ -190,12 +196,8 @@ static bool shc_LoadBlockIndex()
   CWallet *wallet = GetWallet(SHC_COIN_IFACE);
   blkidx_t *mapBlockIndex = GetBlockTable(SHC_COIN_IFACE);
   char errbuf[1024];
+	int mode;
 
-
-#if 0
-  if (!LoadBlockIndexGuts())
-    return false;
-#endif
   txlist vSpring;
   txlist vMatrix;
   txlist vCert;
@@ -203,7 +205,8 @@ static bool shc_LoadBlockIndex()
   txlist vLicense;
   txlist vAlias;
   txlist vContext;
-  if (!shc_FillBlockIndex(vMatrix, vSpring, vCert, vIdent, vLicense, vAlias, vContext))
+  txlist vExec;
+  if (!shc_FillBlockIndex(vMatrix, vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec))
     return (false);
 
   if (fRequestShutdown)
@@ -222,7 +225,7 @@ static bool shc_LoadBlockIndex()
   BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
   {
     pindex = item.second;
-    pindex->bnChainWork = (pindex->pprev ? pindex->pprev->bnChainWork : 0) + pindex->GetBlockWork();
+//    pindex->bnChainWork = (pindex->pprev ? pindex->pprev->bnChainWork : 0) + pindex->GetBlockWork();
   }
   if (pindex) {
     Debug("shc_LoadBlockIndex: chain work calculated (%s) for %d blocks.", pindex->bnChainWork.ToString().c_str(), vSortedByHeight.size());
@@ -362,7 +365,7 @@ static bool shc_LoadBlockIndex()
   }
 
   /* Block-chain Validation Matrix */
-  std::reverse(vMatrix.begin(), vMatrix.end());
+//  std::reverse(vMatrix.begin(), vMatrix.end());
   BOOST_FOREACH(CBlockIndex *pindex, vMatrix) {
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     if (!block) continue;
@@ -385,7 +388,7 @@ static bool shc_LoadBlockIndex()
   }
 
   /* ident */
-  std::reverse(vIdent.begin(), vIdent.end());
+//  std::reverse(vIdent.begin(), vIdent.end());
   BOOST_FOREACH(CBlockIndex *pindex, vIdent) {
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
@@ -397,7 +400,7 @@ static bool shc_LoadBlockIndex()
 
   /* Spring Matrix */
   cert_list *idents = GetIdentTable(ifaceIndex);
-  std::reverse(vSpring.begin(), vSpring.end());
+//  std::reverse(vSpring.begin(), vSpring.end());
   BOOST_FOREACH(CBlockIndex *pindex, vSpring) {
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     if (!block) continue;
@@ -423,18 +426,17 @@ static bool shc_LoadBlockIndex()
     delete block;
   }
 
-  std::reverse(vCert.begin(), vCert.end());
+//  std::reverse(vCert.begin(), vCert.end());
   BOOST_FOREACH(CBlockIndex *pindex, vCert) {
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
-      if (IsCertTx(tx))
-        InsertCertTable(iface, tx, pindex->nHeight);
+			InsertCertTable(iface, tx, pindex->nHeight);
     }
     delete block;
   }
 
   /* license */
-  std::reverse(vLicense.begin(), vLicense.end());
+//  std::reverse(vLicense.begin(), vLicense.end());
   BOOST_FOREACH(CBlockIndex *pindex, vLicense) {
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
@@ -445,7 +447,7 @@ static bool shc_LoadBlockIndex()
   }
 
   /* alias */
-  std::reverse(vAlias.begin(), vAlias.end());
+//  std::reverse(vAlias.begin(), vAlias.end());
   BOOST_FOREACH(CBlockIndex *pindex, vAlias) {
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
@@ -457,7 +459,7 @@ static bool shc_LoadBlockIndex()
   }
 
   /* context */
-  std::reverse(vContext.begin(), vContext.end());
+//  std::reverse(vContext.begin(), vContext.end());
   BOOST_FOREACH(CBlockIndex *pindex, vContext) {
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
@@ -466,6 +468,24 @@ static bool shc_LoadBlockIndex()
     }
     delete block;
   }
+
+	/* exec */
+	uint256 lhash;
+	BOOST_FOREACH(CBlockIndex *pindex, vExec) {
+		if (lhash == pindex->GetBlockHash())
+			continue;
+
+		CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+		BOOST_FOREACH(CTransaction& tx, block->vtx) {
+			if (IsExecTx(tx, mode)) {
+				ProcessExecTx(iface, NULL, tx, pindex->nHeight);
+			}
+		}
+		delete block;
+
+		lhash = pindex->GetBlockHash();
+	}
+
 
   return true;
 }
@@ -575,9 +595,8 @@ bool shc_RestoreBlockIndex()
   char path[PATH_MAX+1];
   unsigned char *sBlockData;
   size_t sBlockLen;
-  unsigned int maxHeight;
-  bcsize_t height;
-  int nBlockPos;
+  bcpos_t maxHeight;
+  bcpos_t height;
   int nTxPos;
   int err;
   bool ret;
@@ -637,7 +656,9 @@ fprintf(stderr, "DEBUG: shc_RestoreBlockIndex: erased current block-chain index 
     if (err)
       return error(err, "shc_RestoreBlockIndex: error opening backup block-chain.");
 
-    maxHeight = bc_idx_next(bc);
+		maxHeight = 0;
+		(void)bc_idx_next(bc, &maxHeight);
+
     for (height = 1; height < maxHeight; height++) {
       int n_height;
 

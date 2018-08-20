@@ -99,21 +99,25 @@ extern "C" {
   (int64)(iface ? ((_iface)->min_input) : 0)
 
 #define COIN_SERVICES(_iface) \
-  ((_iface)->services)
+  ((_iface) ? (_iface)->services : 0)
 
 #define MAX_FREE_TX_SIZE(_iface) \
   ((_iface)->max_free_tx_size)
 
 
-
-
+/** A self-test interface for verifying stability. */
 #define TEST_COIN_IFACE 0
+/** The "ShareCoin" virtual currency. */
 #define SHC_COIN_IFACE 1
+/** The "USDE" virtual currency. */
 #define USDE_COIN_IFACE 2
+/** The "EMC2" (Einstienium) virtual currency. */
 #define EMC2_COIN_IFACE 3
-#define MAX_COIN_IFACE 4 
-
-
+/** The "LTC" (Litecoin) virtual currency. */
+#define LTC_COIN_IFACE 4
+/** The "ShareCoin" Test Network */
+#define TESTNET_COIN_IFACE 5
+#define MAX_COIN_IFACE 6
 
 
 #define COINF_DL_SCAN (1 << 0)
@@ -124,7 +128,6 @@ extern "C" {
 #define COINF_PEER_SYNC (1 << 6)
 #define COINF_VALIDATE_SCAN (1 << 7)
 #define COINF_VALIDATE_SYNC (1 << 8)
-
 
 
 #define STAT_BLOCK_ACCEPTS(_iface) (_iface)->stat.tot_block_accept
@@ -292,6 +295,28 @@ coin_iface_t *GetCoin(const char *name);
  * @{
  */
 #include "usde_proto.h"
+/**
+ * @}
+ */
+
+/**
+ * The "LTC" (Litecoin) virtual currency.
+ * @ingroup sharecoin
+ * @defgroup sharecoin_ltc The "LTC" (Litecoin) virtual currency.
+ * @{
+ */
+#include "ltc_proto.h"
+/**
+ * @}
+ */
+
+/**
+ * The SHC currency Test Network service.
+ * @ingroup sharecoin
+ * @defgroup sharecoin_testnet The SHC currency Test Network service.
+ * @{
+ */
+#include "testnet_proto.h"
 /**
  * @}
  */

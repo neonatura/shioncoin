@@ -656,6 +656,7 @@ class CTransaction : public CTransactionCore
     COffer offer;
     CTxMatrix matrix;
     CChannel channel;
+		CExecCore exec;
 
     CTransaction()
     {
@@ -674,9 +675,10 @@ class CTransaction : public CTransactionCore
           (this->nFlag & TXF_LICENSE) ||
           (this->nFlag & TXF_ASSET) ||
           (this->nFlag & TXF_IDENT) ||
-          (this->nFlag & TXF_EXEC) ||
           (this->nFlag & TXF_CONTEXT))
         READWRITE(certificate);
+			if (this->nFlag & TXF_EXEC)
+        READWRITE(exec);
       if (this->nFlag & TXF_ALIAS)
         READWRITE(alias);
       if ((this->nFlag & TXF_OFFER) ||
@@ -692,12 +694,15 @@ class CTransaction : public CTransactionCore
 
     void SetNull()
     {
+
       CTransactionCore::SetNull();
+			/*
       certificate.SetNull();
-      alias.SetNull();
+			alias.SetNull();
       offer.SetNull();
       matrix.SetNull();
       channel.SetNull();
+			*/
     }
 
     uint256 GetHash() const
@@ -871,7 +876,7 @@ class CTransaction : public CTransactionCore
     bool EraseTx(int ifaceIndex);
 
 
-    CAlias *CreateAlias(std::string name, const uint160& hash, int type = CAlias::ALIAS_COINADDR);
+    CAlias *CreateAlias(std::string name, int type = CAlias::ALIAS_COINADDR);
     CAlias *UpdateAlias(std::string name, const uint160& hash);
     CAlias *RemoveAlias(std::string name);
 
@@ -893,11 +898,9 @@ class CTransaction : public CTransactionCore
     CCert *RemoveAsset(const CAsset& assetIn);
 
     CExec *CreateExec();
-    CExec *UpdateExec(const CExec& execIn);
-    CExec *ActivateExec(const CExec& execIn);
-    CExecCall *GenerateExec(const CExec& execIn, CCoinAddr& sendAddr);
+    CExecCheckpoint *UpdateExec(const CExec& execIn);
+    CExecCall *GenerateExec(const CExec& execIn);
     CExec *TransferExec(const CExec& execIn);
-    CExec *RemoveExec(const CExec& execIn);
 
     CIdent *CreateIdent(CIdent *ident);
 
@@ -908,7 +911,59 @@ class CTransaction : public CTransactionCore
 
     CAlias *GetAlias()
     {
+
+      if (!(this->nFlag & TXF_ALIAS))
+				return (NULL);
+
       return (&alias);
+    }
+
+    CCert *GetCertificate()
+    {
+      if (!(this->nFlag & TXF_CERTIFICATE) && 
+          !(this->nFlag & TXF_LICENSE) && 
+          !(this->nFlag & TXF_ASSET) && 
+          !(this->nFlag & TXF_IDENT) && 
+          !(this->nFlag & TXF_CONTEXT)) {
+				return (NULL);
+			}
+      return (&certificate);
+    }
+
+    CContext *GetContext()
+    {
+      if (!(this->nFlag & TXF_CONTEXT)) {
+				return (NULL);
+			}
+      return ((CContext *)&certificate);
+    }
+
+		CExec *GetExec() const
+		{
+			if (!(this->nFlag & TXF_EXEC))
+				return (NULL);
+			return ((CExec *)&exec);
+		}
+
+		CExecCall *GetExecCall() const
+		{
+			if (!(this->nFlag & TXF_EXEC))
+				return (NULL);
+			return ((CExecCall *)&exec);
+		}
+
+		CExecCheckpoint *GetExecCheckpoint() const
+		{
+			if (!(this->nFlag & TXF_EXEC))
+				return (NULL);
+			return ((CExecCheckpoint *)&exec);
+		}
+
+    CTxMatrix *GetMatrix()
+    {
+      if (!isFlag(TXF_MATRIX))
+        return (NULL);
+      return (&matrix);
     }
 
     CTxMatrix *GenerateValidateMatrix(int ifaceIndex, CBlockIndex *pindex = NULL);
@@ -919,12 +974,6 @@ class CTransaction : public CTransactionCore
 
     bool VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, shnum_t *lat_p, shnum_t *lon_p);
 
-    CTxMatrix *GetMatrix()
-    {
-      if (!isFlag(TXF_MATRIX))
-        return (NULL);
-      return (&matrix);
-    }
 
     /**
      * @param lcl_addr The local coin-addr to pay to.

@@ -78,12 +78,14 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = shc$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
+bin_PROGRAMS = shc$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
+	$(am__EXEEXT_3)
 @STATIC_LIBSHARE_TRUE@am__append_1 = -I$(LIBSHARE)/include
 @DEBUG_TRUE@am__append_2 = -g
 @DEBUG_FALSE@am__append_3 = -O
 @USDE_SERVICE_TRUE@am__append_4 = usde
 @EMC2_SERVICE_TRUE@am__append_5 = emc2
+@TESTNET_SERVICE_TRUE@am__append_6 = testnet
 subdir = src/coin-console
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build-aux/depcomp
@@ -102,6 +104,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 @USDE_SERVICE_TRUE@am__EXEEXT_1 = usde$(EXEEXT)
 @EMC2_SERVICE_TRUE@am__EXEEXT_2 = emc2$(EXEEXT)
+@TESTNET_SERVICE_TRUE@am__EXEEXT_3 = testnet$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__emc2_SOURCES_DIST = shcon.c shcon.h shcon_init.c shcon_init.h \
@@ -143,13 +146,33 @@ shc_DEPENDENCIES = $(am__DEPENDENCIES_1)
 shc_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(shc_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am__testnet_SOURCES_DIST = shcon.c shcon.h shcon_init.c shcon_init.h \
+	shcon_term.c shcon_term.h shcon_opt.c shcon_opt.h shcon_log.c \
+	shcon_log.h shcon_stream.c shcon_stream.h net/net.c net/net.h \
+	net/net_conn.c net/net_read.c net/net_write.c key/key.c \
+	key/key.h key/key_dat.c key/key_auth.c command/command.c \
+	command/command.h command/command_print.c
+am__objects_3 = testnet-shcon.$(OBJEXT) testnet-shcon_init.$(OBJEXT) \
+	testnet-shcon_term.$(OBJEXT) testnet-shcon_opt.$(OBJEXT) \
+	testnet-shcon_log.$(OBJEXT) testnet-shcon_stream.$(OBJEXT) \
+	testnet-net.$(OBJEXT) testnet-net_conn.$(OBJEXT) \
+	testnet-net_read.$(OBJEXT) testnet-net_write.$(OBJEXT) \
+	testnet-key.$(OBJEXT) testnet-key_dat.$(OBJEXT) \
+	testnet-key_auth.$(OBJEXT) testnet-command.$(OBJEXT) \
+	testnet-command_print.$(OBJEXT)
+@TESTNET_SERVICE_TRUE@am_testnet_OBJECTS = $(am__objects_3)
+testnet_OBJECTS = $(am_testnet_OBJECTS)
+@TESTNET_SERVICE_TRUE@testnet_DEPENDENCIES = $(am__DEPENDENCIES_1)
+testnet_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(testnet_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am__usde_SOURCES_DIST = shcon.c shcon.h shcon_init.c shcon_init.h \
 	shcon_term.c shcon_term.h shcon_opt.c shcon_opt.h shcon_log.c \
 	shcon_log.h shcon_stream.c shcon_stream.h net/net.c net/net.h \
 	net/net_conn.c net/net_read.c net/net_write.c key/key.c \
 	key/key.h key/key_dat.c key/key_auth.c command/command.c \
 	command/command.h command/command_print.c
-am__objects_3 = usde-shcon.$(OBJEXT) usde-shcon_init.$(OBJEXT) \
+am__objects_4 = usde-shcon.$(OBJEXT) usde-shcon_init.$(OBJEXT) \
 	usde-shcon_term.$(OBJEXT) usde-shcon_opt.$(OBJEXT) \
 	usde-shcon_log.$(OBJEXT) usde-shcon_stream.$(OBJEXT) \
 	usde-net.$(OBJEXT) usde-net_conn.$(OBJEXT) \
@@ -157,7 +180,7 @@ am__objects_3 = usde-shcon.$(OBJEXT) usde-shcon_init.$(OBJEXT) \
 	usde-key.$(OBJEXT) usde-key_dat.$(OBJEXT) \
 	usde-key_auth.$(OBJEXT) usde-command.$(OBJEXT) \
 	usde-command_print.$(OBJEXT)
-@USDE_SERVICE_TRUE@am_usde_OBJECTS = $(am__objects_3)
+@USDE_SERVICE_TRUE@am_usde_OBJECTS = $(am__objects_4)
 usde_OBJECTS = $(am_usde_OBJECTS)
 @USDE_SERVICE_TRUE@usde_DEPENDENCIES = $(am__DEPENDENCIES_1)
 usde_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -197,9 +220,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(emc2_SOURCES) $(shc_SOURCES) $(usde_SOURCES)
+SOURCES = $(emc2_SOURCES) $(shc_SOURCES) $(testnet_SOURCES) \
+	$(usde_SOURCES)
 DIST_SOURCES = $(am__emc2_SOURCES_DIST) $(shc_SOURCES) \
-	$(am__usde_SOURCES_DIST)
+	$(am__testnet_SOURCES_DIST) $(am__usde_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -266,7 +290,6 @@ GCJFLAGS = @GCJFLAGS@
 GIT = @GIT@
 GREP = @GREP@
 HELP2MAN = @HELP2MAN@
-INITD_DIR = @INITD_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -412,6 +435,9 @@ shc_LDADD = $(ld_flags)
 @EMC2_SERVICE_TRUE@emc2_SOURCES = $(console_sources)
 @EMC2_SERVICE_TRUE@emc2_CFLAGS = $(tool_flags) -DEMC2_COIN_CLIENT
 @EMC2_SERVICE_TRUE@emc2_LDADD = $(ld_flags)
+@TESTNET_SERVICE_TRUE@testnet_SOURCES = $(console_sources)
+@TESTNET_SERVICE_TRUE@testnet_CFLAGS = $(tool_flags) -DTESTNET_COIN_CLIENT
+@TESTNET_SERVICE_TRUE@testnet_LDADD = $(ld_flags)
 all: all-am
 
 .SUFFIXES:
@@ -504,6 +530,10 @@ shc$(EXEEXT): $(shc_OBJECTS) $(shc_DEPENDENCIES) $(EXTRA_shc_DEPENDENCIES)
 	@rm -f shc$(EXEEXT)
 	$(AM_V_CCLD)$(shc_LINK) $(shc_OBJECTS) $(shc_LDADD) $(LIBS)
 
+testnet$(EXEEXT): $(testnet_OBJECTS) $(testnet_DEPENDENCIES) $(EXTRA_testnet_DEPENDENCIES) 
+	@rm -f testnet$(EXEEXT)
+	$(AM_V_CCLD)$(testnet_LINK) $(testnet_OBJECTS) $(testnet_LDADD) $(LIBS)
+
 usde$(EXEEXT): $(usde_OBJECTS) $(usde_DEPENDENCIES) $(EXTRA_usde_DEPENDENCIES) 
 	@rm -f usde$(EXEEXT)
 	$(AM_V_CCLD)$(usde_LINK) $(usde_OBJECTS) $(usde_LDADD) $(LIBS)
@@ -544,6 +574,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_opt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_term.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-command.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-command_print.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-key.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-key_auth.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-key_dat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-net.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-net_conn.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-net_read.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-net_write.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_init.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_log.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_opt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_stream.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_term.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-command_print.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-key.Po@am__quote@
@@ -1000,6 +1045,216 @@ shc-command_print.obj: command/command_print.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='command/command_print.c' object='shc-command_print.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-command_print.obj `if test -f 'command/command_print.c'; then $(CYGPATH_W) 'command/command_print.c'; else $(CYGPATH_W) '$(srcdir)/command/command_print.c'; fi`
+
+testnet-shcon.o: shcon.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon.o -MD -MP -MF $(DEPDIR)/testnet-shcon.Tpo -c -o testnet-shcon.o `test -f 'shcon.c' || echo '$(srcdir)/'`shcon.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon.Tpo $(DEPDIR)/testnet-shcon.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon.c' object='testnet-shcon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon.o `test -f 'shcon.c' || echo '$(srcdir)/'`shcon.c
+
+testnet-shcon.obj: shcon.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon.obj -MD -MP -MF $(DEPDIR)/testnet-shcon.Tpo -c -o testnet-shcon.obj `if test -f 'shcon.c'; then $(CYGPATH_W) 'shcon.c'; else $(CYGPATH_W) '$(srcdir)/shcon.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon.Tpo $(DEPDIR)/testnet-shcon.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon.c' object='testnet-shcon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon.obj `if test -f 'shcon.c'; then $(CYGPATH_W) 'shcon.c'; else $(CYGPATH_W) '$(srcdir)/shcon.c'; fi`
+
+testnet-shcon_init.o: shcon_init.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_init.o -MD -MP -MF $(DEPDIR)/testnet-shcon_init.Tpo -c -o testnet-shcon_init.o `test -f 'shcon_init.c' || echo '$(srcdir)/'`shcon_init.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_init.Tpo $(DEPDIR)/testnet-shcon_init.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_init.c' object='testnet-shcon_init.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_init.o `test -f 'shcon_init.c' || echo '$(srcdir)/'`shcon_init.c
+
+testnet-shcon_init.obj: shcon_init.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_init.obj -MD -MP -MF $(DEPDIR)/testnet-shcon_init.Tpo -c -o testnet-shcon_init.obj `if test -f 'shcon_init.c'; then $(CYGPATH_W) 'shcon_init.c'; else $(CYGPATH_W) '$(srcdir)/shcon_init.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_init.Tpo $(DEPDIR)/testnet-shcon_init.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_init.c' object='testnet-shcon_init.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_init.obj `if test -f 'shcon_init.c'; then $(CYGPATH_W) 'shcon_init.c'; else $(CYGPATH_W) '$(srcdir)/shcon_init.c'; fi`
+
+testnet-shcon_term.o: shcon_term.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_term.o -MD -MP -MF $(DEPDIR)/testnet-shcon_term.Tpo -c -o testnet-shcon_term.o `test -f 'shcon_term.c' || echo '$(srcdir)/'`shcon_term.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_term.Tpo $(DEPDIR)/testnet-shcon_term.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_term.c' object='testnet-shcon_term.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_term.o `test -f 'shcon_term.c' || echo '$(srcdir)/'`shcon_term.c
+
+testnet-shcon_term.obj: shcon_term.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_term.obj -MD -MP -MF $(DEPDIR)/testnet-shcon_term.Tpo -c -o testnet-shcon_term.obj `if test -f 'shcon_term.c'; then $(CYGPATH_W) 'shcon_term.c'; else $(CYGPATH_W) '$(srcdir)/shcon_term.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_term.Tpo $(DEPDIR)/testnet-shcon_term.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_term.c' object='testnet-shcon_term.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_term.obj `if test -f 'shcon_term.c'; then $(CYGPATH_W) 'shcon_term.c'; else $(CYGPATH_W) '$(srcdir)/shcon_term.c'; fi`
+
+testnet-shcon_opt.o: shcon_opt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_opt.o -MD -MP -MF $(DEPDIR)/testnet-shcon_opt.Tpo -c -o testnet-shcon_opt.o `test -f 'shcon_opt.c' || echo '$(srcdir)/'`shcon_opt.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_opt.Tpo $(DEPDIR)/testnet-shcon_opt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_opt.c' object='testnet-shcon_opt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_opt.o `test -f 'shcon_opt.c' || echo '$(srcdir)/'`shcon_opt.c
+
+testnet-shcon_opt.obj: shcon_opt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_opt.obj -MD -MP -MF $(DEPDIR)/testnet-shcon_opt.Tpo -c -o testnet-shcon_opt.obj `if test -f 'shcon_opt.c'; then $(CYGPATH_W) 'shcon_opt.c'; else $(CYGPATH_W) '$(srcdir)/shcon_opt.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_opt.Tpo $(DEPDIR)/testnet-shcon_opt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_opt.c' object='testnet-shcon_opt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_opt.obj `if test -f 'shcon_opt.c'; then $(CYGPATH_W) 'shcon_opt.c'; else $(CYGPATH_W) '$(srcdir)/shcon_opt.c'; fi`
+
+testnet-shcon_log.o: shcon_log.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_log.o -MD -MP -MF $(DEPDIR)/testnet-shcon_log.Tpo -c -o testnet-shcon_log.o `test -f 'shcon_log.c' || echo '$(srcdir)/'`shcon_log.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_log.Tpo $(DEPDIR)/testnet-shcon_log.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_log.c' object='testnet-shcon_log.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_log.o `test -f 'shcon_log.c' || echo '$(srcdir)/'`shcon_log.c
+
+testnet-shcon_log.obj: shcon_log.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_log.obj -MD -MP -MF $(DEPDIR)/testnet-shcon_log.Tpo -c -o testnet-shcon_log.obj `if test -f 'shcon_log.c'; then $(CYGPATH_W) 'shcon_log.c'; else $(CYGPATH_W) '$(srcdir)/shcon_log.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_log.Tpo $(DEPDIR)/testnet-shcon_log.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_log.c' object='testnet-shcon_log.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_log.obj `if test -f 'shcon_log.c'; then $(CYGPATH_W) 'shcon_log.c'; else $(CYGPATH_W) '$(srcdir)/shcon_log.c'; fi`
+
+testnet-shcon_stream.o: shcon_stream.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_stream.o -MD -MP -MF $(DEPDIR)/testnet-shcon_stream.Tpo -c -o testnet-shcon_stream.o `test -f 'shcon_stream.c' || echo '$(srcdir)/'`shcon_stream.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_stream.Tpo $(DEPDIR)/testnet-shcon_stream.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_stream.c' object='testnet-shcon_stream.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_stream.o `test -f 'shcon_stream.c' || echo '$(srcdir)/'`shcon_stream.c
+
+testnet-shcon_stream.obj: shcon_stream.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_stream.obj -MD -MP -MF $(DEPDIR)/testnet-shcon_stream.Tpo -c -o testnet-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_stream.Tpo $(DEPDIR)/testnet-shcon_stream.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_stream.c' object='testnet-shcon_stream.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
+
+testnet-net.o: net/net.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net.o -MD -MP -MF $(DEPDIR)/testnet-net.Tpo -c -o testnet-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net.Tpo $(DEPDIR)/testnet-net.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net/net.c' object='testnet-net.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c
+
+testnet-net.obj: net/net.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net.obj -MD -MP -MF $(DEPDIR)/testnet-net.Tpo -c -o testnet-net.obj `if test -f 'net/net.c'; then $(CYGPATH_W) 'net/net.c'; else $(CYGPATH_W) '$(srcdir)/net/net.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net.Tpo $(DEPDIR)/testnet-net.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net/net.c' object='testnet-net.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-net.obj `if test -f 'net/net.c'; then $(CYGPATH_W) 'net/net.c'; else $(CYGPATH_W) '$(srcdir)/net/net.c'; fi`
+
+testnet-net_conn.o: net/net_conn.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net_conn.o -MD -MP -MF $(DEPDIR)/testnet-net_conn.Tpo -c -o testnet-net_conn.o `test -f 'net/net_conn.c' || echo '$(srcdir)/'`net/net_conn.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net_conn.Tpo $(DEPDIR)/testnet-net_conn.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net/net_conn.c' object='testnet-net_conn.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-net_conn.o `test -f 'net/net_conn.c' || echo '$(srcdir)/'`net/net_conn.c
+
+testnet-net_conn.obj: net/net_conn.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net_conn.obj -MD -MP -MF $(DEPDIR)/testnet-net_conn.Tpo -c -o testnet-net_conn.obj `if test -f 'net/net_conn.c'; then $(CYGPATH_W) 'net/net_conn.c'; else $(CYGPATH_W) '$(srcdir)/net/net_conn.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net_conn.Tpo $(DEPDIR)/testnet-net_conn.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net/net_conn.c' object='testnet-net_conn.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-net_conn.obj `if test -f 'net/net_conn.c'; then $(CYGPATH_W) 'net/net_conn.c'; else $(CYGPATH_W) '$(srcdir)/net/net_conn.c'; fi`
+
+testnet-net_read.o: net/net_read.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net_read.o -MD -MP -MF $(DEPDIR)/testnet-net_read.Tpo -c -o testnet-net_read.o `test -f 'net/net_read.c' || echo '$(srcdir)/'`net/net_read.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net_read.Tpo $(DEPDIR)/testnet-net_read.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net/net_read.c' object='testnet-net_read.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-net_read.o `test -f 'net/net_read.c' || echo '$(srcdir)/'`net/net_read.c
+
+testnet-net_read.obj: net/net_read.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net_read.obj -MD -MP -MF $(DEPDIR)/testnet-net_read.Tpo -c -o testnet-net_read.obj `if test -f 'net/net_read.c'; then $(CYGPATH_W) 'net/net_read.c'; else $(CYGPATH_W) '$(srcdir)/net/net_read.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net_read.Tpo $(DEPDIR)/testnet-net_read.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net/net_read.c' object='testnet-net_read.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-net_read.obj `if test -f 'net/net_read.c'; then $(CYGPATH_W) 'net/net_read.c'; else $(CYGPATH_W) '$(srcdir)/net/net_read.c'; fi`
+
+testnet-net_write.o: net/net_write.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net_write.o -MD -MP -MF $(DEPDIR)/testnet-net_write.Tpo -c -o testnet-net_write.o `test -f 'net/net_write.c' || echo '$(srcdir)/'`net/net_write.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net_write.Tpo $(DEPDIR)/testnet-net_write.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net/net_write.c' object='testnet-net_write.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-net_write.o `test -f 'net/net_write.c' || echo '$(srcdir)/'`net/net_write.c
+
+testnet-net_write.obj: net/net_write.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net_write.obj -MD -MP -MF $(DEPDIR)/testnet-net_write.Tpo -c -o testnet-net_write.obj `if test -f 'net/net_write.c'; then $(CYGPATH_W) 'net/net_write.c'; else $(CYGPATH_W) '$(srcdir)/net/net_write.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net_write.Tpo $(DEPDIR)/testnet-net_write.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net/net_write.c' object='testnet-net_write.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-net_write.obj `if test -f 'net/net_write.c'; then $(CYGPATH_W) 'net/net_write.c'; else $(CYGPATH_W) '$(srcdir)/net/net_write.c'; fi`
+
+testnet-key.o: key/key.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-key.o -MD -MP -MF $(DEPDIR)/testnet-key.Tpo -c -o testnet-key.o `test -f 'key/key.c' || echo '$(srcdir)/'`key/key.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-key.Tpo $(DEPDIR)/testnet-key.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='key/key.c' object='testnet-key.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-key.o `test -f 'key/key.c' || echo '$(srcdir)/'`key/key.c
+
+testnet-key.obj: key/key.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-key.obj -MD -MP -MF $(DEPDIR)/testnet-key.Tpo -c -o testnet-key.obj `if test -f 'key/key.c'; then $(CYGPATH_W) 'key/key.c'; else $(CYGPATH_W) '$(srcdir)/key/key.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-key.Tpo $(DEPDIR)/testnet-key.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='key/key.c' object='testnet-key.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-key.obj `if test -f 'key/key.c'; then $(CYGPATH_W) 'key/key.c'; else $(CYGPATH_W) '$(srcdir)/key/key.c'; fi`
+
+testnet-key_dat.o: key/key_dat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-key_dat.o -MD -MP -MF $(DEPDIR)/testnet-key_dat.Tpo -c -o testnet-key_dat.o `test -f 'key/key_dat.c' || echo '$(srcdir)/'`key/key_dat.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-key_dat.Tpo $(DEPDIR)/testnet-key_dat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='key/key_dat.c' object='testnet-key_dat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-key_dat.o `test -f 'key/key_dat.c' || echo '$(srcdir)/'`key/key_dat.c
+
+testnet-key_dat.obj: key/key_dat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-key_dat.obj -MD -MP -MF $(DEPDIR)/testnet-key_dat.Tpo -c -o testnet-key_dat.obj `if test -f 'key/key_dat.c'; then $(CYGPATH_W) 'key/key_dat.c'; else $(CYGPATH_W) '$(srcdir)/key/key_dat.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-key_dat.Tpo $(DEPDIR)/testnet-key_dat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='key/key_dat.c' object='testnet-key_dat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-key_dat.obj `if test -f 'key/key_dat.c'; then $(CYGPATH_W) 'key/key_dat.c'; else $(CYGPATH_W) '$(srcdir)/key/key_dat.c'; fi`
+
+testnet-key_auth.o: key/key_auth.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-key_auth.o -MD -MP -MF $(DEPDIR)/testnet-key_auth.Tpo -c -o testnet-key_auth.o `test -f 'key/key_auth.c' || echo '$(srcdir)/'`key/key_auth.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-key_auth.Tpo $(DEPDIR)/testnet-key_auth.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='key/key_auth.c' object='testnet-key_auth.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-key_auth.o `test -f 'key/key_auth.c' || echo '$(srcdir)/'`key/key_auth.c
+
+testnet-key_auth.obj: key/key_auth.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-key_auth.obj -MD -MP -MF $(DEPDIR)/testnet-key_auth.Tpo -c -o testnet-key_auth.obj `if test -f 'key/key_auth.c'; then $(CYGPATH_W) 'key/key_auth.c'; else $(CYGPATH_W) '$(srcdir)/key/key_auth.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-key_auth.Tpo $(DEPDIR)/testnet-key_auth.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='key/key_auth.c' object='testnet-key_auth.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-key_auth.obj `if test -f 'key/key_auth.c'; then $(CYGPATH_W) 'key/key_auth.c'; else $(CYGPATH_W) '$(srcdir)/key/key_auth.c'; fi`
+
+testnet-command.o: command/command.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-command.o -MD -MP -MF $(DEPDIR)/testnet-command.Tpo -c -o testnet-command.o `test -f 'command/command.c' || echo '$(srcdir)/'`command/command.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-command.Tpo $(DEPDIR)/testnet-command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='command/command.c' object='testnet-command.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-command.o `test -f 'command/command.c' || echo '$(srcdir)/'`command/command.c
+
+testnet-command.obj: command/command.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-command.obj -MD -MP -MF $(DEPDIR)/testnet-command.Tpo -c -o testnet-command.obj `if test -f 'command/command.c'; then $(CYGPATH_W) 'command/command.c'; else $(CYGPATH_W) '$(srcdir)/command/command.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-command.Tpo $(DEPDIR)/testnet-command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='command/command.c' object='testnet-command.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-command.obj `if test -f 'command/command.c'; then $(CYGPATH_W) 'command/command.c'; else $(CYGPATH_W) '$(srcdir)/command/command.c'; fi`
+
+testnet-command_print.o: command/command_print.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-command_print.o -MD -MP -MF $(DEPDIR)/testnet-command_print.Tpo -c -o testnet-command_print.o `test -f 'command/command_print.c' || echo '$(srcdir)/'`command/command_print.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-command_print.Tpo $(DEPDIR)/testnet-command_print.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='command/command_print.c' object='testnet-command_print.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-command_print.o `test -f 'command/command_print.c' || echo '$(srcdir)/'`command/command_print.c
+
+testnet-command_print.obj: command/command_print.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-command_print.obj -MD -MP -MF $(DEPDIR)/testnet-command_print.Tpo -c -o testnet-command_print.obj `if test -f 'command/command_print.c'; then $(CYGPATH_W) 'command/command_print.c'; else $(CYGPATH_W) '$(srcdir)/command/command_print.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-command_print.Tpo $(DEPDIR)/testnet-command_print.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='command/command_print.c' object='testnet-command_print.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-command_print.obj `if test -f 'command/command_print.c'; then $(CYGPATH_W) 'command/command_print.c'; else $(CYGPATH_W) '$(srcdir)/command/command_print.c'; fi`
 
 usde-shcon.o: shcon.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-shcon.o -MD -MP -MF $(DEPDIR)/usde-shcon.Tpo -c -o usde-shcon.o `test -f 'shcon.c' || echo '$(srcdir)/'`shcon.c

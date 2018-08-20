@@ -89,45 +89,60 @@ void usage_help(void)
       "--remove\tRemove the Share Coin service.\n"
       "\n"
 #endif
-      "Network Options:\n"
-      "\t--max-conn <#>\tThe maximum number of incoming coin-service connections. (default: 300)\n"
-      "\t--no-seed\tPrevent pre-defined seed IP addresses from being used.\n"
-      "\t--check-addr\tRe-verify the external IP address used by this machine.\n"
-#ifdef USDE_SERVICE
-      "\t--no-usde\tDisable the USDE coin service.\n"
-#endif
-#ifdef EMC2_SERVICE
-      "\t--no-emc2\tDisable the EMC2 coin service.\n"
-#endif
-      "\t--no-stratum\tDisable the stratum service.\n"
-      "\n"
-      "Peer Options:\n"
-      "\t--ban-span <#>\tThe number of seconds a peer will be banned for.\n"
-      "\t--ban-threshold <#>\tThe degree of misbehaviour before a peer is disconnected.\n"
+      "Configuration Options:\n"
+			);
+
+	/* configurable runtime options */
+  fprintf(stdout, "%s", opt_usage_print());
+
+  fprintf(stdout,
       "\n"
       "Diagnostic Options:\n"
-      "\t--debug\t\tLog verbose debugging information.\n"
-      "\t-nf\t\tRun daemon in foreground (no fork).\n"
-      "\t--shc-rebuild-chain\tRestore the backup SHC block-chain.\n"
+      "\t-nf\n"
+			"\t\tRun daemon in foreground (no fork).\n"
+      "\n"
+      "\t--check-addr\n"
+			"\t\tRe-verify this machine's external IP address.\n"
+      "\n"
+      "\t--shc-rebuild-chain\n"
+			"\t\tRestore the backup SHC block-chain.\n"
 #ifdef USDE_SERVICE
-      "\t--usde-rebuild-chain\tRestore the backup USDE block-chain.\n"
+      "\n"
+      "\t--usde-rebuild-chain\n"
+			"\t\tRestore the backup USDE block-chain.\n"
 #endif
 #ifdef EMC2_SERVICE
-      "\t--emc2-rebuild-chain\tRestore the backup EMC2 block-chain.\n"
+      "\n"
+      "\t--emc2-rebuild-chain\n"
+			"\t\tRestore the backup EMC2 block-chain.\n"
 #endif
       "\n"
+      "Configuration Datafile:\n"
+			"\tPersistently set configuration options in \"%s/.shc/shc.conf\":\n"
+			"\n"
+			"\tFor example:\n"
+			"\t\t# shc.conf\n"
+			"\t\tdebug=1\n"
+			"\t\tmax-conn=300\n"
+			"\t\trpc-host=127.0.0.1\n"
+      "\n"
       "Persistent Preferences:\n"
-      "\tshcoind.debug\t\tSee '--debug' command-line option.\n"
-      "\tshcoind.net.max\t\tSee '--conn-max' command-line option.\n"
-      "\tshcoind.net.seed\tWhether to use pre-defined seed IP addresses.\n"
-      "\tshcoind.ban.span\tSee '--ban-span' command-line option.\n"
-      "\tshcoind.ban.threshold\tSee '--ban-threshold' command-line option.\n"
-      "\tshcoind.admin\tEnable administrative priveleges. (hazardous)\n"
-      "\n"
-      "Note: Run \"shpref <name> <val>\" to set persistent preferences.\n"
-      "\n"
+      "\tRun \"shpref shcoind.<name> <value>\" to permanently apply configuration options. The \"shpref\" utility program is installed with the share library suite.\n"
+			"\n"
+			"\tFor example:\n"
+			"\t\tshpref shcoind.debug true\n"
+			"\t\tshpref shcoind.max-conn 300\n"
+			"\t\tshpref shcoind.rpc-host 127.0.0.1\n"
+			"\n"
+			"Note: Configuration datafile options will over-ride \"shpref\" set options.\n"
+			"\n"
       "Visit 'https://shcoins.com/' for additional information.\n"
-      "Report bugs to <support@neo-natura.com>.\n"
+      "Report bugs to <support@neo-natura.com>.\n",
+#ifdef WINDOWS
+		getenv("HOMEDIR")
+#else
+		getenv("HOME")
+#endif
       );
 //      "\t--rescan\t\tRescan blocks for missing wallet transactions.\n"
 }
@@ -185,9 +200,14 @@ int shcoind_main(int argc, char *argv[])
 
   /* always perform 'fresh' tx rescan */
 
+	/* process configuration options from command-line arguments. */
+	opt_arg_interp(argc, argv);
+
+	/* process special flags */
   for (i = 1; i < argc; i++) {
     if (0 == strcmp(argv[i], "-nf")) {
       opt_no_fork = TRUE;
+#if 0
 		} else if (0 == strcmp(argv[i], "--debug")) {
 			opt_bool_set(OPT_DEBUG, TRUE);
     } else if (0 == strcmp(argv[i], "--max-conn")) {
@@ -202,10 +222,10 @@ int shcoind_main(int argc, char *argv[])
       opt_bool_set(OPT_SERV_USDE, FALSE);
     } else if (0 == strcmp(argv[i], "--no-emc2")) {
       opt_bool_set(OPT_SERV_EMC2, FALSE);
+    } else if (0 == strcmp(argv[i], "--no-testnet")) {
+      opt_bool_set(OPT_SERV_TESTNET, FALSE);
     } else if (0 == strcmp(argv[i], "--no-stratum")) {
       opt_bool_set(OPT_SERV_STRATUM, FALSE);
-    } else if (0 == strcmp(argv[i], "--check-addr")) {
-      shpref_set("shcoind.net.addr.stamp", "0"); /* clear cached IP addr */
     } else if (0 == strcmp(argv[i], "--ban-span")) {
       if (i + 1 < argc && isdigit(argv[i+1][0])) {
         i++;
@@ -218,6 +238,9 @@ int shcoind_main(int argc, char *argv[])
         if (isdigit(argv[i][0]))
           opt_num_set(OPT_BAN_THRESHOLD, MAX(1, atoi(argv[i])));
       }
+#endif
+    } else if (0 == strcmp(argv[i], "--check-addr")) {
+      shpref_set("shcoind.net.addr.stamp", "0"); /* clear cached IP addr */
     } else if (0 == strcmp(argv[i], "--shc-rebuild-chain")) {
       opt_bool_set(OPT_SHC_BACKUP_RESTORE, TRUE);
       opt_restore = TRUE;
@@ -278,6 +301,13 @@ int shcoind_main(int argc, char *argv[])
       if (!opt_bool(OPT_SERV_EMC2))
         iface->enabled = FALSE;
     }
+    if (idx == TESTNET_COIN_IFACE) {
+#ifndef TESTNET_SERVICE
+      iface->enabled = FALSE;
+#endif
+			if (!opt_bool(OPT_SERV_TESTNET))
+				iface->enabled = FALSE;
+		}
     if (!iface->enabled)
       continue;
 

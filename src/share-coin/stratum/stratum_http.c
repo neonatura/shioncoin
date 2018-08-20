@@ -77,6 +77,7 @@ unet_table_t *t;
   }
   if (idx == MAX_COIN_IFACE) {
     for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
+			if (idx == TESTNET_COIN_IFACE) continue;
       iface = GetCoinByIndex(idx);
       if (iface && iface->enabled)
         break;
@@ -89,7 +90,7 @@ unet_table_t *t;
   CIface *next_iface = NULL;
   for (next_idx = 1; next_idx < MAX_COIN_IFACE; next_idx++) {
     int nIdx = (idx + next_idx) % MAX_COIN_IFACE;
-    if (nIdx == 0) continue;
+    if (nIdx == 0 || nIdx == TESTNET_COIN_IFACE) continue;
 
     next_iface = GetCoinByIndex(nIdx);
     if (next_iface && next_iface->enabled)

@@ -5,15 +5,12 @@ dist_docdir = $(datadir)/@PACKAGE@
 
 if HAVE_HELP2MAN
 dist_man_MANS = \
-	man/man1/shcoin.1 \
 	man/man1/shcoind.1
 
-man/man1/shcoin.1: helpfile.stamp
 man/man1/shcoind.1: helpfile.stamp
 
 helpfile.stamp:
 	mkdir -p man/man1
-	$(HELP2MAN) --output=man/man1/shcoin.1 --name='share-coin command-line tool' $(top_builddir)/src/share-coin/shcoin
 	$(HELP2MAN) --output=man/man1/shcoind.1 --name='share-coin daemon' $(top_builddir)/src/share-coin/shcoind
 	echo Timestamp > helpfile.stamp
 endif

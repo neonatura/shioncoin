@@ -34,6 +34,7 @@
 #include "rpccert_proto.h"
 #include "rpcalias_proto.h"
 #include "rpccontext_proto.h"
+#include "rpcexec_proto.h"
 
 
 using namespace std;
@@ -341,11 +342,115 @@ const RPCOp CTX_LOCTYPES = {
   "prec: The precision associated with the location type."
 };
 
+const RPCOp EXEC_COMPILE = {
+	&rpc_exec_compile, 1, {RPC_STRING},
+  "Syntax: <path>]\n"
+  "Params: [ <path> The file path of a main LUA file. ]\n"
+//  "Params: [ <exec-hash> A pre-existing execution script dependency. ]\n"
+	"\n"
+	" Compile a SEXE executable class from source code.\n"
+//	"	Specifying a LUA file will result in the all \"*.lua\" files in the same directory being compiled into a SEXE executable.\n"
+//	"\n"
+//	"	Note: An pre-existing executable can be added as a depdency.\n"
+};
+
+const RPCOp EXEC_FEE = {
+  &rpc_exec_fee, 0, {RPC_INT},
+  "Syntax: [<exec-size>]\n"
+  "Summary: Obtain the coin fee to create a executable transaction.\n"
+  "Params: [ <exec-size> The size of the proposed executable. ]\n"
+  "\n"
+  "A context transaction essentially consists of a hashed name, a binary segment value, and an expiration date.\n"
+  "The context operation fee is based on the current block-chain height and the size of the underlying context value.\n"
+  "When a executable size is not specified, the maximum size \"780000\" will be used."
+};
+
+const RPCOp EXEC_GET = {
+  &rpc_exec_get, 1, {RPC_STRING},
+  "Syntax: <exec-hash>\n"
+  "Summary: Obtain information about a particular executable on the block-chain.\n"
+  "\n"
+  "Obtains detailed information, and the user data associated with, a SEXE executable stored on the block chain.\n"
+};
+
+const RPCOp EXEC_INFO = {
+  &rpc_exec_info, 0, {},
+  "Summary: Obtain general information about all executables.\n"
+  "\n"
+  "Obtains general information about all executable stored on the block-chain."
+};
+
+const RPCOp EXEC_LIST = {
+  &rpc_exec_list, 1, {RPC_STRING},
+  "Syntax: <keyword>\n"
+  "Summary: Obtain general information about executables.\n"
+  "\n"
+  "Obtains general information about all executable names that match the given keyword."
+};
+
+const RPCOp EXEC_NEW = {
+	&rpc_exec_new, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> <path>\n"
+  "Params: [ <path> The file path of a SX file. ]\n"
+	"\n"
+	" Create a new executable class on the block-chain.\n"
+	"\n"
+	"	Note: See https://shcoins.com/sexe/ for more information on creating SEXE executable classes.\n"
+};
+
+const RPCOp EXEC_RUN = {
+  &rpc_exec_run, 3, {RPC_ACCOUNT, RPC_DOUBLE, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING},
+  "Syntax: <account> <fee> <class>.<func> [<arg>, [..]]\n"
+  "Summary: Run a method in a published SEXE class.\n"
+  "\n"
+  "Run a method from a published SEXE class with the specified fee."
+	"\n"
+	"Note: A minimum transaction fee is required for all methods which result in writing to the block-chain.\n"
+};
+
+const RPCOp EXEC_RESET = {
+  &rpc_exec_reset, 1, {RPC_STRING},
+  "Syntax: <class>\n"
+  "Summary: Reset the local run-time of a published executable.\n"
+  "\n"
+  "Rewews an call execution chain for a particular sexe class."
+};
+
+const RPCOp EXEC_HISTORY = {
+  &rpc_exec_history, 1, {RPC_STRING},
+  "Syntax: <class>\n"
+  "Summary: Display the call execution chain for a particular sexe class.\n"
+  "\n"
+  "Rewews an call execution chain for a particular sexe class."
+};
+
+#if 0
+const RPCOp EXEC_RENEW = {
+  &rpc_exec_renew, 1, {RPC_STRING},
+  "Syntax: <class>\n"
+  "Summary: Rewew a published executable.\n"
+  "\n"
+  "Rewews an existing class's expiration date. A renewed executable class will expire after 5 years.\n"
+	"\n"
+  "Note: Only the current owner may renew a SEXE class."
+};
+#endif
+
+#if 0
+const RPCOp EXEC_TRANSFER = {
+  &rpc_exec_transfer, 2, {RPC_STRING, RPC_COINADDR},
+  "Syntax: <class> <addr>\n"
+  "Summary: Transfer ownership of a executable class.\n"
+  "\n"
+  "Transfers ownership to a new address.\n"
+	"\n"
+  "Note: Only the current owner may renew a SEXE class."
+};
+#endif
 
 
-void shc_RegisterRPCOp()
+void shc_RegisterRPCOp(int ifaceIndex)
 {
-  int ifaceIndex = SHC_COIN_IFACE;
 
   RegisterRPCOpDefaults(ifaceIndex);
 
@@ -382,10 +487,25 @@ void shc_RegisterRPCOp()
   RegisterRPCOp(ifaceIndex, "ctx.findloc", CTX_FINDLOC);
   RegisterRPCOp(ifaceIndex, "ctx.loctypes", CTX_LOCTYPES);
 
+#ifdef USE_SEXE
+  RegisterRPCOp(ifaceIndex, "exec.compile", EXEC_COMPILE);
+  RegisterRPCOp(ifaceIndex, "exec.fee", EXEC_FEE);
+  RegisterRPCOp(ifaceIndex, "exec.get", EXEC_GET);
+  RegisterRPCOp(ifaceIndex, "exec.info", EXEC_INFO);
+  RegisterRPCOp(ifaceIndex, "exec.list", EXEC_LIST);
+//  RegisterRPCOp(ifaceIndex, "exec.pay", EXEC_PAY);
+  RegisterRPCOp(ifaceIndex, "exec.new", EXEC_NEW);
+//  RegisterRPCOp(ifaceIndex, "exec.renew", EXEC_RENEW);
+  RegisterRPCOp(ifaceIndex, "exec.reset", EXEC_RESET);
+  RegisterRPCOp(ifaceIndex, "exec.run", EXEC_RUN);
+//  RegisterRPCOp(ifaceIndex, "exec.transfer", EXEC_TRANSFER);
+#endif
+
   RegisterRPCOp(ifaceIndex, "wallet.csend", WALLET_CSEND);
   RegisterRPCOp(ifaceIndex, "wallet.donate", WALLET_DONATE);
   RegisterRPCOp(ifaceIndex, "wallet.keyphrase", WALLET_KEYPHRASE);
   RegisterRPCOp(ifaceIndex, "wallet.setkeyphrase", WALLET_SETKEYPHRASE);
   RegisterRPCOp(ifaceIndex, "wallet.stamp", WALLET_STAMP);
+
 }
 

@@ -72,10 +72,10 @@ void f_shcoind_log(int err_code, const char *tag, const char *text, const char *
   shbuf_clear(buff);
 }
 
-
 void timing_init(char *tag, shtime_t *stamp_p)
 {
   
+	/* mark the time when we started timing. */
   *stamp_p = shtime();
 
 }
@@ -84,10 +84,12 @@ void timing_term(int ifaceIndex, char *tag, shtime_t *stamp_p)
 {
   shtime_t stamp = *stamp_p;
   double diff = shtime_diff(stamp, shtime());
-  char buf[1024];
+  char buf[256];
 
-  if (diff > 0.2) { /* 200ms */
-    sprintf(buf, "TIMING[%s]: total %-2.2f seconds.", tag, diff);
+  if (diff >= 0.5) { /* 1/2 a second */
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf)-1,
+				"TIMING[%s]: total %-2.2f seconds.", tag, diff);
     if (!ifaceIndex)
       shcoind_log(buf);
     else
@@ -95,5 +97,4 @@ void timing_term(int ifaceIndex, char *tag, shtime_t *stamp_p)
   }
 
 }
-
 

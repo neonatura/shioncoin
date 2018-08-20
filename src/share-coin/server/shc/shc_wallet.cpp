@@ -147,7 +147,7 @@ bool shc_LoadWallet(void)
     Debug("(shc) LoadWallet: Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
     nStart = GetTimeMillis();
     shcWallet->ScanForWalletTransactions(pindexRescan, true);
-    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+//    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
 
   shc_UpgradeWallet();

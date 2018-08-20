@@ -97,7 +97,7 @@ int unet_accept(int mode, unsigned int *sk_p)
     return ((int)cli_fd);
   }
 
-  if (cli_fd >= MAX_UNET_SOCKETS) {
+  if (cli_fd >= (get_max_descriptors() / MAX_UNET_COIN_MODES)) {
     char buf[256];
 
     sprintf(buf, "unet_accept: socket descriptor (%u) exceeds supported maximum.", (unsigned int)cli_fd);

@@ -1,7 +1,8 @@
 AUTOMAKE_OPTIONS = foreign
 
+sbin_PROGRAMS = shcoind
 TESTS = test_shcoind
-noinst_PROGRAMS = test_shcoind
+check_PROGRAMS = test_shcoind
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/secp256k1/include \
@@ -33,11 +34,15 @@ proto_sources = \
 	$(srcdir)/proto/usde_proto.cpp \
 	$(srcdir)/proto/emc2_proto.cpp \
 	$(srcdir)/proto/test_proto.cpp \
+	$(srcdir)/proto/ltc_proto.cpp \
+	$(srcdir)/proto/testnet_proto.cpp \
 	$(srcdir)/proto/coin_proto.h \
 	$(srcdir)/proto/shc_proto.h \
 	$(srcdir)/proto/usde_proto.h \
 	$(srcdir)/proto/emc2_proto.h \
-	$(srcdir)/proto/test_proto.h
+	$(srcdir)/proto/test_proto.h \
+	$(srcdir)/proto/ltc_proto.h \
+	$(srcdir)/proto/testnet_proto.h
 
 stratum_sources = \
 	stratum/stratum.h \
@@ -78,6 +83,7 @@ common_includes = \
 	server/rpcalias_proto.h \
 	server/rpccert_proto.h \
 	server/rpccontext_proto.h \
+	server/rpcexec_proto.h \
 	server/compat.h \
 	server/crypter.h \
 	server/txidx.h \
@@ -105,6 +111,7 @@ common_includes = \
 	shcoind_version.h \
 	server_iface.h \
 	shcoind_rpc.h \
+	shcoind_error.h \
 	shcoind_log.h \
 	shcoind_opt.h \
 	shcoind_signal.h \
@@ -113,6 +120,7 @@ common_includes = \
 
 common_sources = \
 	shcoind_rpc.c \
+	shcoind_error.c \
 	shcoind_log.c \
 	shcoind_opt.c \
 	shcoind_signal.c \
@@ -177,6 +185,26 @@ server_sources = \
 	server/emc2/emc2_netmsg.h \
 	server/emc2/emc2_pool.cpp \
 	server/emc2/emc2_pool.h \
+	server/ltc/ltc_netmsg.cpp \
+	server/ltc/ltc_netmsg.h \
+	server/ltc/ltc_block.cpp \
+	server/ltc/ltc_block.h \
+	server/ltc/ltc_wallet.cpp \
+	server/ltc/ltc_wallet.h \
+	server/ltc/ltc_txidx.cpp \
+	server/ltc/ltc_txidx.h \
+	server/ltc/ltc_pool.cpp \
+	server/ltc/ltc_pool.h \
+	server/testnet/testnet_netmsg.cpp \
+	server/testnet/testnet_netmsg.h \
+	server/testnet/testnet_block.cpp \
+	server/testnet/testnet_block.h \
+	server/testnet/testnet_wallet.cpp \
+	server/testnet/testnet_wallet.h \
+	server/testnet/testnet_txidx.cpp \
+	server/testnet/testnet_txidx.h \
+	server/testnet/testnet_pool.cpp \
+	server/testnet/testnet_pool.h \
 	server/ext/txext.cpp \
 	server/ext/alias.cpp \
 	server/ext/certificate.cpp \
@@ -188,6 +216,7 @@ server_sources = \
 	server/rpc/rpcalias_proto.cpp \
 	server/rpc/rpccert_proto.cpp \
 	server/rpc/rpccontext_proto.cpp \
+	server/rpc/rpcexec_proto.cpp \
 	server/rpc/rpcdump.cpp \
 	server/rpc/rpc_command.cpp \
 	server/rpc/rpcrawtransaction.cpp \
@@ -228,9 +257,33 @@ server_sources = \
 	server_iface.cpp
 
 
-#noinst_PROGRAMS = test_shcoind 
-#noinst_LIBRARIES = libshcoin.a
-sbin_PROGRAMS = shcoind
+
+shcoind_SOURCES = \
+	$(common_includes) $(common_sources) \
+	$(server_sources) \
+	shcoind.c \
+	shcoind_daemon.c \
+	shcoind_daemon.h
+if WINDOWS
+shcoind_SOURCES += \
+	shcoind_svc.c \
+	shcoind_svc.h
+endif
+
+shcoind_LDADD = \
+	$(top_builddir)/src/secp256k1/libsecp256k1.a
+if STATIC_LIBSHARE
+shcoind_LDADD += \
+	$(LIBSHARE)/src/share-lib/libshare.a \
+	$(LIBSHARE)/src/sexe/libshare_sexe.a
+shcoind_CFLAGS = -I$(LIBSHARE)/include
+shcoind_CXXFLAGS = -I$(LIBSHARE)/include
+else
+shcoind_LDADD += -lshare -lshare_sexe
+endif
+shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
+
+
 
 test_shcoind_SOURCES = \
 	$(common_includes) $(common_sources) \
@@ -263,36 +316,6 @@ endif
 test_shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
 
 
-#libshcoin_a_SOURCES = \
-#	$(common_includes) $(common_sources)
-#libshcoin_a_LIBADD = \
-#	$(top_builddir)/src/secp256k1/libsecp256k1.a
-
-
-shcoind_SOURCES = \
-	$(common_includes) $(common_sources) \
-	$(server_sources) \
-	shcoind.c \
-	shcoind_daemon.c \
-	shcoind_daemon.h
-if WINDOWS
-shcoind_SOURCES += \
-	shcoind_svc.c \
-	shcoind_svc.h
-endif
-
-shcoind_LDADD = \
-	$(top_builddir)/src/secp256k1/libsecp256k1.a
-if STATIC_LIBSHARE
-shcoind_LDADD += \
-	$(LIBSHARE)/src/share-lib/libshare.a \
-	$(LIBSHARE)/src/sexe/libshare_sexe.a
-shcoind_CFLAGS = -I$(LIBSHARE)/include
-shcoind_CXXFLAGS = -I$(LIBSHARE)/include
-else
-shcoind_LDADD += -lshare -lshare_sexe
-endif
-shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
 
 if HAVE_SYSTEMCTL
 SYSD_FILE = /etc/systemd/system/shcoind.service

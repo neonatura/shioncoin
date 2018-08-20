@@ -51,7 +51,7 @@ using namespace std;
 using namespace boost;
 using namespace json_spirit;
 
-#define MAX_NONCE_SEQUENCE 24
+#define MAX_NONCE_SEQUENCE 8
 
 //std::map<uint256, CBlockIndex*> transactionMap;
 
@@ -132,9 +132,9 @@ const char *c_getblocktemplate(int ifaceIndex)
   if (iface->blockscan_max > pindexPrev->nHeight)
     return (NULL); /* downloading blocks */
 
-  /* prune worker blocks more than ten minutes old */
+  /* prune stale worker blocks (see SHC_MAX_DRIFT_TIME) */
   vector<unsigned int> vDelete;
-  time_t timeExpire = GetAdjustedTime() - 600;
+  time_t timeExpire = GetAdjustedTime() - 1440;
   for (work_map::const_iterator mi = mapWork.begin(); mi != mapWork.end(); ++mi) {
     CBlock *tblock = mi->second;
     if (tblock->nTime < timeExpire) {

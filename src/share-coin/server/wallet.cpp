@@ -2020,13 +2020,15 @@ CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount, bool bForceNew)
 CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 {
   CWalletDB walletdb(wallet->strWalletFile);
-  CAccount account;
   bool bKeyUsed = false;
+  CAccount account;
 
+	/* load from wallet */
   walletdb.ReadAccount(strAccount, account);
+  bool bValid = account.vchPubKey.IsValid();
 
-  // Check if the current key has been used
-  if (!bForceNew && account.vchPubKey.IsValid()) {
+  if (!bForceNew && bValid) {
+		/* check if the current key has been used */
     CScript scriptPubKey;
     scriptPubKey.SetDestination(account.vchPubKey.GetID());
     for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
@@ -2040,19 +2042,15 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
     }
   }
 
-  // Generate a new key
-  if (!account.vchPubKey.IsValid() || bForceNew || bKeyUsed)
-  {
-
-#if 0
-    if (!wallet->GetKeyFromPool(account.vchPubKey, false))
-      return CPubKey();
-#endif
-
+  if (!bValid) {
+		/* first time -- generate primary key for account */
     account.vchPubKey = wallet->GenerateNewKey(true);
     wallet->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
     walletdb.WriteAccount(strAccount, account);
-  }
+	} else if (bForceNew && bKeyUsed) {
+  	/* generate a new key */
+    account.vchPubKey = wallet->GenerateNewKey(true);
+  } /* else .. continue to use primary key */
 
   return (account.vchPubKey);
 }
@@ -2068,16 +2066,18 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
   CWalletDB walletdb(strWalletFile);
   CAccount account;
   CKey pkey;
-  bool fUpdate = false;
 
   walletdb.ReadAccount(strAccount, account);
 
   if (!account.vchPubKey.IsValid()) {
+		account.vchPubKey = GenerateNewKey(true);
+#if 0
     if (!GetKeyFromPool(account.vchPubKey, false))
       return false;
+#endif
 
     SetAddressBookName(account.vchPubKey.GetID(), strAccount);
-    fUpdate = true;
+    walletdb.WriteAccount(strAccount, account);
   }
 
   if (!GetKey(account.vchPubKey.GetID(), pkey)) {
@@ -2098,11 +2098,8 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
       return error(SHERR_INVAL, "CWallet.GetMergedAddress: error adding generated key to wallet.");
     }
 
-    SetAddressBookName(pubkey.GetID(), strAccount);
+//    SetAddressBookName(pubkey.GetID(), strAccount);
   }
-
-  if (fUpdate)
-    walletdb.WriteAccount(strAccount, account);
 
   return (true);
 }

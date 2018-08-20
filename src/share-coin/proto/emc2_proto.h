@@ -44,7 +44,7 @@
 //#define EMC2_MAX_SIGOPS 80000 /* consensus.h, 07.20.17 */
 
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
-#define EMC2_MAX_DRIFT_TIME 900 /* 15 minutes */ 
+#define EMC2_MAX_DRIFT_TIME 7200 /* 120 minutes */ 
 
 static const int EMC2_PROTOCOL_VERSION = 70015;
 
@@ -72,7 +72,7 @@ static const unsigned int EMC2_MAX_BLOCK_SERIALIZED_SIZE = 4000000;
 static const unsigned int EMC2_MAX_BLOCK_WEIGHT = 4000000;
 
 
-static const int64 EMC2_MIN_INPUT = 100000;
+static const int64 EMC2_MIN_INPUT = 29400;
 static const int64 EMC2_MIN_TX_FEE = 100000;
 //static const int64 EMC2_MIN_RELAY_TX_FEE = 100000;
 

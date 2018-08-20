@@ -38,14 +38,14 @@ int bc_arch_add(bc_t *bc, bc_idx_t *arch);
 
 uint32_t bc_arch_crc(bc_hash_t hash);
 
-int bc_arch_get(bc_t *bc, bcsize_t pos, bc_idx_t *ret_arch);
+int bc_arch_get(bc_t *bc, bcpos_t pos, bc_idx_t *ret_arch);
 
 /**
- * @returns The next record index.
+ * The next record index available in the database. 
  */
-bcsize_t bc_arch_next(bc_t *bc);
+int bc_arch_next(bc_t *bc, bcpos_t *pos_p);
 
-int bc_arch_set(bc_t *bc, bcsize_t pos, bc_idx_t *arch);
+int bc_arch_set(bc_t *bc, bcpos_t pos, bc_idx_t *arch);
 
 int bc_arch_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_arch, bcsize_t *ret_pos);
 

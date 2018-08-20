@@ -44,6 +44,8 @@ extern "C" {
 
 typedef uint32_t bcsize_t;
 
+typedef uint32_t bcpos_t;
+
 typedef uint32_t bc_hash_t[8];
 
 typedef struct bc_idx_t

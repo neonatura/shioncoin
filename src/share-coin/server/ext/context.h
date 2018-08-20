@@ -79,6 +79,7 @@ class CContext : public CCert
 
     CContext operator=(const CContext &b)
     {
+			SetNull();
       Init(b);
       return (*this);
     }

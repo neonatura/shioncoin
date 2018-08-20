@@ -24,6 +24,7 @@
  */  
 
 #include "test_shcoind.h"
+#include <sexe.h>
 #include <string>
 #include <vector>
 #include "wallet.h"
@@ -56,8 +57,9 @@ _TEST(blockchain)
   unsigned char *t_data;
   size_t t_data_len;
   int idx;
-  bcsize_t n_pos;
-  bcsize_t pos;
+  bcpos_t n_pos;
+  bcpos_t pos;
+	bcpos_t t_pos;
   int err;
 
   err = bc_open("rawtest", &bc);
@@ -65,7 +67,7 @@ _TEST(blockchain)
 
   srand(time(NULL));
 
-n_pos = bc_idx_next(bc);
+	(void)bc_idx_next(bc, &n_pos);
 
   for (idx = 0; idx < 10; idx++) {
     buf[0] = (rand() % 254);
@@ -75,13 +77,14 @@ n_pos = bc_idx_next(bc);
 
     memcpy(hash[idx], buf + 1, sizeof(hash[idx]));
 
-    pos = bc_append(bc, hash[idx], buf, sizeof(buf));
-    _TRUE(pos >= 0);
-
-    err = bc_find(bc, hash[idx], NULL);
+    err = bc_append(bc, hash[idx], buf, sizeof(buf));
     _TRUE(err == 0);
 
-    _TRUE(((pos + 1) == bc_idx_next(bc)));
+    err = bc_find(bc, hash[idx], &pos);
+    _TRUE(err == 0);
+
+		bc_idx_next(bc, &t_pos);
+		_TRUE( (pos+1) == (t_pos) );
 
     err = bc_get(bc, pos, &t_data, &t_data_len);
     _TRUE(err == 0);
@@ -112,12 +115,10 @@ n_pos = bc_idx_next(bc);
     free(t_data);
   }
   
+	bc_idx_next(bc, &t_pos);
+  _TRUE(t_pos == (n_pos + 10));
 
-//fprintf(stderr, "OK (height %d)\n", (bc_idx_next(bc)-1));
-  _TRUE(bc_idx_next(bc) == (n_pos + 10));
   bc_close(bc);
-
-
 }
 
 _TEST(truncate)
@@ -801,6 +802,7 @@ _TEST(ctxtx)
     string strName = "test context name";
     cbuff vchValue(payload, payload + strlen(payload));
     err = init_ctx_tx(iface, wtx, strLabel, strName, vchValue);
+if (err) fprintf(stderr, "DEBUG: %d = init_ctx_tx('%s', '%s', <%d bytes>)\n", err, strLabel.c_str(), strName.c_str(), (int)vchValue.size());
     _TRUE(0 == err);
   }
   CContext ctx(wtx.certificate);
@@ -825,7 +827,7 @@ _TEST(ctxtx)
   _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 
   /* test geodetic context */
-  shgeo_set(&geo, 46.7467, -114.1096, NULL);
+  shgeo_set(&geo, 46.7467, -114.1096, 0);
   string strName = "geo:46.7467,-114.1096";
   const char *payload = "{\"name\":\"mountain\",\"code\":\"AREA\"}";
   cbuff vchValue(payload, payload + strlen(payload));
@@ -1280,53 +1282,31 @@ _TRUE(wallet->CommitTransaction(wtx) == true);
 
 }
 
-static void _init_exectx_sx(char *src_path, char *sx_path)
+
+static int TEST_sexe_compile(char *path_out, char *path_fname, char *path_dir, int *exec_size)
 {
-#ifndef WIN32
-  const char *tmp_path = shcache_path("tmp");
-#else
-  const char *tmp_path = "exectx";
-#endif
-  const char *text = 
-    "function buyTicket(farg)\n"
-    "  if (userdata.rtotal >= userdata.rmax) then\n"
-    "    return 10\n"
-    "  end\n"
-    "  local reg = userdata.register[farg.sender]\n"
-    "  if (reg) then\n"
-    "    return 20\n"
-    "  end\n"
-    "  userdata.register[farg.sender] = farg.value\n"
-    "  userdata.rtotal = userdata.rtotal + 1\n"
-    "  commit(farg.sender, farg.value/2)\n"
-    "  return 0\n"
-    "end\n"
-    "function init(farg)\n"
-    "  userdata.rmax = 3\n"
-    "  userdata.rtotal = 0\n"
-    "  userdata.register = { }\n"
-    "  userdata.owner = farg.sender\n"
-    "  userdata.buyTicket = buyTicket\n"
-    "  userdata.refundTicket = refundTicket\n"
-    "  userdata.setQuota = setQuota\n"
-    "  return 0\n"
-    "end\n"
-    "function term(farg)\n"
-    "  return 0\n"
-    "end\n"
-    "return 0\n";
-  char sysbuf[10240];
+	sexe_t *L;
+	int argc;
+	char *argv[256];
 
-  sprintf(src_path, "%s.lua", tmp_path);
-  sprintf(sx_path, "%s.sx", tmp_path);
+	argc = 2;
+	argv[0] = path_out;
+	argv[1] = path_fname;
 
-  /* write source code */
-  shfs_write_mem((char *)src_path, (char *)text, strlen(text));
+	L = sexe_init();
+	if (L==NULL)
+		return (SHERR_NOMEM);
 
-  /* compile source code */
-  sprintf(sysbuf, "sxc -o \"%s\" \"%s\"", sx_path, src_path);
-  system(sysbuf);
+	lua_pushcfunction(L, &sexe_compile_pmain);
+	lua_pushinteger(L,argc);
+	lua_pushlightuserdata(L,argv);
+	if (lua_pcall(L,2,0,0)!=LUA_OK)
+		return (SHERR_ILSEQ);
+	lua_close(L);
+
+	return (0);
 }
+
 
 
 _TEST(exectx)
@@ -1341,10 +1321,23 @@ _TEST(exectx)
   int idx;
   int err;
 
-  _init_exectx_sx(src_path, sx_path);
-  string strPath = sx_path;
+  for (idx = 0; idx < 2; idx++) {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
 
-  (void)GetAccountAddress(wallet, strAccount, true);
+	strcpy(sx_path, "BaseObject.lua");
+	exec_write_base_object(sx_path);
+
+	err = TEST_sexe_compile("BaseObject.sx", "BaseObject.lua", "", NULL);
+	if (err) {
+		fprintf(stderr, "DEBUG: %d = TEST_sexe_compile()\n", err);
+	}
+	_TRUE(err == 0);
+
+  CCoinAddr sendAddr = GetAccountAddress(wallet, strAccount, true);
 
   /* create a coin balance. */
   for (idx = 0; idx < 2; idx++) {
@@ -1354,18 +1347,20 @@ _TEST(exectx)
     delete block;
   }
 
-  CWalletTx wtx;
-  wtx.SetNull();
-  wtx.strFromAccount = strAccount;
 
-  err = init_exec_tx(iface, strAccount, strPath, 0, wtx); 
+	/* - Exec Init Tx - */
+  CWalletTx wtx;
+
+  string strPath("BaseObject.sx");
+  err = init_exec_tx(iface, strAccount, strPath, wtx); 
 if (err) fprintf(stderr, "DEBUG: TEST: EXECTX[status %d]: %s\n", err, wtx.ToString(TEST_COIN_IFACE).c_str());
-  CExec *exec = &((CExec&)wtx.certificate);
-  uint160 hExec = exec->GetIdentHash();
+  _TRUE(err == 0);
+
+  CExec *exec = wtx.GetExec();
   _TRUE(err == 0);
   _TRUE(VerifyExec(wtx, mode) == true);
   _TRUE(mode == OP_EXT_NEW);
-  _TRUE(exec->VerifySignature());
+  _TRUE(exec->VerifySignature(TEST_COIN_IFACE));
 
   {
     CBlock *block = test_GenerateBlock();
@@ -1374,21 +1369,131 @@ if (err) fprintf(stderr, "DEBUG: TEST: EXECTX[status %d]: %s\n", err, wtx.ToStri
     delete block;
   }
 
-  CWalletTx run_tx;
-  err = generate_exec_tx(iface, strAccount, hExec, "buyTicket", wtx);
+	uint160 hExec = exec->GetHash();
+
+	/* clear previous user-data */
+	ResetExecChain(iface, hExec);
+
+	/* - Exec Call (direct) - */
+  CWalletTx wtx_call;
+	wtx_call.SetNull();
+	CExecCall *call = wtx_call.GenerateExec(*exec);
+if (!call) { fprintf(stderr, "DEBUG: TEST: exectx: !call\n"); } 
+	_TRUEPTR(call);
+
+	call->hExec = hExec;
+	call->SetSendTime();
+	call->SetCommitHeight(TEST_COIN_IFACE);
+	call->SetMethodName("verify");
+
+
+	shjson_t *param = shjson_init(NULL);
+	shjson_str_add(param, "sender", (char *)sendAddr.ToString().c_str());
+	shjson_str_add(param, "owner", (char *)sendAddr.ToString().c_str());
+	shjson_str_add(param, "iface", "test");
+	shjson_num_add(param, "value", 0);
+	shjson_num_add(param, "version", 3);
+	shjson_str_add(param, "class", "BaseObject");
+	shjson_str_add(param, "method", "verify");
+	shjson_num_add(param, "timestamp", call->GetSendTime());
+	shjson_num_add(param, "height", GetBestHeight(iface));
+
+	bool ret = exec->CallStack(TEST_COIN_IFACE, sendAddr, &param);
+  _TRUE(ret == true);
+
+	shjson_free(&param);
+
+  for (idx = 0; idx < 2; idx++) {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+
+
+	/* - Exec Call Tx - */
+	wtx_call.SetNull();
+	string strClass("BaseObject");
+	char *args[3]; args[0] = NULL;
+	Value ret_val;
+	err = generate_exec_tx(iface, strAccount, strClass, COIN, "update", args, ret_val, wtx_call);  
 if (err) fprintf(stderr, "DEBUG: %d = generate_exec_tx()\n", err);
-  _TRUE(err == 0);
+	_TRUE(err == 0);
+	_TRUE(ret_val.get_bool() == true);
+	uint160 hCall = wtx_call.GetExecCall()->GetHash();
 
-  {
+	{
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
 
-  unlink(src_path);
-  unlink(sx_path);
-#endif
+	CExecCall t_call;
+	_TRUE(GetCallByHash(iface, hCall, t_call));
+
+	/* Checkpoint */
+
+	{
+		vector<uint160>& vCall = wallet->mapExecCall[hExec];
+		_TRUE(vCall.size() == 1);
+
+		vector<uint160>& vPendCall = wallet->mapExecCallPending[hExec];
+		_TRUE(vPendCall.size() == 0);
+	}
+
+	ResetExecChain(iface, hExec);
+
+	{
+		vector<uint160>& vCall = wallet->mapExecCall[hExec];
+		_TRUE(vCall.size() == 0);
+
+		vector<uint160>& vPendCall = wallet->mapExecCallPending[hExec];
+		_TRUE(vPendCall.size() == 1);
+	}
+
+  for (idx = 0; idx < 10; idx++) {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+
+  CWalletTx wtx2_call;
+	wtx2_call.SetNull();
+	err = generate_exec_tx(iface, strAccount, strClass, COIN, "update", args, ret_val, wtx2_call);  
+if (err) fprintf(stderr, "DEBUG: %d = generate_exec_tx()/2\n", err);
+	_TRUE(err == 0);
+
+	{
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+
+	_TRUE(wallet->mapExecCheckpoint.count(hExec) == 1);
+fprintf(stderr, "DEBUG: TEST: GetStackHeight/before %d\n", (int)exec->GetStackHeight(TEST_COIN_IFACE));
+
+	{
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+
+	_TRUE(ExecRestoreCheckpoint(iface, hExec) == true);
+
+fprintf(stderr, "DEBUG: TEST: GetStackHeight/after %d\n", (int)exec->GetStackHeight(TEST_COIN_IFACE));
+
+	{
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+
+#endif /* def USE_SEXE */
 }
 
 _TEST(scriptid)
@@ -1541,7 +1646,6 @@ _TEST(segwit)
     delete block;
   }
   nValue = GetAccountBalance(TEST_COIN_IFACE, strWitAccount, 1);
-//fprintf(stderr, "DEBUG: TEST: wit bal %f\n", (double)nValue/COIN);
 
   CCoinAddr witAddr(TEST_COIN_IFACE);
   _TRUE(wallet->GetWitnessAddress(extAddr, witAddr) == true);

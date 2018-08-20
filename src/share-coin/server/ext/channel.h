@@ -72,6 +72,7 @@ class CChannelKey
 
     CChannelKey operator=(const CChannelKey &b)
     {
+			SetNull();
       Init(b);
       return (*this);
     }
@@ -157,6 +158,7 @@ class CChannel
 
     CChannel operator=(const CChannel &b)
     {
+			SetNull();
       Init(b);
       return (*this);
     }

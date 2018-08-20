@@ -186,7 +186,8 @@ static peerdb_t **peerdb_track_scan(bc_t *db, int max)
   int err;
   int i;
 
-  db_max = bc_idx_next(db); 
+	db_max = 0;
+	(void)bc_idx_next(db, &db_max);
 
   max = MIN(max, db_max);
   max = MIN(max, MAX_PEERDB_TRACK_LIST_SIZE);
@@ -282,7 +283,6 @@ static int peerdb_write(bc_t *db, peerdb_t *p)
     err = bc_write(db, pos, hash, data, data_len);
   }
 
-
   return (0);
 }
 
@@ -345,15 +345,15 @@ static peerdb_t **peerdb_track_list(int mode, int ret_max)
 {
   peerdb_t **ret_list;
   bc_t *db;
-  int db_max;
+  bcpos_t db_max;
   int idx;
 
   db = peerdb_open(mode);
   if (!db)
     return (NULL);
 
-  db_max = bc_idx_next(db); 
-  db_max = MIN(db_max, ret_max);
+	(void)bc_idx_next(db, &db_max);
+  db_max = MIN(db_max, (bcpos_t)MAX(0, ret_max));
 
   ret_list = peerdb_track_scan(db, db_max);
   if (!ret_list)
@@ -455,6 +455,15 @@ void unet_peer_fill_seed(int mode)
       sprintf(buf, "unet_peer_fill_seed: seeding SHC peer '%s'.", shpeer_print(peer));
       unet_log(mode, buf);
     }
+	} else if (mode == UNET_TESTNET) {
+    for (i = 0; i < TESTNET_SEED_LIST_SIZE; i++) {
+      sprintf(hostname, "%s %d", testnet_seed_list[i], bind->port);
+      peer = shpeer_init((char *)unet_mode_label(mode), hostname); 
+      create_uevent_verify_peer(mode, peer);
+
+      sprintf(buf, "unet_peer_fill_seed: seeding TESTNET peer '%s'.", shpeer_print(peer));
+      unet_log(mode, buf);
+    }
   } else if (mode == UNET_USDE) {
     for (i = 0; i < USDE_SEED_LIST_SIZE; i++) {
       sprintf(hostname, "%s %d", usde_seed_list[i], bind->port);
@@ -523,7 +532,9 @@ unsigned int unet_peer_total(int mode)
   if (!db)
     return (0);
 
-  ret_tot = bc_idx_next(db);
+	ret_tot = 0;
+	(void)bc_idx_next(db, &ret_tot);
+
   return (ret_tot);
 }
 
@@ -644,9 +655,9 @@ int unet_peer_export_path(int ifaceIndex, char *path)
   char hostname[MAXHOSTNAMELEN+1];
   char idx_str[256];
   char *text;
-  int db_max;
+  bcpos_t db_max;
+  bcpos_t idx;
   int port;
-  int idx;
   int err;
 
   db = peerdb_open(ifaceIndex);
@@ -656,7 +667,9 @@ int unet_peer_export_path(int ifaceIndex, char *path)
   root = shjson_init(NULL);
   j = shjson_obj_add(root, "track");
 
-  db_max = bc_idx_next(db);
+	db_max = 0;
+	(void)bc_idx_next(db, &db_max);
+
   for (idx = 0; idx < db_max; idx++) {
     err = peerdb_read_index(db, idx, &p);
     if (err)
@@ -667,7 +680,7 @@ int unet_peer_export_path(int ifaceIndex, char *path)
     shpeer_host(&p->peer, hostname, &port);
     sprintf(hostname + strlen(hostname), " %d", port);
 
-    sprintf(idx_str, "%d", (idx+1));
+    sprintf(idx_str, "%u", (idx+1));
     node = shjson_obj_add(j, idx_str);
 
     shjson_str_add(node, "host", hostname);

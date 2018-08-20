@@ -135,6 +135,11 @@ public:
         setvch(vch);
     }
 
+		int bits()
+		{
+			return (BN_num_bits(this));
+		}
+
     void setulong(unsigned long n)
     {
         if (!BN_set_word(this, n))

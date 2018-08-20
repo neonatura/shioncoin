@@ -1,0 +1,49 @@
+# The shcoind (ShareCoin) service configuration file.
+# Required Path: ~/shc/shc.conf
+
+# String		name=<string>
+# Number    name=<number>
+# Boolean   name=<0|1>
+
+# Verbose logging information.
+debug=0
+
+# The maximum number of socket connections.
+net-max=300
+
+# Administrative RPC commands.
+admin=0
+
+# The number of seconds to ban a node for suspicious activity.
+ban-span=21600
+
+# The amount of suspicious behaviour before banning a node.
+ban-threshold=1000
+
+# The port to accept incoming SHC service connections.
+shc-port=24104
+
+# The built-in stratum miner service.
+stratum=1
+
+# The socket port to listen for stratum connections.
+stratum-port=9448
+
+# The maximum number of seconds between "getwork" notifications.
+stratum-work-cycle=15
+
+# The RPC command service.
+rpc=1
+
+# The socket port to listen for RPC commands.
+rpc-port=9447
+
+# The IP Address of the ethernet device to bind the RPC service to or a literal star "*" to allow any incoming network connection.
+rpc-host=127.0.0.1
+
+# The ShareCoin Testnet service.
+testnet=0
+
+# The socket port to listen for testnet connections.
+testnet-port=26104
+

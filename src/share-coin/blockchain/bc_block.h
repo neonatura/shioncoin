@@ -34,15 +34,15 @@ int bc_open(char *name, bc_t **bc_p);
 
 char *bc_name(bc_t *bc);
 
-int bc_read(bc_t *bc, int pos, void *data, bcsize_t data_len);
+int bc_read(bc_t *bc, bcsize_t pos, void *data, bcsize_t data_len);
 
 int bc_append(bc_t *bc, bc_hash_t hash, void *data, size_t data_len);
 
-int bc_find(bc_t *bc, bc_hash_t hash, int *pos_p);
+int bc_find(bc_t *bc, bc_hash_t hash, bcpos_t *pos_p);
 
 int bc_alloc(bc_t *bc, unsigned int jrnl);
 
-int bc_get_hash(bc_t *bc, bcsize_t pos, bc_hash_t ret_hash);
+int bc_get_hash(bc_t *bc, bcpos_t pos, bc_hash_t ret_hash);
 
 int bc_hash_cmp(bc_hash_t a_hash, bc_hash_t b_hash);
 
@@ -57,15 +57,13 @@ int bc_clear(bc_t *bc, bcsize_t pos);
 
 int bc_write(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int data_len);
 
-int bc_get(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p);
+int bc_get(bc_t *bc, bcpos_t pos, unsigned char **data_p, size_t *data_len_p);
 
 void bc_idle(bc_t *bc);
 
 uint32_t bc_journal(int pos);
 
 int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p);
-
-int bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, int data_len);
 
 int bc_purge(bc_t *bc, bcsize_t pos);
 
@@ -75,7 +73,9 @@ int bc_rewrite(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int data_
 
 const char *bc_path_base(void);
 
+int bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, bcsize_t data_len);
 
+int bc_find(bc_t *bc, bc_hash_t hash, bcpos_t *pos_p);
 
 
 #endif /* ndef __BLOCKCHAIN__BC_BLOCK_H__ */

@@ -71,6 +71,7 @@ extern shbuf_t *server_msg_buff;
 #include "server_iface.h"
 #include "shcoind_version.h"
 #include "shcoind_signal.h"
+#include "shcoind_error.h"
 #include "shcoind_opt.h"
 #include "shcoind_log.h"
 #include "shcoind_block.h"

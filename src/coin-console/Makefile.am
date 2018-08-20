@@ -63,4 +63,10 @@ emc2_CFLAGS = $(tool_flags) -DEMC2_COIN_CLIENT
 emc2_LDADD = $(ld_flags)
 endif
 
+if TESTNET_SERVICE
+bin_PROGRAMS += testnet
+testnet_SOURCES = $(console_sources)
+testnet_CFLAGS = $(tool_flags) -DTESTNET_COIN_CLIENT
+testnet_LDADD = $(ld_flags)
+endif
 

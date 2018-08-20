@@ -586,14 +586,6 @@ bool emc2_CreateGenesisBlock()
   if (!ret)
     return (false);
 
-#ifdef USE_LEVELDB_COINDB
-  EMC2TxDB txdb;
-  block.SetBestChain(txdb, (*blockIndex)[emc2_hashGenesisBlock]);
-  txdb.Close();
-#else
-  block.SetBestChain((*blockIndex)[emc2_hashGenesisBlock]);
-#endif
-
   return (true);
 }
 
@@ -618,6 +610,7 @@ static void emc2_EraseFromWallets(uint256 hash)
 }
 
 
+#if 0
 /** minimum amount of work that could possibly be required nTime after minimum work required was nBase */
 unsigned int emc2_ComputeMinWork(unsigned int nBase, int64 nTime)
 {
@@ -641,6 +634,7 @@ unsigned int emc2_ComputeMinWork(unsigned int nBase, int64 nTime)
     bnResult = emc2_bnProofOfWorkLimit;
   return bnResult.GetCompact();
 }
+#endif
 
 
 
@@ -711,6 +705,7 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
 pblock->print();
       return error(SHERR_INVAL, "ProcessBlock() : block with timestamp before last checkpoint");
     }
+#if 0
     CBigNum bnNewBlock;
     bnNewBlock.SetCompact(pblock->nBits);
     CBigNum bnRequired;
@@ -721,6 +716,7 @@ pblock->print();
         pfrom->Misbehaving(100);
       return error(SHERR_INVAL, "ProcessBlock() : block with too little proof-of-work");
     }
+#endif
   }
 
   /*
@@ -738,6 +734,7 @@ pblock->print();
       if (pindexBest) {
         Debug("(emc2) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
         pfrom->PushGetBlocks(GetBestBlockIndex(EMC2_COIN_IFACE), emc2_GetOrphanRoot(pblock->GetHash()));
+				InitServiceBlockEvent(EMC2_COIN_IFACE, pindexBest->nHeight);
       }
     }
 
@@ -811,9 +808,15 @@ bool EMC2Block::CheckBlock()
   }
 
   // Check timestamp
-  if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
+  if (GetBlockTime() > GetAdjustedTime() + EMC2_MAX_DRIFT_TIME) {
     return error(SHERR_INVAL, "CheckBlock() : block timestamp too far in the future");
   }
+#if 0
+  if (GetBlockTime() <= pindexPrev->GetMedianTimePast()) {
+    print();
+    return error(SHERR_INVAL, "(emc2) AcceptBlock() : block's timestamp too far in the past.");
+  }
+#endif
 
   // First transaction must be coinbase, the rest must not be
   for (unsigned int i = 1; i < vtx.size(); i++) {
@@ -1159,9 +1162,9 @@ bool EMC2Block::AcceptBlock()
     return error(SHERR_INVAL, "(emc2) AcceptBlock() : block's timestamp too far in the future.");
 
   }
-  if (GetBlockTime() <= pindexPrev->GetBlockTime() - EMC2_MAX_DRIFT_TIME) {
+  if (GetBlockTime() <= pindexPrev->GetMedianTimePast()) {
     print();
-    return error(SHERR_INVAL, "(emc2) AcceptBlock() : block's timestamp too far in the pas.");
+    return error(SHERR_INVAL, "(emc2) AcceptBlock() : block's timestamp too far in the past.");
   }
 
   bool checkHeightMismatch = false;
@@ -1345,7 +1348,10 @@ bool emc2_Truncate(uint256 hash)
 
   bc_t *bc = GetBlockChain(iface);
   unsigned int nMinHeight = cur_index->nHeight;
-  unsigned int nMaxHeight = (bc_idx_next(bc)-1);
+
+  uint32_t nMaxHeight = 0;
+	(void)bc_idx_next(bc, &nMaxHeight);
+	nMaxHeight = MAX(1, nMaxHeight) - 1;
     
   EMC2TxDB txdb; /* OPEN */
 
@@ -1441,22 +1447,12 @@ bool EMC2Block::AddToBlockIndex()
     pindexNew->nStatus |= BIS_OPT_WITNESS;
   }
 
-
   if (pindexNew->bnChainWork > bnBestChainWork) {
-#ifdef USE_LEVELDB_COINDB
-    EMC2TxDB txdb;
-    bool ret = SetBestChain(txdb, pindexNew);
-    txdb.Close();
-    if (!ret)
-      return false;
-#else
     bool ret = SetBestChain(pindexNew);
     if (!ret)
       return (false);
-#endif
   } else {
-    if (!WriteArchBlock())
-      return (false);
+    WriteArchBlock();
   }
 
   return true;

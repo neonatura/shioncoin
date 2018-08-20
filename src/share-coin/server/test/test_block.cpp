@@ -172,10 +172,7 @@ uint256 test_GetOrphanRoot(uint256 hash)
   return (hash);
 }
 
-
-
-
-
+/** TestNet : difficulty level is always lowest possible per protocol. */
 unsigned int TESTBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
   unsigned int nProofOfWorkLimit = TEST_bnProofOfWorkLimit.GetCompact();
@@ -368,7 +365,7 @@ bool test_CreateGenesisBlock()
 CBlock *test_GenerateBlock(CBlockIndex *pindexPrev)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  static unsigned int nNonceIndex;
+  static unsigned int nNonceIndex = 0xF2222222;
 //  static unsigned int nXIndex = 0xf0000000;
 //  CBlockIndex *bestIndex = GetBestBlockIndex(TEST_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
@@ -454,25 +451,6 @@ static void test_EraseFromWallets(uint256 hash)
 }
 
 
-// minimum amount of work that could possibly be required nTime after
-// minimum work required was nBase
-//
-static unsigned int test_ComputeMinWork(unsigned int nBase, int64 nTime)
-{
-  CBigNum bnResult;
-  bnResult.SetCompact(nBase);
-  while (nTime > 0 && bnResult < TEST_bnProofOfWorkLimit)
-  {
-    // Maximum 136% adjustment...
-    bnResult = (bnResult * 75) / 55; 
-    // ... in best-case exactly 4-times-normal target time
-    nTime -= TESTBlock::nTargetTimespan*4;
-  }
-  if (bnResult > TEST_bnProofOfWorkLimit)
-    bnResult = TEST_bnProofOfWorkLimit;
-  return bnResult.GetCompact();
-}
-
 bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
   int ifaceIndex = TEST_COIN_IFACE;
@@ -512,16 +490,6 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
         pfrom->Misbehaving(100);
       return error(SHERR_INVAL, "ProcessBlock() : block with timestamp before last checkpoint");
     }
-    CBigNum bnNewBlock;
-    bnNewBlock.SetCompact(pblock->nBits);
-    CBigNum bnRequired;
-    bnRequired.SetCompact(test_ComputeMinWork(pcheckpoint->nBits, deltaTime));
-    if (bnNewBlock > bnRequired)
-    {
-      if (pfrom)
-        pfrom->Misbehaving(100);
-      return error(SHERR_INVAL, "ProcessBlock() : block with too little proof-of-work");
-    }
   }
 
   /* block is considered orphan when previous block or one of the transaction's input hashes is unknown. */
@@ -537,7 +505,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
       if (pindexBest) {
         Debug("(test) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
         pfrom->PushGetBlocks(GetBestBlockIndex(TEST_COIN_IFACE), test_GetOrphanRoot(pblock->GetHash()));
-//        ServiceBlockEventUpdate(TEST_COIN_IFACE);
+				InitServiceBlockEvent(TEST_COIN_IFACE, pindexBest->nHeight);
       }
     }
     return true;
@@ -610,7 +578,7 @@ bool TESTBlock::CheckBlock()
 
   // Check proof of work matches claimed amount
   if (!test_CheckProofOfWork(GetPoWHash(), nBits)) {
-    return error(SHERR_INVAL, "CheckBlock() : proof of work failed");
+    return error(SHERR_INVAL, "(test) CheckBlock : proof of work failed");
   }
 
   // Check timestamp
@@ -916,7 +884,16 @@ bool TESTBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     /* reorg will attempt to read this block from db */
     WriteArchBlock();
 
-    ret = test_Reorganize(txdb, pindexNew, &mempool);
+		/* limit */
+    CBlockIndex *pindexIntermediate = pindexNew;
+		CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
+		while (pindexIntermediate->pprev && 
+				pindexIntermediate->pprev->bnChainWork > pindexBest->bnChainWork)
+    {
+      pindexIntermediate = pindexIntermediate->pprev;
+    }
+
+    ret = test_Reorganize(txdb, pindexIntermediate, &mempool);
     if (!ret) {
       txdb.TxnAbort();
       InvalidChainFound(pindexNew);
@@ -1007,7 +984,8 @@ bool TESTBlock::AcceptBlock()
     return error(SHERR_INVAL, "(test) AcceptBlock: block's timestamp more than fifteen minutes in the future.");
 
   }
-  if (GetBlockTime() <= pindexPrev->GetBlockTime() - TEST_MAX_DRIFT_TIME) {
+	if ((GetBlockTime() <= pindexPrev->GetBlockTime() - TEST_MAX_DRIFT_TIME) ||
+			(GetBlockTime() < pindexPrev->GetBlockTime())) {
     print();
     return error(SHERR_INVAL, "(test) AcceptBlock: block's timestamp more than fifteen minutes old.");
   }
@@ -1096,29 +1074,12 @@ bool TESTBlock::AddToBlockIndex()
   }
 
   if (pindexNew->bnChainWork > bnBestChainWork) {
-#ifdef USE_LEVELDB_COINDB
-    TESTTxDB txdb;
-    bool ret = SetBestChain(txdb, pindexNew);
-    txdb.Close();
-    if (!ret)
-      return false;
-#else
     bool ret = SetBestChain(pindexNew);
     if (!ret)
       return (false);
-#endif
   } else {
-    if (!WriteArchBlock()) {
-      return (false);
-    }
+    WriteArchBlock();
   }
-
-#if 0
-  setValid->insert(pindexNew);
-  if (!core_ConnectBestBlock(TEST_COIN_IFACE, this, pindexNew)) {
-    return error(SHERR_INVAL, "AddToBlockIndex: ConnectBestBlock failure");
-  }
-#endif
 
   return true;
 }
@@ -1234,7 +1195,7 @@ bool test_Truncate(uint256 hash)
   CBlockIndex *pBestIndex;
   CBlockIndex *cur_index;
   CBlockIndex *pindex;
-  unsigned int nHeight;
+  bcpos_t nHeight;
   int err;
 
   if (!blockIndex || !blockIndex->count(hash))
@@ -1251,9 +1212,12 @@ bool test_Truncate(uint256 hash)
     return error(SHERR_INVAL, "Erase: height is not valid.");
 
   bc_t *bc = GetBlockChain(iface);
-  unsigned int nMinHeight = cur_index->nHeight;
-  unsigned int nMaxHeight = (bc_idx_next(bc)-1);
-    
+  unsigned int nMinHeight = MAX(1, cur_index->nHeight);
+
+	uint32_t nMaxHeight = 0;
+	(void)bc_idx_next(bc, &nMaxHeight);
+	nMaxHeight = MAX(1, nMaxHeight) - 1;
+
   TESTTxDB txdb; /* OPEN */
 
   for (nHeight = nMaxHeight; nHeight > nMinHeight; nHeight--) {
@@ -1730,10 +1694,6 @@ bool TESTBlock::DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex)
             } else if (matrix.GetType() == CTxMatrix::M_SPRING) {
               BlockRetractSpringMatrix(iface, tx, pindex);
             }
-          }
-        } else {
-          if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
-            DisconnectCertificate(iface, tx);
           }
         }
       }

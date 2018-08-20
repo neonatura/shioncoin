@@ -67,6 +67,7 @@ class COfferAccept : public CExtCore
 
     COfferAccept operator=(const COfferAccept &b)
     {
+			SetNull();
       Init(b);
       return *this;
     }
@@ -75,7 +76,7 @@ class COfferAccept : public CExtCore
         return !(a == b);
     }
     
-    void SetNull() 
+    void SetNull()
     {
       CExtCore::SetNull();
 
@@ -150,7 +151,9 @@ class COffer : public COfferAccept
             );
       }
 
-    COffer operator=(const COffer &b) {
+    COffer operator=(const COffer &b) 
+		{
+			SetNull();
       COfferAccept::Init(b);
       nPayCoin = b.nPayCoin;
       nXferCoin = b.nXferCoin;

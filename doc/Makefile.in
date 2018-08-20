@@ -190,7 +190,6 @@ GCJFLAGS = @GCJFLAGS@
 GIT = @GIT@
 GREP = @GREP@
 HELP2MAN = @HELP2MAN@
-INITD_DIR = @INITD_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -299,7 +298,6 @@ with_kerneldir = @with_kerneldir@
 AM_CFLAGS = -DDATADIR=\"$(datadir)\"
 dist_docdir = $(datadir)/@PACKAGE@
 @HAVE_HELP2MAN_TRUE@dist_man_MANS = \
-@HAVE_HELP2MAN_TRUE@	man/man1/shcoin.1 \
 @HAVE_HELP2MAN_TRUE@	man/man1/shcoind.1
 
 @HAVE_DOXYGEN_TRUE@dist_doc_DATA = shcoin_html.tar.gz
@@ -570,12 +568,10 @@ uninstall-man: uninstall-man1
 	uninstall-man1
 
 
-@HAVE_HELP2MAN_TRUE@man/man1/shcoin.1: helpfile.stamp
 @HAVE_HELP2MAN_TRUE@man/man1/shcoind.1: helpfile.stamp
 
 @HAVE_HELP2MAN_TRUE@helpfile.stamp:
 @HAVE_HELP2MAN_TRUE@	mkdir -p man/man1
-@HAVE_HELP2MAN_TRUE@	$(HELP2MAN) --output=man/man1/shcoin.1 --name='share-coin command-line tool' $(top_builddir)/src/share-coin/shcoin
 @HAVE_HELP2MAN_TRUE@	$(HELP2MAN) --output=man/man1/shcoind.1 --name='share-coin daemon' $(top_builddir)/src/share-coin/shcoind
 @HAVE_HELP2MAN_TRUE@	echo Timestamp > helpfile.stamp
 

@@ -205,7 +205,7 @@ static bool ServiceValidateEvent(int ifaceIndex)
   unsigned int nBestHeight = GetBestHeight(iface);
   unsigned int nStartHeight = wallet->nValidateHeight;
   unsigned int nHeight = wallet->nValidateHeight;
-  unsigned int nMaxHeight = nHeight + 16;
+  unsigned int nMaxHeight = nHeight + 10;
 
   if (nHeight <= nBestHeight) {
     for (; nHeight <= nBestHeight && nHeight < nMaxHeight; nHeight++) {
@@ -501,6 +501,15 @@ void PerformBlockChainOperation(int ifaceIndex)
         memset(&chain, 0, sizeof(chain));
       }
       break;
+
+		case BCOP_MINER:
+			ret = UpdateServiceMinerEvent(chain.ifaceIndex);
+			if (!ret) {
+        sprintf(buf, "PerformBlockChainOperation: spent %u iterations mining a block.", chain.total);
+        unet_log(chain.ifaceIndex, buf);
+        memset(&chain, 0, sizeof(chain));
+			}
+			break;
   }
 }
 
@@ -673,6 +682,8 @@ void InitServiceWalletEvent(CWallet *wallet, uint64_t nHeight)
     wallet->nScanHeight = nHeight;
   else
     wallet->nScanHeight = MIN(nHeight, wallet->nScanHeight); 
+
+
 }
 
 void InitServiceValidateEvent(CWallet *wallet, uint64_t nHeight)
@@ -786,6 +797,127 @@ int InitServiceBlockEvent(int ifaceIndex, uint64_t nHeight)
 
   return (0);
 }
+
+static double GetDifficulty(unsigned int nBits)
+{
+	int nShift = (nBits >> 24) & 0xff;
+
+	double dDiff =
+		(double)0x0000ffff / (double)(nBits & 0x00ffffff);
+
+	while (nShift < 29)
+	{
+		dDiff *= 256.0;
+		nShift++;
+	}
+	while (nShift > 29)
+	{
+		dDiff /= 256.0;
+		nShift--;
+	}
+
+	return dDiff;
+}
+
+static uint64_t nNonceCount;
+int InitServiceMinerEvent(int ifaceIndex, uint64_t nIncr)
+{
+
+  chain.mode = BCOP_MINER;
+	chain.ifaceIndex = ifaceIndex;
+
+	nNonceCount = nIncr;
+	chain.total = nIncr;
+
+	return (0);
+}
+
+/* simple cpu miner for testnet */
+bool UpdateServiceMinerEvent(int ifaceIndex)
+{
+  static uint32_t nNonceIndex = 0xF2222222;
+	static uint32_t nNonceHeight;
+	static CBlock *block;
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+	uint32_t height;
+	bool found;
+
+	if (nNonceCount == 0)
+		return (false);
+
+	height = GetBestHeight(ifaceIndex);
+	if (!block || nNonceHeight != height) {
+		nNonceHeight = height;
+
+		if (block)
+			delete block;
+
+		block = CreateBlockTemplate(iface);
+		if (!block) { 
+			unet_log(ifaceIndex, "UpdateServiceMinerEvent: unable to create new block.");
+			return (false); /* stop */
+		}
+
+		block->hashMerkleRoot = block->BuildMerkleTree();
+
+		{ /* debug */
+			char errbuf[256];
+			double dDiff = (double)GetDifficulty(block->nBits);
+			sprintf(errbuf, "UpdateServiceMinerEvent: mining new block (diff %f): %s", dDiff, block->ToString().c_str());
+			unet_log(ifaceIndex, errbuf);
+		}
+
+	}
+
+	found = false;
+  block->nNonce   = ++nNonceIndex;
+
+  {
+    uint256 hashTarget = CBigNum().SetCompact(block->nBits).getuint256();
+    uint256 thash;
+    char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
+
+    loop
+    {
+      scrypt_1024_1_1_256_sp(BEGIN(block->nVersion), BEGIN(thash), scratchpad);
+      if (thash <= hashTarget) {
+				found = true;
+        break;
+			}
+
+      ++block->nNonce;
+			if (block->nNonce == 0) {
+				//printf("NONCE WRAPPED, incrementing time\n");
+				++block->nTime;
+			}
+
+//			if ((block->nNonce & 0xFFF) == 0) { printf("nonce %08X: hash = %s (target = %s)\n", block->nNonce, thash.ToString().c_str(), hashTarget.ToString().c_str()); }
+
+			nNonceCount--;
+			if (0 == (nNonceCount % 500)) /* ~250ms */
+				break;
+    }
+  }
+  nNonceIndex = block->nNonce;
+
+	if (found) {
+		char errbuf[256];
+		bool ok = ProcessBlock(NULL /* local */, block);
+		if (ok) {
+			sprintf(errbuf, "UpdateServiceMinerEvent: found block \"%s\".", block->GetHash().GetHex().c_str());
+		} else {
+			sprintf(errbuf, "UpdateServiceMinerEvent: error processing block \"%s\".", block->GetHash().GetHex().c_str());
+		}
+		unet_log(ifaceIndex, errbuf);
+
+		/* start anew */
+		delete block;
+		block = NULL;
+	}
+
+	return (true);
+}
+
 
 
 #ifdef __cplusplus

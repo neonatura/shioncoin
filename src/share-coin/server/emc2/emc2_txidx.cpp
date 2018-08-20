@@ -309,37 +309,26 @@ bool emc2_FillBlockIndex()
   CBlockIndex *lastIndex;
   EMC2Block block;
   uint256 hash;
+	bcpos_t nMaxIndex;
   int nHeight;
   int err;
 
-#ifdef USE_LEVELDB_COINDB
-  bool checkBest = false;
-  uint256 hashBestChain;
-  EMC2TxDB txdb;
-  if (txdb.ReadHashBestChain(hashBestChain))
-    checkBest = true;
-  txdb.Close();
-#endif
-
-  int nMaxIndex = bc_idx_next(bc);
+	nMaxIndex = 0;
+	(void)bc_idx_next(bc, &nMaxIndex);
 
   lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
-    if (0 != bc_idx_get(bc, nHeight, NULL))
-      break;
     if (!block.ReadBlock(nHeight)) {
-//fprintf(stderr, "DEBUG: emc2_FillBlockIndex: error reading block height %d in main chain.\n", nHeight);
       break;
     }
+
     hash = block.GetHash();
 
     if (nHeight == 0) {
       if (hash != emc2_hashGenesisBlock) {
-//fprintf(stderr, "DEBUG: emc2_FillBlockIndex: stopping at invalid genesis '%s' @ height %d\n", hash.GetHex().c_str(), nHeight);
         break; /* invalid genesis */
       }
     } else if (blockIndex->count(block.hashPrevBlock) == 0) {
-//fprintf(stderr, "DEBUG: emc2_FillBlockIndex: stopping at orphan '%s' @ height %d\n", hash.GetHex().c_str(), nHeight);
       break;
     }
 
@@ -349,7 +338,6 @@ bool emc2_FillBlockIndex()
     }
     pindexNew->pprev = lastIndex;//InsertBlockIndex(blockIndex, block.hashPrevBlock);
     if (lastIndex) lastIndex->pnext = pindexNew;
-//    if (lastIndex && lastIndex->pprev == pindexNew) pindexNew->pnext = InsertBlockIndex(blockIndex, lastIndex->GetBlockHash());   
 
     pindexNew->nHeight        = nHeight;
     pindexNew->nVersion       = block.nVersion;
@@ -367,13 +355,11 @@ bool emc2_FillBlockIndex()
     if (nHeight == 0 && pindexNew->GetBlockHash() == emc2_hashGenesisBlock)
       EMC2Block::pindexGenesisBlock = pindexNew;
 
-    lastIndex = pindexNew;
+		pindexNew->bnChainWork =
+			(lastIndex ? lastIndex->bnChainWork : 0) + 
+			pindexNew->GetBlockWork();
 
-#ifdef USE_LEVELDB_COINDB
-    if (checkBest && hash == hashBestChain) {
-      break;
-    } 
-#endif
+    lastIndex = pindexNew;
   }
   SetBestBlockIndex(iface, lastIndex);
 
@@ -428,7 +414,7 @@ static bool emc2_LoadBlockIndex()
   BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
   {
     CBlockIndex* pindex = item.second;
-    pindex->bnChainWork = (pindex->pprev ? pindex->pprev->bnChainWork : 0) + pindex->GetBlockWork();
+//    pindex->bnChainWork = (pindex->pprev ? pindex->pprev->bnChainWork : 0) + pindex->GetBlockWork();
     setValid->insert(pindex);
   }
 
@@ -598,7 +584,7 @@ bool emc2_RestoreBlockIndex()
   char path[PATH_MAX+1];
   unsigned char *sBlockData;
   size_t sBlockLen;
-  unsigned int maxHeight;
+  bcpos_t maxHeight;
   bcsize_t height;
   int nBlockPos, nTxPos;
   int err;
@@ -628,7 +614,8 @@ bool emc2_RestoreBlockIndex()
     if (err)
       return error(err, "emc2_RestoreBlockIndex: error opening backup block-chain.");
 
-    maxHeight = bc_idx_next(bc);
+		maxHeight = 0;
+		(void)bc_idx_next(bc, &maxHeight);
     for (height = 1; height < maxHeight; height++) {
       int n_height;
 

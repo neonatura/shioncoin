@@ -32,52 +32,55 @@ extern "C" {
 
 
 
-#define OPT_DEBUG "shcoind.debug"
-#define OPT_MAX_CONN "shcoind.net.max"
-#define OPT_PEER_SEED "shcoind.net.seed"
-#define OPT_BAN_SPAN "shcoind.ban.span"
-#define OPT_BAN_THRESHOLD "shcoind.ban.threshold"
+#define OPT_DEBUG "debug"
+#define OPT_MAX_CONN "net-max"
+#define OPT_PEER_SEED "seed"
+#define OPT_ADMIN "admin"
+#define OPT_BAN_SPAN "ban-span"
+#define OPT_BAN_THRESHOLD "ban-threshold"
+#define OPT_SHC_PORT "shc-port"
+#define OPT_SERV_STRATUM "stratum"
+#define OPT_STRATUM_PORT "stratum-port"
+#define OPT_STRATUM_WORK_CYCLE "stratum-work-cycle"
+#define OPT_SERV_RPC "rpc"
+#define OPT_RPC_PORT "rpc-port"
+#define OPT_RPC_HOST "rpc-host"
+#define OPT_RPC_MAP "rpc-map"
+#define OPT_SERV_TESTNET "testnet"
+#define OPT_TESTNET_PORT "testnet-port"
+#define OPT_SERV_USDE "usde"
+#define OPT_USDE_PORT "usde-port"
+#define OPT_SERV_EMC2 "emc2"
+#define OPT_EMC2_PORT "emc2-port"
+#define OPT_SHC_BACKUP_RESTORE "shc-backup-restore"
+#define OPT_USDE_BACKUP_RESTORE "usde-backup-restore"
+#define OPT_EMC2_BACKUP_RESTORE "emc2-backup-restore"
+#define OPT_LTC_BACKUP_RESTORE "ltc-backup-restore"
 
-/** An option indicating whether to enable the USDE coin service. */
-#define OPT_SERV_USDE "shcoind.net.usde"
-
-/** An option indicating whether to enable the EMC2 coin service. */
-#define OPT_SERV_EMC2 "shcoind.net.emc2"
-
-/** An option indicating whether to enable the stratum service. */
-#define OPT_SERV_STRATUM "shcoind.net.stratum"
-
-#define OPT_STRATUM_PORT "shcoind.stratum.port"
-
-#define OPT_SERV_RPC "shcoind.net.rpc"
-
-#define OPT_RPC_PORT "shcoind.rpc.port"
-
-#define OPT_SHC_BACKUP_RESTORE "shcoind.shc.backup.restore"
-
-#define OPT_USDE_BACKUP_RESTORE "shcoind.usde.backup.restore"
-
-#define OPT_EMC2_BACKUP_RESTORE "shcoind.emc2.backup.restore"
-
-#define OPT_ADMIN "shcoind.admin"
+/* not used */
+#define OPT_FMAP_IDLE "fmap-idle"
+#define OPT_LOG_PATH "log-path"
 
 
 void opt_init(void);
 
 void opt_term(void);
 
-int opt_num(char *tag);
+int opt_num(const char *tag);
 
-void opt_num_set(char *tag, int num);
+void opt_num_set(const char *tag, int num);
 
-const char *opt_str(char *tag);
+const char *opt_str(const char *tag);
 
-void opt_str_set(char *tag, char *str);
+void opt_str_set(const char *tag, char *str);
 
-int opt_bool(char *tag);
+int opt_bool(const char *tag);
 
-void opt_bool_set(char *tag, int b);
+void opt_bool_set(const char *tag, int b);
 
+const char *opt_usage_print(void);
+
+void opt_arg_interp(int argc, char **argv);
 
 
 

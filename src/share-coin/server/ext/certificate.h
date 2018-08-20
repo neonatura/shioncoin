@@ -242,7 +242,9 @@ class CCert : public CIdent
           );
     }
 
-    CCert operator=(const CCert &b) {
+    CCert operator=(const CCert &b) 
+		{
+			SetNull();
       Init(b);
       return *this;
     }
@@ -259,6 +261,7 @@ class CCert : public CIdent
 
       nVersion = 3;
       nFee = 0;
+			hashIssuer = 0;
 
       /* x509 prep */
       nFlag = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
@@ -391,6 +394,7 @@ class CLicense : public CCert
 
     CLicense operator=(const CLicense &b) 
     {
+			SetNull();
       Init(b);
       return *this;
     }

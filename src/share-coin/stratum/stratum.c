@@ -116,6 +116,7 @@ static void stratum_timer(void)
 {
   static task_attr_t attr;
   static int _sync_init;
+	static time_t _work_cycle;
   unet_table_t *t;
   user_t *peer;
   shbuf_t *buff;
@@ -210,7 +211,12 @@ static void stratum_timer(void)
   }
 #endif
 
-  tnow = time(NULL)/8;
+	/* OPT_STRATUM_WORK_CYCLE: Maximum time-span between work creation (default: 15 seconds, max: 1 hour). */
+	if (!_work_cycle) {
+		_work_cycle = (time_t)MAX(1, MIN(3600, opt_num(OPT_STRATUM_WORK_CYCLE)));
+	}
+  tnow = time(NULL) / _work_cycle;
+
   blk_iface = 0;
   is_new = is_stratum_task_pending(&blk_iface);
   if (is_new || (attr.tnow != tnow)) {
@@ -309,7 +315,7 @@ int stratum_init(void)
 {
   int err;
 
-  err = unet_bind(UNET_STRATUM, get_stratum_daemon_port(), 0);
+  err = unet_bind(UNET_STRATUM, get_stratum_daemon_port(), NULL);
   if (err)
     return (err);
 

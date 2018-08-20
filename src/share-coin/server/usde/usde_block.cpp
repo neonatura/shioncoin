@@ -882,22 +882,8 @@ bool usde_CreateGenesisBlock()
   if (!ret)
     return (false);
 
-#ifdef USE_LEVELDB_COINDB
-  USDETxDB txdb;
-  block.SetBestChain(txdb, (*blockIndex)[usde_hashGenesisBlock]);
-  txdb.Close();
-#else
-  block.SetBestChain((*blockIndex)[usde_hashGenesisBlock]);
-#endif
-
   return (true);
 }
-
-
-
-
-
-
 
 
 
@@ -1007,7 +993,7 @@ pblock->print();
       if (pindexBest) {
         Debug("(usde) ProcessBlocks: requesting blocks from height %d due to orphan '%s'.\n", pindexBest->nHeight, pblock->GetHash().GetHex().c_str());
         pfrom->PushGetBlocks(GetBestBlockIndex(USDE_COIN_IFACE), usde_GetOrphanRoot(pblock->GetHash()));
-//        ServiceBlockEventUpdate(USDE_COIN_IFACE);
+				InitServiceBlockEvent(USDE_COIN_IFACE, pindexBest->nHeight);
       }
     }
     return true;
@@ -1786,9 +1772,12 @@ bool usde_Truncate(uint256 hash)
     return error(SHERR_INVAL, "Erase: height is not valid.");
 
   bc_t *bc = GetBlockChain(iface);
-  unsigned int nMinHeight = cur_index->nHeight;
-  unsigned int nMaxHeight = (bc_idx_next(bc)-1);
-    
+  unsigned int nMinHeight = MAX(1, cur_index->nHeight);
+
+	bcpos_t nMaxHeight = 0;
+	(void)bc_idx_next(bc, &nMaxHeight);
+	nMaxHeight = MAX(1, nMaxHeight) - 1;
+
   USDETxDB txdb; /* OPEN */
 
   for (nHeight = nMaxHeight; nHeight > nMinHeight; nHeight--) {
@@ -1871,25 +1860,15 @@ CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
   pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
 
   if (pindexNew->bnChainWork > bnBestChainWork) {
-#ifdef USE_LEVELDB_COINDB
-    USDETxDB txdb;
-    bool ret = SetBestChain(txdb, pindexNew);
-    txdb.Close();
-    if (!ret)
-      return false;
-#else
     bool ret = SetBestChain(pindexNew);
     if (!ret)
       return (false);
-#endif
   } else {
-    if (!WriteArchBlock())
-      return (false);
+    WriteArchBlock();
   }
 
   return true;
 }
-
 
 int64_t USDEBlock::GetBlockWeight()
 {

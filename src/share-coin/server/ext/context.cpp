@@ -399,6 +399,10 @@ bool VerifyContextTx(CIface *iface, CTransaction& tx, int& mode)
   if (ctx.GetExpireTime() > (now + DEFAULT_CONTEXT_LIFESPAN))
     return error(SHERR_INVAL, "invalid expiration time");
 
+	if (!ctx.VerifySignature()) {
+		return (error(SHERR_ACCESS, "VerifyContextTx: invalid signature."));
+	}
+
   return (true);
 }
 
@@ -435,14 +439,27 @@ Object CContext::ToValue()
  */
 bool CContext::Sign(int ifaceIndex)
 {
+	shkey_t *key;
+	const char *hex_str;
+	bool ok;
 
-  if (vContext.size() == 0)
+  if (vContext.size() == 0) {
+		error(SHERR_INVAL, "CContext.Sign: vContext is empty.");
     return (false);
+	}
 
-  return (signature.SignContext(vContext));
+	key = hashIssuer.GetKey();
+	hex_str = shkey_hex(key);
+	string hex_seed(hex_str, hex_str+strlen(hex_str)); 
+  ok = signature.SignContext(vContext, hex_seed);
+	if (!ok) {
+		error(SHERR_INVAL, "CContext.Sign: vContext<%d bytes>, hex_seed(%s)\n", vContext.size(), hex_seed.c_str());
+	}
+
+	return (ok);
 }
 
-/* @todo ensure pubkey in compact sig matches ext coin addr */
+/* @todo ensure pubkey in compact sig matches hashIsser */
 bool CContext::VerifySignature()
 {
   bool ret;
@@ -451,7 +468,6 @@ bool CContext::VerifySignature()
     return (false);
 
   ret = signature.VerifyContext(vContext.data(), vContext.size());
-
   if (!ret) {
     error(SHERR_ACCESS, "CContext.VerifySignature: verification failure: %s", ToString().c_str());
     return (false); 
@@ -587,6 +603,40 @@ bool IsContextName(CIface *iface, string strName)
   return (false);
 }
 
+int ctx_context_verify(cbuff vchValue)
+{
+	static const unsigned char *gzip = (unsigned char *)"\037\213";
+	static const unsigned char *bz2 = (unsigned char *)"\102\132\150\071\061\101\131\046";
+	static const unsigned char *rar = (unsigned char *)"Rar!";
+	static const unsigned char *jpeg = (unsigned char *)"\377\330\377\341";
+	static const unsigned char *zip = (unsigned char *)"\120\113\003\004";
+	static const unsigned char *xz = (unsigned char *)"\xFD" "7zXZ";
+	static const unsigned char *shz = (unsigned char *)"\132\123\042\042";
+	static const unsigned char *gif = (unsigned char *)"GIF89a";
+	static const unsigned char *png = (unsigned char *)"\211PNG\015\012\032\012";
+	static const unsigned char *winexe = (unsigned char *)"MZ";
+
+	if (vchValue.size() <= 8)
+		return (0);
+
+	if (std::equal(vchValue.begin(), vchValue.begin()+2, gzip) ||
+			std::equal(vchValue.begin(), vchValue.begin()+8, bz2) ||
+			std::equal(vchValue.begin(), vchValue.begin()+4, rar) ||
+			std::equal(vchValue.begin(), vchValue.begin()+4, jpeg) || 
+			std::equal(vchValue.begin(), vchValue.begin()+4, zip) ||
+			std::equal(vchValue.begin(), vchValue.begin()+5, xz) ||
+			std::equal(vchValue.begin(), vchValue.begin()+4, shz) ||
+			std::equal(vchValue.begin(), vchValue.begin()+6, gif) ||
+			std::equal(vchValue.begin(), vchValue.begin()+8, png) ||
+			std::equal(vchValue.begin(), vchValue.begin()+2, winexe)) {
+		/* suppress common images, executables, and archives. */
+		return (SHERR_ILSEQ);
+	}
+
+	/* context permitted */
+	return (0);
+}
+
 
 /**
  * Set the context value.
@@ -595,12 +645,19 @@ bool IsContextName(CIface *iface, string strName)
  */
 bool CContext::SetValue(string name, cbuff value)
 {
+	int err;
 
   if (name.size() < 3)
     return (false);
 
-  if (value.size() == 0 || value.size() > 4096)
+  if (value.size() == 0 || 
+			value.size() > CContext::MAX_VALUE_SIZE) {
     return (false);
+	}
+
+	err = ctx_context_verify(value);
+	if (err)
+		return (false);
 
   hashIssuer = GetContextHash(name);
 
@@ -621,6 +678,7 @@ bool CContext::SetValue(string name, cbuff value)
 
 static string GetObjectValue(Object obj, string cmp_name)
 {
+
   for( Object::size_type i = 0; i != obj.size(); ++i )
   {
     const Pair& pair = obj[i];
@@ -750,40 +808,6 @@ void share_geo_save(CContext *ctx, string label)
 //fprintf(stderr, "DEBUG: %d = shgeodb_loc_set(%Lf,%Lf)\n", err, lat, lon);
   }
 
-}
-
-int ctx_context_verify(cbuff vchValue)
-{
-	static const unsigned char *gzip = (unsigned char *)"\037\213";
-	static const unsigned char *bz2 = (unsigned char *)"\102\132\150\071\061\101\131\046";
-	static const unsigned char *rar = (unsigned char *)"Rar!";
-	static const unsigned char *jpeg = (unsigned char *)"\377\330\377\341";
-	static const unsigned char *zip = (unsigned char *)"\120\113\003\004";
-	static const unsigned char *xz = (unsigned char *)"\xFD" "7zXZ";
-	static const unsigned char *shz = (unsigned char *)"\132\123\042\042";
-	static const unsigned char *gif = (unsigned char *)"GIF89a";
-	static const unsigned char *png = (unsigned char *)"\211PNG\015\012\032\012";
-	static const unsigned char *winexe = (unsigned char *)"MZ";
-
-	if (vchValue.size() <= 8)
-		return (0);
-
-	if (std::equal(vchValue.begin(), vchValue.begin()+2, gzip) ||
-			std::equal(vchValue.begin(), vchValue.begin()+8, bz2) ||
-			std::equal(vchValue.begin(), vchValue.begin()+4, rar) ||
-			std::equal(vchValue.begin(), vchValue.begin()+4, jpeg) || 
-			std::equal(vchValue.begin(), vchValue.begin()+4, zip) ||
-			std::equal(vchValue.begin(), vchValue.begin()+5, xz) ||
-			std::equal(vchValue.begin(), vchValue.begin()+4, shz) ||
-			std::equal(vchValue.begin(), vchValue.begin()+6, gif) ||
-			std::equal(vchValue.begin(), vchValue.begin()+8, png) ||
-			std::equal(vchValue.begin(), vchValue.begin()+2, winexe)) {
-		/* suppress common images, executables, and archives. */
-		return (SHERR_ILSEQ);
-	}
-
-	/* context permitted */
-	return (0);
 }
 
 int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fAddr)

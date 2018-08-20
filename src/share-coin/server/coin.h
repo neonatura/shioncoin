@@ -27,6 +27,9 @@
 #define __SERVER__COIN_H__
 
 
+typedef int64 CAmount;
+
+
 bool core_VerifyCoinInputs(int ifaceIndex, CTransaction& tx, unsigned int nIn, CTxOut& prev);
 
 bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex);
@@ -48,6 +51,13 @@ bool core_Truncate(CIface *iface, uint256 hash);
 bool HasTxCoins(CIface *iface, uint256 hash);
 
 bool UpdateBlockCoins(CBlock& block);
+
+string FormatMoney(int64 n);
+
+bool ParseMoney(const string& str, CAmount& nRet);
+
+bool ParseMoney(const char* pszIn, CAmount& nRet);
+
 
 #endif /* ndef __SERVER_COIN_H__ */
 

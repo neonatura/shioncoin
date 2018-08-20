@@ -314,7 +314,9 @@ class CExtCore
 typedef std::map<std::string, uint256> alias_list;
 typedef std::map<uint160, uint256> asset_list;
 typedef std::map<uint160, uint256> cert_list;
-typedef std::map<uint160, CTransaction> exec_list;
+typedef std::map<uint160, uint256> exec_list;
+typedef std::map<std::string, uint160> exec_label_list;
+typedef std::map< uint160, vector<uint160> > exec_call_list;
 typedef std::map<uint160, uint256> offer_list;
 typedef std::map<uint160, CTransaction> channel_list;
 typedef std::map<uint160, uint256> ctx_list;

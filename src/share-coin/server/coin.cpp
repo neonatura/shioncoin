@@ -188,8 +188,8 @@ bool CTransaction::WriteCoins(int ifaceIndex, int nOut, const uint256& hashTxOut
   /* store new coin output */
   memcpy(data + (32 * nOut), buff.data(), 32);
   if (txPos < 0) {
-    txPos = bc_append(bc, hash.GetRaw(), data, data_len);
-    if (txPos < 0) {
+    err = bc_append(bc, hash.GetRaw(), data, data_len);
+    if (err) {
       free(data);
       return (false);
     }
@@ -607,74 +607,6 @@ bool CBlock::ConnectBlock(CBlockIndex* pindex)
 
 
 
-#ifdef USE_LEVELDB_COINDB
-
-bool CTransaction::DisconnectInputs(CTxDB& txdb)
-{
-  CIface *iface = GetCoinByIndex(txdb.ifaceIndex);
-
-  // Relinquish previous transactions' spent pointers
-  if (!IsCoinBase())
-  {
-    BOOST_FOREACH(const CTxIn& txin, vin)
-    {
-      COutPoint prevout = txin.prevout;
-
-      // Get prev txindex from disk
-      CTxIndex txindex;
-      if (!txdb.ReadTxIndex(prevout.hash, txindex))
-        return error(SHERR_INVAL, "DisconnectInputs() : ReadTxIndex failed");
-
-      if (prevout.n >= txindex.vSpent.size())
-        return error(SHERR_INVAL, "DisconnectInputs() : prevout.n out of range");
-
-      // Mark outpoint as not spent
-      txindex.vSpent[prevout.n].SetNull();
-
-      // Write back
-      if (!txdb.UpdateTxIndex(prevout.hash, txindex))
-        return error(SHERR_INVAL, "DisconnectInputs() : UpdateTxIndex failed");
-    }
-  }
-
-  if (IsCertTx(*this)) {
-    if (!DisconnectCertificate(iface, *this)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting certificate");
-    }
-  }
-  if (IsAliasTx(*this)) {
-    if (!DisconnectAliasTx(iface, *this)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting alias");
-    }
-  }
-  if (IsContextTx(*this)) {
-    if (!DisconnectContextTx(iface, *this)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting alias");
-    }
-  }
-
-  // Remove transaction from index
-  // This can fail if a duplicate of this transaction was in a chain that got
-  // reorganized away. This is only possible if this transaction was completely
-  // spent, so erasing it would be a no-op anway.
-  txdb.EraseTxIndex(*this);
-
-  /* erase from bc_tx.idx */
-  EraseTx(txdb.ifaceIndex);
-
-  {
-    uint256 hash = GetHash();
-    CWallet *wallet = GetWallet(iface);
-    if (wallet->mapWallet.count(hash) != 0) {
-      wallet->mapWallet.erase(hash); 
-      Debug("DisconnectInputs: erased mapWallet tx '%s'\n", hash.GetHex().c_str());
-    }
-  }
-
-  return true;
-}
-
-#else
 
 bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
 {
@@ -703,19 +635,26 @@ bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
 
   if (IsCertTx(*tx)) {
     if (!DisconnectCertificate(iface, *tx)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting certificate");
+      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting certificate tx.");
     }
   }
   if (IsAliasTx(*tx)) {
     if (!DisconnectAliasTx(iface, *tx)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting alias");
+      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting alias tx.");
     }
   }
   if (IsContextTx(*tx)) {
     if (!DisconnectContextTx(iface, *tx)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting alias");
+      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting context tx.");
     }
   }
+
+	int mode;
+	if (IsExecTx(*tx, mode)) {
+		if (!DisconnectExecTx(iface, *tx, mode)) {
+      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting exec tx [mode %d].", mode);
+		}
+	}
 
   /* erase from 'coin' fmap */
   tx->EraseCoins(ifaceIndex);
@@ -734,7 +673,6 @@ bool CTransaction::DisconnectInputs(int ifaceIndex)
   return (core_DisconnectInputs(ifaceIndex, this));
 }
 
-#endif
 
 
 
@@ -782,6 +720,7 @@ bool core_Truncate(CIface *iface, uint256 hash)
   CBlockIndex *cur_index;
   CBlockIndex *pindex;
   unsigned int nHeight;
+	uint32_t nMaxHeight;
   int err;
 
   if (!blockIndex || !blockIndex->count(hash))
@@ -799,7 +738,9 @@ bool core_Truncate(CIface *iface, uint256 hash)
 
   bc_t *bc = GetBlockChain(iface);
   unsigned int nMinHeight = cur_index->nHeight;
-  unsigned int nMaxHeight = (bc_idx_next(bc)-1);
+	/* calculate highest block index */
+	(void)bc_idx_next(bc, &nMaxHeight);
+	nMaxHeight -= 1;
     
   for (nHeight = nMaxHeight; nHeight > nMinHeight; nHeight--) {
     CBlock *block = GetBlockByHeight(iface, nHeight);
@@ -869,3 +810,70 @@ bool UpdateBlockCoins(CBlock& block)
 
   return (true);
 }
+
+string FormatMoney(CAmount n)
+{
+
+	int64_t n_abs = (n > 0 ? n : -n);
+	int64_t quotient = n_abs/COIN;
+	int64_t remainder = n_abs%COIN;
+	std::string str;
+	int nTrim = 0;
+
+	str = strprintf("%d.%08d", quotient, remainder);
+	for (int i = str.size()-1; (str[i] == '0' && isdigit(str[i-2])); --i)
+		++nTrim;
+	if (nTrim)
+		str.erase(str.size()-nTrim, nTrim);
+
+	if (n < 0)
+		str.insert((unsigned int)0, 1, '-');
+
+	return str;
+}
+
+bool ParseMoney(const string& str, CAmount& nRet)
+{
+	return ParseMoney(str.c_str(), nRet);
+}
+
+bool ParseMoney(const char* pszIn, CAmount& nRet)
+{
+	string strWhole;
+	CAmount nUnits = 0;
+	const char* p;
+
+	p = pszIn;
+	while (isspace(*p))
+		p++;
+	for (; *p; p++) {
+		if (*p == '.') {
+			p++;
+			CAmount nMult = CENT*10;
+			while (isdigit(*p) && (nMult > 0))
+			{
+				nUnits += nMult * (*p++ - '0');
+				nMult /= 10;
+			}
+			break;
+		}
+		if (isspace(*p))
+			break;
+		if (!isdigit(*p))
+			return false;
+		strWhole.insert(strWhole.end(), *p);
+	}
+	for (; *p; p++)
+		if (!isspace(*p))
+			return false;
+	if (strWhole.size() > 10) // guard against 63 bit overflow
+		return false;
+	if (nUnits < 0 || nUnits > COIN)
+		return false;
+
+	CAmount nWhole = atoi64(strWhole);
+	nRet = nWhole*COIN + nUnits;
+
+	return true;
+}
+

@@ -25,6 +25,10 @@
 
 #include "shcoind.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 
 const char *_descriptor_flag_label[MAX_DESCRIPTOR_FLAGS] = {
   "file",
@@ -47,6 +51,30 @@ static uint64_t _total_descriptor_release;
 
 extern shtime_t server_start_t;
 
+
+int get_max_descriptors(void)
+{
+	static int _max_fd;
+
+	if (_max_fd == 0) {
+		char errbuf[256];
+		long max;
+
+		_max_fd = MAX_DESCRIPTORS;
+
+#ifdef _SC_OPEN_MAX
+		max = sysconf(_SC_OPEN_MAX);
+		if (max > MAX_DESCRIPTORS) {
+			_max_fd = (int)max; 
+		}
+#endif
+
+    sprintf(errbuf, "maximum %d descriptors available", _max_fd);
+    shcoind_info("max-descriptors", errbuf);
+	}
+
+	return (_max_fd);
+}
 
 const char *descriptor_iface_name(int ifaceIndex)
 {
@@ -85,7 +113,7 @@ const char *descriptor_print(int fd)
   char tbuf2[256];
 
 
-  if (fd >= MAX_DESCRIPTORS)
+  if (fd >= get_max_descriptors())
     return (NULL); 
 
   d = (_descriptor_table + fd);
@@ -123,11 +151,11 @@ desc_t *descriptor_claim(int fd, int mode, int flag)
   char errbuf[256];
   int err;
 
-  if (fd >= MAX_DESCRIPTORS)
+  if (fd >= get_max_descriptors())
     return (NULL); 
 
   if (!_descriptor_table) /* init */
-    _descriptor_table = (desc_t *)calloc(MAX_DESCRIPTORS, sizeof(desc_t));
+    _descriptor_table = (desc_t *)calloc(get_max_descriptors(), sizeof(desc_t));
 
   d = (_descriptor_table + fd);
 
@@ -176,11 +204,11 @@ desc_t *descriptor_mark(int fd)
   desc_t *d;
   char errbuf[256];
 
-  if (fd >= MAX_DESCRIPTORS)
+  if (fd >= get_max_descriptors())
     return (NULL); 
 
   if (!_descriptor_table) /* init */
-    _descriptor_table = (desc_t *)calloc(MAX_DESCRIPTORS, sizeof(desc_t));
+    _descriptor_table = (desc_t *)calloc(get_max_descriptors(), sizeof(desc_t));
 
   d = (_descriptor_table + fd);
 
@@ -208,7 +236,7 @@ void descriptor_release(int fd)
     return; 
 
   if (!_descriptor_table) /* init */
-    _descriptor_table = (desc_t *)calloc(MAX_DESCRIPTORS + 1, sizeof(desc_t));
+    _descriptor_table = (desc_t *)calloc(get_max_descriptors() + 1, sizeof(desc_t));
 
   d = (_descriptor_table + fd);
 
@@ -238,7 +266,7 @@ void descriptor_list_print(void)
   int err;
   int fd;
 
-  for (fd = 3; fd < MAX_DESCRIPTORS; fd++) {
+  for (fd = 3; fd < get_max_descriptors(); fd++) {
     d = (desc_t *)(_descriptor_table + fd);
 
     if (!d->flag) {
@@ -319,7 +347,7 @@ void descriptor_wbuff_add(int fd, unsigned char *data, size_t data_len)
   desc_t *d;
   char errbuf[256];
 
-  if (fd >= MAX_DESCRIPTORS)
+  if (fd >= get_max_descriptors())
     return; 
 
   d = (_descriptor_table + fd);
