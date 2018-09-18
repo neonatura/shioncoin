@@ -647,14 +647,12 @@ public:
 #if 0
       if (fHaveWitness) {
         PushMessage("tx", tx);
-fprintf(stderr, "DEBUG: PushTx '%s' to peer [wit]\n", tx.GetHash().c_str());
       } else {
         CDataStream ss(SER_GETHASH, SERIALIZE_TRANSACTION_NO_WITNESS);
         ss.reserve(1024);
         ss << tx;
         cbuff vchTx(ss.begin(), ss.end());
         PushMessage("tx", tx);
-fprintf(stderr, "DEBUG: PushTx '%s' to peer [!wit]\n", tx.GetHash().c_str());
       }
 #endif
 

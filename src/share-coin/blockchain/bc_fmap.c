@@ -50,6 +50,8 @@ static int bc_iface_index(char *name)
 
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
     CIface *iface = GetCoinByIndex(idx);
+		if (!iface)
+			continue;
     if (0 == strncmp(iface->name, name, strlen(iface->name)))
       return (idx);
   }

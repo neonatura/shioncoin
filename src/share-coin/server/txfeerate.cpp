@@ -395,6 +395,9 @@ CBlockPolicyEstimator::CBlockPolicyEstimator(int ifaceIndexIn, const CFeeRate& _
   CWallet *wallet = GetWallet(iface);
 
   ifaceIndex = ifaceIndexIn;
+
+	rollingMinimumFeeRate = 0;
+
   minTrackedFee = _minRelayFee < CFeeRate(MIN_FEERATE) ? CFeeRate(MIN_FEERATE) : _minRelayFee;
   std::vector<double> vfeelist;
   for (double bucketBoundary = minTrackedFee.GetFeePerK(); bucketBoundary <= MAX_FEERATE; bucketBoundary *= FEE_SPACING) {
@@ -679,7 +682,11 @@ double CBlockPolicyEstimator::estimateSmartPriority(int confTarget, int *answerF
 CFeeRate CBlockPolicyEstimator::GetMinFee(size_t sizelimit)
 {
 
+#if 0
   if (!blockSinceLastRollingFeeBump || rollingMinimumFeeRate == 0)
+    return CFeeRate(rollingMinimumFeeRate);
+#endif
+  if (rollingMinimumFeeRate == 0)
     return CFeeRate(rollingMinimumFeeRate);
 
   CIface *iface = GetCoinByIndex(ifaceIndex);

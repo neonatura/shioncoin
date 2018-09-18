@@ -342,20 +342,17 @@ AM_CONDITIONAL([HAVE_DOXYGEN],
 AC_PATH_PROG(HELP2MAN, help2man, @echo WARNING: skipped: help2man )
 AM_CONDITIONAL(HAVE_HELP2MAN, [test x"$HELP2MAN" = x"help2man"])
 
-AC_ARG_ENABLE(pthread,
-AS_HELP_STRING([--enable-pthread],
-               [enable pthread library, default: no]),
-[case "${enableval}" in
-             yes) pthread=true ;;
-             no)  pthread=false ;;
-             *)   AC_MSG_ERROR([bad value ${enableval} for --enable-pthread]) ;;
-esac], [pthread=false])
-AM_CONDITIONAL(PTHREAD, test x"$pthread" = x"true")
-if test "x$enable_pthread" = "xyes" ; then
+# Standard system "pthread" library for threading.
+AC_ARG_ENABLE([sexe],
+  AS_HELP_STRING([--disable-pthread], [Disable pthread library]))
+AM_CONDITIONAL(USE_LIBPTHREAD, [test "x$enable_pthread" != "xno"])
+if test "x$enable_pthread" != "xno" ; then
   AC_CHECK_HEADERS([pthread.h])
   AC_CHECK_LIB([pthread], [pthread_self])
   AC_CHECK_FUNCS([pthread_mutex_lock pthread_mutex_unlock pthread_self pthread_mutex_init pthread_mutex_destroy])
+  AC_DEFINE_UNQUOTED([USE_LIBPTHREAD], 1, [Define to enable pthread library.])
 fi
+
 
 AC_CHECK_FUNCS([BN_bn2mpi])
 

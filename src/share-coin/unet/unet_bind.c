@@ -71,6 +71,9 @@ int unet_bind(int mode, int port, char *host)
 
   descriptor_claim(sk, mode, DF_LISTEN);
 
+	/* init thread for calling timer */
+	unet_thread_init(mode);
+
   return (0);
 }
 
@@ -94,6 +97,9 @@ int unet_unbind(int mode)
 
   if (_unet_bind[mode].fd == UNDEFINED_SOCKET)
     return (SHERR_INVAL);
+	
+	/* terminate timer thread */
+	unet_thread_free(mode);
 
   /* close all accepted sockets for coin service. */
   unet_close_all(mode);

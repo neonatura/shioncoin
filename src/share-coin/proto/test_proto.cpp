@@ -47,8 +47,8 @@ int64 TESTBlock::nTargetSpacing = 60; /* one minute */
 static int test_init(CIface *iface, void *_unused_)
 {
 
-  iface->nRuleChangeActivationThreshold = 9072;
-  iface->nMinerConfirmationWindow = 12096;
+  iface->nRuleChangeActivationThreshold = 4;
+  iface->nMinerConfirmationWindow = 5;
 
   SetWallet(TEST_COIN_IFACE, testWallet);
   return (0);
@@ -102,9 +102,11 @@ static CPubKey test_GetMainAccountPubKey(CWallet *wallet)
 
     ret_key = GetAccountPubKey(wallet, strAccount);
     if (!ret_key.IsValid()) {
+#if 0
       CReserveKey reservekey(wallet);
       ret_key = reservekey.GetReservedKey();
       reservekey.KeepKey();
+#endif
     }
   }
 
@@ -143,40 +145,6 @@ static int test_block_templ(CIface *iface, CBlock **block_p)
 
   return (0);
 }
-
-#if 0
-static int test_block_submit(CIface *iface, CBlock *block)
-{
-  blkidx_t *blockIndex;
-
-  blockIndex = GetBlockTable(TEST_COIN_IFACE);
-  if (!blockIndex) {
-fprintf(stderr, "DEBUG: test_block_submit: error obtaining tableBlockIndex[TEST}\n"); 
-    return (STERR_INVAL);
-}
-
-  // Check for duplicate
-  uint256 hash = block->GetHash();
-  if (blockIndex->count(hash))// || mapOrphanBlocks.count(hash))
-    return (BLKERR_DUPLICATE_BLOCK);
-
-  // Preliminary checks
-  if (!block->CheckBlock()) {
-    shcoind_log("c_processblock: !CheckBlock()");
-    return (BLKERR_CHECKPOINT);
-  }
-
-  // Store to disk
-  if (!block->AcceptBlock()) {
-    shcoind_log("c_processblock: !AcceptBlock()");
-    return (BLKERR_INVALID_BLOCK);
-  }
-
-  block->print();
-
-return (0);
-}
-#endif
 
 static int test_tx_new(CIface *iface, void *arg)
 {

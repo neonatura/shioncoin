@@ -215,6 +215,7 @@ public:
     enum
     {
         PUBKEY_ADDRESS = 38,
+        PUBKEY_C_ADDRESS = 29,
         PUBKEY_E_ADDRESS = 33,
         PUBKEY_S_ADDRESS = 62,
         SCRIPT_ADDRESS = 5,
@@ -233,6 +234,8 @@ public:
           return (PUBKEY_S_ADDRESS);
         case EMC2_COIN_IFACE:
           return (PUBKEY_E_ADDRESS);
+        case COLOR_COIN_IFACE:
+          return (PUBKEY_C_ADDRESS);
       }
 
       return (PUBKEY_ADDRESS);
@@ -343,6 +346,18 @@ class USDECoinAddr : public CCoinAddr
     }
 
     USDECoinAddr(const CTxDestination &dest) : CCoinAddr(USDE_COIN_IFACE)
+    {
+      Set(dest);
+    }
+};
+class COLORCoinAddr : public CCoinAddr
+{
+  public:
+    COLORCoinAddr() : CCoinAddr(COLOR_COIN_IFACE)
+    {
+    }
+
+    COLORCoinAddr(const CTxDestination &dest) : CCoinAddr(COLOR_COIN_IFACE)
     {
       Set(dest);
     }

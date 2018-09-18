@@ -121,6 +121,7 @@ enum opcodetype
     OP_16 = 0x60,
 
     /* extension ops */
+		OP_ALTCHAIN = 0x04,
     OP_CONTEXT = 0x05,
     OP_EXEC = 0x06,
     OP_CHANNEL = 0x07,
@@ -229,14 +230,17 @@ enum opcodetype
     OP_CHECKMULTISIGVERIFY = 0xaf,
 
     // expansion
-    OP_NOP1 = 0xb0,
-    OP_NOP2 = 0xb1,
-    OP_NOP3 = 0xb2,
+		OP_NOP1 = 0xb0,
+		OP_CHECKLOCKTIMEVERIFY = 0xb1,
+		OP_NOP2 = OP_CHECKLOCKTIMEVERIFY,
+		OP_CHECKSEQUENCEVERIFY = 0xb2,
+		OP_NOP3 = OP_CHECKSEQUENCEVERIFY,
     OP_NOP4 = 0xb3,
     OP_NOP5 = 0xb4,
     OP_NOP6 = 0xb5,
     OP_NOP7 = 0xb6,
-    OP_NOP8 = 0xb7,
+		OP_CHECKALTPROOF = 0xb7,
+		OP_NOP8 = OP_CHECKALTPROOF,
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
 

@@ -76,14 +76,6 @@ static int emc2_init(CIface *iface, void *_unused_)
 
 
 
-#if 0
-  if (!bitdb.Open(GetDataDir())) /* DEBUG: */
-  {
-    fprintf(stderr, "error: unable to open data directory.\n");
-    return (SHERR_INVAL);
-  }
-#endif
-
   if (!opt_bool(OPT_EMC2_BACKUP_RESTORE)) {
     /* normal startup */
     if (!emc2_InitBlockIndex()) {
@@ -202,9 +194,11 @@ static CPubKey emc2_GetMainAccountPubKey(CWallet *wallet)
     ret_key = GetAccountPubKey(wallet, strAccount);
     if (!ret_key.IsValid()) {
       error(SHERR_INVAL, "GetMainAccountPubKey: emc2: error obtaining main account pubkey.");
+#if 0
       CReserveKey reservekey(wallet);
       ret_key = reservekey.GetReservedKey();
       reservekey.KeepKey();
+#endif
     } else {
       CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
       Debug("(emc2) GetMainAccountPubKey: using '%s' for mining address", 
@@ -255,40 +249,6 @@ static int emc2_block_templ(CIface *iface, CBlock **block_p)
 
   return (0);
 }
-
-#if 0
-static int emc2_block_submit(CIface *iface, CBlock *block)
-{
-  blkidx_t *blockIndex;
-
-  blockIndex = GetBlockTable(EMC2_COIN_IFACE);
-  if (!blockIndex) {
-fprintf(stderr, "DEBUG: emc2_block_submit: error obtaining tableBlockIndex[EMC2}\n"); 
-    return (STERR_INVAL);
-}
-
-  // Check for duplicate
-  uint256 hash = block->GetHash();
-  if (blockIndex->count(hash))// || mapOrphanBlocks.count(hash))
-    return (BLKERR_DUPLICATE_BLOCK);
-
-  // Preliminary checks
-  if (!block->CheckBlock()) {
-    shcoind_log("c_processblock: !CheckBlock()");
-    return (BLKERR_CHECKPOINT);
-  }
-
-  // Store to disk
-  if (!block->AcceptBlock()) {
-    shcoind_log("c_processblock: !AcceptBlock()");
-    return (BLKERR_INVALID_BLOCK);
-  }
-
-  block->print();
-
-return (0);
-}
-#endif
 
 static int emc2_tx_new(CIface *iface, void *arg)
 {

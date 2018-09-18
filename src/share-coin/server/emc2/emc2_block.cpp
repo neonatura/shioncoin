@@ -687,7 +687,6 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
 
   // Preliminary checks
   if (!pblock->CheckBlock()) {
-/* DEBUG: */ pblock->print();
     return error(SHERR_INVAL, "(emc2) ProcessBlock: failure verifying block '%s'.", hash.GetHex().c_str());
   }
 

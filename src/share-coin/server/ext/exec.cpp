@@ -589,8 +589,7 @@ static int ProcessExecGenerateTx(int ifaceIndex, CExec *execIn, CExecCall *exec,
 	int64 nSendFee = (int64)(shjson_num(param, "fee", 0) * COIN);
 	if (bGenerate) {
 		if (nSendFee > nFee)
-			return (SHERR_AGAIN);
-fprintf(stderr, "DEBUG: ProcessExecGenerateTx[bGenerate]: nSendFee(%f) nFee(%f)\n", (double)nSendFee/COIN, (double)nFee/COIN); 
+			return (ERR_FEE);
 
 		exec->SetSendValue(nSendFee);
 		exec->SetChecksum(string(shjson_str(param, "checksum", "")));
@@ -608,7 +607,6 @@ fprintf(stderr, "DEBUG: ProcessExecGenerateTx[bGenerate]: nSendFee(%f) nFee(%f)\
 		exec->SetSignContext();
 #endif
 		exec->InitTxChain();
-fprintf(stderr, "DEBUG: ProcessExecGenerateTx: CALL: %s\n", exec->ToString(ifaceIndex).c_str());  
 	} else {
 		if (nSendFee != nFee) {
 			error(SHERR_INVAL, "ProcessExecGenerateTx: warning: processed fee(%f) does not equal recorded fee(%f)", (double)nSendFee/COIN, (double)nFee/COIN); 
@@ -670,7 +668,6 @@ bool CallExecChain(CIface *iface, CExec& exec, int& nCheckpoint)
 	nCheckpoint = 0;
 	if (wallet->mapExecCallPending.count(hExec) != 0) {
 		int64 nUpdateHeight = exec.GetStackHeight(ifaceIndex);
-fprintf(stderr, "DEBUG: CallExecChain: nUpdateHeight %d\n", nUpdateHeight);
 
 		vector<uint160> vCall;
 		const vector<uint160>& call_list = wallet->mapExecCallPending[hExec];
@@ -737,7 +734,6 @@ static void ClearStackData(CIface *iface, CExec *exec)
 		return;
 
 	err = sexe_io_serialize(S, iface->name, NULL);
-fprintf(stderr, "DEBUG: ClearStackData: sexe_io_serialize(NULL) [err  %d]\n", err);
 	_CloseStack(S);
 }
 
@@ -752,7 +748,6 @@ void ResetExecChain(CIface *iface, const uint160& hExec)
 		return;
 
 	ClearStackData(iface, &exec);
-fprintf(stderr, "DEBUG: ResetExecChain: GetStackHeight %d\n", exec.GetStackHeight(GetCoinIndex(iface)));
 
 	vector<uint160>& vActiveCall = wallet->mapExecCall[hExec];
   BOOST_FOREACH(const uint160& hash, vActiveCall) {
@@ -1082,8 +1077,6 @@ bool ExecSaveCheckpoint(CIface *iface, CExec *exec, CTransaction *cp_tx)
 	uint160 hCheckpoint;
 	char fname[PATH_MAX+1];
 	int err;
-
-fprintf(stderr, "DEBUG: ExecSaveCheckpoint: %s\n", cp_tx->ToString(ifaceIndex).c_str());
 
 	/* copy current userdata to backup */
 	buff = shbuf_init();
@@ -1621,8 +1614,6 @@ static int sexe_ContextCreateEvent(lua_State *L)
 		return (1);
 	}
 
-fprintf(stderr, "DEBUG: sexe_ContextCreateEvent: PARAM: %s\n", shjson_print(param)); 
-
 	/* return success */
 	sexe_pushboolean(L, TRUE);
 	return (1);
@@ -1739,7 +1730,6 @@ bool CExec::CallStack(int ifaceIndex, CCoinAddr sendAddr, shjson_t **param_p)
 		error(err, "sexe_pget [CallStack]");
 		return (false);
 	}
-fprintf(stderr, "DEBUG: CallStack: POST-PARAM: %s\n", shjson_print(param));
 
 #if 0 /* because simutanous calls can occur before being committed to block-chain the checkpoint is used to checksum matching instead of each call */
 	int64 nFee = shjson_num(param, "fee", 0) * COIN;
@@ -1915,7 +1905,7 @@ bool CExec::GetStackData(int ifaceIndex, shjson_t **j_p)
 	err = sexe_io_unserialize(S, iface->name, &udata);
 	_CloseStack(S);
 	if (err) {
-fprintf(stderr, "DEBUG: GetStackData: %d = sexe_io_unserialize()\n", err);
+//fprintf(stderr, "DEBUG: GetStackData: %d = sexe_io_unserialize()\n", err);
 		return (false);
 	}
 
@@ -1968,8 +1958,8 @@ int ProcessExecTx(CIface *iface, CNode *pfrom, CTransaction& tx, int64 nHeight)
 				int nOut = IndexOfExecOutput(tx);
 				int64 nOutValue = tx.vout[nOut].nValue;
 				if (nOutValue < nFee) {
-					error(SHERR_AGAIN, "ProcessExecTx: OP_EXT_NEW: insufficient fee.");
-					return (SHERR_AGAIN);
+					error(ERR_FEE, "ProcessExecTx: OP_EXT_NEW: insufficient fee.");
+					return (ERR_FEE);
 				}
 
 				/* verify integrity of sexe class */
@@ -2143,7 +2133,7 @@ int init_exec_tx(CIface *iface, string strAccount, string strPath, CWalletTx& wt
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
 		error(SHERR_INVAL, "init_exec_tx: insufficient balance (%llu) .. %llu required\n", bal, nFee);
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   /* establish 'sender' coin addr */
@@ -2192,7 +2182,7 @@ int init_exec_tx(CIface *iface, string strAccount, string strPath, CWalletTx& wt
   CScript scriptPubKey;
   uint160 hExec = exec->GetHash();
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_EXEC) << OP_HASH160 << hExec << OP_2DROP << OP_RETURN;
-  string strError = wallet->SendMoney(scriptPubKey, nFee, wtx, false);
+  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
   if (strError != "") {
     error(ifaceIndex, "init_exec_tx: %s", strError.c_str());
     return (SHERR_INVAL);
@@ -2221,8 +2211,6 @@ int update_exec_tx(CIface *iface, string strAccount, const uint160& hExec, CWall
 	shjson_t *udata;
 	char buf[256];
 
-fprintf(stderr, "DEBUG: update_exec_tx()\n");
-
   /* verify original exec */
   CTransaction tx;
   if (!GetTxOfExec(iface, hExec, tx)) {
@@ -2244,7 +2232,7 @@ fprintf(stderr, "DEBUG: update_exec_tx()\n");
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
 		shjson_free(&udata);
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   /* exec update tx */
@@ -2310,8 +2298,8 @@ int generate_exec_tx(CIface *iface, string strAccount, string strClass, int64 nF
   /* ensure sufficient funds are available to invoke call */
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < (nFee + (int64)iface->min_tx_fee)) {
-    error(SHERR_AGAIN, "generate_exec_tx: insufficient funds.");
-    return (SHERR_AGAIN);
+    error(ERR_FEE, "generate_exec_tx: insufficient funds.");
+    return (ERR_FEE);
   }
 
   /* define "sender" address. */
@@ -2334,7 +2322,6 @@ int generate_exec_tx(CIface *iface, string strAccount, string strClass, int64 nF
     error(SHERR_INVAL, "generate_exec_tx: error processing pending calls for class \"%s\".", strClass.c_str());
     return (SHERR_INVAL);
 	}
-fprintf(stderr, "DEBUG: generate_exec_tx: nCheckpoint = %d\n", nCheckpoint); 
 
 	hExec = execIn.GetHash();
 	if (nCheckpoint != 0 && 
@@ -2429,7 +2416,7 @@ fprintf(stderr, "DEBUG: generate_exec_tx: nCheckpoint = %d\n", nCheckpoint);
 				if (text) {
 					CWalletTx ctx_tx;
 
-fprintf(stderr, "DEBUG: generate_exec_tx: CONTEXT[%s]: %s\n", node->string, text);
+//fprintf(stderr, "DEBUG: generate_exec_tx: CONTEXT[%s]: %s\n", node->string, text);
 					err = init_ctx_tx(iface, ctx_tx, strAccount,
 							strName, vchFromString(string(text)), NULL, true);
 					free(text);
@@ -2646,8 +2633,6 @@ bool CExecCall::VerifySignature(int ifaceIndex)
   CCoinAddr addr(ifaceIndex);
 	uint256 hash;
 	cbuff msg;
-
-fprintf(stderr, "DEBUG: VerifySignature: CALL: %s\n", ToString(ifaceIndex).c_str());
 
 	if (vTx.size() == 0) {
 		error(SHERR_INVAL, "CExecCall.VerifySignature: invalid exec call tx chain");

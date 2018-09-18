@@ -552,6 +552,7 @@ class CTransactionCore
     static const int TXF_CHANNEL = (1 << 12);
     static const int TXF_EXEC = (1 << 13);
     static const int TXF_CONTEXT = (1 << 14);
+    static const int TXF_ALTCHAIN = (1 << 15);
 
     int nFlag;
     std::vector<CTxIn> vin;
@@ -637,6 +638,15 @@ class CTransactionCore
       return (false);
     }
 
+    friend bool operator==(const CTransactionCore& a, const CTransactionCore& b)
+		{
+			return (a.nFlag  == b.nFlag &&
+					a.vin       == b.vin &&
+					a.vout      == b.vout &&
+//					a.wit.vtxinwit == b.wit.vtxinwit &&
+					a.nLockTime == b.nLockTime);
+		}
+
     std::string ToString(int ifaceIndex);
 
     Object ToValue(int ifaceIndex);
@@ -657,6 +667,7 @@ class CTransaction : public CTransactionCore
     CTxMatrix matrix;
     CChannel channel;
 		CExecCore exec;
+		CAltChain altchain;
 
     CTransaction()
     {
@@ -667,6 +678,31 @@ class CTransaction : public CTransactionCore
       SetNull();
       Init(tx);
     }
+
+#if 0
+		CTransaction(const CTransactionCore& tx)
+		{
+      SetNull();
+			nFlag = tx.nFlag;
+			vin = tx.vin;
+			vout = tx.vout;
+			wit = tx.wit;
+			nLockTime = tx.nLockTime;
+		}
+#endif
+
+		CTransaction(const CAltTx& tx)
+		{
+      SetNull();
+			nFlag = tx.nFlag;
+			vin.clear();
+			for (int i = 0; i < tx.vin.size(); i++)
+				vin.insert(vin.end(), tx.vin[i]);
+			vout.clear();
+			for (int i = 0; i < tx.vout.size(); i++)
+				vout.insert(vout.end(), tx.vout[i]);
+			nLockTime = tx.nLockTime;
+		}
 
     IMPLEMENT_SERIALIZE
     (
@@ -688,6 +724,9 @@ class CTransaction : public CTransactionCore
         READWRITE(matrix);
       if (this->nFlag & TXF_CHANNEL)
         READWRITE(channel);
+
+      if (this->nFlag & TXF_ALTCHAIN)
+        READWRITE(altchain);
     )
 
     void Init(const CTransaction& tx);
@@ -696,13 +735,13 @@ class CTransaction : public CTransactionCore
     {
 
       CTransactionCore::SetNull();
-			/*
       certificate.SetNull();
 			alias.SetNull();
       offer.SetNull();
       matrix.SetNull();
       channel.SetNull();
-			*/
+			exec.SetNull();
+			altchain.SetNull();
     }
 
     uint256 GetHash() const
@@ -908,6 +947,8 @@ class CTransaction : public CTransactionCore
 
     CContext *CreateContext();
 
+		CAltChain *CreateAltChain();
+
 
     CAlias *GetAlias()
     {
@@ -959,6 +1000,13 @@ class CTransaction : public CTransactionCore
 			return ((CExecCheckpoint *)&exec);
 		}
 
+		CAltChain *GetAltChain() const
+		{
+			if (!(this->nFlag & TXF_ALTCHAIN))
+				return (NULL);
+			return ((CAltChain *)&altchain);
+		}
+
     CTxMatrix *GetMatrix()
     {
       if (!isFlag(TXF_MATRIX))
@@ -998,11 +1046,13 @@ class CTransaction : public CTransactionCore
     CChannel *RemoveChannel(const CChannel& channelIn);
 
 
+
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
         return (a.nFlag  == b.nFlag &&
                 a.vin       == b.vin &&
                 a.vout      == b.vout &&
+//                a.wit.vtxinwit == b.wit.vtxinwit &&
                 a.nLockTime == b.nLockTime);
     }
 
@@ -1165,6 +1215,18 @@ public:
         return (int64)nTime;
     }
 
+    friend bool operator==(const CBlockHeader& a, const CBlockHeader& b)
+    {
+        return (
+						a.nVersion == b.nVersion &&
+						a.hashPrevBlock == b.hashPrevBlock &&
+						a.hashMerkleRoot == b.hashMerkleRoot &&
+						a.nTime == b.nTime &&
+						a.nBits == b.nBits &&
+						a.nNonce == b.nNonce
+						);
+    }
+
     Object ToValue();
 
     std::string ToString();
@@ -1289,6 +1351,21 @@ class CBlock : public CBlockHeader
       block.nNonce         = nNonce;
       return block;
     }
+
+		CAltBlock GetAltBlockHeader() const
+		{
+			CAltBlock header;
+
+			header.SetNull();
+			header.nFlag = this->nVersion;
+			header.hashPrevBlock = hashPrevBlock;
+			header.hashMerkleRoot = hashMerkleRoot;
+			header.nTime = nTime;
+			header.nBits = nBits;
+			header.nNonce = nNonce;
+
+			return (header);
+		}
 
     /**
      * Obtain a JSON representation of the block's content.
@@ -1781,6 +1858,9 @@ void core_IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev);
 
 /** set a 4-byte (8 character) hex string from stratum miner on the block's coinbase signature. */
 void core_SetExtraNonce(CBlock* pblock, const char *xn_hex);
+
+/** determines whether a block exists in the disk block-chain with given hash. */
+bool HasBlockHash(CIface *iface, uint256 hash);
 
 
 

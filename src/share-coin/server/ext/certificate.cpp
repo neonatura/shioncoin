@@ -721,31 +721,32 @@ bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight)
   int nOut;
 
   /* core verification */
-  if (!IsCertTx(tx))
-    return (false); /* tx not flagged as cert */
+  if (!IsCertTx(tx)) {
+    return (error(SHERR_INVAL, "VerifyCert: transaction does not contain a certificate: %s", tx.ToString(GetCoinIndex(iface)).c_str()));
+	}
 
   /* verify hash in pub-script matches cert hash */
   nOut = IndexOfExtOutput(tx);
   if (nOut == -1)
-    return (false); /* no extension output */
+    return (error(SHERR_INVAL, "VerifyCert: no extension output"));
 
   int mode;
   if (!DecodeCertHash(tx.vout[nOut].scriptPubKey, mode, hashCert))
-    return (false); /* no cert hash in output */
+    return (error(SHERR_INVAL, "VerifyCert: no cert hash in output"));
 
   if (mode != OP_EXT_NEW &&
       mode != OP_EXT_ACTIVATE &&
       mode != OP_EXT_UPDATE &&
       mode != OP_EXT_TRANSFER &&
       mode != OP_EXT_REMOVE)
-    return (false);
+    return (error(SHERR_INVAL, "VerifyCert: invalid operational mode."));
 
   if (tx.vout[nOut].nValue < GetCertOpFee(iface, nHeight))
-    return false;//error(SHERR_INVAL, "VerifyCert: insufficient fee (%f of %f) for block accepted at height %d.", FormatMoney(tx.vout[nOut].nValue), GetCertOpFee(iface, nHeight));
+    return error(SHERR_INVAL, "VerifyCert: insufficient fee (%f) for block accepted at height %d.", (double)tx.vout[nOut].nValue/COIN, (int)nHeight);
 
   CCert *cert = &tx.certificate;
   if (hashCert != cert->GetHash())
-    return (false); /* cert hash mismatch */
+    return (error(SHERR_INVAL, "VerifyCert: invalid cert hash"));
 
   if (cert->hashIssuer.IsNull() &&
       (cert->nFlag & SHCERT_CERT_CHAIN))
@@ -753,7 +754,7 @@ bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight)
 
   now = time(NULL);
   if (cert->GetExpireTime() > (now + SHARE_DEFAULT_EXPIRE_TIME))
-    return error(SHERR_INVAL, "invalid expiration time");
+    return error(SHERR_INVAL, "VerifyCert: invalid expiration time");
 
   return (true);
 }
@@ -962,7 +963,7 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
   int64 nFee = GetCertOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   /* send to extended tx storage account */
@@ -975,7 +976,7 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
   scriptPubKey += scriptPubKeyOrig;
 
   /* send certificate transaction */
-  string strError = wallet->SendMoney(scriptPubKey, nFee, wtx, false);
+  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
   if (strError != "") {
     error(ifaceIndex, strError.c_str());
     return (SHERR_INVAL);
@@ -1053,7 +1054,7 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
   int64 nFee = GetCertOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   /* send to extended tx storage account */
@@ -1066,7 +1067,7 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
   scriptPubKey += scriptPubKeyOrig;
 
   /* send certificate transaction */
-  string strError = wallet->SendMoney(scriptPubKey, nFee, wtx, false);
+  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
   if (strError != "") {
     error(ifaceIndex, strError.c_str());
     return (SHERR_INVAL);
@@ -1132,12 +1133,12 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
 
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee)
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
 
   /* create a single [known] input to derive license from */
   CScript scriptPubKeyDest;
   scriptPubKeyDest.SetDestination(extAddr.Get());
-  string certStrError = wallet->SendMoney(scriptPubKeyDest, nFee, int_wtx, false);
+  string certStrError = wallet->SendMoney(strAccount, scriptPubKeyDest, nFee, int_wtx, false);
   if (certStrError != "") {
     error(ifaceIndex, certStrError.c_str());
     return (SHERR_CANCELED);
@@ -1154,7 +1155,7 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
     return error(SHERR_INVAL, "intermediate tx output is insufficient.");
 
   vector<pair<CScript, int64> > vecSend;
-  CReserveKey rkey(wallet);
+//  CReserveKey rkey(wallet);
 
   /* initialize wallet transaction */
   wtx.SetNull();
@@ -1182,8 +1183,8 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
   vecSend.push_back(make_pair(scriptPubKey, (int64)iface->min_tx_fee));
 
   /* ship 'er off */
-  if (!CreateTransactionWithInputTx(iface,
-        vecSend, int_wtx, nOut, wtx, rkey, nRetFee) ||
+  if (!CreateTransactionWithInputTx(iface, strAccount,
+        vecSend, int_wtx, nOut, wtx, nRetFee) ||
       !wallet->CommitTransaction(wtx)) {
     error(SHERR_CANCELED, "error paying certificate owner the license fee.");
     return (SHERR_CANCELED);
@@ -1293,10 +1294,10 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
     scriptPubKeyFee.SetDestination(certAddr.Get());
     vecSend.push_back(make_pair(scriptPubKeyFee, nCertFee));
 
-    CReserveKey rkey(wallet);
+//    CReserveKey rkey(wallet);
     int64 nRetFee = MAX(iface->min_tx_fee, wtx.vout[0].nValue - nCertFee);
-    if (!CreateTransactionWithInputTx(iface,
-          vecSend, wtx, nTxOut, l_wtx, rkey, nRetFee) ||
+    if (!CreateTransactionWithInputTx(iface, strAccount,
+          vecSend, wtx, nTxOut, l_wtx, nRetFee) ||
         !wallet->CommitTransaction(l_wtx)) {
       error(SHERR_CANCELED, "error paying certificate owner the license fee.");
       return (SHERR_CANCELED);
@@ -1368,16 +1369,6 @@ static void FillSharenetCertificate(SHCert *cert, CCert *c_cert, CCert *iss)
     const string& pubkey_str = stringFromVch(iss->signature.vPubKey);
     shhex_bin((char *)pubkey_str.c_str(), (unsigned char *)iss_pub, pubkey_str.size()/2);
     shalg_size(iss_pub) = pubkey_str.size()/2;
-
-#if 0
-    {
-      unsigned char *raw = (unsigned char *)iss_pub;
-      cbuff ctx(raw, raw + shalg_size(iss_pub));
-      bool ok = c_cert->signature.VerifyContext(ctx.data(), ctx.size());
-      fprintf(stderr, "DEBUG: FillSharenetCert: VERIFY: %s = VerifyCOntext <%d bytes>\n", (ok ? "true" : "false"), ctx.size());
-fprintf(stderr, "DEBUG: DEBUG: FillSharenetCert: VERIFY: data \"%s\"\n", shhex_str(raw, shalg_size(iss_pub)));
-    }
-#endif
     
     err = shesig_import(cert, (char *)iss_label.c_str(), iss_pub);
   } else {
@@ -1633,13 +1624,14 @@ int init_ident_stamp_tx(CIface *iface, std::string strAccount, std::string strCo
   const uint160 hashIdent = ident->GetHash();
 
   /* sent to intermediate account. */
-  CReserveKey rkey(wallet);
+//  CReserveKey rkey(wallet);
   wtx.strFromAccount = strAccount;
 
   CScript scriptPubKey;
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_IDENT) << OP_HASH160 << hashIdent << OP_2DROP << OP_RETURN;
   int64 nFeeRequired;
-  if (!wallet->CreateTransaction(scriptPubKey, nFee, wtx, rkey, nFeeRequired)) {
+	string strError;
+  if (!wallet->CreateAccountTransaction(strAccount, scriptPubKey, nFee, wtx, strError, nFeeRequired)) {
     return (SHERR_CANCELED);
   }
 
@@ -1673,7 +1665,7 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
 
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nValue) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   CTransaction tx;
@@ -1699,18 +1691,20 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
   uint160 hashIdent = ident->GetHash();
 
   /* send to intermediate account. */
-  CReserveKey rkey(wallet);
+  //CReserveKey rkey(wallet);
   wtx.strFromAccount = strAccount;
 
-  /* careful here to not collect change as reservekey is being used as an intermediate account adddress and also as the "change addr". doing both would result in multiple outputs to the same address in single tx which is taboo */
-  CPubKey vchPubKey = rkey.GetReservedKey();
+	/* set destination address. */
   CScript scriptPubKeyOrig;
+	CPubKey vchPubKey = GetAccountPubKey(wallet, strAccount, true);
   scriptPubKeyOrig.SetDestination(vchPubKey.GetID());
+
   CScript scriptPubKey;
   scriptPubKey << OP_EXT_PAY << CScript::EncodeOP_N(OP_IDENT) << OP_HASH160 << hashIdent << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
   int64 nFeeRequired;
-  if (!wallet->CreateTransaction(scriptPubKey, nValue, wtx, rkey, nFeeRequired)) {
+	string strError;
+  if (!wallet->CreateAccountTransaction(strAccount, scriptPubKey, nValue, wtx, strError, nFeeRequired)) {
 CTransaction& pr_tx = (CTransaction&)wtx;
     return (SHERR_CANCELED);
   }
@@ -1732,7 +1726,7 @@ CTransaction *tx = (CTransaction *)&wtx;
   CScript destPubKey;
   destPubKey.SetDestination(addrDest.Get());
   
-  if (!SendMoneyWithExtTx(iface, wtx, t_wtx, destPubKey, vecSend, nMinValue)) { 
+  if (!SendMoneyWithExtTx(iface, strAccount, wtx, t_wtx, destPubKey, vecSend, nMinValue)) { 
 //fprintf(stderr, "DEBUG: init_ident_donate_tx:: !SendMoneyWithExtTx()\n");
     return (SHERR_INVAL);
   }

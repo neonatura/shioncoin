@@ -413,7 +413,7 @@ CBlock *test_GenerateBlock(CBlockIndex *pindexPrev)
       ++block->nNonce;
       if (block->nNonce == 0)
       {
-        printf("NONCE WRAPPED, incrementing time\n");
+//        printf("NONCE WRAPPED, incrementing time\n");
         ++block->nTime;
       }
     }

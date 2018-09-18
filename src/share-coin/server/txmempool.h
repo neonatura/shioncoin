@@ -54,6 +54,7 @@ class CPoolTx
   protected:
     time_t stamp;
     uint256 hash;
+		uint160 hColor;
     bool fLocal;
     int flags;
 
@@ -100,6 +101,7 @@ class CPoolTx
       stamp = time(NULL);
       tx.SetNull();
       hash = uint256(0);
+			hColor = uint160(0);
 
       dPriority = 0;
       dFeePriority = 0;
@@ -114,6 +116,16 @@ class CPoolTx
       flags = 0;
       mapInputs.clear();
     }
+
+		void SetColor(const uint160& hColorIn)
+		{
+			hColor = hColorIn;
+		}
+
+		uint160 GetColor()
+		{
+			return (hColor);
+		}
 
     time_t GetStamp()
     {
@@ -330,9 +342,11 @@ class CTxMemPool
 
     virtual bool GetTx(uint256 hash, CTransaction& retTx, int flags = 0) = 0;
 
-    virtual bool AddTx(CTransaction& tx, CNode *pfrom = NULL) = 0;
+    virtual bool AddTx(CTransaction& tx, CNode *pfrom = NULL, uint160 hColor = 0) = 0;
 
     virtual vector<CTransaction> GetActiveTx() = 0;
+
+		virtual vector<CTransaction> GetActiveColorTx(const uint160& hColor) = 0;
 
     virtual bool FetchInputs(uint256 hash, tx_cache& cacheRet) = 0;
 
@@ -351,6 +365,10 @@ class CTxMemPool
     virtual bool IsPendingTx(const uint256 hash) const = 0;
 
     virtual bool IsInputTx(const uint256 hash, int nOut) = 0;
+
+    virtual CPoolTx *GetPoolTx(uint256 hash) = 0;
+
+    virtual double CalculateFeePriority(CPoolTx *ptx) = 0;
 
 };
 
@@ -516,7 +534,7 @@ class CPool : public CTxMemPool
 
     void purge();
 
-    bool AddTx(CTransaction& tx, CNode *pfrom = NULL);
+    bool AddTx(CTransaction& tx, CNode *pfrom = NULL, uint160 hColor = 0);
 
     bool AddActiveTx(CPoolTx& tx);
 
@@ -549,6 +567,8 @@ class CPool : public CTxMemPool
     void CalculateFee(CPoolTx& ptx);
 
     vector<CTransaction> GetActiveTx();
+
+		vector<CTransaction> GetActiveColorTx(const uint160& hColor);
 
     vector<uint256> GetActiveHash();
 
@@ -592,6 +612,8 @@ class CPool : public CTxMemPool
     virtual int64 CalculateSoftFee(CTransaction& tx) = 0;
 
     virtual int64 IsFreeRelay(CTransaction& tx, tx_cache& mapInputs) = 0;
+
+    virtual double CalculateFeePriority(CPoolTx *ptx) = 0;
 
 
     

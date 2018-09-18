@@ -24,11 +24,103 @@
  */  
 
 #include "shcoind.h"
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
 
-void unet_thread_run(int mode, uthread_t call, void *arg)
+/** A flag indicating that thread sub-system is currently running. */ 
+#define UTHREAD_IDLE (1 << 0)
+
+/** A flag indicating that the timer thread is currently running. */ 
+#define UTHREAD_TIMER (1 << 1)
+
+/** The maximum time permitted for a thread to sleep is 334ms (1/3 second). */
+#define UTHREAD_MAX_TIME 0.334
+
+void *unet_thread_timer(unet_bind_t *bind)
 {
-	pthread_attr_t attr;
+	shtime_t start_t;
+	double wait_t;
+	double idle_t;
 
-	pthread_attr_init(&attr);
-	pthread_create(&th, &attr, call, arg);
+	usleep(1000); /* 1ms */
+
+	while (bind->fl_timer & UTHREAD_TIMER) {
+		start_t = shtime();
+
+		/* call timer function for timer mode */
+		unet_timer_cycle_mode(bind);
+
+		/* sleep based on activity load (>activity = <sleep) */
+		wait_t = shtimef(shtime()) - shtimef(start_t);
+		if (wait_t <= idle_t) {
+			/* increase wait if activity takes less time */
+			idle_t += 0.001;
+		} else {
+			/* decrease wait if activity takes longer time */
+			idle_t /= 2;
+		}
+		idle_t = MAX(0.01, MIN(UTHREAD_MAX_TIME, idle_t));
+		usleep(idle_t * 1000000);
+	}
+
+	return (NULL);
 }
+
+/** Initialize the timer thread. */
+void unet_thread_init(int mode)
+{
+#ifdef USE_LIBPTHREAD
+	pthread_attr_t attr;
+	unet_bind_t *bind;
+	char buf[256];
+
+	bind = unet_bind_table(mode);
+	if (!bind)
+		return;
+
+	if ((bind->fl_timer & UTHREAD_IDLE))
+		return; /* thread is already running */
+
+	bind->fl_timer |= UTHREAD_IDLE;
+	bind->fl_timer |= UTHREAD_TIMER;
+
+	memset(&attr, 0, sizeof(attr));
+	pthread_attr_init(&attr);
+	(void)pthread_create(&bind->th_timer, &attr,
+			UTHREAD(unet_thread_timer), bind);
+	pthread_attr_destroy(&attr);
+
+	/* debug: */
+	sprintf(buf, "unet_thread_init: initialized thread #%x (port %d).", (unsigned int)pthread_self(), bind->port);
+	unet_log(mode, buf);
+#endif
+}
+
+/** Terminate the timer thread. */
+void unet_thread_free(int mode)
+{
+#ifdef USE_LIBPTHREAD
+	unet_bind_t *bind;
+	void *ret_code;
+	char buf[256];
+
+	bind = unet_bind_table(mode);
+	if (!bind)
+		return;
+
+	if (!(bind->fl_timer & UTHREAD_IDLE))
+		return; /* thread is not running */
+
+	/* disable all modes from running. */
+	bind->fl_timer = 0;
+
+	/* wait for thread to terminate */
+	(void)pthread_join(bind->th_timer, &ret_code);
+
+	/* debug: */
+	sprintf(buf, "unet_thread_init: terminated thread #%x (port %d).", (unsigned int)pthread_self(), bind->port);
+	unet_log(mode, buf);
+#endif USE_LIBPTHREAD
+}
+

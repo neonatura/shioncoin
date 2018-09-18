@@ -196,7 +196,7 @@ public:
 bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStream& vRecv)
 {
   NodeList &vNodes = GetNodeList(iface);
-  static map<CService, CPubKey> mapReuseKey;
+//  static map<CService, CPubKey> mapReuseKey;
   CWallet *pwalletMain = GetWallet(iface);
   CTxMemPool *pool = GetTxMemPool(iface);
   int ifaceIndex = GetCoinIndex(iface);

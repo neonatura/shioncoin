@@ -829,6 +829,19 @@ bc_t *GetBlockTxChain(CIface *iface)
   return (iface->bc_tx);
 }
 
+bc_t *GetWalletTxChain(CIface *iface)
+{
+
+  if (!iface->bc_wtx) {
+    char name[256];
+
+    sprintf(name, "%s_wtx", iface->name);
+    (void)bc_open(name, &iface->bc_wtx);
+  }
+
+  return (iface->bc_wtx);
+}
+
 bc_t *GetBlockCoinChain(CIface *iface)
 {
 

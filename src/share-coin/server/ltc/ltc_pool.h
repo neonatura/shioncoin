@@ -62,6 +62,8 @@ class LTC_CTxMemPool : public CPool
     int64 CalculateSoftFee(CTransaction& tx);
     int64 IsFreeRelay(CTransaction& tx, tx_cache& mapInputs);
 
+		double CalculateFeePriority(CPoolTx *ptx);
+
     LTC_CTxMemPool() : CPool(LTC_COIN_IFACE) { };
 
 };

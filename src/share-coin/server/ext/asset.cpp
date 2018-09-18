@@ -338,7 +338,7 @@ int init_asset_tx(CIface *iface, string strAccount, string strTitle, string strH
   int64 nFee = GetAssetOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   uint160 assetHash = asset->GetHash();
@@ -439,7 +439,7 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   int64 nNetFee = GetAssetOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nNetFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   /* activation fee */
@@ -533,7 +533,7 @@ int activate_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset
   int64 nNetFee = GetAssetOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nNetFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   /* activation fee */
@@ -623,7 +623,7 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   int64 nNetFee = GetAssetOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nNetFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   /* removal fee */
@@ -639,19 +639,6 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   if (!s_wtx.Send())
     return (SHERR_CANCELED);
   
-
-#if 0
-  if (nNetFee) { /* supplemental tx payment */
-    vecSend.push_back(make_pair(scriptFee, nNetFee));
-  }
-
-  if (!SendMoneyWithExtTx(iface, wtxIn, wtx, scriptPubKey, vecSend)) {
-fprintf(stderr, "DEBUG: update_asset_tx: !SendMoneyWithExtTx\n"); 
-    return (SHERR_INVAL);
-}
-#endif
-
-
   wtx = (CWalletTx)s_wtx;
   wallet->mapAsset[assetHash] = wtx.GetHash();
   Debug("(%s) SENT:ASSETACTIVATE : assethash=%s, tx=%s", iface->name, asset->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());

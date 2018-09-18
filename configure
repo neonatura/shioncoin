@@ -646,8 +646,8 @@ USE_SEXE_FALSE
 USE_SEXE_TRUE
 DEBUG_FALSE
 DEBUG_TRUE
-PTHREAD_FALSE
-PTHREAD_TRUE
+USE_LIBPTHREAD_FALSE
+USE_LIBPTHREAD_TRUE
 HAVE_HELP2MAN_FALSE
 HAVE_HELP2MAN_TRUE
 HELP2MAN
@@ -850,9 +850,8 @@ with_sysroot
 enable_libtool_lock
 enable_largefile
 with_libshare
-enable_pthread
-enable_debug
 enable_sexe
+enable_debug
 enable_usde
 enable_emc2
 enable_testnet
@@ -1506,7 +1505,7 @@ Optional Features:
                           speeds up one-time build
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --disable-largefile     omit support for large files
-  --enable-pthread        enable pthread library, default: no
+  --disable-pthread       Disable pthread library
   --enable-debug          enable debugging, default: no
   --disable-sexe          Disable execution of SEXE programs.
   --enable-usde           Enable USDE coin service.
@@ -22124,26 +22123,21 @@ else
 fi
 
 
-# Check whether --enable-pthread was given.
-if test "${enable_pthread+set}" = set; then :
-  enableval=$enable_pthread; case "${enableval}" in
-             yes) pthread=true ;;
-             no)  pthread=false ;;
-             *)   as_fn_error $? "bad value ${enableval} for --enable-pthread" "$LINENO" 5 ;;
-esac
-else
-  pthread=false
+# Standard system "pthread" library for threading.
+# Check whether --enable-sexe was given.
+if test "${enable_sexe+set}" = set; then :
+  enableval=$enable_sexe;
 fi
 
- if test x"$pthread" = x"true"; then
-  PTHREAD_TRUE=
-  PTHREAD_FALSE='#'
+ if test "x$enable_pthread" != "xno"; then
+  USE_LIBPTHREAD_TRUE=
+  USE_LIBPTHREAD_FALSE='#'
 else
-  PTHREAD_TRUE='#'
-  PTHREAD_FALSE=
+  USE_LIBPTHREAD_TRUE='#'
+  USE_LIBPTHREAD_FALSE=
 fi
 
-if test "x$enable_pthread" = "xyes" ; then
+if test "x$enable_pthread" != "xno" ; then
   for ac_header in pthread.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "pthread.h" "ac_cv_header_pthread_h" "$ac_includes_default"
@@ -22213,7 +22207,13 @@ _ACEOF
 fi
 done
 
+
+cat >>confdefs.h <<_ACEOF
+#define USE_LIBPTHREAD 1
+_ACEOF
+
 fi
+
 
 for ac_func in BN_bn2mpi
 do :
@@ -22606,8 +22606,8 @@ if test -z "${HAVE_HELP2MAN_TRUE}" && test -z "${HAVE_HELP2MAN_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_HELP2MAN\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${PTHREAD_TRUE}" && test -z "${PTHREAD_FALSE}"; then
-  as_fn_error $? "conditional \"PTHREAD\" was never defined.
+if test -z "${USE_LIBPTHREAD_TRUE}" && test -z "${USE_LIBPTHREAD_FALSE}"; then
+  as_fn_error $? "conditional \"USE_LIBPTHREAD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${DEBUG_TRUE}" && test -z "${DEBUG_FALSE}"; then

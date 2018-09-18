@@ -618,7 +618,7 @@ int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalle
   int64 nFee = GetAliasOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
 #if 0
@@ -702,7 +702,7 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
   int64 nNetFee = (int64)MIN_TX_FEE(iface);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nNetFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   string strAccountIn;
@@ -800,7 +800,7 @@ int remove_alias_addr_tx(CIface *iface, string strAccount, string strTitle, CWal
   int64 nNetFee = (int64)MIN_TX_FEE(iface);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nNetFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   if (!s_wtx.AddExtTx(&wtxIn, scriptPubKey))

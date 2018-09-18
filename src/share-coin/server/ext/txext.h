@@ -320,6 +320,7 @@ typedef std::map< uint160, vector<uint160> > exec_call_list;
 typedef std::map<uint160, uint256> offer_list;
 typedef std::map<uint160, CTransaction> channel_list;
 typedef std::map<uint160, uint256> ctx_list;
+typedef std::map<uint160, uint256> altchain_list;
 
 
 #include "certificate.h"
@@ -329,6 +330,7 @@ typedef std::map<uint160, uint256> ctx_list;
 #include "alias.h"
 #include "channel.h"
 #include "context.h"
+#include "altchain.h"
 
 
 #endif /* ndef __SERVER_TXEXT_H__ */

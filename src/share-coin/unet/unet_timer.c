@@ -26,6 +26,7 @@
 #include "shcoind.h"
 
 
+
 /**
  * Add a new work procedure.
  * @note Called once per second.
@@ -61,36 +62,35 @@ void unet_timer_unset(int mode)
 
 }
 
+void unet_timer_cycle_mode(unet_bind_t *bind)
+{
+  shtime_t min_t;
+  shtime_t now;
+  shtime_t ts;
+
+	if (!bind)
+		return;
+
+	if (!bind->op_timer)
+		return;
+
+	/* call work procedure */
+	bind->timer_stamp = now;
+	(*bind->op_timer)();
+}
+
 /**
  * Call any timer procedures that have not already this second.
  */
 void unet_timer_cycle(void)
 {
   unet_bind_t *bind;
-  shtime_t min_t;
-  shtime_t now;
-  shtime_t ts;
   int idx;
 
   for (idx = 0; idx < MAX_UNET_MODES; idx++) {
-    bind = unet_bind_table(idx);
-
-    if (!bind->op_timer)
-      continue; /* all done */
-
-#if 0
-    now = shtime();
-    min_t = shtime_adj(now, -0.02); /* 20ms ago */
-    if (shtime_before(min_t, bind->timer_stamp))
-      continue; /* not ready */
-#endif
-
-    /* call work procedure */
-    bind->timer_stamp = now;
-    timing_init("unet_timer_cycle", &ts);
-    (*bind->op_timer)();
-    timing_term(idx, "unet_timer_cycle", &ts);
-  }
+		bind = unet_bind_table(idx);
+		unet_timer_cycle_mode(bind);
+	}
 
 }
 

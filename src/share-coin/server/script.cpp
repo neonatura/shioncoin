@@ -310,6 +310,24 @@ bool static _CheckLowS(const std::vector<unsigned char>& vchSig)
 }
 
 
+static bool IsAltChainTxHash(cbuff vchColor, cbuff vchTx)
+{
+	uint160 hColor(vchColor);
+	uint256 hTx(vchTx);
+
+	if (hColor == 0)
+		return (false);
+
+/* DEBUG: TODO: check other iface services enabled for matching color(name) */
+
+	/* alt-chain -- quick check */
+	CIface *alt_iface = GetCoinByIndex(COLOR_COIN_IFACE);
+	if (!alt_iface || !alt_iface->enabled)
+		return (false);
+	CTransaction tx;
+	return (GetTransaction(alt_iface, hTx, tx, NULL));
+}
+
 //bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, const CTransaction& txTo, unsigned int nIn, int nHashType, int sigver, int flags)
 bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigned int sigver, int flags)
 {
@@ -399,7 +417,7 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
             //
           case OP_NOP:
           case OP_NOP1: case OP_NOP2: case OP_NOP3: case OP_NOP4: case OP_NOP5:
-          case OP_NOP6: case OP_NOP7: case OP_NOP8: case OP_NOP9: case OP_NOP10:
+          case OP_NOP6: case OP_NOP7: case OP_NOP9: case OP_NOP10:
             break;
 
           case OP_IF:
@@ -788,9 +806,6 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
               valtype& vch1 = stacktop(-2);
               valtype& vch2 = stacktop(-1);
               bool fEqual = (vch1 == vch2);
-if (!fEqual) {
-fprintf(stderr, "DEBUG: EvalScript: OP_EQUALVERIFY: \"%s\" != \"%s\" [tx %s] [script %s]\n", HexStr(vch1).c_str(), HexStr(vch2).c_str(), sig.tx->GetHash().GetHex().c_str(), script.ToString().c_str());
-}
               // OP_NOTEQUAL is disabled because it would be too easy to say
               // something like n != 1 and have some wiseguy pass in 1 with extra
               // zero bytes after it (numerically, 0x01 == 0x0001 == 0x000001)
@@ -1002,10 +1017,6 @@ fprintf(stderr, "DEBUG: EvalScript: OP_EQUALVERIFY: \"%s\" != \"%s\" [tx %s] [sc
               valtype& vchSig    = stacktop(-2);
               valtype& vchPubKey = stacktop(-1);
 
-              ////// debug print
-              //PrintHex(vchSig.begin(), vchSig.end(), "evalscript sig: %s\n");
-              //PrintHex(vchPubKey.begin(), vchPubKey.end(), "evalscript pubkey: %s\n");
-
               // Subset of script starting at the most recent codeseparator
               CScript scriptCode(pbegincodehash, pend);
 
@@ -1021,9 +1032,6 @@ fprintf(stderr, "DEBUG: EvalScript: OP_EQUALVERIFY: \"%s\" != \"%s\" [tx %s] [sc
               }
 
               bool fSuccess = sig.CheckSig(vchSig, vchPubKey, scriptCode, sigver);
-//fprintf(stderr, "DEBUG: EvalScript: sig.checkSig(%s): vchPubKey(%s) vchSig(%s)\n", (fSuccess ? "success" : "failure"), HexStr(vchPubKey).c_str(), HexStr(vchSig).c_str()); 
-if (!fSuccess) { fprintf(stderr, "DEBUG: EvalScript: CheckSig !fSuccess: vchSig-size(%d): \"%s\"\n",  vchSig.size(), CScript(vchSig).ToString().c_str()); }
-
               popstack(stack);
               popstack(stack);
               stack.push_back(fSuccess ? vchTrue : vchFalse);
@@ -1112,12 +1120,24 @@ if (!fSuccess) { fprintf(stderr, "DEBUG: EvalScript: CheckSig !fSuccess: vchSig-
             }
             break;
 
+					case OP_CHECKALTPROOF:
+						{
+              if ((int)stack.size() < 2)
+                return false;
+							valtype& vchColor    = stacktop(-1);
+							valtype& vchTx = stacktop(-2);
+							bool fSuccess = IsAltChainTxHash(vchColor, vchTx);
+							popstack(stack);
+							popstack(stack);
+							stack.push_back(fSuccess ? vchTrue : vchFalse);
+						}
+						break;
+
           default:
             if (opcode >= 0xf0 && opcode <= 0xf9) { /* ext */
               break;
             }
 
-fprintf(stderr, "DEBUG: EvalScript: unknown op-code %x\n", (int)opcode);
             return false;
         }
 
@@ -1128,13 +1148,11 @@ fprintf(stderr, "DEBUG: EvalScript: unknown op-code %x\n", (int)opcode);
   }
   catch (...)
   {
-fprintf(stderr, "DEBUG: EvalScript: caught exception\n");
     return false;
   }
 
 
   if (!vfExec.empty()) {
-fprintf(stderr, "DEBUG: EvalScript: !vfExec.empty()\n");
     return false;
   }
 
@@ -1481,7 +1499,6 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
     return true;
   }
 
-//fprintf(stderr, "DEBUG: Solver: no script template found matching \"%s\"\n", scriptPubKey.ToString().c_str()); 
   vSolutionsRet.clear();
   typeRet = TX_NONSTANDARD;
   return false;
@@ -1542,122 +1559,6 @@ bool SignN(const vector<valtype>& multisigdata, const CKeyStore& keystore, uint2
     }
     return nSigned==nRequired;
 }
-
-#if 0
-//
-// Sign scriptPubKey with private keys stored in keystore, given transaction hash and hash type.
-// Signatures are returned in scriptSigRet (or returns false if scriptPubKey can't be signed),
-// unless whichTypeRet is TX_SCRIPTHASH, in which case scriptSigRet is the redemption script.
-// Returns false if scriptPubKey could not be completely satisified.
-//
-bool Solver(const CKeyStore& keystore, const CScript& scriptPubKey, uint256 hash, int nHashType, CScript& scriptSigRet, txnouttype& whichTypeRet)
-{
-  scriptSigRet.clear();
-
-
-  vector<valtype> vSolutions;
-  if (!Solver(scriptPubKey, whichTypeRet, vSolutions)) {
-fprintf(stderr, "DEBUG: Solver: failed to solve \"%s\"\n", scriptPubKey.ToString().c_str());
-    return false;
-  }
-
-  CKeyID keyID;
-  switch (whichTypeRet) {
-    case TX_NONSTANDARD:
-      return false;
-    case TX_PUBKEY:
-      {
-        if (!(nHashType & SIGHASH_HDKEY)) {
-          keyID = CPubKey(vSolutions[0]).GetID();
-          return Sign1(keyID, keystore, hash, nHashType, scriptSigRet);
-        }
-        keyID = HDPubKey(vSolutions[0]).GetID();
-        return Sign1(keyID, keystore, hash, nHashType, scriptSigRet);
-      }
-    case TX_PUBKEYHASH:
-      if (!(nHashType & SIGHASH_HDKEY)) {
-        keyID = CKeyID(uint160(vSolutions[0]));
-        if (!Sign1(keyID, keystore, hash, nHashType, scriptSigRet))
-          return false;
-        CPubKey vch;
-        keystore.GetPubKey(keyID, vch);
-        scriptSigRet << vch;
-      } else {
-fprintf(stderr, "DEBUG: Solver: TX_PUBKEYHASH: vSolutions.size() = %d\n", vSolutions.size());
-        keyID = CKeyID(uint160(vSolutions[0]));
-        if (!Sign1(keyID, keystore, hash, nHashType, scriptSigRet))
-          return false;
-        HDPrivKey key;
-        if (!keystore.GetKey(keyID, key))
-          return false;
-        scriptSigRet << key.GetPubKey().Raw();
-      }
-      return true;
-    case TX_SCRIPTHASH:
-      return keystore.GetCScript(uint160(vSolutions[0]), scriptSigRet);
-
-    case TX_MULTISIG:
-      scriptSigRet << OP_0; // workaround CHECKMULTISIG bug
-      return (SignN(vSolutions, keystore, hash, nHashType, scriptSigRet));
-
-    case TX_WITNESS_V0_KEYHASH:
-      {
-fprintf(stderr, "DEBUG: Solver: TX_WITNESS_V0_KEYHASH: vSolutions.size() = %d\n", vSolutions.size());
-        //scriptSigRet << vSolutions[0];
-        cbuff vchSig(vSolutions[0].begin(), vSolutions[0].end());
-        scriptSigRet = CScript(vchSig.begin(), vchSig.end());
-fprintf(stderr, "DEBUG: Solver: TX_WITNESS_V0_KEYHASH: scriptSigRet: \"%s\"\n", scriptSigRet.ToString().c_str());
-fprintf(stderr, "DEBUG: Solver: TX_WITNESS_V0_KEYHASH: vSolutions[0] = \"%s\"\n", HexStr(vSolutions[0].begin(), vSolutions[0].end()).c_str());
-        return (true);
-      }
-
-    case TX_WITNESS_V0_SCRIPTHASH:
-      {
-        const cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
-        cbuff vchHash;
-        uint160 hash160;
-
-        RIPEMD160(&vch[0], vch.size(), &vchHash[0]);
-        memcpy(&hash160, &vchHash[0], sizeof(hash160));
-
-        return keystore.GetCScript(hash160, scriptSigRet);
-      }
-  }
-
-  return false;
-}
-#endif
-
-#if 0
-bool Solver(const CKeyStore& keystore, CSignature& sig, txnouttype& whichTypeRet)
-{
-  bool ok;
-  if (sig.nHashType == TX_WITNESS_V0_KEYHASH) {
-    vector<valtype> vSolutions;
-    if (!Solver(sig.scriptAddr, whichTypeRet, vSolutions))
-      return false;
-
-    sig.stack.push_back(vSolutions[0]);
-  } else if (sig.nHashType == TX_WITNESS_V0_SCRIPTHASH) {
-    vector<valtype> vSolutions;
-    if (!Solver(sig.scriptAddr, whichTypeRet, vSolutions))
-      return false;
-
-    if (!keystore.GetCScript(uint160(vSolutions[0]), sig.scriptSig))
-      return (false);
-
-    sig.stack.push_back(cbuff(sig.scriptSig.begin(), sig.scriptSig.end()));
-  } else {
-    ok = Solver(keystore, sig.scriptAddr, sig.hash, sig.nHashType, sig.scriptSig, whichTypeRet);
-    if (!ok)
-      return (false);
-
-    sig.stack.push_back(cbuff(sig.scriptSig.begin(), sig.scriptSig.end()));
-  }
-
-  return (true);
-}
-#endif
 
 int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned char> >& vSolutions)
 {
@@ -1918,13 +1819,11 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
     } else if (program.size() == 20) {
       // Special case for pay-to-pubkeyhash; signature + pubkey in witness
       if (witness.size() != 2) {
-fprintf(stderr, "DEBUG: ERR_WITNESS_PROGRAM_MISMATCH\n");
         return false;//set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH); // 2 items in witness
       }
       scriptPubKey << OP_DUP << OP_HASH160 << program << OP_EQUALVERIFY << OP_CHECKSIG;
       stack = witness;
     } else {
-fprintf(stderr, "DEBUG:VerifWitnessProgram: invalid size program for ver0\n");
       return false;//set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_WRONG_LENGTH);
     }
   } else if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM) {
@@ -1973,6 +1872,8 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
   if (fValidatePayToScriptHash)
     stackCopy = stack;
   if (!EvalScript(sig, stack, scriptPubKey, SIGVERSION_BASE, 0)) {
+
+
     return error(SHERR_INVAL, "VerifyScript: error evaluating script [stack %d]: \"%s\"\n", stack.size(), scriptPubKey.ToString().c_str());
   }
   if (stack.empty()) {
@@ -2000,7 +1901,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
       // for witness programs.
       stack.resize(1);
     }
-  }
+	}
 
   // Additional validation for spend-to-script-hash transactions:
   if (fValidatePayToScriptHash && scriptPubKey.IsPayToScriptHash())
@@ -2013,7 +1914,6 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
     popstack(stackCopy);
 
     if (!EvalScript(sig, stackCopy, pubKey2, SIGVERSION_BASE, 0)) {
-fprintf(stderr, "DEBUG: VerifyScript: !EvalScript (IsPayToScriptHash)\n");
       return false;
     }
     if (stackCopy.empty())

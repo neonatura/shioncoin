@@ -215,7 +215,8 @@ bool BlockAcceptSpringMatrix(CIface *iface, CTransaction& tx, bool& fCheck)
         spring_loc_claim(lat, lon);
         /* erase pending ident tx */
         wallet->mapIdent.erase(matrix.hRef);
-        Debug("BlockAcceptSpringMatrix: Spring verify success: (new %s) lat(%f) lon(%f)\n", matrix.ToString().c_str(), lat, lon);
+Debug("BlockAcceptSpringMatrix: Spring verify success: lat(%Lf) lon(%Lf)\n", lat, lon);
+        Debug("BlockAcceptSpringMatrix: Spring verify success: (new %s) lat(%Lf) lon(%Lf)\n", matrix.ToString().c_str(), lat, lon);
       }
       return (true); /* matrix was found */
     }
@@ -277,7 +278,12 @@ bool CTransaction::VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, s
   CTransaction tx;
   if (!GetTxOfIdent(iface, matrix.hRef, tx))
     return error(SHERR_INVAL, "VerifySpringMatrix: invalid ident tx.");
-  CIdent& ident = (CIdent&)tx.certificate;
+
+	CCert *cert = tx.GetCertificate();
+	if (!cert)
+		return (error(SHERR_INVAL, "VerifySptringMatrix: invalid reference hash"));
+
+  CIdent& ident = (CIdent&)(*cert);
 
   shgeo_loc(&ident.geo, lat_p, lon_p, NULL);
   if (!is_spring_loc(*lat_p, *lon_p))

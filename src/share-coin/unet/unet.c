@@ -32,8 +32,13 @@ static const char *_unet_label[MAX_UNET_MODES] =
   "shc",
   "usde",
   "emc2",
-  "!RESERVED!",
+  "ltc",
   "testnet",
+  "color",
+  "!RESERVED!",
+  "!RESERVED!",
+  "!RESERVED!",
+  "!RESERVED!",
   "!RESERVED!",
   "!RESERVED!",
   "stratum",
@@ -102,6 +107,7 @@ void unet_cycle(double max_t)
   static shtime_t start_t;
   static int next_t;
   static double idle_t = 0.1;
+	static int uevent_cycle_index;
   unet_bind_t *bind;
   unet_table_t *t;
   shbuf_t *buff;
@@ -127,24 +133,27 @@ void unet_cycle(double max_t)
   if (start_t == SHTIME_UNDEFINED)
     start_t = shtime();
 
+#ifndef USE_LIBPTHREAD
   /* work proc */
   unet_timer_cycle();
+#endif
 
-  /* events */
-  uevent_cycle();
+	if (0 == (++uevent_cycle_index % 4)) {
+		/* events */
+		uevent_cycle();
 
-  now = time(NULL);
+		now = time(NULL);
+		if (next_t < now) {
+			/* scan for new service connections */
+			if (uevent_type_count(UEVENT_PEER_VERIFY) == 0) {
+				unet_peer_scan();
+			}
 
-  if (next_t < now) {
-    /* scan for new service connections */
-    if (uevent_type_count(UEVENT_PEER_VERIFY) == 0) {
-      unet_peer_scan();
-    }
+			unet_idle(); 
 
-    unet_idle(); 
-
-    next_t = now + 15;
-  }
+			next_t = now + 15;
+		}
+	}
 
   /* mark sockets for I/O */
   fd_max = 0;
@@ -172,6 +181,7 @@ void unet_cycle(double max_t)
     fd_max = MAX(fd, fd_max);
   }
 
+#ifndef USE_LIBPTHREAD
   /* wait remainder of max_t */
   wait_t = shtimef(shtime()) - shtimef(start_t);
   if (wait_t <= idle_t) {
@@ -179,9 +189,12 @@ void unet_cycle(double max_t)
     idle_t += 0.001;
   } else {
     /* decrease wait if activie takes longer time */
-    idle_t -= wait_t;
+    idle_t /= 2;
   }
   idle_t = MAX(0.01, MIN(max_t, idle_t));
+#else
+	idle_t = 0.1; /* 100ms */
+#endif
 
   memset(&to, 0, sizeof(to));
   to.tv_usec = MIN(999000, 1000000 * idle_t);
@@ -259,11 +272,6 @@ void unet_cycle(double max_t)
 
 
   start_t = shtime();
-
-#if 0
-  /* free expunged sockets */
-  unet_close_free();
-#endif
 
 }
 

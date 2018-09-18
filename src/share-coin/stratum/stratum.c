@@ -25,6 +25,12 @@
 
 #include "shcoind.h"
 #include "stratum.h"
+#include <math.h>
+
+#define MAX_STRATUM_MESSAGE_SIZE 16000000 /* 16m */
+
+static volatile time_t stratum_work_cycle;
+
 
 int get_stratum_daemon_port(void)
 {
@@ -116,7 +122,6 @@ static void stratum_timer(void)
 {
   static task_attr_t attr;
   static int _sync_init;
-	static time_t _work_cycle;
   unet_table_t *t;
   user_t *peer;
   shbuf_t *buff;
@@ -169,10 +174,27 @@ static void stratum_timer(void)
 
     /* process incoming requests */
     len = shbuf_idx(buff, '\n');
-    if (len == -1)
+    if (len == -1) {
+			if (shbuf_size(buff) > MAX_STRATUM_MESSAGE_SIZE) {
+				/* junk */
+				shbuf_clear(buff);
+			}
       continue;
+		}
+		if (len > MAX_STRATUM_MESSAGE_SIZE) {
+			/* error.. */
+			shbuf_trim(buff, len + 1);
+			continue;
+		}
+
+		shbuf_lock(buff);
     data = shbuf_data(buff);
+    len = stridx(data, '\n'); /* redundant */
+    if (len == -1) { shbuf_unlock(buff); continue; }
     data[len] = '\0';
+		data = strdup(data);
+    shbuf_trim(buff, len + 1);
+		shbuf_unlock(buff);
 
     if (0 == strncmp(data, "GET ", strlen("GET "))) {
       stratum_register_html_task(peer, data + strlen("GET "));
@@ -185,7 +207,8 @@ static void stratum_timer(void)
         stratum_register_client_task(peer, data);
       }
     }
-    shbuf_trim(buff, len + 1);
+
+		free(data);
   }
 
   stratum_close_free();
@@ -212,10 +235,7 @@ static void stratum_timer(void)
 #endif
 
 	/* OPT_STRATUM_WORK_CYCLE: Maximum time-span between work creation (default: 15 seconds, max: 1 hour). */
-	if (!_work_cycle) {
-		_work_cycle = (time_t)MAX(1, MIN(3600, opt_num(OPT_STRATUM_WORK_CYCLE)));
-	}
-  tnow = time(NULL) / _work_cycle;
+  tnow = time(NULL) / stratum_work_cycle;
 
   blk_iface = 0;
   is_new = is_stratum_task_pending(&blk_iface);
@@ -266,10 +286,33 @@ static void stratum_timer(void)
 
 }
 
+static void stratum_close_all(void)
+{
+  user_t *peer_next;
+  user_t *peer;
+
+  for (peer = client_list; peer; peer = peer_next) {
+    peer_next = peer->next;
+
+    if (!(peer->flags & USER_CLIENT) &&
+        !(peer->flags & USER_REMOTE))
+      continue;
+
+    if (peer->fd == -1)
+			continue;
+
+		descriptor_release(peer->fd);
+		free(peer);
+  }
+  client_list = NULL;
+
+}
+
 void stratum_term(void)
 {
 
-  unet_unbind(UNET_STRATUM);
+	stratum_close_all(); /* close client sockets. */
+  unet_unbind(UNET_STRATUM); /* close listening socket. */
 
 }
 
@@ -314,6 +357,10 @@ int stratum_register_client_task(user_t *user, char *json_text)
 int stratum_init(void)
 {
   int err;
+
+	/* OPT_STRATUM_WORK_CYCLE: Maximum time-span between work creation (default: 15 seconds, max: 1 hour). */
+	stratum_work_cycle = (time_t)fabs(opt_num(OPT_STRATUM_WORK_CYCLE));
+	if (stratum_work_cycle < 2) stratum_work_cycle = 2;
 
   err = unet_bind(UNET_STRATUM, get_stratum_daemon_port(), NULL);
   if (err)

@@ -125,7 +125,7 @@ Value rpc_alias_pubaddr_update(CIface *iface, const Array& params, bool fStratum
     if (err == SHERR_REMOTE) {
       throw runtime_error("Alias is not associated with a local account.");
     }
-    if (err == SHERR_AGAIN) {
+    if (err == ERR_FEE) {
       throw runtime_error("Not enough coins in account to perform the transaction.");
     }
     throw runtime_error("Error updating alias transaction.");
@@ -194,7 +194,7 @@ Value rpc_alias_pubaddr(CIface *iface, const Array& params, bool fStratum)
         throw JSONRPCError(-5, "Invalid coin address specified.");
       if (err == SHERR_NOENT)
         throw JSONRPCError(-5, "Coin address not located in wallet.");
-      if (err == SHERR_AGAIN)
+      if (err == ERR_FEE)
         throw JSONRPCError(-5, "Not enough coins in account to create alias.");
       throw JSONRPCError(-5, "Unable to generate transaction.");
     }
@@ -206,7 +206,7 @@ Value rpc_alias_pubaddr(CIface *iface, const Array& params, bool fStratum)
         throw JSONRPCError(-5, "Invalid coin address specified.");
       if (err == SHERR_NOENT)
         throw JSONRPCError(-5, "Coin address not located in wallet.");
-      if (err == SHERR_AGAIN)
+      if (err == ERR_FEE)
         throw JSONRPCError(-5, "Not enough coins in account to create alias.");
       throw JSONRPCError(-5, "Unable to generate transaction.");
     }
@@ -361,7 +361,7 @@ Value rpc_alias_remove(CIface *iface, const Array& params, bool fStratum)
   if (err) {
     if (err == SHERR_NOENT)
       throw JSONRPCError(-5, "Coin address not located in wallet.");
-    if (err == SHERR_AGAIN)
+    if (err == ERR_FEE)
       throw JSONRPCError(-5, "Not enough coins in account to create alias.");
     throw JSONRPCError(-5, "Unable to generate transaction.");
   }

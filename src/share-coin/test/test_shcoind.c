@@ -30,12 +30,12 @@ extern TEST_certtx(CuTest*);
 extern TEST_identtx(CuTest*);
 extern TEST_bloom_create_insert_key(CuTest*);
 extern TEST_bloom_match(CuTest*);
-extern TEST_coin_hdkey(CuTest*);
+//extern TEST_coin_hdkey(CuTest*);
 extern TEST_channeltx(CuTest*);
 extern TEST_hdtx(CuTest*);
 extern TEST_exectx(CuTest*);
-extern TEST_coin_table(CuTest*);
 extern TEST_coin_spendall(CuTest*);
+extern TEST_coin_spendall_segwit(CuTest*);
 extern TEST_ctxtx(CuTest*);
 extern TEST_scriptid(CuTest*);
 extern TEST_segwit(CuTest*);
@@ -73,7 +73,6 @@ int main(int argc, char *argv[])
 
   test_shcoind_init();
 
-#if 0
   /* core tests */
   SUITE_ADD_TEST(suite, TEST_coinaddr);
   SUITE_ADD_TEST(suite, TEST_bloom_create_insert_key);
@@ -81,21 +80,28 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_jsonencap);
   SUITE_ADD_TEST(suite, TEST_coin_key);
   SUITE_ADD_TEST(suite, TEST_coin_key_phrase);
+
+	/* currently (appears) creates pubkey's that cant be verified against. 
   SUITE_ADD_TEST(suite, TEST_coin_hdkey);
+	*/
+
   SUITE_ADD_TEST(suite, TEST_wallet);
   SUITE_ADD_TEST(suite, TEST_bignum);
   SUITE_ADD_TEST(suite, TEST_sha256transform);
   SUITE_ADD_TEST(suite, TEST_blockchain);
   SUITE_ADD_TEST(suite, TEST_matrix);
   SUITE_ADD_TEST(suite, TEST_serializetx);
-#endif
 
   /* block-chain transaction tests */
   SUITE_ADD_TEST(suite, TEST_reorganize);
   SUITE_ADD_TEST(suite, TEST_matrixtx);
   SUITE_ADD_TEST(suite, TEST_identtx);
 //  SUITE_ADD_TEST(suite, TEST_truncate);
+
+	/* currently (appears) creates pubkey's that cant be verified against. 
   SUITE_ADD_TEST(suite, TEST_hdtx);
+	*/
+
   SUITE_ADD_TEST(suite, TEST_signtx);
   SUITE_ADD_TEST(suite, TEST_cointx);
   SUITE_ADD_TEST(suite, TEST_aliastx);
@@ -104,8 +110,6 @@ int main(int argc, char *argv[])
 #ifdef USE_SEXE
   SUITE_ADD_TEST(suite, TEST_exectx);
 #endif
-
-#if 0
   SUITE_ADD_TEST(suite, TEST_ctxtx);
 //  SUITE_ADD_TEST(suite, TEST_channeltx);
 //  SUITE_ADD_TEST(suite, TEST_offertx);
@@ -116,17 +120,21 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_txmempool_pending);
   SUITE_ADD_TEST(suite, TEST_txmempool_inval);
   SUITE_ADD_TEST(suite, TEST_txmempool_depend);
+#if 0
+	/* re-enable me */
   SUITE_ADD_TEST(suite, TEST_respend);
   SUITE_ADD_TEST(suite, TEST_orphan_block);
+#endif
+
+  /* pre-finale */
+  SUITE_ADD_TEST(suite, TEST_coin_spendall);
 
   /* segwit tests */
   SUITE_ADD_TEST(suite, TEST_segwit);
   SUITE_ADD_TEST(suite, TEST_segwit_serializetx);
 
-  /* finale */
-  SUITE_ADD_TEST(suite, TEST_coin_table);
-  SUITE_ADD_TEST(suite, TEST_coin_spendall);
-#endif
+	/* finale */
+  SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);
 
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);

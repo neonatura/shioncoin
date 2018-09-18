@@ -59,15 +59,6 @@ static int usde_init(CIface *iface, void *_unused_)
   SetWallet(USDE_COIN_IFACE, usdeWallet);
 
 
-
-#if 0
-  if (!bitdb.Open(GetDataDir())) /* DEBUG: */
-  {
-    fprintf(stderr, "error: unable to open data directory.\n");
-    return (SHERR_INVAL);
-  }
-#endif
-
   if (!opt_bool(OPT_USDE_BACKUP_RESTORE)) {
     /* normal startup */
     if (!usde_InitBlockIndex()) {
@@ -181,9 +172,12 @@ static CPubKey usde_GetMainAccountPubKey(CWallet *wallet)
     ret_key = GetAccountPubKey(wallet, strAccount);
     if (!ret_key.IsValid()) {
       error(SHERR_INVAL, "(usde) GetMainAccountPubKey: error obtaining main account pubkey.");
+#if 0
       CReserveKey reservekey(wallet);
       ret_key = reservekey.GetReservedKey();
       reservekey.KeepKey();
+#endif
+			ret_key = wallet->GenerateNewKey();
     } else {
       CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
       Debug("(usde) GetMainAccountPubKey: using '%s' for mining address.",
@@ -235,40 +229,6 @@ error(SHERR_INVAL, "usde_block_templ: error obtaining main pubkey.\n");
 
   return (0);
 }
-
-#if 0
-static int usde_block_submit(CIface *iface, CBlock *block)
-{
-  blkidx_t *blockIndex;
-
-  blockIndex = GetBlockTable(USDE_COIN_IFACE);
-  if (!blockIndex) {
-fprintf(stderr, "DEBUG: usde_block_submit: error obtaining tableBlockIndex[USDE}\n"); 
-    return (STERR_INVAL);
-}
-
-  // Check for duplicate
-  uint256 hash = block->GetHash();
-  if (blockIndex->count(hash))// || mapOrphanBlocks.count(hash))
-    return (BLKERR_DUPLICATE_BLOCK);
-
-  // Preliminary checks
-  if (!block->CheckBlock()) {
-    shcoind_log("c_processblock: !CheckBlock()");
-    return (BLKERR_CHECKPOINT);
-  }
-
-  // Store to disk
-  if (!block->AcceptBlock()) {
-    shcoind_log("c_processblock: !AcceptBlock()");
-    return (BLKERR_INVALID_BLOCK);
-  }
-
-  block->print();
-
-return (0);
-}
-#endif
 
 static int usde_tx_new(CIface *iface, void *arg)
 {

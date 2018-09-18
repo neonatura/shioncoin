@@ -36,13 +36,16 @@ proto_sources = \
 	$(srcdir)/proto/test_proto.cpp \
 	$(srcdir)/proto/ltc_proto.cpp \
 	$(srcdir)/proto/testnet_proto.cpp \
+	$(srcdir)/proto/color_proto.cpp \
 	$(srcdir)/proto/coin_proto.h \
 	$(srcdir)/proto/shc_proto.h \
 	$(srcdir)/proto/usde_proto.h \
 	$(srcdir)/proto/emc2_proto.h \
 	$(srcdir)/proto/test_proto.h \
 	$(srcdir)/proto/ltc_proto.h \
-	$(srcdir)/proto/testnet_proto.h
+	$(srcdir)/proto/testnet_proto.h \
+	$(srcdir)/proto/color_proto.h
+
 
 stratum_sources = \
 	stratum/stratum.h \
@@ -127,6 +130,7 @@ common_sources = \
 	shcoind_descriptor.c \
 	unet/unet_accept.c \
 	unet/unet_bind.c \
+	unet/unet_thread.c \
 	unet/unet.c \
 	unet/unet_close.c \
 	unet/unet_connect.c \
@@ -205,16 +209,38 @@ server_sources = \
 	server/testnet/testnet_txidx.h \
 	server/testnet/testnet_pool.cpp \
 	server/testnet/testnet_pool.h \
+	server/color/color_block.cpp \
+	server/color/color_block.h \
+	server/color/color_wallet.cpp \
+	server/color/color_wallet.h \
+	server/color/color_txidx.cpp \
+	server/color/color_txidx.h \
+	server/color/color_pool.cpp \
+	server/color/color_pool.h \
+	server/color/color_rpc.cpp \
 	server/ext/txext.cpp \
+	server/ext/txext.h \
 	server/ext/alias.cpp \
+	server/ext/alias.h \
 	server/ext/certificate.cpp \
+	server/ext/certificate.h \
 	server/ext/offer.cpp \
+	server/ext/offer.h \
 	server/ext/asset.cpp \
+	server/ext/asset.h \
 	server/ext/exec.cpp \
+	server/ext/exec.h \
 	server/ext/channel.cpp \
+	server/ext/channel.h \
 	server/ext/context.cpp \
+	server/ext/context.h \
+	server/ext/altchain.cpp \
+	server/ext/altchain.h \
+	server/ext/altchain_color.c \
+	server/ext/altchain_color.h \
 	server/rpc/rpcalias_proto.cpp \
 	server/rpc/rpccert_proto.cpp \
+	server/rpc/rpccolor_proto.cpp \
 	server/rpc/rpccontext_proto.cpp \
 	server/rpc/rpcexec_proto.cpp \
 	server/rpc/rpcdump.cpp \

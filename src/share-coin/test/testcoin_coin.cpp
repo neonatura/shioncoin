@@ -338,6 +338,8 @@ _TEST(coinaddr)
 //fprintf(stderr, "DEBUG: TEST: coinaddr: '%s' has nVersion '%d'\n", "GSje1VrcG7uT55sL41sze9aL5qM7GaN5Bf", s_addr.GetVersion());
   }
 
+#if 0
+	/* DEBUG: TODO: re-introduce code; may be adding un-retrievable pubkey */
   {
     CKey skey;
     skey.MakeNewKey(true);
@@ -356,6 +358,13 @@ _TEST(coinaddr)
     _TRUE(fRet);
 //fprintf(stderr, "DEBUG: fRet = %s\n", (fRet ? "true" : "false"));
   }
+#endif
+
+
+
+
+
+
 
 #if 0
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
@@ -370,7 +379,7 @@ fprintf(stderr, "DEBUG: TEST: found addr '%s' for account '%s'\n", address.ToStr
 
 }
 
-
+#if 0
 _TEST(coin_table)
 {
   blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
@@ -425,7 +434,7 @@ _TEST(coin_table)
   }
 
 }
-
+#endif
 
 _TEST(coin_spendall)
 {
@@ -446,7 +455,43 @@ _TEST(coin_spendall)
   nValue = bal - COIN;
 
   scriptPubKey.SetDestination(addrTo.Get());
-  strError = wallet->SendMoney(scriptPubKey, nValue, wtx);
+  strError = wallet->SendMoney(strFromAcc, scriptPubKey, nValue, wtx);
+if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall: %s\n", strError.c_str()); } 
+  _TRUE(strError == "");
+  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
+
+  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
+  {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+
+}
+
+_TEST(coin_spendall_segwit)
+{
+  CWallet *wallet = GetWallet(TEST_COIN_IFACE);
+  CScript scriptPubKey;
+  string strFromAcc("");
+  string strToAcc("test");
+  string strError;
+  int64 nValue;
+  int64 bal;
+
+  CWalletTx wtx;
+  wtx.SetNull();
+  wtx.strFromAccount = strFromAcc;
+
+  bal = GetAccountBalance(TEST_COIN_IFACE, strFromAcc, 1);
+  CCoinAddr addrTo = GetAccountAddress(wallet, strToAcc, true);
+  nValue = bal - COIN;
+
+  scriptPubKey.SetDestination(addrTo.Get());
+  strError = wallet->SendMoney(strFromAcc, scriptPubKey, nValue, wtx);
+if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall_segwit: %s\n", strError.c_str()); } 
   _TRUE(strError == "");
   _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
 

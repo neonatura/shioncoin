@@ -259,7 +259,6 @@ bool LoadExternalBlockchainFile()
     try {
       FILE *fl = fopen(chain.path, "rb");
       if (!fl) {
-//        fprintf(stderr, "DEBUG: error open '%s': %s\n", chain.path, strerror(errno));
         return (false);
       }
       CAutoFile blkdat(fl, SER_DISK, DISK_VERSION);
@@ -289,7 +288,6 @@ bool LoadExternalBlockchainFile()
             chain.pos += ((unsigned char*)nFind - pchData) + 1;
           }
           else {
-//fprintf(stderr, "DEBUG: pchMessage not found\n");
             chain.pos += sizeof(pchData) - sizeof(iface->hdr_magic) + 1;
 }
         } while(!fRequestShutdown);
@@ -311,22 +309,9 @@ if (bestBlock->GetBlockHash() != block->hashPrevBlock)
 #endif
 
           if (!ProcessBlock(NULL,block)) {
-//fprintf(stderr, "DEBUG: IMPORT: block '%s' failed.\n", block->GetHash().GetHex().c_str());
             delete block;
             continue;
           }
-#if 0
-          if (!block->CheckBlock()) {
-fprintf(stderr, "DEBUG: IMPORT: block '%s' failed integrity validation.\n", block->GetHash().GetHex().c_str());
-            delete block;
-            continue;
-          }
-          if (!block->AcceptBlock()) {
-fprintf(stderr, "DEBUG: IMPORT: block '%s' was not accepted.\n", block->GetHash().GetHex().c_str());
-            delete block;
-            continue;
-          }
-#endif
           delete block;
 
           chain.total++;
@@ -353,7 +338,6 @@ fprintf(stderr, "DEBUG: IMPORT: block '%s' was not accepted.\n", block->GetHash(
       }
     }
     catch (std::exception &e) {
-      //fprintf(stderr, "DEBUG: %s() : Deserialize or I/O error caught during load: %s\n", __PRETTY_FUNCTION__, e.what());
       chain.pos += 4;
       return (true);
     }
@@ -375,7 +359,6 @@ bool SaveExternalBlockchainFile()
     try {
       FILE *fl = fopen(chain.path, "ab");
       if (!fl) {
-//        fprintf(stderr, "DEBUG: error open '%s': %s\n", chain.path, strerror(errno));
         return (false);
       }
       CAutoFile blkdat(fl, SER_DISK, DISK_VERSION);
@@ -566,19 +549,6 @@ bool ServicePeerEvent(int ifaceIndex)
   pfrom->PushMessage("getaddr");
   pfrom->fGetAddr = true;
   Debug("ServicePeerEvent: requesting node address list for iface #%d.\n", ifaceIndex);
-
-#if 0
-  if (!pfrom->fInbound) {
-    // Advertise our address
-    if (!fNoListen && !IsInitialBlockDownload(ifaceIndex)) {
-      CAddress addr = GetLocalAddress(&pfrom->addr);
-      if (addr.IsRoutable()) {
-        fprintf(stderr, "DEBUG: ServicePeerEvent: GetLocalAddress '%s'\n", pfrom->addr.ToString().c_str());
-        pfrom->PushAddress(addr);
-      }
-    }
-  }
-#endif
 
   return (false); /* all done */
 }

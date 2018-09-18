@@ -34,7 +34,7 @@
 #define MIN_SHARE_DIFFICULTY 0.03125 /* diff 1 */
 
 /* minimum miner work difficulty permitted. */
-#define MIN_USER_WORK_DIFFICULTY 128
+#define MIN_USER_WORK_DIFFICULTY 256
 
 /* maximum miner work difficulty permitted. */
 #define MAX_USER_WORK_DIFFICULTY 1024000
@@ -273,12 +273,12 @@ void stratum_user_block(user_t *user, double share_diff)
     }
 
     user->block_freq = (span + user->block_freq) / 2;
-    if (user->block_freq < 1) { 
+    if (user->block_freq < 2) { 
       if (user->work_diff < MAX_USER_WORK_DIFFICULTY)
-        stratum_set_difficulty(user, user->work_diff + 64);
-    } else if (user->block_freq > 120) {
+        stratum_set_difficulty(user, user->work_diff + 256);
+    } else if (user->block_freq > 60) {
       if (user->work_diff > MIN_USER_WORK_DIFFICULTY)
-        stratum_set_difficulty(user, user->work_diff - 64);
+        stratum_set_difficulty(user, user->work_diff - 256);
     }
   }
   user->block_tm = cur_t;

@@ -72,6 +72,7 @@ typedef vector<CBlockIndex*> txlist;
 bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+  CWallet *alt_wallet = GetWallet(COLOR_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
   CBlockIndex *lastIndex;
@@ -117,7 +118,19 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
 			(lastIndex ? lastIndex->bnChainWork : 0) + 
 			pindexNew->GetBlockWork();
 
-    BOOST_FOREACH(CTransaction& tx, block.vtx) {
+		opcodetype opcode;
+		BOOST_FOREACH(CTransaction& tx, block.vtx) {
+			BOOST_FOREACH(const CTxOut& out, tx.vout) {
+				const CScript& script = out.scriptPubKey;
+				CScript::const_iterator pc = script.begin();
+				while (script.GetOp(pc, opcode)) {
+					if (opcode == OP_RETURN) {
+						STAT_TX_RETURNS(iface) += out.nValue;
+						break;
+					}
+				}
+			}
+
       /* register extended transactions. */
       if (tx.isFlag(CTransaction::TXF_MATRIX)) {
 				if (tx.IsCoinBase()) {
@@ -129,10 +142,14 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
 							vSpring.push_back(pindexNew);
 					}
 				}
-      } else if (tx.isFlag(CTransaction::TXF_ALIAS)) {
+      } 
+
+			if (tx.isFlag(CTransaction::TXF_ALIAS)) {
 				if (IsAliasTx(tx))
 					vAlias.push_back(pindexNew);
-      } else if (tx.isFlag(CTransaction::TXF_ASSET)) {
+      }
+
+			if (tx.isFlag(CTransaction::TXF_ASSET)) {
 				/* not implemented. */
       } else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
 				if (IsCertTx(tx))
@@ -157,6 +174,13 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
       if (tx.isFlag(CTransaction::TXF_EXEC)) {
 				if (IsExecTx(tx, mode))
 					vExec.push_back(pindexNew);
+			}
+
+			/* track highest block on alt-chain. */
+      if (tx.isFlag(CTransaction::TXF_ALTCHAIN)) {
+				if (IsAltChainTx(tx)) {
+					CommitAltChainTx(iface, tx, NULL, true);
+				}
 			}
     } /* FOREACH (tx) */
 
@@ -430,7 +454,9 @@ static bool shc_LoadBlockIndex()
   BOOST_FOREACH(CBlockIndex *pindex, vCert) {
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
-			InsertCertTable(iface, tx, pindex->nHeight);
+      if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
+				InsertCertTable(iface, tx, pindex->nHeight);
+			}
     }
     delete block;
   }

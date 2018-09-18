@@ -1097,20 +1097,7 @@ void usde_server_timer(void)
   usde_MessageHandler(iface);
   timing_term(USDE_COIN_IFACE, "MessageHandler", &ts);
 
-  event_cycle_chain(USDE_COIN_IFACE); /* DEBUG: */
-
-#if 0
-  if (0 == (verify_idx % 20)) {
-    bc = GetBlockTxChain(iface);
-    if (bc)
-      bc_idle(bc);
-
-    bc = GetBlockChain(iface);
-    if (bc)
-      bc_idle(bc);
-  }
-  verify_idx++;
-#endif
+  event_cycle_chain(USDE_COIN_IFACE);
 
 }
 
@@ -1218,32 +1205,6 @@ bool shc_coin_server_recv_msg(CIface *iface, CNode* pfrom)
   return (fRet);
 }
 
-#if 0
-void *shc_coin_server_recv_msg_thread(CNode *pfrom)
-{
-	CIface *iface;
-	bool fRet;
-
-	if (!pfrom)
-		return;
-
-	{
-		LOCK(pnode->cs_vRecv);
-
-		fRet = false;
-		iface = GetCoinByIndex(pfrom->ifaceIndex);
-		if (iface)
-			fRet = shc_coin_server_recv_msg(iface, pfrom); 
-	}
-
-	if (!fRet) {
-		/* .. */
-	}
-
-	return (NULL);
-}
-#endif
-
 int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
 {
   coinhdr_t hdr;
@@ -1284,10 +1245,6 @@ int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   memcpy(&vRecv[0], data, sizeof(hdr) + hdr.size);
   shbuf_trim(buff, sizeof(hdr) + hdr.size);
 
-#if 0
-	unet_thread_run(GetCoinIndex(iface), 
-			UTHREAD(shc_coin_server_recv_msg_thread), pnode);
-#endif
   bool fRet = shc_coin_server_recv_msg(iface, pnode);
   if (!fRet) {
     error(SHERR_INVAL, "shc_coin_server_recv: shc_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
@@ -1376,20 +1333,8 @@ void shc_server_timer(void)
   shc_MessageHandler(iface);
   timing_term(SHC_COIN_IFACE, "MessageHandler", &ts);
 
-  event_cycle_chain(SHC_COIN_IFACE); /* DEBUG: TODO: uevent */
+  event_cycle_chain(SHC_COIN_IFACE); 
 
-#if 0
-  if (0 == (verify_idx % 20)) {
-    bc = GetBlockTxChain(iface);
-    if (bc)
-      bc_idle(bc);
-
-    bc = GetBlockChain(iface);
-    if (bc)
-      bc_idle(bc);
-  }
-  verify_idx++;
-#endif
 
 }
 
@@ -1758,20 +1703,7 @@ void testnet_server_timer(void)
   testnet_MessageHandler(iface);
   timing_term(TESTNET_COIN_IFACE, "MessageHandler", &ts);
 
-  event_cycle_chain(TESTNET_COIN_IFACE); /* DEBUG: TODO: uevent */
-
-#if 0
-  if (0 == (verify_idx % 20)) {
-    bc = GetBlockTxChain(iface);
-    if (bc)
-      bc_idle(bc);
-
-    bc = GetBlockChain(iface);
-    if (bc)
-      bc_idle(bc);
-  }
-  verify_idx++;
-#endif
+  event_cycle_chain(TESTNET_COIN_IFACE); 
 
 }
 
@@ -1993,86 +1925,6 @@ void start_node(void)
   /* start cpp threads */
   StartCoinServer();
 }
-
-#if 0
-void start_node_peer(const char *host, int port)
-{
-  CService vserv;
-
-  if (0 == strcmp(host, "127.0.0.1"))
-    return; /* already known */
-
-  if (!port)
-    return;
-
-/* DEBUG: sloppie */
-int ifaceIndex = -1;
-int i;
-  for (i = 0; i < MAX_COIN_IFACE; i++) {
-CIface *iface = GetCoinByIndex(i);
-if (iface->port == port)
-  break;
-} 
-if (i != MAX_COIN_IFACE)
-  ifaceIndex = i;
-//    port = USDE_COIN_DAEMON_PORT;
-
-  if (ifaceIndex != -1) {
-    if (Lookup(host, vserv, port, false)) {
-      OpenNetworkConnection(ifaceIndex, CAddress(vserv));
-    }
-  }
-
-}
-#endif
-
-#if 0
-void flush_addrman_db(void)
-{
-  DumpAddresses();
-}
-#endif
-
-#if 0
-void shared_addr_submit(const char *net_addr)
-{
-  shpeer_t *peer;
-
-  peer = shpeer_init("shared", (char *)net_addr);
-  if (!peer)
-    return;
-
-  shapp_listen(TX_APP, peer);
-  shpeer_free(&peer); 
-}
-#endif
-
-#if 0
-int GetRandomAddress(CIface *iface, char *hostname, int *port_p)
-{
-  shpeer_t *self_peer;
-  shpeer_t *peer;
-  unet_bind_t *bind;
-  char buf[256];
-  int err;
-
-  bind = unet_bind_table(ifaceIndex);
-  if (!bind && !bind->peer_db)
-    return (SHERR_INVAL);
-
-  sprintf(buf, "127.0.0.1 %d", USDE_COIN_DAEMON_PORT);
-  self_peer = shpeer_init(iface->name, buf);
-  peers = shnet_track_scan(bind->peer_db, self_peer, 1);
-  shpeer_free(&self_peer);
-  if (err)
-    return (err);
-
-  shpeer_host(peer, hostname, port_p);
-  shpeer_free(&peer);
-
-  return (0);
-}
-#endif
 
 
 
@@ -2621,7 +2473,7 @@ void emc2_server_timer(void)
   emc2_MessageHandler(iface);
   timing_term(EMC2_COIN_IFACE, "MessageHandler", &ts);
 
-  event_cycle_chain(EMC2_COIN_IFACE); /* DEBUG: */
+  event_cycle_chain(EMC2_COIN_IFACE);
 
 }
 
@@ -2917,20 +2769,7 @@ void ltc_server_timer(void)
   ltc_MessageHandler(iface);
   timing_term(LTC_COIN_IFACE, "MessageHandler", &ts);
 
-  event_cycle_chain(LTC_COIN_IFACE); /* DEBUG: TODO: uevent */
-
-#if 0
-  if (0 == (verify_idx % 20)) {
-    bc = GetBlockTxChain(iface);
-    if (bc)
-      bc_idle(bc);
-
-    bc = GetBlockChain(iface);
-    if (bc)
-      bc_idle(bc);
-  }
-  verify_idx++;
-#endif
+  event_cycle_chain(LTC_COIN_IFACE);
 
 }
 

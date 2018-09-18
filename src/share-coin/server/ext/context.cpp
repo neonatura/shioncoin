@@ -818,23 +818,28 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
 	int err;
 
   if (strName.length() < 3) {
+		error(SHERR_INVAL, "init_ctx_tx: name less than three characters.");
     return (SHERR_INVAL);
   }
   if (vchValue.size() == 0) {
+		error(SHERR_INVAL, "init_ctx_tx: blank value");
     return (SHERR_INVAL);
   }
   if (vchValue.size() > CContext::MAX_VALUE_SIZE) {
+		error(SHERR_INVAL, "init_ctx_tx: value exceeds maximum context size.");
     return (SHERR_INVAL);
   }
 
 	err = ctx_context_verify(vchValue);
-	if (err)
+	if (err) {
+		error(err, "init_ctx_tx: invalid context value.");
 		return (err);
+	}
 
   int64 nFee = GetContextOpFee(iface, GetBestHeight(iface), vchValue.size());
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   if (IsContextName(iface, strName)) {
@@ -886,7 +891,7 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
   scriptPubKey += destPubKey;
 
   // send transaction
-  string strError = wallet->SendMoney(scriptPubKey, nFee, wtx, false);
+  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
   if (strError != "") {
     error(ifaceIndex, "init_ctx_tx: %s", strError.c_str());
     return (SHERR_INVAL);
@@ -936,7 +941,7 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
   int64 nFee = GetContextOpFee(iface, GetBestHeight(iface), vchValue.size());
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee)
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
 
   if (wallet->mapWallet.count(wtxInHash) == 0)
     return (SHERR_REMOTE);
@@ -990,7 +995,7 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
   scriptPubKey += destPubKey;
 
   vector<pair<CScript, int64> > vecSend;
-  if (!SendMoneyWithExtTx(iface, wtxIn, wtx, scriptPubKey, vecSend)) {
+  if (!SendMoneyWithExtTx(iface, strAccount, wtxIn, wtx, scriptPubKey, vecSend)) {
     return (SHERR_CANCELED);
   }
 

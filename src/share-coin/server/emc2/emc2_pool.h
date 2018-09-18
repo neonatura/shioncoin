@@ -62,6 +62,8 @@ class EMC2_CTxMemPool : public CPool
     int64 CalculateSoftFee(CTransaction& tx);
     int64 IsFreeRelay(CTransaction& tx, tx_cache& mapInputs);
 
+		double CalculateFeePriority(CPoolTx *ptx);
+
     EMC2_CTxMemPool() : CPool(EMC2_COIN_IFACE) { };
 
 };

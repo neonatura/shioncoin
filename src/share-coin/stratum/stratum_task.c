@@ -398,6 +398,7 @@ task_t *task_init(task_attr_t *attr)
     stratum_task_weight(attr);
     for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
 			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
+			if (ifaceIndex == COLOR_COIN_IFACE) continue;
       iface = GetCoinByIndex(ifaceIndex);
       if (!iface || !iface->enabled) continue;
       if (max_weight == 0.00 || attr->weight[ifaceIndex] > max_weight) {
@@ -424,6 +425,7 @@ task_t *task_init(task_attr_t *attr)
     reset_idx = 0;
     for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
 			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
+			if (ifaceIndex == COLOR_COIN_IFACE) continue;
       if (!iface || !iface->enabled) continue;
 
       if (attr->commit_stamp[ifaceIndex] != attr->blk_stamp[ifaceIndex]) {
@@ -774,6 +776,7 @@ int is_stratum_task_pending(int *ret_iface)
 
   for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
 		if (ifaceIndex == TESTNET_COIN_IFACE) continue;
+		if (ifaceIndex == COLOR_COIN_IFACE) continue;
     CIface *iface = GetCoinByIndex(ifaceIndex);
     if (!iface || !iface->enabled) 
       continue; /* iface not enabled */
@@ -847,6 +850,7 @@ void stratum_task_weight(task_attr_t *attr)
   now = time(NULL);
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
 		if (idx == TESTNET_COIN_IFACE) continue;
+		if (idx == COLOR_COIN_IFACE) continue;
     iface = GetCoinByIndex(idx);
     if (!iface || !iface->enabled) continue;
 

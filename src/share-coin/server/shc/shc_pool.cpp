@@ -136,38 +136,11 @@ bool SHC_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
 
 bool SHC_CTxMemPool::AcceptTx(CTransaction& tx)
 {
-#ifdef USE_LEVELDB_COINDB
-  uint256 hash = tx.GetHash();
-  bool fCheckInputs = true;
 
-  if (fCheckInputs) {
-    bool fInvalid = false;
-    map<uint256, CTxIndex> mapUnused;
-    MapPrevTx mapInputs;
-    {
-      SHCTxDB txdb;
+	if (IsAltChainTx(tx)) {
+		CommitAltChainPoolTx(GetCoinByIndex(SHC_COIN_IFACE), tx, true);
+	}
 
-      /* ensure the transaction is unique. */
-      if (txdb.ContainsTx(hash)) {
-        txdb.Close();
-        return false;
-      }
-
-      if (!tx.FetchInputs(txdb, mapUnused, NULL, false, mapInputs, fInvalid)) {
-        txdb.Close();
-        return (error(SHERR_INVAL, "(shc) CTxMemPool.AcceptTx: error retrieiving input transactions for submitted tx \"%s\".", hash.GetHex().c_str()));
-      }
-
-      txdb.Close();
-    }
-
-    if (!shc_ConnectInputs(&tx, mapInputs, mapUnused, CDiskTxPos(0,0,0), GetBestBlockIndex(SHC_COIN_IFACE), false, false)) {
-      return (error(SHERR_INVAL, "(shc) CTxMemPool.AcceptTx: error connecting inputs for submitted tx \"%s\".", hash.GetHex().c_str()));
-    }
-  }
-
-  Debug("(shc) mempool accepted tx \"%s\".", hash.ToString().c_str());
-#endif
   return true;
 }
 
@@ -222,4 +195,38 @@ int64 SHC_CTxMemPool::IsFreeRelay(CTransaction& tx, tx_cache& mapInputs)
   return (false);
 }
 
+double SHC_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
+{
+	double dFeePrio;
+
+	dFeePrio = sqrt(ptx->dPriority + 1) * (double)ptx->nFee;
+
+	if (IsAltChainTx(ptx->tx)) {
+		CAltChain *alt = ptx->tx.GetAltChain();
+		if (alt) {
+			vector<CTransaction> vTx = GetActiveTx();
+			for (int i = 0; i < vTx.size(); i++) {
+				const CTransaction& p_tx = vTx[i];
+				if (IsAltChainTx(p_tx)) {
+					CAltChain *p_alt = p_tx.GetAltChain();
+					if (p_alt) {
+						if (p_alt->block.GetHash() == alt->block.hashPrevBlock) {
+							/* found pool tx with altchain that has parent hash. */
+							CPoolTx *p_ptx = GetPoolTx(p_tx.GetHash());
+							if (p_ptx) {
+								dFeePrio = MIN(dFeePrio / 2, p_ptx->dFeePriority);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	/* DEBUG: TODO: EXEC.. */
+
+	return (dFeePrio);
+
+}
 

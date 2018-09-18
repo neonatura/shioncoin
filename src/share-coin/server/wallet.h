@@ -35,7 +35,7 @@
 #include "coin.h"
 
 class CWalletTx;
-class CReserveKey;
+//class CReserveKey;
 class CWalletDB;
 class COutput;
 class HDPubKey;
@@ -51,7 +51,9 @@ enum WalletFeature
 	FEATURE_LATEST = 60000
 };
 
+typedef std::map<std::string, std::string> mapval_t;
 
+#if 0
 /** A key pool entry */
 class CKeyPool
 {
@@ -78,6 +80,7 @@ class CKeyPool
 			 READWRITE(vchPubKey);
 			)
 };
+#endif
 
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
@@ -144,11 +147,17 @@ class CWallet : public CCryptoKeyStore
 		/** The over-written TX_NEW/TX_ACTIVATE : TX_CERT certificate transactions. */
 		mutable std::map<uint256, uint160> mapCertArch;
 
-		bool fFileBacked;
+		/* the tail end block on a color chain */
+		std::map<uint160, uint256> mapColor;
+
+		/* the pending tail end block on a color chain. */
+		std::map<uint160, uint256> mapColorPool;
+
 		std::string strWalletFile;
 
+#if 0
 		std::set<int64> setKeyPool;
-
+#endif
 
 		typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
 		MasterKeyMap mapMasterKeys;
@@ -158,7 +167,6 @@ class CWallet : public CCryptoKeyStore
 		{
 			nWalletVersion = FEATURE_BASE;
 			nWalletMaxVersion = FEATURE_BASE;
-			fFileBacked = false;
 			nMasterKeyMaxID = 0;
 			pwalletdbEncryption = NULL;
 			ifaceIndex = index;
@@ -170,7 +178,6 @@ class CWallet : public CCryptoKeyStore
 			nWalletVersion = FEATURE_BASE;
 			nWalletMaxVersion = FEATURE_BASE;
 			strWalletFile = strWalletFileIn;
-			fFileBacked = true;
 			nMasterKeyMaxID = 0;
 			pwalletdbEncryption = NULL;
 			ifaceIndex = index;
@@ -218,9 +225,11 @@ class CWallet : public CCryptoKeyStore
 		bool AddCScript(const CScript& redeemScript);
 		bool LoadCScript(const CScript& redeemScript) { return CCryptoKeyStore::AddCScript(redeemScript); }
 
+#if 0
 		bool Unlock(const SecureString& strWalletPassphrase);
 		bool ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase, const SecureString& strNewWalletPassphrase);
 		bool EncryptWallet(const SecureString& strWalletPassphrase);
+#endif
 
 		void MarkDirty();
 		bool AddToWallet(const CWalletTx& wtxIn);
@@ -232,22 +241,13 @@ class CWallet : public CCryptoKeyStore
 		int64 GetBalance() const;
 		int64 GetUnconfirmedBalance() const;
 		int64 GetImmatureBalance() const;
+#if 0
 		std::string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
-		std::string SendMoneyToDestination(const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
+#endif
+		std::string SendMoneyToDestination(string strAccount, const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
 
 		string SendMoney(string strFromAccount, CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee = false);
 		string SendMoney(string stringFromAccount, const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
-
-
-		bool NewKeyPool();
-		bool TopUpKeyPool();
-		int64 AddReserveKey(const CKeyPool& keypool);
-		void ReserveKeyFromKeyPool(int64& nIndex, CKeyPool& keypool);
-		void KeepKey(int64 nIndex);
-		void ReturnKey(int64 nIndex);
-		bool GetKeyFromPool(CPubKey &key, bool fAllowReuse=true);
-		int64 GetOldestKeyPoolTime();
-		void GetAllReserveKeys(std::set<CKeyID>& setAddress);
 
 		bool IsMine(const CTxIn& txin) const;
 		int64 GetDebit(const CTxIn& txin) const;
@@ -341,10 +341,12 @@ class CWallet : public CCryptoKeyStore
 			}
 		}
 
+#if 0
 		int GetKeyPoolSize()
 		{
 			return setKeyPool.size();
 		}
+#endif
 
 		bool AllowFree(double dPriority)
 		{
@@ -383,8 +385,11 @@ class CWallet : public CCryptoKeyStore
 		virtual int64 GetTxFee(CTransaction tx) = 0;
 		virtual int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false) = 0;
 		virtual void ReacceptWalletTransactions() = 0;
+
+#if 0
 		virtual bool CreateTransaction(const std::vector<std::pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet) = 0;
 		virtual bool CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet) = 0;
+#endif
 
 		virtual bool CreateAccountTransaction(string strFromAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, string& strError, int64& nFeeRet) = 0;
 		virtual bool CreateAccountTransaction(string strFromAccount, CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, string& strError, int64& nFeeRet) = 0;
@@ -418,8 +423,15 @@ class CWallet : public CCryptoKeyStore
 		 */
 		boost::signals2::signal<void (CWallet *wallet, const uint256 &hashTx, ChangeType status)> NotifyTransactionChanged;
 #endif
+
+		bool ReadTx(uint256 hash, CWalletTx& wtx);
+
+		bool WriteTx(uint256 hash, const CWalletTx& wtx);
+
+		bool EraseTx(uint256 hash);
 };
 
+#if 0
 /** A key allocated from the key pool. */
 class CReserveKey
 {
@@ -444,6 +456,7 @@ class CReserveKey
 		CPubKey GetReservedKey();
 		void KeepKey();
 };
+#endif
 
 
 /** A transaction with a bunch of additional info that only the owner cares about. 
@@ -461,6 +474,7 @@ class CWalletTx : public CMerkleTx
 		unsigned int fTimeReceivedIsTxTime;
 		unsigned int nTimeReceived;  // time received by this node
 		char fFromMe;
+		char fCommit; /* committed to a block */
 		std::string strFromAccount;
 		std::vector<char> vfSpent; // which outputs are already spent
 
@@ -492,6 +506,14 @@ class CWalletTx : public CMerkleTx
 		CWalletTx(CWallet *pwalletIn, const CTransaction& txIn) : CMerkleTx(txIn)
 	{
 		Init(pwalletIn);
+	}
+
+		CWalletTx(CWallet *pwalletIn, const CTransaction& txIn, mapval_t mapValue) : CMerkleTx(txIn)
+	{
+		Init(pwalletIn);
+
+		mapValue = mapValue;
+		strFromAccount = mapValue["fromaccount"];
 	}
 
 		void Init(CWallet *pwalletIn)
@@ -594,6 +616,16 @@ class CWalletTx : public CMerkleTx
 			 {
 				 pwallet = pwalletIn;
 				 MarkDirty();
+			 }
+
+			 void SetColor(uint160 hColor)
+			 {
+				 strFromAccount = hColor.GetHex();
+			 }
+
+			 uint160 GetColor()
+			 {
+				 return (uint160(strFromAccount));
 			 }
 
 			 void MarkSpent(unsigned int nOut)
@@ -739,16 +771,12 @@ class CWalletTx : public CMerkleTx
 			 bool WriteToDisk();
 
 			 int64 GetTxTime() const;
+
 			 int GetRequestCount() const;
 
 			 void AddSupportingTransactions();
 
-#ifdef USE_LEVELDB_COINDB
-			 bool AcceptWalletTransaction(CTxDB& txdb, bool fCheckInputs=true);
-			 //    void RelayWalletTransaction(CTxDB& txdb);
-#else
 			 bool AcceptWalletTransaction();
-#endif
 
 };
 
@@ -909,13 +937,12 @@ CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount, bool bForceNew=f
 /** 
  * Send coins with the inclusion of a specific input transaction.
  */
-bool SendMoneyWithExtTx(CIface *iface, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee = 0);
-
+bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee = 0);
 bool GetCoinAddr(CWallet *wallet, CCoinAddr& addrAccount, string& strAccount);
 
 bool GetCoinAddr(CWallet *wallet, string strAddress, CCoinAddr& addrAccount);
 
-bool CreateTransactionWithInputTx(CIface *iface, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxIn, int nTxOut, CWalletTx& wtxNew, CReserveKey& reservekey, int64 nTxFee = 0);
+bool CreateTransactionWithInputTx(CIface *iface, string strAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxIn, int nTxOut, CWalletTx& wtxNew, int64 nTxFee = 0);
 
 bool VerifyMatrixTx(CTransaction& tx, int& mode);
 
@@ -952,6 +979,11 @@ bool SelectCoins_Avg(int64 nTargetValue, vector<COutput>& vCoins, set<pair<const
 
 /** Add wallet transactions into mempool which have not been included onto a block. */
 void core_ReacceptWalletTransactions(CWallet *wallet);
+
+bool CreateTransactionWithInputTx(CIface *iface, string strAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxIn, int nTxOut, CWalletTx& wtxNew, int64 nTxFee);
+
+bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee);
+
 
 #endif
 

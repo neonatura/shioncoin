@@ -30,7 +30,7 @@
 #include "coin_proto.h"
 #include "rpc/rpc_proto.h"
 
-#define DEFAULT_WORK_DIFFICULTY 1024
+#define DEFAULT_WORK_DIFFICULTY 20480
 
 #define WORK_ROUND_OFFSET 400000 
 
@@ -601,6 +601,7 @@ int stratum_default_iface(void)
   ifaceIndex = 0;
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
 		if (idx == TESTNET_COIN_IFACE) continue;
+		if (idx == COLOR_COIN_IFACE) continue;
     iface = GetCoinByIndex(idx);
     if (!iface || !iface->enabled) continue;
 
@@ -986,12 +987,14 @@ int stratum_request_message(user_t *user, shjson_t *json)
         udata2 = shjson_array_add(udata, NULL);
         for (i = 1; i < MAX_COIN_IFACE; i++) {
 					if (i == TESTNET_COIN_IFACE) continue;
+					if (i == COLOR_COIN_IFACE) continue;
           shjson_num_add(udata2, NULL, stratum_addr_crc(i, t_user->worker));
         }
 
         udata2 = shjson_array_add(udata, NULL);
         for (i = 1; i < MAX_COIN_IFACE; i++) {
 					if (i == TESTNET_COIN_IFACE) continue;
+					if (i == COLOR_COIN_IFACE) continue;
           shjson_num_add(udata2, NULL, stratum_ext_addr_crc(i, t_user->worker));
         }
       }
@@ -1224,7 +1227,7 @@ int stratum_request_message(user_t *user, shjson_t *json)
 
   /* unknown request in proper JSON format. */
   reply = shjson_init(NULL);
-  set_stratum_error(reply, -5, "invalid command");
+  set_stratum_error(reply, ERR_NOMETHOD, "invalid command");
   shjson_null_add(reply, "result");
   err = stratum_send_message(user, reply);
   shjson_free(&reply);

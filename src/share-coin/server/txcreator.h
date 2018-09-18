@@ -66,8 +66,7 @@ class CTxCreator : public CWalletTx
 
     CTxCreator(CWallet* wallet, const CTransaction& txIn) : CWalletTx(wallet, txIn)
     {
-      CWalletTx::Init(wallet);
-
+      Init(wallet);
 
       vector<CTxOut> outs = txIn.vout;
       vector<CTxIn> ins = txIn.vin;
@@ -101,7 +100,6 @@ class CTxCreator : public CWalletTx
       nDepth = 0;
       strError = "";
       setInput.clear();
-
     }
 
     void SetAccount(string strAccountIn);
@@ -112,6 +110,10 @@ class CTxCreator : public CWalletTx
 
     bool HaveInput(CWalletTx *tx, unsigned int n);
 
+    bool HaveInput(const CTxDestination& pubKey);
+
+    bool HaveInput(const CPubKey& pubKey);
+
     bool AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxFee = 0);
 
     bool AddOutput(const CPubKey& pubkey, int64 nValue, bool fInsert = false);
@@ -119,6 +121,10 @@ class CTxCreator : public CWalletTx
     bool AddOutput(const CTxDestination& address, int64 nValue, bool fInsert = false);
 
     bool AddOutput(CScript scriptPubKey, int64 nValue, bool fInsert = false);
+
+    bool HaveOutput(const CTxDestination& pubKey);
+
+    bool HaveOutput(const CPubKey& pubKey);
 
     bool SetChange(const CPubKey& addr);
 

@@ -159,9 +159,6 @@ bool CCryptoKeyStore::AddKey(const CKey& key)
         if (!IsCrypted())
             return CBasicKeyStore::AddKey(key);
 
-        if (IsLocked())
-            return false;
-
         std::vector<unsigned char> vchCryptedSecret;
         CPubKey vchPubKey = key.GetPubKey();
         bool fCompressed;
@@ -180,9 +177,6 @@ bool CCryptoKeyStore::AddKey(const HDPrivKey& key)
     LOCK(cs_KeyStore);
     if (!IsCrypted())
       return CBasicKeyStore::AddKey(key);
-
-    if (IsLocked())
-      return false;
 
     std::vector<unsigned char> vchCryptedSecret;
     CPubKey vchPubKey = key.GetPubKey();

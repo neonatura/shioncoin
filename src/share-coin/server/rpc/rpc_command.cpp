@@ -103,6 +103,20 @@ class JSONRequest
 Object JSONRPCError(int code, const string& message)
 {
     Object error;
+		if (code == ERR_ACCESS) {
+			code = -23; /* Bad signature */
+		} else if (code == ERR_NOKEY) {
+			code = -22; /* Signature unavailable. */
+		} else if (code == ERR_KEYREJECTED ||
+				code == ERR_KEYREVOKED || code == ERR_KEYEXPIRED) {
+			code = -21; /* Signature unavailable */
+		} else if (code == ERR_FEE) {
+			code = -10; /* Fee required */
+		} else if (code == ERR_NOMETHOD) { 
+			code = -3; /* Method not found. */ 
+		} else if (code == ERR_OPNOTSUPP) {
+			code = -2; /* Service not found. */
+		}
     error.push_back(Pair("code", code));
     error.push_back(Pair("message", message));
     return error;
@@ -604,6 +618,7 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("blockorphan",  (int)iface->stat.tot_block_orphan));
   obj.push_back(Pair("txsubmit",  (int)iface->stat.tot_tx_submit));
   obj.push_back(Pair("txaccept",  (int)iface->stat.tot_tx_accept));
+  obj.push_back(Pair("burnt-coins",  (double)iface->stat.tot_tx_return/COIN));
 
   {
     bc = GetBlockChain(iface);
@@ -968,7 +983,6 @@ Value rpc_block_work(CIface *iface, const Array& params, bool fStratum)
   typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
   static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
   static vector<CBlock*> vNewBlock;
-  static CReserveKey reservekey(pwalletMain);
 
   if (params.size() == 0)
   {
@@ -1054,7 +1068,7 @@ Value rpc_block_work(CIface *iface, const Array& params, bool fStratum)
     pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
-    return CheckWork(pblock, *pwalletMain, reservekey);
+    return CheckWork(pblock, *pwalletMain);
   }
 }
 
@@ -1079,7 +1093,6 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
   typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
   static mapNewBlock_t mapNewBlock;
   static vector<CBlock*> vNewBlock;
-  static CReserveKey reservekey(pwalletMain);
 
   if (params.size() == 0)
   {
@@ -1189,7 +1202,7 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
 
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
-    return CheckWork(pblock, *pwalletMain, reservekey);
+    return CheckWork(pblock, *pwalletMain);
   }
 }
 
@@ -1522,8 +1535,6 @@ Value rpc_wallet_prune(CIface *iface, const Array& params, bool fStratum)
 
 bool BackupWallet(const CWallet& wallet, const string& strDest)
 {
-  if (!wallet.fFileBacked)
-    return false;
   while (!fShutdown)
   {
     {
@@ -1662,8 +1673,10 @@ Value rpc_wallet_info(CIface *iface, const Array& params, bool fStratum)
 
   obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
 
+#if 0
   obj.push_back(Pair("keypoololdest", (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
   obj.push_back(Pair("keypoolsize",   pwalletMain->GetKeyPoolSize()));
+#endif
 
 //  obj.push_back(Pair("txcachecount",   (int)pwalletMain->mapWallet.size()));
 //  obj.push_back(Pair("errors",        GetWarnings(ifaceIndex, "statusbar")));
@@ -3177,9 +3190,9 @@ Value rpc_wallet_multisend(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(-6, "Account has insufficient funds");
 
   // Send
-  CReserveKey keyChange(pwalletMain);
   int64 nFeeRequired = 0;
-  bool fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired);
+	string strError;
+  bool fCreated = pwalletMain->CreateAccountTransaction(strAccount, vecSend, wtx, strError, nFeeRequired);
   if (!fCreated)
   {
     if (totalAmount + nFeeRequired > pwalletMain->GetBalance())
@@ -4056,9 +4069,9 @@ Value rpc_block_mine(CIface *iface, const Array& params, bool fStratum)
   if (fHelp || params.size() > 1)
     throw runtime_error(
         "block.mine <iterations>\n"
-        "Mine a block on the block-chain. (default: 1024).\n");
+        "Mine a block on the block-chain. (default: 10240).\n");
 
-	uint64_t nIncr = 1024;
+	uint64_t nIncr = 10240;
 	if (params.size() > 0) {
 		nIncr = (uint64_t)params[0].get_int();
 	}
@@ -4335,7 +4348,7 @@ const RPCOp BLOCK_VERIFY = {
 };
 const RPCOp BLOCK_MINE = {
   &rpc_block_mine, 0, {RPC_INT64},
-  "Default: 1024 intervals\n"
+  "Default: 10240 intervals\n"
   "Mine a block on the block-chain with an ongoing event.\n"
   "Note: Intended primary for use with the testnet network."
 };
@@ -4773,7 +4786,7 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "wallet.exportdat", WALLET_EXPORTDAT);
   RegisterRPCOp(ifaceIndex, "wallet.get", WALLET_GET);
 
-  RegisterRPCOp(ifaceIndex, "wallet.info", WALLET_INFO);
+//  RegisterRPCOp(ifaceIndex, "wallet.info", WALLET_INFO);
   RegisterRPCOp(ifaceIndex, "wallet.import", WALLET_IMPORT);
 
   RegisterRPCOp(ifaceIndex, "wallet.key", WALLET_KEY);

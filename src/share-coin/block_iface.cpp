@@ -1134,6 +1134,20 @@ int GetBlockDepthInMainChain(CIface *iface, uint256 blockHash)
   if (!pindex || !pindex->IsInMainChain(ifaceIndex))
     return (0);
 
+	int nDepth = 0;
+	CBlockIndex *pindexBest = NULL;
+	if (ifaceIndex == COLOR_COIN_IFACE) {
+		/* count manually as each color has it's own 'best block index'. */
+		pindexBest = pindex;
+
+		while (pindexBest && pindexBest->pnext) {
+			pindexBest = pindexBest->pnext;
+			nDepth++;
+		}
+
+		return (1 + nDepth);
+	}
+
   return 1 + GetBestHeight(ifaceIndex) - pindex->nHeight;
 }
 

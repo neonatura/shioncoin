@@ -199,8 +199,8 @@ bool CSign::SignContext(cbuff& vchContext, string hexSeed)
 bool CSign::VerifyContext(unsigned char *data, size_t data_len)
 {
   shkey_t *pub_key;
-  char sig_r[256];
-  char sig_s[256];
+  char sig_r[512];
+  char sig_s[512];
   char pub_key_hex[256];
   int err;
 
@@ -222,6 +222,8 @@ bool CSign::VerifyContext(unsigned char *data, size_t data_len)
   strncpy(pub_key_hex, stringFromVch(vPubKey).c_str(), sizeof(pub_key_hex)-1);
   pub_key = shecdsa_key(pub_key_hex);
 
+	memset(sig_r, 0, sizeof(sig_r));
+	memset(sig_s, 0, sizeof(sig_s));
   strncpy(sig_r, stringFromVch(vSig[0]).c_str(), sizeof(sig_r)-1);
   strncpy(sig_s, stringFromVch(vSig[1]).c_str(), sizeof(sig_s)-1);
   err = shecdsa_verify(pub_key, sig_r, sig_s, data, data_len);

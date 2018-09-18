@@ -132,8 +132,9 @@ Value rpc_exec_compile(CIface *iface, const Array& params, bool fStratum)
 	/* compile into SX output file */
 	strcpy(path_out, get_exec_path(iface, fname));
 	err = rpc_sexe_compile(path_out, pathbuf, path_dir, &exec_size);
-	//err = rpc_sexe_compile(path_out, path_fname, path_dir, &exec_size);
-fprintf(stderr, "DEBUG: %d = rpc_sexe_compile(%s, %s)\n", err, path_out, pathbuf);
+	if (err) {
+		throw JSONRPCError(err, "compile executable");
+	}
 
 	/* return info */
   Object obj;
@@ -287,7 +288,6 @@ Value rpc_exec_new(CIface *iface, const Array& params, bool fStratum)
 				(char *)params[1].get_str().c_str()));
 
 	err = init_exec_tx(iface, strAccount, strPath, wtx);
-fprintf(stderr, "DEBUG: rpc_exec_new: %d = init_exec_tx('%s')\n", err, strPath.c_str());
 	if (err)
 		throw JSONRPCError(err, "initialize executable");
 
@@ -450,7 +450,6 @@ Value rpc_exec_renew(CIface *iface, const Array& params, bool fStratum)
 
 	CWalletTx wtx;
 	err = update_exec_tx(iface, execIn.GetHash(), wtx);
-fprintf(stderr, "DEBUG: %d = update_exec_tx()\n", err);
 	if (err)
 		throw JSONRPCError(err, "initialize executable class");
 

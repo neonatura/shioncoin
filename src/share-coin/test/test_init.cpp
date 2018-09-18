@@ -31,7 +31,7 @@ void test_shcoind_init(void)
   testWallet = new TESTWallet();
   SetWallet(TEST_COIN_IFACE, testWallet);
   //RegisterWallet(testWallet);
-  RandAddSeedPerfmon();
+  //RandAddSeedPerfmon();
 
   iface->op_init(iface, NULL);
 
@@ -51,7 +51,7 @@ void test_shcoind_init(void)
   test_LoadWallet();
 
 
-  iface->nRuleChangeActivationThreshold = 5;
+  iface->nRuleChangeActivationThreshold = 4;
   iface->nMinerConfirmationWindow = 5;
 
 //CBlock *test_block = test_GenerateBlock(); /* DEBUG: */

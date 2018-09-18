@@ -127,10 +127,14 @@ bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txl
               vSpring.push_back(pindexNew);
           }
         } 
-      } else if (tx.isFlag(CTransaction::TXF_ALIAS)) {
+      } 
+
+			if (tx.isFlag(CTransaction::TXF_ALIAS)) {
         if (IsAliasTx(tx))
           vAlias.push_back(pindexNew);
-      } else if (tx.isFlag(CTransaction::TXF_ASSET)) {
+      } 
+
+			if (tx.isFlag(CTransaction::TXF_ASSET)) {
         /* not implemented. */
       } else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
         if (IsCertTx(tx))
@@ -155,6 +159,13 @@ bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txl
       if (tx.isFlag(CTransaction::TXF_EXEC)) {
         if (IsExecTx(tx, mode))
           vExec.push_back(pindexNew);
+			}
+
+			/* track highest block on alt-chain. */
+			if (tx.isFlag(CTransaction::TXF_ALTCHAIN)) {
+				if (IsAltChainTx(tx)) {
+					CommitAltChainTx(iface, tx, NULL, true);
+				}
 			}
     } /* FOREACH (tx) */
 

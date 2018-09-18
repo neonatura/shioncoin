@@ -177,19 +177,17 @@ bool CSignature::SignatureHash(CScript scriptCode, int sigver, uint256& hashRet)
     CTxOut out;
 
     if (!wallet->FillInputs(*tx, mapInputs)) {
-fprintf(stderr, "DEBUG: CSignature.SignatureHash: error filling inputs\n");
       return (false);
     }
 
     const CTxIn& in = tx->vin[nIn];
     if (!tx->GetOutputFor(in, mapInputs, out)) {
-fprintf(stderr, "DEBUG: CSignature.SignatureHash: error obtaining coin output\n");
       return (false);
 }
 
     hashRet = witness_v0_SignatureHash(scriptCode, *tx, nIn, nHashType, out.nValue);
     return (true);
-  }
+	}
 
   if (nIn >= tx->vin.size()) {
     return (error(SHERR_INVAL, "SignatureHash: nIn out of range"));
@@ -235,7 +233,6 @@ bool CSignature::CheckSig(cbuff vchSig, cbuff vchPubKey, CScript scriptCode, int
       return false;
 
     if (!key.Verify(sighash, vch)) {
-fprintf(stderr, "DEBUG: CheckSig: !key.Verify: scriptCode(\"%s\") sighash(\"%s\") vchSig(\"%s\") nHashType(%d) sigver(%d)\n", scriptCode.ToString().c_str(), sighash.GetHex().c_str(), HexStr(vchSig.begin(), vchSig.end()).c_str(), nHashType, sigver);
       return (error(SHERR_ACCESS, "CSignature.CheckSig: signature verification failure: \"%s\".", HexStr(vchSig.begin(), vchSig.end()).c_str()));
     }
   }
@@ -274,24 +271,6 @@ bool CSignature::SignSignature(const CScript& fromPubKey)
 
   stack.clear();
 
-#if 0
-  // Leave out the signature from the hash, since a signature can't sign itself.
-  // The checksig op will also drop the signatures from its hash.
-  uint256 hash;
-  if (!SignatureHash(script, SIGVERSION_BASE, hash)) {
-fprintf(stderr, "DEBUG: SignSignature: SignatureHash error: fromPubKey(\"%s\")\n", fromPubKey.ToString().c_str());
-    return false;
-  }
-//fprintf(stderr, "DEBUG: CSignature.SignSignature: sighash \"%s\"\n", hash.GetHex().c_str());
-
-  txnouttype whichType;
-  if (!Solver(*wallet, script, hash, nHashType, txin.scriptSig, whichType)) {
-fprintf(stderr, "DEBUG: SignSignature: Solver error: fromPubKey(\"%s\")\n", fromPubKey.ToString().c_str());
-    return (error(SHERR_INVAL, "SignSignature: error solving coin address."));
-  }
-fprintf(stderr, "DEBUG: SignSignature: success: fromPubKey(\"%s\") whichType(%d) scriptSig(\"%s\")\n", fromPubKey.ToString().c_str(), whichType, txin.scriptSig.ToString().c_str()); 
-CScript scriptSigCopy(txin.scriptSig);
-#endif
 
   /* primary signature */
   txnouttype whichType;
@@ -305,16 +284,6 @@ CScript scriptSigCopy(txin.scriptSig);
     //script = subscript = txin.scriptSig;
     script = subscript = CScript(result[0].begin(), result[0].end());
 
-#if 0
-    // Recompute txn hash using subscript in place of scriptPubKey:
-    if (!SignatureHash(script, SIGVERSION_BASE, hash))
-      return false;
-
-cbuff vchHash(hash.begin(), hash.end());
-fprintf(stderr, "DEBUG: SIGN: TX_SCRIPTHASH: hash \"%s\" [u160 %s]\n", hash.GetHex().c_str(), Hash160(vchHash).GetHex().c_str());
-
-    fSolved = Solver(*wallet, script, hash, nHashType, txin.scriptSig, whichType) && whichType != TX_SCRIPTHASH;
-#endif
 
     fSolved = fSolved && SignAddress(script, result, whichType, SIGVERSION_BASE) && whichType != TX_SCRIPTHASH;
 
@@ -334,18 +303,6 @@ fprintf(stderr, "DEBUG: SIGN: TX_SCRIPTHASH: hash \"%s\" [u160 %s]\n", hash.GetH
 
     stack = result; /* signature */
 
-#if 0
-    if (stack.size() < 2) { 
-      CWallet *wallet = GetWallet(ifaceIndex); 
-      CPubKey tKeyPub;
-      CKeyID id;
-      memcpy(&id, &vchSig[0], 20);
-      wallet->GetPubKey(id, tKeyPub);
-      cbuff tKey = tKeyPub.Raw();
-      stack.push_back(tKey);
-fprintf(stderr, "DEBUG: SIgnSignature: appended witness pub-key \"%s\"\n", HexStr(tKey).c_str());
-    }
-#endif
 
     txin.scriptSig = CScript();
     result.clear();
@@ -372,7 +329,6 @@ fprintf(stderr, "DEBUG: SIgnSignature: appended witness pub-key \"%s\"\n", HexSt
   if (stack.size() != 0 || tx->wit.vtxinwit.size() > nIn) {
     tx->wit.vtxinwit.resize(tx->vin.size());
     tx->wit.vtxinwit[nIn].scriptWitness.stack = stack;
-//fprintf(stderr, "DEBUG: SignSignature: [nIn %d] stack-size %d: %s\n", nIn, stack.size(), tx->ToString(ifaceIndex).c_str()); 
   }
   if (!fSolved) {
     return (error(SHERR_INVAL, "SignSignature: error generating signature."));
@@ -385,7 +341,7 @@ fprintf(stderr, "DEBUG: SIgnSignature: appended witness pub-key \"%s\"\n", HexSt
         true, (stack.size() == 0) ? 0 : SCRIPT_VERIFY_WITNESS);
   }
   if (!ret) {
-    return (error(SHERR_INVAL, "SignSignature: error verifying integrity."));
+    return (error(SHERR_INVAL, "SignSignature: error verifying integrity of tx input '%s' (segwit: %s) (output: #%d.", txin.prevout.hash.GetHex().c_str(), ((stack.size() == 0) ? "false" : "true"), txin.prevout.n));
   }
 
   return (true);
@@ -411,7 +367,7 @@ bool CSignature::SignSignature(const CTransaction& txFrom)
 
   const CTxOut& txout = txFrom.vout[txin.prevout.n];
   if (!SignSignature(txout.scriptPubKey)) {
-    return (error(SHERR_INVAL, "CSignature.SignSignature: error signing script address: \"%s\".", txout.scriptPubKey.ToString().c_str()));
+    return (error(SHERR_INVAL, "CSignature.SignSignature: error signing script address \"%s\": tx hash %s.", txout.scriptPubKey.ToString().c_str(), txFrom.GetHash().GetHex().c_str()));
   }
 
   return (true);
@@ -430,7 +386,7 @@ bool CSignature::CreateSignature(cbuff& vchSig, const CKeyID& address, const CSc
   if (!(nHashType & SIGHASH_HDKEY)) {
     CKey key;
     if (!keystore.GetKey(address, key))
-      return (error(SHERR_ACCESS, "CreateSignature: error obtaining private key."));
+      return (error(SHERR_ACCESS, "CreateSignature: error obtaining private key for CKeyID \"%s\".", address.GetHex().c_str()));
     // Signing with uncompressed keys is disabled in witness scripts
     if (sigversion == SIGVERSION_WITNESS_V0 && !key.IsCompressed()) {
       return (error(SHERR_INVAL, "CreateSignature: generating witness program signature unsupportd for non-compressed key: script \"%s\" [sigver %d].", scriptCode.ToString().c_str(), sigversion));

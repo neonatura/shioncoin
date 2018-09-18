@@ -429,7 +429,7 @@ Value rpc_wallet_stamp(CIface *iface, const Array& params, bool fStratum)
 
   nBalance = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (nBalance < nValue)
-    throw JSONRPCError(SHERR_AGAIN, "Insufficient funds available for account specified.");
+    throw JSONRPCError(ERR_FEE, "Insufficient funds available for account specified.");
 
   CWalletTx wtx;
   err = init_ident_stamp_tx(iface, strAccount, strComment, wtx);

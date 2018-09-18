@@ -54,6 +54,8 @@ class TESTNET_CTxMemPool : public CPool
     int64 CalculateSoftFee(CTransaction& tx);
     int64 IsFreeRelay(CTransaction& tx, tx_cache& mapInputs);
 
+		double CalculateFeePriority(CPoolTx *ptx);
+
     TESTNET_CTxMemPool() : CPool(TESTNET_COIN_IFACE) { };
 };
 

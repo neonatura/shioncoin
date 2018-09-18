@@ -650,6 +650,7 @@ int stratum_sync_userlist_resp(user_t *user, shjson_t *tree)
     if (udata) {
       for (j = 1; j < MAX_COIN_IFACE; j++) {
 				if (j == TESTNET_COIN_IFACE) continue;
+				if (j == COLOR_COIN_IFACE) continue;
         CIface *iface = GetCoinByIndex(j);
         if (!iface || !iface->enabled) continue;
 
@@ -675,6 +676,7 @@ int stratum_sync_userlist_resp(user_t *user, shjson_t *tree)
     if (udata) {
       for (j = 1; j < MAX_COIN_IFACE; j++) {
 				if (j == TESTNET_COIN_IFACE) continue;
+				if (j == COLOR_COIN_IFACE) continue;
         CIface *iface = GetCoinByIndex(j);
         if (!iface || !iface->enabled) continue;
 

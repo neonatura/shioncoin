@@ -756,8 +756,11 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
     /// we have a chance to check the order here
 
     // Keep giving the same key to the same ip until they use it
-    if (!mapReuseKey.count(pfrom->addr))
-      pwalletMain->GetKeyFromPool(mapReuseKey[pfrom->addr], true);
+    if (!mapReuseKey.count(pfrom->addr)) {
+    //  pwalletMain->GetKeyFromPool(mapReuseKey[pfrom->addr], true);
+			string strAccount("");
+			mapReuseKey[pfrom->addr] = GetAccountPubKey(pwalletMain, strAccount, true);
+		}
 
     // Send back approval of order and pubkey to use
     CScript scriptPubKey;

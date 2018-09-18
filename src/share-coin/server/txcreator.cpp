@@ -85,6 +85,32 @@ bool CTxCreator::HaveInput(CWalletTx *tx, unsigned int n)
   return (bFound);
 }
 
+bool CTxCreator::HaveInput(const CTxDestination& input)
+{
+	bool bFound = false;
+
+	BOOST_FOREACH(const PAIRTYPE(CWalletTx *,unsigned int)& coin, setInput) {
+		const CWalletTx *wtx = coin.first;
+		unsigned int wtx_n = coin.second;
+		const CTxOut& txout = wtx->vout[wtx_n];
+
+		CTxDestination address;
+		if (!ExtractDestination(txout.scriptPubKey, address))
+			continue;
+
+		if (input == address) {
+			bFound = true;
+			break;
+		}
+	}
+
+	return (bFound);
+}
+
+bool CTxCreator::HaveInput(const CPubKey& pubKey)
+{
+	return (HaveInput(pubKey.GetID()));
+}
 
 /**
  * @param scriptPubKey The destination script receiving the extended input reference.
@@ -181,6 +207,29 @@ bool CTxCreator::AddOutput(CScript scriptPubKey, int64 nValue, bool fInsert)
   return (true);
 }
 
+bool CTxCreator::HaveOutput(const CTxDestination& input)
+{
+	bool bFound = false;
+
+	BOOST_FOREACH(const CTxOut& txout, vout) {
+		CTxDestination address;
+		if (!ExtractDestination(txout.scriptPubKey, address))
+			continue;
+
+		if (input == address) {
+			bFound = true;
+			break;
+		}
+	}
+
+	return (bFound);
+}
+
+bool CTxCreator::HaveOutput(const CPubKey& pubKey)
+{
+	return (HaveOutput(pubKey.GetID()));
+}
+
 bool CTxCreator::SetChange(const CPubKey& scriptPubKey)
 {
   changePubKey = scriptPubKey;
@@ -214,6 +263,7 @@ int64 CTxCreator::CalculateFee()
   /* core */
   nFee = pwallet->CalculateFee(*this, nMinFee);
 
+#if 0
   /* rolling */
   CBlockPolicyEstimator *fee = GetFeeEstimator(iface);
   if (fee) {
@@ -227,13 +277,22 @@ int64 CTxCreator::CalculateFee()
         nSoftFee < MAX_TX_FEE(iface))
       nFee = MAX(nFee, nSoftFee);
   }
+#endif
 
   return (nFee);
 }
 
 void CTxCreator::CreateChangeAddr()
 {
-  changePubKey = pwallet->GenerateNewKey();
+
+	if (!fAccount) {
+		string strAccount("");
+		changePubKey = GetAccountPubKey(pwallet, strAccount, true);
+//		changePubKey = pwallet->GenerateNewKey();
+	} else {
+		changePubKey = GetAccountPubKey(pwallet, strFromAccount, true);
+	}
+
 }
 
 bool CTxCreator::Generate()
@@ -250,23 +309,13 @@ bool CTxCreator::Generate()
     return (false);
   }
 
-  nLockTime = 0; /* default -- not set */
-  if (pwallet->ifaceIndex != USDE_COIN_IFACE) {
-    /* mitigate sniping */
-    int r_idx = shrand() % 60;
-    if (0 == (r_idx % 10)) {
-      nLockTime = GetBestHeight(iface) - 2 - r_idx;
-    }
-  }
-/* DEBUG: TODO CTxCreator.SetLockHeight() ... */
-
   /* establish "coin change" destination address */
   int ext_idx = IndexOfExtOutput(*this);
   if (fAccount && (ext_idx == -1) && !changePubKey.IsValid()) {
     CPubKey changePubKey;
 
     ok = pwallet->GetMergedPubKey(strFromAccount, "change", changePubKey);
-    if (ok) {
+    if (ok && !HaveInput(changePubKey) && !HaveOutput(changePubKey)) {
       SetChange(changePubKey);
     }
   }
@@ -300,7 +349,6 @@ bool CTxCreator::Generate()
     setCoinsCopy.clear();
 
     if (nDebit + nFee > nTotCredit) { /* add inputs to use */
-      /* DEBUG: todo: SetSelectMode(SELECT_AVG, SELECT_MINCONF).. */
       ok = SelectCoins_Avg((nDebit + nFee), vCoins, setCoins, nValueIn);
       if (!ok) {
         strError = "Insufficient input coins to fund transaction.";
@@ -380,7 +428,7 @@ bool CTxCreator::Generate()
     }
 
     int64 nChange = (nTotCredit - nDebit - nFee);
-    if (nChange >= CENT) {
+    if (nChange >= MIN_INPUT_VALUE(iface)) {
       CScript script;
 
       script.SetDestination(changePubKey.GetID());
@@ -534,11 +582,22 @@ size_t CTxCreator::GetSerializedSize()
 bool CTxCreator::AddInput(uint256 hashTx, unsigned int n)
 {
   
-
-  if (pwallet->mapWallet.count(hashTx) == 0)
-    return (false); /* is not in wallet. */
+  if (pwallet->mapWallet.count(hashTx) == 0) {
+		return (error(ERR_REMOTE, "CTxCreator.AddInput: input specified is not available in wallet (%s) #%u.", hashTx.GetHex().c_str(), n));
+	}
 
   CWalletTx& wtx = pwallet->mapWallet[hashTx];
+	if (wtx.IsSpent(n)) {
+//		error(ERR_INVAL, "DEBUG: warning: CTxCreator.AddInput: error adding already spent input (%s) #%u.", hashTx.GetHex().c_str(), n);
+	}
+	vector<uint256> vOuts;
+	if (!wtx.ReadCoins(pwallet->ifaceIndex, vOuts))
+		return (error(ERR_INVAL, "CTxCreator: error loading coin inputs."));
+	if (vOuts.size() <= n)
+		return (error(ERR_INVAL, "CTxCreator: coin input size mismatch."));
+	if (vOuts[n] != 0)
+		return (error(ERR_INVAL, "CTxCreator: input is already spent (%s).", vOuts[n].GetHex().c_str()));
+
   return (AddInput(&wtx, n));
 }
 
@@ -713,7 +772,6 @@ bool CTxBatchCreator::Send()
 
   if (fAccount) {
     pwallet->SetAddressBookName(changePubKey.GetID(), strFromAccount);
-/* DEBUG: TODO: save wallet to disk if updated */
   }
 
   vector<CWalletTx> vCommitList;

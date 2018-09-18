@@ -62,6 +62,8 @@ class SHC_CTxMemPool : public CPool
     int64 CalculateSoftFee(CTransaction& tx);
     int64 IsFreeRelay(CTransaction& tx, tx_cache& mapInputs);
 
+		double CalculateFeePriority(CPoolTx *ptx);
+
     SHC_CTxMemPool() : CPool(SHC_COIN_IFACE) { };
 };
 

@@ -309,7 +309,7 @@ class CExecCall : public CExec
 
     void Init(const CExecCall& execIn)
     {
-			CExecCore::Init((const CExecCore& )execIn);
+			CExec::Init((const CExec& )execIn);
     }
 
     friend bool operator==(const CExecCall &a, const CExecCall &b)

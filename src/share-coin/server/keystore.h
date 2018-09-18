@@ -173,6 +173,7 @@ public:
         return fUseCrypto;
     }
 
+#if 0
     bool IsLocked() const
     {
         if (!IsCrypted())
@@ -184,6 +185,7 @@ public:
         }
         return result;
     }
+#endif
 
     bool Lock();
 

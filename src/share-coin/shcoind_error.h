@@ -39,6 +39,8 @@
 #define ERR_ENCODE     CUSTOM_ERROR(2)
 #define ERR_FEE        CUSTOM_ERROR(3)
 #define ERR_COMMIT     CUSTOM_ERROR(4)
+#define ERR_NOCLASS    CUSTOM_ERROR(5)
+#define ERR_NOMETHOD   CUSTOM_ERROR(6)
 
 /* redundant (convienence) */
 #define ERR_STALE ERR_EXPIRE

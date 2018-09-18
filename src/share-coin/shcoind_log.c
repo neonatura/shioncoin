@@ -46,6 +46,12 @@ void f_shcoind_log(int err_code, const char *tag, const char *text, const char *
     shbuf_catstr(buff, (char *)tag);
     shbuf_catstr(buff, ": ");
   }
+	if (err_code && err_code != SHERR_INFO) {
+		char *err_str = error_str(err_code);
+		//shbuf_catstr(buff, "error: ");
+		shbuf_catstr(buff, err_str);
+		shbuf_catstr(buff, ": ");
+	}
   if (text) {
     len = strlen(text);
     if (*text && text[strlen(text)-1] == '\n')
@@ -64,7 +70,8 @@ void f_shcoind_log(int err_code, const char *tag, const char *text, const char *
   }
 
   if (err_code && err_code != SHERR_INFO) {
-    shlog(SHLOG_ERROR, err_code, shbuf_data(buff));
+    shlog(SHLOG_ERROR, 0, shbuf_data(buff));
+    //shlog(SHLOG_ERROR, err_code, shbuf_data(buff));
   } else {
     shlog(SHLOG_INFO, 0, shbuf_data(buff));
   }

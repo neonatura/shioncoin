@@ -36,6 +36,11 @@
 
 using namespace std;
 
+static const uint256 _blank_hash = 0;
+
+extern unsigned int color_GetTotalBlocks();
+
+
 /**
  * Write specific amount of available coins per transaction output.
  */
@@ -71,10 +76,8 @@ bool WriteTxCoins(uint256 hash, int ifaceIndex, const vector<uint256>& vOuts)
   }
 
   if (!data) {
-    uint256 blank_hash = 0;
-
     for (idx = 0; idx < vOuts.size(); idx++) {
-      if (blank_hash != vOuts[idx])
+      if (_blank_hash != vOuts[idx])
         break;
     }
     if (idx == vOuts.size()) {
@@ -166,9 +169,7 @@ bool CTransaction::WriteCoins(int ifaceIndex, int nOut, const uint256& hashTxOut
   }
 
   if (!data) {
-    uint256 blank_hash = 0;
-
-    if(hashTxOut == blank_hash)
+    if(hashTxOut == _blank_hash)
       return (true); /* nothing changed */
 
     /* fresh */
@@ -247,13 +248,12 @@ bool CTransaction::ReadCoins(int ifaceIndex, vector<uint256>& vOuts)
   vOuts.clear();
   vOuts.resize(vout.size());
 
-  uint256 blank_hash = 0;
   for (idx = 0; idx < vout.size(); idx++) {
     if (data) {
       cbuff raw(data + (32 * idx), data + ((32 * idx) + 32));
       vOuts[idx] = uint256(raw);
     } else {
-      vOuts[idx] = blank_hash;
+      vOuts[idx] = _blank_hash;
     }
   }
   if (data)
@@ -369,7 +369,7 @@ bool core_VerifyCoinInputs(int ifaceIndex, CTransaction& tx, unsigned int nIn, C
 
 //int core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex* pindexBlock, tx_map& mapOutput, map<uint256, CTransaction> mapTx, int& nSigOps, int64& nFees, bool fVerifySig = true, bool fVerifyInputs = false);
 
-static bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex* pindexBlock, tx_map& mapOutput, map<uint256, CTransaction>& mapTx, int& nSigOps, int64& nFees, bool fVerifySig, bool fVerifyInputs, bool fRequireInputs, CBlock *pBlock)
+bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex* pindexBlock, tx_map& mapOutput, map<uint256, CTransaction>& mapTx, int& nSigOps, int64& nFees, bool fVerifySig, bool fVerifyInputs, bool fRequireInputs, CBlock *pBlock)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   const bool fStrictPayToScriptHash=true;
@@ -575,9 +575,16 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 
   if (pindex->pprev)
   {
-    pindex->nHeight = pindex->pprev->nHeight + 1;
     timing_init("ConnectBlock/WriteBlock", &ts);
-    bool ok = block->WriteBlock(pindex->nHeight);
+		bool ok = false;
+		if (block->ifaceIndex == COLOR_COIN_IFACE) {
+			/* multiple chains require manual lookup. */
+			uint64_t nCommitHeight = (uint64_t)color_GetTotalBlocks();
+			ok = block->WriteBlock(nCommitHeight);
+		} else {
+			pindex->nHeight = pindex->pprev->nHeight + 1;
+			ok = block->WriteBlock(pindex->nHeight);
+		}
     timing_term(block->ifaceIndex, "ConnectBlock/WriteBlock", &ts);
     if (!ok) {
       return (error(SHERR_INVAL, "(%s) ConnectBlock: error writing block hash '%s' to height %d\n", iface->name, pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight));
@@ -613,7 +620,6 @@ bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(iface);
   uint256 hash = tx->GetHash();
-  uint256 blank_hash;
 
   // Relinquish previous transactions' spent pointers
   if (!tx->IsCoinBase())
@@ -629,7 +635,7 @@ bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
         continue;
       }
 
-      prevtx.WriteCoins(ifaceIndex, prevout.n, blank_hash);
+      prevtx.WriteCoins(ifaceIndex, prevout.n, _blank_hash);
     }
   }
 

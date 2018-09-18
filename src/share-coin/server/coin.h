@@ -58,6 +58,8 @@ bool ParseMoney(const string& str, CAmount& nRet);
 
 bool ParseMoney(const char* pszIn, CAmount& nRet);
 
+bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex* pindexBlock, tx_map& mapOutput, map<uint256, CTransaction>& mapTx, int& nSigOps, int64& nFees, bool fVerifySig, bool fVerifyInputs, bool fRequireInputs, CBlock *pBlock);
+
 
 #endif /* ndef __SERVER_COIN_H__ */
 

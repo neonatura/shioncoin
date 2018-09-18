@@ -44,6 +44,7 @@ CBigNum TESTNETBlock::bnBestInvalidWork;
 
 
 extern void shc_RegisterRPCOp(int ifaceIndex);
+extern void color_RegisterRPCOp(int ifaceIndex);
 
 
 static int testnet_init(CIface *iface, void *_unused_)
@@ -65,11 +66,15 @@ static int testnet_init(CIface *iface, void *_unused_)
 
 	/* BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
-	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1538352000; /* 10/01/18 */
-	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1546300800; /* 01/01/19 */ 
+	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1546300800; /* 01/01/19 */
+	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1551398400; /* 03/01/19 */
+
 
 
   shc_RegisterRPCOp(TESTNET_COIN_IFACE);
+
+	/* alternate block-chain rpc operations. */
+  color_RegisterRPCOp(TESTNET_COIN_IFACE);
 
   testnetWallet = new TESTNETWallet();
   SetWallet(TESTNET_COIN_IFACE, testnetWallet);
@@ -182,9 +187,12 @@ static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
     ret_key = GetAccountPubKey(wallet, strAccount);
     if (!ret_key.IsValid()) {
       error(SHERR_INVAL, "(testnet) GetMainAccountPubKey: error obtaining main account pubkey.");
+#if 0
       CReserveKey reservekey(wallet);
       ret_key = reservekey.GetReservedKey();
       reservekey.KeepKey();
+#endif
+			ret_key = wallet->GenerateNewKey();
     } else {
       CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
       Debug("(testnet) GetMainAccountPubKey: using '%s' for mining address.",

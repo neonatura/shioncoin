@@ -28,6 +28,7 @@
 #include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
+#include "txcreator.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -96,16 +97,11 @@ bool test_LoadWallet(void)
 
   if (fFirstRun)
   {
-
-    // Create new keyUser and set as default key
-    RandAddSeedPerfmon();
-
-    CPubKey newDefaultKey;
-    if (!testWallet->GetKeyFromPool(newDefaultKey, false))
-      strErrors << _("Cannot initialize keypool") << "\n";
+		string strAccount("");
+		CPubKey newDefaultKey = GetAccountPubKey(testWallet, strAccount, true);
+		//CPubKey newDefaultKey = testWallet->GenerateNewKey(); 
     testWallet->SetDefaultKey(newDefaultKey);
-    if (!testWallet->SetAddressBookName(testWallet->vchDefaultKey.GetID(), ""))
-      strErrors << _("Cannot write default address") << "\n";
+//    testWallet->SetAddressBookName(testWallet->vchDefaultKey.GetID(), "");
   }
 
   //printf("%s", strErrors.str().c_str());
@@ -345,7 +341,7 @@ bool TESTWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = fFileBacked ? new CWalletDB(strWalletFile,"r") : NULL;
+      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
       // Add tx to wallet, because if it has change it's also ours,
       // otherwise just for transaction history.
@@ -362,8 +358,7 @@ bool TESTWallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-      if (fFileBacked)
-        delete pwalletdb;
+			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets
@@ -393,6 +388,7 @@ bool TESTWallet::CommitTransaction(CWalletTx& wtxNew)
   return true;
 }
 
+#if 0
 bool TESTWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
@@ -539,13 +535,14 @@ wtxNew.print(TEST_COIN_IFACE);
   }
   return true;
 }
-
 bool TESTWallet::CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
 {
     vector< pair<CScript, int64> > vecSend;
     vecSend.push_back(make_pair(scriptPubKey, nValue));
     return CreateTransaction(vecSend, wtxNew, reservekey, nFeeRet);
 }
+#endif
+
 
 void TESTWallet::AddSupportingTransactions(CWalletTx& wtx)
 {
@@ -600,6 +597,7 @@ int64 TESTWallet::GetBlockValue(int nHeight, int64 nFees)
   return (test_GetBlockValue(nHeight, nFees));
 }
 
+#if 0
 bool TESTWallet::CreateAccountTransaction(string strFromAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, string& strError, int64& nFeeRet)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
@@ -658,49 +656,38 @@ bool TESTWallet::CreateAccountTransaction(string strFromAccount, const vector<pa
           nFeeRet += nMoveToFee;
         }
 
-        if (nChange > 0)
-        {
+				if (nChange > 0) {
+					CKeyID keyID;
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					if (addr.GetKeyID(keyID)) {
+						CScript scriptChange;
+						scriptChange.SetDestination(keyID);
 
-          CPubKey vchPubKey;
-          if (nChange > CENT &&
-              wtxNew.strFromAccount.length() != 0 &&
-              GetMergedPubKey(wtxNew.strFromAccount, "change", vchPubKey)) {
-            /* Use a consistent change address based on primary address. */
-            //  reservekey.ReturnKey();
-          } else {
-            /* Revert to using a quasi-standard 'ghost' address. */
-            CReserveKey reservekey(this);
-            vchPubKey = reservekey.GetReservedKey();
-            reservekey.KeepKey();
-          }
-
-          CScript scriptChange;
-          scriptChange.SetDestination(vchPubKey.GetID());
-
-          // Insert change txn at random position:
-          vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
-          wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
-
-#if 0
-        } else {
-          reservekey.ReturnKey();
-#endif
+						// Insert change txn at random position:
+						vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
+						wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
+					}
         }
 
         // Fill vin
-        BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
+        BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins) {
           wtxNew.vin.push_back(CTxIn(coin.first->GetHash(),coin.second));
+				}
+
 
         unsigned int nIn = 0;
         BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins) {
+					const CWalletTx *wtx = coin.first;
           CSignature sig(TEST_COIN_IFACE, &wtxNew, nIn);
-          if (!sig.SignSignature(*coin.first)) {
-            return false;
+          if (!sig.SignSignature(*wtx)) {
+						const uint256& in_hash = wtx->GetHash();
+fprintf(stderr, "DEBUG: CreateAccountTransaction: INPUT VIN[%s]: %s\n", in_hash.GetHex().c_str(), wtxNew.vin[nIn].ToString().c_str());
+fprintf(stderr, "DEBUG: CreateAccountTransaction: INPUT: WTX: %s\n", ((CWalletTx *)wtx)->ToString(TEST_COIN_IFACE).c_str()); 
+						return (error(ERR_ACCESS, "CreateAccountTransaction: !sig.SignSignature[input #%d]: %s\n", (int)nIn, wtxNew.ToString(TEST_COIN_IFACE).c_str())); 
           }
 
           nIn++;
         }
-wtxNew.print(TEST_COIN_IFACE);
 #if 0
         // Sign
         int nIn = 0;
@@ -742,6 +729,43 @@ wtxNew.print(TEST_COIN_IFACE);
     }
   }
   return true;
+}
+#endif
+bool TESTWallet::CreateAccountTransaction(string strFromAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, string& strError, int64& nFeeRet)
+{
+
+	nFeeRet = 0;
+	strError = "invalid parameter";
+
+  if (vecSend.empty())
+		return (false);
+
+  BOOST_FOREACH (const PAIRTYPE(CScript, int64)& s, vecSend) {
+    if (s.first.size() == 0 || s.second < 0)
+      return false;
+  }
+
+	wtxNew.vin.clear();
+	wtxNew.vout.clear();
+	wtxNew.fFromMe = true;
+
+	CTxCreator wtx(this, wtxNew);
+	wtx.SetAccount(strFromAccount);
+	BOOST_FOREACH(const PAIRTYPE(CScript, int64)& coin, vecSend) {
+		wtx.AddOutput(coin.first, coin.second);
+	}
+	if (!wtx.Generate()) {
+		strError = wtx.GetError();
+		return (false);
+	}
+
+	nFeeRet = wtx.CalculateFee();
+//	wtx.nCredit - wtx.nDebit;
+	wtxNew = (CWalletTx)wtx;
+//	wtxNew.AddSupportingTransactions();
+//	wtxNew.fTimeReceivedIsTxTime = true;
+
+	return (true);
 }
 bool TESTWallet::CreateAccountTransaction(string strFromAccount, CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, string& strError, int64& nFeeRet)
 {

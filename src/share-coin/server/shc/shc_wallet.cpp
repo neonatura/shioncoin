@@ -113,16 +113,11 @@ bool shc_LoadWallet(void)
 
   if (fFirstRun)
   {
-
-    // Create new keyUser and set as default key
-    RandAddSeedPerfmon();
-
-    CPubKey newDefaultKey;
-    if (!shcWallet->GetKeyFromPool(newDefaultKey, false))
-      strErrors << _("Cannot initialize keypool") << "\n";
-    shcWallet->SetDefaultKey(newDefaultKey);
-    if (!shcWallet->SetAddressBookName(shcWallet->vchDefaultKey.GetID(), ""))
-      strErrors << _("Cannot write default address") << "\n";
+		string strAccount("");
+		CPubKey newDefaultKey = GetAccountPubKey(shcWallet, strAccount, true);
+		//CPubKey newDefaultKey = shcWallet->GenerateNewKey();
+		shcWallet->SetDefaultKey(newDefaultKey);
+		shcWallet->SetAddressBookName(shcWallet->vchDefaultKey.GetID(), "");
   }
 
   printf("%s", strErrors.str().c_str());
@@ -381,7 +376,7 @@ bool SHCWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = fFileBacked ? new CWalletDB(strWalletFile,"r") : NULL;
+      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
       // Add tx to wallet, because if it has change it's also ours,
       // otherwise just for transaction history.
@@ -398,8 +393,7 @@ bool SHCWallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-      if (fFileBacked)
-        delete pwalletdb;
+			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets
@@ -443,6 +437,7 @@ bool SHCWallet::CreateAccountTransaction(string strAccount, const vector<pair<CS
 }
 #endif
 
+#if 0
 bool SHCWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
@@ -496,28 +491,17 @@ bool SHCWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, 
           nFeeRet += nMoveToFee;
         }
 
-        if (nChange > 0)
-        {
+        if (nChange > 0) {
+					CKeyID keyID;
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					if (addr.GetKeyID(keyID)) {
+						CScript scriptChange;
+						scriptChange.SetDestination(keyID);
 
-          CPubKey vchPubKey;
-          if (wtxNew.strFromAccount.length() != 0 &&
-              GetMergedPubKey(wtxNew.strFromAccount, "change", vchPubKey)) {
-            /* Use a consistent change address based on primary address. */
-            reservekey.ReturnKey();
-          } else {
-            /* Revert to using a quasi-standard 'ghost' address. */
-            vchPubKey = reservekey.GetReservedKey();
-          }
-        
-          CScript scriptChange;
-          scriptChange.SetDestination(vchPubKey.GetID());
-
-          // Insert change txn at random position:
-          vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
-          wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
-
-        } else {
-          reservekey.ReturnKey();
+						// Insert change txn at random position:
+						vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
+						wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
+					}
         }
 
         // Fill vin
@@ -575,6 +559,13 @@ bool SHCWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, 
   }
   return true;
 }
+bool SHCWallet::CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
+{
+    vector< pair<CScript, int64> > vecSend;
+    vecSend.push_back(make_pair(scriptPubKey, nValue));
+    return CreateTransaction(vecSend, wtxNew, reservekey, nFeeRet);
+}
+#endif
 
 bool SHCWallet::CreateAccountTransaction(string strFromAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, string& strError, int64& nFeeRet)
 {
@@ -638,34 +629,17 @@ bool SHCWallet::CreateAccountTransaction(string strFromAccount, const vector<pai
           nFeeRet += nMoveToFee;
         }
 
-        if (nChange > 0)
-        {
+        if (nChange > 0) {
+					CKeyID keyID;
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					if (addr.GetKeyID(keyID)) {
+						CScript scriptChange;
+						scriptChange.SetDestination(keyID);
 
-          CPubKey vchPubKey;
-          if (nChange > CENT &&
-              wtxNew.strFromAccount.length() != 0 &&
-              GetMergedPubKey(wtxNew.strFromAccount, "change", vchPubKey)) {
-/* DEBUG: TODO: && none of inputs are vchPubKey */
-            /* Use a consistent change address based on primary address. */
-            //  reservekey.ReturnKey();
-          } else {
-            /* Revert to using a quasi-standard 'ghost' address. */
-            CReserveKey reservekey(this);
-            vchPubKey = reservekey.GetReservedKey();
-            reservekey.KeepKey();
-          }
-
-          CScript scriptChange;
-          scriptChange.SetDestination(vchPubKey.GetID());
-
-          // Insert change txn at random position:
-          vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
-          wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
-
-#if 0
-        } else {
-          reservekey.ReturnKey();
-#endif
+						// Insert change txn at random position:
+						vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
+						wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
+					}
         }
 
         // Fill vin
@@ -749,12 +723,6 @@ bool SHCWallet::CreateAccountTransaction(string strFromAccount, CScript scriptPu
   return CreateAccountTransaction(strFromAccount, vecSend, wtxNew, strError, nFeeRet);
 }
 
-bool SHCWallet::CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
-{
-    vector< pair<CScript, int64> > vecSend;
-    vecSend.push_back(make_pair(scriptPubKey, nValue));
-    return CreateTransaction(vecSend, wtxNew, reservekey, nFeeRet);
-}
 
 
 void SHCWallet::AddSupportingTransactions(CWalletTx& wtx)

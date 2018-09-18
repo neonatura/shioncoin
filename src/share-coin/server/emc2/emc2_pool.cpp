@@ -190,3 +190,7 @@ int64 EMC2_CTxMemPool::IsFreeRelay(CTransaction& tx, tx_cache& mapInputs)
   return (false);
 }
 
+double EMC2_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
+{
+	return (sqrt(ptx->dPriority) * (double)ptx->nFee);
+}

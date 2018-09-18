@@ -343,17 +343,29 @@ const char *json_getnewaddress(int ifaceIndex, const char *account)
   if (!wallet)
     return (NULL);
 
+#if 0
   if (!wallet->IsLocked())
     wallet->TopUpKeyPool();
+#endif
 
   // Generate a new key that is added to wallet
   CPubKey newKey;
+#if 0
   if (!wallet->GetKeyFromPool(newKey, false)) {
     return (NULL);
   }
+#endif
+
+	newKey = GetAccountPubKey(wallet, strAccount, true);
+
+	CKeyID keyID = newKey.GetID();
+  getnewaddr_str = CCoinAddr(keyID).ToString();
+
+#if 0
   CKeyID keyID = newKey.GetID();
   wallet->SetAddressBookName(keyID, strAccount);
   getnewaddr_str = CCoinAddr(keyID).ToString();
+#endif
 
   return (getnewaddr_str.c_str());
 }
@@ -765,12 +777,6 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
   bool found = false;
   int64 nBalance;
 
-#if 0
-  if (pwalletMain->IsLocked()) {
-    return (-13);
-  }
-#endif
-
   if (dAmount <= 0)
     return (SHERR_INVAL);
 
@@ -806,7 +812,7 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
   CWalletTx wtx;
   wtx.strFromAccount = strMainAccount;
   wtx.mapValue["comment"] = strComment;
-  string strError = pwalletMain->SendMoneyToDestination(address.Get(), nAmount, wtx);
+  string strError = pwalletMain->SendMoneyToDestination(strMainAccount, address.Get(), nAmount, wtx);
   if (strError != "") {
     //throw JSONRPCError(-4, strError);
     return (-4);
@@ -1087,11 +1093,6 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
   bool found = false;
   int64 nBalance;
 
-  if (pwalletMain->IsLocked()) {
-    shcoind_log("c_wallet_account_transfer: wallet is locked.");
-    return (-13);
-  }
-
   // Find all addresses that have the given account
   CCoinAddr address(ifaceIndex);
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, pwalletMain->mapAddressBook)
@@ -1134,7 +1135,7 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
   CWalletTx wtx;
   wtx.strFromAccount = strMainAccount;
   wtx.mapValue["comment"] = strComment;
-  string strError = pwalletMain->SendMoneyToDestination(address.Get(), nAmount, wtx);
+  string strError = pwalletMain->SendMoneyToDestination(strMainAccount, address.Get(), nAmount, wtx);
   if (strError != "") {
     return (-4);
   }

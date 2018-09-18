@@ -32,7 +32,7 @@
 #include "base58.h"
 
 
-class CKeyPool;
+//class CKeyPool;
 class CAccount;
 class CAccountingEntry;
 
@@ -45,6 +45,7 @@ enum DBErrors
     DB_LOAD_FAIL,
     DB_NEED_REWRITE
 };
+
 
 /** Access to the wallet database (wallet.dat) */
 class CWalletDB : public CDB
@@ -69,19 +70,19 @@ public:
 
     bool ReadTx(uint256 hash, CWalletTx& wtx)
     {
-        return Read(std::make_pair(std::string("tx"), hash), wtx);
+			return (Read(std::make_pair(std::string("tx"), hash), wtx));
     }
 
     bool WriteTx(uint256 hash, const CWalletTx& wtx)
     {
-        nWalletDBUpdated++;
-        return Write(std::make_pair(std::string("tx"), hash), wtx);
+			nWalletDBUpdated++;
+			return Write(std::make_pair(std::string("tx"), hash), wtx);
     }
 
     bool EraseTx(uint256 hash)
     {
-        nWalletDBUpdated++;
-        return Erase(std::make_pair(std::string("tx"), hash));
+			nWalletDBUpdated++;
+			return Erase(std::make_pair(std::string("tx"), hash));
     }
 
     bool ReadKey(const CPubKey& vchPubKey, CPrivKey& vchPrivKey)
@@ -151,6 +152,7 @@ public:
         return Write(std::string("defaultkey"), vchPubKey.Raw());
     }
 
+#if 0
     bool ReadPool(int64 nPool, CKeyPool& keypool)
     {
         return Read(std::make_pair(std::string("pool"), nPool), keypool);
@@ -167,6 +169,7 @@ public:
         nWalletDBUpdated++;
         return Erase(std::make_pair(std::string("pool"), nPool));
     }
+#endif
 
     // Settings are no longer stored in wallet.dat; these are
     // used only for backwards compatibility:

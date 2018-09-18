@@ -42,8 +42,11 @@ class EMC2Wallet : public CWallet
     int64 GetTxFee(CTransaction tx);
     bool CommitTransaction(CWalletTx& wtxNew);
 
+#if 0
     bool CreateTransaction(const std::vector<std::pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet);
     bool CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet);
+#endif
+
     void AddSupportingTransactions(CWalletTx& wtx);
 
     bool CreateAccountTransaction(string strFromAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, string& strError, int64& nFeeRet);

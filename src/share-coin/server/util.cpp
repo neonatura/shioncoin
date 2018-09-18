@@ -137,6 +137,7 @@ void RandAddSeed()
     memset(&nCounter, 0, sizeof(nCounter));
 }
 
+#if 0
 void RandAddSeedPerfmon()
 {
     RandAddSeed();
@@ -163,6 +164,7 @@ void RandAddSeedPerfmon()
     }
 #endif
 }
+#endif
 
 uint64 GetRand(uint64 nMax)
 {

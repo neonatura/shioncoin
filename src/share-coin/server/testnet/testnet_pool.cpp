@@ -50,7 +50,9 @@
 using namespace std;
 using namespace boost;
 
-bool testnet_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx, const CBlockIndex* pindexBlock, bool fBlock, bool fMiner);
+extern bool testnet_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx, const CBlockIndex* pindexBlock, bool fBlock, bool fMiner);
+extern double color_CalculatePoolFeePriority(CPool *pool, CPoolTx *ptx, double dFeePrio);
+
 
 
 static int64 testnet_CalculateFee(const CTransaction& tx)
@@ -129,6 +131,12 @@ bool TESTNET_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInpu
 
 bool TESTNET_CTxMemPool::AcceptTx(CTransaction& tx)
 {
+
+	if (IsAltChainTx(tx)) {
+		CommitAltChainPoolTx(GetCoinByIndex(TESTNET_COIN_IFACE), tx, true);
+
+	}
+
   return true;
 }
 
@@ -176,4 +184,16 @@ int64 TESTNET_CTxMemPool::IsFreeRelay(CTransaction& tx, tx_cache& mapInputs)
   return (false);
 }
 
+double TESTNET_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
+{
+	double dFeePrio;
 
+	dFeePrio = sqrt(ptx->dPriority + 1) * (double)ptx->nFee;
+
+	/* alt-chain priority adjustment */
+	dFeePrio = color_CalculatePoolFeePriority(this, ptx, dFeePrio);
+
+	/* DEBUG: TODO: EXEC.. */
+
+	return (dFeePrio);
+}

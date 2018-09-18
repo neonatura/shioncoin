@@ -107,7 +107,7 @@ bool HDPrivKey::derive(HDPrivKey& privkey, cbuff pubkey, uint32_t i)
   strcpy(privkey_hex, shecdsa_hd_privkey(secret_hex, chain_hex, i));
 
   cbuff secret = ParseHex(privkey_hex); 
-if (secret.size() != 32) fprintf(stderr, "DEBUG: HDPrivKey.derive: derived secret key is not 32 bytes\n");
+//if (secret.size() != 32) fprintf(stderr, "DEBUG: HDPrivKey.derive: derived secret key is not 32 bytes\n");
   privkey = HDPrivKey(*this, secret, ParseHex(chain_hex), i);
 
   if (!privkey.IsValid())
@@ -285,7 +285,7 @@ bool HDPubKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
 void HDMasterPrivKey::MakeNewKey(bool fCompressed)
 {
 
-  RandAddSeedPerfmon();
+//  RandAddSeedPerfmon();
 
   CKey t_key;
   t_key.MakeNewKey(fCompressed);

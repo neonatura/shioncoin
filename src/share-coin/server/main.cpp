@@ -63,7 +63,6 @@ CMedianFilter<int> cPeerBlockCounts(5, 0); // Amount of blocks that other nodes 
 
 bool CTransaction::ReadFromDisk(int ifaceIndex, COutPoint prevout)
 {
-fprintf(stderr, "DEBUG: CTransaction::ReadFromDisk(COutPoint)\n");
   return (ReadTx(ifaceIndex, prevout.hash));
 }
 
@@ -93,13 +92,11 @@ bool CTransaction::AreInputsStandard(int ifaceIndex, const MapPrevTx& mapInputs)
     // get the scriptPubKey corresponding to this input:
     const CScript& prevScript = prev.scriptPubKey;
     if (!Solver(prevScript, whichType, vSolutions)) {
-      fprintf(stderr, "DEBUG: TEST: ERROR: AreInputsStandard: Solver failure, whichType(%d)\n", whichType);
       return false;
     }
 
     int nArgsExpected = ScriptSigArgsExpected(whichType, vSolutions);
     if (nArgsExpected < 0) {
-      fprintf(stderr, "DEBUG: TEST: ERROR: AreInputsStandard: whichType(%d) nArgsExpected(%d)\n", whichType, nArgsExpected);
       return false;
     }
 
@@ -107,26 +104,12 @@ bool CTransaction::AreInputsStandard(int ifaceIndex, const MapPrevTx& mapInputs)
     CTransaction *txSig = (CTransaction *)this;
     CSignature sig(ifaceIndex, txSig, i);
     if (!EvalScript(sig, stack, vin[i].scriptSig, SIGVERSION_BASE, 0)) {
-      fprintf(stderr, "DEBUG: AreInputsStandard: !EvalScript: scriptSig \"%s\"\n", vin[i].scriptSig.ToString().c_str()); 
       return false;
     }
-#if 0
-    // Transactions with extra stuff in their scriptSigs are
-    // non-standard. Note that this EvalScript() call will
-    // be quick, because if there are any operations
-    // beside "push data" in the scriptSig the
-    // IsStandard() call returns false
-    vector<vector<unsigned char> > stack;
-    if (!EvalScript(stack, vin[i].scriptSig, *this, i, 0, SIGVERSION_BASE, 0)) {
-      fprintf(stderr, "DEBUG: AreInputsStandard: !EvalScript: scriptSig \"%s\"\n", vin[i].scriptSig.ToString().c_str()); 
-      return false;
-    }
-#endif
 
     if (whichType == TX_SCRIPTHASH)
     {
       if (stack.empty()) {
-fprintf(stderr, "DEBUG: CTransaction.AreInputStandard: TX_SCRIPT_HASH: stack.empty()\n"); 
         return false;
       }
       CScript subscript(stack.back().begin(), stack.back().end());
@@ -146,14 +129,12 @@ fprintf(stderr, "DEBUG: CTransaction.AreInputStandard: TX_SCRIPT_HASH: stack.emp
       int tmpExpected;
       tmpExpected = ScriptSigArgsExpected(whichType2, vSolutions2);
       if (tmpExpected < 0) {
-fprintf(stderr, "DEBUG: AreInputsStandard: nArgsExpected += %d [whichType2 %d]\n", tmpExpected, whichType2);
         return false;
       }
       nArgsExpected += tmpExpected;
     }
 
     if (stack.size() > (unsigned int)nArgsExpected) {
-      fprintf(stderr, "DEBUG: AreInputsStandard: stack.size(%d) nArgsExpected(%d) whichType(%d)\n", stack.size(), nArgsExpected, whichType); 
       return false;
     }
   }
@@ -188,7 +169,7 @@ const CTxOut& CTransaction::GetOutputFor(const CTxIn& input, const MapPrevTx& in
 
   const CTransaction& txPrev = (mi->second).second;
   if (input.prevout.n >= txPrev.vout.size()) {
-    fprintf(stderr, "DEBUG: input.revout.n(%d) txprev.vout.size(%d) input.prevout.hash '%s'\n", (int)input.prevout.n, (int)txPrev.vout.size(), input.prevout.hash.GetHex().c_str()); 
+//    fprintf(stderr, "DEBUG: input.revout.n(%d) txprev.vout.size(%d) input.prevout.hash '%s'\n", (int)input.prevout.n, (int)txPrev.vout.size(), input.prevout.hash.GetHex().c_str()); 
     /* DEBUG: todo: check how critical this is */
     sprintf(errbuf, "Transaction::GetOutputFor: prevout(%s).n(%d) out of range (>= %d)", input.prevout.hash.GetHex().c_str(), (int)input.prevout.n, (int)txPrev.vout.size());
     throw std::runtime_error((const char *)errbuf);
@@ -608,7 +589,7 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
 }
 
 
-bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
+bool CheckWork(CBlock* pblock, CWallet& wallet)
 {
   CIface *iface = GetCoinByIndex(pblock->ifaceIndex); 
   uint256 hash = pblock->GetPoWHash();
@@ -629,8 +610,10 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     if (pblock->hashPrevBlock != GetBestBlockChain(iface))
       return error(SHERR_INVAL, "BitcoinMiner : generated block is stale");
 
+#if 0
     // Remove key from key pool
     reservekey.KeepKey();
+#endif
 
     // Track how many getdata requests this block gets
     {

@@ -53,7 +53,7 @@ bool CPool::VerifyTx(CTransaction& tx)
   }
 
   if ((int64)tx.nLockTime > std::numeric_limits<int>::max()) {
-    return error(SHERR_INVAL, "CPool.VerifyTx: nLockTime exceeds 2038 limit.");
+    return error(SHERR_INVAL, "CPool.VerifyTx: nLockTime exceeds 2038 limit (%u).", tx.nLockTime);
   }
 
   if (iface) {
@@ -77,7 +77,7 @@ bool CPool::VerifyTx(CTransaction& tx)
   return (true);
 }
 
-bool CPool::AddTx(CTransaction& tx, CNode *pfrom)
+bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   uint256 hash = tx.GetHash();
@@ -101,6 +101,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom)
   CPoolTx ptx(tx);
   if (pfrom == NULL)
     ptx.setLocal(true);
+	ptx.SetColor(hColor);
 
   /* retrieve all input transactions */
   bool hasInputs = FillInputs(ptx);
@@ -218,10 +219,14 @@ void CPool::CalculateFee(CPoolTx& ptx)
   //nMinFee = wallet->GetFee(ptx.GetTx(), nCredit, nBytes, dPriority);
   ptx.nMinFee = wallet->CalculateFee(tx);
 
-  /* calculate fee and priority */
+  /* calculate fee */
   ptx.nFee = nCredit - tx.GetValueOut();
-  ptx.dPriority = wallet->GetPriority(tx, ptx.GetInputs());
-  ptx.dFeePriority = sqrt(ptx.dPriority) * (double)ptx.nFee; 
+
+	/* calculate priority */
+	ptx.dPriority = wallet->GetPriority(tx, ptx.GetInputs());
+	ptx.dFeePriority = CalculateFeePriority(&ptx);
+
+//	ptx.dFeePriority = sqrt(ptx.dPriority) * (double)ptx.nFee; 
 
 }
 
@@ -870,6 +875,28 @@ vector<CTransaction> CPool::GetActiveTx()
   return (vTx);
 }
 
+vector<CTransaction> CPool::GetActiveColorTx(const uint160& hColor)
+{
+  vector<CPoolTx> vPoolTx;
+  vector<CTransaction> vTx;
+  int64_t nMaxWeight = GetMaxWeight();
+  int64_t nWeight = 0;
+
+  for (pool_map::iterator it = active.begin(); it != active.end(); ++it) {
+    CPoolTx& ptx = it->second;
+		if (ptx.GetColor() == hColor)
+			vPoolTx.push_back(ptx);
+  }
+  sort(vPoolTx.begin(), vPoolTx.end()); 
+
+  BOOST_FOREACH(CPoolTx& ptx, vPoolTx) {
+    CTransaction& tx = ptx.GetTx();
+    vTx.insert(vTx.end(), tx);
+  }
+
+  return (vTx);
+}
+
 vector<uint256> CPool::GetActiveHash()
 {
   vector<CPoolTx> vPoolTx;
@@ -1007,6 +1034,12 @@ bool CPool::Commit(CBlock& block)
   if (fee) {
     fee->processBlock(pindex->nHeight, entries, true);
   }
+
+	/* set 'Commit' flag on wallet transactions. 
+  BOOST_FOREACH(const CTransaction& tx, block.vtx) {
+		 wtx.fCommit = true 
+	}
+	*/
 
   PurgeOverflowTx();
 

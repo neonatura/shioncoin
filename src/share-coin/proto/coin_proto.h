@@ -87,7 +87,7 @@ extern "C" {
  * The minimum fee applied to a tranaction.
  */
 #define MIN_TX_FEE(_iface) \
-  (int64)(iface ? ((_iface)->min_tx_fee) : 0)
+  (int64)((_iface) ? ((_iface)->min_tx_fee) : 0)
 
 #define MIN_RELAY_TX_FEE(_iface) \
   (MIN_TX_FEE(_iface))
@@ -107,17 +107,26 @@ extern "C" {
 
 /** A self-test interface for verifying stability. */
 #define TEST_COIN_IFACE 0
+
 /** The "ShareCoin" virtual currency. */
 #define SHC_COIN_IFACE 1
+
 /** The "USDE" virtual currency. */
 #define USDE_COIN_IFACE 2
+
 /** The "EMC2" (Einstienium) virtual currency. */
 #define EMC2_COIN_IFACE 3
+
 /** The "LTC" (Litecoin) virtual currency. */
 #define LTC_COIN_IFACE 4
+
 /** The "ShareCoin" Test Network */
 #define TESTNET_COIN_IFACE 5
-#define MAX_COIN_IFACE 6
+
+/** The "ShareCoin Color" alternate block-chain. */
+#define COLOR_COIN_IFACE 6
+
+#define MAX_COIN_IFACE 7
 
 
 #define COINF_DL_SCAN (1 << 0)
@@ -135,6 +144,7 @@ extern "C" {
 #define STAT_BLOCK_ORPHAN(_iface) (_iface)->stat.tot_block_orphan
 #define STAT_TX_ACCEPTS(_iface) (_iface)->stat.tot_tx_accept
 #define STAT_TX_SUBMITS(_iface) (_iface)->stat.tot_tx_submit
+#define STAT_TX_RETURNS(_iface) (_iface)->stat.tot_tx_return
 
 struct coin_iface_t;
 typedef int (*coin_f)(struct coin_iface_t * /*iface*/, void * /* arg */);
@@ -221,6 +231,7 @@ typedef struct coin_iface_t
 
   bc_t *bc_block;
   bc_t *bc_tx;
+  bc_t *bc_wtx;
   bc_t *bc_coin;
   double blk_diff; /* next block difficulty */
   uint64_t tx_tot; /* nTransactionsUpdated */
@@ -237,6 +248,7 @@ typedef struct coin_iface_t
     uint64_t tot_block_orphan;
     uint64_t tot_tx_submit;
     uint64_t tot_tx_accept;
+		uint64_t tot_tx_return;
     uint64_t tot_spring_submit;
     uint64_t tot_spring_accept;
   } stat;
@@ -321,10 +333,23 @@ coin_iface_t *GetCoin(const char *name);
  * @}
  */
 
+/**
+ * The SHC currency Color alternate block-chain.
+ * @ingroup sharecoin
+ * @defgroup sharecoin_color The SHC currency Color alternate block-chain.
+ * @{
+ */
+#include "color_proto.h"
+/**
+ * @}
+ */
+
 
 bc_t *GetBlockChain(CIface *iface);
 
 bc_t *GetBlockTxChain(CIface *iface);
+
+bc_t *GetWalletTxChain(CIface *iface);
 
 bc_t *GetBlockCoinChain(CIface *iface);
 

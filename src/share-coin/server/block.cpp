@@ -435,7 +435,6 @@ bool CTransaction::WriteTx(int ifaceIndex, uint64_t blockHeight)
         return error(err, "WriteTx; error clearing invalid previous hash tx [tx-idx-size %d] [tx-pos %d].", (int)data_len, (int)txPos);
 #endif
     } else {
-fprintf(stderr, "DEBUG: critical: CTransaction.WriteTx: bc_get error %d\n", err); 
 
     /* force re-open */
       CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -535,7 +534,6 @@ bool CTransaction::ReadTx(int ifaceIndex, uint256 txHash, uint256 *hashBlock)
 
   if (hashBlock) {
     *hashBlock = block->GetHash();
-//    if (*hashBlock == 0) { fprintf(stderr, "DEBUG: ReadTx: invalid hash 0 \n"); }
   }
 
   Init(*tx);
@@ -570,6 +568,26 @@ CBlock *GetBlockByHeight(CIface *iface, int nHeight)
     return (NULL);
 
   return (block);
+}
+
+bool HasBlockHash(CIface *iface, uint256 hash)
+{
+  bc_t *bc;
+  bcpos_t nHeight;
+  int err;
+
+  if (!iface || !iface->enabled)
+    return (false);
+
+  bc = GetBlockChain(iface);
+  if (!bc)
+    return (false);
+
+  err = bc_find(bc, hash.GetRaw(), &nHeight);
+  if (err)
+    return false;
+
+  return (true);
 }
 
 CBlock *GetBlockByHash(CIface *iface, const uint256 hash)
@@ -1470,14 +1488,20 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		}
 
     BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
+#if 0 
       if (tx.isFlag(CTransaction::TXF_MATRIX)) {
 				/* handled in coinbase */
-			} else if (tx.isFlag(CTransaction::TXF_ALIAS)) {
+			} 
+#endif
+
+			if (tx.isFlag(CTransaction::TXF_ALIAS)) {
         bool fRet = CommitAliasTx(iface, tx, nHeight);
         if (!fRet) {
           error(SHERR_INVAL, "CommitAliasTx failure");
         }
-      } else if (tx.isFlag(CTransaction::TXF_ASSET)) {
+      } 
+
+			if (tx.isFlag(CTransaction::TXF_ASSET)) {
 				/* not implemented. */
 			} else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
         InsertCertTable(iface, tx, nHeight);
@@ -1504,6 +1528,13 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 			if (tx.isFlag(CTransaction::TXF_EXEC) &&
 					IsExecTx(tx, mode) && mode != OP_EXT_UPDATE) {
         ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
+			}
+
+			/* non-exclusive */
+			if (tx.isFlag(CTransaction::TXF_ALTCHAIN)) {
+				if (IsAltChainTx(tx)) {
+					CommitAltChainTx(iface, tx, pblock->originPeer);
+				}
 			}
     }
   }
@@ -1858,7 +1889,6 @@ CTxMatrix *CTransaction::GenerateValidateMatrix(int ifaceIndex, CBlockIndex *pin
       return (NULL);
   }
 
-
   height = (pindex->nHeight - 27);
   height /= 27;
   height *= 27;
@@ -1876,10 +1906,10 @@ CTxMatrix *CTransaction::GenerateValidateMatrix(int ifaceIndex, CBlockIndex *pin
   }
 
   nFlag |= CTransaction::TXF_MATRIX;
-  CTxMatrix matrixNew(matrixValidate);
-  matrixNew.SetType(CTxMatrix::M_VALIDATE);
-  matrixNew.Append(pindex->nHeight, pindex->GetBlockHash()); 
-  matrix = (CTxMatrix&)matrixNew;
+
+  matrix = CTxMatrix(matrixValidate);
+  matrix.SetType(CTxMatrix::M_VALIDATE);
+  matrix.Append(pindex->nHeight, pindex->GetBlockHash()); 
 
   return (&matrix);
 }
@@ -2083,6 +2113,12 @@ Object CTransaction::ToValue(int ifaceIndex)
     CContext ctx(certificate);
     obj.push_back(Pair("context", ctx.ToValue()));
   }
+	if (this->nFlag & TXF_ALTCHAIN) {
+		CAltChain *alt = GetAltChain();
+		if (alt) {
+			obj.push_back(Pair("altchain", alt->ToValue()));
+		}
+	}
 
   return (obj);
 }
@@ -2172,13 +2208,23 @@ int CTransaction::GetDepthInMainChain(int ifaceIndex, CBlockIndex* &pindexRet) c
   uint256 hashTx = GetHash();
   bool ret;
 
-  CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
+	CBlockIndex *pindex = GetBlockIndexByTx(iface, hashTx);
+	if (!pindex)
+		return (0);
+
+  CBlockIndex *pindexBest = NULL;
+	if (ifaceIndex == COLOR_COIN_IFACE) {
+		/* count manually as each color has it's own 'best block index'. */
+		pindexBest = pindex;
+		while (pindexBest && pindexBest->pnext) {
+			pindexBest = pindexBest->pnext;
+		}
+	} else {
+		pindexBest = GetBestBlockIndex(ifaceIndex);
+	}
   if (!pindexBest)
     return (0);
 
-  CBlockIndex *pindex = GetBlockIndexByTx(iface, hashTx);
-  if (!pindex)
-    return (0);
 
   if (!pindex->IsInMainChain(ifaceIndex))
     return 0;
@@ -2191,8 +2237,8 @@ int CTransaction::GetDepthInMainChain(int ifaceIndex, CBlockIndex* &pindexRet) c
 CChannel *CTransaction::CreateChannel(CCoinAddr& src_addr, CCoinAddr& dest_addr, int64 nValue)
 {
 
-Debug("CreatChannel()");
-
+	/* not implemented */
+#if 0
   if (isFlag(CTransaction::TXF_CHANNEL))
     return (NULL); /* already established */
 
@@ -2210,6 +2256,7 @@ Debug("CreatChannel()");
   channel.GetOrigin()->addr = lcl_pubkey;
   channel.GetPeer()->addr = rem_pubkey;
   channel.SetOriginValue(nValue);
+#endif
 
   return (&channel);
 }
@@ -2391,6 +2438,24 @@ CContext *CTransaction::CreateContext()
   ctx->SetExpireSpan((double)DEFAULT_CONTEXT_LIFESPAN);
 
   return (ctx);
+}
+
+CAltChain *CTransaction::CreateAltChain()
+{
+	CAltChain *alt;
+
+	if (nFlag & CTransaction::TXF_ALTCHAIN)
+		return (NULL);
+
+	nFlag |= CTransaction::TXF_ALTCHAIN;
+
+	alt = GetAltChain();
+	alt->SetNull();
+
+	/* does not expire */
+	alt->tExpire = SHTIME_UNDEFINED;
+
+	return (alt);
 }
 
 
@@ -3563,9 +3628,11 @@ void CTransaction::Init(const CTransaction& tx)
 
 	if (this->nFlag & TXF_MATRIX)
 		matrix = tx.matrix;
-	else if (this->nFlag & TXF_ALIAS)
+
+	if (this->nFlag & TXF_ALIAS)
 		alias = CAlias(tx.alias);
-	else if (this->nFlag & TXF_ASSET)
+
+	if (this->nFlag & TXF_ASSET)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_CERTIFICATE)
 		certificate = tx.certificate;
@@ -3584,5 +3651,9 @@ void CTransaction::Init(const CTransaction& tx)
 	/* non-exclusive */
 	if (this->nFlag & TXF_EXEC)
 		exec = tx.exec;
+
+	/* non-exclusive */
+	if (this->nFlag & TXF_ALTCHAIN)
+		altchain = tx.altchain;
 
 }

@@ -107,16 +107,11 @@ bool usde_LoadWallet(void)
 
   if (fFirstRun)
   {
-
-    // Create new keyUser and set as default key
-    RandAddSeedPerfmon();
-
-    CPubKey newDefaultKey;
-    if (!usdeWallet->GetKeyFromPool(newDefaultKey, false))
-      strErrors << _("Cannot initialize keypool") << "\n";
-    usdeWallet->SetDefaultKey(newDefaultKey);
-    if (!usdeWallet->SetAddressBookName(usdeWallet->vchDefaultKey.GetID(), ""))
-      strErrors << _("Cannot write default address") << "\n";
+		string strAccount("");
+		CPubKey newDefaultKey = GetAccountPubKey(usdeWallet, strAccount, true);
+		//CPubKey newDefaultKey = usdeWallet->GenerateNewKey();
+		usdeWallet->SetDefaultKey(newDefaultKey);
+		usdeWallet->SetAddressBookName(usdeWallet->vchDefaultKey.GetID(), "");
   }
 
   printf("%s", strErrors.str().c_str());
@@ -420,7 +415,7 @@ bool USDEWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = fFileBacked ? new CWalletDB(strWalletFile,"r") : NULL;
+      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
       // Add tx to wallet, because if it has change it's also ours,
       // otherwise just for transaction history.
@@ -437,8 +432,7 @@ bool USDEWallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-      if (fFileBacked)
-        delete pwalletdb;
+			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets
@@ -471,6 +465,7 @@ bool USDEWallet::CommitTransaction(CWalletTx& wtxNew)
   return true;
 }
 
+#if 0
 bool USDEWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
 {
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
@@ -606,13 +601,14 @@ bool USDEWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
   }
   return true;
 }
-
 bool USDEWallet::CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
 {
     vector< pair<CScript, int64> > vecSend;
     vecSend.push_back(make_pair(scriptPubKey, nValue));
     return CreateTransaction(vecSend, wtxNew, reservekey, nFeeRet);
 }
+#endif
+
 
 void USDEWallet::AddSupportingTransactions(CWalletTx& wtx)
 {
@@ -726,36 +722,17 @@ bool USDEWallet::CreateAccountTransaction(string strFromAccount, const vector<pa
           nFeeRet += nMoveToFee;
         }
 
-        if (nChange > 0)
-        {
+				if (nChange > 0) {
+					CKeyID keyID;
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					if (addr.GetKeyID(keyID)) {
+						CScript scriptChange;
+						scriptChange.SetDestination(keyID);
 
-          CPubKey vchPubKey;
-#if 0
-          if (nChange > CENT &&
-              wtxNew.strFromAccount.length() != 0 &&
-              GetMergedPubKey(wtxNew.strFromAccount, "change", vchPubKey)) {
-            /* Use a consistent change address based on primary address. */
-            //  reservekey.ReturnKey();
-          } else 
-#endif
-          {
-            /* Revert to using a quasi-standard 'ghost' address. */
-            CReserveKey reservekey(this);
-            vchPubKey = reservekey.GetReservedKey();
-            reservekey.KeepKey();
-          }
-
-          CScript scriptChange;
-          scriptChange.SetDestination(vchPubKey.GetID());
-
-          // Insert change txn at random position:
-          vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
-          wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
-
-#if 0
-        } else {
-          reservekey.ReturnKey();
-#endif
+						// Insert change txn at random position:
+						vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
+						wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
+					}
         }
 
         // Fill vin

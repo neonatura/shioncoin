@@ -44,6 +44,7 @@ CBigNum SHCBlock::bnBestInvalidWork;
 
 
 extern void shc_RegisterRPCOp(int ifaceIndex);
+extern void color_RegisterRPCOp(int ifaceIndex);
 
 
 static int shc_init(CIface *iface, void *_unused_)
@@ -66,10 +67,13 @@ static int shc_init(CIface *iface, void *_unused_)
 
 	/* BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
-	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1546300800; /* 01/01/19 */
-	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1524941521; /* 12/01/19 */ 
+	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1577836800; /* 01/01/20 */
+	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1609459200; /* 01/01/21 */ 
 
   shc_RegisterRPCOp(SHC_COIN_IFACE);
+
+	/* alternate block-chain rpc operations. */
+  color_RegisterRPCOp(SHC_COIN_IFACE);
 
   shcWallet = new SHCWallet();
   SetWallet(SHC_COIN_IFACE, shcWallet);
@@ -190,9 +194,12 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
     ret_key = GetAccountPubKey(wallet, strAccount);
     if (!ret_key.IsValid()) {
       error(SHERR_INVAL, "(shc) GetMainAccountPubKey: error obtaining main account pubkey.");
+#if 0
       CReserveKey reservekey(wallet);
       ret_key = reservekey.GetReservedKey();
       reservekey.KeepKey();
+#endif
+			ret_key = wallet->GenerateNewKey();
     } else {
       CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
       Debug("(shc) GetMainAccountPubKey: using '%s' for mining address.",

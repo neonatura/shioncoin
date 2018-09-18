@@ -44,17 +44,14 @@ void shcoind_term(void)
 {
   int idx;
 
+#if 0
   /* terminate rpc service */
   rpc_term();
 
   /* terminate stratum server */
   stratum_term();
-
-  for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
-#ifndef USDE_SERVICE
-    if (idx == USDE_COIN_IFACE)
-      continue;
 #endif
+  for (idx = 1; idx < MAX_UNET_MODES; idx++) {
     unet_unbind(idx);
   }
 

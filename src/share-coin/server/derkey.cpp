@@ -456,8 +456,10 @@ bool CKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
    * not historically been enforced in coins, so normalize them first. */
   secp256k1_ecdsa_signature_normalize(secp256k1_context_verify, &sig, &sig);
 
-  return (secp256k1_ecdsa_verify(secp256k1_context_verify, 
-      &sig, hash.begin(), &pubkey));
+bool ok =
+  secp256k1_ecdsa_verify(secp256k1_context_verify, 
+      &sig, hash.begin(), &pubkey);
+return (ok);
 }
 
 bool CKey::VerifyCompact(uint256 hash, const std::vector<unsigned char>& vchSig)

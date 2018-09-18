@@ -65,6 +65,7 @@ bool CCoinAddr::IsValid() const
   switch(nVersion)
   {
     case PUBKEY_ADDRESS:
+    case PUBKEY_C_ADDRESS:
     case PUBKEY_E_ADDRESS:
     case PUBKEY_S_ADDRESS:
       nExpectedSize = 20; // Hash of public key
@@ -100,6 +101,7 @@ CTxDestination CCoinAddr::Get() const
     return CNoDestination();
   switch (nVersion) {
     case PUBKEY_ADDRESS:
+    case PUBKEY_C_ADDRESS:
     case PUBKEY_E_ADDRESS:
     case PUBKEY_S_ADDRESS:
     case PUBKEY_ADDRESS_TEST: 
@@ -125,6 +127,7 @@ bool CCoinAddr::GetKeyID(CKeyID &keyID) const
     return false;
   switch (nVersion) {
     case PUBKEY_ADDRESS:
+    case PUBKEY_C_ADDRESS:
     case PUBKEY_E_ADDRESS:
     case PUBKEY_S_ADDRESS:
     case PUBKEY_ADDRESS_TEST:

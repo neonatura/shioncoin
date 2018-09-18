@@ -515,7 +515,7 @@ bool CChannel::GetChannelTx(int ifaceIndex, CTransaction& tx)
 int CommitChannelTransaction(CWallet *wallet, CTransaction& tx)
 {
   CWalletTx wtx(wallet, tx);
-  CReserveKey rkey(wallet);
+  //CReserveKey rkey(wallet);
 
   if (!wallet->CommitTransaction(wtx))
     return (SHERR_CANCELED);
@@ -555,7 +555,7 @@ uint160 GenerateChannelPubKey(CWallet *wallet, string strAccount)
 bool CChannelKey::GenerateMasterKey(CWallet *wallet, string strAccount)
 {
   bool fCompressed = true;
-  RandAddSeedPerfmon();
+//  RandAddSeedPerfmon();
   CKey key;
   key.MakeNewKey(fCompressed);
 //  wallet->SetMinVersion(FEATURE_COMPRPUBKEY);
@@ -772,7 +772,7 @@ int init_channel_tx(CIface *iface, string strAccount, int64 nValue, CCoinAddr& r
   set<pair<const CWalletTx*,unsigned int> > setCoins; /* coins found */
   int64 nValueIn = 0; /* values found */
   if (!wallet->SelectCoins(nValue, setCoins, nValueIn) || nValueIn < nValue)
-    return (SHERR_AGAIN); /* not enough coins */
+    return (ERR_FEE);
   BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
     wtx.vin.push_back(CTxIn(coin.first->GetHash(),coin.second));
 /* DEBUG: TODO: must be marked as spent */
@@ -840,7 +840,7 @@ int activate_channel_tx(CIface *iface, CTransaction *txIn, int64 nValue, CWallet
     int64 nValueIn = 0; /* values found */
 
     if (!wallet->SelectCoins(nValue, setCoins, nValueIn) || nValueIn < nValue)
-      return (SHERR_AGAIN); /* not enough coins */
+      return (ERR_FEE);
     BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
       wtx.vin.push_back(CTxIn(coin.first->GetHash(),coin.second));
 
@@ -967,7 +967,7 @@ return (SHERR_INVAL);
   if (isOrigin) {
     if (nValue > channel->GetOriginValue()) {
 //fprintf(stderr, "DEBUG: pay_channel_tx: (isOrigin) nValue(%lld) < channel->origin-value(%lld)\n", nValue, channel->GetOriginValue());
-      return (SHERR_AGAIN);
+      return (ERR_FEE);
 }
     channel->SetOriginValue(channel->GetOriginValue() - nValue);
     channel->SetPeerValue(channel->GetPeerValue() + nValue);
@@ -979,7 +979,7 @@ return (SHERR_INVAL);
   } else {
     if (nValue > channel->GetPeerValue()) {
 //fprintf(stderr, "DEBUG: pay_channel_tx: (isOrigin) nValue(%lld) < channel->peer-value(%lld)\n", nValue, channel->GetPeerValue());
-      return (SHERR_AGAIN);
+      return (ERR_FEE);
 }
     channel->SetPeerValue(channel->GetPeerValue() - nValue);
     channel->SetOriginValue(channel->GetOriginValue() + nValue);

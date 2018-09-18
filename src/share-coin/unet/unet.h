@@ -37,23 +37,29 @@ extern "C" {
 #define UNET_EMC2 3
 #define UNET_LTC 4
 #define UNET_TESTNET 5
+#define UNET_COLOR 6
 
-#define UNET_RESERVED_3 6
 #define UNET_RESERVED_4 7
+#define UNET_RESERVED_3 8
+#define UNET_RESERVED_2 9
+#define UNET_RESERVED_1 10
 
-#define MAX_UNET_COIN_MODES 8
+#define MAX_UNET_COIN_MODES 11
+
+#define UNET_RESERVED_5 11
+#define UNET_RESERVED_6 12
 
 /* coin stratum service */
-#define UNET_STRATUM 8 
+#define UNET_STRATUM 13
 
 /* stratum through encrypted-stream-layer */
-#define UNET_STRATUM_ESL 9
+#define UNET_STRATUM_ESL 14
 
 /* ssl-rpc via localhost connection */
-#define UNET_RPC 10
+#define UNET_RPC 15
 
 /* maximum number of unet services */
-#define MAX_UNET_MODES 11
+#define MAX_UNET_MODES 16
 
 
 #define UNETF_SHUTDOWN DF_SHUTDOWN
@@ -89,6 +95,9 @@ typedef void (*unet_op)(void);
 
 typedef void (*unet_addr_op)(int, struct sockaddr *);
 
+typedef void *(*uthread_t)(void *);
+#define UTHREAD(_a) ((uthread_t)(_a))
+
 
 /* per unet mode */
 typedef struct unet_bind_t
@@ -119,6 +128,12 @@ typedef struct unet_bind_t
 
   /** the timer callback */
   unet_op op_timer;
+
+	/** thread associated timer flags */
+	int fl_timer;
+#ifdef HAVE_LIBPTHREAD
+	pthread_t th_timer;
+#endif
 
   /** called when a new socket is accepted. */
   unet_addr_op op_accept;
@@ -166,8 +181,6 @@ typedef struct uevent_t
   void *data;
 } uevent_t;
 
-typedef void *(*uthread_t)(void *);
-#define UTHREAD(_a) ((uthread_t)(_a))
 
 
 
@@ -274,6 +287,14 @@ void unet_peer_track_add(int ifaceIndex, shpeer_t *peer);
 void unet_peer_track_remove(int ifaceIndex, shpeer_t *peer);
 
 void unet_peer_prune(int mode);
+
+/** Initialize the timer thread. */
+void unet_thread_init(int mode);
+
+/** Terminate the timer thread. */
+void unet_thread_free(int mode);
+
+void unet_timer_cycle_mode(unet_bind_t *bind);
 
 
 #ifdef __cplusplus

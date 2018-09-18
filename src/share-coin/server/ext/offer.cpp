@@ -508,7 +508,7 @@ std::string OfferHoldAltCoin(CIface *iface, string strAccount, COfferAccept *off
   scriptPubKey.SetDestination(xferAddr.Get());
 
   wtx.strFromAccount = strAccount;
-  string strError = wallet->SendMoney(scriptPubKey, nValue, wtx, false);
+  string strError = wallet->SendMoney(strAccount, scriptPubKey, nValue, wtx, false);
   if (strError != "")
     return (strError);
 
@@ -549,7 +549,7 @@ int init_offer_tx(CIface *iface, std::string strAccount, int64 srcValue, int des
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
     sprintf(errbuf, "init_offer_tx: account '%s' balance %llu < nFee %llu\n", strAccount.c_str(), (unsigned long long)bal, (unsigned long long)nFee);
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   wtx.SetNull();
@@ -632,7 +632,7 @@ int init_offer_tx(CIface *iface, std::string strAccount, int64 srcValue, int des
   scriptPubKeyOrig.SetDestination(extAddr.Get());
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << offerHash << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
-  string strError = wallet->SendMoney(scriptPubKey, nFee, wtx, false);
+  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
   if (strError != "") {
 /* .. send back alt_wtx */
     error(ifaceIndex, strError.c_str());
@@ -665,8 +665,7 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
   int64 nFee = GetOfferOpFee(iface) + MAX(0, srcValue);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
-//fprintf(stderr, "DEBUG: bal(%lu) < nFee(%lu)\nn", (unsigned long)bal, (unsigned long)nFee);
-    return (SHERR_AGAIN);
+    return (ERR_FEE);
   }
 
   /* establish offer tx */
@@ -780,7 +779,7 @@ fprintf(stderr, "DEBUG: accept->hXferTx '%s'\n", offer->hXferTx.GetHex().c_str()
   scriptPubKeyOrig.SetDestination(extAddr.Get());
   scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << hashAccept << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
-  string strError = wallet->SendMoney(scriptPubKey, nFee, wtx, false);
+  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
   if (strError != "") {
 /* .. send back alt_wtx */
     wtx.print(ifaceIndex);
@@ -802,6 +801,7 @@ int generate_offer_tx(CIface *iface, uint160 hashOffer, CWalletTx& wtx)
   int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(iface);
   int64 minTxFee = MIN_TX_FEE(iface);
+	string strAccount("");
   char errbuf[1024];
   bool ret;
 
@@ -924,8 +924,8 @@ int calcFee;
     }
 
     CWallet *altWallet = GetWallet(altIface);
-    CReserveKey reservekey(altWallet);
-    ret = CreateTransactionWithInputTx(altIface, alt_vecSend, alt_wtxIn, nTxOut, alt_wtx, reservekey);
+   // CReserveKey reservekey(altWallet);
+    ret = CreateTransactionWithInputTx(altIface, strAccount, alt_vecSend, alt_wtxIn, nTxOut, alt_wtx, 0);// reservekey);
     if (!ret) {
       return (SHERR_CANCELED);
     }
@@ -943,8 +943,8 @@ int calcFee;
   scriptFee << OP_EXT_GENERATE << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << offerHash << OP_2DROP << OP_RETURN;
   vecSend.push_back(make_pair(scriptFee, minTxFee));
 
-  CReserveKey reservekey(wallet);
-  ret = CreateTransactionWithInputTx(iface, vecSend, wtxIn, nTxOut, wtx, reservekey);
+//  CReserveKey reservekey(wallet);
+  ret = CreateTransactionWithInputTx(iface, strAccount, vecSend, wtxIn, nTxOut, wtx, 0);//reservekey);
   if (!ret)
     return (SHERR_CANCELED);
  if (!wallet->CommitTransaction(wtx)) {
@@ -961,6 +961,7 @@ int pay_offer_tx(CIface *iface, uint160 hashAccept, CWalletTx& wtx)
 {
   int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(iface);
+	string strAccount("");
   char errbuf[1024];
   bool ret;
 
@@ -1085,8 +1086,8 @@ int nAltFeeValue = alt_wtxIn.vout[nTxOut].nValue;
     }
 
     CWallet *altWallet = GetWallet(altIface);
-    CReserveKey reservekey(altWallet);
-    ret = CreateTransactionWithInputTx(altIface, alt_vecSend, alt_wtxIn, nTxOut, alt_wtx, reservekey);
+    //CReserveKey reservekey(altWallet);
+    ret = CreateTransactionWithInputTx(altIface, strAccount, alt_vecSend, alt_wtxIn, nTxOut, alt_wtx, 0);//reservekey);
     if (!ret) {
       error(SHERR_CANCELED, "error creating alt-coin transaction.");
       return (SHERR_CANCELED);
@@ -1105,8 +1106,8 @@ int nAltFeeValue = alt_wtxIn.vout[nTxOut].nValue;
   scriptFee << OP_EXT_PAY << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << hashPay << OP_2DROP << OP_RETURN;
   vecSend.push_back(make_pair(scriptFee, (int64)iface->min_tx_fee));
 
-  CReserveKey reservekey(wallet);
-  ret = CreateTransactionWithInputTx(iface, vecSend, wtxIn, nTxOut, wtx, reservekey);
+  //CReserveKey reservekey(wallet);
+  ret = CreateTransactionWithInputTx(iface, strAccount, vecSend, wtxIn, nTxOut, wtx, 0);//reservekey);
   if (!ret) {
     error(SHERR_CANCELED, "error creating native transaction.");
     return (SHERR_CANCELED);
