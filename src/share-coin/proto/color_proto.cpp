@@ -53,6 +53,15 @@ static int color_init(CIface *iface, void *_unused_)
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
+	/* P2SH */
+	iface->BIP16Height = 0; /* always enabled */
+	/* v2.0 block (height in coinbase) */
+	iface->BIP34Height = 0; /* always enabled */
+	/* OP_CHECLOCKTIMEVERIFY */
+	iface->BIP65Height = 0; /* always enabled */
+	/* strict DER signature */
+	iface->BIP66Height = 0; /* always enabled */
+
 
   iface->nRuleChangeActivationThreshold = 9072;
   iface->nMinerConfirmationWindow = 12096;
@@ -290,6 +299,12 @@ coin_iface_t color_coin_iface = {
   COLOR_PROTOCOL_VERSION, /* network proto ver */
   0, //COLOR_COIN_DAEMON_PORT,
   { 0xd9, 0xd9, 0xf9, 0xbd },
+	29, /* C */
+	5, /* 3 */
+	25, /* A */
+	157,
+	{0x04, 0x88, 0xB2, 0x1E},
+	{0x04, 0x88, 0xAD, 0xE4},
   0, //NODE_NETWORK | NODE_BLOOM,
   COLOR_MIN_INPUT,
   COLOR_MAX_BLOCK_SIZE,

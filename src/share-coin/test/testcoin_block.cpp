@@ -305,6 +305,12 @@ _TEST(serializetx)
   CTransaction tx;
   CTransaction cmp_tx;
 
+	CTxIn txin;
+	txin.scriptSig << OP_0;
+	tx.vin.insert(tx.vin.end(), txin);
+	CTxOut txout;
+	txout.scriptPubKey << OP_0;
+	tx.vout.insert(tx.vout.end(), txout);
   ser << tx;
   ser >> cmp_tx;
   _TRUE(tx.GetHash() == cmp_tx.GetHash());
@@ -343,8 +349,6 @@ char hashstr[256];
   _TRUE(cert.GetHash() == cmp_cert.GetHash());
 
   COffer offer = COffer();
-  COfferAccept acc = COfferAccept();
-offer.accepts.push_back(acc);
   COffer cmp_offer;
   a_ser << offer;
   a_ser >> cmp_offer;
@@ -366,6 +370,8 @@ offer.accepts.push_back(acc);
   CTxMatrix cmp_matrix;
   cmp_matrix.Init(mtx.matrix);
   _TRUE(mtx.matrix.GetHash() == cmp_matrix.GetHash());
+
+
 }
 
 _TEST(signtx)
@@ -850,45 +856,53 @@ _TEST(offertx)
   CWallet *wallet = GetWallet(TEST_COIN_IFACE);
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   CTransaction t_tx;
-  int64 srcValue;
-  int64 destValue;
+  int64 nValue;
+	int mode;
   int idx;
   int err;
 
   string strLabel("");
 
-  /* create a coin balance */
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
 
   CCoinAddr addr = GetAccountAddress(wallet, strLabel, false);
   _TRUE(addr.IsValid() == true);
 
-  int64 bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
-  srcValue = -1 * (bal / 10);
-  destValue = 1 * (bal / 10);
+	string strAltLabel("offer");
+  CCoinAddr alt_addr = GetAccountAddress(wallet, strAltLabel, false);
+  _TRUE(alt_addr.IsValid() == true);
 
-  CWalletTx wtx;
-  err = init_offer_tx(iface, strLabel, srcValue, TEST_COIN_IFACE, destValue, wtx);
+  /* create a coin balance */
+  {
+		CTxCreator s_wtx(wallet, strLabel);
+		s_wtx.AddOutput(alt_addr.Get(), (int64)COIN*2);
+		_TRUE(s_wtx.Send());
+
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+
+		int64 bal = GetAccountBalance(TEST_COIN_IFACE, strAltLabel, 1);
+fprintf(stderr, "DEBUG: TEST: OFFER: alt account \"offer\" balance %f\n", (double)bal/COIN);
+  }
+
+	int64 bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
+
+  nValue = 1 * COIN;
+
+	CWalletTx wtx;
+	err = init_offer_tx(iface, strLabel, TEST_COIN_IFACE, nValue, nValue, 1.0, wtx);
+fprintf(stderr, "DEBUG: TEST: OFFER: %d = init_offer_tx()\n", err);
   _TRUE(0 == err);
   uint160 hashOffer = wtx.offer.GetHash();
   uint256 hashTx = wtx.GetHash();
-
-#if 0
   {
     int64 t_bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
 fprintf(stderr, "DEBUG: TEST: OFFER: offer initialized .. bal is now %f\n", ((double)t_bal / COIN));
   }
-#endif
-
   _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
-  _TRUE(VerifyOffer(wtx) == true);
+  _TRUE(VerifyOffer(wtx, mode) == true);
   _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-
   /* insert offer-tx into chain */
   {
     CBlock *block = test_GenerateBlock();
@@ -896,18 +910,14 @@ fprintf(stderr, "DEBUG: TEST: OFFER: offer initialized .. bal is now %f\n", ((do
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
-
   /* verify insertion */
+  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
   _TRUE(GetTxOfOffer(iface, hashOffer, t_tx) == true);
   _TRUE(t_tx.GetHash() == hashTx); 
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 
-  srcValue = 1 * (bal / 3);
-  destValue = -1 * (bal / 4);
-
-  /* generate test license from certificate */
-  CWalletTx acc_wtx;
-  err = accept_offer_tx(iface, strLabel, hashOffer, srcValue, destValue, acc_wtx);
+	CWalletTx acc_wtx;
+	err = accept_offer_tx(iface, strAltLabel, hashOffer, nValue, acc_wtx); 
+fprintf(stderr, "DEBUG: TEST: OFFER: %d = accept_offer_tx()\n", err);
   if (err == -2) {
     CTxMemPool *mempool = GetTxMemPool(iface);
     if (mempool->exists(hashTx)) {
@@ -917,50 +927,63 @@ fprintf(stderr, "DEBUG: TEST: OFFER: offer initialized .. bal is now %f\n", ((do
   _TRUE(0 == err);
   uint160 hashAccept = acc_wtx.offer.GetHash();
   _TRUE(acc_wtx.CheckTransaction(TEST_COIN_IFACE));
-  _TRUE(VerifyOffer(acc_wtx) == true);
+  _TRUE(VerifyOffer(acc_wtx, mode) == true);
   _TRUE(acc_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-
-#if 0
+fprintf(stderr, "DEBUG: ACCEPT: %s\n", acc_wtx.ToString(TEST_COIN_IFACE).c_str());
   {
     int64 t_bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
 fprintf(stderr, "DEBUG: TEST: OFFER: offer accepted .. bal is now %f\n", ((double)t_bal / COIN));
   }
-#endif
-
+  {
+    int64 t_bal = GetAccountBalance(TEST_COIN_IFACE, strAltLabel, 1);
+fprintf(stderr, "DEBUG: TEST: OFFER: offer accepted .. alt-bal is now %f\n", ((double)t_bal / COIN));
+  }
   {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
-
   /* verify insertion */
   _TRUE(acc_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 
   /* offer generate operation */
   CWalletTx gen_wtx;
   err = generate_offer_tx(iface, hashOffer, gen_wtx);
-if (err) fprintf(stderr, "DEBUG: %d = generate_offer_tx\n", err);
+if (err) fprintf(stderr, "DEBUG: TEST: OFFER: %d = generate_offer_tx\n", err);
   _TRUE(0 == err);
   uint160 hashGen = gen_wtx.offer.GetHash();
   _TRUE(gen_wtx.CheckTransaction(TEST_COIN_IFACE));
-  _TRUE(VerifyOffer(gen_wtx) == true);
-  _TRUE(hashGen == hashOffer);
-
-#if 0
-  {
-    int64 t_bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
-fprintf(stderr, "DEBUG: TEST: OFFER: offer generated .. bal is now %f\n", ((double)t_bal / COIN));
-  }
-#endif
-
+  _TRUE(VerifyOffer(gen_wtx, mode) == true);
   {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
-
+  {
+    int64 t_bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
+fprintf(stderr, "DEBUG: TEST: OFFER: offer generated .. bal is now %f\n", ((double)t_bal / COIN));
+  }
+  {
+    int64 t_bal = GetAccountBalance(TEST_COIN_IFACE, strAltLabel, 1);
+fprintf(stderr, "DEBUG: TEST: OFFER: offer generated .. alt-bal is now %f\n", ((double)t_bal / COIN));
+  }
+  {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+  {
+    int64 t_bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
+fprintf(stderr, "DEBUG: TEST: OFFER: offer generated .. bal is now %f\n", ((double)t_bal / COIN));
+  }
+  {
+    int64 t_bal = GetAccountBalance(TEST_COIN_IFACE, strAltLabel, 1);
+fprintf(stderr, "DEBUG: TEST: OFFER: offer generated .. alt-bal is now %f\n", ((double)t_bal / COIN));
+  }
+#if 0
   /* pay operation */
   CWalletTx pay_wtx;
   err = pay_offer_tx(iface, hashAccept, pay_wtx);
@@ -990,16 +1013,19 @@ fprintf(stderr, "DEBUG: TEST: OFFER: offer pay'd .. bal is now %f\n", ((double)t
   }
 
   _TRUE(pay_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+#endif
 #if 0
   /* verify payment has been appended to block-chain */
   _TRUE(GetTxOfOffer(iface, hashPay, t_tx) == false);
   _TRUE(t_tx.GetHash() == pay_wtx.GetHash());
 #endif
 
-/* verify payment */
+#if 0
+	/* verify payment */
   int64 new_bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
-//fprintf(stderr, "DEBUG: TEST OFFER: offertx: bal %llu < new_bal %llu\n", (unsigned long long)bal, (unsigned long long)new_bal);
+fprintf(stderr, "DEBUG: TEST OFFER: offertx: bal %llu < new_bal %llu\n", (unsigned long long)bal, (unsigned long long)new_bal);
   _TRUE(new_bal >= bal);
+#endif
 }
 
 
@@ -1721,6 +1747,10 @@ _TEST(segwit)
   /* return coins back to main account. */
   CTxCreator wtx3(wallet, strWitAccount);
   wtx3.AddOutput(addr.Get(), nValue - (MIN_TX_FEE(iface) * 2));
+	{
+		CTransaction *t = (CTransaction *)&wtx3;
+fprintf(stderr, "DEBUG: TEST: SEGWIT: wtx3.ToString: %s\n", t->ToString(TEST_COIN_IFACE).c_str());
+	}
   _TRUE(wtx3.Send());
   strError = wtx3.GetError();
 if (strError != "") fprintf(stderr, "DEBUG: wtx3.strerror = \"%s\"\n", strError.c_str());
@@ -1730,6 +1760,7 @@ if (strError != "") fprintf(stderr, "DEBUG: wtx3.strerror = \"%s\"\n", strError.
   {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
+fprintf(stderr, "DEBUG: TEST: SEGWIT: wtx3 BLOCK: %s\n", block->ToString().c_str());
     _TRUE(ProcessBlock(NULL, block) == true);
 #if 0
     int nIndex = 0;

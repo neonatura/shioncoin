@@ -50,6 +50,15 @@ static int usde_init(CIface *iface, void *_unused_)
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
+	/* P2SH */
+	iface->BIP16Height = 1; 
+	/* v2.0 block (height in coinbase) */
+	iface->BIP34Height = -1; /* never enabled */
+	/* OP_CHECLOCKTIMEVERIFY */
+	iface->BIP65Height = -1; /* never enabled */
+	/* strict DER signature */
+	iface->BIP66Height = -1; /* never enabled */
+
   iface->nRuleChangeActivationThreshold = 15120; // 75% of 20160
   iface->nMinerConfirmationWindow = 20160; /* aprox */
 
@@ -256,6 +265,12 @@ coin_iface_t usde_coin_iface = {
   USDE_PROTOCOL_VERSION, /* network protocol version */ 
   USDE_COIN_DAEMON_PORT,
   { 0xd9, 0xd9, 0xf9, 0xbd },
+	38, /* G */
+	5,
+	0, /* not supported */
+	166, /* 38 + 128 */
+	{0x0, 0x0, 0x0, 0x0}, /* not supported */
+	{0x0, 0x0, 0x0, 0x0}, /* not supported */
   NODE_NETWORK,
   USDE_MIN_INPUT,
   USDE_MAX_BLOCK_SIZE,

@@ -473,7 +473,8 @@ bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex*
 
 
     if (fVerifySig) {
-      if (!VerifySignature(ifaceIndex, prevtx, *tx, i, fStrictPayToScriptHash, 0)) {
+			int fVerify = GetBlockScriptFlags(iface, pindexBlock);
+      if (!VerifySignature(ifaceIndex, prevtx, *tx, i, fStrictPayToScriptHash, 0, fVerify)) {
         return (error(SHERR_ACCESS, "core_ConnectCoinInputs: error verifying signature integrity."));
       }
     }
@@ -881,5 +882,50 @@ bool ParseMoney(const char* pszIn, CAmount& nRet)
 	nRet = nWhole*COIN + nUnits;
 
 	return true;
+}
+
+static vector<uint160> iface_hash_table;
+CIface *GetCoinByHash(uint160 hash)
+{
+	int ifaceIndex;
+
+	if (iface_hash_table.empty()) {
+		iface_hash_table.resize(MAX_COIN_IFACE);
+		for (ifaceIndex = 0; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+			if (ifaceIndex == COLOR_COIN_IFACE) continue;
+			CIface *iface = GetCoinByIndex(ifaceIndex);
+			if (!iface) continue;
+			string name(iface->name);
+			cbuff vchStr(name.begin(), name.end());
+			iface_hash_table[ifaceIndex] = Hash160(vchStr);
+		}
+	}
+	for (ifaceIndex = 0; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+		if (ifaceIndex == COLOR_COIN_IFACE) continue;
+		CIface *iface = GetCoinByIndex(ifaceIndex);
+		if (!iface) continue;
+
+		if (hash == iface_hash_table[ifaceIndex])
+			return (iface);
+	}
+
+	return (GetCoinByIndex(COLOR_COIN_IFACE));
+}
+
+uint160 GetCoinHash(string name)
+{
+	int ifaceIndex;
+	uint160 hash;
+
+	for (ifaceIndex = 0; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+		if (ifaceIndex == COLOR_COIN_IFACE) continue;
+		CIface *iface = GetCoinByIndex(ifaceIndex);
+		if (!iface) continue;
+		if (0 == strcmp(name.c_str(), iface->name)) {
+			hash = Hash160(vchFromString(name));
+			break;
+		}
+	}
+	return (hash);
 }
 

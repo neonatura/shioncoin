@@ -84,7 +84,6 @@ bool usde_FillBlockIndex()
   blkidx_t *blockIndex = GetBlockTable(USDE_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
   CBlockIndex *lastIndex;
-  USDEBlock block;
   uint256 hash;
 	bcpos_t nMaxIndex;
   bcpos_t nHeight;
@@ -95,6 +94,7 @@ bool usde_FillBlockIndex()
 
   lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
+		USDEBlock block;
     if (!block.ReadBlock(nHeight)) {
       break;
     }

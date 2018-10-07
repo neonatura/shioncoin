@@ -36,7 +36,9 @@
 extern "C" {
 #endif
 
-
+#define BASE58_DEFAULT_PUBKEY_ADDRESS 62 /* S */
+#define BASE58_DEFAULT_SCRIPT_ADDRESS 5
+#define BASE58_DEFAULT_SECRET_KEY 176
 
 #define COIN_IFACE_VERSION(_maj, _min, _rev, _bui) \
   ( \
@@ -154,6 +156,19 @@ typedef int (*coin_f)(struct coin_iface_t * /*iface*/, void * /* arg */);
   ((_iface)->hdr_magic)
 
 
+#define BASE58_PUBKEY_ADDRESS(_iface) \
+	((_iface) ? (_iface)->base58_pubkey_address : BASE58_DEFAULT_PUBKEY_ADDRESS)
+#define BASE58_SCRIPT_ADDRESS(_iface) \
+	((_iface) ? (_iface)->base58_script_address : BASE58_DEFAULT_SCRIPT_ADDRESS)
+#define BASE58_SCRIPT_ADDRESS_2(_iface) \
+	((_iface) ? (_iface)->base58_script_address2 : 0)
+#define BASE58_SECRET_KEY(_iface) \
+	((_iface) ? (_iface)->base58_secret_key : (BASE58_DEFAULT_PUBKEY_ADDRESS + 128))
+#define BASE58_EXT_PUBLIC_KEY(_iface) \
+	((_iface)->base58_ext_public_key)
+#define BASE58_EXT_SECRET_KEY(_iface) \
+	((_iface)->base58_ext_secret_key)
+
 
 
 enum DeploymentPos
@@ -198,6 +213,13 @@ typedef struct coin_iface_t
 
   unsigned char hdr_magic[4];
 
+	unsigned char base58_pubkey_address;
+	unsigned char base58_script_address;
+	unsigned char base58_script_address2;
+	unsigned char base58_secret_key;
+	unsigned char base58_ext_public_key[4];
+	unsigned char base58_ext_secret_key[4];
+
   uint64_t services; /* NODE_XXX */
   uint64_t min_input;
   uint64_t max_block_size;
@@ -224,7 +246,15 @@ typedef struct coin_iface_t
   coin_f op_tx_new;
   coin_f op_tx_pool;
 
-  /* BIP */
+	/** Block height at which BIP16 becomes active */
+	int BIP16Height;
+	/** Block height and hash at which BIP34 becomes active */
+	int BIP34Height;
+	/** Block height at which BIP65 becomes active */
+	int BIP65Height;
+	/** Block height at which BIP66 becomes active */
+	int BIP66Height;
+  /* BIP consensus */
   uint32_t nRuleChangeActivationThreshold;
   uint32_t nMinerConfirmationWindow;
   BIP9Deployment vDeployments[MAX_VERSION_BITS_DEPLOYMENTS];  

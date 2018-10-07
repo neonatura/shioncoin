@@ -96,6 +96,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_reorganize);
   SUITE_ADD_TEST(suite, TEST_matrixtx);
   SUITE_ADD_TEST(suite, TEST_identtx);
+#if 0 /* DEBUG: */
 //  SUITE_ADD_TEST(suite, TEST_truncate);
 
 	/* currently (appears) creates pubkey's that cant be verified against. 
@@ -112,7 +113,6 @@ int main(int argc, char *argv[])
 #endif
   SUITE_ADD_TEST(suite, TEST_ctxtx);
 //  SUITE_ADD_TEST(suite, TEST_channeltx);
-//  SUITE_ADD_TEST(suite, TEST_offertx);
   SUITE_ADD_TEST(suite, TEST_scriptid);
   SUITE_ADD_TEST(suite, TEST_chainwork);
 
@@ -135,6 +135,13 @@ int main(int argc, char *argv[])
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);
+#endif /* DEBUG: */	
+	
+
+  SUITE_ADD_TEST(suite, TEST_offertx);
+
+
+
 
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);

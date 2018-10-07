@@ -359,7 +359,7 @@ const char *json_getnewaddress(int ifaceIndex, const char *account)
 	newKey = GetAccountPubKey(wallet, strAccount, true);
 
 	CKeyID keyID = newKey.GetID();
-  getnewaddr_str = CCoinAddr(keyID).ToString();
+  getnewaddr_str = CCoinAddr(ifaceIndex, keyID).ToString();
 
 #if 0
   CKeyID keyID = newKey.GetID();
@@ -1427,7 +1427,7 @@ static const char *json_stratum_create_account(int ifaceIndex, const char *acc_n
       CKeyID keyId = newKey.GetID();
       wallet->SetAddressBookName(keyId, strAccount);
       if (ifaceIndex == idx) {
-        coinAddr = CCoinAddr(keyId).ToString();
+        coinAddr = CCoinAddr(ifaceIndex, keyId).ToString();
         phash = get_private_key_hash(wallet, keyId);
       }
     }
@@ -2027,7 +2027,7 @@ static const char *json_stratum_account_import(int ifaceIndex, const char *acc_n
   }
 
   Object result;
-  CCoinAddr addr(vchAddress);
+  CCoinAddr addr(ifaceIndex, vchAddress);
 
   result.push_back(Pair("address", addr.ToString()));
   account_import_json = JSONRPCReply(result, Value::null, Value::null);

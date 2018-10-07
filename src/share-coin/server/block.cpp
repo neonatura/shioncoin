@@ -1156,7 +1156,7 @@ bool CTransaction::CheckTransaction(int ifaceIndex)
 
   // Basic checks that don't depend on any context
   if (vin.empty())
-    return error(SHERR_INVAL, "CTransaction::CheckTransaction() : vin empty");
+    return error(SHERR_INVAL, "CTransaction::CheckTransaction() : vin empty: %s", ToString(ifaceIndex).c_str());
   if (vout.empty())
     return error(SHERR_INVAL, "CTransaction::CheckTransaction() : vout empty");
   // Size limits
@@ -1223,7 +1223,7 @@ bool CTransaction::CheckTransactionInputs(int ifaceIndex)
     return (true);
 
   if (vin.empty())
-    return error(SHERR_INVAL, "(core) CheckTransaction: vin empty");
+    return error(SHERR_INVAL, "(core) CheckTransaction: vin empty: %s", ToString(ifaceIndex).c_str());
 
   BOOST_FOREACH(const CTxIn& txin, vin) {
     if (txin.prevout.IsNull()) {
@@ -1519,9 +1519,13 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
         if (!fRet) {
           error(SHERR_INVAL, "CommitLicenseTx failure");
         }
-			} else if (tx.isFlag(CTransaction::TXF_OFFER) ||
-					tx.isFlag(CTransaction::TXF_OFFER)) {
-				/* not implemented. */
+			} 
+
+			/* non-exlusive */
+			if (tx.isFlag(CTransaction::TXF_OFFER)) {
+        int err = CommitOfferTx(iface, tx, nHeight);
+				if (err)
+					error(err, "CommitOfferTx");
       }
 
 			/* non-exclusive */
@@ -1696,37 +1700,48 @@ CCert *CTransaction::CreateLicense(CCert *cert)
 
 COffer *CTransaction::CreateOffer()
 {
+	COffer *off;
 
   if (nFlag & CTransaction::TXF_OFFER)
     return (NULL);
 
   nFlag |= CTransaction::TXF_OFFER;
-  offer = COffer();
 
-  return (&offer);
+  off = GetOffer();
+  off->SetExpireSpan((double)7200); /* 2 hours */
+
+  return (off);
 }
 
-COfferAccept *CTransaction::AcceptOffer(COffer *offerIn)
+COffer *CTransaction::AcceptOffer(COffer *offerIn)
 {
   uint160 hashOffer;
 
-  if (nFlag & CTransaction::TXF_OFFER_ACCEPT)
+  if (nFlag & CTransaction::TXF_OFFER)
     return (NULL);
 
-  nFlag |= CTransaction::TXF_OFFER_ACCEPT;
+  nFlag |= CTransaction::TXF_OFFER;
 
+#if 0
   int64 nPayValue = -1 * offerIn->nXferValue;
   int64 nXferValue = -1 * offerIn->nPayValue;
+#endif
   hashOffer = offerIn->GetHash();
   offer = *offerIn;
 
-  offer.vPayAddr.clear();
-  offer.vXferAddr.clear();
-  offer.nPayValue = nPayValue;
-  offer.nXferValue = nXferValue;
-  offer.hashOffer = hashOffer;
+	COffer *off = GetOffer();
 
- return ((COfferAccept *)&offer);
+#if 0
+  off->vPayAddr.clear();
+  off->vXferAddr.clear();
+  off.nPayValue = nPayValue;
+  off.nXferValue = nXferValue;
+#endif
+  off->hashOffer = hashOffer;
+
+  off->SetExpireSpan((double)7200); /* 2 hours */
+
+ return (off);
 }
 
 COffer *CTransaction::GenerateOffer(COffer *offerIn)
@@ -1740,23 +1755,31 @@ COffer *CTransaction::GenerateOffer(COffer *offerIn)
  return (&offer);
 }
 
-COfferAccept *CTransaction::PayOffer(COfferAccept *accept)
+COffer *CTransaction::PayOffer(COffer *accept)
 {
 
-  if (nFlag & CTransaction::TXF_OFFER_ACCEPT)
+  if (nFlag & CTransaction::TXF_OFFER)
     return (NULL);
 
-  nFlag |= CTransaction::TXF_OFFER_ACCEPT;
-  offer = COffer(*accept);
+  nFlag |= CTransaction::TXF_OFFER;
+  offer = *accept;
 
- return ((COfferAccept *)&offer);
+ return ((COffer *)&offer);
 }
 
 COffer *CTransaction::RemoveOffer(uint160 hashOffer)
 {
   if (nFlag & CTransaction::TXF_OFFER)
     return (NULL);
- return (NULL); 
+
+  nFlag |= CTransaction::TXF_OFFER;
+
+	COffer *off = GetOffer();
+	off->SetNull();
+
+  off->hashOffer = hashOffer;
+
+	return (off);
 }
 
 
@@ -2097,8 +2120,6 @@ Object CTransaction::ToValue(int ifaceIndex)
   }
   if (this->nFlag & TXF_OFFER)
     obj.push_back(Pair("offer", offer.ToValue()));
-  if (this->nFlag & TXF_OFFER_ACCEPT)
-    obj.push_back(Pair("offeraccept", offer.ToValue()));
   if (this->nFlag & TXF_IDENT) {
     CIdent& ident = (CIdent&)certificate;
     obj.push_back(Pair("ident", ident.ToValue()));
@@ -3644,8 +3665,9 @@ void CTransaction::Init(const CTransaction& tx)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_LICENSE)
 		certificate = tx.certificate;
-	else if ((this->nFlag & TXF_OFFER) ||
-			(this->nFlag & TXF_OFFER_ACCEPT))
+
+	/* non-exclusive */
+	if (this->nFlag & TXF_OFFER)
 		offer = tx.offer;
 
 	/* non-exclusive */
@@ -3656,4 +3678,45 @@ void CTransaction::Init(const CTransaction& tx)
 	if (this->nFlag & TXF_ALTCHAIN)
 		altchain = tx.altchain;
 
+}
+
+unsigned int GetBlockScriptFlags(CIface *iface, const CBlockIndex* pindex)
+{
+	unsigned int flags = SCRIPT_VERIFY_NONE;
+  VersionBitsCache *cache;
+
+
+	// Start enforcing P2SH (BIP16)
+	if (iface->BIP16Height != -1 &&
+			pindex->nHeight >= iface->BIP16Height) {
+		flags |= SCRIPT_VERIFY_P2SH;
+	}
+
+	// Start enforcing the DERSIG (BIP66) rule
+	if (iface->BIP66Height != -1 &&
+			pindex->nHeight >= iface->BIP66Height) {
+		flags |= SCRIPT_VERIFY_DERSIG;
+	}
+
+	// Start enforcing CHECKLOCKTIMEVERIFY (BIP65) rule
+	if (iface->BIP65Height != -1 &&
+			pindex->nHeight >= iface->BIP65Height) {
+		flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
+	}
+
+	cache = GetVersionBitsCache(iface);
+	if (cache) {
+		/* enforce BIP68 (sequence locks) and BIP112 (CHECKSEQUENCEVERIFY) using versionbits logic. */
+		if (VersionBitsState(pindex->pprev, iface, DEPLOYMENT_CSV, *cache) == THRESHOLD_ACTIVE) {
+			flags |= SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
+		}
+	}
+
+	// Start enforcing WITNESS rules using versionbits logic.
+	if (IsWitnessEnabled(iface, pindex->pprev)) {
+		flags |= SCRIPT_VERIFY_WITNESS;
+		flags |= SCRIPT_VERIFY_NULLDUMMY;
+	}
+
+	return flags;
 }

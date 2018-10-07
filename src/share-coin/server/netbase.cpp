@@ -1193,3 +1193,46 @@ void CService::SetPort(unsigned short portIn)
     port = portIn;
 }
 
+void CNode::PushTx(const CTransaction& tx, int flags)
+{
+	static const char *pszCommand = "tx";
+
+	CDataStream ss(SER_NETWORK, flags);
+	ss.reserve(1024);
+	ss << tx;
+
+	try
+	{
+		BeginMessage(pszCommand);
+		vSend << ss;
+		EndMessage();
+	}
+	catch (...)
+	{
+		AbortMessage();
+		throw;
+	}
+
+}
+
+void CNode::PushBlock(const CBlock& block, int nFlag)
+{
+	static const char *pszCommand = "block";
+
+	CDataStream ss(SER_GETHASH, nFlag);
+	ss.reserve(4096);
+	ss << block;
+
+	try
+	{
+		BeginMessage(pszCommand);
+		vSend << ss;
+		EndMessage();
+	}
+	catch (...)
+	{
+		AbortMessage();
+		throw;
+	}
+
+}

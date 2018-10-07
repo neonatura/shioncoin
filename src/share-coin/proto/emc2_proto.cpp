@@ -54,6 +54,15 @@ static int emc2_init(CIface *iface, void *_unused_)
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
+	/* P2SH */
+	iface->BIP16Height = 1; /* always enabled */
+	/* v2.0 block (height in coinbase) */
+	iface->BIP34Height = 1; /* always enabled */
+	/* OP_CHECLOCKTIMEVERIFY */
+	iface->BIP65Height = 1; /* always enabled */
+	/* strict DER signature */
+	iface->BIP66Height = 1; /* always enabled */
+
   iface->nRuleChangeActivationThreshold = 15120; // 75% of 20160
   iface->nMinerConfirmationWindow = 20160; /* aprox */
 
@@ -276,6 +285,12 @@ coin_iface_t emc2_coin_iface = {
   EMC2_PROTOCOL_VERSION, /* network protocol version */ 
   EMC2_COIN_DAEMON_PORT,
   { 0xe8, 0xf1, 0xc4, 0xac },
+	33, /* E */
+	5,
+	55,
+	176,/* !+128 */
+	{ 0x04, 0x88, 0xb2, 0x1e },
+	{ 0x04, 0x88, 0xad, 0xe4 },
   NODE_NETWORK | NODE_BLOOM | NODE_WITNESS,
   EMC2_MIN_INPUT,
   EMC2_MAX_BLOCK_SIZE,

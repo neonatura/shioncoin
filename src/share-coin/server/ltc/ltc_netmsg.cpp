@@ -486,6 +486,7 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
     {
       CInv &inv = vInv[nInv];
+			int nFetchFlags = 0;
 
       inv.ifaceIndex = LTC_COIN_IFACE;
 
@@ -497,7 +498,19 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       bool fAlreadyHave = AlreadyHave(iface, inv);
       Debug("(ltc) INVENTORY: %s(%s) [%s]",
           inv.GetCommand().c_str(), inv.hash.GetHex().c_str(),
-          fAlreadyHave ? "have" : "new");
+					fAlreadyHave ? "have" : "new");
+
+			if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
+				nFetchFlags |= MSG_WITNESS_FLAG;
+
+			if (inv.type == MSG_TX ||
+					inv.type == MSG_BLOCK) {
+				inv.type |= nFetchFlags;
+			}
+
+			if (inv.type == MSG_BLOCK && pfrom->fHaveWitness) {
+				inv.type |= nFetchFlags;
+			}
 
       if (!fAlreadyHave)
         pfrom->AskFor(inv);

@@ -69,14 +69,12 @@ CBlockIndex static * InsertBlockIndex(uint256 hash)
 }
 
 typedef vector<CBlockIndex*> txlist;
-bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec)
+bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec, txlist& vOffer)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-  CWallet *alt_wallet = GetWallet(COLOR_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
   CBlockIndex *lastIndex;
-  SHCBlock block;
   uint256 hash;
 	bcpos_t nMaxIndex;
   bcpos_t nHeight;
@@ -89,6 +87,7 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
 
 	lastIndex = NULL;
 	for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
+		SHCBlock block;
     if (!block.ReadBlock(nHeight))
       break;
 
@@ -165,9 +164,12 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
       } else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
 				if (IsLicenseTx(tx))
 					vLicense.push_back(pindexNew);
-      } else if (tx.isFlag(CTransaction::TXF_OFFER) ||
-					tx.isFlag(CTransaction::TXF_OFFER_ACCEPT)) {
-				/* not implemented */
+      }
+
+			/* non-exclusive */
+			if (tx.isFlag(CTransaction::TXF_OFFER)) {
+				if (IsOfferTx(tx))
+					vOffer.push_back(pindexNew);
       }
 
 			/* non-exclusive */
@@ -230,7 +232,8 @@ static bool shc_LoadBlockIndex()
   txlist vAlias;
   txlist vContext;
   txlist vExec;
-  if (!shc_FillBlockIndex(vMatrix, vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec))
+	txlist vOffer;
+  if (!shc_FillBlockIndex(vMatrix, vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec, vOffer))
     return (false);
 
   if (fRequestShutdown)
@@ -512,6 +515,15 @@ static bool shc_LoadBlockIndex()
 		lhash = pindex->GetBlockHash();
 	}
 
+	/* offer */
+  BOOST_FOREACH(CBlockIndex *pindex, vOffer) {
+    CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+    BOOST_FOREACH(CTransaction& tx, block->vtx) {
+      if (IsOfferTx(tx))
+        CommitOfferTx(iface, tx, pindex->nHeight);
+    }
+    delete block;
+  }
 
   return true;
 }

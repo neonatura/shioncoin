@@ -57,6 +57,8 @@ static const size_t nMaxNumSize = 4;
 // Maximum number of bytes pushable to the stack
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520;
 
+extern CIface *GetCoinByHash(uint160 hash);
+
 
 
 CBigNum CastToBigNum(const valtype& vch)
@@ -243,15 +245,15 @@ const char* GetOpName(opcodetype opcode)
     case OP_CHECKMULTISIG          : return "OP_CHECKMULTISIG";
     case OP_CHECKMULTISIGVERIFY    : return "OP_CHECKMULTISIGVERIFY";
 
-    // expanson
+    // expansion
     case OP_NOP1                   : return "OP_NOP1";
-    case OP_NOP2                   : return "OP_NOP2";
-    case OP_NOP3                   : return "OP_NOP3";
+		case OP_CHECKLOCKTIMEVERIFY    : return "OP_CHECKLOCKTIMEVERIFY";
+		case OP_CHECKSEQUENCEVERIFY    : return "OP_CHECKSEQUENCEVERIFY";
     case OP_NOP4                   : return "OP_NOP4";
     case OP_NOP5                   : return "OP_NOP5";
     case OP_NOP6                   : return "OP_NOP6";
     case OP_NOP7                   : return "OP_NOP7";
-    case OP_NOP8                   : return "OP_NOP8";
+    case OP_CHECKALTPROOF          : return "OP_CHECKALTPROOF";
     case OP_NOP9                   : return "OP_NOP9";
     case OP_NOP10                  : return "OP_NOP10";
 
@@ -309,23 +311,18 @@ bool static _CheckLowS(const std::vector<unsigned char>& vchSig)
   return (true);
 }
 
-
-static bool IsAltChainTxHash(cbuff vchColor, cbuff vchTx)
+bool EvalAltProofScript(uint160 hCoin, uint256 hTx)
 {
-	uint160 hColor(vchColor);
-	uint256 hTx(vchTx);
+	bool fSuccess = true; /* if no iface is not available then default to true */
 
-	if (hColor == 0)
-		return (false);
+	CIface *iface = GetCoinByHash(hCoin);
+	if (!iface)
+		iface = GetCoinByIndex(COLOR_COIN_IFACE);
 
-/* DEBUG: TODO: check other iface services enabled for matching color(name) */
+	if (iface)
+		fSuccess = VerifyTxHash(iface, hTx);
 
-	/* alt-chain -- quick check */
-	CIface *alt_iface = GetCoinByIndex(COLOR_COIN_IFACE);
-	if (!alt_iface || !alt_iface->enabled)
-		return (false);
-	CTransaction tx;
-	return (GetTransaction(alt_iface, hTx, tx, NULL));
+	return (fSuccess);
 }
 
 //bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, const CTransaction& txTo, unsigned int nIn, int nHashType, int sigver, int flags)
@@ -345,6 +342,7 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
     return false;
 }
   int nOpCount = 0;
+	bool fRequireMinimal = (flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
 
   try
   {
@@ -416,15 +414,152 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
             // Control
             //
           case OP_NOP:
-          case OP_NOP1: case OP_NOP2: case OP_NOP3: case OP_NOP4: case OP_NOP5:
+          case OP_NOP1: case OP_NOP4: case OP_NOP5:
           case OP_NOP6: case OP_NOP7: case OP_NOP9: case OP_NOP10:
             break;
+
+					case OP_CHECKLOCKTIMEVERIFY: /* BIP 65 */
+						{
+//              const CTransaction& txTo = *sig.tx;
+							int nIn = sig.nTxIn; 
+
+							// (nLockTime -- nLockTime )
+							if (!(flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY))
+								break; // not enabled; treat as a NOP
+							if (stack.size() < 1)
+								return false;
+							// Note that elsewhere numeric opcodes are limited to
+							// operands in the range -2**31+1 to 2**31-1, however it is
+							// legal for opcodes to produce results exceeding that
+							// range. This limitation is implemented by CScriptNum's
+							// default 4-byte limit.
+							//
+							// If we kept to that limit we'd have a year 2038 problem,
+							// even though the nLockTime field in transactions
+							// themselves is uint32 which only becomes meaningless
+							// after the year 2106.
+							//
+							// Thus as a special case we tell CScriptNum to accept up
+							// to 5-byte bignums, which are good until 2**32-1, the
+							// same limit as the nLockTime field itself.
+							const CScriptNum nLockTime(stacktop(-1), 5);
+							// In the rare event that the argument may be < 0 due to
+							// some arithmetic being done first, you can always use
+							// 0 MAX CHECKLOCKTIMEVERIFY.
+							if (nLockTime < 0)
+								return false;
+							// There are two times of nLockTime: lock-by-blockheight
+							// and lock-by-blocktime, distinguished by whether
+							// nLockTime < LOCKTIME_THRESHOLD.
+							//
+							// We want to compare apples to apples, so fail the script
+							// unless the type of nLockTime being tested is the same as
+							// the nLockTime in the transaction.
+							if (!(
+										(txTo.nLockTime <  LOCKTIME_THRESHOLD && nLockTime <  LOCKTIME_THRESHOLD) ||
+										(txTo.nLockTime >= LOCKTIME_THRESHOLD && nLockTime >= LOCKTIME_THRESHOLD)
+									 ))
+								return false;
+							// Now that we know we're comparing apples-to-apples, the
+							// comparison is a simple numeric one.
+							if (nLockTime > (int64_t)txTo.nLockTime)
+								return false;
+							// Finally the nLockTime feature can be disabled and thus
+							// CHECKLOCKTIMEVERIFY bypassed if every txin has been
+							// finalized by setting nSequence to maxint. The
+							// transaction would be allowed into the blockchain, making
+							// the opcode ineffective.
+							//
+							// Testing if this vin is not final is sufficient to
+							// prevent this condition. Alternatively we could test all
+							// inputs, but testing just this input minimizes the data
+							// required to prove correct CHECKLOCKTIMEVERIFY execution.
+							if (txTo.vin[nIn].IsFinal())
+								return false;
+							break;
+						}
+
+					case OP_CHECKSEQUENCEVERIFY:
+						{
+              //const CTransaction& txTo = *sig.tx;
+							int nIn = sig.nTxIn;
+
+							if (!(flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)) {
+								// not enabled; treat as a NOP3
+								break;
+							}
+
+							if (stack.size() < 1)
+								return false;
+
+							// nSequence, like nLockTime, is a 32-bit unsigned integer
+							// field. See the comment in CHECKLOCKTIMEVERIFY regarding
+							// 5-byte numeric operands.
+							const CScriptNum nSequence(stacktop(-1), fRequireMinimal, 5);
+
+							// In the rare event that the argument may be < 0 due to
+							// some arithmetic being done first, you can always use
+							// 0 MAX CHECKSEQUENCEVERIFY.
+							if (nSequence < 0)
+								return false;
+
+							// To provide for future soft-fork extensibility, if the
+							// operand has the disabled lock-time flag set,
+							// CHECKSEQUENCEVERIFY behaves as a NOP.
+							if ((nSequence & CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG) != 0)
+								break;
+
+							// Compare the specified sequence number with the input.
+							// Relative lock times are supported by comparing the passed
+							// in operand to the sequence number of the input.
+							const int64_t txToSequence = (int64_t)txTo.vin[nIn].nSequence;
+
+							// Fail if the transaction's version number is not set high
+							// enough to trigger BIP 68 rules.
+							if (txTo.GetVersion() < 2)
+								return false;
+
+							// Sequence numbers with their most significant bit set are not
+							// consensus constrained. Testing that the transaction's sequence
+							// number do not have this bit set prevents using this property
+							// to get around a CHECKSEQUENCEVERIFY check.
+							if (txToSequence & CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG)
+								return false;
+
+							// Mask off any bits that do not have consensus-enforced meaning
+							// before doing the integer comparisons
+							const uint32_t nLockTimeMask = CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG | CTxIn::SEQUENCE_LOCKTIME_MASK;
+							const int64_t txToSequenceMasked = txToSequence & nLockTimeMask;
+							const CScriptNum nSequenceMasked = nSequence & nLockTimeMask;
+
+							// There are two kinds of nSequence: lock-by-blockheight
+							// and lock-by-blocktime, distinguished by whether
+							// nSequenceMasked < CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG.
+							//
+							// We want to compare apples to apples, so fail the script
+							// unless the type of nSequenceMasked being tested is the same as
+							// the nSequenceMasked in the transaction.
+							if (!(
+										(txToSequenceMasked <  CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG && nSequenceMasked <  CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG) ||
+										(txToSequenceMasked >= CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG && nSequenceMasked >= CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG)
+									 )) {
+								return false;
+							}
+
+							// Now that we know we're comparing apples-to-apples, the
+							// comparison is a simple numeric one.
+							if (nSequenceMasked > txToSequenceMasked)
+								return false;
+
+							break;
+						}
 
           case OP_IF:
           case OP_NOTIF:
             {
               // <expression> if [statements] [else [statements]] endif
               bool fValue = false;
+fprintf(stderr, "DEBUG: EvalScript: OP_IF: fExec(%s)\n", (fExec ? "true" : "false"));
               if (fExec)
               {
                 if (stack.size() < 1)
@@ -443,6 +578,7 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
                 popstack(stack);
               }
               vfExec.push_back(fValue);
+fprintf(stderr, "DEBUG: EvalScript: OP_IF: fValue(%s)\n", (fValue ? "true" : "false"));
             }
             break;
 
@@ -1126,7 +1262,14 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
                 return false;
 							valtype& vchColor    = stacktop(-1);
 							valtype& vchTx = stacktop(-2);
-							bool fSuccess = IsAltChainTxHash(vchColor, vchTx);
+fprintf(stderr, "DEBUG: EvalScript: OP_CHECKALTPROOF: vchColor(%s) vchTx(%s)\n", uint160(vchColor).GetHex().c_str(), uint256(vchTx).GetHex().c_str()); 
+							//bool fSuccess = IsAltChainTxHash(vchColor, vchTx);
+							bool fSuccess = false;
+							{
+								CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+								fSuccess = (VerifyTxHash(iface, uint256(vchTx)));
+							}
+							//bool fSuccess = IsAltChainTxHash(vchColor, vchTx);
 							popstack(stack);
 							popstack(stack);
 							stack.push_back(fSuccess ? vchTrue : vchFalse);
@@ -1322,8 +1465,6 @@ static bool core_CScript_IsPushOnly(const CScript& script, int of = 0)
 
 
 
-
-
 //
 // Return public keys or hashes from scriptPubKey, for 'standard' transaction types.
 //
@@ -1342,19 +1483,22 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
     // Sender provides N pubkeys, receivers provides M signatures
     mTemplates.insert(make_pair(TX_MULTISIG, CScript() << OP_SMALLINTEGER << OP_PUBKEYS << OP_SMALLINTEGER << OP_CHECKMULTISIG));
-
+		
     /* Extended transactions follow the format of 
-     * "OP_EXT_XXX << OP_XXX << OP_HASH160 << <hash> << OP_2DROP << OP_RETURN".
+     * "OP_EXT_XXX << OP_XXX << OP_HASH160 << <hash> << OP_2DROP << <script>".
      * The first two directives and last two directives each count as
      * a single sig-op comprising of a total of 2 sig-ops. The 2DROP
-     * drops both of them from the stack leaving behind a single 
-     * OP_RETURN sig-op with null destination. Note that the 
-     * OP_RETURN itself has a nValue (>= min_tx) and is 
-     * not counted towards the block transaction fee.
+     * drops both of them from the stack leaving behind a parseable pubkey script.
+		 * If a single OP_RETURN (with null destination) then the coins
+		 * will be burnt. Note that the OP_RETURN will have a nValue
+		 * (>= min_tx) and is not counted towards the block transaction fee.
      */ 
 
     /* sent to null address (burnt coins) */
     mTemplates.insert(make_pair(TX_RETURN, CScript() << OP_RETURN));
+
+		// if else pubkey/sig */
+//    mTemplates.insert(make_pair(TX_PUBKEYIF, CScript() << OP_IF << OP_PUBKEY << OP_CHECKSIG << OP_ELSE << OP_PUBKEY << OP_CHECKSIG << OP_ENDIF));
   }
 
   // Shortcut for pay-to-script-hash, which are more constrained than the other types:
@@ -1387,12 +1531,12 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
   // Scan templates
   const CScript& script1 = scriptPubKey;
 
+		opcodetype opcode1, opcode2;
   BOOST_FOREACH(const PAIRTYPE(txnouttype, CScript)& tplate, mTemplates)
   {
     const CScript& script2 = tplate.second;
     vSolutionsRet.clear();
 
-    opcodetype opcode1, opcode2;
     vector<unsigned char> vch1, vch2;
 
     // Compare
@@ -1417,6 +1561,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
       if (!script1.GetOp(pc1, opcode1, vch1)) {
         break;
       }
+			/* <OP_EXT_XXX> <EXT OP (SMALLINT)> OP_HASH160 <OP_EXT_HASH> OP_2DROP */
       if (opcode1 >= 0xf0 && opcode1 < 0xfa) { /* ext */
         while (opcode1 != OP_2DROP && opcode1 != OP_DROP) {
           if (!script1.GetOp(pc1, opcode1, vch1))
@@ -1427,10 +1572,54 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
             break;
         }
       }
+			/* OP_CHECKALTPROOF <hTx> <hColor|hCoin> */
+			if (opcode1 == OP_CHECKALTPROOF) {
+				/* hTx */
+				if (!script1.GetOp(pc1, opcode1, vch1)) break;
+				if (vch1.size() != sizeof(uint256)) break;
+				/* hColor|hCoin */
+				if (!script1.GetOp(pc1, opcode1, vch1)) break;
+				if (vch1.size() != sizeof(uint160)) break;
+fprintf(stderr, "DEBUG: Solver: found complete OP_CHECKALTPROOF\n"); 
+
+/* cheat */
+				vSolutionsRet.push_back(vchTrue);
+
+				/* next op-code */
+				if (!script1.GetOp(pc1, opcode1, vch1)) break;
+			}
+			if (opcode1 == OP_IF) {
+				if (vSolutionsRet.size() == 0) {
+					break;
+				}
+				if (vSolutionsRet.back() == vchTrue) {
+				} else {
+					while (opcode1 != OP_ELSE) {
+						if (!script1.GetOp(pc1, opcode1, vch1))
+							break;
+					}
+					/* OP_ELSE */
+					if (!script1.GetOp(pc1, opcode1, vch1))
+						break;
+				}
+				vSolutionsRet.pop_back();
+				/* next op */
+				if (!script1.GetOp(pc1, opcode1, vch1))
+					break;
+			}
+			if (opcode1 == OP_ELSE) {
+				while (opcode1 != OP_ENDIF) {
+					if (!script1.GetOp(pc1, opcode1, vch1))
+						break;
+				}
+			}
+			if (opcode1 == OP_ENDIF) {
+				script1.GetOp(pc1, opcode1, vch1);
+				continue;
+			}
       if (!script2.GetOp(pc2, opcode2, vch2)) {
         break;
       }
-
 
       // Template matching opcodes:
       if (opcode2 == OP_PUBKEYS)
@@ -1804,7 +1993,7 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
     if (program.size() == 32) {
       // Version 0 segregated witness program: SHA256(CScript) inside the program, CScript + inputs in witness
       if (witness.size() == 0) {
-        return false;//set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_WITNESS_EMPTY);
+        return error(ERR_INVAL, "VerifyWitnessProgram: empty witness stack.");
       }
       scriptPubKey = CScript(witness.back().begin(), witness.back().end());
       stack = std::vector<std::vector<unsigned char> >(witness.begin(), witness.end() - 1);
@@ -1814,29 +2003,29 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
       hashScriptPubKey = Hash(scriptPubKey.begin(), scriptPubKey.end());
 
       if (0 != memcmp(hashScriptPubKey.begin(), &program[0], 32)) {
-        return false;//set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
+        return error(ERR_INVAL, "VerifyWitnessProgram: invalid program");
       }
     } else if (program.size() == 20) {
       // Special case for pay-to-pubkeyhash; signature + pubkey in witness
       if (witness.size() != 2) {
-        return false;//set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH); // 2 items in witness
+        return error(ERR_INVAL, "VerifyWitnessProgram: program does not contain exactly two elements (x%d) [P2SH].", witness.size());
       }
       scriptPubKey << OP_DUP << OP_HASH160 << program << OP_EQUALVERIFY << OP_CHECKSIG;
       stack = witness;
     } else {
-      return false;//set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_WRONG_LENGTH);
+      return error(ERR_INVAL, "VerifyWitnessProgram: wrong program length.");
     }
   } else if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM) {
-    return false;//set_error(serror, SCRIPT_ERR_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM);
+    return error(ERR_INVAL, "VerifyWitnessProgram: DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM");
   } else {
     // Higher version witness scripts return true for future softfork compatibility
-    return (0);//set_success(serror);
+    return (true);//set_success(serror);
   }
 
   // Disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack
   for (unsigned int i = 0; i < stack.size(); i++) {
     if (stack.at(i).size() > MAX_SCRIPT_ELEMENT_SIZE)
-      return false;//set_error(serror, SCRIPT_ERR_PUSH_SIZE);
+      return error(SHERR_INVAL, "VerifyScriptProgram: script exceeds push size.");
   }
 
   if (!EvalScript(sig, stack, scriptPubKey, SIGVERSION_WITNESS_V0, SCRIPT_VERIFY_MINIMALIF | flags)) {
@@ -1845,9 +2034,9 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
 
   // Scripts inside witness implicitly require cleanstack behaviour
   if (stack.size() != 1)
-    return false;//set_error(serror, SCRIPT_ERR_EVAL_FALSE);
+    return error(ERR_INVAL, "VerifyWitnessProgram: stack.size() != 1");
   if (!CastToBool(stack.back()))
-    return false;//set_error(serror, SCRIPT_ERR_EVAL_FALSE);
+    return error(ERR_INVAL, "VerifyWitnessProgram: !CastToBool");
 
   return true;
 }
@@ -1861,7 +2050,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
   bool hadWitness = false;
 
   if ((flags & SCRIPT_VERIFY_SIGPUSHONLY) != 0 && !scriptSig.IsPushOnly()) {
-    return (false);
+    return (error(ERR_INVAL, "VerifyScript: !scriptSig.IsPushOnly"));
   }
 
   vector<vector<unsigned char> > stack, stackCopy;
@@ -1895,7 +2084,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
         return error(SHERR_INVAL, "VerifyScript: witness malleability constraint failure.");
       }
       if (!VerifyWitnessProgram(sig, witness, witnessversion, witnessprogram, flags)) {
-        return error(SHERR_INVAL, "VerifyScript: error verifying witness program.");
+        return error(SHERR_INVAL, "VerifyScript: error verifying witness program (PUBKEY) (flags %d).", flags);
       }
       // Bypass the cleanstack check at the end. The actual stack is obviously not clean
       // for witness programs.
@@ -1907,7 +2096,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
   if (fValidatePayToScriptHash && scriptPubKey.IsPayToScriptHash())
   {
     if (!scriptSig.IsPushOnly()) // scriptSig must be literals-only
-      return false;            // or validation fails
+      return error(ERR_INVAL, "VerifyScript: P2SH !IsPushOnly");            // or validation fails
 
     const valtype& pubKeySerialized = stackCopy.back();
     CScript pubKey2(pubKeySerialized.begin(), pubKeySerialized.end());
@@ -1928,13 +2117,12 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
         if (scriptSig != CScript() << std::vector<unsigned char>(pubKey2.begin(), pubKey2.end())) {
           // The scriptSig must be _exactly_ a single push of the redeemScript. Otherwise we
           // reintroduce malleability.
-          return false;//set_error(serror, SCRIPT_ERR_WITNESS_MALLEATED_P2SH);
+          return error(SHERR_INVAL, "VeriyScript: witness address pubkey failure.");
         }
         if (!VerifyWitnessProgram(sig, witness, witnessversion, witnessprogram,  flags)) {
-          return false;
+          return error(SHERR_INVAL, "VeriyScript: error verifying witness program (P2SH).");
         }
-        // Bypass the cleanstack check at the end. The actual stack is obviously not clean
-        // for witness programs.
+        /* Bypass the cleanstack check at the end. The actual stack is obviously not clean for witness programs. */
         stack.resize(1);
       }
     }
@@ -1943,7 +2131,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
 
   if (flags & SCRIPT_VERIFY_WITNESS) {
     if (!hadWitness && !witness.empty()) {
-      return (false);
+      return (error(SHERR_INVAL, "VerifyScript: !hadWitness && !wintess.empty"));
     }
   }
 
@@ -1951,7 +2139,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
 }
 
 
-bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, bool fValidatePayToScriptHash, int nHashType)
+bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, bool fValidatePayToScriptHash, int nHashType, int flags)
 {
   assert(nIn < txTo.vin.size());
   const CTxIn& txin = txTo.vin[nIn];
@@ -1965,7 +2153,10 @@ bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransact
   CTransaction *txSig = (CTransaction *)&txTo;
   CSignature sig(ifaceIndex, txSig, nIn);
   cstack_t witness;
-  if (!VerifyScript(sig, txin.scriptSig, witness, txout.scriptPubKey, fValidatePayToScriptHash, 0)){
+	if (!txTo.wit.IsNull()) {
+		witness = txTo.wit.vtxinwit[nIn].scriptWitness.stack;
+	}
+  if (!VerifyScript(sig, txin.scriptSig, witness, txout.scriptPubKey, fValidatePayToScriptHash, flags)){
     txSig->print(ifaceIndex);
     return (false);
   }
@@ -2155,18 +2346,19 @@ bool CScript::IsPayToScriptHash() const
 
 bool CScript::IsWitnessProgram(int& version, std::vector<unsigned char>& program) const 
 {
-    if (this->size() < 4 || this->size() > 42) {
-        return false;
-    }
-    if ((*this)[0] != OP_0 && ((*this)[0] < OP_1 || (*this)[0] > OP_16)) {
-        return false;
-    }
-    if ((size_t)((*this)[1] + 2) == this->size()) {
-        version = DecodeOP_N((opcodetype)(*this)[0]);
-        program = std::vector<unsigned char>(this->begin() + 2, this->end());
-        return true;
-    }
-    return false;
+	if (this->size() < 4 || this->size() > 42) {
+		return false;
+	}
+	if ((*this)[0] != OP_0 && ((*this)[0] < OP_1 || (*this)[0] > OP_16)) {
+		return false;
+	}
+
+	if ((size_t)((*this)[1] + 2) == this->size()) {
+		version = DecodeOP_N((opcodetype)(*this)[0]);
+		program = std::vector<unsigned char>(this->begin() + 2, this->end());
+		return true;
+	}
+	return false;
 }
 
 class CScriptVisitor : public boost::static_visitor<bool>
@@ -2238,3 +2430,4 @@ CScript GetScriptForDestination(const CTxDestination& dest)
     boost::apply_visitor(CScriptVisitor(&script), dest);
     return script;
 } 
+

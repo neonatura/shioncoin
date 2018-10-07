@@ -397,6 +397,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
       for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
       {
         CInv &inv = vInv[nInv];
+				int nFetchFlags = 0;
 
         inv.ifaceIndex = TESTNET_COIN_IFACE;
 
@@ -408,6 +409,18 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
         Debug("(testnet) INVENTORY: %s(%s) [%s]", 
             inv.GetCommand().c_str(), inv.hash.GetHex().c_str(), 
             fAlreadyHave ? "have" : "new");
+
+				if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
+					nFetchFlags |= MSG_WITNESS_FLAG;
+
+				if (inv.type == MSG_TX ||
+						inv.type == MSG_BLOCK) {
+					inv.type |= nFetchFlags;
+				}
+
+				if (inv.type == MSG_BLOCK && pfrom->fHaveWitness) {
+					inv.type |= nFetchFlags;
+				}
 
         if (!fAlreadyHave)
           pfrom->AskFor(inv);

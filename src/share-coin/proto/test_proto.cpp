@@ -47,6 +47,15 @@ int64 TESTBlock::nTargetSpacing = 60; /* one minute */
 static int test_init(CIface *iface, void *_unused_)
 {
 
+	/* P2SH */
+	iface->BIP16Height = 1; 
+	/* v2.0 block (height in coinbase) */
+	iface->BIP34Height = 1;
+	/* OP_CHECLOCKTIMEVERIFY */
+	iface->BIP65Height = 1;
+	/* strict DER signature */
+	iface->BIP66Height = 1;
+
   iface->nRuleChangeActivationThreshold = 4;
   iface->nMinerConfirmationWindow = 5;
 
@@ -172,6 +181,12 @@ coin_iface_t test_coin_iface = {
   TEST_PROTOCOL_VERSION, /* network protocol version */ 
   TEST_COIN_DAEMON_PORT,
   { 0xd9, 0xd9, 0xf8, 0xbd },
+	38, /* G */
+	5, /* 3 */
+	25, /* A */
+	190,
+	{0x04, 0x88, 0xB2, 0x1E},
+	{0x04, 0x88, 0xAD, 0xE4},
   0,
   TEST_MIN_INPUT,
   TEST_MAX_BLOCK_SIZE,

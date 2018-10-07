@@ -61,30 +61,20 @@ bool CCoinSecret::SetString(const std::string& strSecret)
 bool CCoinAddr::IsValid() const
 {
   unsigned int nExpectedSize = 20;
-  bool fExpectTestNet = false;
-  switch(nVersion)
-  {
-    case PUBKEY_ADDRESS:
+  switch(nVersion) {
+    case PUBKEY_G_ADDRESS:
     case PUBKEY_C_ADDRESS:
     case PUBKEY_E_ADDRESS:
+    case PUBKEY_L_ADDRESS:
     case PUBKEY_S_ADDRESS:
       nExpectedSize = 20; // Hash of public key
-      fExpectTestNet = false;
       break;
     case SCRIPT_ADDRESS:
+    case SCRIPT_ADDRESS_2:
+    case SCRIPT_ADDRESS_2S:
+    case SCRIPT_ADDRESS_2G:
       nExpectedSize = 20; // Hash of CScript
-      fExpectTestNet = false;
       break;
-#if 0
-    case PUBKEY_ADDRESS_TEST:
-      nExpectedSize = 20;
-      fExpectTestNet = true;
-      break;
-    case SCRIPT_ADDRESS_TEST:
-      nExpectedSize = 20;
-      fExpectTestNet = true;
-      break;
-#endif
     default:
       return false;
   }
@@ -92,26 +82,42 @@ bool CCoinAddr::IsValid() const
     Debug("CCoinSecret: vchData.size() %d, nExpectedSize %d\n", vchData.size(), nExpectedSize);
   }
   return vchData.size() == nExpectedSize;
-  //return fExpectTestNet == fTestNet && vchData.size() == nExpectedSize;
 }
 
 CTxDestination CCoinAddr::Get() const 
 {
+
   if (!IsValid())
     return CNoDestination();
+
+#if 0
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	if (nVersion == BASE58_PUBKEY_ADDRESS(iface)) {
+		uint160 id;
+		memcpy(&id, &vchData[0], 20);
+		return CKeyID(id);
+	}
+	if (nVersion == BASE58_SCRIPT_ADDRESS(iface)) {
+		uint160 id;
+		memcpy(&id, &vchData[0], 20);
+		return CScriptID(id);
+	}
+#endif
   switch (nVersion) {
-    case PUBKEY_ADDRESS:
+		case PUBKEY_G_ADDRESS:
     case PUBKEY_C_ADDRESS:
     case PUBKEY_E_ADDRESS:
+    case PUBKEY_L_ADDRESS:
     case PUBKEY_S_ADDRESS:
-    case PUBKEY_ADDRESS_TEST: 
       {
         uint160 id;
         memcpy(&id, &vchData[0], 20);
         return CKeyID(id);
       }
     case SCRIPT_ADDRESS:
-    case SCRIPT_ADDRESS_TEST: 
+    case SCRIPT_ADDRESS_2:
+    case SCRIPT_ADDRESS_2S:
+    case SCRIPT_ADDRESS_2G:
       {
         uint160 id;
         memcpy(&id, &vchData[0], 20);
@@ -126,11 +132,11 @@ bool CCoinAddr::GetKeyID(CKeyID &keyID) const
   if (!IsValid())
     return false;
   switch (nVersion) {
-    case PUBKEY_ADDRESS:
+    case PUBKEY_G_ADDRESS:
     case PUBKEY_C_ADDRESS:
     case PUBKEY_E_ADDRESS:
     case PUBKEY_S_ADDRESS:
-    case PUBKEY_ADDRESS_TEST:
+    case PUBKEY_L_ADDRESS:
       {
         uint160 id;
         memcpy(&id, &vchData[0], 20);
@@ -143,16 +149,36 @@ bool CCoinAddr::GetKeyID(CKeyID &keyID) const
 
 bool CCoinAddr::GetScriptID(CScriptID& scriptID) const 
 {
+
   if (!IsValid())
     return false;
+
+#if 0
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	if (iface && (nVersion != BASE58_SCRIPT_ADDRESS(iface)))
+		return (false);
+#endif
+#if 0
   if (nVersion != SCRIPT_ADDRESS &&
       nVersion != SCRIPT_ADDRESS_TEST)
     return false;
+#endif
+	switch (nVersion) {
+		case SCRIPT_ADDRESS:
+    case SCRIPT_ADDRESS_2:
+    case SCRIPT_ADDRESS_2S:
+    case SCRIPT_ADDRESS_2G:
+			{
+				uint160 id;
+				memcpy(&id, &vchData[0], 20);
+				scriptID = CScriptID(id);
+			}
+			break;
+		default:
+			return (false);
+	}
 
-  uint160 id;
-  memcpy(&id, &vchData[0], 20);
-  scriptID = CScriptID(id);
-  return (true);
+	return (true);
 }
 
 
@@ -242,4 +268,21 @@ bool DecodeBase58(const char* psz, std::vector<unsigned char>& vchRet)
     return true;
 }
 
+int CCoinAddr::GetPubKeyVersion() const 
+{
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	return (BASE58_PUBKEY_ADDRESS(iface));
+}
 
+int CCoinAddr::GetScriptVersion() const
+{
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	int ver;
+
+	ver = BASE58_SCRIPT_ADDRESS_2(iface);
+	if (ver == 0)
+		ver = BASE58_SCRIPT_ADDRESS(iface);
+	if (ver == 0)
+		ver = BASE58_DEFAULT_SCRIPT_ADDRESS;
+	return (ver);
+}

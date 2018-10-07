@@ -527,8 +527,6 @@ public:
 			// We're using mapAskFor as a priority queue,
 			// the key is the earliest time the request can be sent
 			int64& nRequestTime = mapAlreadyAskedFor[inv];
-			if (fDebugNet)
-				printf("askfor %s   %" PRI64d "\n", inv.ToString().c_str(), nRequestTime);
 
 			// Make sure not to reuse time indexes to keep things in the same order
 			int64 nNow = (GetTime() - 1) * 1000000;
@@ -552,8 +550,6 @@ public:
         nHeaderStart = vSend.size();
         vSend << CMessageHeader(ifaceIndex, pszCommand, 0);
         nMessageStart = vSend.size();
-        if (fDebug)
-            printf("sending: %s ", pszCommand);
     }
 
     void AbortMessage()
@@ -565,15 +561,13 @@ public:
         nMessageStart = -1;
         LEAVE_CRITICAL_SECTION(cs_vSend);
 
-        if (fDebug)
-            printf("(aborted)\n");
     }
 
     void EndMessage()
     {
         if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
         {
-            printf("dropmessages DROPPING SEND MESSAGE\n");
+            //printf("dropmessages DROPPING SEND MESSAGE\n");
             AbortMessage();
             return;
         }
@@ -592,9 +586,6 @@ public:
         assert(nMessageStart - nHeaderStart >= CMessageHeader::CHECKSUM_OFFSET + sizeof(nChecksum));
         memcpy((char*)&vSend[nHeaderStart] + CMessageHeader::CHECKSUM_OFFSET, &nChecksum, sizeof(nChecksum));
 
-        if (fDebug) {
-            printf("(%d bytes)\n", nSize);
-        }
 
         nHeaderStart = -1;
         nMessageStart = -1;
@@ -616,48 +607,9 @@ public:
 
     void PushVersion();
 
-    void PushBlock(const CBlock& block, int nFlag = 0)
-    {
-			CDataStream ss(SER_GETHASH, nFlag);
-			ss.reserve(4096);
-			ss << block;
-			cbuff vchBlock(ss.begin(), ss.end());
-			PushMessage("block", vchBlock);
-#if 0
-      if (fHaveWitness) {
-        PushMessage("block", block);
-      } else {
-        CDataStream ss(SER_GETHASH, SERIALIZE_TRANSACTION_NO_WITNESS);
-        ss.reserve(4096);
-        ss << block;
-        cbuff vchBlock(ss.begin(), ss.end());
-        PushMessage("block", block);
-      }
-#endif
-    }
+    void PushBlock(const CBlock& block, int nFlag = 0);
 
-    void PushTx(const CTransaction& tx, int flags = 0)
-    {
-
-      CDataStream ss(SER_GETHASH, flags);
-      ss.reserve(1024);
-      ss << tx;
-      cbuff vchTx(ss.begin(), ss.end());
-      PushMessage("tx", vchTx);
-#if 0
-      if (fHaveWitness) {
-        PushMessage("tx", tx);
-      } else {
-        CDataStream ss(SER_GETHASH, SERIALIZE_TRANSACTION_NO_WITNESS);
-        ss.reserve(1024);
-        ss << tx;
-        cbuff vchTx(ss.begin(), ss.end());
-        PushMessage("tx", tx);
-      }
-#endif
-
-      //Debug("PushTx: tx \"%s\" to peer \"%s\" [flag %d]\n", tx.GetHash().c_str(), addrName.c_str(), flags);
-    }
+    void PushTx(const CTransaction& tx, int flags = 0);
 
     void PushMessage(const char* pszCommand)
     {

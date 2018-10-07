@@ -38,6 +38,16 @@
 #include <share.h>
 
 
+#define CLROPT_ERROR 0
+#define CLROPT_DIFFICULTY 1
+#define CLROPT_BLOCKTARGET 2
+#define CLROPT_MATURITY 3
+#define CLROPT_REWARDBASE 4
+#define CLROPT_REWARDHALF 5
+#define CLROPT_TXFEE 6
+#define MAX_CLROPT 7
+
+
 class COLORBlock : public CBlock
 {
 public:
@@ -114,6 +124,8 @@ public:
 
 };
 
+typedef map<int, int> color_opt;
+
 
 /**
  * A memory pool where an inventory of pending block transactions are stored.
@@ -137,10 +149,15 @@ extern uint256 COLOR_hashBestChain;
 extern int64 COLOR_nTimeBestReceived;
 
 
+
 /**
  * Generate the inital COLOR block in an alt block-chain.
  */
-COLORBlock *color_CreateGenesisBlock(uint160 hColor);
+COLORBlock *color_CreateGenesisBlock(uint160 hColor, const color_opt& opt = color_opt());
+
+void SetColorOpt(color_opt& opt, int mode, int val);
+
+int GetColorOptValue(color_opt& opt, int mode);
 
 /**
  * Set the best known block hash.
@@ -166,7 +183,7 @@ CBlock *color_GetOrphanBlock(const uint256& hash);
 
 uint256 color_GetOrphanRoot(uint256 hash);
 
-CBlock *color_GenerateNewBlock(CIface *iface, const CPubKey& rkey, uint160 hColor, vector<CTransaction> vTx);
+CBlock *color_GenerateNewBlock(CIface *iface, const CPubKey& rkey, uint160 hColor, vector<CTransaction> vTx, const color_opt& opt = color_opt());
 
 bool color_VerifyGenesisBlock(const CBlock& block);
 
@@ -180,6 +197,7 @@ double color_CalculatePoolFeePriority(CPool *pool, CPoolTx *ptx, double dFeePrio
 
 void color_GenerateNewBlockNonce(CIface *iface, CBlock *block);
 
+void ParseColorOptScript(color_opt& opt, CScript script);
 
 
 /**

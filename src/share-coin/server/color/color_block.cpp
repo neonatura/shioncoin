@@ -50,6 +50,17 @@ using namespace std;
 using namespace boost;
 
 
+static int clropt_default_table[MAX_CLROPT] = 
+{
+	0,
+	1, /* DIFF: >> 11 */
+	1, /* TARGET: 60s */
+	1, /* MATURE: 60 */
+	1, /* REWARD: 1 */
+	1, /* HALF: 1000 */
+	1, /* FEE: 0.0000001 */
+};
+
 /* there is no pre-defined genesis block for an alt-chain. the default proof of work is slightly harder, though. */
 static const CBigNum COLOR_bnGenesisProofOfWorkLimit(~uint256(0) >> 12);
 
@@ -386,8 +397,73 @@ COLORBlock* color_CreateNewBlock(uint160 hColor, CBlockIndex *pindexPrev, const 
   return pblock.release();
 }
 
+
+void SetColorOpt(color_opt& opt, int mode, int val)
+{
+	opt[mode] = val;
+}
+
+int GetColorOptValue(color_opt& opt, int mode)
+{
+	if (opt.count(mode) == 0)
+		return (0);
+	return ((int)opt[mode]);
+}
+
+CScript GetColorOptScript(const color_opt& opt)
+{
+	CScript script;
+
+	script << OP_RETURN << OP_0;
+	BOOST_FOREACH(const PAIRTYPE(int, int)& tok, opt) {
+		script << CScript::EncodeOP_N(tok.first); 
+		script << CScript::EncodeOP_N(tok.second); 
+	}
+
+	return (script);
+}
+
+void ParseColorOptScript(color_opt& opt, CScript script)
+{
+	CScript::const_iterator pc1 = script.begin();
+	opcodetype modecode, valuecode;
+	int mode, value;
+
+	if (!script.GetOp(pc1, modecode))
+		return;
+	if (!script.GetOp(pc1, valuecode))
+		return;
+	if (modecode != OP_RETURN || valuecode != OP_0)
+		return; /* invalid format */
+
+	while (pc1 != script.end()) {
+		if (!script.GetOp(pc1, modecode))
+			break;
+		if (!script.GetOp(pc1, valuecode))
+			break;
+		mode = CScript::DecodeOP_N(modecode);
+		value = CScript::DecodeOP_N(valuecode);
+		if (mode == 0 || value == 0) continue;
+		opt[mode] = value;
+	}
+
+}
+
+#if 0
+void GetChainColorOpt(CWallet *wallet, uint160 hColor, color_opt& opt)
+{
+
+	opt.clear();
+
+	if (wallet->mapColorHead.count(hColor) == 0)
+		return;
+
+	if (!GetTransaction(
+}
+#endif
+
 /* the intial block in a chain for a particular color. requires finding a suitable nonce against the genesis difficulty and provides no coin reward. */ 
-COLORBlock *color_CreateGenesisBlock(uint160 hColor)
+COLORBlock *color_CreateGenesisBlock(uint160 hColor, const color_opt& opt)
 {
 
   auto_ptr<COLORBlock> pblock(new COLORBlock());
@@ -402,7 +478,8 @@ COLORBlock *color_CreateGenesisBlock(uint160 hColor)
   txNew.vin.resize(1);
   txNew.vin[0].prevout.SetNull();
   txNew.vout.resize(1);
-  txNew.vout[0].scriptPubKey << OP_RETURN;
+  txNew.vout[0].scriptPubKey += GetColorOptScript(opt);
+  //txNew.vout[0].scriptPubKey << OP_RETURN;
   //txNew.vout[0].scriptPubKey << rkey << OP_CHECKSIG;
   txNew.vout[0].nValue = color_GetBlockValue(0, 0);
   pblock->vtx.push_back(txNew);
@@ -456,7 +533,7 @@ bool color_VerifyGenesisBlock(const CBlock& block)
 	return (true);
 }
 
-CBlock *color_GenerateNewBlock(CIface *iface, const CPubKey& rkey, uint160 hColor, vector<CTransaction> vTx)
+CBlock *color_GenerateNewBlock(CIface *iface, const CPubKey& rkey, uint160 hColor, vector<CTransaction> vTx, const color_opt& opt)
 {
 #if 0
 	static unsigned int nNonceIndex = 0xE2222222;
@@ -469,7 +546,7 @@ CBlock *color_GenerateNewBlock(CIface *iface, const CPubKey& rkey, uint160 hColo
 	// Create new block
 	if (!pindexPrev) {
 		/* create genesis block. */
-		pblock = color_CreateGenesisBlock(hColor);
+		pblock = color_CreateGenesisBlock(hColor, opt);
 	} else {
 		/* chained color block */
 		CWallet *wallet = GetWallet(COLOR_COIN_IFACE);
@@ -1124,5 +1201,97 @@ double color_CalculatePoolFeePriority(CPool *pool, CPoolTx *ptx, double dFeePrio
 	}
 
 	return (dFeePrio);
+}
+
+
+CBigNum color_GetMinDifficulty(color_opt& opt)
+{
+	const int mode = CLROPT_DIFFICULTY;
+	int val = 0;
+
+	if (opt.count(mode) != 0) {
+		val = opt[mode];
+	}
+	if (val == 0)
+		val = clropt_default_table[CLROPT_DIFFICULTY];
+	val = 10 + MIN(val, 8);
+
+	return (CBigNum(~uint256(0) >> val));
+}
+
+int64 color_GetBlockTarget(color_opt& opt)
+{
+	const int mode = CLROPT_BLOCKTARGET;
+	int64 val = 0;
+	int64 nSpacing = 0;
+
+	if (opt.count(mode) != 0) {
+		val = opt[mode];
+	}
+	if (val == 0)
+		val = clropt_default_table[CLROPT_BLOCKTARGET];
+
+	return ((int64)(val * 60));
+}
+
+int64 color_GetCoinbaseMaturity(color_opt& opt)
+{
+	const int mode = CLROPT_MATURITY;
+	int64 val = 0;
+	int64 nSpacing = 0;
+
+	if (opt.count(mode) != 0) {
+		val = opt[mode];
+	}
+	if (val == 0)
+		val = clropt_default_table[CLROPT_MATURITY];
+	val = MIN(val, 8);
+
+	return ((int64)(val * 60));
+}
+
+int64 color_GetBlockValueBase(color_opt& opt)
+{
+	const int mode = CLROPT_REWARDBASE;
+	double dValue;
+	int64 val = 0;
+
+	if (opt.count(mode) != 0)
+		val = opt[mode];
+	if (val == 0)
+		val = clropt_default_table[mode];
+	val = MIN(val, 10);
+
+	dValue = pow(2, (double)val);
+	return ((int64)(dValue * COIN));
+}
+
+int64 color_GetBlockValueRate(color_opt& opt)
+{
+	const int mode = CLROPT_REWARDHALF;
+	int64 val = 0;
+
+	if (opt.count(mode) != 0)
+		val = opt[mode];
+	if (val == 0)
+		val = clropt_default_table[mode];
+
+	return ((int64)val * 1000);
+}
+
+int64 color_GetMinTxFee(color_opt& opt)
+{
+	const int mode = CLROPT_REWARDBASE;
+	double dValue;
+	int64 val = 0;
+
+	if (opt.count(mode) != 0)
+		val = opt[mode];
+	if (val == 0)
+		val = clropt_default_table[mode];
+	val = MIN(val, 10);
+
+	dValue = pow(2, (double)val);
+	return ((int64)(dValue * COIN));
 }
 

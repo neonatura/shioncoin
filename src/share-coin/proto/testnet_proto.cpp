@@ -52,6 +52,15 @@ static int testnet_init(CIface *iface, void *_unused_)
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
+	/* P2SH */
+	iface->BIP16Height = 1; 
+	/* v2.0 block (height in coinbase) */
+	iface->BIP34Height = 1;
+	/* OP_CHECLOCKTIMEVERIFY */
+	iface->BIP65Height = 1;
+	/* strict DER signature */
+	iface->BIP66Height = 1;
+
   iface->nRuleChangeActivationThreshold = 9072;
   iface->nMinerConfirmationWindow = 12096;
 
@@ -308,6 +317,12 @@ coin_iface_t testnet_coin_iface = {
   TESTNET_PROTOCOL_VERSION, /* network proto ver */
   TESTNET_COIN_DAEMON_PORT,
   { 0x09, 0xd9, 0xf9, 0xbd },
+	65, /* T */
+	5, /* 3 */
+	25, /* A */
+	193,
+	{0x04, 0x88, 0xB2, 0x1E},
+	{0x04, 0x88, 0xAD, 0xE4},
   NODE_NETWORK | NODE_BLOOM,
   TESTNET_MIN_INPUT,
   TESTNET_MAX_BLOCK_SIZE,

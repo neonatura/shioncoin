@@ -7,22 +7,47 @@
 
 class CCoinAddr;
 
-class COfferAccept : public CExtCore 
+class COffer : public CExtCore 
 {
   public:
-    cbuff vPayAddr;
-    cbuff vXferAddr;
-    int64 nPayValue;
-    int64 nXferValue;
+		/* reserved */
+    unsigned int nType;
+		/** the output of the sink-tx holding alt-coins. */
+		unsigned int hSinkOut;
+		/** the actual SHC currency being exchanged. */
+		int64 nValue;
+		/** the minimum SHC currency to send for exchange. */
+		int64 nMinValue;
+		/** the maximum SHC currency to send for exchange. */
+		int64 nMaxValue;
+		/** the exchange rate (<shc-currency> * ((double)nRate*COIN)). */
+		int64 nRate;
+		/** the original offer's hash. */
     uint160 hashOffer;
-    uint256 hXferTx;
+		/** optional alt-currency color hash (COLOR_COIN_IFACE). */
+		uint160 hashColor;
+		/** the final destination SHC currency transaction hash. */
+		uint256 hPayTx;
+		/** the final destination alt-coin currency transaction hash. */
+		uint256 hXferTx;
+		/** the intermediate tx where the initiator's is storing alt currency. */
+		uint256 hSinkTx;
+		/** reserved */
     uint256 hChain;
+		/** the offer initiator's alt-currency receiving [pubkey] address. */
+    cbuff vchPayAddr;
+		/** the offer acceptor's SHC receiving [pubkey] address. */
+    cbuff vchXferAddr;
+		/** the pubkey address receiving SHC coins. */
+		cbuff vchPayCoin;
+		/** the pubkey address receiving alt-currency coins. */
+		cbuff vchXferCoin;
 
-    COfferAccept() { 
+    COffer() { 
       SetNull();
     }
 
-    COfferAccept(const COfferAccept& offerIn)
+    COffer(const COffer& offerIn)
     {
       SetNull();
       Init(offerIn);
@@ -30,49 +55,76 @@ class COfferAccept : public CExtCore
 
     IMPLEMENT_SERIALIZE (
       READWRITE(*(CExtCore *)this);
-      READWRITE(vPayAddr);
-      READWRITE(vXferAddr);
-      READWRITE(nPayValue);
-      READWRITE(nXferValue);
-      READWRITE(hashOffer);
-      READWRITE(hXferTx);
-      READWRITE(hChain);
+			READWRITE(nType);
+			READWRITE(nValue);
+			READWRITE(nMinValue);
+			READWRITE(nMaxValue);
+			READWRITE(nRate);
+			READWRITE(hashOffer);
+			READWRITE(hashColor);
+			READWRITE(hPayTx);
+			READWRITE(hXferTx);
+			READWRITE(hSinkTx);
+			READWRITE(hSinkOut);
+			READWRITE(hChain);
+			READWRITE(vchPayAddr);
+			READWRITE(vchXferAddr);
+			READWRITE(vchPayCoin);
+			READWRITE(vchXferCoin);
     )
 
-
-    friend bool operator==(const COfferAccept &a, const COfferAccept &b) {
+    friend bool operator==(const COffer &a, const COffer &b) {
       return (
           ((CExtCore&) a) == ((CExtCore&) b) &&
-          a.vPayAddr == b.vPayAddr &&
-          a.vXferAddr == b.vXferAddr &&
-          a.nPayValue == b.nPayValue &&
-          a.nXferValue == b.nXferValue && 
-          a.hashOffer == b.hashOffer &&
-          a.hXferTx == b.hXferTx &&
-          a.hChain == b.hChain
+					a.nType == b.nType &&
+					a.nValue == b.nValue &&
+					a.nMinValue == b.nMinValue &&
+					a.nMaxValue == b.nMaxValue &&
+					a.nRate == b.nRate &&
+					a.hashOffer == b.hashOffer &&
+					a.hashColor == b.hashColor &&
+					a.hPayTx == b.hPayTx &&
+					a.hXferTx == b.hXferTx &&
+					a.hSinkTx == b.hSinkTx &&
+					a.hSinkOut == b.hSinkOut &&
+					a.hChain == b.hChain &&
+					a.vchPayAddr == b.vchPayAddr &&
+					a.vchXferAddr == b.vchXferAddr &&
+					a.vchPayCoin == b.vchPayCoin &&
+					a.vchXferCoin == b.vchXferCoin
           );
     }
 
-    void Init(const COfferAccept& b)
+    void Init(const COffer& b)
     {
       CExtCore::Init(b);
-      vPayAddr = b.vPayAddr;
-      vXferAddr = b.vXferAddr;
-      nPayValue = b.nPayValue;
-      nXferValue = b.nXferValue;
-      hashOffer = b.hashOffer;
-      hXferTx = b.hXferTx;
-      hChain = b.hChain;
+
+			nType = b.nType;
+			nValue = b.nValue;
+			nMinValue = b.nMinValue;
+			nMaxValue = b.nMaxValue;
+			nRate = b.nRate;
+			hashOffer = b.hashOffer;
+			hashColor = b.hashColor;
+			hPayTx = b.hPayTx;
+			hXferTx = b.hXferTx;
+			hSinkTx = b.hSinkTx;
+			hSinkOut = b.hSinkOut;
+			hChain = b.hChain;
+			vchPayAddr = b.vchPayAddr;
+			vchXferAddr = b.vchXferAddr;
+			vchPayCoin = b.vchPayCoin;
+			vchXferCoin = b.vchXferCoin;
     }
 
-    COfferAccept operator=(const COfferAccept &b)
+    COffer operator=(const COffer &b)
     {
 			SetNull();
       Init(b);
       return *this;
     }
 
-    friend bool operator!=(const COfferAccept &a, const COfferAccept &b) {
+    friend bool operator!=(const COffer &a, const COffer &b) {
         return !(a == b);
     }
     
@@ -80,18 +132,37 @@ class COfferAccept : public CExtCore
     {
       CExtCore::SetNull();
 
-      vPayAddr.clear(); 
-      vXferAddr.clear(); 
-      nPayValue = 0;
-      nXferValue = 0;
-      hashOffer = 0;
-      hXferTx = 0;
-      hChain = 0;
+			nType = 16; /* reserved */
+			nValue == 0;
+			nMinValue = 0;
+			nMaxValue = 0;
+			nRate = 0;
+			hashOffer = 0;
+			hashColor = 0;
+			hPayTx = 0;
+			hXferTx = 0;
+			hSinkTx = 0;
+			hSinkOut = 0;
+			hChain = 0;
+			vchPayAddr.clear(); 
+			vchXferAddr.clear();
+			vchPayCoin.clear(); 
+			vchXferCoin.clear();
     }
 
     bool IsNull() const 
     {
-      return (nPayValue == 0 || nXferValue == 0);
+      return (nMinValue == 0 || nMaxValue == 0);
+    }
+
+    CIface *GetPayIface()
+    {
+      return (GetCoin(stringFromVch(vchPayCoin).c_str()));
+    }
+
+    CIface *GetXferIface()
+    {
+      return (GetCoin(stringFromVch(vchXferCoin).c_str()));
     }
 
     const uint160 GetHash()
@@ -104,99 +175,25 @@ class COfferAccept : public CExtCore
 
     bool GetPayAddr(int ifaceIndex, CCoinAddr& addr);
 
-    bool GetXferAddr(int ifaceIndex, CCoinAddr& addr, std::string& account);
+    bool GetPayAccount(int ifaceIndex, CCoinAddr& addr, std::string& account);
+
+    bool GetXferAddr(int ifaceIndex, CCoinAddr& addr);
+
+    bool GetXferAccount(int ifaceIndex, CCoinAddr& addr, std::string& account);
+
+		void SetPayAddr(const CPubKey& payAddr);
+
+		void SetXferAddr(const CPubKey& xferAddr);
 
     Object ToValue();
+
     std::string ToString();
 };
 
-class COffer : public COfferAccept
-{
-  public:
-    int nPayCoin;
-    int nXferCoin;
-    unsigned int nType;
-    std::vector<COfferAccept>accepts;
-
-    COffer() {
-      SetNull();
-    }
-
-    COffer(const COffer& offerIn)
-    {
-      SetNull();
-      Init(offerIn);
-    }
-    COffer(const COfferAccept& accept)
-    {
-      SetNull();
-      COfferAccept::Init(accept);
-    }
-
-    IMPLEMENT_SERIALIZE (
-        READWRITE(*(COfferAccept *)this);
-        READWRITE(this->nPayCoin);
-        READWRITE(this->nXferCoin);
-        READWRITE(this->nType);
-        READWRITE(this->accepts);
-        )
-
-      friend bool operator==(const COffer &a, const COffer &b) {
-        return (
-            ((COfferAccept&) a) == ((COfferAccept&) b) &&
-            a.nPayCoin == b.nPayCoin &&
-            a.nXferCoin == b.nXferCoin &&
-            a.nType == b.nType &&
-            a.accepts == b.accepts
-            );
-      }
-
-    COffer operator=(const COffer &b) 
-		{
-			SetNull();
-      COfferAccept::Init(b);
-      nPayCoin = b.nPayCoin;
-      nXferCoin = b.nXferCoin;
-      nType = b.nType;
-      accepts = b.accepts;
-      return *this;
-    }
-
-    friend bool operator!=(const COffer &a, const COffer &b) {
-      return !(a == b);
-    }
-
-    void SetNull()
-    {
-      COfferAccept::SetNull();
-      nPayCoin = -1;
-      nXferCoin = -1;
-      nType = 16; /* reserved */
-      accepts.clear();
-    }
-
-    bool IsNull() const 
-    {
-      return (COfferAccept::IsNull());
-    }
-
-    CIface *GetPayIface()
-    {
-      return (GetCoinByIndex(nPayCoin));
-    }
-
-    CIface *GetXferIface()
-    {
-      return (GetCoinByIndex(nXferCoin));
-    }
-
-    Object ToValue();
-};
 
 
-
-
-bool VerifyOffer(CTransaction& tx);
+/** Verify the integrity of a "Offer Extended Transaction". */
+bool VerifyOffer(const CTransaction& tx, int& mode);
 
 /**
  * The coin cost to initiate a offer or offer-accept transaction.
@@ -213,15 +210,17 @@ int64 GetOfferOpFee(CIface *iface);
  * @param wtx Filled with the offer transaction being performed.
  * @note One of the coin values must be negative and the other positive.
  */
-int init_offer_tx(CIface *iface, std::string strAccount, int64 srcValue, int destIndex, int64 destValue, CWalletTx& wtx);
+int init_offer_tx(CIface *iface, std::string strAccount, int altIndex, int64 nMinValue, int64 nMaxValue, double dRate, CWalletTx& wtx, uint160 hColor = 0);
+
+int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, int64 nValue, CWalletTx& wtx, uint160 hColor = 0);
 
 extern bool GetTxOfOffer(CIface *iface, const uint160& hash, CTransaction& tx);
 
-extern int init_offer_tx(CIface *iface, std::string strAccount, int64 srcValue, int destIndex, int64 destValue, CWalletTx& wtx);
-extern int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, int64 srcValue, int64 destValue, CWalletTx& wtx);
-extern int generate_offer_tx(CIface *iface, uint160 hashOffer, CWalletTx& wtx);
+int generate_offer_tx(CIface *iface, uint160 hashOffer, CWalletTx& wtx);
 
-extern int pay_offer_tx(CIface *iface, uint160 hashAccept, CWalletTx& wtx);
+bool IsOfferTx(const CTransaction& tx);
+
+int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight);
 
 
 

@@ -307,7 +307,6 @@ bool emc2_FillBlockIndex()
   blkidx_t *blockIndex = GetBlockTable(EMC2_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
   CBlockIndex *lastIndex;
-  EMC2Block block;
   uint256 hash;
 	bcpos_t nMaxIndex;
   int nHeight;
@@ -318,6 +317,7 @@ bool emc2_FillBlockIndex()
 
   lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
+		EMC2Block block;
     if (!block.ReadBlock(nHeight)) {
       break;
     }

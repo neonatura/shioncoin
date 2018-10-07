@@ -52,6 +52,14 @@ static int ltc_init(CIface *iface, void *_unused_)
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
+	/* P2SH */
+	iface->BIP16Height = 218579; // 87afb798a3ad9378fcd56123c81fb31cfd9a8df4719b9774d71730c16315a092 - October 1, 2012
+	/* v2.0 block (height in coinbase) */ 
+	iface->BIP34Height = 710000; /* fa09d204a83a768ed5a7c8d441fa62f2043abf420cff1226c7b4329aeb9d51cf */
+	/* OP_CHECLOCKTIMEVERIFY */
+	iface->BIP65Height = 918684; /* bab3041e8977e0dc3eeff63fe707b92bde1dd449d8efafb248c27c8264cc311a */
+	/* strict DER signature */
+	iface->BIP66Height = 811879; /* 7aceee012833fa8952f8835d8b1b3ae233cd6ab08fdb27a771d2bd7bdc491894 */ 
 
   iface->nRuleChangeActivationThreshold = 6048;
 	iface->nMinerConfirmationWindow = 8064;
@@ -308,6 +316,12 @@ coin_iface_t ltc_coin_iface = {
   LTC_PROTOCOL_VERSION, /* network proto ver */
   LTC_COIN_DAEMON_PORT,
   { 0xfb, 0xc0, 0xb6, 0xdb },
+	48, /* L */
+	5,
+	50,
+	176,
+	{0x04, 0x88, 0xB2, 0x1E},
+	{0x04, 0x88, 0xAD, 0xE4},
   NODE_NETWORK | NODE_BLOOM,
   LTC_MIN_INPUT,
   LTC_MAX_BLOCK_SIZE,

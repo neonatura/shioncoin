@@ -72,7 +72,6 @@ static bool color_FillBlockIndex()
   blkidx_t *blockIndex = GetBlockTable(COLOR_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
 	CBlockIndex *bestIndex;
-  COLORBlock block;
   uint256 hash;
 	bcpos_t nMaxIndex;
   bcpos_t nHeight;
@@ -85,6 +84,7 @@ static bool color_FillBlockIndex()
 
 	bestIndex = NULL;
 	for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
+		COLORBlock block;
     if (!block.ReadBlock(nHeight))
       break;
 

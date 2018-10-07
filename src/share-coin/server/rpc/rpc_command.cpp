@@ -1955,6 +1955,7 @@ Value rpc_wallet_addr(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_wallet_witaddr(CIface *iface, const Array& params, bool fStratum)
 {
+  int ifaceIndex = GetCoinIndex(iface);
 
   if (fHelp || params.size() != 1)
     throw runtime_error(
@@ -2016,7 +2017,7 @@ Value rpc_wallet_witaddr(CIface *iface, const Array& params, bool fStratum)
   /* persist */
   wallet->SetAddressBookName(result, strAccount);
 
-  return (CCoinAddr(result).ToString());
+  return (CCoinAddr(ifaceIndex, result).ToString());
 }
 
 Value rpc_wallet_recvbyaccount(CIface *iface, const Array& params, bool fStratum)
@@ -3909,7 +3910,7 @@ Value rpc_addmultisigaddress(CIface *iface, const Array& params, bool fStratum)
     pwalletMain->AddCScript(inner);
 
     pwalletMain->SetAddressBookName(innerID, strAccount);
-    return CCoinAddr(innerID).ToString();
+    return CCoinAddr(ifaceIndex, innerID).ToString();
 }
 
 Value rpc_tx_get(CIface *iface, const Array& params, bool fStratum)

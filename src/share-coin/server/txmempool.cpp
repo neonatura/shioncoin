@@ -241,7 +241,7 @@ bool CPool::VerifyStandards(CPoolTx& ptx)
 
     /* ensure input script is valid */
     if (!Solver(txout.scriptPubKey, whichType, vSolutions)) { 
-      return (error(SHERR_INVAL, "CPool.AddTx: rejecting transaction with unresolvable output coin address."));
+      return (error(SHERR_INVAL, "CPool.AddTx: rejecting transaction with unresolvable output coin address: %s", txout.scriptPubKey.ToString().c_str()));
     }
     if (whichType == TX_NONSTANDARD) {
       return (error(SHERR_INVAL, "CPool.AddTx: rejecting transaction with unknown output coin script."));

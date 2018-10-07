@@ -2685,9 +2685,13 @@ CScript GetScriptForWitness(const CScript& redeemscript)
 			uint160 h160 = Hash160(vch);
 			ret << OP_0 << h160;
 
+fprintf(stderr, "DEBUG: GetScriptForWitness: TX_PUBKEY %s\n", ret.ToString().c_str());
+
 			return ret;
 		} else if (typ == TX_PUBKEYHASH) {
 			ret << OP_0 << vSolutions[0];
+
+fprintf(stderr, "DEBUG: GetScriptForWitness: TX_PUBKEYHASH: %s\n", ret.ToString().c_str()); 
 			return ret;
 		}
 	}
@@ -2704,6 +2708,7 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 	string strAccount;
+	CTxDestination result; 
 
 	{
 		LOCK(cs_wallet);
@@ -2719,7 +2724,6 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 
 		CKeyID keyID;
 		CScriptID scriptID;
-		CScriptID result;
 		if (addr.GetKeyID(keyID)) {
 			CKey key;
 			if (!GetKey(keyID, key))
@@ -2737,10 +2741,14 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 			if (!::IsMine(*this, basescript, true))
 				return error(SHERR_ACCESS, "GetWitnessAddress: cannot create witness address from non-local pub-key address.");
 #endif
+	//  CSHA256().Write(&redeemscript[0], redeemscript.size()).Finalize(hash.begin());
 
 			CScript witscript = GetScriptForWitness(basescript);
-			this->AddCScript(witscript);
+
 			result = CScriptID(witscript);
+			this->AddCScript(witscript);
+
+fprintf(stderr, "DEBUG: GetWitnessAddress: PUBKEY (witscript: %s)\n", witscript.ToString().c_str());
 		} else if (addr.GetScriptID(scriptID)) {
 			CScript subscript;
 			if (this->GetCScript(scriptID, subscript)) {
@@ -2749,6 +2757,7 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 				if (subscript.IsWitnessProgram(witnessversion, witprog)) {
 					/* ID is already for a witness program script */
 					result = scriptID;
+fprintf(stderr, "DEBUG: GetWitnessAddress: P2SH\n");
 				} else {
 #if 0
 					//isminetype typ;
@@ -2761,6 +2770,7 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 					CScript witscript = GetScriptForWitness(subscript);
 					this->AddCScript(witscript);
 					result = CScriptID(witscript);
+fprintf(stderr, "DEBUG: GetWitnessAddress: P2SH/2\n");
 				}
 			}
 		} else {
@@ -2773,6 +2783,8 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 		/* fill in return variable */
 		witAddr = CCoinAddr(ifaceIndex, result);
 	}
+
+fprintf(stderr, "DEBUG: GetWitnessAddress: created address \"%s\".\n", witAddr.ToString().c_str());
 
 	return (true);
 }

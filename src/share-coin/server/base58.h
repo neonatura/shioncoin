@@ -33,6 +33,10 @@
 #include "script.h"
 
 
+#ifndef BASE58_DEFAULT_SCRIPT_ADDRESS
+#define BASE58_DEFAULT_SCRIPT_ADDRESS 5
+#endif
+
 // Encode a byte sequence as a base58-encoded string
 std::string EncodeBase58(const unsigned char* pbegin, const unsigned char* pend);
 
@@ -214,20 +218,23 @@ class CCoinAddr : public CBase58Data
 public:
     enum
     {
-        PUBKEY_ADDRESS = 38,
         PUBKEY_C_ADDRESS = 29,
         PUBKEY_E_ADDRESS = 33,
+        PUBKEY_G_ADDRESS = 38,
+        PUBKEY_L_ADDRESS = 48,
         PUBKEY_S_ADDRESS = 62,
+
         SCRIPT_ADDRESS = 5,
-        PUBKEY_ADDRESS_TEST = 111,
-        SCRIPT_ADDRESS_TEST = 196,
+        SCRIPT_ADDRESS_2 = 50,
+        SCRIPT_ADDRESS_2S = 25,
+        SCRIPT_ADDRESS_2G = 55,
     };
 
     mutable int ifaceIndex;
 
     static int GetCoinAddrVersion(int ifaceIndex)
     {
-
+#if 0
       switch (ifaceIndex) {
         case SHC_COIN_IFACE:
         case TESTNET_COIN_IFACE:
@@ -237,13 +244,13 @@ public:
         case COLOR_COIN_IFACE:
           return (PUBKEY_C_ADDRESS);
       }
-
       return (PUBKEY_ADDRESS);
+#endif
+			return (BASE58_PUBKEY_ADDRESS(GetCoinByIndex(ifaceIndex)));
     }
 
     bool Set(const CKeyID &id) {
-        int ver = PUBKEY_ADDRESS;
-        if (ifaceIndex != 0) ver = GetCoinAddrVersion(ifaceIndex);
+        int ver = GetPubKeyVersion();
         SetData(ver, &id, 20);
         //SetData(GetCoinAddrVersion(ifaceIndex), &id, 20);
         //SetData(fTestNet ? PUBKEY_ADDRESS_TEST : PUBKEY_ADDRESS, &id, 20);
@@ -251,7 +258,9 @@ public:
     }
 
     bool Set(const CScriptID &id) {
-        SetData(SCRIPT_ADDRESS, &id, 20);
+				int ver = GetScriptVersion();
+        SetData(ver, &id, 20);
+//        SetData(SCRIPT_ADDRESS, &id, 20);
         return true;
     }
 
@@ -273,37 +282,64 @@ public:
       Set(dest);
     }
 
+#if 0
     CCoinAddr(const CScriptID& scriptIn)
     {
       ifaceIndex = 0;
       Set(scriptIn);
     }
+#endif
 
     CCoinAddr(const std::string& strAddress)
     {
-      ifaceIndex = 0;
       SetString(strAddress);
+      InitVersionIface();
     }
 
     CCoinAddr(const char* pszAddress)
     {
-      ifaceIndex = 0;
       SetString(pszAddress);
+      InitVersionIface();
     }
 
     CTxDestination Get() const;
     bool GetKeyID(CKeyID &keyID) const;
     bool GetScriptID(CScriptID &scriptID) const;
 
+		int GetPubKeyVersion() const; 
+
+		int GetScriptVersion() const;
+
+		int InitVersionIface()
+		{
+			int idx;
+
+			/* note: doesnt handle CScript */
+			for (idx = 0; idx < MAX_COIN_IFACE; idx++) {
+				CIface *iface = GetCoinByIndex(idx);
+				if (!iface) continue;
+				if (BASE58_PUBKEY_ADDRESS(iface) == nVersion) {
+					ifaceIndex = idx; 
+				}
+			}
+		}
+
+
     bool IsScript() const 
     {
       if (!IsValid())
         return false;
+#if 0
+			return (nVersion == GetScriptVersion());
+#endif
       switch (nVersion) {
         case SCRIPT_ADDRESS:
-        case SCRIPT_ADDRESS_TEST: {
-                                    return true;
-                                  }
+        case SCRIPT_ADDRESS_2:
+        case SCRIPT_ADDRESS_2S:
+        case SCRIPT_ADDRESS_2G:
+					{
+						return true;
+					}
         default: return false;
       }
     }

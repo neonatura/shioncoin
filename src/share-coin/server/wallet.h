@@ -150,6 +150,9 @@ class CWallet : public CCryptoKeyStore
 		/* the tail end block on a color chain */
 		std::map<uint160, uint256> mapColor;
 
+		/* the head (genesis) block on a color chain */
+		std::map<uint160, uint256> mapColorHead;
+
 		/* the pending tail end block on a color chain. */
 		std::map<uint160, uint256> mapColorPool;
 

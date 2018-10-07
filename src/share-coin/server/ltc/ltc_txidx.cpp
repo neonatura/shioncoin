@@ -304,7 +304,6 @@ bool ltc_FillBlockIndex()
   blkidx_t *blockIndex = GetBlockTable(LTC_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
   CBlockIndex *lastIndex;
-  LTCBlock block;
   uint256 hash;
 	bcpos_t nMaxIndex;
 	bcpos_t nHeight;
@@ -315,6 +314,7 @@ bool ltc_FillBlockIndex()
 
   lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
+		LTCBlock block;
     if (!block.ReadBlock(nHeight))
       break;
 

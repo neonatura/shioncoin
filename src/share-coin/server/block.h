@@ -319,24 +319,49 @@ public:
  */
 class CTxIn
 {
-public:
+	public:
     COutPoint prevout;
     CScript scriptSig;
     unsigned int nSequence;
 
+		static const uint32_t SEQUENCE_FINAL = 0xffffffff;
+
+		/* Below flags apply in the context of BIP 68*/
+		/* If this flag set, CTxIn::nSequence is NOT interpreted as a
+		 * relative lock-time. */
+		static const uint32_t SEQUENCE_LOCKTIME_DISABLE_FLAG = (1 << 31);
+
+		/* If CTxIn::nSequence encodes a relative lock-time and this flag
+		 * is set, the relative lock-time has units of 512 seconds,
+		 * otherwise it specifies blocks with a granularity of 1. */
+		static const uint32_t SEQUENCE_LOCKTIME_TYPE_FLAG = (1 << 22);
+
+		/* If CTxIn::nSequence encodes a relative lock-time, this mask is
+		 * applied to extract that lock-time from the sequence field. */
+		static const uint32_t SEQUENCE_LOCKTIME_MASK = 0x0000ffff;
+
+		/* In order to use the same number of bits to encode roughly the
+		 * same wall-clock duration, and because blocks are naturally
+		 * limited to occur every 600s on average, the minimum granularity
+		 * for time-based relative lock-time is fixed at 512 seconds.
+		 * Converting from CTxIn::nSequence to seconds is performed by
+		 * multiplying by 512 = 2^9, or equivalently shifting up by
+		 * 9 bits. */
+		static const int SEQUENCE_LOCKTIME_GRANULARITY = 9;
+
     CTxIn()
     {
-        nSequence = std::numeric_limits<unsigned int>::max();
+        nSequence = SEQUENCE_FINAL;
     }
 
-    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
+    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=SEQUENCE_FINAL)
     {
         prevout = prevoutIn;
         scriptSig = scriptSigIn;
         nSequence = nSequenceIn;
     }
 
-    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
+    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=SEQUENCE_FINAL)
     {
         prevout = COutPoint(hashPrevTx, nOut);
         scriptSig = scriptSigIn;
@@ -352,7 +377,7 @@ public:
 
     bool IsFinal() const
     {
-        return (nSequence == std::numeric_limits<unsigned int>::max());
+        return (nSequence == SEQUENCE_FINAL);
     }
 
     friend bool operator==(const CTxIn& a, const CTxIn& b)
@@ -541,11 +566,12 @@ class CTransactionCore
 
     static const int TXF_VERSION = (1 << 0);
     static const int TXF_VERSION_2 = (1 << 1);
+    static const int TXF_RESERVED_0 = (1 << 2);
+    static const int TXF_RESERVED_1 = (1 << 3);
     static const int TXF_CERTIFICATE = (1 << 4);
     static const int TXF_LICENSE = (1 << 5);
     static const int TXF_ALIAS = (1 << 6);
     static const int TXF_OFFER = (1 << 7);
-    static const int TXF_OFFER_ACCEPT = (1 << 8);
     static const int TXF_ASSET = (1 << 9);
     static const int TXF_IDENT = (1 << 10);
     static const int TXF_MATRIX = (1 << 11);
@@ -553,6 +579,8 @@ class CTransactionCore
     static const int TXF_EXEC = (1 << 13);
     static const int TXF_CONTEXT = (1 << 14);
     static const int TXF_ALTCHAIN = (1 << 15);
+
+		static const int VERSION_MASK = 15;
 
     int nFlag;
     std::vector<CTxIn> vin;
@@ -630,13 +658,40 @@ class CTransactionCore
         return (vin.empty() && vout.empty());
     }
 
-    bool isFlag(int flag) const
+		int GetVersion() const
+		{
+			return ((int)(nFlag & VERSION_MASK));
+		}
+
+		unsigned int GetFlags() const
+		{
+			unsigned int v = (unsigned int)GetVersion();
+			return (nFlag - v);
+		}
+
+    bool isFlag(unsigned int flag) const
     {
-      if ( (nFlag & flag) ) {
+			unsigned int tx_flags = GetFlags();
+
+      if ( (tx_flags & flag) ) {
         return (true);
       } 
+
       return (false);
     }
+
+		void SetVersion(int ver)
+		{
+			ver = MAX(0, MIN(VERSION_MASK, ver));
+			nFlag = GetFlags() + ver;
+		}
+
+		void SetFlag(unsigned int flag)
+		{
+			if (flag <= VERSION_MASK)
+				return;
+			nFlag |= flag;
+		}
 
     friend bool operator==(const CTransactionCore& a, const CTransactionCore& b)
 		{
@@ -717,8 +772,7 @@ class CTransaction : public CTransactionCore
         READWRITE(exec);
       if (this->nFlag & TXF_ALIAS)
         READWRITE(alias);
-      if ((this->nFlag & TXF_OFFER) ||
-          (this->nFlag & TXF_OFFER_ACCEPT))
+      if (this->nFlag & TXF_OFFER)
         READWRITE(offer);
       if (this->nFlag & TXF_MATRIX)
         READWRITE(matrix);
@@ -926,9 +980,9 @@ class CTransaction : public CTransactionCore
     CCert *CreateLicense(CCert *cert);
 
     COffer *CreateOffer();
-    COfferAccept *AcceptOffer(COffer *offerIn);
+    COffer *AcceptOffer(COffer *offerIn);
     COffer *GenerateOffer(COffer *offerIn);
-    COfferAccept *PayOffer(COfferAccept *accept);
+    COffer *PayOffer(COffer *accept);
     COffer *RemoveOffer(uint160 hashOffer);
 
     CCert *CreateAsset(string strAssetName, string strAssetHash);
@@ -999,6 +1053,14 @@ class CTransaction : public CTransactionCore
 				return (NULL);
 			return ((CExecCheckpoint *)&exec);
 		}
+
+    COffer *GetOffer() const
+    {
+      if (!(this->nFlag & TXF_OFFER)) {
+				return (NULL);
+			}
+      return ((COffer *)&offer);
+    }
 
 		CAltChain *GetAltChain() const
 		{
@@ -1861,6 +1923,9 @@ void core_SetExtraNonce(CBlock* pblock, const char *xn_hex);
 
 /** determines whether a block exists in the disk block-chain with given hash. */
 bool HasBlockHash(CIface *iface, uint256 hash);
+
+/** obtain the verification flags neccessary for the block height. */
+unsigned int GetBlockScriptFlags(CIface *iface, const CBlockIndex* pindex);
 
 
 

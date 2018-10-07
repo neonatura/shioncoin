@@ -52,6 +52,14 @@ static int shc_init(CIface *iface, void *_unused_)
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
+	/* P2SH */
+	iface->BIP16Height = 1; /* always enabled */
+	/* v2.0 block (height in coinbase) */
+	iface->BIP34Height = 59128; /* f19bc1a7e3416751daf8ea6ca116aded43b0f541ac4576ccd99a7c494fb50f20 */
+	/* OP_CHECLOCKTIMEVERIFY */
+	iface->BIP65Height = 59128; /* f19bc1a7e3416751daf8ea6ca116aded43b0f541ac4576ccd99a7c494fb50f20 */
+	/* strict DER signature */
+	iface->BIP66Height = 59128; /* f19bc1a7e3416751daf8ea6ca116aded43b0f541ac4576ccd99a7c494fb50f20 */
 
   iface->nRuleChangeActivationThreshold = 9072;
   iface->nMinerConfirmationWindow = 12096;
@@ -315,6 +323,12 @@ coin_iface_t shc_coin_iface = {
   SHC_PROTOCOL_VERSION, /* network proto ver */
   SHC_COIN_DAEMON_PORT,
   { 0xd9, 0xd9, 0xf9, 0xbd },
+	62, /* S*/
+	5, /* 3 */
+	25, /* A */
+	190,
+	{0x04, 0x88, 0xB2, 0x1E},
+	{0x04, 0x88, 0xAD, 0xE4},
   NODE_NETWORK | NODE_BLOOM,
   SHC_MIN_INPUT,
   SHC_MAX_BLOCK_SIZE,
