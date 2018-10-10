@@ -35,6 +35,8 @@
 #include "chain.h"
 #include "rpc_proto.h"
 #include "txmempool.h"
+#include "color/color_pool.h"
+#include "color/color_block.h"
 
 using namespace std;
 using namespace boost;
@@ -67,20 +69,18 @@ static uint160 rpc_alt_key_from_value(Value val)
 Value rpc_alt_addr(CIface *iface, const Array& params, bool fStratum) 
 {
 	CWallet *wallet = GetWallet(iface);
+	string strAccount("");
 	CPubKey pubkey;
 	uint160 hColor;
-	string strAccount;
 
-  if (params.size() == 0)
+  if (params.size() == 0 || params.size() > 2)
     throw runtime_error("rpc_alt_addr");
 
 	hColor = rpc_alt_key_from_value(params[0]);
-	if (params.size() == 1)
-		strAccount = "";
-	else
+	if (params.size() > 1)
 		strAccount = AccountFromValue(params[1]);
-	GetAltChainAddr(iface, hColor, pubkey, true);
 
+	pubkey = GetAltChainAddr(hColor, strAccount, true);
 	CCoinAddr addrRet(COLOR_COIN_IFACE, pubkey.GetID()); 
 	return (addrRet.ToString());
 }
@@ -88,21 +88,17 @@ Value rpc_alt_addr(CIface *iface, const Array& params, bool fStratum)
 Value rpc_alt_addrlist(CIface *iface, const Array& params, bool fStratum) 
 {
   CWallet *wallet = GetWallet(COLOR_COIN_IFACE);
+	string strAccount("");
 	uint160 hColor;
 
-  if (params.size() != 1)
-    throw runtime_error("alt.addrlist <color> [<account>]");
+  if (params.size() == 0 || params.size() > 2)
+    throw runtime_error("rpc_alt_addrlist");
 
-#if 0
-	strAccount = AccountFromValue(params[1]);
-  if (!IsAccountValid(iface, strAccount))
-    throw JSONRPCError(SHERR_NOENT, "Invalid account name specified.");
-#endif
-
-	hColor = rpc_alt_key_from_value(params[0]);
+	hColor = rpc_alt_key_from_value(params[0]); /* not used */
+	if (params.size() > 1)
+		strAccount = AccountFromValue(params[1]);
 
   Array ret;
-	string strAccount(hColor.GetHex());
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item,
 			wallet->mapAddressBook) {
     const CCoinAddr& address = CCoinAddr(COLOR_COIN_IFACE, item.first);
@@ -111,33 +107,46 @@ Value rpc_alt_addrlist(CIface *iface, const Array& params, bool fStratum)
       ret.push_back(address.ToString());
   }
 
-#if 0
   if (strAccount.length() == 0) {
     std::set<CKeyID> keys;
     wallet->GetKeys(keys);
     BOOST_FOREACH(const CKeyID& key, keys) {
       if (wallet->mapAddressBook.count(key) == 0) { /* loner */
-        CCoinAddr addr(ifaceIndex, key);
+        CCoinAddr addr(COLOR_COIN_IFACE, key);
         ret.push_back(addr.ToString());
       }
     }
   }
-#endif
 
   return ret;
 }
 
 Value rpc_alt_balance(CIface *iface, const Array& params, bool fStratum) 
 {
+	CWallet *wallet = GetWallet(iface);
+	string strAccount;
 	uint160 hColor;
+	int64 nBalance = 0;
+	int nMinDepth = 1;
 
-  if (params.size() != 1)
+  if (params.size() > 3)
     throw runtime_error("rpc_alt_balance");
 
-	/* TODO: nMinDepth, [account] */
-
 	hColor = rpc_alt_key_from_value(params[0]);
-	return ((double)GetAccountBalance(COLOR_COIN_IFACE, hColor.GetHex(), 1)/COIN);
+	if (params.size() > 1)
+		strAccount = AccountFromValue(params[1]);
+	if (params.size() > 2)
+		nMinDepth = params[2].get_int();
+
+	{
+		vector <COutput> vCoins;
+		wallet->AvailableAccountCoins(strAccount, vCoins, nMinDepth == 0 ? false : true, hColor);
+		BOOST_FOREACH(const COutput& out, vCoins) {
+			nBalance += out.tx->vout[out.i].nValue;
+		}
+	}
+
+	return ((double)nBalance/COIN);
 }
 
 Value rpc_alt_color(CIface *iface, const Array& params, bool fStratum) 
@@ -271,7 +280,73 @@ Value rpc_alt_mine(CIface *iface, const Array& params, bool fStratum)
 
 	CWalletTx wtx;
 	vector<CTransaction> vAltTx;
-	err = init_altchain_tx(iface, strAccount, hColor, vAltTx, wtx); 
+	err = update_altchain_tx(iface, strAccount, hColor, vAltTx, wtx); 
+	if (err)
+    throw JSONRPCError(err, "update_altchain_tx");
+
+	return wtx.ToValue(ifaceIndex);
+}
+
+static void _split_token(string tok, string& mode_str, int& val)
+{
+	string delim("=");
+
+	mode_str = "";
+	val = 0;
+
+	if (tok.find(delim) == string::npos)
+		return;
+
+	mode_str = tok.substr(0, tok.find(delim));
+	val = atoi(tok.substr(tok.find(delim)).c_str());
+}
+
+Value rpc_alt_new(CIface *iface, const Array& params, bool fStratum) 
+{
+  CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	string strAccount;
+	uint160 hColor;
+	int64 nValue;
+	int err;
+
+  if (params.size() == 0)
+    throw runtime_error("rpc_alt_mine");
+
+	/* block-chain color */
+	hColor = rpc_alt_key_from_value(params[0]);
+
+	/* account on main-chain to deduct altchain-tx fee. */
+	if (params.size() == 1)
+		strAccount = "";
+	else
+		strAccount = AccountFromValue(params[1]);
+
+	/* establish block-chain parameters. */
+	color_opt opt;
+	for (int i = 2; i < params.size(); i++) {
+		string tok = params[i].get_str();
+		string mode_str;
+		int val;
+		_split_token(tok, mode_str, val);
+		if (mode_str == "" || val == 0)
+			continue;
+		if (mode_str == "difficulty")
+			SetColorOpt(opt, CLROPT_DIFFICULTY, MIN(8, val));
+		else if (mode_str == "blocktarget")
+			SetColorOpt(opt, CLROPT_BLOCKTARGET, MIN(15, val));
+		else if (mode_str == "maturity")
+			SetColorOpt(opt, CLROPT_MATURITY, MIN(8, val));
+		else if (mode_str == "rewardbase")
+			SetColorOpt(opt, CLROPT_REWARDBASE, MIN(10, val));
+		else if (mode_str == "rewardhalf")
+			SetColorOpt(opt, CLROPT_REWARDHALF, MIN(15, val));
+		else if (mode_str == "txfee")
+			SetColorOpt(opt, CLROPT_TXFEE, MIN(8, val));
+	}
+
+	CWalletTx wtx;
+	err = init_altchain_tx(iface, strAccount, hColor, opt, wtx);
 	if (err)
     throw JSONRPCError(err, "init_altchain_tx");
 
@@ -299,9 +374,9 @@ Value rpc_alt_send(CIface *iface, const Array& params, bool fStratum)
 
 	CWalletTx wtx;
 	CCoinAddr addr(params[1].get_str());
-	err = init_altchain_tx(iface, strAccount, hColor, addr, nValue, wtx); 
+	err = update_altchain_tx(iface, strAccount, hColor, addr, nValue, wtx); 
 	if (err)
-    throw JSONRPCError(err, "init_altchain_tx");
+    throw JSONRPCError(err, "update_altchain_tx");
 
 	return wtx.ToValue(ifaceIndex);
 }

@@ -58,5 +58,15 @@ Value rpc_wallet_stamp(CIface *iface, const Array& params, bool fHelp);
 
 Value rpc_cert_export(CIface *iface, const Array& params, bool fHelp);
 
+Value rpc_asset_get(CIface *iface, const Array& params, bool fHelp);
+Value rpc_asset_info(CIface *iface, const Array& params, bool fHelp);
+Value rpc_asset_new(CIface *iface, const Array& params, bool fHelp);
+Value rpc_asset_list(CIface *iface, const Array& params, bool fHelp);
+Value rpc_asset_listacc(CIface *iface, const Array& params, bool fHelp);
+Value rpc_asset_listcert(CIface *iface, const Array& params, bool fHelp);
+Value rpc_asset_remove(CIface *iface, const Array& params, bool fHelp);
+Value rpc_asset_update(CIface *iface, const Array& params, bool fHelp);
+
+
 #endif /* ndef __SERVER__RPCCERT_PROTO_H__ */
 

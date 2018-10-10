@@ -152,6 +152,7 @@ Value rpc_alias_pubaddr(CIface *iface, const Array& params, bool fStratum)
   int err;
 
   if (ifaceIndex != TEST_COIN_IFACE &&
+      ifaceIndex != TESTNET_COIN_IFACE &&
       ifaceIndex != SHC_COIN_IFACE)
     throw runtime_error("Unsupported operation for coin service.\n");
 
@@ -321,6 +322,7 @@ Value rpc_alias_remove(CIface *iface, const Array& params, bool fStratum)
 
   int ifaceIndex = GetCoinIndex(iface);
   if (ifaceIndex != TEST_COIN_IFACE &&
+      ifaceIndex != TESTNET_COIN_IFACE &&
       ifaceIndex != SHC_COIN_IFACE)
     throw runtime_error("unsupported operation");
 

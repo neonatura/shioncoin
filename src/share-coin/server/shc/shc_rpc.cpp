@@ -449,6 +449,64 @@ const RPCOp EXEC_TRANSFER = {
 #endif
 
 
+const RPCOp ASSET_GET = {
+  &rpc_asset_get, 1, {RPC_STRING},
+  "Summary: Display information about an asset.\n"
+  "\n"
+  "Print detailed information about a particular asset."
+};
+const RPCOp ASSET_INFO = {
+  &rpc_asset_info, 0, {},
+  "Summary: Display information about asset transactions.\n"
+  "\n"
+  "Show general information about certified assets."
+};
+const RPCOp ASSET_NEW = {
+  &rpc_asset_new, 4, {RPC_ACCOUNT, RPC_STRING, RPC_STRING, RPC_STRING},
+  "Syntax: <account> <cert> <title> <data>\n"
+  "Summary: Create a certified asset.\n"
+  "\n"
+  "Submit a new asset transaction onto the blockchain."
+};
+const RPCOp ASSET_LIST = {
+  &rpc_asset_list, 0, {RPC_STRING},
+  "Syntax: [<kwd>]\n"
+  "Summary: List assets information.\n"
+  "\n"
+  "List all assets on blockchain with keyword substring match."
+};
+const RPCOp ASSET_LISTACC = {
+  &rpc_asset_list, 1, {RPC_ACCOUNT},
+  "Syntax: <account>\n"
+  "Summary: List assets information for account.\n"
+  "\n"
+  "List all assets on blockchain with with account association."
+};
+const RPCOp ASSET_LISTCERT = {
+  &rpc_asset_listcert, 1, {RPC_STRING},
+  "Syntax: <cert>\n"
+  "Summary: List assets information for certificate.\n"
+  "\n"
+  "List all assets on blockchain certified by specified certificate hash."
+};
+const RPCOp ASSET_REMOVE = {
+  &rpc_asset_remove, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> <asset>\n"
+  "Summary: Remove a certified asset.\n"
+  "\n"
+  "Remove an asset from the blockchain."
+};
+const RPCOp ASSET_UPDATE = {
+  &rpc_asset_update, 4, {RPC_ACCOUNT, RPC_STRING, RPC_STRING, RPC_STRING},
+  "Syntax: <account> <asset> <title> <data>\n"
+  "Summary: Update an existing asset.\n"
+  "\n"
+  "Update information for an asset on the blockchain."
+};
+
+
+
+
 void shc_RegisterRPCOp(int ifaceIndex)
 {
 
@@ -461,6 +519,15 @@ void shc_RegisterRPCOp(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "alias.list", ALIAS_LIST);
   RegisterRPCOp(ifaceIndex, "alias.pubaddr", ALIAS_PUBADDR);
   RegisterRPCOp(ifaceIndex, "alias.remove", ALIAS_REMOVE);
+
+  RegisterRPCOp(ifaceIndex, "asset.get", ASSET_GET);
+  RegisterRPCOp(ifaceIndex, "asset.info", ASSET_INFO);
+  RegisterRPCOp(ifaceIndex, "asset.new", ASSET_NEW);
+  RegisterRPCOp(ifaceIndex, "asset.list", ASSET_LIST);
+  RegisterRPCOp(ifaceIndex, "asset.listacc", ASSET_LISTACC);
+  RegisterRPCOp(ifaceIndex, "asset.listcert", ASSET_LISTCERT);
+  RegisterRPCOp(ifaceIndex, "asset.remove", ASSET_REMOVE);
+  RegisterRPCOp(ifaceIndex, "asset.update", ASSET_UPDATE);
 
   RegisterRPCOp(ifaceIndex, "cert.export", CERT_EXPORT);
   RegisterRPCOp(ifaceIndex, "cert.info", CERT_INFO);

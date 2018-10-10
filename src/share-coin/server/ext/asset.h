@@ -114,14 +114,24 @@ class CAsset : public CCert
 
 };
 
+
+bool GetTxOfAsset(CIface *iface, const uint160& hashAsset, CTransaction& tx); 
+
+int64 GetAssetOpFee(CIface *iface, int nHeight); 
+
+asset_list *GetAssetTable(int ifaceIndex);
+
+bool IsAssetTx(const CTransaction& tx);
+
 bool VerifyAsset(CTransaction& tx);
 
+bool ProcessAssetTx(CIface *iface, CTransaction& tx, int nHeight);
 
-int init_asset_tx(CIface *iface, string strAccount, string strTitle, string strHash, CWalletTx& wtx);
+bool DisconnectAssetTx(CIface *iface, CTransaction& tx);
+
+int init_asset_tx(CIface *iface, string strAccount, uint160 hashCert, string strTitle, string strHash, CWalletTx& wtx);
 
 int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, string strTitle, string strHash, CWalletTx& wtx);
-
-int activate_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, const uint160& hashCert, CWalletTx& wtx);
 
 int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, CWalletTx& wtx);
 
