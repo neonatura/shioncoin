@@ -720,7 +720,7 @@ bool LTCBlock::CheckBlock()
   }
 
   // Check timestamp
-  if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
+  if (GetBlockTime() > GetAdjustedTime() + LTC_MAX_DRIFT_TIME) {
     return error(SHERR_INVAL, "CheckBlock() : block timestamp too far in the future");
   }
 

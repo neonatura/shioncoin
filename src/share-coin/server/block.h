@@ -985,10 +985,9 @@ class CTransaction : public CTransactionCore
     COffer *PayOffer(COffer *accept);
     COffer *RemoveOffer(uint160 hashOffer);
 
-    CCert *CreateAsset(string strAssetName, string strAssetHash);
-    CCert *UpdateAsset(const CAsset& assetIn, string strAssetName, string strAssetHash);
-    CCert *SignAsset(const CAsset& assetIn, CCert *cert);
-    CCert *RemoveAsset(const CAsset& assetIn);
+    CAsset *CreateAsset(string strAssetName, string strAssetHash);
+    CAsset *UpdateAsset(const CAsset& assetIn, string strAssetName, string strAssetHash);
+    CAsset *RemoveAsset(const CAsset& assetIn);
 
     CExec *CreateExec();
     CExecCheckpoint *UpdateExec(const CExec& execIn);
@@ -1067,6 +1066,13 @@ class CTransaction : public CTransactionCore
 			if (!(this->nFlag & TXF_ALTCHAIN))
 				return (NULL);
 			return ((CAltChain *)&altchain);
+		}
+
+		CAsset *GetAsset()
+		{
+			if (!(this->nFlag & TXF_ASSET))
+				return (NULL);
+			return ((CAsset *)&certificate);
 		}
 
     CTxMatrix *GetMatrix()
@@ -1309,6 +1315,7 @@ class CBlock : public CBlockHeader
     std::vector<CTransaction> vtx;
     mutable std::vector<uint256> vMerkleTree; /* mem only */
     mutable CNode *originPeer;
+		uint160 hColor;
 
     CBlock()
     {

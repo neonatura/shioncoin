@@ -399,7 +399,6 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   CCoinAddr addr = GetAccountAddress(wallet, strAccount, false);
 
   if (!addr.IsValid()) {
-fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
     return (SHERR_NOENT);
   }
 
@@ -407,7 +406,6 @@ fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
   string strExtAccount = "@" + strAccount;
   CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
   if (!extAddr.IsValid()) {
-fprintf(stderr, "DEBUG: update_asset_tx: !extAddr.IsValid\n");
     return (SHERR_INVAL);
   }
 
@@ -468,7 +466,6 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   /* verify original asset */
   CTransaction tx;
   if (!GetTxOfAsset(iface, hashAsset, tx)) {
-//fprintf(stderr, "DEBUG: update_asset_tx: !GetTxOfAsset\n");
     return (SHERR_NOENT);
   }
 	int nOut = IndexOfExtOutput(tx);
@@ -478,7 +475,6 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
     return (SHERR_REMOTE);
   }
   if(!IsLocalAsset(iface, tx)) {
-//fprintf(stderr, "DEBUG: update_asset_tx: !IsLocalAsset\n");
     return (SHERR_REMOTE);
   }
 
@@ -491,7 +487,6 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   /* establish account */
   CCoinAddr addr = GetAccountAddress(wallet, strAccount, false);
   if (!addr.IsValid()) {
-//fprintf(stderr, "DEBUG: update_asset_tx: !addr.IsValid\n");
     return (SHERR_NOENT);
   }
 
@@ -726,8 +721,8 @@ bool GetAssetChain(CIface *iface, const CTransaction& txIn, vector<CTransaction>
 
 	tx = txIn;
 	mode = OP_EXT_UPDATE;
+	l_hashIssuer = tx.GetAsset()->hashIssuer;
 	while (mode == OP_EXT_UPDATE) {
-fprintf(stderr, "DEBUG: GetAssetChain: hashIssuer %s\n", l_hashIssuer.GetHex().c_str()); 
 		for (i = 0; i < tx.vin.size(); i++) {
 			const CTxIn& in = tx.vin[i];
 			CTransaction p_tx;
@@ -747,10 +742,10 @@ fprintf(stderr, "DEBUG: GetAssetChain: hashIssuer %s\n", l_hashIssuer.GetHex().c
 
 			CAsset *p_asset = p_tx.GetAsset();
 			if (mode == OP_EXT_NEW) {
-				if (l_hashIssuer != 0 && hashAsset != l_hashIssuer)
+				if (hashAsset != l_hashIssuer)
 					continue; /* wrong chain */
 			} else {
-				if (l_hashIssuer != 0 && p_asset->hashIssuer != l_hashIssuer)
+				if (p_asset->hashIssuer != l_hashIssuer)
 					continue; /* wrong chain */
 			}
 

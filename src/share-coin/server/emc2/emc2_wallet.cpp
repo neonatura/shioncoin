@@ -585,7 +585,7 @@ bool EMC2Wallet::UnacceptWalletTransaction(const CTransaction& tx)
 }
 #endif
 
-int64 EMC2Wallet::GetBlockValue(int nHeight, int64 nFees)
+int64 EMC2Wallet::GetBlockValue(int nHeight, int64 nFees, uint160 hColor)
 {
   return (emc2_GetBlockValue(nHeight, nFees));
 }
@@ -792,7 +792,7 @@ bool AllowFree() {
 }
 #endif
 
-int64 EMC2Wallet::GetFeeRate()
+int64 EMC2Wallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
   int64 nVal;
@@ -803,4 +803,8 @@ int64 EMC2Wallet::GetFeeRate()
   return (nVal);
 }
 
-
+int EMC2Wallet::GetCoinbaseMaturity(uint160 hColor)
+{
+  CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
+	return (iface ? iface->coinbase_maturity : 0);
+}

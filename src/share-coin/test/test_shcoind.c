@@ -96,7 +96,6 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_reorganize);
   SUITE_ADD_TEST(suite, TEST_matrixtx);
   SUITE_ADD_TEST(suite, TEST_identtx);
-#if 0 /* DEBUG: */
 //  SUITE_ADD_TEST(suite, TEST_truncate);
 
 	/* currently (appears) creates pubkey's that cant be verified against. 
@@ -115,16 +114,15 @@ int main(int argc, char *argv[])
 //  SUITE_ADD_TEST(suite, TEST_channeltx);
   SUITE_ADD_TEST(suite, TEST_scriptid);
   SUITE_ADD_TEST(suite, TEST_chainwork);
+  SUITE_ADD_TEST(suite, TEST_offertx);
 
   /* tx memory pool */
   SUITE_ADD_TEST(suite, TEST_txmempool_pending);
   SUITE_ADD_TEST(suite, TEST_txmempool_inval);
   SUITE_ADD_TEST(suite, TEST_txmempool_depend);
-#if 0
-	/* re-enable me */
+
   SUITE_ADD_TEST(suite, TEST_respend);
   SUITE_ADD_TEST(suite, TEST_orphan_block);
-#endif
 
   /* pre-finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall);
@@ -135,10 +133,8 @@ int main(int argc, char *argv[])
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);
-#endif /* DEBUG: */	
 	
 
-  SUITE_ADD_TEST(suite, TEST_offertx);
 
 
 

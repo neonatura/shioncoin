@@ -771,8 +771,14 @@ int is_stratum_task_pending(int *ret_iface)
   static uint32_t usec;
   struct timeval now;
   uint64_t block_height;
-  int ifaceIndex;
   char errbuf[256];
+  int ifaceIndex;
+	int usec_trigger = 0;
+
+	usec++;
+	if (0 == (usec % 720)) { /* twelve minutes */
+		usec_trigger = 1;
+	}
 
   for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
 		if (ifaceIndex == TESTNET_COIN_IFACE) continue;
@@ -786,13 +792,14 @@ int is_stratum_task_pending(int *ret_iface)
         block_height < (iface->blockscan_max - 1))
       continue; /* downloading blocks.. */
 
-    if (block_height == pend_block_height[ifaceIndex])
-      continue; /* no new block. */
+		if (!usec_trigger && block_height == pend_block_height[ifaceIndex])
+			continue; /* no new block. */
 
     pend_block_height[ifaceIndex] = block_height;
     if (ret_iface)
       *ret_iface = ifaceIndex;
 
+		usec = 1;
     return (TRUE);
   }
 

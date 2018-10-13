@@ -583,13 +583,13 @@ bool TESTNETBlock::AcceptBlock()
 
   if (GetBlockTime() > GetAdjustedTime() + TESTNET_MAX_DRIFT_TIME) {
     print();
-    return error(SHERR_INVAL, "(testnet) AcceptBlock: block's timestamp more than fifteen minutes in the future.");
+    return error(SHERR_INVAL, "(testnet) AcceptBlock: block's timestamp too new.");
 
   }
-	if ((GetBlockTime() <= pindexPrev->GetBlockTime() - TESTNET_MAX_DRIFT_TIME) ||
+	if (GetBlockTime() <= pindexPrev->GetMedianTimePast() ||
 			(GetBlockTime() < pindexPrev->GetBlockTime())) {
     print();
-    return error(SHERR_INVAL, "(testnet) AcceptBlock: block's timestamp more than fifteen minutes old.");
+    return error(SHERR_INVAL, "(testnet) AcceptBlock: block's timestamp too old.");
   }
 
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {

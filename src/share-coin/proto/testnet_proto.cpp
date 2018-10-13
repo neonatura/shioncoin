@@ -76,7 +76,7 @@ static int testnet_init(CIface *iface, void *_unused_)
 	/* BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
 	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1546300800; /* 01/01/19 */
-	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1551398400; /* 03/01/19 */
+	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1577836800; /* 01/01/20 */
 
 
 

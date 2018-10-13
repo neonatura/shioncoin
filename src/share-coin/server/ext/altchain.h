@@ -29,6 +29,8 @@
 class CTxIn;
 class CTxOut;
 
+typedef map<int, int> color_opt;
+
 class CAltBlock
 {
 	public:
@@ -256,7 +258,7 @@ class CAltChain : public CExtCore
 /**
  * Generate a CAltChain extended transaction that can be commited to the block-chain.
  */
-bool GenerateAltChainBlock(CIface *iface, CAltChain *altchain, uint160 hColor, vector<CTransaction> vTx, const CPubKey& pubkey, CBlock **pBlockRet);
+bool GenerateAltChainBlock(CIface *iface, string strAccount, CAltChain *altchain, uint160 hColor, vector<CTransaction> vTx, const CPubKey& pubkey, CBlock **pBlockRet);
 
 /**
  * Obtain a uint160 hash representing a 128-bit color. 
@@ -265,15 +267,13 @@ bool GenerateAltChainBlock(CIface *iface, CAltChain *altchain, uint160 hColor, v
  * @returns The color encoded as a 20-byte hash sequence.
  * @note The first four bytes of the hash contains the "symbol" of the color.
  */
-uint160 GetAltColorHash(string strTitle, string& strColorRet);
+uint160 GetAltColorHash(CIface *iface, string strTitle, string& strColorRet);
 
 string GetAltColorHashAbrev(uint160 hash);
 
 void GetAltColorCode(uint160 hash, uint32_t *r_p, uint32_t *g_p, uint32_t *b_p, uint32_t *a_p);
 
-bool GetAltChainAddr(CIface *iface, uint160 hColor, CPubKey& pubkey, bool bForceNew = false);
-
-const CPubKey& GetAltChainAddr(CIface *iface, uint160 hColor, string strAccount);
+const CPubKey& GetAltChainAddr(uint160 hColor, string strAccount, bool bForceNew);
 
 bool CommitAltChainTx(CIface *iface, CTransaction& tx, CNode *pfrom, bool fUpdate = false);
 
@@ -288,15 +288,15 @@ bool CommitAltChainOrphanTx(CIface *iface, const CTransaction& tx);
  */
 bool IsAltChainTx(const CTransaction& tx);
 
+int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt& opt, CWalletTx& wtx);
 
+int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<CTransaction> vAltTx, CWalletTx& wtx);
 
-int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<CTransaction> vAltTx, CWalletTx& wtx);
+int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, const CScript& addrTo, int64 nValueTo, CWalletTx& wtx);
 
-int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, const CScript& addrTo, int64 nValueTo, CWalletTx& wtx);
+int update_altchain_tx(CIface *iface, string strAccount, uint160 color, const CPubKey& addrTo, int64 nValueTo, CWalletTx& wtx);
 
-int init_altchain_tx(CIface *iface, string strAccount, uint160 color, const CPubKey& addrTo, int64 nValueTo, CWalletTx& wtx);
-
-int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, const CCoinAddr& addrTo, int64 nValueTo, CWalletTx& wtx);
+int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, const CCoinAddr& addrTo, int64 nValueTo, CWalletTx& wtx);
 
 
 

@@ -981,13 +981,13 @@ bool TESTBlock::AcceptBlock()
 
   if (GetBlockTime() > GetAdjustedTime() + TEST_MAX_DRIFT_TIME) {
     print();
-    return error(SHERR_INVAL, "(test) AcceptBlock: block's timestamp more than fifteen minutes in the future.");
+    return error(SHERR_INVAL, "(test) AcceptBlock: block's timestamp too new.");
 
   }
-	if ((GetBlockTime() <= pindexPrev->GetBlockTime() - TEST_MAX_DRIFT_TIME) ||
-			(GetBlockTime() < pindexPrev->GetBlockTime())) {
+	if (GetBlockTime() <= pindexPrev->GetMedianTimePast() ||
+			GetBlockTime() < pindexPrev->GetBlockTime()) {
     print();
-    return error(SHERR_INVAL, "(test) AcceptBlock: block's timestamp more than fifteen minutes old.");
+    return error(SHERR_INVAL, "(test) AcceptBlock: block's timestamp too old.");
   }
 
   bool checkHeightMismatch = false;

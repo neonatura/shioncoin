@@ -776,7 +776,7 @@ bool SHCWallet::UnacceptWalletTransaction(const CTransaction& tx)
 
 #endif
 
-int64 SHCWallet::GetBlockValue(int nHeight, int64 nFees)
+int64 SHCWallet::GetBlockValue(int nHeight, int64 nFees, uint160 hColor)
 {
   return (shc_GetBlockValue(nHeight, nFees));
 }
@@ -812,8 +812,14 @@ double SHCWallet::AllowFreeThreshold()
   return ((double)COIN * block_daily / block_bytes);
 }
 
-int64 SHCWallet::GetFeeRate()
+int64 SHCWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   return (MIN_TX_FEE(iface));
+}
+
+int SHCWallet::GetCoinbaseMaturity(uint160 hColor)
+{
+  CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+	return (iface ? iface->coinbase_maturity : 0);
 }

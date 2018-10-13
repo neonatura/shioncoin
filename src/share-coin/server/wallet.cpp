@@ -810,7 +810,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed) const
 	}
 }
 
-void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, bool fOnlyConfirmed) const
+void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, bool fOnlyConfirmed, uint160 hColor) const
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 	CTxMemPool *pool = GetTxMemPool(iface);
@@ -860,6 +860,9 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
 		for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
 		{
 			const CWalletTx* pcoin = &(*it).second;
+
+			if (hColor != 0 && pcoin->GetColor() != hColor)
+				continue;
 
 			if (!pcoin->IsFinal(ifaceIndex))
 				continue;
@@ -1159,7 +1162,7 @@ bool SelectCoins_Avg(int64 nTargetValue, vector<COutput>& vCoins, set<pair<const
 	return true;
 }
 
-bool CWallet::SelectAccountCoins(string strAccount, int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const
+bool CWallet::SelectAccountCoins(string strAccount, int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet, uint160 hColor) const
 {
 	vector<COutput> vCoins;
 	AvailableAccountCoins(strAccount, vCoins);
@@ -1471,6 +1474,8 @@ bool SyncWithWallets(CIface *iface, CTransaction& tx, CBlock *pblock)
 
 int CMerkleTx::GetBlocksToMaturity(int ifaceIndex) const
 {
+	CWallet *wallet = GetWallet(ifaceIndex);
+	int nMaturity = wallet ? wallet->GetCoinbaseMaturity() : 0;
 
 	if (!IsCoinBase())
 		return 0;
@@ -1479,7 +1484,7 @@ int CMerkleTx::GetBlocksToMaturity(int ifaceIndex) const
 		return 0;
 
 	int depth = GetDepthInMainChain(ifaceIndex);
-	return max(0, ((int)iface->coinbase_maturity + 1) - depth);
+	return max(0, (nMaturity + 1) - depth);
 }
 
 int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
@@ -2684,14 +2689,9 @@ CScript GetScriptForWitness(const CScript& redeemscript)
 			cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
 			uint160 h160 = Hash160(vch);
 			ret << OP_0 << h160;
-
-fprintf(stderr, "DEBUG: GetScriptForWitness: TX_PUBKEY %s\n", ret.ToString().c_str());
-
 			return ret;
 		} else if (typ == TX_PUBKEYHASH) {
 			ret << OP_0 << vSolutions[0];
-
-fprintf(stderr, "DEBUG: GetScriptForWitness: TX_PUBKEYHASH: %s\n", ret.ToString().c_str()); 
 			return ret;
 		}
 	}
@@ -2747,8 +2747,6 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 
 			result = CScriptID(witscript);
 			this->AddCScript(witscript);
-
-fprintf(stderr, "DEBUG: GetWitnessAddress: PUBKEY (witscript: %s)\n", witscript.ToString().c_str());
 		} else if (addr.GetScriptID(scriptID)) {
 			CScript subscript;
 			if (this->GetCScript(scriptID, subscript)) {
@@ -2757,7 +2755,6 @@ fprintf(stderr, "DEBUG: GetWitnessAddress: PUBKEY (witscript: %s)\n", witscript.
 				if (subscript.IsWitnessProgram(witnessversion, witprog)) {
 					/* ID is already for a witness program script */
 					result = scriptID;
-fprintf(stderr, "DEBUG: GetWitnessAddress: P2SH\n");
 				} else {
 #if 0
 					//isminetype typ;
@@ -2770,7 +2767,6 @@ fprintf(stderr, "DEBUG: GetWitnessAddress: P2SH\n");
 					CScript witscript = GetScriptForWitness(subscript);
 					this->AddCScript(witscript);
 					result = CScriptID(witscript);
-fprintf(stderr, "DEBUG: GetWitnessAddress: P2SH/2\n");
 				}
 			}
 		} else {
@@ -2784,12 +2780,10 @@ fprintf(stderr, "DEBUG: GetWitnessAddress: P2SH/2\n");
 		witAddr = CCoinAddr(ifaceIndex, result);
 	}
 
-fprintf(stderr, "DEBUG: GetWitnessAddress: created address \"%s\".\n", witAddr.ToString().c_str());
-
 	return (true);
 }
 
-int64 CWallet::CalculateFee(CTransaction& tx, int64 nMinFee)
+int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee)
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 	int64 nBytes;
@@ -2799,7 +2793,11 @@ int64 CWallet::CalculateFee(CTransaction& tx, int64 nMinFee)
 	//nBytes = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION(iface));
 
 	/* base fee */
-	nFee = GetFeeRate() * (1 + (nBytes / 1000));
+	if (ifaceIndex == COLOR_COIN_IFACE) {
+		nFee = GetFeeRate(tx.GetColor()) * (1 + (nBytes / 1000));
+	} else {
+		nFee = GetFeeRate() * (1 + (nBytes / 1000));
+	}
 	/* dust penalty */
 	BOOST_FOREACH(const CTxOut& out, tx.vout) {
 		if (out.nValue < CENT)

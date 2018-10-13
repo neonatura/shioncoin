@@ -652,7 +652,7 @@ bool TESTNETWallet::UnacceptWalletTransaction(const CTransaction& tx)
   return (core_UnacceptWalletTransaction(iface, tx));
 }
 
-int64 TESTNETWallet::GetBlockValue(int nHeight, int64 nFees)
+int64 TESTNETWallet::GetBlockValue(int nHeight, int64 nFees, uint160 hColor)
 {
   return (testnet_GetBlockValue(nHeight, nFees));
 }
@@ -688,8 +688,14 @@ double TESTNETWallet::AllowFreeThreshold()
   return ((double)COIN * block_daily / block_bytes);
 }
 
-int64 TESTNETWallet::GetFeeRate()
+int64 TESTNETWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
   return (MIN_TX_FEE(iface));
+}
+
+int TESTNETWallet::GetCoinbaseMaturity(uint160 hColor)
+{
+  CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
+	return (iface ? iface->coinbase_maturity : 0);
 }

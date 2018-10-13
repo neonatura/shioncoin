@@ -592,7 +592,7 @@ bool TESTWallet::UnacceptWalletTransaction(const CTransaction& tx)
 }
 #endif
 
-int64 TESTWallet::GetBlockValue(int nHeight, int64 nFees)
+int64 TESTWallet::GetBlockValue(int nHeight, int64 nFees, uint160 hColor)
 {
   return (test_GetBlockValue(nHeight, nFees));
 }
@@ -804,8 +804,14 @@ double TESTWallet::AllowFreeThreshold()
   return ((double)COIN * block_daily / block_bytes);
 }
 
-int64 TESTWallet::GetFeeRate()
+int64 TESTWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   return (MIN_TX_FEE(iface));
+}
+
+int TESTWallet::GetCoinbaseMaturity(uint160 hColor)
+{
+  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+	return (iface ? iface->coinbase_maturity : 0);
 }

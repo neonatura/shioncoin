@@ -223,6 +223,7 @@ public:
         PUBKEY_G_ADDRESS = 38,
         PUBKEY_L_ADDRESS = 48,
         PUBKEY_S_ADDRESS = 62,
+        PUBKEY_T_ADDRESS = 65,
 
         SCRIPT_ADDRESS = 5,
         SCRIPT_ADDRESS_2 = 50,

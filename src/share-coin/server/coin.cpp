@@ -441,9 +441,10 @@ bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex*
         return (error(SHERR_INVAL, "core_ConnectInputs: invalid block reference"));
       }
 
-      if ((pindexBlock->nHeight - previndex->nHeight) < iface->coinbase_maturity) {
-        /* immature */
-        return (error(SHERR_INVAL, "core_ConnectInputs: immature coinbase"));
+			CWallet *wallet = GetWallet(iface);
+			if ((pindexBlock->nHeight - previndex->nHeight) < wallet->GetCoinbaseMaturity(pBlock->hColor)) {
+				/* immature */
+				return (error(SHERR_INVAL, "core_ConnectInputs: immature coinbase"));
       }
     }
 
@@ -554,7 +555,6 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
   }
   if (nSigOps > MAX_BLOCK_SIGOPS(iface)) /* too many puppies */
     return error(SHERR_INVAL, "ConnectBlock() : too many sigops");
-
   if (block->vtx[0].GetValueOut() > 
       wallet->GetBlockValue(pindex->nHeight, nFees)) {
     return (error(SHERR_INVAL, "core_ConnectBlock: coinbaseValueOut(%f) > BlockValue(%f) @ height %d [fee %llu]\n", ((double)block->vtx[0].GetValueOut()/(double)COIN), ((double)wallet->GetBlockValue(pindex->nHeight, nFees)/(double)COIN), pindex->nHeight, (unsigned long long)nFees)); 
@@ -660,6 +660,12 @@ bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
 	if (IsExecTx(*tx, mode)) {
 		if (!DisconnectExecTx(iface, *tx, mode)) {
       error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting exec tx [mode %d].", mode);
+		}
+	}
+
+	if (IsAssetTx(*tx)) {
+		if (!DisconnectAssetTx(iface, *tx)) {
+      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting asset tx.");
 		}
 	}
 

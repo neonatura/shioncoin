@@ -61,14 +61,15 @@ static int clropt_default_table[MAX_CLROPT] =
 	1, /* FEE: 0.0000001 */
 };
 
-/* there is no pre-defined genesis block for an alt-chain. the default proof of work is slightly harder, though. */
+/* there is no pre-defined single genesis block for an alt-chain. */
 static const CBigNum COLOR_bnGenesisProofOfWorkLimit(~uint256(0) >> 12);
 
 /* the minimum proof-of-work to create a new block on an alt-chain. */ 
 static const CBigNum COLOR_bnProofOfWorkLimit(~uint256(0) >> 11);
 
+static std::map<uint160, color_opt> mapColorOpt;
 
-static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) 
+static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax, CBigNum bnProofOfWorkLimit) 
 {
   const CBlockIndex *BlockLastSolved	= pindexLast;
   const CBlockIndex *BlockReading	= pindexLast;
@@ -82,7 +83,7 @@ static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const
   double	EventHorizonDeviationFast;
   double	EventHorizonDeviationSlow;
 
-  if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 || (uint64)BlockLastSolved->nHeight < PastBlocksMin) { return COLOR_bnProofOfWorkLimit.GetCompact(); }
+  if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 || (uint64)BlockLastSolved->nHeight < PastBlocksMin) { return bnProofOfWorkLimit.GetCompact(); }
 
   int64 LatestBlockTime = BlockLastSolved->GetBlockTime();
 
@@ -123,9 +124,29 @@ static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const
     bnNew *= PastRateActualSeconds;
     bnNew /= PastRateTargetSeconds;
   }
-  if (bnNew > COLOR_bnProofOfWorkLimit) { bnNew = COLOR_bnProofOfWorkLimit; }
+  if (bnNew > bnProofOfWorkLimit) { bnNew = bnProofOfWorkLimit; }
 
   return bnNew.GetCompact();
+}
+
+static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint160 hColor)
+{
+  static unsigned int	TimeDaySeconds	= 60 * 60 * 24;
+	int64 BlocksTargetSpacing;
+	CBigNum bnProofOfWorkLimit;
+
+	BlocksTargetSpacing = color_GetBlockTarget(hColor);
+  int64	PastSecondsMin	= TimeDaySeconds * 0.10;
+  int64	PastSecondsMax	= TimeDaySeconds * 2.8;
+  uint64	PastBlocksMin	= PastSecondsMin / BlocksTargetSpacing;
+  uint64	PastBlocksMax	= PastSecondsMax / BlocksTargetSpacing;	
+
+	if (pindexLast == NULL)
+		bnProofOfWorkLimit = COLOR_bnGenesisProofOfWorkLimit;
+	else
+		bnProofOfWorkLimit = color_GetMinDifficulty(hColor);
+
+	return (color_KimotoGravityWell(pindexLast, pblock, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax, bnProofOfWorkLimit));
 }
 
 
@@ -237,31 +258,11 @@ uint256 color_GetOrphanRoot(uint256 hash)
   return (hash);
 }
 
-
-
-
-
 unsigned int COLORBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
-  int nHeight = pindexLast->nHeight + 1;
-
-  int64 nInterval;
-  int64 nActualTimespanMax;
-  int64 nActualTimespanMin;
-  int64 nTargetTimespanCurrent;
-
-  // Genesis block
   if (pindexLast == NULL)
     return (COLOR_bnGenesisProofOfWorkLimit.GetCompact());
-
-  static const int64	BlocksTargetSpacing	= 1.0 * 60; // 1.0 minutes
-  unsigned int	TimeDaySeconds	= 60 * 60 * 24;
-  int64	PastSecondsMin	= TimeDaySeconds * 0.10;
-  int64	PastSecondsMax	= TimeDaySeconds * 2.8;
-  uint64	PastBlocksMin	= PastSecondsMin / BlocksTargetSpacing;
-  uint64	PastBlocksMax	= PastSecondsMax / BlocksTargetSpacing;	
-
-  return color_KimotoGravityWell(pindexLast, this, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
+  return color_KimotoGravityWell(pindexLast, this, hColor);
 }
 
 static int64_t color_GetTxWeight(const CTransaction& tx)
@@ -274,27 +275,17 @@ static int64_t color_GetTxWeight(const CTransaction& tx)
   return (weight);
 }
 
-/*
- * (height 000000): Block Reward 12.000000
- * (height 015000): Block Reward 6.000000
- * (height 030000): Block Reward 4.000000
- * (height 045000): Block Reward 3.000000
- * (height 060000): Block Reward 2.000000
- * (height 075000): Block Reward 1.700000
- * (height 090000): Block Reward 1.500000
- * (height 105000): Block Reward 1.300000
- * (height 120000): Block Reward 1.000000
- * (height 135000): Block Reward 1.000000
- * Total coin value: 722387.999979
- * Total height: 1440000
- */
-int64 color_GetBlockValue(int nHeight, int64 nFees)
+int64 color_GetBlockValue(uint160 hColor, int nHeight, int64 nFees)
 {
-  double base = (double)COIN * 1.2;
+  double base;
   double fact;
+	double rate;
   int64 nValue;
+
+	base = (double)color_GetBlockValueBase(hColor);
+	rate = (double)color_GetBlockValueBase(hColor); 
     
-  fact = ((nHeight + 1) / 12000) + 1;
+  fact = ((nHeight + 1) / rate) + 1;
   nValue = (int64)(base / fact) + nFees;
     
   nValue /= 1000000;
@@ -330,6 +321,26 @@ CBlockIndex *GetBestColorBlockIndex(CIface *iface, uint160 hColor)
 	}
 
 	return (NULL);
+}
+
+bool color_GetBlockColor(CIface *iface, CBlockIndex *pindex, uint160& hColor)
+{
+	CWallet *wallet = GetWallet(iface);
+
+	if (!wallet)
+		return (false);
+
+	while (pindex && pindex->pprev)
+		pindex = pindex->pprev;
+	if (!pindex)
+		return (false);
+	
+	const uint256& hBlock = pindex->GetBlockHash();
+	if (wallet->mapColorHead.count(hBlock) == 0)
+		return (false);
+
+	hColor = wallet->mapColorHead[hBlock]; 
+	return (true);
 }
 
 COLORBlock* color_CreateNewBlock(uint160 hColor, CBlockIndex *pindexPrev, const CPubKey& rkey)
@@ -371,7 +382,7 @@ COLORBlock* color_CreateNewBlock(uint160 hColor, CBlockIndex *pindexPrev, const 
   }
 
   /* calculate reward */
-	pblock->vtx[0].vout[0].nValue = color_GetBlockValue(nHeight+1, nFees);
+	pblock->vtx[0].vout[0].nValue = color_GetBlockValue(hColor, nHeight+1, nFees);
 
   /* define core header */
   pblock->nVersion = 1;//core_ComputeBlockVersion(iface, pindexPrev);
@@ -392,7 +403,6 @@ COLORBlock* color_CreateNewBlock(uint160 hColor, CBlockIndex *pindexPrev, const 
 			(CScript() << qual << ParseHex(hexStr)) + 
 			COINBASE_FLAGS;
 	}
-//	pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
   return pblock.release();
 }
@@ -433,8 +443,12 @@ void ParseColorOptScript(color_opt& opt, CScript script)
 		return;
 	if (!script.GetOp(pc1, valuecode))
 		return;
-	if (modecode != OP_RETURN || valuecode != OP_0)
+	if (modecode != OP_RETURN) {
 		return; /* invalid format */
+	}
+	if (valuecode != OP_0) {
+		return; /* invalid format */
+	}
 
 	while (pc1 != script.end()) {
 		if (!script.GetOp(pc1, modecode))
@@ -449,20 +463,7 @@ void ParseColorOptScript(color_opt& opt, CScript script)
 
 }
 
-#if 0
-void GetChainColorOpt(CWallet *wallet, uint160 hColor, color_opt& opt)
-{
-
-	opt.clear();
-
-	if (wallet->mapColorHead.count(hColor) == 0)
-		return;
-
-	if (!GetTransaction(
-}
-#endif
-
-/* the intial block in a chain for a particular color. requires finding a suitable nonce against the genesis difficulty and provides no coin reward. */ 
+/** Creates the intial block in a chain for a particular color. Requires finding a suitable nonce against the genesis difficulty and provides no coin reward. */ 
 COLORBlock *color_CreateGenesisBlock(uint160 hColor, const color_opt& opt)
 {
 
@@ -479,17 +480,14 @@ COLORBlock *color_CreateGenesisBlock(uint160 hColor, const color_opt& opt)
   txNew.vin[0].prevout.SetNull();
   txNew.vout.resize(1);
   txNew.vout[0].scriptPubKey += GetColorOptScript(opt);
-  //txNew.vout[0].scriptPubKey << OP_RETURN;
-  //txNew.vout[0].scriptPubKey << rkey << OP_CHECKSIG;
-  txNew.vout[0].nValue = color_GetBlockValue(0, 0);
+  txNew.vout[0].nValue = color_GetBlockValue(hColor, 0, 0);
   pblock->vtx.push_back(txNew);
 
   /* define core header */
   pblock->nVersion = 1;
   pblock->hashPrevBlock  = 0;
-  //pblock->hashMerkleRoot = pblock->BuildMerkleTree();
   pblock->nBits          = pblock->GetNextWorkRequired(NULL);
-  pblock->nTime = GetAdjustedTime();
+  pblock->UpdateTime(NULL);
   pblock->nNonce         = 0;
 
 	{ /* BIP39 */
@@ -503,12 +501,11 @@ COLORBlock *color_CreateGenesisBlock(uint160 hColor, const color_opt& opt)
 			(CScript() << qual << ParseHex(hexStr)) + 
 			COINBASE_FLAGS;
 	}
-//	pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
   return (pblock.release());
 }
 
-/* genesis blocks may be committed from alt-chains, and therefore we cannot enforce the default coinbase criteria (i.e. OP_RETURN) for colored coins. */
+/** Verify the initial block of an alt-chain. */
 bool color_VerifyGenesisBlock(const CBlock& block)
 {
 	
@@ -535,9 +532,6 @@ bool color_VerifyGenesisBlock(const CBlock& block)
 
 CBlock *color_GenerateNewBlock(CIface *iface, const CPubKey& rkey, uint160 hColor, vector<CTransaction> vTx, const color_opt& opt)
 {
-#if 0
-	static unsigned int nNonceIndex = 0xE2222222;
-#endif
 	CBlockIndex *pindexPrev;
 	COLORBlock *pblock;
 
@@ -560,33 +554,7 @@ CBlock *color_GenerateNewBlock(CIface *iface, const CPubKey& rkey, uint160 hColo
 		for (int i = 0; i < vTx.size(); i++) {
 			pblock->vtx.insert(pblock->vtx.end(), vTx[i]);
 		}
-//		pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 	}
-
-
-#if 0
-	pblock->nNonce   = ++nNonceIndex;
-	{
-		uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
-		uint256 thash;
-		char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
-
-		loop
-		{
-			scrypt_1024_1_1_256_sp(BEGIN(pblock->nVersion), BEGIN(thash), scratchpad);
-			if (thash <= hashTarget)
-				break;
-
-//if ((pblock->nNonce & 0xFFF) == 0) { printf("nonce %08X: hash = %s (target = %s)\n", pblock->nNonce, thash.ToString().c_str(), hashTarget.ToString().c_str()); }
-			++pblock->nNonce;
-			if (pblock->nNonce == 0)
-			{
-				++pblock->nTime;
-			}
-		}
-	}
-	nNonceIndex = pblock->nNonce;
-#endif
 
 	return pblock;
 }
@@ -723,7 +691,7 @@ bool COLORBlock::CheckBlock()
   }
 
   // Check timestamp
-  if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
+  if (GetBlockTime() > GetAdjustedTime() + COLOR_MAX_DRIFT_TIME) {
     return error(SHERR_INVAL, "CheckBlock() : block timestamp too far in the future");
   }
 
@@ -830,13 +798,12 @@ bool COLORBlock::AcceptBlock()
 
 	if (GetBlockTime() > GetAdjustedTime() + COLOR_MAX_DRIFT_TIME) {
 		print();
-		return error(SHERR_INVAL, "(color) AcceptBlock: block's timestamp more than fifteen minutes in the future.");
-
+		return error(SHERR_INVAL, "(color) AcceptBlock: block's timestamp too new.");
 	}
 
 	if (pindexPrev) {
-		if ((GetBlockTime() <= pindexPrev->GetBlockTime() - COLOR_MAX_DRIFT_TIME) || 
-				(GetBlockTime() < pindexPrev->GetBlockTime())) {	
+		if (GetBlockTime() <= pindexPrev->GetMedianTimePast() ||
+				GetBlockTime() < pindexPrev->GetBlockTime()) {	
 			print();
 			return error(SHERR_INVAL, "(color) AcceptBlock: block's timestamp is too old.");
 		}
@@ -1203,6 +1170,46 @@ double color_CalculatePoolFeePriority(CPool *pool, CPoolTx *ptx, double dFeePrio
 	return (dFeePrio);
 }
 
+bool GetChainColorOpt(uint160 hColor, color_opt& opt)
+{
+
+	opt.clear();
+
+	if (mapColorOpt.count(hColor) == 0) {
+		return (false);
+	}
+
+	opt = mapColorOpt[hColor];
+	return (true);
+}
+
+bool GetChainColorOpt(CIface *iface, CBlockIndex *pindex, color_opt& opt)
+{
+	uint160 hColor;
+
+	if (!color_GetBlockColor(iface, pindex, hColor)) {
+		return (false);
+	}
+
+	return (GetChainColorOpt(hColor, opt));
+}
+
+bool GetChainColorOpt(CIface *iface, uint256 hBlock, color_opt& opt)
+{
+	CBlockIndex *pindex;
+
+  pindex = GetBlockIndexByHash(COLOR_COIN_IFACE, hBlock);
+	if (!pindex)
+		return (false);
+
+	return (GetChainColorOpt(iface, pindex, opt));
+}
+
+void SetChainColorOpt(uint160 hColor, color_opt& opt)
+{
+	mapColorOpt[hColor] = opt;
+}
+
 
 CBigNum color_GetMinDifficulty(color_opt& opt)
 {
@@ -1219,6 +1226,13 @@ CBigNum color_GetMinDifficulty(color_opt& opt)
 	return (CBigNum(~uint256(0) >> val));
 }
 
+CBigNum color_GetMinDifficulty(uint160 hColor)
+{
+	color_opt opt;
+	GetChainColorOpt(hColor, opt);
+	return (color_GetMinDifficulty(opt));
+}
+
 int64 color_GetBlockTarget(color_opt& opt)
 {
 	const int mode = CLROPT_BLOCKTARGET;
@@ -1232,6 +1246,13 @@ int64 color_GetBlockTarget(color_opt& opt)
 		val = clropt_default_table[CLROPT_BLOCKTARGET];
 
 	return ((int64)(val * 60));
+}
+
+int64 color_GetBlockTarget(uint160 hColor)
+{
+	color_opt opt;
+	GetChainColorOpt(hColor, opt);
+	return (color_GetBlockTarget(opt));
 }
 
 int64 color_GetCoinbaseMaturity(color_opt& opt)
@@ -1250,6 +1271,13 @@ int64 color_GetCoinbaseMaturity(color_opt& opt)
 	return ((int64)(val * 60));
 }
 
+int64 color_GetCoinbaseMaturity(uint160 hColor)
+{
+	color_opt opt;
+	GetChainColorOpt(hColor, opt);
+	return (color_GetCoinbaseMaturity(opt));
+}
+
 int64 color_GetBlockValueBase(color_opt& opt)
 {
 	const int mode = CLROPT_REWARDBASE;
@@ -1266,6 +1294,13 @@ int64 color_GetBlockValueBase(color_opt& opt)
 	return ((int64)(dValue * COIN));
 }
 
+int64 color_GetBlockValueBase(uint160 hColor)
+{
+	color_opt opt;
+	GetChainColorOpt(hColor, opt);
+	return (color_GetBlockValueBase(opt));
+}
+
 int64 color_GetBlockValueRate(color_opt& opt)
 {
 	const int mode = CLROPT_REWARDHALF;
@@ -1279,19 +1314,32 @@ int64 color_GetBlockValueRate(color_opt& opt)
 	return ((int64)val * 1000);
 }
 
+int64 color_GetBlockValueRate(uint160 hColor)
+{
+	color_opt opt;
+	GetChainColorOpt(hColor, opt);
+	return (color_GetBlockValueRate(opt));
+}
+
 int64 color_GetMinTxFee(color_opt& opt)
 {
-	const int mode = CLROPT_REWARDBASE;
-	double dValue;
+	const int mode = CLROPT_TXFEE;
 	int64 val = 0;
 
 	if (opt.count(mode) != 0)
 		val = opt[mode];
 	if (val == 0)
 		val = clropt_default_table[mode];
-	val = MIN(val, 10);
+	val = MIN(val, 10) + 1;
 
-	dValue = pow(2, (double)val);
-	return ((int64)(dValue * COIN));
+	return ((int64)pow(10, (double)val));
 }
+
+int64 color_GetMinTxFee(uint160 hColor)
+{
+	color_opt opt;
+	GetChainColorOpt(hColor, opt);
+	return (color_GetMinTxFee(opt));
+}
+
 

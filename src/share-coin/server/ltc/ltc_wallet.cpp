@@ -585,7 +585,7 @@ bool LTCWallet::UnacceptWalletTransaction(const CTransaction& tx)
 }
 #endif
 
-int64 LTCWallet::GetBlockValue(int nHeight, int64 nFees)
+int64 LTCWallet::GetBlockValue(int nHeight, int64 nFees, uint160 hColor)
 {
   return (ltc_GetBlockValue(nHeight, nFees));
 }
@@ -791,7 +791,7 @@ bool AllowFree() {
 }
 #endif
 
-int64 LTCWallet::GetFeeRate()
+int64 LTCWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
   int64 nVal;
@@ -803,3 +803,8 @@ int64 LTCWallet::GetFeeRate()
 }
 
 
+int LTCWallet::GetCoinbaseMaturity(uint160 hColor)
+{
+  CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
+	return (iface ? iface->coinbase_maturity : 0);
+}

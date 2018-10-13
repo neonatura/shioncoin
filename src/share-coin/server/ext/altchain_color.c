@@ -551,6 +551,11 @@ void color_gen(char *name, uint32_t *red_p, uint32_t *green_p, uint32_t *blue_p,
 	int i;
 
 	*red_p = *green_p = *blue_p = *alpha_p = ~0;
+	ret_label[0] = '\000';
+	ret_abrev[0] = '\000';
+
+	if (!name || !*name)
+		return;
 
 	memset(name_buf, 0, sizeof(name_buf));
 	for (i = 0; i < strlen(name) && i < 127; i++) {

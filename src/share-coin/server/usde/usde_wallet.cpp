@@ -659,7 +659,7 @@ bool USDEWallet::UnacceptWalletTransaction(const CTransaction& tx)
 }
 #endif
 
-int64 USDEWallet::GetBlockValue(int nHeight, int64 nFees)
+int64 USDEWallet::GetBlockValue(int nHeight, int64 nFees, uint160 hColor)
 {
   return (usde_GetBlockValue(nHeight, nFees));
 }
@@ -841,8 +841,14 @@ double USDEWallet::AllowFreeThreshold()
   return COIN * 700 / 250;
 }
 
-int64 USDEWallet::GetFeeRate()
+int64 USDEWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
   return (MIN_TX_FEE(iface));
+}
+
+int USDEWallet::GetCoinbaseMaturity(uint160 hColor)
+{
+  CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
+	return (iface ? iface->coinbase_maturity : 0);
 }

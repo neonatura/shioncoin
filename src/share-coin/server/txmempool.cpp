@@ -217,7 +217,11 @@ void CPool::CalculateFee(CPoolTx& ptx)
 
   /* calculate minimum fee */
   //nMinFee = wallet->GetFee(ptx.GetTx(), nCredit, nBytes, dPriority);
-  ptx.nMinFee = wallet->CalculateFee(tx);
+	{
+		CWalletTx wtx(wallet, tx);
+		wtx.SetColor(ptx.GetColor());
+		ptx.nMinFee = wallet->CalculateFee(wtx);
+	}
 
   /* calculate fee */
   ptx.nFee = nCredit - tx.GetValueOut();

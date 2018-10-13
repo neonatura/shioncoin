@@ -58,7 +58,7 @@ class TESTNETWallet : public CWallet
 
 		bool UnacceptWalletTransaction(const CTransaction& tx);
 
-		int64 GetBlockValue(int nHeight, int64 nFees);
+		int64 GetBlockValue(int nHeight, int64 nFees, uint160 hColor = 0);
 
 		unsigned int GetTransactionWeight(const CTransaction& tx);
 
@@ -68,7 +68,9 @@ class TESTNETWallet : public CWallet
 
 		double AllowFreeThreshold();
 
-		int64 GetFeeRate();
+		int64 GetFeeRate(uint160 hColor);
+
+		int GetCoinbaseMaturity(uint160 hColor = 0);
 };
 
 extern TESTNETWallet *testnetWallet;

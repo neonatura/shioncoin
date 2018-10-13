@@ -60,8 +60,6 @@ public:
     static CBigNum bnBestInvalidWork;
     static int64 nTimeBestReceived;
 
-		uint160 hColor;
-
     COLORBlock(uint160 hColorIn = 0)
     {
         SetNull();
@@ -124,8 +122,6 @@ public:
 
 };
 
-typedef map<int, int> color_opt;
-
 
 /**
  * A memory pool where an inventory of pending block transactions are stored.
@@ -169,7 +165,7 @@ bool color_SetBestChain(CBlock *block);
  */
 bool color_ProcessBlock(CNode* pfrom, CBlock* pblock);
 
-int64 color_GetBlockValue(int nHeight, int64 nFees);
+int64 color_GetBlockValue(uint160 hColor, int nHeight, int64 nFees);
 
 bool color_IsOrphanBlock(const uint256& hash);
 
@@ -198,6 +194,26 @@ double color_CalculatePoolFeePriority(CPool *pool, CPoolTx *ptx, double dFeePrio
 void color_GenerateNewBlockNonce(CIface *iface, CBlock *block);
 
 void ParseColorOptScript(color_opt& opt, CScript script);
+
+bool GetChainColorOpt(uint160 hColor, color_opt& opt);
+
+bool GetChainColorOpt(CBlockIndex *pindex, color_opt& opt);
+
+bool GetChainColorOpt(uint256 hBlock, color_opt& opt);
+
+void SetChainColorOpt(uint160 hColor, color_opt& opt);
+
+int64 color_GetMinTxFee(uint160 hColor);
+
+int64 color_GetCoinbaseMaturity(uint160 hColor);
+
+CBigNum color_GetMinDifficulty(uint160 hColor);
+
+int64 color_GetBlockTarget(uint160 hColor);
+
+int64 color_GetBlockValueBase(uint160 hColor);
+
+int64 color_GetBlockValueRate(uint160 hColor);
 
 
 /**

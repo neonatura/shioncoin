@@ -786,7 +786,7 @@ bool SHCBlock::CheckBlock()
   }
 
   // Check timestamp
-  if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
+  if (GetBlockTime() > GetAdjustedTime() + SHC_MAX_DRIFT_TIME) {
     return error(SHERR_INVAL, "CheckBlock() : block timestamp too far in the future");
   }
 
@@ -1052,8 +1052,8 @@ bool SHCBlock::AcceptBlock()
     return error(SHERR_INVAL, "(shc) AcceptBlock: block's timestamp more than fifteen minutes in the future.");
 
   }
-  if ((GetBlockTime() <= pindexPrev->GetBlockTime() - SHC_MAX_DRIFT_TIME) || 
-			(GetBlockTime() < pindexPrev->GetBlockTime())) {	
+  if (GetBlockTime() <= pindexPrev->GetMedianTimePast() ||
+			GetBlockTime() < pindexPrev->GetBlockTime()) {	
     print();
     return error(SHERR_INVAL, "(shc) AcceptBlock: block's timestamp is too old.");
   }

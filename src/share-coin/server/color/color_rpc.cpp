@@ -40,7 +40,7 @@ using namespace boost;
 
 const RPCOp ALT_ADDR = {
   &rpc_alt_addr, 1, {RPC_STRING, RPC_ACCOUNT},
-  "Syntax: <name|color-hex> [account]\n"
+  "Syntax: <name|color-hex> [<account>]\n"
   "Summary: Obtain a alt-chain coin address.\n"
   "\n"
   "Create a new coin address suitable for receiving coins on an alternate block-chain."
@@ -48,7 +48,7 @@ const RPCOp ALT_ADDR = {
 
 const RPCOp ALT_ADDRLIST = {
   &rpc_alt_addrlist, 1, {RPC_STRING, RPC_ACCOUNT},
-  "Syntax: <name|color-hex> [account]\n"
+  "Syntax: <name|color-hex> [<account>]\n"
   "Summary: Obtain a list of alt-chain coin addresses.\n"
   "\n"
   "List all local coin addresses associated with a alternate block-chain."
@@ -90,8 +90,8 @@ const RPCOp ALT_COMMIT = {
 };
 
 const RPCOp ALT_BALANCE = {
-  &rpc_alt_balance, 1, {RPC_STRING},
-  "Syntax: <name|color-hex>\n"
+  &rpc_alt_balance, 1, {RPC_STRING, RPC_ACCOUNT, RPC_INT},
+  "Syntax: <name|color-hex> [<account>] [<depth>]\n"
   "Summary: The coin balance on an alternate block-chain.\n"
   "\n"
   "Calculate the total balance available for a particular alternate block-chain."
@@ -104,7 +104,30 @@ const RPCOp ALT_MINE = {
   "\n"
   "Uses the built-in CPU miner in order to generate a block on an alternate block-chain. A genesis block will be created for the first block of each color.\n"
 	"\n"
-	"Note: A 0.001 tx-fee will be charged [on the main block-chain] in order to create an alt-chain block."
+	"Note: A minimal tx-fee will be charged [on the main block-chain] in order to create an alt-chain block."
+};
+const RPCOp ALT_NEW = {
+  &rpc_alt_new, 1, {RPC_STRING, RPC_ACCOUNT, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING},
+  "Syntax: <name|color-hex> [<account>] [option=value]..\n"
+  "Summary: Generate a genesis block for a new alternate block-chain.\n"
+	"Options:\n"
+	"\tdifficulty=<1-8>\n"
+	"\t\tA lower number indicates a lower minimum block difficulty.\n"
+	"\tblocktarget=<1-15>\n"
+	"\t\tThe number of minutes to set the block difficulty target.\n"
+	"\tmaturity=<1-8>\n"
+	"\t\tThe number of blocks for a coinbase to mature in 60-block intervals.\n"
+	"\t\tFor example: A 7 value would indicate (7*60=) 420 block maturity.\n" 
+	"\trewardbase=<1-10>\n"
+	"\t\tThe base value for calculating a block reward (2 ^ <value>).\n"
+	"\t\tFor example: A 7 value would indicate (2^7=) 128 coins.\n"
+	"\trewardhalf=<1-10>\n"
+	"\t\tThe number of blocks to half the reward in 1000 increments.\n"
+	"\ttxfee=<1-8>\n"
+	"\t\tThe txfee of X, where X is (10 ^ (X+1)) / COIN.\n"
+	"\t\tFor example: A 7 value would indicate ((10^7)/COIN=) 1 coins.\n"
+  "\n"
+	"Note: A minimal tx-fee will be charged [on the main block-chain] in order to create an alt-chain block."
 };
 
 const RPCOp ALT_BLOCK = {
@@ -133,6 +156,7 @@ void color_RegisterRPCOp(int ifaceIndex)
 	 */
   RegisterRPCOp(ifaceIndex, "alt.info", ALT_INFO);
   RegisterRPCOp(ifaceIndex, "alt.mine", ALT_MINE);
+  RegisterRPCOp(ifaceIndex, "alt.new", ALT_NEW);
   RegisterRPCOp(ifaceIndex, "alt.send", ALT_SEND);
   RegisterRPCOp(ifaceIndex, "alt.tx", ALT_TX);
 

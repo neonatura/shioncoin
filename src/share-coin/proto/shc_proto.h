@@ -48,7 +48,7 @@
 #define SHC_MAX_SIGOPS 32768
 
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
-#define SHC_MAX_DRIFT_TIME 1440 /* 24 minutes */ 
+#define SHC_MAX_DRIFT_TIME 720 /* 12 minutes */
 
 /**
  * The network protocol version used to communicate between SHC services.

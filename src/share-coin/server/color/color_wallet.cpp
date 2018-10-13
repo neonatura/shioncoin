@@ -519,9 +519,9 @@ bool COLORWallet::UnacceptWalletTransaction(const CTransaction& tx)
 
 #endif
 
-int64 COLORWallet::GetBlockValue(int nHeight, int64 nFees)
+int64 COLORWallet::GetBlockValue(int nHeight, int64 nFees, uint160 hColor)
 {
-  return (color_GetBlockValue(nHeight, nFees));
+  return (color_GetBlockValue(hColor, nHeight, nFees));
 }
 
 unsigned int COLORWallet::GetTransactionWeight(const CTransaction& tx)
@@ -555,8 +555,17 @@ double COLORWallet::AllowFreeThreshold()
   return ((double)COIN * block_daily / block_bytes);
 }
 
-int64 COLORWallet::GetFeeRate()
+int64 COLORWallet::GetFeeRate(uint160 hColor)
 {
+	return (color_GetMinTxFee(hColor));
+#if 0
   CIface *iface = GetCoinByIndex(COLOR_COIN_IFACE);
   return (MIN_TX_FEE(iface));
+#endif
 }
+
+int COLORWallet::GetCoinbaseMaturity(uint160 hColor)
+{
+	return (color_GetCoinbaseMaturity(hColor));
+}
+

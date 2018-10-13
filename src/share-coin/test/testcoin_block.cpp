@@ -42,6 +42,7 @@
 #include "txsignature.h"
 
 
+extern bool GetTxOfAsset(CIface *iface, const uint160& hashAsset, CTransaction& tx);
 
 #ifdef __cplusplus
 extern "C" {
@@ -545,6 +546,7 @@ _TEST(aliastx)
 
 
 
+
 _TEST(assettx)
 {
   CWallet *wallet = GetWallet(TEST_COIN_IFACE);
@@ -566,31 +568,89 @@ _TEST(assettx)
   CCoinAddr addr = GetAccountAddress(wallet, strLabel, false);
   _TRUE(addr.IsValid() == true);
 
-  CWalletTx wtx;
-  err = init_asset_tx(iface, strLabel, "test", addr.ToString(), wtx);
-  _TRUE(0 == err);
-
-  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyAsset(wtx) == true);
-
-  CAsset asset(wtx.certificate);
-  uint160 hashAsset = asset.GetHash();
-
-  for (idx = 0; idx < 2; idx++) {
+	/* create certificate */
+  CWalletTx cert_wtx;
+	string hexSeed;
+	err = init_cert_tx(iface, cert_wtx, strLabel, "asset", hexSeed, 1);
+	_TRUE(0 == err);
+  uint160 hashCert = cert_wtx.certificate.GetHash();
+  {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
 
-  err = update_asset_tx(iface, strLabel, hashAsset, "test", addr.ToString(), wtx);
+  CWalletTx wtx;
+  err = init_asset_tx(iface, strLabel, hashCert, "test", addr.ToString(), wtx);
   _TRUE(0 == err);
-
   _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
   _TRUE(VerifyAsset(wtx) == true);
+  CAsset *asset = wtx.GetAsset();
+	_TRUEPTR(asset);
+  uint160 hashAsset = asset->GetHash();
+  _TRUE(asset->VerifySignature(TEST_COIN_IFACE));
+  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
+	for (int i = 0; i < 2; i++) {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 
-// activate
-  //_TRUE(asset.VerifySignature(TEST_COIN_IFACE));
+	/* perform asset update. */
+	CWalletTx u_wtx(wallet);
+  err = update_asset_tx(iface, strLabel, hashAsset, "test", "updated data", u_wtx);
+  _TRUE(0 == err);
+  _TRUE(u_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
+  _TRUE(VerifyAsset(u_wtx) == true);
+  _TRUE(u_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
+	for (int i = 0; i < 2; i++) {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+  _TRUE(u_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+
+
+	/* verify asset update */
+	CTransaction u_tx;
+	_TRUE(GetTxOfAsset(iface, hashAsset, u_tx) == true); 
+	CAsset *u_asset = u_tx.GetAsset();
+	_TRUEPTR(u_asset);
+	_TRUE(u_asset->GetHash() == u_wtx.GetAsset()->GetHash());
+fprintf(stderr, "DEBUG: ASSET: %s\n", u_asset->ToString().c_str());
+
+
+
+	/* perform asset removal. */
+	CWalletTx r_wtx(wallet);
+  err = remove_asset_tx(iface, strLabel, hashAsset, r_wtx);
+  _TRUE(0 == err);
+  _TRUE(r_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
+  _TRUE(VerifyAsset(r_wtx) == true);
+  _TRUE(r_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
+	{
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+  _TRUE(r_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+
+	/* verify asset removal */
+	CTransaction r_tx;
+	_TRUE(GetTxOfAsset(iface, hashAsset, r_tx) == false);
+
+	/* fall back to previous. */
+	_TRUE(DisconnectAssetTx(iface, r_wtx) == true);
+	CTransaction u2_tx;
+	_TRUE(GetTxOfAsset(iface, hashAsset, u2_tx) == true);
+fprintf(stderr, "DEBUG: ASSET2: %s\n", u2_tx.GetAsset()->ToString().c_str());
+	_TRUE(u2_tx.GetAsset()->GetHash() == u_tx.GetAsset()->GetHash());
+
 }
 
 _TEST(identtx)

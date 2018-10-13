@@ -42,6 +42,7 @@ blkidx_t tableBlockIndex[MAX_COIN_IFACE];
 extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex = NULL);
 extern std::string HexBits(unsigned int nBits);
 extern void ScriptPubKeyToJSON(int ifaceIndex, const CScript& scriptPubKey, Object& out);
+extern bool color_GetBlockColor(CIface *iface, CBlockIndex *pindex, uint160& hColor);
 
 
 
@@ -618,6 +619,9 @@ CBlock *GetBlockByHash(CIface *iface, const uint256 hash)
   if (block->GetHash() != hash)
     return (NULL);
 
+	if (ifaceIndex == COLOR_COIN_IFACE)
+		color_GetBlockColor(iface, pindex, block->hColor);
+
   return (block);
 }
 
@@ -1040,7 +1044,13 @@ CBlockIndex *GetGenesisBlockIndex(CIface *iface) /* DEBUG: */
 
 void CBlock::UpdateTime(const CBlockIndex* pindexPrev)
 {
+	if (!pindexPrev) {
+		nTime = GetAdjustedTime();
+		return;
+	}
+
   nTime = max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+  nTime = max(nTime, pindexPrev->nTime);
 }
 
 bool CTransaction::IsFinal(int ifaceIndex, int nBlockHeight, int64 nBlockTime) const
@@ -1502,7 +1512,10 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
       } 
 
 			if (tx.isFlag(CTransaction::TXF_ASSET)) {
-				/* not implemented. */
+        bool fRet = ProcessAssetTx(iface, tx, nHeight);
+        if (!fRet) {
+          error(SHERR_INVAL, "ProcessAssetTx failure");
+        }
 			} else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
         InsertCertTable(iface, tx, nHeight);
       } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
@@ -1783,62 +1796,56 @@ COffer *CTransaction::RemoveOffer(uint160 hashOffer)
 }
 
 
-CCert *CTransaction::CreateAsset(string strAssetName, string strAssetHash)
+CAsset *CTransaction::CreateAsset(string strAssetName, string strAssetHash)
 {
+	CAsset *asset;
 
   if (nFlag & CTransaction::TXF_ASSET)
     return (NULL);
 
   nFlag |= CTransaction::TXF_ASSET;
-  CAsset asset(strAssetName);
+	asset = GetAsset();
 
-  asset.nFlag |= SHCERT_CERT_CHAIN;
-  asset.nFlag &= ~SHCERT_CERT_SIGN;
-  asset.nFlag &= ~SHCERT_CERT_DIGITAL;
+	asset->SetNull();
+	asset->SetLabel(strAssetName);
+	asset->vContext = vchFromString(strAssetHash);
 
-  certificate = (CCert&)asset;
+  asset->nFlag |= SHCERT_CERT_CHAIN;
+  asset->nFlag &= ~SHCERT_CERT_SIGN;
+  asset->nFlag &= ~SHCERT_CERT_DIGITAL;
 
-  return (&certificate);
+  return (asset);
 }
 
-CCert *CTransaction::UpdateAsset(const CAsset& assetIn, string strAssetName, string strAssetHash)
+CAsset *CTransaction::UpdateAsset(const CAsset& assetIn, string strAssetName, string strAssetHash)
 {
+	CAsset *asset;
 
   if (nFlag & CTransaction::TXF_ASSET)
     return (NULL);
 
   nFlag |= CTransaction::TXF_ASSET;
-  certificate = (CCert&)assetIn;
-  certificate.SetLabel(strAssetName);
+	asset = GetAsset();
+	*asset = assetIn;
+  asset->SetLabel(strAssetName);
+	asset->vContext = vchFromString(strAssetHash);
 
-  return (&certificate);
+  return (asset);
 }
 
-CCert *CTransaction::SignAsset(const CAsset& assetIn, CCert *cert)
+CAsset *CTransaction::RemoveAsset(const CAsset& assetIn)
 {
+	CAsset *asset;
 
   if (nFlag & CTransaction::TXF_ASSET)
     return (NULL);
 
   nFlag |= CTransaction::TXF_ASSET;
-  CAsset asset = assetIn;
-  asset.Sign(cert);
-  asset.hashIssuer = cert->GetHash();
-  certificate = (CCert&)asset;
+	asset = GetAsset();
 
-  return (&certificate);
-}
+	asset->SetNull();
 
-CCert *CTransaction::RemoveAsset(const CAsset& assetIn)
-{
-
-  if (nFlag & CTransaction::TXF_ASSET)
-    return (NULL);
-
-  nFlag |= CTransaction::TXF_ASSET;
-  certificate = (CCert&)assetIn;
-
-  return (&certificate);
+  return (asset);
 }
 
 CIdent *CTransaction::CreateIdent(CIdent *ident)
@@ -2892,7 +2899,6 @@ bool core_CheckBlockWitness(CIface *iface, CBlock *pblock, CBlockIndex *pindexPr
 				if (commit_tx.wit.vtxinwit.size() == 0) {
 					/* non-standard -- fill in missing witness block structure */
 					core_UpdateUncommittedBlockStructures(iface, pblock, pindexPrev);
-					/* DEBUG: */ error(SHERR_INVAL, "(emc2) core_CheckBlockWitness: filled missing witness nonce for block '%s'.", pblock->GetHash().GetHex().c_str());
 				}
 			}
 #endif

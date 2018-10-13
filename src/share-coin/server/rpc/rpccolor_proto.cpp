@@ -49,7 +49,7 @@ extern bool GetColorBlockHeight(CBlockIndex *pindex, unsigned int& nHeight);
 extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex = NULL);
 
 
-static uint160 rpc_alt_key_from_value(Value val)
+static uint160 rpc_alt_key_from_value(CIface *iface, Value val)
 {
 	string text = val.get_str();
 	string strDesc;
@@ -60,7 +60,7 @@ static uint160 rpc_alt_key_from_value(Value val)
 		hColor = uint160(text);
 	}
 	if (hColor == 0) {
-		hColor = GetAltColorHash(text, strDesc);
+		hColor = GetAltColorHash(iface, text, strDesc);
 	}
 
 	return (hColor);
@@ -76,7 +76,7 @@ Value rpc_alt_addr(CIface *iface, const Array& params, bool fStratum)
   if (params.size() == 0 || params.size() > 2)
     throw runtime_error("rpc_alt_addr");
 
-	hColor = rpc_alt_key_from_value(params[0]);
+	hColor = rpc_alt_key_from_value(iface, params[0]);
 	if (params.size() > 1)
 		strAccount = AccountFromValue(params[1]);
 
@@ -94,7 +94,7 @@ Value rpc_alt_addrlist(CIface *iface, const Array& params, bool fStratum)
   if (params.size() == 0 || params.size() > 2)
     throw runtime_error("rpc_alt_addrlist");
 
-	hColor = rpc_alt_key_from_value(params[0]); /* not used */
+	hColor = rpc_alt_key_from_value(iface, params[0]); /* not used */
 	if (params.size() > 1)
 		strAccount = AccountFromValue(params[1]);
 
@@ -132,7 +132,7 @@ Value rpc_alt_balance(CIface *iface, const Array& params, bool fStratum)
   if (params.size() > 3)
     throw runtime_error("rpc_alt_balance");
 
-	hColor = rpc_alt_key_from_value(params[0]);
+	hColor = rpc_alt_key_from_value(iface, params[0]);
 	if (params.size() > 1)
 		strAccount = AccountFromValue(params[1]);
 	if (params.size() > 2)
@@ -162,7 +162,7 @@ Value rpc_alt_color(CIface *iface, const Array& params, bool fStratum)
     throw runtime_error("rpc_alt_color");
 
 	strTitle = params[0].get_str();
-	hColor = GetAltColorHash(strTitle, strDesc); 
+	hColor = GetAltColorHash(iface, strTitle, strDesc); 
 
 	Object ret;
 
@@ -185,6 +185,31 @@ Value rpc_alt_color(CIface *iface, const Array& params, bool fStratum)
 	return ret;
 }
 
+static double print_rpc_difficulty(CBigNum val)
+{
+{
+	unsigned int nBits = val.GetCompact();
+	int nShift = (nBits >> 24) & 0xff;
+
+	double dDiff =
+		(double)0x0000ffff / (double)(nBits & 0x00ffffff);
+
+	while (nShift < 29)
+	{
+		dDiff *= 256.0;
+		nShift++;
+	}
+	while (nShift > 29)
+	{
+		dDiff /= 256.0;
+		nShift--;
+	}
+
+	return dDiff;
+}
+
+}
+
 Value rpc_alt_info(CIface *iface, const Array& params, bool fStratum) 
 {
 	CIface *alt_iface = GetCoinByIndex(COLOR_COIN_IFACE);
@@ -198,7 +223,7 @@ Value rpc_alt_info(CIface *iface, const Array& params, bool fStratum)
   if (params.size() != 1)
     throw runtime_error("rpc_alt_info");
 
-	hColor = rpc_alt_key_from_value(params[0]);
+	hColor = rpc_alt_key_from_value(iface, params[0]);
 	if (hColor == 0) {
     throw JSONRPCError(SHERR_INVAL, "invalid color hash");
 	}
@@ -212,6 +237,15 @@ Value rpc_alt_info(CIface *iface, const Array& params, bool fStratum)
 	GetAltColorCode(hColor, &r, &g, &b, &a);
 
 
+	/* custom options */
+	int64 nBlockValueRate = color_GetBlockValueRate(hColor);
+	int64 nBlockValueBase = color_GetBlockValueBase(hColor);
+	int64 nBlockTarget = color_GetBlockTarget(hColor);
+	int64 nCoinbaseMaturity = color_GetCoinbaseMaturity(hColor);
+	int64 nMinTxFee = color_GetMinTxFee(hColor);
+	CBigNum bnMinDifficulty = color_GetMinDifficulty(hColor);
+
+
 	Object obj;
 
 	sprintf(buf, "#%-2.2X%-2.2X%-2.2X", (r >> 24), (g >> 24), (b >> 24));
@@ -223,10 +257,21 @@ Value rpc_alt_info(CIface *iface, const Array& params, bool fStratum)
 
 	obj.push_back(Pair("blocks", (int)nHeight));
 
+	obj.push_back(Pair("blocktarget", (int)nBlockTarget));
+	obj.push_back(Pair("blockvaluerate", (int)nBlockValueRate));
+	obj.push_back(Pair("blockvaluebase", ((double)nBlockValueBase/COIN)));
+
 	obj.push_back(Pair("currentblockhash", pindex->GetBlockHash().GetHex()));
 
 	obj.push_back(Pair("difficulty",
 				(double)GetDifficulty(COLOR_COIN_IFACE, pindex)));
+
+	obj.push_back(Pair("min-difficulty", 
+				print_rpc_difficulty(bnMinDifficulty)));
+
+	obj.push_back(Pair("min-txfee", ((double)nMinTxFee/COIN)));
+
+	obj.push_back(Pair("maturity", (int)nCoinbaseMaturity));
 
 	CTxMemPool *pool = GetTxMemPool(alt_iface);
 	obj.push_back(Pair("pooledtx",      (uint64_t)pool->size()));
@@ -272,7 +317,7 @@ Value rpc_alt_mine(CIface *iface, const Array& params, bool fStratum)
   if (params.size() == 0)
     throw runtime_error("rpc_alt_mine");
 
-	hColor = rpc_alt_key_from_value(params[0]);
+	hColor = rpc_alt_key_from_value(iface, params[0]);
 	if (params.size() == 1)
 		strAccount = "";
 	else
@@ -298,7 +343,7 @@ static void _split_token(string tok, string& mode_str, int& val)
 		return;
 
 	mode_str = tok.substr(0, tok.find(delim));
-	val = atoi(tok.substr(tok.find(delim)).c_str());
+	val = atoi(tok.substr(tok.find(delim) + 1).c_str());
 }
 
 Value rpc_alt_new(CIface *iface, const Array& params, bool fStratum) 
@@ -314,7 +359,7 @@ Value rpc_alt_new(CIface *iface, const Array& params, bool fStratum)
     throw runtime_error("rpc_alt_mine");
 
 	/* block-chain color */
-	hColor = rpc_alt_key_from_value(params[0]);
+	hColor = rpc_alt_key_from_value(iface, params[0]);
 
 	/* account on main-chain to deduct altchain-tx fee. */
 	if (params.size() == 1)
@@ -365,7 +410,7 @@ Value rpc_alt_send(CIface *iface, const Array& params, bool fStratum)
   if (params.size() < 3 || params.size() > 4)
     throw runtime_error("rpc_alt_send");
 
-	hColor = rpc_alt_key_from_value(params[0]);
+	hColor = rpc_alt_key_from_value(iface, params[0]);
 	nValue = AmountFromValue(params[2]);
 
 	strAccount = "";

@@ -82,6 +82,8 @@ class CKeyPool
 };
 #endif
 
+typedef map<int, int> color_opt;
+
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
  */
@@ -112,7 +114,6 @@ class CWallet : public CCryptoKeyStore
 		mutable std::map<uint160, uint256> mapOffer;
 		mutable std::map<uint160, uint256> mapOfferAccept;
 		mutable std::map<uint160, uint256> mapAsset;
-		mutable std::map<uint160, uint256> mapAssetArch;
 
 		/** A vector of executable SEXE class & call tx's. */
 		mutable std::map<uint160, uint256> mapExec;
@@ -151,7 +152,7 @@ class CWallet : public CCryptoKeyStore
 		std::map<uint160, uint256> mapColor;
 
 		/* the head (genesis) block on a color chain */
-		std::map<uint160, uint256> mapColorHead;
+		std::map<uint256, uint160> mapColorHead;
 
 		/* the pending tail end block on a color chain. */
 		std::map<uint160, uint256> mapColorPool;
@@ -201,13 +202,13 @@ class CWallet : public CCryptoKeyStore
 		bool CanSupportFeature(enum WalletFeature wf) { return nWalletMaxVersion >= wf; }
 
 		void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed =true)  const;
-		void AvailableAccountCoins(string strAccount, std::vector<COutput>& vCoins, bool fOnlyConfirmed =true)  const;
+		void AvailableAccountCoins(string strAccount, std::vector<COutput>& vCoins, bool fOnlyConfirmed =true, uint160 hColor = 0)  const;
 
 		void AvailableAddrCoins(vector<COutput>& vCoins, const CCoinAddr& filterAddr, int64& nTotalValue, bool fOnlyConfirmed) const;
 
 		bool SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
 
-		bool SelectAccountCoins(string strAccount, int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
+		bool SelectAccountCoins(string strAccount, int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet, uint160 hColor = 0) const;
 
 		// keystore implementation
 		// Generate a new key
@@ -375,7 +376,7 @@ class CWallet : public CCryptoKeyStore
 
 		bool GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr);
 
-		int64 CalculateFee(CTransaction& tx, int64 nMinFee = 0);
+		int64 CalculateFee(CWalletTx& tx, int64 nMinFee = 0);
 
 		bool FillInputs(const CTransaction& tx, tx_cache& inputs, bool fAllowSpent = true);
 
@@ -401,7 +402,7 @@ class CWallet : public CCryptoKeyStore
 		virtual void AddSupportingTransactions(CWalletTx& wtx) = 0;
 		virtual void ResendWalletTransactions() = 0;
 		virtual bool UnacceptWalletTransaction(const CTransaction& tx) = 0;
-		virtual int64 GetBlockValue(int nHeight, int64 nFees) = 0;
+		virtual int64 GetBlockValue(int nHeight, int64 nFees, uint160 hColor = 0) = 0;
 
 		/* the serialized size of the transaction. */
 		virtual unsigned int GetTransactionWeight(const CTransaction& tx) = 0;  
@@ -414,7 +415,9 @@ class CWallet : public CCryptoKeyStore
 
 
 		/* 1k data cost */
-		virtual int64 GetFeeRate() = 0;
+		virtual int64 GetFeeRate(uint160 hColor = 0) = 0;
+
+		virtual int GetCoinbaseMaturity(uint160 hColor = 0) = 0;
 
 #if 0
 		/** Address book entry changed.
@@ -480,6 +483,7 @@ class CWalletTx : public CMerkleTx
 		char fCommit; /* committed to a block */
 		std::string strFromAccount;
 		std::vector<char> vfSpent; // which outputs are already spent
+		uint160 hColor; /* COLOR_COIN_IFACE */
 
 		// memory only
 		mutable bool fDebitCached;
@@ -517,6 +521,8 @@ class CWalletTx : public CMerkleTx
 
 		mapValue = mapValue;
 		strFromAccount = mapValue["fromaccount"];
+		if (mapValue.count("color") != 0)
+			hColor = uint160(mapValue["color"]);
 	}
 
 		void Init(CWallet *pwalletIn)
@@ -529,6 +535,7 @@ class CWalletTx : public CMerkleTx
 			nTimeReceived = 0;
 			fFromMe = false;
 			strFromAccount.clear();
+			hColor = 0;
 			vfSpent.clear();
 			fDebitCached = false;
 			fCreditCached = false;
@@ -550,6 +557,8 @@ class CWalletTx : public CMerkleTx
 			 if (!fRead)
 			 {
 			 pthis->mapValue["fromaccount"] = pthis->strFromAccount;
+			 if (pthis->hColor != 0)
+				 pthis->mapValue["color"] = pthis->hColor.GetHex();
 
 			 std::string str;
 			 BOOST_FOREACH(char f, vfSpent)
@@ -573,6 +582,8 @@ class CWalletTx : public CMerkleTx
 			 if (fRead)
 			 {
 				 pthis->strFromAccount = pthis->mapValue["fromaccount"];
+				 if (pthis->mapValue.count("color") != 0)
+					 pthis->hColor = uint160(pthis->mapValue["color"]);
 
 				 if (mapValue.count("spent"))
 					 BOOST_FOREACH(char c, pthis->mapValue["spent"])
@@ -582,6 +593,7 @@ class CWalletTx : public CMerkleTx
 			 }
 
 			 pthis->mapValue.erase("fromaccount");
+			 pthis->mapValue.erase("color");
 			 pthis->mapValue.erase("version");
 			 pthis->mapValue.erase("spent");
 			 )
@@ -621,14 +633,14 @@ class CWalletTx : public CMerkleTx
 				 MarkDirty();
 			 }
 
-			 void SetColor(uint160 hColor)
+			 void SetColor(uint160 hColorIn)
 			 {
-				 strFromAccount = hColor.GetHex();
+				 hColor = hColorIn;
 			 }
 
-			 uint160 GetColor()
+			 uint160 GetColor() const
 			 {
-				 return (uint160(strFromAccount));
+				 return (hColor);
 			 }
 
 			 void MarkSpent(unsigned int nOut)

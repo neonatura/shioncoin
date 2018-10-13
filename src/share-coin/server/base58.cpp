@@ -67,6 +67,7 @@ bool CCoinAddr::IsValid() const
     case PUBKEY_E_ADDRESS:
     case PUBKEY_L_ADDRESS:
     case PUBKEY_S_ADDRESS:
+    case PUBKEY_T_ADDRESS:
       nExpectedSize = 20; // Hash of public key
       break;
     case SCRIPT_ADDRESS:
@@ -109,6 +110,7 @@ CTxDestination CCoinAddr::Get() const
     case PUBKEY_E_ADDRESS:
     case PUBKEY_L_ADDRESS:
     case PUBKEY_S_ADDRESS:
+    case PUBKEY_T_ADDRESS:
       {
         uint160 id;
         memcpy(&id, &vchData[0], 20);
@@ -137,6 +139,7 @@ bool CCoinAddr::GetKeyID(CKeyID &keyID) const
     case PUBKEY_E_ADDRESS:
     case PUBKEY_S_ADDRESS:
     case PUBKEY_L_ADDRESS:
+    case PUBKEY_T_ADDRESS:
       {
         uint160 id;
         memcpy(&id, &vchData[0], 20);
