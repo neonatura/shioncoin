@@ -2415,4 +2415,9 @@ bool USDEBlock::DisconnectBlock(CBlockIndex* pindex)
 
 #endif /* USE_LEVELDB_COINDB */
 
+bool USDEBlock::CreateCheckpoint()
+{ 
+  return (false);
+}
+
 

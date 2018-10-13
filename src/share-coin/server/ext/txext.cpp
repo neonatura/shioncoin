@@ -427,3 +427,30 @@ bool CSign::VerifySeed(string hexSeed)
 
   return (strPubKey == stringFromVch(vPubKey));
 }
+
+
+bool GetExtOutput(const CTransaction& tx, int ext_mode, int& nOut, CScript& scriptOut)
+{
+	int idx;
+
+	idx = 0;
+	BOOST_FOREACH(const CTxOut& out, tx.vout) {
+		const CScript& script = out.scriptPubKey;
+		opcodetype opcode;
+		CScript::const_iterator pc = script.begin();
+		if (script.GetOp(pc, opcode) &&
+				opcode >= 0xf0 && opcode <= 0xf9) { /* ext mode */
+			if (script.GetOp(pc, opcode) &&
+					CScript::DecodeOP_N(opcode) == ext_mode) {
+				nOut = idx;
+				scriptOut = out.scriptPubKey;
+				return (true);
+			}
+		}
+
+		idx++;
+	}
+
+	return (false);
+}
+

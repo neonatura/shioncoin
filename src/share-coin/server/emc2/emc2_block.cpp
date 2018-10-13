@@ -2000,3 +2000,8 @@ bool EMC2Block::DisconnectBlock(CBlockIndex* pindex)
 
 #endif /* USE_LEVELDB_COINDB */
 
+bool EMC2Block::CreateCheckpoint()
+{ 
+  return (false);
+}
+

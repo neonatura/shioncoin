@@ -215,6 +215,11 @@ namespace TESTNET_Checkpoints
     return NULL;
   }
 
+  void AddCheckpoint(int height, uint256 hash)
+  {
+    mapCheckpoints.insert(mapCheckpoints.end(), make_pair(height, hash));
+  }
+
 }
 
 static int64_t testnet_GetTxWeight(const CTransaction& tx)
@@ -816,6 +821,7 @@ bool TESTNETBlock::ConnectBlock(CBlockIndex* pindex)
 bool TESTNETBlock::DisconnectBlock(CBlockIndex* pindex)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
+	CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
   CBlock *block = (CBlock *)this;
 
   if (!core_DisconnectBlock(pindex, block))
@@ -828,7 +834,7 @@ bool TESTNETBlock::DisconnectBlock(CBlockIndex* pindex)
           CTxMatrix& matrix = tx.matrix;
           if (matrix.GetType() == CTxMatrix::M_VALIDATE) {
             /* retract block hash from Validate matrix */
-            matrixValidate.Retract(pindex->nHeight, pindex->GetBlockHash());
+            wallet->matrixValidate.Retract(pindex->nHeight, pindex->GetBlockHash());
           } else if (matrix.GetType() == CTxMatrix::M_SPRING) {
             BlockRetractSpringMatrix(iface, tx, pindex);
           }
@@ -838,6 +844,26 @@ bool TESTNETBlock::DisconnectBlock(CBlockIndex* pindex)
   }
 
   return (true);
+}
+
+
+bool TESTNETBlock::CreateCheckpoint()
+{
+  blkidx_t *blockIndex = GetBlockTable(TESTNET_COIN_IFACE);
+  const uint256& hBlock = GetHash();
+  CBlockIndex *prevIndex;
+  CBlockIndex *pindex;
+
+  if (blockIndex->count(hBlock) == 0)
+    return (false);
+  pindex = (*blockIndex)[hBlock];
+
+  prevIndex = TESTNET_Checkpoints::GetLastCheckpoint(*blockIndex);
+  if (prevIndex && pindex->nHeight <= prevIndex->nHeight)
+    return (false); /* stale */
+
+  TESTNET_Checkpoints::AddCheckpoint(pindex->nHeight, hBlock);
+	return (true);
 }
 
 

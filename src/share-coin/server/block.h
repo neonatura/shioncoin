@@ -1084,7 +1084,7 @@ class CTransaction : public CTransactionCore
 
     CTxMatrix *GenerateValidateMatrix(int ifaceIndex, CBlockIndex *pindex = NULL);
 
-    bool VerifyValidateMatrix(const CTxMatrix& matrix, CBlockIndex *pindex);
+    bool VerifyValidateMatrix(int ifaceIndex, const CTxMatrix& matrix, CBlockIndex *pindex);
 
     CTxMatrix *GenerateSpringMatrix(int ifaceIndex, CIdent& ident);
 
@@ -1493,6 +1493,9 @@ class CBlock : public CBlockHeader
 
     /* a weight based on the block size */
     virtual int64_t GetBlockWeight() = 0;
+
+		/* add a new dynamic checkpoint to the block-chain. */
+		virtual bool CreateCheckpoint() = 0;
 
 #ifdef USE_LEVELDB_COINDB
     /* leveldb */

@@ -108,6 +108,9 @@ public:
 
     int64_t GetBlockWeight();
 
+		bool CreateCheckpoint(); 
+
+
 #ifdef USE_LEVELDB_COINDB
     bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);
     bool ConnectBlock(CTxDB& txdb, CBlockIndex* pindex);

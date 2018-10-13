@@ -204,8 +204,6 @@ class CTxMatrix
 };
 
 
-extern CTxMatrix matrixValidate;
-
 class CBlock;
 
 bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward);
@@ -221,7 +219,7 @@ void BlockRetractSpringMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pind
 #ifdef __cplusplus
 extern "C" {
 #endif
-int validate_render_fractal(char *img_path, double zoom, double span, double x_of, double y_of);
+int validate_render_fractal(int ifaceIndex, char *img_path, double zoom, double span, double x_of, double y_of);
 #ifdef __cplusplus
 }
 #endif

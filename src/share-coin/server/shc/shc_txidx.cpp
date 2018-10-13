@@ -410,7 +410,7 @@ static bool shc_LoadBlockIndex()
     while (tindex->pprev && tindex->nHeight > matrix.nHeight)
       tindex = tindex->pprev;
 
-    matrixValidate.Append(tindex->nHeight, tindex->GetBlockHash()); 
+    wallet->matrixValidate.Append(tindex->nHeight, tindex->GetBlockHash()); 
     delete block;
   }
 

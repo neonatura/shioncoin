@@ -107,6 +107,9 @@ class CWallet : public CCryptoKeyStore
 		unsigned int nScanHeight;
 		unsigned int nValidateHeight;
 
+		CTxMatrix matrixValidate;
+		vector<CKeyID> mapValidateNotary;
+
 		mutable std::map<std::string, uint256> mapAlias;
 		mutable std::map<uint256, std::string> mapAliasArch;
 

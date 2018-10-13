@@ -96,6 +96,8 @@ public:
 
 //  protected: bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
 
+		bool CreateCheckpoint(); 
+
 
 #ifdef USE_LEVELDB_COINDB
     bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);

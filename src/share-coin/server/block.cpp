@@ -32,6 +32,7 @@
 #include "wit_merkle.h"
 #include "txmempool.h"
 #include "coin.h"
+#include "wallet.h"
 
 using namespace std;
 
@@ -1844,6 +1845,7 @@ CAsset *CTransaction::RemoveAsset(const CAsset& assetIn)
 	asset = GetAsset();
 
 	asset->SetNull();
+	asset->vAddr = assetIn.vAddr;
 
   return (asset);
 }
@@ -1876,10 +1878,13 @@ CIdent *CTransaction::CreateIdent(int ifaceIndex, CCoinAddr& addr)
   return ((CIdent *)&certificate);
 }
 
-bool CTransaction::VerifyValidateMatrix(const CTxMatrix& matrix, CBlockIndex *pindex)
+bool CTransaction::VerifyValidateMatrix(int ifaceIndex, const CTxMatrix& matrix, CBlockIndex *pindex)
 {
+	CWallet *wallet = GetWallet(ifaceIndex);
   unsigned int height;
 
+	if (!wallet)
+		return (false);
   if (!pindex)
     return (false);
 
@@ -1894,7 +1899,7 @@ bool CTransaction::VerifyValidateMatrix(const CTxMatrix& matrix, CBlockIndex *pi
   }
 
   bool ret;
-  CTxMatrix cmp_matrix(matrixValidate);
+  CTxMatrix cmp_matrix(wallet->matrixValidate);
   cmp_matrix.SetType(CTxMatrix::M_VALIDATE);
   cmp_matrix.Append(pindex->nHeight, pindex->GetBlockHash()); 
   ret = (cmp_matrix == matrix);
@@ -1907,8 +1912,12 @@ bool CTransaction::VerifyValidateMatrix(const CTxMatrix& matrix, CBlockIndex *pi
  */
 CTxMatrix *CTransaction::GenerateValidateMatrix(int ifaceIndex, CBlockIndex *pindex)
 {
+	CWallet *wallet = GetWallet(ifaceIndex);
   uint32_t best_height;
   int height;
+
+	if (!wallet)
+		return (NULL);
 
   if (nFlag & CTransaction::TXF_MATRIX)
     return (NULL);
@@ -1926,7 +1935,7 @@ CTxMatrix *CTransaction::GenerateValidateMatrix(int ifaceIndex, CBlockIndex *pin
   if (height <= 27)
     return (NULL);
 
-  if (matrixValidate.GetHeight() >= height)
+  if (wallet->matrixValidate.GetHeight() >= height)
     return (NULL);
 
   while (pindex && pindex->pprev && pindex->nHeight > height)
@@ -1937,7 +1946,7 @@ CTxMatrix *CTransaction::GenerateValidateMatrix(int ifaceIndex, CBlockIndex *pin
 
   nFlag |= CTransaction::TXF_MATRIX;
 
-  matrix = CTxMatrix(matrixValidate);
+  matrix = CTxMatrix(wallet->matrixValidate);
   matrix.SetType(CTxMatrix::M_VALIDATE);
   matrix.Append(pindex->nHeight, pindex->GetBlockHash()); 
 

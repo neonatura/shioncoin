@@ -1916,3 +1916,8 @@ bool LTCBlock::DisconnectBlock(CBlockIndex* pindex)
 
 #endif /* USE_LEVELDB_COINDB */
 
+bool LTCBlock::CreateCheckpoint()
+{ 
+  return (false);
+}
+

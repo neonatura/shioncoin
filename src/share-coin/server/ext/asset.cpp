@@ -35,6 +35,8 @@ using namespace std;
 using namespace json_spirit;
 
 
+extern bool GetExtOutput(const CTransaction& tx, int ext_mode, int& nOut, CScript& scriptOut);
+
 
 asset_list *GetAssetTable(int ifaceIndex)
 {
@@ -96,9 +98,6 @@ bool DecodeAssetHash(const CScript& script, int& mode, uint160& hash)
 
 
 
-bool IsAssetOp(int op) {
-	return (op == OP_ASSET);
-}
 
 
 string assetFromOp(int op) {
@@ -255,6 +254,43 @@ bool GetTxOfAsset(CIface *iface, const uint160& hashAsset, CTransaction& tx)
   return true;
 }
 
+#if 0
+static int IndexOfAssetOutput(const CTransaction& tx)
+{
+	int idx;
+
+	idx = 0;
+	BOOST_FOREACH(const CTxOut& out, tx.vout) {
+		const CScript& script = out.scriptPubKey;
+		opcodetype opcode;
+		CScript::const_iterator pc = script.begin();
+		if (script.GetOp(pc, opcode) &&
+				opcode >= 0xf0 && opcode <= 0xf9) { /* ext mode */
+			if (script.GetOp(pc, opcode) &&
+					CScript::DecodeOP_N(opcode) == OP_ASSET)
+				break;
+		}
+
+		idx++;
+	}
+	if (idx == tx.vout.size())
+		return (-1); /* uh oh */
+
+	return (idx);
+}
+#endif
+static int IndexOfAssetOutput(const CTransaction& tx)
+{
+	CScript script;
+	int nTxOut;
+
+	if (!GetExtOutput(tx, OP_ASSET, nTxOut, script))
+		return (-1);
+
+	return (nTxOut);
+}
+
+
 bool IsLocalAsset(CIface *iface, const CTxOut& txout) 
 {
   CWallet *pwalletMain = GetWallet(iface);
@@ -266,7 +302,7 @@ bool IsLocalAsset(CIface *iface, const CTransaction& tx)
   if (!IsAssetTx(tx))
     return (false); /* not a asset */
 
-  int nOut = IndexOfExtOutput(tx);
+  int nOut = IndexOfAssetOutput(tx);
   if (nOut == -1)
     return (false); /* invalid state */
 
@@ -288,7 +324,7 @@ bool VerifyAsset(CTransaction& tx)
 }
 
   /* verify hash in pub-script matches asset hash */
-  nOut = IndexOfExtOutput(tx);
+  nOut = IndexOfAssetOutput(tx);
   if (nOut == -1)
     return (false); /* no extension output */
 
@@ -310,6 +346,39 @@ bool VerifyAsset(CTransaction& tx)
   return (true);
 }
 
+bool VerifyAssetAccount(CWallet *wallet, const CTxOut& outAsset, string strAccount)
+{
+	bool fIsScript;
+
+	strAccount = "@" + strAccount;
+
+	/* extract "extended account" tx-destination. */
+	CTxDestination dest;
+	if (!ExtractDestination(outAsset.scriptPubKey, dest))
+		return (false);
+	CCoinAddr addrAsset = CCoinAddr(wallet->ifaceIndex, dest);
+	if (!addrAsset.IsValid())
+		return (false);
+	fIsScript = addrAsset.IsScript();
+
+	/* search for matching output and account name. */
+	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
+	{
+		const CCoinAddr& address = CCoinAddr(wallet->ifaceIndex, item.first);
+		const string& account = item.second;
+
+		if (fIsScript && !address.IsScript())
+			continue;
+
+		if (strAccount != account)
+			continue;
+
+		if (address.Get() == addrAsset.Get())
+			return (true);
+	}
+
+	return (false);
+}
 
 
 int init_asset_tx(CIface *iface, string strAccount, uint160 hashCert, string strTitle, string strHash, CWalletTx& wtx)
@@ -382,25 +451,20 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   if (!GetTxOfAsset(iface, hashAsset, tx)) {
     return (SHERR_NOENT);
   }
-	nOut = IndexOfExtOutput(tx);
+	nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1)
 		return (false);
+#if 0
   if(!IsLocalAsset(iface, tx)) {
     return (SHERR_REMOTE);
   }
+#endif
+	if (!VerifyAssetAccount(wallet, tx.vout[nOut], strAccount)) {
+		return (SHERR_ACCESS); /* invalid account specified. */
+	}
 
   /* establish original tx */
-  uint256 wtxInHash = tx.GetHash();
-  if (wallet->mapWallet.count(wtxInHash) == 0) {
-    return (SHERR_REMOTE);
-  }
-
-  /* establish account */
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, false);
-
-  if (!addr.IsValid()) {
-    return (SHERR_NOENT);
-  }
+  uint256 hTxIn = tx.GetHash();
 
   /* generate new coin address */
   string strExtAccount = "@" + strAccount;
@@ -409,11 +473,18 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
     return (SHERR_INVAL);
   }
 
-  int64 nNetFee = GetAssetOpFee(iface, GetBestHeight(iface));
-  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nNetFee) {
-    return (ERR_FEE);
-  }
+	/* establish fee for asset update. */
+	int64 nTxFee = (MIN_TX_FEE(iface) * 2);
+	int64 nCredit = wallet->GetCredit(tx.vout[nOut]);
+  int64 nNetFee = MAX(nTxFee, nCredit - nTxFee);
+
+	/* verify account has balance for tx fee. */
+	if (nNetFee > nCredit) {
+		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+		if (bal < (nNetFee - nCredit)) {
+			return (ERR_FEE);
+		}
+	}
 
   /* generate tx */
   CAsset *asset;
@@ -427,10 +498,11 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
 
   uint160 assetHash = asset->GetHash();
 
-  CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
+	if (nCredit > nNetFee) {
+		s_wtx.SetMinFee(nCredit - nNetFee);
+	}
 
-  /* link previous asset as input */
-	if (!s_wtx.AddInput(&wtxIn, nOut))
+	if (!s_wtx.AddInput(hTxIn, nOut))
 		return (false);
 
   /* generate output script */
@@ -468,33 +540,34 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   if (!GetTxOfAsset(iface, hashAsset, tx)) {
     return (SHERR_NOENT);
   }
-	int nOut = IndexOfExtOutput(tx);
+	int nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1)
 		return (false);
+#if 0
   if(!IsLocalAsset(iface, tx)) {
     return (SHERR_REMOTE);
   }
-  if(!IsLocalAsset(iface, tx)) {
-    return (SHERR_REMOTE);
-  }
+#endif
+	if (!VerifyAssetAccount(wallet, tx.vout[nOut], strAccount)) {
+		return (SHERR_ACCESS); /* invalid account specified. */
+	}
 
   /* establish original tx */
-  uint256 wtxInHash = tx.GetHash();
-  if (wallet->mapWallet.count(wtxInHash) == 0) {
-    return (SHERR_REMOTE);
-  }
+  uint256 hTxIn = tx.GetHash();
 
-  /* establish account */
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, false);
-  if (!addr.IsValid()) {
-    return (SHERR_NOENT);
-  }
+	/* establish fee for asset update. */
+	int64 nCredit = wallet->GetCredit(tx.vout[nOut]);
+  int64 nNetFee = MIN_TX_FEE(iface);
+	int64 nTxFee = nCredit - nNetFee;
+	int64 nDebit = nNetFee + nTxFee;
 
-  int64 nNetFee = GetAssetOpFee(iface, GetBestHeight(iface));
-  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nNetFee) {
-    return (ERR_FEE);
-  }
+	/* establish fee for asset removal. */
+	if (nDebit > nCredit) {
+		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+		if (bal < (nDebit - nCredit)) {
+			return (ERR_FEE);
+		}
+	}
 
   /* generate tx */
   CCert *asset;
@@ -508,17 +581,14 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
 
   uint160 assetHash = asset->GetHash();
 
-  CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
+	s_wtx.SetMinFee(nTxFee);
 
   /* link previous asset as input */
-	if (!s_wtx.AddInput(&wtxIn, nOut))
+	if (!s_wtx.AddInput(hTxIn, nOut))
 		return (false);
 
   /* generate output script */
-	CScript scriptPubKeyOrig;
-  scriptPubKeyOrig.SetDestination(addr.Get()); /* back to origin */
-	scriptPubKey << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP;
-  scriptPubKey += scriptPubKeyOrig;
+	scriptPubKey << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP << OP_RETURN;
   if (!s_wtx.AddOutput(scriptPubKey, nNetFee))
     return (SHERR_INVAL);
 
@@ -620,8 +690,9 @@ bool ProcessNewAssetTx(CIface *iface, CTransaction& tx)
 		return (false); /* dup */
 
 	/* verify certificate signature */
-	if (!asset->VerifySignature(GetCoinIndex(iface)))
+	if (!asset->VerifySignature(GetCoinIndex(iface))) {
 		return (false);
+	}
 
 	wallet->mapAsset[hAsset] = tx.GetHash();
 	return (true);
@@ -639,10 +710,12 @@ bool ProcessUpdateAssetTx(CIface *iface, CTransaction& tx)
 	if (!asset)
 		return (false);
 
-	if (!VerifyAssetChainOrigin(iface, tx, asset->hashIssuer, hPrevAssetTx))
+	const uint160& hIssuer = asset->GetIssuerHash();
+	if (!VerifyAssetChainOrigin(iface, tx, hIssuer, hPrevAssetTx)) {
 		return (false);
+	}
 
-	wallet->mapAsset[asset->hashIssuer] = tx.GetHash();
+	wallet->mapAsset[hIssuer] = tx.GetHash();
 	return (true);
 }
 
@@ -656,10 +729,12 @@ bool ProcessRemoveAssetTx(CIface *iface, CTransaction& tx)
 	if (!asset)
 		return (false);
 
-	if (!VerifyAssetChainOrigin(iface, tx, asset->hashIssuer, hPrevAssetTx))
+	const uint160& hIssuer = asset->GetIssuerHash();
+	if (!VerifyAssetChainOrigin(iface, tx, hIssuer, hPrevAssetTx)) {
 		return (false);
+	}
 
-	wallet->mapAsset.erase(asset->hashIssuer);
+	wallet->mapAsset.erase(hIssuer);
 	return (true);
 }
 
@@ -667,10 +742,11 @@ bool ProcessAssetTx(CIface *iface, CTransaction& tx, int nHeight)
 {
   CWallet *wallet = GetWallet(iface);
 
-	if (!VerifyAsset(tx))
+	if (!VerifyAsset(tx)) {
 		return (false);
+	}
 
-	int nOut = IndexOfExtOutput(tx);
+	int nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1)
 		return (false);
 
@@ -710,7 +786,7 @@ bool GetAssetChain(CIface *iface, const CTransaction& txIn, vector<CTransaction>
 
 	vTx.clear();
 
-	nOut = IndexOfExtOutput(txIn);
+	nOut = IndexOfAssetOutput(txIn);
 	if (nOut == -1)
 		return (false);
 	if (!DecodeAssetHash(txIn.vout[nOut].scriptPubKey, mode, hashAsset))
@@ -725,28 +801,35 @@ bool GetAssetChain(CIface *iface, const CTransaction& txIn, vector<CTransaction>
 	while (mode == OP_EXT_UPDATE) {
 		for (i = 0; i < tx.vin.size(); i++) {
 			const CTxIn& in = tx.vin[i];
+			const uint256& hashPrevTx = in.prevout.hash;
+			int nPrevOut = in.prevout.n;
 			CTransaction p_tx;
 
-			if (!GetTransaction(iface, in.prevout.hash, p_tx, NULL))
+			if (!GetTransaction(iface, in.prevout.hash, p_tx, NULL)) {
+fprintf(stderr, "GetAssetChain: invalid input tx \"%s\"\n", p_tx.GetHash().GetHex().c_str());
 				continue; /* soft error */
+			}
 
-			if (!IsAssetTx(p_tx))
+			const CTxOut& out = p_tx.vout[nPrevOut];
+			if (!DecodeAssetHash(out.scriptPubKey, mode, hashAsset)) {
+fprintf(stderr, "GetAssetChain: !DecodeAssetHash\n");
 				continue; /* onto next tx */
-
-			nOut = IndexOfExtOutput(p_tx);
-			if (nOut == -1)
-				continue; /* onto next tx */
-
-			if (!DecodeAssetHash(p_tx.vout[nOut].scriptPubKey, mode, hashAsset))
-				continue; /* onto next tx */
+			}
 
 			CAsset *p_asset = p_tx.GetAsset();
+			if (!p_asset) {
+				continue;
+			}
 			if (mode == OP_EXT_NEW) {
-				if (hashAsset != l_hashIssuer)
+				if (hashAsset != l_hashIssuer) {
+fprintf(stderr, "GetAssetChain: !DecodeAssetHash: hashAsset != l_hashIssuer\n");
 					continue; /* wrong chain */
+				}
 			} else {
-				if (p_asset->hashIssuer != l_hashIssuer)
+				if (p_asset->hashIssuer != l_hashIssuer) {
+fprintf(stderr, "GetAssetChain: !DecodeAssetHash: p_asset->hashIssuer != l_hashIssuer\n");
 					continue; /* wrong chain */
+				}
 			}
 
 			tx = p_tx;
@@ -770,7 +853,7 @@ bool DisconnectAssetTx(CIface *iface, CTransaction& tx)
 	if (!asset)
 		return (error(ERR_INVAL, "DisconnectAssetTx: !Asset"));
 
-	int nOut = IndexOfExtOutput(tx);
+	int nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1)
 		return (error(ERR_INVAL, "DisconnectAssetTx: !ExtOutput"));
 

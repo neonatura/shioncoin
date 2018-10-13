@@ -43,8 +43,6 @@ void CTxMatrix::ClearCells()
 }
 #endif
 
-CTxMatrix matrixValidate;
-
 
 void CTxMatrix::Append(int heightIn, uint256 hash)
 {
@@ -71,6 +69,30 @@ void CTxMatrix::Retract(int heightIn, uint256 hash)
   SubCell(row, col, (unsigned int)shcrc(hash.GetRaw(), 32));
 }
 
+/* A redeem script from a OP_MATRIX:GENERATE tx output that is used to trigger a new dynamic checkpoint. */
+uint160 GenerateValidateScript(CWallet *wallet, CScript& script, uint160& hash)
+{
+
+	script.clear();
+
+	while (wallet->mapValidateNotary.size() > 8) 
+		wallet->mapValidateNotary.erase(wallet->mapValidateNotary.begin());
+
+	if (wallet->mapValidateNotary.size() <= 4) {
+		script << OP_RETURN;
+	} else {
+		/* all of all */
+		script << CScript::EncodeOP_N(wallet->mapValidateNotary.size());
+		for (int i = 0; i < wallet->mapValidateNotary.size(); i++) {
+			script << wallet->mapValidateNotary[i]; /* CKeyID */
+		}
+		script << CScript::EncodeOP_N(wallet->mapValidateNotary.size());
+		script << OP_CHECKMULTISIG;
+	}
+	hash = Hash160(script);
+
+	return (true);
+}
 
 
 /* 'zero transactions' penalty. */
@@ -103,6 +125,7 @@ bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward
 bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, bool& fCheck)
 {
   int ifaceIndex = GetCoinIndex(iface);
+	CWallet *wallet = GetWallet(iface);
   CTxMatrix matrix;
   bool fMatrix = false;
   int mode;
@@ -111,15 +134,15 @@ bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, bool& fCheck)
     CBlockIndex *pindex = GetBestBlockIndex(ifaceIndex);
     CTxMatrix& matrix = *tx.GetMatrix();
     if (matrix.GetType() == CTxMatrix::M_VALIDATE &&
-        matrix.GetHeight() > matrixValidate.GetHeight()) {
-      if (!tx.VerifyValidateMatrix(matrix, pindex)) {
+        matrix.GetHeight() > wallet->matrixValidate.GetHeight()) {
+      if (!tx.VerifyValidateMatrix(ifaceIndex, matrix, pindex)) {
         fCheck = false;
         error(SHERR_INVAL, "BlockAcceptValidateMatrix: invalid matrix received: %s", matrix.ToString().c_str());
       } else {
         fCheck = true;
         /* apply new hash to matrix */
-        matrixValidate = matrix;
-        Debug("BlockAcceptValidateMatrix: Validate verify success: %s\n", matrixValidate.ToString().c_str());
+        wallet->matrixValidate = matrix;
+        Debug("BlockAcceptValidateMatrix: Validate verify success: %s\n", wallet->matrixValidate.ToString().c_str());
       }
       return (true); /* matrix was found */
     }
@@ -367,13 +390,10 @@ std::string CTxMatrix::ToString()
 }
 
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-int validate_render_fractal(char *img_path, double zoom, double span, double x_of, double y_of)
+int cpp_validate_render_fractal(int ifaceIndex, char *img_path, double zoom, double span, double x_of, double y_of)
 {
-  CTxMatrix *matrix;
+	CWallet *wallet = GetWallet(ifaceIndex);
+	CTxMatrix *matrix = &wallet->matrixValidate;
   uint32_t m_seed;
   double seed;
   int y, x;
@@ -381,12 +401,20 @@ int validate_render_fractal(char *img_path, double zoom, double span, double x_o
   m_seed = 0;
   for (y = 0; y < 3; y++) {
     for (x = 0; x < 3; x++) {
-      m_seed += matrixValidate.vData[y][x];
+      m_seed += matrix->vData[y][x];
     }
   }
   seed = (double)m_seed;
 
   return (fractal_render(img_path, seed, zoom, span, x_of, y_of));
+}
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+int validate_render_fractal(int ifaceIndex, char *img_path, double zoom, double span, double x_of, double y_of)
+{
+	return (cpp_validate_render_fractal(ifaceIndex, img_path, zoom, span, x_of, y_of));
 }
 #ifdef __cplusplus
 }

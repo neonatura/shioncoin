@@ -1342,4 +1342,7 @@ int64 color_GetMinTxFee(uint160 hColor)
 	return (color_GetMinTxFee(opt));
 }
 
-
+bool COLORBlock::CreateCheckpoint()
+{
+	return (false);
+}

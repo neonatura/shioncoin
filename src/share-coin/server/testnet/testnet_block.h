@@ -88,6 +88,8 @@ public:
     bool ConnectBlock(CBlockIndex* pindex);
     bool DisconnectBlock(CBlockIndex* pindex);
 
+		bool CreateCheckpoint(); 
+
 };
 
 

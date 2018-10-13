@@ -231,6 +231,12 @@ namespace TEST_Checkpoints
     return NULL;
   }
 
+  void AddCheckpoint(int height, uint256 hash)
+  {
+    mapCheckpoints.insert(mapCheckpoints.end(), make_pair(height, hash));
+  }
+
+
 }
 
 static int64_t test_GetTxWeight(const CTransaction& tx)
@@ -1677,6 +1683,7 @@ return false;
 bool TESTBlock::DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex)
 {
   CIface *iface = GetCoinByIndex(txdb.ifaceIndex);
+	CWallet *wallet = GetCoinByIndex(txdb.ifaceIndex);
 
   if (!core_DisconnectBlock(txdb, pindex, this))
     return (false);
@@ -1690,7 +1697,7 @@ bool TESTBlock::DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex)
             CTxMatrix& matrix = tx.matrix;
             if (matrix.GetType() == CTxMatrix::M_VALIDATE) {
               /* retract block hash from Validate matrix */
-              matrixValidate.Retract(matrix.nHeight, pindex->GetBlockHash());
+              wallet->matrixValidate.Retract(matrix.nHeight, pindex->GetBlockHash());
             } else if (matrix.GetType() == CTxMatrix::M_SPRING) {
               BlockRetractSpringMatrix(iface, tx, pindex);
             }
@@ -1868,6 +1875,7 @@ bool TESTBlock::ConnectBlock(CBlockIndex* pindex)
 bool TESTBlock::DisconnectBlock(CBlockIndex* pindex)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
 
   if (!core_DisconnectBlock(pindex, this))
     return (false);
@@ -1879,7 +1887,7 @@ bool TESTBlock::DisconnectBlock(CBlockIndex* pindex)
           CTxMatrix& matrix = tx.matrix;
           if (matrix.GetType() == CTxMatrix::M_VALIDATE) {
             /* retract block hash from Validate matrix */
-            matrixValidate.Retract(matrix.nHeight, pindex->GetBlockHash());
+            wallet->matrixValidate.Retract(matrix.nHeight, pindex->GetBlockHash());
           } else if (matrix.GetType() == CTxMatrix::M_SPRING) {
             BlockRetractSpringMatrix(iface, tx, pindex);
           }
@@ -1898,4 +1906,23 @@ bool TESTBlock::DisconnectBlock(CBlockIndex* pindex)
 
 #endif
 
+
+bool TESTBlock::CreateCheckpoint()
+{
+	blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
+	const uint256& hBlock = GetHash();
+	CBlockIndex *prevIndex;
+	CBlockIndex *pindex;
+
+	if (blockIndex->count(hBlock) == 0)
+		return (false);
+	pindex = (*blockIndex)[hBlock];
+
+	prevIndex = TEST_Checkpoints::GetLastCheckpoint(*blockIndex);
+	if (prevIndex && pindex->nHeight <= prevIndex->nHeight)
+		return (false); /* stale */
+
+	TEST_Checkpoints::AddCheckpoint(pindex->nHeight, hBlock);
+	return (true);
+}
 

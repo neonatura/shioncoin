@@ -120,6 +120,9 @@ public:
 
     bool DisconnectBlock(CBlockIndex* pindex);
 
+		bool CreateCheckpoint();
+
+
 };
 
 

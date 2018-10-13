@@ -446,7 +446,7 @@ void stratum_http_validate_img(char *args, shbuf_t *buff)
   sprintf(tag, "validate_bmp:%f,%f,%f,%f", zoom, span, x_of, y_of);
   bmp_path = shcache_path(tag);
   if (!shcache_fresh(tag))
-    validate_render_fractal(bmp_path, zoom, span, x_of, y_of);
+    validate_render_fractal(SHC_COIN_IFACE, bmp_path, zoom, span, x_of, y_of);
   stat(bmp_path, &st);
 
   shbuf_catstr(buff, "HTTP/1.0 200 OK\r\n"); 

@@ -137,8 +137,6 @@ int main(int argc, char *argv[])
 
 
 
-
-
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);
   CuSuiteDetails(suite, output);

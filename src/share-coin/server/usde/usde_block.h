@@ -102,6 +102,8 @@ public:
 
     int64_t GetBlockWeight();
 
+		bool CreateCheckpoint(); 
+
 //  protected: bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
 
 

@@ -97,17 +97,14 @@ bool VerifyCertChain(CIface *iface, CTransaction& tx)
   CCert *pcert = &ptx.certificate;
   if (pcert->nFee > (int64)iface->min_tx_fee) {
     const string cert_addr = stringFromVch(pcert->vAddr);
-fprintf(stderr, "DEBUG: VerifyCertChain: pcert->vAddr '%s'\n", stringFromVch(pcert->vAddr).c_str());
 
     bool bFound = false;
-fprintf(stderr, "DEBUG: VerifyCertChain: tx.vout.size)( = %d\n", (int)tx.vout.size());
     for (idx = 0; idx < tx.vout.size(); idx++) {
       CTxDestination dest;
       if (!ExtractDestination(tx.vout[idx].scriptPubKey, dest))
         return error(SHERR_INVAL, "VerifyCertChain: no output destination.");
       CCoinAddr addr(ifaceIndex);
       addr.Set(dest);
-fprintf(stderr, "DEBUG: tx.vout[%d] addr = '%s'\n", idx, addr.ToString().c_str());
       if (addr.ToString() != cert_addr)
         continue; /* wrong output */
 
@@ -1684,7 +1681,6 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
   CIdent& s_cert = (CIdent&)tx.certificate;
   ident = wtx.CreateIdent(&s_cert);
   if (!ident) {
-//fprintf(stderr, "DEBUG: init_ident_donate_tx: !ident\n");
     return (SHERR_INVAL);
   }
 
@@ -1727,7 +1723,6 @@ CTransaction *tx = (CTransaction *)&wtx;
   destPubKey.SetDestination(addrDest.Get());
   
   if (!SendMoneyWithExtTx(iface, strAccount, wtx, t_wtx, destPubKey, vecSend, nMinValue)) { 
-//fprintf(stderr, "DEBUG: init_ident_donate_tx:: !SendMoneyWithExtTx()\n");
     return (SHERR_INVAL);
   }
 

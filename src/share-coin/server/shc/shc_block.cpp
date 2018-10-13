@@ -365,7 +365,6 @@ namespace SHC_Checkpoints
 
     ;
 
-
   bool CheckBlock(int nHeight, const uint256& hash)
   {
     if (fTestNet) return true; // Testnet has no checkpoints
@@ -394,6 +393,11 @@ namespace SHC_Checkpoints
     }
     return NULL;
   }
+
+	void AddCheckpoint(int height, uint256 hash)
+	{
+		mapCheckpoints.insert(mapCheckpoints.end(), make_pair(height, hash));
+	}
 
 }
 
@@ -1389,6 +1393,7 @@ bool SHCBlock::ConnectBlock(CBlockIndex* pindex)
 bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
 {
 	CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
 	CBlock *block = (CBlock *)this;
 
 	if (!core_DisconnectBlock(pindex, block))
@@ -1401,7 +1406,7 @@ bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
 					CTxMatrix& matrix = tx.matrix;
 					if (matrix.GetType() == CTxMatrix::M_VALIDATE) {
 						/* retract block hash from Validate matrix */
-						matrixValidate.Retract(pindex->nHeight, pindex->GetBlockHash());
+						wallet->matrixValidate.Retract(pindex->nHeight, pindex->GetBlockHash());
 					} else if (matrix.GetType() == CTxMatrix::M_SPRING) {
 						BlockRetractSpringMatrix(iface, tx, pindex);
 					}
@@ -1413,6 +1418,26 @@ bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
 	return (true);
 }
 
+bool SHCBlock::CreateCheckpoint()
+{
+  blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
+	const uint256& hBlock = GetHash();
+  CBlockIndex *prevIndex;
+  CBlockIndex *pindex;
+	
+	/* ensure is valid in main chain. */
+	if (blockIndex->count(hBlock) == 0)
+		return (false);
+	pindex = (*blockIndex)[hBlock];
+
+	/* compare height against last checkpoint. */
+	prevIndex = SHC_Checkpoints::GetLastCheckpoint(*blockIndex);
+	if (prevIndex && pindex->nHeight <= prevIndex->nHeight)
+		return (false); /* stale */
+
+	SHC_Checkpoints::AddCheckpoint(pindex->nHeight, hBlock);
+	return (true);
+}
 
 
 

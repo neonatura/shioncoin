@@ -621,7 +621,6 @@ _TEST(assettx)
 	CAsset *u_asset = u_tx.GetAsset();
 	_TRUEPTR(u_asset);
 	_TRUE(u_asset->GetHash() == u_wtx.GetAsset()->GetHash());
-fprintf(stderr, "DEBUG: ASSET: %s\n", u_asset->ToString().c_str());
 
 
 
@@ -648,7 +647,6 @@ fprintf(stderr, "DEBUG: ASSET: %s\n", u_asset->ToString().c_str());
 	_TRUE(DisconnectAssetTx(iface, r_wtx) == true);
 	CTransaction u2_tx;
 	_TRUE(GetTxOfAsset(iface, hashAsset, u2_tx) == true);
-fprintf(stderr, "DEBUG: ASSET2: %s\n", u2_tx.GetAsset()->ToString().c_str());
 	_TRUE(u2_tx.GetAsset()->GetHash() == u_tx.GetAsset()->GetHash());
 
 }
@@ -1093,6 +1091,7 @@ fprintf(stderr, "DEBUG: TEST OFFER: offertx: bal %llu < new_bal %llu\n", (unsign
 _TEST(matrix)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+	CWallet *wallet = GetWallet(iface);
   CTransaction tx;
   CTxMatrix *m;
   double lat, lon;
@@ -1120,7 +1119,7 @@ bool ret;
   pindex = t_pindex;
   m = tx.GenerateValidateMatrix(TEST_COIN_IFACE, pindex);
   _TRUEPTR(m);
-  ret = tx.VerifyValidateMatrix(*m, pindex);
+  ret = tx.VerifyValidateMatrix(TEST_COIN_IFACE, *m, pindex);
   _TRUE(ret == true);
 
   for (idx = 108; idx < 351; idx += 27) {
@@ -1138,10 +1137,10 @@ bool ret;
     m = tx.GenerateValidateMatrix(TEST_COIN_IFACE, pindex);
     _TRUEPTR(m);
 
-    ret = tx.VerifyValidateMatrix(*m, pindex);
+    ret = tx.VerifyValidateMatrix(TEST_COIN_IFACE, *m, pindex);
     _TRUE(ret == true);
   }
-  matrixValidate.SetNull();
+  wallet->matrixValidate.SetNull();
 
 }
 
