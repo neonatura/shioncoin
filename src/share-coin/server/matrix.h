@@ -206,7 +206,21 @@ class CTxMatrix
 
 class CBlock;
 
-bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward);
+bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward, uint64_t nBestHeight, uint64_t nCheckHeight);
+
+void BlockRetractValidateMatrix(CIface *iface, const CTransaction& tx, CBlockIndex *pindex);
+
+bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx);
+
+extern CScriptID GenerateValidateScript(CWallet *wallet, bool& fConsensus, CScript& script, vector<CPubKey> kSend);
+
+bool CreateValidateNotaryTx(CIface *iface, const CTransaction& txPrev, int nPrevOut, CTransaction& tx, vector<CPubKey> kSend);
+
+void InsertValidateNotary(CWallet *wallet, const CTransaction& tx);
+
+bool RelayValidateMatrixNotaryTx(CIface *iface, const CTransaction& txMatrix, CTransaction *txIn = NULL);
+
+void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scriptPrev);
 
 bool BlockGenerateSpringMatrix(CIface *iface, CTransaction& tx, int64& nReward);
 
@@ -215,6 +229,7 @@ bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, bool& fCheck);
 bool BlockAcceptSpringMatrix(CIface *iface, CTransaction& tx, bool& fCheck);
 
 void BlockRetractSpringMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex);
+
 
 #ifdef __cplusplus
 extern "C" {

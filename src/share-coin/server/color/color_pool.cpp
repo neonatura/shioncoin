@@ -155,3 +155,6 @@ double COLOR_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
 }
 
 
+void COLOR_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
+{
+}

@@ -442,9 +442,11 @@ bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex*
       }
 
 			CWallet *wallet = GetWallet(iface);
-			if ((pindexBlock->nHeight - previndex->nHeight) < wallet->GetCoinbaseMaturity(pBlock->hColor)) {
+			unsigned int nDepth = (unsigned int)(pindexBlock->nHeight - previndex->nHeight);
+			unsigned int nMaturity = (unsigned int)wallet->GetCoinbaseMaturity(pBlock->hColor);
+			if (nDepth < nMaturity) {
 				/* immature */
-				return (error(SHERR_INVAL, "core_ConnectInputs: immature coinbase"));
+				return (error(SHERR_INVAL, "core_ConnectInputs: immature coinbase [%d < %d]", nDepth, nMaturity));
       }
     }
 

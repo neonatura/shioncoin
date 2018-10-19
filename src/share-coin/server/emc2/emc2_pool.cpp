@@ -194,3 +194,7 @@ double EMC2_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
 {
 	return (sqrt(ptx->dPriority) * (double)ptx->nFee);
 }
+
+void EMC2_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
+{
+}

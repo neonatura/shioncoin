@@ -64,6 +64,8 @@ class USDE_CTxMemPool : public CPool
 
 		double CalculateFeePriority(CPoolTx *ptx);
 
+		void EnforceCoinStandards(CTransaction& tx);
+
     USDE_CTxMemPool() : CPool(USDE_COIN_IFACE) { };
 };
 

@@ -584,6 +584,7 @@ Value rpc_peer_info(CIface *iface, const Array& params, bool fStratum)
   return obj;
 }
 
+extern unsigned int GetBlockScriptFlags(CIface *iface, const CBlockIndex* pindex);
 Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
 {
   CWallet *pwalletMain = GetWallet(iface);
@@ -655,6 +656,26 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
         IsWitnessEnabled(iface, GetBestBlockIndex(iface))));
   obj.push_back(Pair("segwit-commit", 
         (iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout != 0) ? "true" : "false"));
+
+
+	CBlockIndex *pindexBest = GetBestBlockIndex(iface);
+	if (pindexBest) {
+		unsigned int flags = GetBlockScriptFlags(iface, pindexBest);
+		string flag_str = "";
+
+		if (flags & SCRIPT_VERIFY_P2SH)
+			flag_str += "BIP16 ";
+		if (flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY)
+			flag_str += "BIP65 ";
+		if (flags & SCRIPT_VERIFY_DERSIG)
+			flag_str += "BIP66 ";
+		if (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)
+			flag_str += "BIP68 ";
+
+		if (flag_str != "") {
+			obj.push_back(Pair("scriptflags", flag_str));
+		}
+	}
 
   return obj;
 }
@@ -788,6 +809,11 @@ Value rpc_block_info(CIface *iface, const Array& params, bool fStratum)
 #endif
 
   obj.push_back(Pair("errors",        GetWarnings(ifaceIndex, "statusbar")));
+
+	CBlock *block = GetBlockByHash(iface, pindexBest->GetBlockHash());
+	int nTotal = block->GetTotalBlocksEstimate();
+	delete block;
+  obj.push_back(Pair("checkpoint", nTotal));
 
   return obj;
 }

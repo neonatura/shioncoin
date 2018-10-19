@@ -181,3 +181,7 @@ double USDE_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
 {
 	return (sqrt(ptx->dPriority) * (double)ptx->nFee);
 }
+
+void USDE_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
+{
+}

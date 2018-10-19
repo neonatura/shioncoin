@@ -64,6 +64,8 @@ class SHC_CTxMemPool : public CPool
 
 		double CalculateFeePriority(CPoolTx *ptx);
 
+		void EnforceCoinStandards(CTransaction& tx);
+
     SHC_CTxMemPool() : CPool(SHC_COIN_IFACE) { };
 };
 

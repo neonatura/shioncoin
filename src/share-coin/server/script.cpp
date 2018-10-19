@@ -1470,6 +1470,7 @@ static bool core_CScript_IsPushOnly(const CScript& script, int of = 0)
 //
 bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsigned char> >& vSolutionsRet)
 {
+	CScript scriptPubKeyCopy(scriptPubKey);
 
   // Templates
   static map<txnouttype, CScript> mTemplates;
@@ -1480,6 +1481,8 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
     // Bitcoin address tx, sender provides hash of pubkey, receiver provides signature and pubkey
     mTemplates.insert(make_pair(TX_PUBKEYHASH, CScript() << OP_DUP << OP_HASH160 << OP_PUBKEYHASH << OP_EQUALVERIFY << OP_CHECKSIG));
+
+//		mTemplates.insert(make_pair(TX_SCRIPTHASH, CScript() << OP_HASH160 << OP_PUBKEYHASH << OP_EQUAL)); 
 
     // Sender provides N pubkeys, receivers provides M signatures
     mTemplates.insert(make_pair(TX_MULTISIG, CScript() << OP_SMALLINTEGER << OP_PUBKEYS << OP_SMALLINTEGER << OP_CHECKMULTISIG));
@@ -1501,18 +1504,23 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 //    mTemplates.insert(make_pair(TX_PUBKEYIF, CScript() << OP_IF << OP_PUBKEY << OP_CHECKSIG << OP_ELSE << OP_PUBKEY << OP_CHECKSIG << OP_ENDIF));
   }
 
+	/* remove extended transaction script prefix, if needed. */
+	RemoveExtOutputPrefix(scriptPubKeyCopy);
+
   // Shortcut for pay-to-script-hash, which are more constrained than the other types:
   // it is always OP_HASH160 20 [20 byte hash] OP_EQUAL
-  if (scriptPubKey.IsPayToScriptHash()) {
+  if (scriptPubKeyCopy.IsPayToScriptHash()) {
+
+
     typeRet = TX_SCRIPTHASH;
-    vector<unsigned char> hashBytes(scriptPubKey.begin()+2, scriptPubKey.begin()+22);
+    vector<unsigned char> hashBytes(scriptPubKeyCopy.begin()+2, scriptPubKeyCopy.begin()+22);
     vSolutionsRet.push_back(hashBytes);
     return true;
   }
 
   int witnessversion;
   std::vector<unsigned char> witnessprogram;
-  if (scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram)) {
+  if (scriptPubKeyCopy.IsWitnessProgram(witnessversion, witnessprogram)) {
     if (witnessversion == 0 && witnessprogram.size() == 20) {
       typeRet = TX_WITNESS_V0_KEYHASH;
       vSolutionsRet.push_back(witnessprogram);
@@ -1529,7 +1537,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
 
   // Scan templates
-  const CScript& script1 = scriptPubKey;
+  const CScript& script1 = scriptPubKeyCopy;
 
 		opcodetype opcode1, opcode2;
   BOOST_FOREACH(const PAIRTYPE(txnouttype, CScript)& tplate, mTemplates)
@@ -1561,6 +1569,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
       if (!script1.GetOp(pc1, opcode1, vch1)) {
         break;
       }
+#if 0
 			/* <OP_EXT_XXX> <EXT OP (SMALLINT)> OP_HASH160 <OP_EXT_HASH> OP_2DROP */
       if (opcode1 >= 0xf0 && opcode1 < 0xfa) { /* ext */
         while (opcode1 != OP_2DROP && opcode1 != OP_DROP) {
@@ -1572,6 +1581,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
             break;
         }
       }
+#endif
 			/* OP_CHECKALTPROOF <hTx> <hColor|hCoin> */
 			if (opcode1 == OP_CHECKALTPROOF) {
 				/* hTx */
@@ -1677,9 +1687,9 @@ fprintf(stderr, "DEBUG: Solver: found complete OP_CHECKALTPROOF\n");
   /* The case below handles auxiliary no-op information where OP_RETURN is followed by 1 or more bytes of information containing "push-only" info.
    * It is currently used via BIP 9 to relay consensis commitment for proposed features. The nValue is nominally 0 in this case.
    */
-  if (scriptPubKey.size() > 1 && 
-      scriptPubKey[0] == OP_RETURN && 
-      core_CScript_IsPushOnly(scriptPubKey, 1)) {
+  if (scriptPubKeyCopy.size() > 1 && 
+      scriptPubKeyCopy[0] == OP_RETURN && 
+      core_CScript_IsPushOnly(scriptPubKeyCopy, 1)) {
     // Provably prunable, data-carrying output..
     // So long as script passes the IsUnspendable() test and all but the first
     // byte passes the IsPushOnly() test we don't care what exactly is in the
@@ -2389,6 +2399,12 @@ public:
 void CScript::SetDestination(const CTxDestination& dest)
 {
     boost::apply_visitor(CScriptVisitor(this), dest);
+}
+
+void CScript::SetNoDestination()
+{
+	this->clear();
+	*this << OP_RETURN << OP_0;
 }
 
 void CScript::SetMultisig(int nRequired, const std::vector<CKey>& keys)

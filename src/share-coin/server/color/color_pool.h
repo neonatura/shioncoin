@@ -69,6 +69,8 @@ class COLOR_CTxMemPool : public CPool
 
 		double CalculateFeePriority(CPoolTx *ptx);
 
+		void EnforceCoinStandards(CTransaction& tx);
+
     COLOR_CTxMemPool() : CPool(COLOR_COIN_IFACE) { };
 
 };

@@ -64,6 +64,8 @@ class TEST_CTxMemPool : public CPool
 
 		double CalculateFeePriority(CPoolTx *ptx);
 
+		void EnforceCoinStandards(CTransaction& tx);
+
     TEST_CTxMemPool() : CPool(TEST_COIN_IFACE) { };
 };
 

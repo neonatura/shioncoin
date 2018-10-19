@@ -397,6 +397,7 @@ namespace SHC_Checkpoints
 	void AddCheckpoint(int height, uint256 hash)
 	{
 		mapCheckpoints.insert(mapCheckpoints.end(), make_pair(height, hash));
+		Debug("(shc) AddCheckpoint: new dynamic checkpoint (height %d): %s",height, hash.GetHex().c_str());
 	}
 
 }
@@ -526,7 +527,7 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
   bool ret = false;
   int64 reward = shc_GetBlockValue(pindexPrev->nHeight+1, nFees);
   if (pblock->vtx.size() == 1)
-    ret = BlockGenerateValidateMatrix(iface, pblock->vtx[0], reward);
+    ret = BlockGenerateValidateMatrix(iface, pblock->vtx[0], reward, pindexPrev->nHeight + 1, pblock->GetTotalBlocksEstimate());
   if (!ret)
     ret = BlockGenerateSpringMatrix(iface, pblock->vtx[0], reward);
   pblock->vtx[0].vout[0].nValue = reward; 
@@ -733,6 +734,15 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
 
   ServiceBlockEventUpdate(SHC_COIN_IFACE);
 
+	/* initiate notary tx, if needed. */
+	int mode;
+	const CTransaction& tx = pblock->vtx[0];
+	if ((tx.GetFlags() & CTransaction::TXF_MATRIX) &&
+			GetExtOutputMode(tx, OP_MATRIX, mode) &&
+			mode == OP_EXT_VALIDATE) {
+		RelayValidateMatrixNotaryTx(iface, tx);
+	}
+
   return true;
 }
 
@@ -839,7 +849,6 @@ bool SHCBlock::CheckBlock()
   }
 
 
-/* DEBUG: TODO: */
 /* addition verification.. 
  * ensure genesis block has higher payout in coinbase
  * ensure genesis block has lower difficulty (nbits)
@@ -850,120 +859,6 @@ bool SHCBlock::CheckBlock()
   return true;
 }
 
-#if 0
-bool static SHC_Reorganize(CTxDB& txdb, CBlockIndex* pindexNew, SHC_CTxMemPool *mempool)
-{
-  char errbuf[1024];
-
-  Debug("SHC_Reorganize: block height %u", (unsigned int)pindexNew->nHeight);
-
- // Find the fork
-  CBlockIndex* pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
-  CBlockIndex* pfork = pindexBest;
-  CBlockIndex* plonger = pindexNew;
-  while (pfork != plonger)
-  {
-    while (plonger->nHeight > pfork->nHeight)
-      if (!(plonger = plonger->pprev))
-        return error(SHERR_INVAL, "Reorganize() : plonger->pprev is null");
-    if (pfork == plonger)
-      break;
-    if (!pfork->pprev) {
-      sprintf(errbuf, "SHC_Reorganize: no previous chain for '%s' height %d\n", pfork->GetBlockHash().GetHex().c_str(), pfork->nHeight); 
-      return error(SHERR_INVAL, errbuf);
-    }
-    pfork = pfork->pprev;
-  }
-
-  // List of what to disconnect
-  vector<CBlockIndex*> vDisconnect;
-  for (CBlockIndex* pindex = pindexBest; pindex != pfork; pindex = pindex->pprev)
-    vDisconnect.push_back(pindex);
-
-  // List of what to connect
-  vector<CBlockIndex*> vConnect;
-  for (CBlockIndex* pindex = pindexNew; pindex != pfork; pindex = pindex->pprev)
-    vConnect.push_back(pindex);
-  reverse(vConnect.begin(), vConnect.end());
-
-  //unet_log(txdb.ifaceIndex, "REORGANIZE: Disconnect %i blocks; %s..%s\n", vDisconnect.size(), pfork->GetBlockHash().ToString().substr(0,20).c_str(), pindexBest->GetBlockHash().ToString().substr(0,20).c_str());
-  //unet_log(txdb.ifaceIndex, "REORGANIZE: Connect %i blocks; %s..%s\n", vConnect.size(), pfork->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->GetBlockHash().ToString().substr(0,20).c_str());
-
-  // Disconnect shorter branch
-  vector<CTransaction> vResurrect;
-  BOOST_FOREACH(CBlockIndex* pindex, vDisconnect)
-  {
-    SHCBlock block;
-    if (!block.ReadFromDisk(pindex)) { 
-      if (!block.ReadArchBlock(pindex->GetBlockHash()))
-        return error(SHERR_IO, "Reorganize() : ReadFromDisk for disconnect failed");
-    }
-    if (!block.DisconnectBlock(txdb, pindex))
-      return error(SHERR_INVAL, "Reorganize() : DisconnectBlock %s failed", pindex->GetBlockHash().ToString().substr(0,20).c_str());
-
-    // Queue memory transactions to resurrect
-    BOOST_FOREACH(const CTransaction& tx, block.vtx)
-      if (!tx.IsCoinBase())
-        vResurrect.push_back(tx);
-  }
-
-  // Connect longer branch
-  vector<SHCBlock> vDelete;
-  for (unsigned int i = 0; i < vConnect.size(); i++)
-  {
-    CBlockIndex* pindex = vConnect[i];
-    SHCBlock block;
-    if (!block.ReadFromDisk(pindex)) {
-      if (!block.ReadArchBlock(pindex->GetBlockHash()))
-        return error(SHERR_INVAL, "Reorganize() : ReadFromDisk for connect failed");
-    }
-    if (!block.ConnectBlock(txdb, pindex))
-    {
-      // Invalid block
-      return error(SHERR_INVAL, "Reorganize() : ConnectBlock %s failed", pindex->GetBlockHash().ToString().substr(0,20).c_str());
-    }
-
-    // Queue memory transactions to delete
-    vDelete.push_back(block);
-#if 0
-    BOOST_FOREACH(const CTransaction& tx, block.vtx)
-      vDelete.push_back(tx);
-#endif
-  }
-  if (!txdb.WriteHashBestChain(pindexNew->GetBlockHash()))
-    return error(SHERR_INVAL, "Reorganize() : WriteHashBestChain failed");
-
-  // Make sure it's successfully written to disk before changing memory structure
-  if (!txdb.TxnCommit())
-    return error(SHERR_INVAL, "Reorganize() : TxnCommit failed");
-
-  // Disconnect shorter branch
-  BOOST_FOREACH(CBlockIndex* pindex, vDisconnect)
-    if (pindex->pprev)
-      pindex->pprev->pnext = NULL;
-
-  // Connect longer branch
-  BOOST_FOREACH(CBlockIndex* pindex, vConnect)
-    if (pindex->pprev)
-      pindex->pprev->pnext = pindex;
-
-  // Resurrect memory transactions that were in the disconnected branch
-  BOOST_FOREACH(CTransaction& tx, vResurrect)
-    mempool->AddTx(tx);
-
-#if 0
-  // Delete redundant memory transactions that are in the connected branch
-  BOOST_FOREACH(CTransaction& tx, vDelete)
-    mempool->CommitTx(tx);
-#endif
-  // Delete redundant memory transactions that are in the connected branch
-  BOOST_FOREACH(CBlock& block, vDelete) {
-    mempool->Commit(block);
-  }
-
-  return true;
-}
-#endif
 
 void SHCBlock::InvalidChainFound(CBlockIndex* pindexNew)
 {
@@ -1002,7 +897,6 @@ bool shc_SetBestChainInner(CBlock *block, CTxDB& txdb, CBlockIndex *pindexNew)
   // Adding to current best branch
   if (!block->ConnectBlock(txdb, pindexNew) || !txdb.WriteHashBestChain(hash))
   {
-//fprintf(stderr, "DEBUG: SHCBlock::SetBestChainInner: error connecting block.\n");
 /* truncate block-chain to failed block height. */
 // bc_truncate(bc, pindexNew->nHeight);
     txdb.TxnAbort();
@@ -1122,37 +1016,6 @@ int ifaceIndex = SHC_COIN_IFACE;
   }
   free(sBlockData);
 
-#if 0
-  uint256 cur_hash = GetHash();
-  {
-    uint256 t_hash;
-    bc_hash_t b_hash;
-    memcpy(b_hash, cur_hash.GetRaw(), sizeof(bc_hash_t));
-    t_hash.SetRaw(b_hash);
-    if (!bc_hash_cmp(t_hash.GetRaw(), cur_hash.GetRaw())) {
-      fprintf(stderr, "DEBUG: ReadBlock: error comparing self-hash ('%s' / '%s')\n", cur_hash.GetHex().c_str(), t_hash.GetHex().c_str());
-    }
-  }
-
-  {
-    uint256 db_hash;
-    bc_hash_t ret_hash;
-    err = bc_get_hash(bc, nHeight, ret_hash);
-    if (err) {
-      fprintf(stderr, "DEBUG: CBlock::ReadBlock: bc_get_hash err %d\n", err); 
-      return (false);
-    }
-    db_hash.SetRaw((unsigned int *)ret_hash);
-
-    if (!bc_hash_cmp(db_hash.GetRaw(), cur_hash.GetRaw())) {
-      fprintf(stderr, "DEBUG: CBlock::ReadBlock: hash '%s' from loaded block at pos %d has invalid hash of '%s'\n", db_hash.GetHex().c_str(), nHeight, cur_hash.GetHex().c_str());
-      print();
-      SetNull();
-
-      return (false);
-    }
-  }
-#endif
 
 #if 0
   if (!CheckBlock()) {
@@ -1406,7 +1269,7 @@ bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
 					CTxMatrix& matrix = tx.matrix;
 					if (matrix.GetType() == CTxMatrix::M_VALIDATE) {
 						/* retract block hash from Validate matrix */
-						wallet->matrixValidate.Retract(pindex->nHeight, pindex->GetBlockHash());
+						BlockRetractValidateMatrix(iface, tx, pindex);
 					} else if (matrix.GetType() == CTxMatrix::M_SPRING) {
 						BlockRetractSpringMatrix(iface, tx, pindex);
 					}

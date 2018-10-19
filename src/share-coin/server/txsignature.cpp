@@ -233,7 +233,7 @@ bool CSignature::CheckSig(cbuff vchSig, cbuff vchPubKey, CScript scriptCode, int
       return false;
 
     if (!key.Verify(sighash, vch)) {
-      return (error(SHERR_ACCESS, "CSignature.CheckSig: signature verification failure: \"%s\".", HexStr(vchSig.begin(), vchSig.end()).c_str()));
+      return (error(SHERR_ACCESS, "CSignature.CheckSig: signature verification failure: \"%s\" [script: %s].", HexStr(vchSig.begin(), vchSig.end()).c_str(), scriptCode.ToString().c_str()));
     }
   }
 
@@ -492,8 +492,7 @@ bool CSignature::SignAddress(const CScript& scriptPubKey, cstack_t& ret, txnoutt
 
     case TX_MULTISIG:
       {
-//        scriptSigRet << OP_0; // workaround CHECKMULTISIG bug
-        ret.push_back(valtype());
+        ret.push_back(valtype()); /* workaround CHECKMULTISIG bug */
         return (SignN(this, vSolutions, scriptPubKey, ret, sigversion));
       }
       break;

@@ -402,7 +402,6 @@ bool TESTWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
     nValue += s.second;
   }
   if (vecSend.empty() || nValue < 0) {
-//fprintf(stderr, "DEBUG: CreateTransaction: zero outputs specified failure\n");
     return false;
 }
 
@@ -428,7 +427,6 @@ bool TESTWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
         set<pair<const CWalletTx*,unsigned int> > setCoins;
         int64 nValueIn = 0;
         if (!SelectCoins(nTotalValue, setCoins, nValueIn)) {
-//fprintf(stderr, "DEBUG: CreateTransaction: !SelectCoins\n"); 
           return false;
 }
         BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
@@ -484,7 +482,6 @@ bool TESTWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
           CSignature sig(TEST_COIN_IFACE, &wtxNew, nIn);
           const CWalletTx *wtx = coin.first;
           if (!sig.SignSignature(*wtx)) {
-//fprintf(stderr, "DEBUG: CreateTransaction: !SignSignature(): %s\n", ((CWalletTx *)wtx)->ToString().c_str());
             return false;
           }
           nIn++;
@@ -496,7 +493,6 @@ wtxNew.print(TEST_COIN_IFACE);
         BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins) {
           const CWalletTx *wtx = coin.first;
           if (!SignSignature(*this, *wtx, wtxNew, nIn++)) {
-//fprintf(stderr, "DEBUG: CreateTransaction: !SignSignature(): %s\n", ((CWalletTx *)wtx)->ToString().c_str());
             return false;
           }
         }
@@ -604,8 +600,6 @@ bool TESTWallet::CreateAccountTransaction(string strFromAccount, const vector<pa
 
   wtxNew.strFromAccount = strFromAccount;
 
-//fprintf(stderr, "DEBUG: TestWallet.CreateAccountTransaction()\n"); 
-
   int64 nValue = 0;
   BOOST_FOREACH (const PAIRTYPE(CScript, int64)& s, vecSend)
   {
@@ -681,8 +675,6 @@ bool TESTWallet::CreateAccountTransaction(string strFromAccount, const vector<pa
           CSignature sig(TEST_COIN_IFACE, &wtxNew, nIn);
           if (!sig.SignSignature(*wtx)) {
 						const uint256& in_hash = wtx->GetHash();
-fprintf(stderr, "DEBUG: CreateAccountTransaction: INPUT VIN[%s]: %s\n", in_hash.GetHex().c_str(), wtxNew.vin[nIn].ToString().c_str());
-fprintf(stderr, "DEBUG: CreateAccountTransaction: INPUT: WTX: %s\n", ((CWalletTx *)wtx)->ToString(TEST_COIN_IFACE).c_str()); 
 						return (error(ERR_ACCESS, "CreateAccountTransaction: !sig.SignSignature[input #%d]: %s\n", (int)nIn, wtxNew.ToString(TEST_COIN_IFACE).c_str())); 
           }
 

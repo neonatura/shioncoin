@@ -141,7 +141,7 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
 							vSpring.push_back(pindexNew);
 					}
 				}
-      } 
+      }
 
 			if (tx.isFlag(CTransaction::TXF_ALIAS)) {
 				if (IsAliasTx(tx))
@@ -210,6 +210,7 @@ static bool hasGenesisRoot(CBlockIndex *pindexBest)
 
   return (true);
 }
+
 
 #ifdef USE_LEVELDB_TXDB
 bool SHCTxDB::LoadBlockIndex()
@@ -411,6 +412,7 @@ static bool shc_LoadBlockIndex()
       tindex = tindex->pprev;
 
     wallet->matrixValidate.Append(tindex->nHeight, tindex->GetBlockHash()); 
+		InsertValidateNotary(wallet, m_tx);
     delete block;
   }
 

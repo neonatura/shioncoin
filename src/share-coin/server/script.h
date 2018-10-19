@@ -792,7 +792,6 @@ public:
 
     bool IsWitnessProgram(int& version, std::vector<unsigned char>& program) const; 
 
-
     // Called by CTransaction::IsStandard
     bool IsPushOnly() const
     {
@@ -808,10 +807,11 @@ public:
         return true;
     }
 
+		void SetNoDestination();
 
     void SetDestination(const CTxDestination& address);
-    void SetMultisig(int nRequired, const std::vector<CKey>& keys);
 
+    void SetMultisig(int nRequired, const std::vector<CKey>& keys);
 
     void PrintHex() const
     {

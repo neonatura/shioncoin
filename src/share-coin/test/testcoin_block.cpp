@@ -42,11 +42,14 @@
 #include "txsignature.h"
 
 
-extern bool GetTxOfAsset(CIface *iface, const uint160& hashAsset, CTransaction& tx);
+
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
 
 
 _TEST(blockchain)
@@ -1144,9 +1147,13 @@ bool ret;
 
 }
 
+
+
+
 _TEST(matrixtx)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+  CWallet *wallet = GetWallet(iface);
   CTransaction tx;
   CTxMatrix *m;
   double lat, lon;
@@ -1157,6 +1164,7 @@ bool ret;
   CBlockIndex *pindex;
   CBlockIndex *t_pindex;
   uint256 hashBlock;
+
 
 
   /* claim a known 'root' location in spring matrix */
@@ -1175,13 +1183,66 @@ bool ret;
 
 /* DEBUG: TODO: free blockindex's for valgrind mem check */
 
-  /* ensure that block processing does not fail past x2 Validate matrix */
-  for (idx = 0; idx < 67; idx++) {
+  /* ensure that block processing does not fail past x3 Validate matrix */
+  for (idx = 0; idx < 81; idx++) { /* 27 * 3 = 81 */
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
+
+
+	CPubKey pubkey = GetAccountPubKey(wallet, "", true);
+
+	CTxMemPool *pool = GetTxMemPool(iface);
+
+	/* allow notary transaction to mature & cleanup some coins. */
+  for (idx = 0; idx < 3; idx++) {
+    CBlock *block = test_GenerateBlock();
+		CTxCreator wtx(wallet, strAccount);
+		_TRUE(wtx.AddOutput(pubkey, COIN * 26) == true); /* 27 - 1 */
+		_TRUE(wtx.Send() == true);
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+
+	/* verify new "dynamic checkpoint". */
+	{
+    CBlock *block = test_GenerateBlock();
+		_TRUE(block->GetTotalBlocksEstimate() > 1);
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+
+
+#if 0
+	{
+
+		/* test mechanics of dynamic checkpoint. */
+		CScript valScript;
+		bool fConsensus;
+		vector<CPubKey> kSend;
+		kSend.insert(kSend.end(), pubkey);
+		CScriptID sid(GenerateValidateScript(wallet, fConsensus, valScript, kSend));
+fprintf(stderr, "DEBUG: MATRIXTX: fConsensus = %s\n", (fConsensus ? "true":"false"));
+CCoinAddr addr(TEST_COIN_IFACE, sid);
+fprintf(stderr, "DEBUG: MATRIXTX: redeem addr \"%s\"\n", sid.ToString().c_str());
+fprintf(stderr, "DEBUG: MATRIXTX: redeem script: \"%s\"\n", valScript.ToString().c_str());
+
+		/* create psuedo notary tx. */	
+		CTransaction txPrev;
+		txPrev.vout.push_back(CTxOut(1, valScript));
+		CScript destScript;
+		destScript.SetDestination(pubkey.GetID());
+		txPrev.vout.push_back(CTxOut(1, destScript));
+		CTransaction txNote;
+		bool fOk = CreateValidateNotaryTx(iface, txPrev, 0, txNote, kSend);
+if (fOk) fprintf(stderr, "DEBUG: MATRIXTX: notary tx: %s\n", txNote.ToString(TEST_COIN_IFACE).c_str()); 
+	}
+#endif
+
 }
 
 _TEST(channeltx)
@@ -1621,11 +1682,11 @@ _TEST(scriptid)
   }
 //int64 nValue = GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1);
 //fprintf(stderr, "DEBUG: TEST: SCRIPTID: bal/before nValue %f\n", (double)nValue / COIN);
-  _TRUE(COIN == GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1));
+  _TRUE((int64)COIN == GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1));
 
   /* redeem scriptID back to origin */
   CTxCreator wtx2(wallet, strExtAccount);
-  wtx2.AddOutput(ret_addr.Get(), COIN - (iface->min_tx_fee*2));
+  _TRUE(wtx2.AddOutput(ret_addr.Get(), COIN - (iface->min_tx_fee*2)) == true);
   _TRUE(wtx2.Send());
     
   _TRUE(wtx2.IsInMemoryPool(TEST_COIN_IFACE) == true);
@@ -1642,8 +1703,8 @@ _TEST(scriptid)
     delete block;
   }
   _TRUE(wtx2.IsInMemoryPool(TEST_COIN_IFACE) == false);
-//nValue = GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1);
-//fprintf(stderr, "DEBUG: TEST: SCRIPTID: bal/after %f\n", (double)nValue/COIN);
+int64 nValue = GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1);
+fprintf(stderr, "DEBUG: TEST: SCRIPTID: bal/after %f\n", (double)nValue/COIN);
 
 
   _TRUE(0 == GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1));

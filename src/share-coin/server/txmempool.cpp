@@ -80,8 +80,10 @@ bool CPool::VerifyTx(CTransaction& tx)
 bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
-  uint256 hash = tx.GetHash();
   bool ok;
+
+	EnforceCoinStandards(tx);
+  uint256 hash = tx.GetHash();
 
   if (inval.count(hash))
     return (false); /* known invalid */
@@ -273,9 +275,9 @@ bool CPool::VerifyStandards(CPoolTx& ptx)
       txnouttype whichType;
       const CScript& prevScript = prev.scriptPubKey;
       if (!Solver(prevScript, whichType, vSolutions))
-        return false;
+        return error(ERR_INVAL, "CPool.AddTx: error resolving script: %s", prev.scriptPubKey.ToString().c_str());
       if (whichType == TX_NONSTANDARD) {
-        return (error(SHERR_INVAL, "CPool.AddTx: rejecting transaction with unknown input coin script."));
+        return (error(SHERR_INVAL, "CPool.AddTx: rejecting non-standard transaction: %s", prev.scriptPubKey.ToString().c_str()));
       }
 
       /* evaluate signature */
@@ -678,6 +680,9 @@ void CPool::AddInvalTx(CPoolTx& ptx)
 
   while (inval.size() > 1000)
     inval.erase(inval.begin());
+
+  Debug("CPool.AddInvalTx: added tx \"%s\" to invalid queue.",
+      ptx.GetHash().GetHex().c_str()); 
 }
 
 void CPool::PurgeActiveTx()
@@ -693,8 +698,9 @@ void CPool::PurgeActiveTx()
     sort(vPoolTx.begin(), vPoolTx.end());
 
     BOOST_FOREACH(CPoolTx& ptx, vPoolTx) {
-      if (!ptx.GetTx().IsFinal(ifaceIndex)) 
+      if (!ptx.GetTx().IsFinal(ifaceIndex)) {
         continue;
+			}
       if (GetActiveWeight() + ptx.GetWeight() >= GetMaxWeight())
         continue;
 
@@ -791,7 +797,11 @@ void CPool::PurgeOverflowTx()
       continue;
 
     CPoolTx c_ptx = r_ptx;
-    AddActiveTx(c_ptx);
+    bool b = AddActiveTx(c_ptx);
+		if (!b) {
+			error(ERR_INVAL, "warning: PurgeOverflowTx: error processing tx \"%s\".", c_ptx.tx.GetHash().GetHex().c_str());
+		}
+
     if (active.count(hash) != 0)
       nWeight += nTxWeight;
   }

@@ -234,6 +234,7 @@ namespace TEST_Checkpoints
   void AddCheckpoint(int height, uint256 hash)
   {
     mapCheckpoints.insert(mapCheckpoints.end(), make_pair(height, hash));
+		Debug("(test) AddCheckpoint: new dynamic checkpoint (height %d): %s",height, hash.GetHex().c_str());
   }
 
 
@@ -303,7 +304,7 @@ CBlock* test_CreateNewBlock(const CPubKey& rkey, CBlockIndex *pindexPrev)
   bool ret = false;
   int64 reward = test_GetBlockValue(pindexPrev->nHeight+1, nFees);
   if (pblock->vtx.size() == 1)
-    ret = BlockGenerateValidateMatrix(iface, pblock->vtx[0], reward);
+    ret = BlockGenerateValidateMatrix(iface, pblock->vtx[0], reward, pindexPrev->nHeight + 1, pblock->GetTotalBlocksEstimate());
   if (!ret)
     ret = BlockGenerateSpringMatrix(iface, pblock->vtx[0], reward);
   pblock->vtx[0].vout[0].nValue = reward; 
@@ -539,6 +540,15 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
   }
 
   ServiceBlockEventUpdate(TEST_COIN_IFACE);
+
+	/* initiate notary tx, if needed. */
+	int mode;
+	const CTransaction& tx = pblock->vtx[0];
+	if ((tx.GetFlags() & CTransaction::TXF_MATRIX) &&
+			GetExtOutputMode(tx, OP_MATRIX, mode) &&
+			mode == OP_EXT_VALIDATE) {
+		RelayValidateMatrixNotaryTx(iface, tx);
+	}
 
   return true;
 }
@@ -1090,33 +1100,6 @@ bool TESTBlock::AddToBlockIndex()
   return true;
 }
 
-#if 0
-/* DEBUG: test: coin.cpp */
-bool TESTBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  shtime_t ts;
-  bool ret;
-
-  /* redundant */
-  if (!CheckBlock())
-    return false;
-
-  ret = core_ConnectBlock(this, pindex); 
-  if (!ret) {
-    return (error(SHERR_INVAL, "TestBlock.ConnectBlock: error connecting block '%s'.", GetHash().GetHex().c_str()));
-  }
-
-  timing_init("SyncWithWallets", &ts);
-  BOOST_FOREACH(CTransaction& tx, vtx) {
-    SyncWithWallets(iface, tx, this);
-  }
-  timing_term(TEST_COIN_IFACE, "SyncWithWallets", &ts);
-
-  return true;
-}
-#endif
-
 bool TESTBlock::ReadBlock(uint64_t nHeight)
 {
 int ifaceIndex = TEST_COIN_IFACE;
@@ -1334,7 +1317,6 @@ bool TEST_CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs, b
 
   // Coinbase is only valid in a block, not as a loose transaction
   if (tx.IsCoinBase()) {
-fprintf(stderr, "DEBUG: TEST_CTxMemPool:accept: warning: coinbase: %s", tx.ToString(TEST_COIN_IFACE).c_str());
     return error(SHERR_INVAL, "CTxMemPool::accept() : coinbase as individual tx");
 }
 
@@ -1647,7 +1629,6 @@ bool TESTBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
 
 #if 0
 if (vtx.size() == 0) {
-fprintf(stderr, "DEBUG: ConnectBlock: vtx.size() == 0\n");
 return false;
 }
 #endif
@@ -1662,7 +1643,6 @@ return false;
   if (pindex->pprev)
   {
     if (pindex->pprev->nHeight + 1 != pindex->nHeight) {
-//fprintf(stderr, "DEBUG: test_ConnectBlock: block-index for hash '%s' height changed from %d to %d.\n", pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight, (pindex->pprev->nHeight + 1));
       pindex->nHeight = pindex->pprev->nHeight + 1;
     }
     timing_init("WriteBlock", &ts);
@@ -1697,7 +1677,7 @@ bool TESTBlock::DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex)
             CTxMatrix& matrix = tx.matrix;
             if (matrix.GetType() == CTxMatrix::M_VALIDATE) {
               /* retract block hash from Validate matrix */
-              wallet->matrixValidate.Retract(matrix.nHeight, pindex->GetBlockHash());
+							BlockRetractValidateMatrix(iface, tx, pindex);
             } else if (matrix.GetType() == CTxMatrix::M_SPRING) {
               BlockRetractSpringMatrix(iface, tx, pindex);
             }

@@ -35,7 +35,6 @@ using namespace std;
 using namespace json_spirit;
 
 
-extern bool GetExtOutput(const CTransaction& tx, int ext_mode, int& nOut, CScript& scriptOut);
 
 
 asset_list *GetAssetTable(int ifaceIndex)
@@ -283,8 +282,9 @@ static int IndexOfAssetOutput(const CTransaction& tx)
 {
 	CScript script;
 	int nTxOut;
+	int mode;
 
-	if (!GetExtOutput(tx, OP_ASSET, nTxOut, script))
+	if (!GetExtOutput(tx, OP_ASSET, mode, nTxOut, script))
 		return (-1);
 
 	return (nTxOut);

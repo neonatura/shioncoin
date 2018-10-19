@@ -64,6 +64,8 @@ class LTC_CTxMemPool : public CPool
 
 		double CalculateFeePriority(CPoolTx *ptx);
 
+		void EnforceCoinStandards(CTransaction& tx);
+
     LTC_CTxMemPool() : CPool(LTC_COIN_IFACE) { };
 
 };

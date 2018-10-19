@@ -194,3 +194,7 @@ double LTC_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
 {
 	return (sqrt(ptx->dPriority) * (double)ptx->nFee);
 }
+
+void LTC_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
+{
+}

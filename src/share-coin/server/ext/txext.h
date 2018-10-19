@@ -333,6 +333,15 @@ typedef std::map<uint160, uint256> altchain_list;
 #include "altchain.h"
 
 
+bool GetExtOutput(const CScript& script, int ext_mode, int& mode, CScript& scriptOut);
+
+bool GetExtOutput(const CTransaction& tx, int ext_mode, int& mode, int& nOut, CScript& scriptOut);
+
+bool GetExtOutputMode(const CTransaction& tx, int ext_mode, int& mode);
+
+bool RemoveExtOutputPrefix(CScript& script);
+
+
 #endif /* ndef __SERVER_TXEXT_H__ */
 
 

@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
   /* block-chain transaction tests */
   SUITE_ADD_TEST(suite, TEST_reorganize);
   SUITE_ADD_TEST(suite, TEST_matrixtx);
+#if 0
   SUITE_ADD_TEST(suite, TEST_identtx);
 //  SUITE_ADD_TEST(suite, TEST_truncate);
 
@@ -134,7 +135,7 @@ int main(int argc, char *argv[])
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);
 	
-
+#endif
 
 
   CuSuiteRun(suite);

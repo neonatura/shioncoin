@@ -385,6 +385,7 @@ static bool testnet_LoadBlockIndex()
       tindex = tindex->pprev;
 
     wallet->matrixValidate.Append(tindex->nHeight, tindex->GetBlockHash()); 
+		InsertValidateNotary(wallet, m_tx);
     delete block;
   }
 

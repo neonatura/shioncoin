@@ -615,6 +615,10 @@ class CPool : public CTxMemPool
 
     virtual double CalculateFeePriority(CPoolTx *ptx) = 0;
 
+    virtual void EnforceCoinStandards(CTransaction& tx) = 0;
+
+
+
 
     
 /* IncrPriority(uint256 hash) */

@@ -64,6 +64,8 @@ class EMC2_CTxMemPool : public CPool
 
 		double CalculateFeePriority(CPoolTx *ptx);
 
+		void EnforceCoinStandards(CTransaction& tx);
+
     EMC2_CTxMemPool() : CPool(EMC2_COIN_IFACE) { };
 
 };

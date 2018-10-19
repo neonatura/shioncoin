@@ -129,10 +129,38 @@ bool SHC_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
       return (error(SHERR_INVAL, "(shc) "
             "CTxMemPool.VerifyCoinStandards: error evaluating signature. [SCRIPT_VERIFY_LOW_S]"));
     }
-    //Debug("(shc) CTxMemPool.VerifyCoinStandards: info: (BIP 66) verified DER signature <%d bytes>.", (int)tx.vin[i].scriptSig.size());
   }
+
   return (true);
 }
+
+void SHC_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
+{
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
+
+	if (tx.IsFinal(SHC_COIN_IFACE))
+		return; /* n/a */
+
+	/* detect notary tx */
+	const uint256& hPrevTx = tx.vin[0].prevout.hash;
+	if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
+			std::find(wallet->mapValidateTx.begin(), wallet->mapValidateTx.end(),
+				hPrevTx) != wallet->mapValidateTx.end()) {
+		CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+		CTransaction prev;
+
+		if (!GetTransaction(iface, hPrevTx, prev, NULL))
+			return;
+		if (tx.vin[0].prevout.n >= prev.vout.size())
+			return;
+
+		const CTxOut& out = prev.vout[tx.vin[0].prevout.n];
+		if (tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) 
+			UpdateValidateNotaryTx(iface, tx, out.scriptPubKey);
+	}
+
+}
+
 
 bool SHC_CTxMemPool::AcceptTx(CTransaction& tx)
 {
@@ -229,4 +257,9 @@ double SHC_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
 	return (dFeePrio);
 
 }
-
+#if 0
+bool SHC_CTxMemPool::AcceptNonfinalTx(CPoolTx *ptx)
+{
+	return (true);
+}
+#endif

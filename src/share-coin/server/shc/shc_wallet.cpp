@@ -755,12 +755,10 @@ bool SHCWallet::UnacceptWalletTransaction(const CTransaction& tx)
       /* set output as unspent */
       txindex.vSpent[nTxOut].SetNull();
       txdb.UpdateTxIndex(prev_hash, txindex);
-//fprintf(stderr, "DEBUG: TXDB: marked tx '%s' out #%d as unspent\n", prev_hash.GetHex().c_str(), nTxOut);
     }
 
     /* remove pool tx from db */
     txdb.EraseTxIndex(tx);
-//fprintf(stderr, "DEBUG: TXDB: erased tx '%s'\n", tx.GetHash().GetHex().c_str());
 
     txdb.Close();
   }

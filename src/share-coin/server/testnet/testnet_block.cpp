@@ -218,6 +218,7 @@ namespace TESTNET_Checkpoints
   void AddCheckpoint(int height, uint256 hash)
   {
     mapCheckpoints.insert(mapCheckpoints.end(), make_pair(height, hash));
+		Debug("(testnet) AddCheckpoint: new dynamic checkpoint (height %d): %s",height, hash.GetHex().c_str());
   }
 
 }
@@ -269,7 +270,7 @@ CBlock* testnet_CreateNewBlock(const CPubKey& rkey)
   bool ret = false;
   int64 reward = testnet_GetBlockValue(pindexPrev->nHeight+1, nFees);
   if (pblock->vtx.size() == 1)
-    ret = BlockGenerateValidateMatrix(iface, pblock->vtx[0], reward);
+    ret = BlockGenerateValidateMatrix(iface, pblock->vtx[0], reward, pindexPrev->nHeight + 1, pblock->GetTotalBlocksEstimate());
   if (!ret)
     ret = BlockGenerateSpringMatrix(iface, pblock->vtx[0], reward);
   pblock->vtx[0].vout[0].nValue = reward; 
@@ -427,6 +428,15 @@ bool testnet_ProcessBlock(CNode* pfrom, CBlock* pblock)
   }
 
   ServiceBlockEventUpdate(TESTNET_COIN_IFACE);
+
+	/* initiate notary tx, if needed. */
+	int mode;
+	const CTransaction& tx = pblock->vtx[0];
+	if ((tx.GetFlags() & CTransaction::TXF_MATRIX) &&
+			GetExtOutputMode(tx, OP_MATRIX, mode) &&
+			mode == OP_EXT_VALIDATE) {
+		RelayValidateMatrixNotaryTx(iface, tx);
+	}
 
   return true;
 }
@@ -834,7 +844,7 @@ bool TESTNETBlock::DisconnectBlock(CBlockIndex* pindex)
           CTxMatrix& matrix = tx.matrix;
           if (matrix.GetType() == CTxMatrix::M_VALIDATE) {
             /* retract block hash from Validate matrix */
-            wallet->matrixValidate.Retract(pindex->nHeight, pindex->GetBlockHash());
+						BlockRetractValidateMatrix(iface, tx, pindex);
           } else if (matrix.GetType() == CTxMatrix::M_SPRING) {
             BlockRetractSpringMatrix(iface, tx, pindex);
           }

@@ -428,29 +428,64 @@ bool CSign::VerifySeed(string hexSeed)
   return (strPubKey == stringFromVch(vPubKey));
 }
 
+bool GetExtOutput(const CScript& script, int ext_mode, int& mode, CScript& scriptOut)
+{
+	opcodetype opcode;
+	opcodetype opcode2;
+	CScript::const_iterator pc = script.begin();
+	if (script.GetOp(pc, opcode) &&
+			opcode >= 0xf0 && opcode <= 0xf9) { /* ext mode */
+		if (script.GetOp(pc, opcode2) &&
+				CScript::DecodeOP_N(opcode2) == ext_mode) {
+			mode = opcode;
+			scriptOut = script;
+			return (true);
+		}
+	}
+	return (false);
+}
 
-bool GetExtOutput(const CTransaction& tx, int ext_mode, int& nOut, CScript& scriptOut)
+bool GetExtOutput(const CTransaction& tx, int ext_mode, int& mode, int& nOut, CScript& scriptOut)
 {
 	int idx;
 
-	idx = 0;
+	nOut = 0;
 	BOOST_FOREACH(const CTxOut& out, tx.vout) {
 		const CScript& script = out.scriptPubKey;
-		opcodetype opcode;
-		CScript::const_iterator pc = script.begin();
-		if (script.GetOp(pc, opcode) &&
-				opcode >= 0xf0 && opcode <= 0xf9) { /* ext mode */
-			if (script.GetOp(pc, opcode) &&
-					CScript::DecodeOP_N(opcode) == ext_mode) {
-				nOut = idx;
-				scriptOut = out.scriptPubKey;
-				return (true);
-			}
-		}
+		if (GetExtOutput(script, ext_mode, mode, scriptOut))
+			return (true);
 
-		idx++;
+		nOut++;
 	}
 
 	return (false);
 }
 
+bool GetExtOutputMode(const CTransaction& tx, int ext_mode, int& mode)
+{
+	CScript script;
+	int nOut;
+	return (GetExtOutput(tx, ext_mode, mode, nOut, script));
+}
+
+bool RemoveExtOutputPrefix(CScript& script)
+{
+	CScript::const_iterator pc = script.begin();
+	opcodetype opcode;
+
+	if (!script.GetOp(pc, opcode) ||
+			opcode < 0xf0 || opcode > 0xf9)
+		return (false); /* mode */
+	if (!script.GetOp(pc, opcode) ||
+			opcode < OP_1 || opcode > OP_15)
+		return (false); /* op */
+
+	opcode = OP_0;
+	while (opcode != OP_2DROP) {
+	  if (!script.GetOp(pc, opcode))
+			return (false);
+	}
+
+	script = CScript(pc, script.end());
+	return (true);
+}

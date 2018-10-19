@@ -82,6 +82,8 @@ int64_t TEST_CTxMemPool::GetSoftSigOpCost()
 
 bool TEST_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
 {
+	CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+  CWallet *wallet = GetWallet(iface);
 
   if (tx.IsCoinBase())
     return (true);
@@ -96,10 +98,12 @@ bool TEST_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
     vector<vector<unsigned char> > vSolutions;
     txnouttype whichType;
     const CScript& prevScript = prev.scriptPubKey;
-    if (!Solver(prevScript, whichType, vSolutions))
-      return false;
-    if (whichType == TX_NONSTANDARD)
-      return false;
+    if (!Solver(prevScript, whichType, vSolutions)) {
+      return error(ERR_INVAL, "(test) VerifyCoinStandards: unable to solve script: %s", prev.scriptPubKey.ToString().c_str());
+		}
+    if (whichType == TX_NONSTANDARD) {
+      return error(ERR_INVAL, "(test) VerifyCoinStandards: script is non-standard: %s", prev.scriptPubKey.ToString().c_str());
+		}
 
     /* evaluate signature */
     vector<vector<unsigned char> > stack;
@@ -109,11 +113,36 @@ bool TEST_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
       return (error(SHERR_INVAL, "(test) "
             "CTxMemPool.VerifyCoinStandards: error evaluating signature. [SCRIPT_VERIFY_LOW_S]"));
     }
-    //Debug("(test) CTxMemPool.VerifyCoinStandards: info: (BIP 66) verified DER signature <%d bytes>.", (int)tx.vin[i].scriptSig.size());
   }
 
   return (true);
 }
+
+void TEST_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
+{
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
+
+	if (tx.IsFinal(TEST_COIN_IFACE))
+		return; /* n/a */
+
+	/* detect notary tx */
+	const uint256& hPrevTx = tx.vin[0].prevout.hash;
+	if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
+			std::find(wallet->mapValidateTx.begin(), wallet->mapValidateTx.end(),
+				hPrevTx) != wallet->mapValidateTx.end()) {
+		CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+		CTransaction prev;
+
+		if (!GetTransaction(iface, hPrevTx, prev, NULL))
+			return;
+
+		const CTxOut& out = prev.vout[tx.vin[0].prevout.n];
+		if (tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) 
+			UpdateValidateNotaryTx(iface, tx, out.scriptPubKey);
+	}
+
+}
+
 
 bool TEST_CTxMemPool::AcceptTx(CTransaction& tx)
 {
