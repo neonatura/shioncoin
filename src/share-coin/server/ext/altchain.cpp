@@ -189,19 +189,6 @@ int64 GetAltChainOpFee(CIface *iface)
 	return ((int64)MIN_TX_FEE(iface) * 10);
 }
 
-#if 0
-int64 GetAltChainReturnFee(const CTransaction& tx) 
-{
-	int64 nFee = 0;
-	for (unsigned int i = 0; i < tx.vout.size(); i++) {
-		const CTxOut& out = tx.vout[i];
-		if (out.scriptPubKey.size() == 1 && out.scriptPubKey[0] == OP_RETURN)
-			nFee += out.nValue;
-	}
-	return nFee;
-}
-#endif
-
 bool IsAltChainTx(const CTransaction& tx)
 {
   int tot;
@@ -1029,18 +1016,23 @@ static double GetDifficulty(unsigned int nBits)
 
 Object CAltChain::ToValue()
 {
-  Object obj = CExtCore::ToValue();
-
-	obj.push_back(Pair("color-hash", hColor.GetHex()));
-	obj.push_back(Pair("symbol", GetAltColorHashAbrev(hColor)));
-
-	obj.push_back(Pair("block", block.ToValue()));
-
+	Object block_obj;
+  Object obj;
 	Array ar;
+
+	/* block */
+	block_obj = block.ToValue();
+	/* vtx */
 	for (int i = 0; i < vtx.size(); i++) {
 		ar.push_back(vtx[i].ToValue());
 	}
-	obj.push_back(Pair("vtx", ar));
+	block_obj.push_back(Pair("vtx", ar));
+
+	/* alt-chain block */
+	obj.push_back(Pair("block", block_obj));
+	obj.push_back(Pair("colorhash", hColor.GetHex()));
+	obj.push_back(Pair("symbol", GetAltColorHashAbrev(hColor)));
+	obj.push_back(Pair("version", (int)GetVersion())); /* CExtCore */
 
   return (obj);
 }
@@ -1175,6 +1167,11 @@ int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
 
+	if (!wallet)
+		return (ERR_INVAL);
+	if (wallet->mapColor.count(hColor) != 0)
+		return (ERR_EXIST);
+
   int64 nFee = GetAltChainOpFee(iface);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
@@ -1199,7 +1196,7 @@ int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt
 
   CScript scriptPubKey;
   uint160 altchainHash = altchain->GetHash();
-	scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_ALTCHAIN) << OP_HASH160 << altchainHash << OP_2DROP << OP_RETURN;
+	scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_ALTCHAIN) << OP_HASH160 << altchainHash << OP_2DROP << OP_RETURN << OP_0;
   if (!s_wtx.AddOutput(scriptPubKey, nFee)) {
 		error(SHERR_INVAL, "init_altchain_tx: s_wtx.AddOutput: %s", s_wtx.GetError().c_str());
     return (SHERR_INVAL);
@@ -1212,9 +1209,10 @@ int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt
 
   wtx = s_wtx;
 
-  Debug("(%s) SENT:ALTCHAINNEW : color=%s, altchainhash=%s, tx=%s\n", 
-      iface->name, hColor.GetHex().c_str(), altchain->GetHash().GetHex().c_str(), 
-      s_wtx.GetHash().GetHex().c_str());
+	Debug("(%s) init_altchain_tx: color(%s) altchainhash(%s) tx(%s)", 
+			iface->name, hColor.GetHex().c_str(), 
+			altchain->GetHash().GetHex().c_str(), 
+			s_wtx.GetHash().GetHex().c_str());
 
   return (0);
 }
@@ -1224,6 +1222,11 @@ int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
 
+	if (!wallet)
+		return (ERR_INVAL);
+	if (wallet->mapColor.count(hColor) == 0)
+		return (ERR_NOENT);
+
   int64 nFee = GetAltChainOpFee(iface);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
@@ -1231,7 +1234,6 @@ int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<
   }
 
   CTxCreator s_wtx(wallet, strAccount);
-
   CAltChain *altchain = s_wtx.CreateAltChain();
   if (!altchain) {
 		error(SHERR_INVAL, "update_altchain_tx: !CreateAltChain");
@@ -1247,7 +1249,7 @@ int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<
 
   CScript scriptPubKey;
   uint160 altchainHash = altchain->GetHash();
-	scriptPubKey << OP_EXT_UPDATE << CScript::EncodeOP_N(OP_ALTCHAIN) << OP_HASH160 << altchainHash << OP_2DROP << OP_RETURN;
+	scriptPubKey << OP_EXT_UPDATE << CScript::EncodeOP_N(OP_ALTCHAIN) << OP_HASH160 << altchainHash << OP_2DROP << OP_RETURN << OP_0;
   if (!s_wtx.AddOutput(scriptPubKey, nFee)) {
 		error(SHERR_INVAL, "update_altchain_tx: s_wtx.AddOutput: %s", s_wtx.GetError().c_str());
     return (SHERR_INVAL);
@@ -1260,9 +1262,10 @@ int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<
 
   wtx = s_wtx;
 
-  Debug("(%s) SENT:ALTCHAINUPDATE : color=%s, altchainhash=%s, tx=%s\n", 
-      iface->name, hColor.GetHex().c_str(), altchain->GetHash().GetHex().c_str(), 
-      s_wtx.GetHash().GetHex().c_str());
+	Debug("(%s) update_altchain_tx: color(%s) altchainhash(%s) tx(%s)", 
+			iface->name, hColor.GetHex().c_str(), 
+			altchain->GetHash().GetHex().c_str(), 
+			s_wtx.GetHash().GetHex().c_str());
 
   return (0);
 }
@@ -1294,4 +1297,5 @@ int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, const C
 	return (update_altchain_tx(iface, strAccount,
 				hColor, scriptPubKey, nValueTo, wtx));
 }
+
 

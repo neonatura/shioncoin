@@ -35,6 +35,7 @@
 #include "chain.h"
 #include "rpc_proto.h"
 #include "txmempool.h"
+#include "wallet.h"
 #include "color/color_pool.h"
 #include "color/color_block.h"
 
@@ -121,10 +122,125 @@ Value rpc_alt_addrlist(CIface *iface, const Array& params, bool fStratum)
   return ret;
 }
 
+void rpccolor_GetAvailableCoins(CIface *iface, string strAccount, vector<COutput>& vCoins, bool fOnlyConfirmed, uint160 hColor)
+{
+	CWallet *wallet = GetWallet(iface);
+	CTxMemPool *pool = GetTxMemPool(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	int64 nMinValue = MIN_INPUT_VALUE(iface);
+	vector<CTxDestination> vDest;
+
+fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: hColor %s\n", hColor.GetHex().c_str());
+
+	vCoins.clear();
+
+	{
+		LOCK(wallet->cs_wallet);
+
+		BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook) {
+			const string& account = item.second;
+//			if (account != strAccount) continue;
+			vDest.push_back(item.first);
+		}
+	}
+fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: vDest x%d\n", vDest.size());
+
+#if 0
+	if (strAccount.length() == 0) {
+		/* include coinbase (non-mapped) pub-keys */
+		std::set<CKeyID> keys;
+		GetKeys(keys);
+		BOOST_FOREACH(const CKeyID& key, keys) {
+			if (mapAddressBook.count(key) == 0) { /* loner */
+				CCoinAddr addr(ifaceIndex, key);
+				vDest.push_back(addr.Get());
+fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: LONER\n");
+			}
+		}
+	}
+#endif
+
+	{
+		LOCK(wallet->cs_wallet);
+		for (map<uint256, CWalletTx>::const_iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it)
+		{
+			const CWalletTx* pcoin = &(*it).second;
+
+			if (hColor != 0 && pcoin->GetColor() != hColor) {
+fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: wrong color %s\n", pcoin->GetColor().GetHex().c_str()); 
+				continue;
+			}
+
+			if (!pcoin->IsFinal(ifaceIndex)) {
+fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: !Final\n");
+				continue;
+			}
+
+			if (fOnlyConfirmed) {
+				if (!pcoin->IsConfirmed()) {
+fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: unconfirmed\n");
+					continue;
+				}
+				int mat;
+				if (pcoin->IsCoinBase() && 
+						(mat=pcoin->GetBlocksToMaturity(ifaceIndex)) > 0) {
+fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: immature\n");
+					continue;
+				}
+			}
+
+			// If output is less than minimum value, then don't include transaction.
+			// This is to help deal with dust spam clogging up create transactions.
+			uint256 pcoinHash = pcoin->GetHash();
+			for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
+				opcodetype opcode;
+				const CScript& script = pcoin->vout[i].scriptPubKey;
+				CScript::const_iterator pc = script.begin();
+				if (script.GetOp(pc, opcode) &&
+						opcode >= 0xf0 && opcode <= 0xf9) { /* ext mode */
+					continue; /* not avail */
+				}
+
+				if (pcoin->vout[i].nValue < nMinValue)
+					continue;
+
+				/* check whether this output has already been used */
+				if (pcoin->IsSpent(i))
+					continue;
+
+				/* check mempool for conflict */ 
+				if (pool->IsInputTx(pcoinHash, i))
+					continue;
+
+				/* filter via account */
+				CTxDestination dest;
+				if (!ExtractDestination(pcoin->vout[i].scriptPubKey, dest))
+					continue;
+
+				if ( std::find(vDest.begin(), vDest.end(), dest) != vDest.end() ) {
+					vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain(ifaceIndex)));
+				} 
+#if 0
+				else if (pcoin->strFromAccount == strAccount && 
+						0 == mapAddressBook.count(dest)) {
+					if (::IsMine(*this, dest)) {
+						vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain(ifaceIndex)));
+					}
+				}
+#endif
+
+			}
+		}
+	}
+
+fprintf(stderr, "DEBUG: rpccolor_GetAavailableCoins: vCoins.size %d\n", vCoins.size()); 
+
+}
+
 Value rpc_alt_balance(CIface *iface, const Array& params, bool fStratum) 
 {
 	CWallet *wallet = GetWallet(iface);
-	string strAccount;
+	string strAccount("");
 	uint160 hColor;
 	int64 nBalance = 0;
 	int nMinDepth = 1;
@@ -139,9 +255,10 @@ Value rpc_alt_balance(CIface *iface, const Array& params, bool fStratum)
 		nMinDepth = params[2].get_int();
 
 	{
-		vector <COutput> vCoins;
-		wallet->AvailableAccountCoins(strAccount, vCoins, nMinDepth == 0 ? false : true, hColor);
-		BOOST_FOREACH(const COutput& out, vCoins) {
+		vector<COutput> vCoins;
+		rpccolor_GetAvailableCoins(iface, strAccount, vCoins, (nMinDepth==0 ? false : true), hColor); 
+		for (int i = 0; i < vCoins.size(); i++) {
+			const COutput& out = vCoins[i];
 			nBalance += out.tx->vout[out.i].nValue;
 		}
 	}
@@ -329,7 +446,11 @@ Value rpc_alt_mine(CIface *iface, const Array& params, bool fStratum)
 	if (err)
     throw JSONRPCError(err, "update_altchain_tx");
 
-	return wtx.ToValue(ifaceIndex);
+	CAltChain *alt = wtx.GetAltChain();
+	if (!alt) return (Value::null);
+	Object obj = alt->ToValue();
+	obj.push_back(Pair("txhash", wtx.GetHash().GetHex()));
+	return (obj);
 }
 
 static void _split_token(string tok, string& mode_str, int& val)

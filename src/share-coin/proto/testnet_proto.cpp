@@ -70,8 +70,8 @@ static int testnet_init(CIface *iface, void *_unused_)
 
 	/* BIP68, BIP112, and BIP113 */
 	iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
-	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1530403200; /* 07/01/18 */
-	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1535760000; /* 09/01/18 */
+	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1543622400; /* 12/01/2018 UTC */
+	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1544745600; /* 12/14/2018 UTC */
 
 	/* BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
@@ -188,25 +188,23 @@ static int testnet_block_process(CIface *iface, CBlock *block)
 static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
 {
   static CPubKey ret_key;
+	static int renew_index;
 
-  if (!ret_key.IsValid()) {
+	renew_index++;
+  if ((0 == (renew_index % 50)) || !ret_key.IsValid()) {
     string strAccount("");
     GetAccountAddress(wallet, strAccount, false);
 
-    ret_key = GetAccountPubKey(wallet, strAccount);
+		ret_key = wallet->GenerateNewKey(true);
     if (!ret_key.IsValid()) {
-      error(SHERR_INVAL, "(testnet) GetMainAccountPubKey: error obtaining main account pubkey.");
-#if 0
-      CReserveKey reservekey(wallet);
-      ret_key = reservekey.GetReservedKey();
-      reservekey.KeepKey();
-#endif
-			ret_key = wallet->GenerateNewKey();
+	    ret_key = GetAccountPubKey(wallet, strAccount);
     } else {
-      CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
-      Debug("(testnet) GetMainAccountPubKey: using '%s' for mining address.",
-          addr.ToString().c_str()); 
+			wallet->SetAddressBookName(ret_key.GetID(), strAccount);
+
     }
+		CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
+		Debug("(testnet) GetMainAccountPubKey: using '%s' for mining address.",
+				addr.ToString().c_str()); 
 
     /* mining pool fees */
     string strBankAccount("bank");

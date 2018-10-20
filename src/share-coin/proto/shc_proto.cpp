@@ -70,8 +70,8 @@ static int shc_init(CIface *iface, void *_unused_)
 
 	/* BIP68, BIP112, and BIP113 */
 	iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
-	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1530403200; /* 07/01/18 */
-	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1535760000; /* 09/01/18 */
+	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1543622400; /* 12/01/2018 UTC */
+	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1544745600; /* 12/14/2018 UTC */
 
 	/* BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
@@ -196,31 +196,24 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
   static CPubKey ret_key;
 
   if (!ret_key.IsValid()) {
-    string strAccount("");
-    GetAccountAddress(wallet, strAccount, false);
-
-    ret_key = GetAccountPubKey(wallet, strAccount);
-    if (!ret_key.IsValid()) {
-      error(SHERR_INVAL, "(shc) GetMainAccountPubKey: error obtaining main account pubkey.");
-#if 0
-      CReserveKey reservekey(wallet);
-      ret_key = reservekey.GetReservedKey();
-      reservekey.KeepKey();
-#endif
-			ret_key = wallet->GenerateNewKey();
-    } else {
-      CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
-      Debug("(shc) GetMainAccountPubKey: using '%s' for mining address.",
-          addr.ToString().c_str()); 
-    }
+		/* main account. */
+		string strAccount("");
+		GetAccountAddress(wallet, strAccount, false);
 
     /* mining pool fees */
     string strBankAccount("bank");
     GetAccountAddress(wallet, strBankAccount, false);
+
     /* cpu miner */
     string strSystemAccount("system");
     GetAccountAddress(wallet, strSystemAccount, false);
-  }
+
+		/* use main account's primary address. */
+    ret_key = GetAccountPubKey(wallet, strAccount, false);
+		CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
+		Debug("(shc) GetMainAccountPubKey: using '%s' for mining address.",
+				addr.ToString().c_str()); 
+	}
 
   return (ret_key);
 }

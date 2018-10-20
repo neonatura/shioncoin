@@ -104,20 +104,31 @@ static int test_block_process(CIface *iface, CBlock *block)
 
 static CPubKey test_GetMainAccountPubKey(CWallet *wallet)
 {
-  static CPubKey ret_key;
+	static CPubKey ret_key;
+	static int renew_index;
 
-  if (!ret_key.IsValid()) {
-    string strAccount("");
+	renew_index++;
+	if ((0 == (renew_index % 50)) || !ret_key.IsValid()) {
+		string strAccount("");
+		GetAccountAddress(wallet, strAccount, false);
 
-    ret_key = GetAccountPubKey(wallet, strAccount);
-    if (!ret_key.IsValid()) {
-#if 0
-      CReserveKey reservekey(wallet);
-      ret_key = reservekey.GetReservedKey();
-      reservekey.KeepKey();
-#endif
-    }
-  }
+		ret_key = wallet->GenerateNewKey(true);
+		if (!ret_key.IsValid()) {
+			ret_key = GetAccountPubKey(wallet, strAccount);
+		} else {
+			wallet->SetAddressBookName(ret_key.GetID(), strAccount);
+		}
+		CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID());
+		Debug("(testnet) GetMainAccountPubKey: using '%s' for mining address.",
+				addr.ToString().c_str());
+
+		/* mining pool fees */
+		string strBankAccount("bank");
+		GetAccountAddress(wallet, strBankAccount, false);
+		/* cpu miner */
+		string strSystemAccount("system");
+		GetAccountAddress(wallet, strSystemAccount, false);
+	}
 
   return (ret_key);
 }

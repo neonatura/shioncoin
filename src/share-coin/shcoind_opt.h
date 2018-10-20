@@ -35,6 +35,7 @@ extern "C" {
 #define OPT_DEBUG "debug"
 #define OPT_MAX_CONN "net-max"
 #define OPT_PEER_SEED "seed"
+#define OPT_NOTARY "notary"
 #define OPT_ADMIN "admin"
 #define OPT_BAN_SPAN "ban-span"
 #define OPT_BAN_THRESHOLD "ban-threshold"

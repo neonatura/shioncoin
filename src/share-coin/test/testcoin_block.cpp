@@ -1184,7 +1184,7 @@ bool ret;
 /* DEBUG: TODO: free blockindex's for valgrind mem check */
 
   /* ensure that block processing does not fail past x3 Validate matrix */
-  for (idx = 0; idx < 81; idx++) { /* 27 * 3 = 81 */
+  for (idx = 0; idx < 108; idx++) { /* 27 * 3 = 81 */
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);

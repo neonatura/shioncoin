@@ -2080,7 +2080,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
   }
 
   if (CastToBool(stack.back()) == false) {
-    return error(SHERR_INVAL, "VerifyScript: script does not evaluate to true: \"%s\".", scriptPubKey.ToString().c_str());
+    return error(SHERR_INVAL, "VerifyScript: script does not evaluate to true [P2SH: %s]: \"%s\".", (fValidatePayToScriptHash ? "true" : "false"), scriptPubKey.ToString().c_str());
   }
 
   // Bare witness programs

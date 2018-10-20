@@ -71,12 +71,14 @@ typedef vector<CBlockIndex*> txlist;
 bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec, txlist& vOffer)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
+  CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(TESTNET_COIN_IFACE);
   bc_t *bc = GetBlockChain(iface);
   CBlockIndex *lastIndex;
   uint256 hash;
 	bcpos_t nMaxIndex;
 	bcpos_t nHeight;
+	opcodetype opcode;
   int err;
 	int mode;
 
@@ -116,9 +118,21 @@ bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txl
 			pindexNew->GetBlockWork();
 
     BOOST_FOREACH(CTransaction& tx, block.vtx) {
+			/* stats */
+			BOOST_FOREACH(const CTxOut& out, tx.vout) {
+				const CScript& script = out.scriptPubKey;
+				CScript::const_iterator pc = script.begin();
+				while (script.GetOp(pc, opcode)) {
+					if (opcode == OP_RETURN) {
+						STAT_TX_RETURNS(iface) += out.nValue;
+						break;
+					}
+				}
+			}
+
       /* register extended transactions. */
-			if (tx.isFlag(CTransaction::TXF_MATRIX)) {
-        if (tx.IsCoinBase()) {
+			if (tx.IsCoinBase()) {
+				if (tx.isFlag(CTransaction::TXF_MATRIX)) {
           int mode;
           if (VerifyMatrixTx(tx, mode)) {
             if (mode == OP_EXT_VALIDATE)
@@ -126,8 +140,15 @@ bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txl
             else if (mode == OP_EXT_PAY)
               vSpring.push_back(pindexNew);
           }
-        } 
-      } 
+				} 
+			} else {
+				/* check for notary tx */
+				if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
+						tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) {
+					if (std::find(vMatrix.begin(), vMatrix.end(), pindexNew) == vMatrix.end())
+						vMatrix.push_back(pindexNew);
+				}
+			}
 
 			if (tx.isFlag(CTransaction::TXF_ALIAS)) {
         if (IsAliasTx(tx))
@@ -246,7 +267,6 @@ static bool testnet_LoadBlockIndex()
       !ReadHashBestChain(iface, hashBestChain))
   {
     if (TESTNETBlock::pindexGenesisBlock == NULL) {
-     // fprintf(stderr, "DEBUG: TESTNETTxDB::LoadBlockIndex() : TESTNETBlock::hashBestChain not loaded, but pindexGenesisBlock == NULL");
       return true;
     }
     //    return error(SHERR_INVAL, "TESTNETTxDB::LoadBlockIndex() : TESTNETBlock::hashBestChain not loaded");
@@ -256,7 +276,6 @@ static bool testnet_LoadBlockIndex()
     CBlockIndex *pindexBest = GetBestBlockIndex(iface);
     if (!pindexBest)
       return error(SHERR_INVAL, "TESTNETTxDB::LoadBlockIndex() : TESTNETBlock::hashBestChain not found in the block index");
-    fprintf(stderr, "DEBUG: TESTNET:LoadBlockIndex: falling back to highest block height %d\n", pindexBest->nHeight);
     hashBestChain = pindexBest->GetBlockHash();
   }
 #endif
@@ -278,7 +297,6 @@ static bool testnet_LoadBlockIndex()
     pindexBest = GetBestBlockIndex(iface);
     if (!pindexBest)
       return error(SHERR_INVAL, "TESTNETTxDB::LoadBlockIndex() : TESTNETBlock::hashBestChain not found in the block index");
-//fprintf(stderr, "DEBUG: LoadBlockIndex: falling back to highest block height %d\n", pindexBest->nHeight);
     hashBestChain = pindexBest->GetBlockHash();
   }
 
@@ -371,22 +389,39 @@ static bool testnet_LoadBlockIndex()
     CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
     if (!block) continue;
 
+		/* matrix tx */
     CTransaction id_tx;
     const CTransaction& m_tx = block->vtx[0];
-    const CTxMatrix& matrix = m_tx.matrix;
+		if (m_tx.GetFlags() & CTransaction::TXF_MATRIX) {
+			const CTxMatrix *matrix = &m_tx.matrix;
 
-    if (matrix.nHeight > pindexBest->nHeight) {
-      delete block;
-      break;
-    }
+			if (matrix->nHeight > pindexBest->nHeight) {
+				delete block;
+				break;
+			}
 
-    CBlockIndex *tindex = pindex;
-    while (tindex->pprev && tindex->nHeight > matrix.nHeight)
-      tindex = tindex->pprev;
+			CBlockIndex *tindex = pindex;
+			while (tindex->pprev && tindex->nHeight > matrix->nHeight)
+				tindex = tindex->pprev;
 
-    wallet->matrixValidate.Append(tindex->nHeight, tindex->GetBlockHash()); 
-		InsertValidateNotary(wallet, m_tx);
-    delete block;
+			wallet->matrixValidate.Append(tindex->nHeight, tindex->GetBlockHash()); 
+
+			const uint256& hTx = m_tx.GetHash();
+			wallet->mapValidateTx.push_back(hTx);
+
+			InsertValidateNotary(wallet, m_tx);
+		}
+
+		/* notary tx */
+		for (int i = 1; i < block->vtx.size(); i++) {
+			const CTransaction& tx = block->vtx[i];
+			if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
+					tx.vout[0].nValue <= MIN_INPUT_VALUE(iface) &&
+					std::find(wallet->mapValidateTx.begin(), wallet->mapValidateTx.end(), tx.vin[0].prevout.hash) != wallet->mapValidateTx.end()) {
+				ProcessValidateMatrixNotaryTx(iface, tx);
+			}
+		}
+		delete block;
   }
 
   /* ident */

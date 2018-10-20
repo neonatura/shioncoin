@@ -92,7 +92,7 @@ static const int64 TESTNET_MIN_TX_FEE = 10000;
 static const int64 TESTNET_MAX_MONEY = 1000000000 * TESTNET_COIN; /* 1bil max */
 
 /** The number of blocks generated before a "block reward" is considered spendable. */
-static const int TESTNET_COINBASE_MATURITY = 10;
+static const int TESTNET_COINBASE_MATURITY = 32;
 
 static const int64 TESTNET_MAX_TX_FEE = 1000 * TESTNET_COIN;
 

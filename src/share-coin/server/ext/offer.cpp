@@ -1072,7 +1072,7 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
   int64 minTxFee = MIN_TX_FEE(iface);
 	/* "offer" extended transaction */
   CScript scriptPubKey;
-	scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << hashAccept << OP_2DROP << OP_RETURN;
+	scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << hashAccept << OP_2DROP << OP_RETURN << OP_0; /* null destination */
 	/* 'if alt-tx then send else return funds' script */
 //	CPubKey retAddr = GetAccountPubKey(wallet, strAccount, true);
   //scriptPubKey += offer_CheckAltProofScript(iface, offer, retAddr, nFee); 

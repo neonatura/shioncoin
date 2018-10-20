@@ -189,18 +189,6 @@ int64 GetAssetOpFee(CIface *iface, int nHeight)
   return (nFee);
 }
 
-
-int64 GetAssetReturnFee(const CTransaction& tx) 
-{
-	int64 nFee = 0;
-	for (unsigned int i = 0; i < tx.vout.size(); i++) {
-		const CTxOut& out = tx.vout[i];
-		if (out.scriptPubKey.size() == 1 && out.scriptPubKey[0] == OP_RETURN)
-			nFee += out.nValue;
-	}
-	return nFee;
-}
-
 bool IsAssetTx(const CTransaction& tx)
 {
   int tot;
@@ -588,7 +576,7 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
 		return (false);
 
   /* generate output script */
-	scriptPubKey << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP << OP_RETURN;
+	scriptPubKey << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP << OP_RETURN << OP_0;
   if (!s_wtx.AddOutput(scriptPubKey, nNetFee))
     return (SHERR_INVAL);
 

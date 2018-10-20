@@ -51,6 +51,8 @@ static opt_t _option_table[] = {
 		"The maximum number of socket connections." }, 
 	{ OPT_PEER_SEED, OPT_TYPE_NUM, 1, NULL, 
 		"Whether to auto-seed the core node peers." }, 
+	{ OPT_NOTARY, OPT_TYPE_BOOL, 1, NULL,
+		"Whether to participate in notary transactions." },
 	{ OPT_ADMIN, OPT_TYPE_BOOL, 0, NULL,
 		"Administrative RPC commands." },
 	{ OPT_BAN_SPAN, OPT_TYPE_NUM, 21600, NULL,
@@ -174,6 +176,9 @@ void opt_print(void)
 	}
 
 }
+
+/* Write out the defaults to "shc.conf" */ 
+//static void opt_write_defaults_datfile(void)
 
 static void opt_set_defaults_datfile(void)
 {

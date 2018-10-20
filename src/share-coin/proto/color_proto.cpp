@@ -67,20 +67,18 @@ static int color_init(CIface *iface, void *_unused_)
   iface->nMinerConfirmationWindow = 12096;
 
 	iface->vDeployments[DEPLOYMENT_TESTDUMMY].bit = 28;
-	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nStartTime = 1524960000; /* 04/29/18 */
-	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nTimeout = 1530230400; /* 06/29/18 */ 
+	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nStartTime = 0;
+	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nTimeout = 0;
 
 	/* BIP68, BIP112, and BIP113 */
 	iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
-	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1530403200; /* 07/01/18 */
-	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1535760000; /* 09/01/18 */
+	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 0;
+	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 0;
 
-#if 0
 	/* BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
-	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1546300800; /* 01/01/19 */
-	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1524941521; /* 12/01/19 */ 
-#endif
+	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 0;
+	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 0;
 
 #if 0
   color_RegisterRPCOp(COLOR_COIN_IFACE);

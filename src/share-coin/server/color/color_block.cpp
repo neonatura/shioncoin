@@ -360,8 +360,8 @@ COLORBlock* color_CreateNewBlock(uint160 hColor, CBlockIndex *pindexPrev, const 
   txNew.vin[0].prevout.SetNull();
   txNew.vout.resize(1);
 
-	txNew.vout[0].scriptPubKey.SetDestination(rkey.GetID());
-  //txNew.vout[0].scriptPubKey << rkey << OP_CHECKSIG;
+	//txNew.vout[0].scriptPubKey.SetDestination(rkey.GetID());
+  txNew.vout[0].scriptPubKey << rkey << OP_CHECKSIG;
   pblock->vtx.push_back(txNew);
 
 	/* calculate current tail-block height */
@@ -544,8 +544,7 @@ CBlock *color_GenerateNewBlock(CIface *iface, const CPubKey& rkey, uint160 hColo
 	} else {
 		/* chained color block */
 		CWallet *wallet = GetWallet(COLOR_COIN_IFACE);
-		const CPubKey& pubkey = GetAccountPubKey(wallet, hColor.GetHex(), false);
-		pblock = color_CreateNewBlock(hColor, pindexPrev, pubkey);
+		pblock = color_CreateNewBlock(hColor, pindexPrev, rkey);
 	}
 	if (!pblock)
 		return (NULL);

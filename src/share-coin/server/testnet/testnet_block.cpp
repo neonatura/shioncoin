@@ -284,9 +284,7 @@ CBlock* testnet_CreateNewBlock(const CPubKey& rkey)
   pblock->nNonce         = 0;
 
   /* declare consensus attributes. */
-/* not needed yet.. 
   core_GenerateCoinbaseCommitment(iface, pblock.get(), pindexPrev);
-*/
 
   /* fill coinbase signature (BIP34) */
   core_IncrementExtraNonce(pblock.get(), pindexPrev);

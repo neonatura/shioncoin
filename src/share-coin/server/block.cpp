@@ -2045,10 +2045,12 @@ Object CTransactionCore::ToValue(int ifaceIndex)
 {
   Object obj;
 
-  obj.push_back(Pair("version", 
+  obj.push_back(Pair("version", GetVersion())); 
+#if 0
         (nFlag == 1 || isFlag(CTransaction::TX_VERSION)) ? 1 : 
         (nFlag == 2 || isFlag(CTransaction::TX_VERSION_2)) ? 2 : 0));
-  obj.push_back(Pair("flag", nFlag));
+  obj.push_back(Pair("flag", (int)GetFlags()));
+#endif
 
   if (nLockTime != 0) {
     if ((int64)nLockTime < (int64)LOCKTIME_THRESHOLD) {
@@ -2065,6 +2067,7 @@ Object CTransactionCore::ToValue(int ifaceIndex)
 Object CTransaction::ToValue(int ifaceIndex)
 {
   Object obj = CTransactionCore::ToValue(ifaceIndex);
+	int flags = GetFlags();
 
   /* primary identification */
   obj.push_back(Pair("txid", GetHash().GetHex()));
@@ -2119,55 +2122,57 @@ Object CTransaction::ToValue(int ifaceIndex)
   } 
   obj.push_back(Pair("vout", obj_vout));
 
-  if (this->nFlag & TXF_CERTIFICATE) 
-    obj.push_back(Pair("certificate", certificate.ToValue()));
-  if (this->nFlag & TXF_LICENSE) {
-    CLicense license(certificate);
-    obj.push_back(Pair("license", license.ToValue()));
-  }
-
-  if (this->nFlag & TXF_ALIAS)
-    obj.push_back(Pair("alias", alias.ToValue(ifaceIndex)));
-
-  if (this->nFlag & TXF_ASSET) {
-    CAsset asset(certificate);
-    obj.push_back(Pair("asset", asset.ToValue()));
-  }
-  if (this->nFlag & TXF_EXEC) {
-		int mode;
-		if (IsExecTx(*this, mode)) {
-			if (mode == OP_EXT_NEW) {
-				CExec *exec = GetExec();
-				obj.push_back(Pair("exec", exec->ToValue(ifaceIndex)));
-			} else if (mode == OP_EXT_UPDATE) {
-				CExecCheckpoint *cp = GetExecCheckpoint();
-				obj.push_back(Pair("exec-checkpoint", cp->ToValue(ifaceIndex)));
-			} else if (mode == OP_EXT_GENERATE) {
-				CExecCall *call = GetExecCall();
-				obj.push_back(Pair("exec-call", call->ToValue(ifaceIndex)));
+	if (ifaceIndex == TEST_COIN_IFACE ||
+			ifaceIndex == TESTNET_COIN_IFACE ||
+			ifaceIndex == SHC_COIN_IFACE) {
+		if (this->nFlag & TXF_CERTIFICATE) 
+			obj.push_back(Pair("certificate", certificate.ToValue()));
+		if (this->nFlag & TXF_LICENSE) {
+			CLicense license(certificate);
+			obj.push_back(Pair("license", license.ToValue()));
+		}
+		if (flags & TXF_ALIAS)
+			obj.push_back(Pair("alias", alias.ToValue(ifaceIndex)));
+		if (flags & TXF_ASSET) {
+			CAsset asset(certificate);
+			obj.push_back(Pair("asset", asset.ToValue()));
+		}
+		if (flags & TXF_EXEC) {
+			int mode;
+			if (IsExecTx(*this, mode)) {
+				if (mode == OP_EXT_NEW) {
+					CExec *exec = GetExec();
+					obj.push_back(Pair("exec", exec->ToValue(ifaceIndex)));
+				} else if (mode == OP_EXT_UPDATE) {
+					CExecCheckpoint *cp = GetExecCheckpoint();
+					obj.push_back(Pair("exec-checkpoint", cp->ToValue(ifaceIndex)));
+				} else if (mode == OP_EXT_GENERATE) {
+					CExecCall *call = GetExecCall();
+					obj.push_back(Pair("exec-call", call->ToValue(ifaceIndex)));
+				}
 			}
 		}
-  }
-  if (this->nFlag & TXF_OFFER)
-    obj.push_back(Pair("offer", offer.ToValue()));
-  if (this->nFlag & TXF_IDENT) {
-    CIdent& ident = (CIdent&)certificate;
-    obj.push_back(Pair("ident", ident.ToValue()));
-  }
-  if (this->nFlag & TXF_MATRIX) {
-    obj.push_back(Pair("matrix", matrix.ToValue()));
-  }
-  if (this->nFlag & TXF_CHANNEL) {
-    obj.push_back(Pair("channel", channel.ToValue()));
-  }
-  if (this->nFlag & TXF_CONTEXT) {
-    CContext ctx(certificate);
-    obj.push_back(Pair("context", ctx.ToValue()));
-  }
-	if (this->nFlag & TXF_ALTCHAIN) {
-		CAltChain *alt = GetAltChain();
-		if (alt) {
-			obj.push_back(Pair("altchain", alt->ToValue()));
+		if (flags & TXF_OFFER)
+			obj.push_back(Pair("offer", offer.ToValue()));
+		if (flags & TXF_IDENT) {
+			CIdent& ident = (CIdent&)certificate;
+			obj.push_back(Pair("ident", ident.ToValue()));
+		}
+		if (flags & TXF_MATRIX) {
+			obj.push_back(Pair("matrix", matrix.ToValue()));
+		}
+		if (flags & TXF_CHANNEL) {
+			obj.push_back(Pair("channel", channel.ToValue()));
+		}
+		if (flags & TXF_CONTEXT) {
+			CContext ctx(certificate);
+			obj.push_back(Pair("context", ctx.ToValue()));
+		}
+		if (flags & TXF_ALTCHAIN) {
+			CAltChain *alt = GetAltChain();
+			if (alt) {
+				obj.push_back(Pair("altchain", alt->ToValue()));
+			}
 		}
 	}
 
