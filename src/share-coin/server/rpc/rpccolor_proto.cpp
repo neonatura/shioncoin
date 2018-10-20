@@ -122,148 +122,168 @@ Value rpc_alt_addrlist(CIface *iface, const Array& params, bool fStratum)
   return ret;
 }
 
-void rpccolor_GetAvailableCoins(CIface *iface, string strAccount, vector<COutput>& vCoins, bool fOnlyConfirmed, uint160 hColor)
+static string rpccolor_GetAccountName(CWallet *wallet, const CTxDestination& dest)
 {
+	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook) {
+		const CTxDestination& d = item.first;
+		if (item.first == dest)
+			return (item.second);
+	}
+	return (string(""));
+}
+
+static Value rpccolor_GetAvailableCoins(string strAccount, uint160 hColor, bool fOnlyConfirmed)
+{
+	static Object obj;
+	CIface *iface = GetCoinByIndex(COLOR_COIN_IFACE);
 	CWallet *wallet = GetWallet(iface);
 	CTxMemPool *pool = GetTxMemPool(iface);
   int ifaceIndex = GetCoinIndex(iface);
 	int64 nMinValue = MIN_INPUT_VALUE(iface);
 	vector<CTxDestination> vDest;
 
-fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: hColor %s\n", hColor.GetHex().c_str());
+	obj = Object();
 
-	vCoins.clear();
+	vector<uint160> colors;
+	{
+		LOCK(wallet->cs_wallet);
+		for (map<uint256, CWalletTx>::const_iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it) {
+			const CWalletTx* pcoin = &(*it).second;
+			if (hColor != 0 && pcoin->GetColor() != hColor)
+				continue;
+			if (find(colors.begin(), colors.end(), pcoin->GetColor()) != colors.end()) 
+				continue; /* dup */
+			colors.push_back(pcoin->GetColor());
+		}
+	}
 
+	vector<string> vAccount;
+	if (strAccount == "")
+		vAccount.push_back(string(""));
 	{
 		LOCK(wallet->cs_wallet);
 
 		BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook) {
 			const string& account = item.second;
-//			if (account != strAccount) continue;
+			if (strAccount != "" && account != strAccount) continue;
 			vDest.push_back(item.first);
+			if (find(vAccount.begin(), vAccount.end(), item.second) == vAccount.end())
+				vAccount.push_back(item.second);
 		}
 	}
-fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: vDest x%d\n", vDest.size());
 
-#if 0
-	if (strAccount.length() == 0) {
+//	if (strAccount.length() == 0) {
 		/* include coinbase (non-mapped) pub-keys */
 		std::set<CKeyID> keys;
-		GetKeys(keys);
+		wallet->GetKeys(keys);
 		BOOST_FOREACH(const CKeyID& key, keys) {
-			if (mapAddressBook.count(key) == 0) { /* loner */
+			if (wallet->mapAddressBook.count(key) == 0) { /* loner */
 				CCoinAddr addr(ifaceIndex, key);
 				vDest.push_back(addr.Get());
-fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: LONER\n");
 			}
 		}
-	}
-#endif
+//	}
 
 	{
 		LOCK(wallet->cs_wallet);
-		for (map<uint256, CWalletTx>::const_iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it)
-		{
-			const CWalletTx* pcoin = &(*it).second;
+		for (int k = 0; k < colors.size(); k++) {
+			const uint160& hColorSel = colors[k];
+			int64 nBalance;
 
-			if (hColor != 0 && pcoin->GetColor() != hColor) {
-fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: wrong color %s\n", pcoin->GetColor().GetHex().c_str()); 
-				continue;
-			}
+			map<string,int64> vCoins;
+			for (map<uint256, CWalletTx>::const_iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it) {
+				const CWalletTx* pcoin = &(*it).second;
 
-			if (!pcoin->IsFinal(ifaceIndex)) {
-fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: !Final\n");
-				continue;
-			}
+				if (pcoin->GetColor() != hColorSel)
+					continue;
 
-			if (fOnlyConfirmed) {
-				if (!pcoin->IsConfirmed()) {
-fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: unconfirmed\n");
+				if (!pcoin->IsFinal(ifaceIndex)) {
 					continue;
 				}
-				int mat;
-				if (pcoin->IsCoinBase() && 
-						(mat=pcoin->GetBlocksToMaturity(ifaceIndex)) > 0) {
-fprintf(stderr, "DEBUG: rpccolor_GetAvailableCoins: immature\n");
-					continue;
-				}
-			}
 
-			// If output is less than minimum value, then don't include transaction.
-			// This is to help deal with dust spam clogging up create transactions.
-			uint256 pcoinHash = pcoin->GetHash();
-			for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
-				opcodetype opcode;
-				const CScript& script = pcoin->vout[i].scriptPubKey;
-				CScript::const_iterator pc = script.begin();
-				if (script.GetOp(pc, opcode) &&
-						opcode >= 0xf0 && opcode <= 0xf9) { /* ext mode */
-					continue; /* not avail */
-				}
-
-				if (pcoin->vout[i].nValue < nMinValue)
-					continue;
-
-				/* check whether this output has already been used */
-				if (pcoin->IsSpent(i))
-					continue;
-
-				/* check mempool for conflict */ 
-				if (pool->IsInputTx(pcoinHash, i))
-					continue;
-
-				/* filter via account */
-				CTxDestination dest;
-				if (!ExtractDestination(pcoin->vout[i].scriptPubKey, dest))
-					continue;
-
-				if ( std::find(vDest.begin(), vDest.end(), dest) != vDest.end() ) {
-					vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain(ifaceIndex)));
-				} 
-#if 0
-				else if (pcoin->strFromAccount == strAccount && 
-						0 == mapAddressBook.count(dest)) {
-					if (::IsMine(*this, dest)) {
-						vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain(ifaceIndex)));
+				if (fOnlyConfirmed) {
+					if (!pcoin->IsConfirmed()) {
+						continue;
+					}
+					int mat;
+					if (pcoin->IsCoinBase() && 
+							(mat=pcoin->GetBlocksToMaturity(ifaceIndex)) > 0) {
+						continue;
 					}
 				}
-#endif
 
+				// If output is less than minimum value, then don't include transaction.
+				// This is to help deal with dust spam clogging up create transactions.
+				uint256 pcoinHash = pcoin->GetHash();
+				for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
+					opcodetype opcode;
+					const CScript& script = pcoin->vout[i].scriptPubKey;
+					CScript::const_iterator pc = script.begin();
+					if (script.GetOp(pc, opcode) &&
+							opcode >= 0xf0 && opcode <= 0xf9) { /* ext mode */
+						continue; /* not avail */
+					}
+
+					if (pcoin->vout[i].nValue < nMinValue)
+						continue;
+
+					/* check whether this output has already been used */
+					if (pcoin->IsSpent(i))
+						continue;
+
+					/* check mempool for conflict */ 
+					if (pool->IsInputTx(pcoinHash, i))
+						continue;
+
+					/* filter via account */
+					CTxDestination dest;
+					if (!ExtractDestination(pcoin->vout[i].scriptPubKey, dest))
+						continue;
+
+
+					if ( std::find(vDest.begin(), vDest.end(), dest) != vDest.end() ) {
+						const string& acc_name = rpccolor_GetAccountName(wallet, dest);
+						vCoins[acc_name] += pcoin->vout[i].nValue;
+					}
+
+				}
 			}
-		}
+
+			Object color_obj;
+			for (int h = 0; h < vAccount.size(); h++) {
+				const string& acc_name = vAccount[h];
+				if (vCoins.count(acc_name) == 0) continue;
+				color_obj.push_back(Pair(acc_name, (double)vCoins[acc_name]/COIN));
+			}
+
+			obj.push_back(Pair(hColorSel.GetHex(), color_obj));
+		} /* colors */
 	}
 
-fprintf(stderr, "DEBUG: rpccolor_GetAavailableCoins: vCoins.size %d\n", vCoins.size()); 
-
+	return (Value(obj));
 }
 
 Value rpc_alt_balance(CIface *iface, const Array& params, bool fStratum) 
 {
 	CWallet *wallet = GetWallet(iface);
 	string strAccount("");
-	uint160 hColor;
+	uint160 hColor = 0;
 	int64 nBalance = 0;
 	int nMinDepth = 1;
 
   if (params.size() > 3)
     throw runtime_error("rpc_alt_balance");
 
-	hColor = rpc_alt_key_from_value(iface, params[0]);
+	if (params.size() > 0)
+		hColor = rpc_alt_key_from_value(iface, params[0]);
 	if (params.size() > 1)
 		strAccount = AccountFromValue(params[1]);
 	if (params.size() > 2)
 		nMinDepth = params[2].get_int();
 
-	{
-		vector<COutput> vCoins;
-		rpccolor_GetAvailableCoins(iface, strAccount, vCoins, (nMinDepth==0 ? false : true), hColor); 
-		for (int i = 0; i < vCoins.size(); i++) {
-			const COutput& out = vCoins[i];
-			nBalance += out.tx->vout[out.i].nValue;
-		}
-	}
+	bool fOnlyConfirmed = (nMinDepth == 0 ? false : true);
 
-	return ((double)nBalance/COIN);
+	return (rpccolor_GetAvailableCoins(strAccount, hColor, fOnlyConfirmed));
 }
 
 Value rpc_alt_color(CIface *iface, const Array& params, bool fStratum) 
@@ -449,7 +469,7 @@ Value rpc_alt_mine(CIface *iface, const Array& params, bool fStratum)
 	CAltChain *alt = wtx.GetAltChain();
 	if (!alt) return (Value::null);
 	Object obj = alt->ToValue();
-	obj.push_back(Pair("txhash", wtx.GetHash().GetHex()));
+	obj.push_back(Pair("hiertx", wtx.GetHash().GetHex()));
 	return (obj);
 }
 

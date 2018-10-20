@@ -90,8 +90,8 @@ const RPCOp ALT_COMMIT = {
 };
 
 const RPCOp ALT_BALANCE = {
-  &rpc_alt_balance, 1, {RPC_STRING, RPC_ACCOUNT, RPC_INT},
-  "Syntax: <name|color-hex> [<account>] [<depth>]\n"
+  &rpc_alt_balance, 0, {RPC_STRING, RPC_ACCOUNT, RPC_INT},
+  "Syntax: [<name|color-hex>] [<account>] [<depth>]\n"
   "Summary: The coin balance on an alternate block-chain.\n"
   "\n"
   "Calculate the total balance available for a particular alternate block-chain."

@@ -316,6 +316,10 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
 				wtx.strFromAccount = wtxIn.strFromAccount;
 				fUpdated = true;
 			}
+			if (wtxIn.hColor != 0 && wtx.hColor == 0) {
+				wtx.hColor = wtxIn.hColor;
+				fUpdated = true;
+			}
 			if (wtxIn.fFromMe && wtxIn.fFromMe != wtx.fFromMe)
 			{
 				wtx.fFromMe = wtxIn.fFromMe;
@@ -1637,7 +1641,7 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
 				return error(SHERR_INVAL, "CWallet.GetMergedAddress: error adding generated key to wallet.");
 			}
 
-			//    SetAddressBookName(pubkey.GetID(), strAccount);
+			SetAddressBookName(pubkey.GetID(), strAccount);
 		}
 	}
 
@@ -2464,9 +2468,7 @@ bool core_UnacceptWalletTransaction(CIface *iface, const CTransaction& tx)
 			continue; /* no longer owner */
 		}
 
-		CWalletTx wtx;
-
-		wtx = wallet->mapWallet[prevhash];
+		CWalletTx& wtx = wallet->mapWallet[prevhash];
 
 		/* mark output as unspent */
 		vector<char> vfNewSpent = wtx.vfSpent;

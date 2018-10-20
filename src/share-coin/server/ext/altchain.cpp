@@ -954,11 +954,14 @@ const CPubKey& GetAltChainAddr(uint160 hColor, string strAccount, bool bForceNew
 	static CPubKey pubkey;
 	CWallet *wallet = GetWallet(COLOR_COIN_IFACE);
 
+#if 0
 	if (bForceNew) {
 		wallet->GetMergedPubKey(strAccount, hColor.GetHex().c_str(), pubkey);
 	} else { 
 		pubkey = GetAccountPubKey(wallet, strAccount, false);
 	}
+#endif
+	wallet->GetMergedPubKey(strAccount, hColor.GetHex().c_str(), pubkey);
 
 	return (pubkey);
 }
