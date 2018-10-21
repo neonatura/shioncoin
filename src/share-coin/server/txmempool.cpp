@@ -83,6 +83,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
   bool ok;
 
 	EnforceCoinStandards(tx);
+	
   uint256 hash = tx.GetHash();
 
   if (inval.count(hash))
@@ -187,28 +188,6 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
   return (AddActiveTx(ptx));
 }
 
-#if 0
-bool CPool::Verify(CPoolTx& ptx)
-{
-
-  ptx.CalculateLimits();
-  if (!ptx.VerifyLimits(tx))
-    return (false); /* hard limit failure. */
-
-  if (!VerifyStandards(tx)) {
-    AddInvalTx(ptx);
-    return (false);
-  }
-
-  if (!VerifyConflict(ptx)) {
-    AddInvalTx(ptx);
-    return (false); /* referencing already pool'd inputs */
-  }
-
-  return (true);
-}
-#endif
-
 void CPool::CalculateFee(CPoolTx& ptx)
 {
   CWallet *wallet = GetWallet(ifaceIndex);
@@ -238,10 +217,15 @@ void CPool::CalculateFee(CPoolTx& ptx)
 
 bool CPool::VerifyStandards(CPoolTx& ptx)
 {
+  CIface *iface = GetCoinByIndex(ifaceIndex);
   CTransaction& wtx = ptx.GetTx();
+
+	if (!iface)
+		return (false);
 
   /* verify outputs */
   BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
+#if 0
     vector<valtype> vSolutions;
     txnouttype whichType;
 
@@ -252,6 +236,10 @@ bool CPool::VerifyStandards(CPoolTx& ptx)
     if (whichType == TX_NONSTANDARD) {
       return (error(SHERR_INVAL, "CPool.AddTx: rejecting transaction with unknown output coin script."));
     }
+#endif
+		if (!IsStandard(txout.scriptPubKey)) {
+      return (error(SHERR_INVAL, "(%s) CPool.VerifyStandards: rejecting transaction \"%s\" with non-standard output coin script: %s", iface->name, ptx.GetHash().GetHex().c_str(), txout.scriptPubKey.ToString().c_str()));
+		}
   }
 
   /* verify inputs */
@@ -540,30 +528,22 @@ bool CPool::RefillInputs(CPoolTx& ptx)
 bool CPool::AddActiveTx(CPoolTx& ptx)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
   const uint256& hash = ptx.GetHash();
   CTransaction& tx = ptx.GetTx();
+
+	if (!iface)
+		return (false);
 
   if (active.count(hash) != 0)
     return (true); /* false negative */
 
-
   /* check if their is room */
   if (GetActiveWeight() + ptx.GetWeight() > GetMaxWeight()) {
     /* tx would exceed block weight, send to overflow */
-    Debug("CPool.AddActiveTx: tx \"%s\" would exceed block weight.", ptx.GetHash().GetHex().c_str());
+//    Debug("CPool.AddActiveTx: tx \"%s\" would exceed block weight.", ptx.GetHash().GetHex().c_str());
     return (AddOverflowTx(ptx));
   }
-
-#if 0
-/* todo: remove this section */
-  for (unsigned int i = 0; i < tx.vin.size(); i++) {
-    COutPoint prevout = tx.vin[i].prevout;
-    if (exists(prevout.hash)) {
-      /* bypass issue - wait until dependant tx is cleared. */
-      return (AddOverflowTx(ptx));
-    }
-  }
-#endif
 
   /* for case when overflow is transitioning to active queue. */
   overflow.erase(ptx.GetHash());
@@ -573,45 +553,72 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
   if (!FillInputs(ptx)) {
     ptx.SetFlag(POOL_NO_INPUT);
     AddPendingTx(ptx);
-    return (error(SHERR_INVAL, "CPool.AddActiveTx: tx \"%s\" has unknown inputs specified -- marking as orphan.", ptx.GetHash().GetHex().c_str()));
+    return (error(SHERR_INVAL, "(%s) CPool.AddActiveTx: tx \"%s\" has unknown inputs specified -- marking as orphan.", iface->name, ptx.GetHash().GetHex().c_str()));
   }
-#if 0
-  /* redundant check to ensure inputs are valid. */
-  if (!RefillInputs(ptx)) {
-    ptx.SetFlag(POOL_NO_INPUT);
-    AddPendingTx(ptx);
-    return (error(SHERR_INVAL, "CPool.AddActiveTx: tx \"%s\" has unknown inputs specified -- marking as orphan.", ptx.GetHash().GetHex().c_str()));
-  }
-#endif
+
+	/* resolve script */
+	for (int i = 0; i < tx.vin.size(); i++) {
+		const uint256& hPrevTx = tx.vin[i].prevout.hash;
+		const unsigned int nPrevOut = tx.vin[i].prevout.n;
+		tx_cache& inputs = ptx.GetInputs();
+
+		if (inputs.count(hPrevTx) == 0) {
+			continue;
+		}
+		const CTransaction& txFrom = inputs[hPrevTx];
+
+		/* verify signature */
+		CBlockIndex *pindexBest = GetBestBlockIndex(iface);
+		int fVerify = GetBlockScriptFlags(iface, pindexBest);
+		if (nPrevOut >= txFrom.vout.size() ||
+				!VerifySignature(ifaceIndex, txFrom, tx, i, true, 0, fVerify)) {
+			AddInvalTx(ptx);
+			return (error(ERR_INVAL, "(%s) AddActiveTx: reject: unable to verify signature of input #%d [tx %s].", iface->name, i, hPrevTx.GetHex().c_str()));
+		}
+
+		/* enforce coinbase input maturity */
+		CBlockIndex *previndex = NULL;
+		if (txFrom.IsCoinBase() &&
+				(previndex = GetBlockIndexByTx(iface, hPrevTx))) {
+			unsigned int nDepth = (unsigned int)(pindexBest->nHeight + 1 - previndex->nHeight);
+			unsigned int nMaturity = (unsigned int)wallet->GetCoinbaseMaturity(ptx.GetColor());
+			if (nDepth < nMaturity) {
+				/* immature */
+				AddInvalTx(ptx);
+				return (error(SHERR_INVAL, "(%s) AddActiveTx: reject: coinbase input is immature (%d < %d blocks).", iface->name, nDepth, nMaturity));
+			}
+		}
+	}
 
   /* remove active transactions referencing same inputs */
   if (!ResolveConflicts(ptx)) {
     AddInvalTx(ptx);
-    return (false);
+    return (error(ERR_INVAL, "(%s) AddActiveTx: reject: another tx in mempool is already referencing a coin input [tx %s].", iface->name, ptx.GetHash().GetHex().c_str()));
   }
 
   if (AreInputsSpent(ptx)) {
     AddInvalTx(ptx);
-    return (error(SHERR_INVAL, "CPool.AddActiveTx: rejecting tx \"%s\" with spent input(s).", ptx.GetHash().GetHex().c_str()));
+    return (error(SHERR_INVAL, "(%s) CPool.AddActiveTx: rejecting tx \"%s\" with spent input(s).", iface->name, ptx.GetHash().GetHex().c_str()));
   }
 
-//  if (!ptx.IsLocal()) { /* todo: prevents recursive mutex lock on txdb, this is redudant txdb inputs check when called via core_CommitBlock() */
-    if (!AcceptTx(ptx.tx)) {
-      AddInvalTx(ptx);
-      return (error(SHERR_INVAL, "CPool.AddTx: error accepting transaction into memory pool."));
-    }
-//  }
+	if (!AcceptTx(ptx.tx)) {
+		AddInvalTx(ptx);
+		return (error(SHERR_INVAL, "(%s) CPool.AddActiveTx: error accepting transaction into memory pool.", iface->name));
+	}
 
+	/* insert into queue */
   active[hash] = ptx;
-  STAT_TX_ACCEPTS(iface)++;
 
+	/* stats */
+  STAT_TX_ACCEPTS(iface)++;
+  Debug("(%s) CPool.AddActiveTx: added tx \"%s\" to active queue.",
+      iface->name, ptx.GetHash().GetHex().c_str()); 
+
+	/* update fee estimator */
   CBlockPolicyEstimator *fee = GetFeeEstimator(iface);
   if (fee) {
     fee->processTransaction(ptx, true);
   }
-
-  Debug("CPool.AddActiveTx: added tx \"%s\" to active queue.",
-      ptx.GetHash().GetHex().c_str()); 
 
   return (true);
 }

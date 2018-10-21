@@ -103,6 +103,10 @@ int64_t SHC_CTxMemPool::GetSoftSigOpCost()
 
 bool SHC_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
 {
+
+	if (tx.GetVersion() > 2)
+		return (false);
+
   if (tx.IsCoinBase())
     return (true);
 

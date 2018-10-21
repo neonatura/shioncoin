@@ -1226,7 +1226,6 @@ fprintf(stderr, "DEBUG: EvalScript: OP_IF: fValue(%s)\n", (fValue ? "true" : "fa
               {
                 valtype& vchSig    = stacktop(-isig);
                 valtype& vchPubKey = stacktop(-ikey);
-
                 // Check signature
                 if (sig.CheckSig(vchSig, vchPubKey, scriptCode, sigver))
                 {
@@ -2071,8 +2070,6 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
   if (fValidatePayToScriptHash)
     stackCopy = stack;
   if (!EvalScript(sig, stack, scriptPubKey, SIGVERSION_BASE, 0)) {
-
-
     return error(SHERR_INVAL, "VerifyScript: error evaluating script [stack %d]: \"%s\"\n", stack.size(), scriptPubKey.ToString().c_str());
   }
   if (stack.empty()) {
@@ -2347,11 +2344,36 @@ unsigned int CScript::GetSigOpCount(const CScript& scriptSig) const
 
 bool CScript::IsPayToScriptHash() const
 {
-    // Extra-fast test for pay-to-script-hash CScripts:
-    return (this->size() == 23 &&
-            this->at(0) == OP_HASH160 &&
-            this->at(1) == 0x14 &&
-            this->at(22) == OP_EQUAL);
+
+	if (this->size() < 23)
+		return (false);
+
+	if (this->size() == 23) {
+    /* fast test for pay-to-script-hash CScripts */
+		return (this->at(0) == OP_HASH160 &&
+				this->at(1) == 0x14 &&
+				this->at(22) == OP_EQUAL);
+	} 
+
+	/* extended transaction prefix */
+	if (this->at(0) < 0xf0 || this->at(0) > 0xf9)
+		return (false);
+	if (this->at(1) < OP_1 || this->at(1) > OP_15)
+		return (false);
+	/* seek past prefix */
+	opcodetype opcode = OP_0;
+  CScript::const_iterator pc = begin();
+	pc++; pc++;
+	while (opcode != OP_2DROP) {
+		if (!GetOp(pc, opcode))
+			return (false);
+	}
+	/* compare against standard P2SH format. */
+	CScript cmp_script(pc, end());
+	return (cmp_script.size() == 23 &&
+			cmp_script.at(0) == OP_HASH160 &&
+			cmp_script.at(1) == 0x14 &&
+			cmp_script.at(22) == OP_EQUAL);
 }
 
 bool CScript::IsWitnessProgram(int& version, std::vector<unsigned char>& program) const 

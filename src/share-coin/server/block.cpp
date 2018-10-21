@@ -37,6 +37,15 @@
 using namespace std;
 
 
+#define MAX_OPCODE(_iface) \
+	(0xf9)
+
+#define MAX_SCRIPT_SIZE(_iface) \
+	(10000)
+
+#define MAX_SCRIPT_ELEMENT_SIZE(_iface) \
+	(520)
+
 
 /** Flags for nSequence and nLockTime locks */
 /** Interpret sequence numbers as relative lock-time constraints. */
@@ -1040,7 +1049,8 @@ uint256 GetBestBlockChain(CIface *iface)
   return (hash);
 }
 
-CBlockIndex *GetGenesisBlockIndex(CIface *iface) /* DEBUG: */
+/* @note function not compatible with colored coins. */
+CBlockIndex *GetGenesisBlockIndex(CIface *iface)
 {
   int ifaceIndex = GetCoinIndex(iface);
   CBlock *block = GetBlockByHeight(iface, 0);
@@ -1146,7 +1156,7 @@ CBlock *GetBlankBlock(CIface *iface)
 }
 #endif
 
-/* DEBUG: TODO: faster to read via nHeight */
+/* TODO: faster to read via nHeight */
 bool CBlock::ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -1168,6 +1178,23 @@ bool CBlock::ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions)
   return (ReadBlock(nHeight));
 }
 
+static bool tx_HasValidOps(CIface *iface, const CScript& script)
+{
+	CScript::const_iterator it = script.begin();
+
+	while (it < script.end()) {
+		opcodetype opcode;
+		std::vector<unsigned char> item;
+		if (!script.GetOp(it, opcode, item) || 
+				opcode > MAX_OPCODE(iface) || 
+				item.size() > MAX_SCRIPT_ELEMENT_SIZE(iface)) { 
+			return (false);
+		}
+	}
+
+	return (true);
+}
+
 bool CTransaction::CheckTransaction(int ifaceIndex)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -1180,6 +1207,8 @@ bool CTransaction::CheckTransaction(int ifaceIndex)
     return error(SHERR_INVAL, "CTransaction::CheckTransaction() : vin empty: %s", ToString(ifaceIndex).c_str());
   if (vout.empty())
     return error(SHERR_INVAL, "CTransaction::CheckTransaction() : vout empty");
+	if (GetVersion() == 0)
+		return error(SHERR_INVAL, "(%s) CTransaction.CheckVersion: invalid version [tx %s].", iface->name, GetHash().GetHex().c_str());
   // Size limits
   if (::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION(iface)) > iface->max_block_size)
     return error(SHERR_INVAL, "CTransaction::CheckTransaction() : size limits failed");
@@ -1195,6 +1224,10 @@ bool CTransaction::CheckTransaction(int ifaceIndex)
     nValueOut += txout.nValue;
     if (!MoneyRange(ifaceIndex, nValueOut))
       return error(SHERR_INVAL, "CTransaction::CheckTransaction() : txout total out of range");
+		if (!tx_HasValidOps(iface, txout.scriptPubKey))
+			return (ERR_2BIG, "(%s) CTransaction.CheckTransaction: output script is invalid: %s", iface->name, txout.scriptPubKey.ToString().c_str());
+		if (txout.scriptPubKey.size() > MAX_SCRIPT_SIZE(iface))
+			return (ERR_2BIG, "(%s) CTransaction.CheckTransaction: output script <%d bytes> exceeds maximum length (%d).", iface->name, (int)txout.scriptPubKey.size(), MAX_SCRIPT_SIZE(iface));
   }
 
   // Check for duplicate inputs
@@ -1218,6 +1251,11 @@ bool CTransaction::CheckTransaction(int ifaceIndex)
       if (txin.prevout.IsNull()) {
         return error(SHERR_INVAL, "(core) CheckTransaction: prevout is null");
       }
+
+			if (!tx_HasValidOps(iface, txin.scriptSig))
+				return (ERR_2BIG, "(%s) CTransaction.CheckTransaction: input script is invalid: %s", iface->name, txin.scriptSig.ToString().c_str());
+			if (txin.scriptSig.size() > MAX_SCRIPT_SIZE(iface))
+				return (ERR_2BIG, "(%s) CTransaction.CheckTransaction: input script <%d bytes> exceeds maximum length (%d).", iface->name, (int)txin.scriptSig.size(), MAX_SCRIPT_SIZE(iface));
 #if 0 
       if (!VerifyTxHash(iface, txin.prevout.hash)) {
         print();
@@ -1578,6 +1616,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 bool CTransaction::IsStandard() const
 {
 
+#if 0
   if (!isFlag(CTransaction::TX_VERSION) &&
       !isFlag(CTransaction::TX_VERSION_2)) {
     return error(SHERR_INVAL, "version flag not set (%d) [CTransaction::IsStandard]", nFlag);
@@ -1597,6 +1636,7 @@ bool CTransaction::IsStandard() const
       return error(SHERR_INVAL, "script-sig is push-only [CTransaction::IsStandard]");
     }
   }
+#endif
 
   BOOST_FOREACH(const CTxOut& txout, vout) {
     if (!::IsStandard(txout.scriptPubKey)) {

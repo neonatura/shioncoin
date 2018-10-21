@@ -114,6 +114,10 @@ int64_t USDE_CTxMemPool::GetSoftSigOpCost()
 
 bool USDE_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
 {
+
+	if (tx.GetVersion() > 2)
+		return (false);
+
   return (true);
 }
 

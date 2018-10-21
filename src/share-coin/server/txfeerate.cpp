@@ -475,7 +475,7 @@ void CBlockPolicyEstimator::processTransaction(CPoolTx& entry, bool fCurrentEsti
   double curPri = entry.GetPriority(txHeight);
   mapMemPoolTxs[hash].blockHeight = txHeight;
 
-  Debug("CBlockPolicyEstimator.processTransaction: Blockpolicy mempool tx %s ", hash.ToString().substr(0,10).c_str());
+//  Debug("CBlockPolicyEstimator.processTransaction: Blockpolicy mempool tx %s ", hash.ToString().substr(0,10).c_str());
   // Record this as a priority estimate
   if (entry.GetFee() == 0 || isPriDataPoint(feeRate, curPri)) {
     mapMemPoolTxs[hash].stats = &priStats;
@@ -488,9 +488,7 @@ void CBlockPolicyEstimator::processTransaction(CPoolTx& entry, bool fCurrentEsti
     mapMemPoolTxs[hash].bucketIndex = feeStats.NewTx(txHeight, (double)feeRate.GetFeePerK());
     Debug("CBlockPolicyEstimator.processTransaction: adding \"%s\" as a fee estimate.", hash.GetHex().c_str());
   }
-  else {
-    Debug("CBlockPolicyEstimator.processTransaction: not adding \"%s\".", hash.GetHex().c_str());
-  }
+//  else { Debug("CBlockPolicyEstimator.processTransaction: not adding \"%s\".", hash.GetHex().c_str()); }
 
 }
 

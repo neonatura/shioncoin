@@ -96,8 +96,13 @@ int64_t COLOR_CTxMemPool::GetSoftSigOpCost()
 
 bool COLOR_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
 {
+
+	if (tx.GetVersion() > 2)
+		return (false);
+
   if (tx.IsCoinBase())
     return (true);
+
 
   /* SCRIPT_VERIFY_LOW_S */
   for (unsigned int i = 0; i < tx.vin.size(); i++) {

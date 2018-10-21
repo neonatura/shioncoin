@@ -83,6 +83,9 @@ int64_t LTC_CTxMemPool::GetSoftSigOpCost()
 bool LTC_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
 {
 
+	if (tx.GetVersion() > 2)
+		return (false);
+
   if (tx.IsCoinBase())
     return (true);
 

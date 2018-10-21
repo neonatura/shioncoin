@@ -85,6 +85,9 @@ bool TEST_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
 	CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   CWallet *wallet = GetWallet(iface);
 
+	if (tx.GetVersion() > 2)
+		return (false);
+
   if (tx.IsCoinBase())
     return (true);
 

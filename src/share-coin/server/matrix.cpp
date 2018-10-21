@@ -31,6 +31,12 @@
 #include "txsignature.h"
 #include "txmempool.h"
 
+/* The number of notaries required for the multi-sig signature. */
+#define MIN_VALIDATE_NOTARY_CONSENSUS 6 /* ~8hr back in block-chain. */ 
+
+#define VALIDATE_NOTARY_DEPTH 18 /* x3 / notary */
+
+
 #if 0
 void CTxMatrix::ClearCells()
 {
@@ -43,10 +49,6 @@ void CTxMatrix::ClearCells()
   }
 }
 #endif
-
-
-#define MAX_VALIDATE_TX_HISTORY 128
-
 
 void CTxMatrix::Append(int heightIn, uint256 hash)
 {
@@ -75,7 +77,7 @@ void CTxMatrix::Retract(int heightIn, uint256 hash)
 
 static unsigned int matrix_GetMinConsensus(int ifaceIndex)
 {
-	int nMinConsensus = 3;
+	int nMinConsensus = MIN_VALIDATE_NOTARY_CONSENSUS;
 	if (ifaceIndex == TEST_COIN_IFACE) {
 		/* special case for testing. */
 		nMinConsensus = 1;
@@ -107,7 +109,7 @@ bool GetValidateNotaries(CWallet *wallet, vector<CPubKey>& kSend, uint256 hMatri
 	}
 
 	tot = 0;
-	idx = MAX(0, idx - 9);
+	idx = MAX(0, idx - VALIDATE_NOTARY_DEPTH);
 	for (; idx < wallet->mapValidateTx.size(); idx++) {
 		const uint256& hTx = wallet->mapValidateTx[idx];
 		if (wallet->mapValidateNotary.count(hTx) == 0) {
@@ -256,20 +258,16 @@ bool CreateValidateNotaryTx(CIface *iface, const CTransaction& txPrev, int nPrev
 	
 	/* sign */
 	scriptSig << OP_0;
-//	GetValidateNotaries(wallet, kSend);
-//	int nUnsolved = 0;
 	for (int i = 0; i < nMinConsensus; i++) {
-
-		scriptSig << cbuff(); /* "null" placeholder */
+		scriptSig << OP_0; /* "null" placeholder */
 	}
 	cbuff raw(scriptRedeem.begin(), scriptRedeem.end());
 	scriptSig << raw;
 	tx.vin[0].scriptSig = scriptSig;
 
 	/* wait for originating matrix-tx to mature. */
-//	tx.vin[0].nSequence  = nSeq;
 	tx.vin[0].nSequence  = 1;
-	/* update lock-time */
+	/* establish lock-time */
 	tx.nLockTime = matrix_GetNotaryLockTime(iface);
 
 	return (true);
@@ -489,41 +487,11 @@ void BlockRetractValidateMatrix(CIface *iface, const CTransaction& tx, CBlockInd
 
 	if (wallet->mapValidateTx.size() != 0) {
 		const uint256& hPrevTx = wallet->mapValidateTx.back();
-		if (hPrevTx == tx.GetHash()) {
+		if (hPrevTx == tx.GetHash())
 			wallet->mapValidateTx.pop_back();
-
-#if 0
-			CBlockIndex *pindexMatrix;
-			pindexMatrix = GetBlockIndexByTx(iface, hPrevTx);
-			if (pindexMatrix) {
-				/* retract matrix height */
-				int height = (pindexMatrix->nHeight - 27);
-				height /= 27;
-				height *= 27;
-
-				if (height > 27)
-					wallet->matrixValidate.nHeight = height;
-				else
-					wallet->matrixValidate.nHeight = 0;
-			}
-#endif
-		}
 	}
 	
 	wallet->mapValidateNotary.erase(tx.GetHash());
-#if 0
-	/* the following assumes the chain is being rolled back in reverse order. */
-	CPubKey pubkey;
-	if (ExtractValidateCoinbaseDestination(wallet, tx, pubkey)) {
-		CKeyID keyid;
-
-		/* retract last notary addition. */
-		if (wallet->mapValidateNotary.size() != 0 &&
-				wallet->mapValidateNotary.back() == pubkey) {
-			wallet->mapValidateNotary.pop_back();
-		}
-	}
-#endif
 }
 
 /* returns where tx was a valid matrix-notary-tx */
@@ -584,6 +552,27 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 	if ((pindex->nHeight + iface->coinbase_maturity) > nBestHeight)
 		return (false); /* immmature */
 
+	/* verify validate-tx script. */
+	if (!txMatrix.IsCoinBase()) {
+		return (error(ERR_INVAL, "(%s) ProcessValidateMatrixNotaryTx: transaction \"%s\" is not a coinbase.", iface->name, txin.prevout.hash.GetHex().c_str()));
+	}
+	if (!VerifyValidateMatrixScript(wallet, txMatrix)) {
+		return (error(ERR_INVAL, "(%s) ProcessValidateMatrixNotaryTx: error verifying transaction \"%s\".", iface->name, txin.prevout.hash.GetHex().c_str()));  
+	}
+
+	/* verify notary-tx script. */
+	CBlockIndex *pindexBest = GetBestBlockIndex(iface);
+	if (!pindexBest)
+		return false;
+	{
+		int nIn = 0;
+		bool fStrictPayToScriptHash = true;
+		int fVerify = GetBlockScriptFlags(iface, pindexBest);
+		if (!VerifySignature(ifaceIndex, txMatrix, tx, nIn, fStrictPayToScriptHash, 0, fVerify)) {
+			return (error(SHERR_ACCESS, "(%s) ProcessValidateMatrixNotaryTx: error verifying transaction \"%s\".", iface->name, tx.GetHash().GetHex().c_str()));
+		}
+	}
+
 	/* establish a new dynamic checkpoint at matrix. */
 	pblock = GetBlockByHash(iface, hMatrixBlock);
 	if (!pblock)
@@ -596,6 +585,9 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 	return (true);
 }
 
+uint256 base_SignatureHash(CScript scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType);
+
+
 void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scriptPrev)
 {
 	CWallet *wallet = GetWallet(iface);
@@ -604,6 +596,9 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 	const uint256& hPrevTx = tx.vin[0].prevout.hash;
 	vector<CPubKey> kSend;
 	bool fLocal = false;
+	int nUnsolved;
+	cbuff vch;
+	int i;
 
 	if (tx.IsFinal(ifaceIndex)) {
 		/* already being processed. */
@@ -614,6 +609,9 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 	if (!VerifyValidateMatrixScript(wallet, hPrevTx, scriptPrev)) {
 		return;
 	}
+
+	if (tx.vin.size() != 1 || tx.vout.size() != 1)
+		return; /* invalid */
 
 	if (!GetValidateNotaries(wallet, kSend, hPrevTx)) {
 		return; /* not enough notaries */
@@ -630,36 +628,43 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 		return;
 	}
 
-	CScript script = tx.vin[0].scriptSig;//scriptPrev;
+	/* extract previously applied signatures. */
+	CScript script(tx.vin[0].scriptSig);
 	CScript::const_iterator pc = script.begin();
 	vector<cbuff> vsig;
 	opcodetype opcode;
-
-	cbuff vch;
-	if (!script.GetOp(pc, opcode)) { 
-		return;
-	}
-	if (opcode != OP_0) {
-		return;
-	}
-	for (int i = 0; i < nMinConsensus; i++) {
-		if (script.GetOp(pc, opcode, vch))
+	nUnsolved = 0;
+	if (!script.GetOp(pc, opcode) || opcode != OP_0)
+		return; /* invalid prefix of notary multi-sig script. */
+	for (i = 0; i < nMinConsensus; i++) {
+		if (!script.GetOp(pc, opcode, vch))
 			break;
 		if (vch.size() == 0)
-			break;
-
+			nUnsolved++;
 		vsig.push_back(vch);
 	}
+	if (nUnsolved == 0)
+		return; /* multi-sig for tx is already signed. */
+
+	CScript scriptRedeem;
+	bool fConsensus;
+	GenerateValidateScript(wallet, fConsensus, scriptRedeem, kSend);
+	if (!fConsensus)
+		return; /* invalid state -- no consensus was formed. */
+
+	/* use final 'locked' sequence for signing. */
+	uint32_t nSeq = tx.vin[0].nSequence + 1;
+	tx.vin[0].nSequence = CTxIn::SEQUENCE_FINAL - 1;
 
 	CScript scriptSig;
 	scriptSig << OP_0;
-	int nUnsolved = 0;
+	nUnsolved = 0;
 	bool fUpdated = false;
 	for (int i = 0; i < nMinConsensus; i++) {
 		CKey key;
 		bool fSolved;
 
-		if (vsig.size() > i) {
+		if (i < vsig.size() && vsig[i].size() != 0) {
 			/* signature has already been gathered. */
 			scriptSig << vsig[i];
 			continue;
@@ -667,13 +672,16 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 
 		/* sign local pubkeys */
 		fSolved = false;
-		if (wallet->GetKey(kSend[i].GetID(), key)) {
-			CSignature sig(ifaceIndex, &tx, 0);
+		if (nUnsolved == 0 && /* notaries fill keys in order */ 
+				wallet->GetKey(kSend[i].GetID(), key)) {
+			int nHashType = SIGHASH_ALL;
 			cbuff result;
 
-			fSolved = sig.CreateSignature(result,
-					kSend[i].GetID(), scriptPrev, 0); 
+			/* sign redeem script (base sigver) */
+			uint256 sighash = base_SignatureHash(scriptRedeem, tx, 0, nHashType);
+			fSolved = key.Sign(sighash, result);
 			if (fSolved) {
+				result.push_back((unsigned char)nHashType);
 				scriptSig << result;
 				fUpdated = true;
 			}
@@ -683,15 +691,20 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 			nUnsolved++;
 		}
 	}
+	if (nUnsolved == 0) {
+		/* tx is ready to be shipped. */
+		nSeq = CTxIn::SEQUENCE_FINAL - 1;
+	}
 
+	/* over-write transaction with new signature(s). */
 	if (fUpdated) {
-		/* increase sequence (v1 tx) */
-		tx.vin[0].nSequence = tx.vin[0].nSequence + 1;
+		/* lock sequence */
+		tx.vin[0].nSequence = nSeq;
 		if (tx.vin[0].nSequence == CTxIn::SEQUENCE_FINAL)
 			return; /* invalid state */
-		/* update lock-time. */
-		tx.nLockTime = matrix_GetNotaryLockTime(iface);
 
+
+		/* input signature */
 		CScript scriptSuffix(pc, script.end());
 		scriptSig += scriptSuffix;
 		tx.vin[0].scriptSig = scriptSig; 

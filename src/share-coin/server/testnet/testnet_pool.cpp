@@ -98,6 +98,7 @@ int64_t TESTNET_CTxMemPool::GetSoftSigOpCost()
 
 bool TESTNET_CTxMemPool::VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs)
 {
+
   if (tx.IsCoinBase())
     return (true);
 
