@@ -660,13 +660,15 @@ class CTransactionCore
 
 		int GetVersion() const
 		{
-			return ((int)(nFlag & VERSION_MASK));
+			uint32_t ver = nFlag;
+			return ((int)(ver & VERSION_MASK));
 		}
 
 		unsigned int GetFlags() const
 		{
-			unsigned int v = (unsigned int)GetVersion();
-			return (nFlag - v);
+			uint32_t fla = nFlag;
+			uint32_t v = (uint32_t)GetVersion();
+			return (fla - v);
 		}
 
     bool isFlag(unsigned int flag) const
@@ -1936,6 +1938,10 @@ bool HasBlockHash(CIface *iface, uint256 hash);
 
 /** obtain the verification flags neccessary for the block height. */
 unsigned int GetBlockScriptFlags(CIface *iface, const CBlockIndex* pindex);
+
+bool CheckFinalTx(CIface *iface, const CTransaction& tx, CBlockIndex *pindexPrev, int flags = 0);
+
+bool CheckSequenceLocks(CIface *iface, const CTransaction &tx, int flags);
 
 
 

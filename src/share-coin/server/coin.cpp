@@ -372,15 +372,17 @@ bool core_VerifyCoinInputs(int ifaceIndex, CTransaction& tx, unsigned int nIn, C
 bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex* pindexBlock, tx_map& mapOutput, map<uint256, CTransaction>& mapTx, int& nSigOps, int64& nFees, bool fVerifySig, bool fVerifyInputs, bool fRequireInputs, CBlock *pBlock)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
-  const bool fStrictPayToScriptHash=true;
   const bool fMiner = false;
   bool fFound;
+
 
   if (!iface || !iface->enabled)
     return (false);
 
   if (tx->IsCoinBase())
     return (true);
+
+	int nVerifyFlags = GetBlockScriptFlags(iface, pindexBlock);
 
   nSigOps += tx->GetLegacySigOpCount();
 
@@ -476,8 +478,7 @@ bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex*
 
 
     if (fVerifySig) {
-			int fVerify = GetBlockScriptFlags(iface, pindexBlock);
-      if (!VerifySignature(ifaceIndex, prevtx, *tx, i, fStrictPayToScriptHash, 0, fVerify)) {
+      if (!VerifySignature(ifaceIndex, prevtx, *tx, i, 0, nVerifyFlags)) {
         return (error(SHERR_ACCESS, "core_ConnectCoinInputs: error verifying signature integrity."));
       }
     }

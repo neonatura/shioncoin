@@ -1091,6 +1091,27 @@ bool CTransaction::IsFinal(int ifaceIndex, int nBlockHeight, int64 nBlockTime) c
   return true;
 }
 
+bool CheckFinalTx(CIface *iface, const CTransaction& tx, CBlockIndex *pindexPrev, int flags)
+{
+	int64 nBlockTime;
+	int nHeight = 0;
+
+	if (!pindexPrev)
+		pindexPrev = GetBestBlockIndex(iface);
+	if (!pindexPrev)
+		return (false);
+
+	nHeight = pindexPrev->nHeight + 1;
+
+	if (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) { /* BIP68 */
+		nBlockTime = pindexPrev->GetMedianTimePast();
+	} else {
+		nBlockTime = GetAdjustedTime();
+	}
+
+	return (tx.IsFinal(GetCoinIndex(iface), nHeight, nBlockTime));
+}
+
 
 void SetBestBlockIndex(CIface *iface, CBlockIndex *pindex)
 {
@@ -3909,10 +3930,13 @@ bool CheckSequenceLocks(CIface *iface, const CTransaction &tx, int flags)
 
 		int nHeight = tip->nHeight + 1;
 		CBlockIndex *pindexIn = GetBlockIndexByTx(iface, txin.prevout.hash);
-		if (pindexIn)
+		if (pindexIn) {
 			nHeight = pindexIn->nHeight;
-		if (!pool->GetTx(txin.prevout.hash, txIn))
+		} else if (pool->GetTx(txin.prevout.hash, txIn)) {
+			nHeight = tip->nHeight + 1;
+		} else {
 			return (false); /* unknown input tx */
+		}
  
 		prevheights[txinIndex] = nHeight;
 #if 0

@@ -37,6 +37,16 @@ using namespace std;
 
 typedef vector<unsigned char> valtype;
 
+/** Flags for nSequence and nLockTime locks */
+/** Interpret sequence numbers as relative lock-time constraints. */
+static const unsigned int LOCKTIME_VERIFY_SEQUENCE = (1 << 0);
+/** Use GetMedianTimePast() instead of nTime for end point timestamp. */
+static const unsigned int LOCKTIME_MEDIAN_TIME_PAST = (1 << 1);
+
+static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS = 
+		LOCKTIME_VERIFY_SEQUENCE |
+		LOCKTIME_MEDIAN_TIME_PAST;
+
 
 bool CPool::VerifyTx(CTransaction& tx)
 {
@@ -175,7 +185,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
     }
   }
 
-  if (!tx.IsFinal(ifaceIndex)) {
+  if (!ptx.CheckFinal(iface)) {
     /* wait until transaction is finalized. */
     Debug("CPool.AddActiveTx: tx \"%s\" is not finalized.", ptx.GetHash().GetHex().c_str());
     ptx.SetFlag(POOL_NOT_FINAL);
@@ -571,7 +581,7 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
 		CBlockIndex *pindexBest = GetBestBlockIndex(iface);
 		int fVerify = GetBlockScriptFlags(iface, pindexBest);
 		if (nPrevOut >= txFrom.vout.size() ||
-				!VerifySignature(ifaceIndex, txFrom, tx, i, true, 0, fVerify)) {
+				!VerifySignature(ifaceIndex, txFrom, tx, i, 0, fVerify)) {
 			AddInvalTx(ptx);
 			return (error(ERR_INVAL, "(%s) AddActiveTx: reject: unable to verify signature of input #%d [tx %s].", iface->name, i, hPrevTx.GetHex().c_str()));
 		}
@@ -694,6 +704,7 @@ void CPool::AddInvalTx(CPoolTx& ptx)
 
 void CPool::PurgeActiveTx()
 {
+  CIface *iface = GetCoinByIndex(ifaceIndex);
   vector<CPoolTx> vRemove;
 
   if (overflow.size() != 0) {
@@ -705,9 +716,8 @@ void CPool::PurgeActiveTx()
     sort(vPoolTx.begin(), vPoolTx.end());
 
     BOOST_FOREACH(CPoolTx& ptx, vPoolTx) {
-      if (!ptx.GetTx().IsFinal(ifaceIndex)) {
+      if (!ptx.CheckFinal(iface))
         continue;
-			}
       if (GetActiveWeight() + ptx.GetWeight() >= GetMaxWeight())
         continue;
 
@@ -759,6 +769,7 @@ void CPool::PurgeActiveTx()
 
 void CPool::PurgeOverflowTx()
 {
+  CIface *iface = GetCoinByIndex(ifaceIndex);
   vector<uint256> vRemove;
 
   if (overflow.size() == 0)
@@ -788,7 +799,7 @@ void CPool::PurgeOverflowTx()
   vector<CPoolTx> vPoolTx;
   BOOST_FOREACH(PAIRTYPE(const uint256, CPoolTx)& item, overflow) {
     CPoolTx& ptx = item.second;
-    if (ptx.GetTx().IsFinal(ifaceIndex))
+    if (ptx.CheckFinal(iface))
       vPoolTx.push_back(ptx);
   }
   sort(vPoolTx.begin(), vPoolTx.end());
@@ -1311,4 +1322,30 @@ bool CPoolTx::IsDependent(const CPoolTx& ptx) const
     return (true);
 
   return (false);
+}
+
+bool CPoolTx::CheckFinal(CIface *iface) const
+{
+	CBlockIndex *pindexBest = GetBestBlockIndex(iface);
+
+	if (pindexBest) {
+		/* tx v1 lock/sequence test */
+		if (tx.nLockTime != 0) {
+			int flags = GetBlockScriptFlags(iface, pindexBest);
+			if (!CheckFinalTx(iface, tx, pindexBest, flags))
+				return (false);
+		}
+
+		if (tx.GetVersion() >= 2) {
+			/* tx v2 lock/sequence test */
+			if (!CheckSequenceLocks(iface, tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
+				return (false);
+		}
+	}
+
+	return (true);
+#if 0
+int ifaceIndex = GetCoinIndex(iface);
+return (tx.IsFinal(ifaceIndex));
+#endif
 }

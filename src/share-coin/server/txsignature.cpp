@@ -335,11 +335,28 @@ bool CSignature::SignSignature(const CScript& fromPubKey)
     return (error(SHERR_INVAL, "SignSignature: error generating signature."));
   }
 
+	if (fromPubKey.at(0) == OP_CHECKLOCKTIMEVERIFY) {
+	/* handle OP_CHECKLOCKTIMEVERIFY (wit correct?) */
+		txin.scriptSig << tx->nLockTime;
+	} else if (tx->GetVersion() >= 2 &&
+			fromPubKey.at(0) == OP_CHECKSEQUENCEVERIFY) {
+		/* handle OP_CHECKSEQUENCEVERIFY (wit correct?) */
+		txin.scriptSig << tx->vin[nIn].nSequence;
+	}
+
   bool ret = false;
   {
+		CIface *iface = GetCoinByIndex(ifaceIndex);
+		CBlockIndex *pindexBest = GetBestBlockIndex(iface);
+		int nFlags = GetBlockScriptFlags(iface, pindexBest);
+//		int nFlags = SCRIPT_VERIFY_P2SH;
+
+		/* verify against chain tip. */
     CSignature t_sig(ifaceIndex, tx, nIn, /* nHashType = */ 0);
     ret = VerifyScript(t_sig, txin.scriptSig, stack, fromPubKey,
-        true, (stack.size() == 0) ? 0 : SCRIPT_VERIFY_WITNESS);
+				nFlags);
+				//(stack.size() == 0) ? nFlags : (nFlags | SCRIPT_VERIFY_WITNESS));
+        //true, (stack.size() == 0) ? 0 : SCRIPT_VERIFY_WITNESS);
   }
   if (!ret) {
     return (error(SHERR_INVAL, "SignSignature: error verifying integrity of tx input '%s' (segwit: %s) (output: #%d.", txin.prevout.hash.GetHex().c_str(), ((stack.size() == 0) ? "false" : "true"), txin.prevout.n));

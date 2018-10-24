@@ -424,8 +424,9 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
 							int nIn = sig.nTxIn; 
 
 							// (nLockTime -- nLockTime )
-							if (!(flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY))
+							if (!(flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY)) {
 								break; // not enabled; treat as a NOP
+							}
 							if (stack.size() < 1)
 								return false;
 							// Note that elsewhere numeric opcodes are limited to
@@ -1462,6 +1463,45 @@ static bool core_CScript_IsPushOnly(const CScript& script, int of = 0)
   return true;
 }       
 
+static void RemoveSolverDropPrefix(CScript& script)
+{
+	CScript::const_iterator pc = script.begin();
+	opcodetype opcode;
+	int idx;
+
+	if (!script.GetOp(pc, opcode))
+		return;
+	if (!script.GetOp(pc, opcode))
+		return;
+	if (opcode == OP_DROP) {
+		script = CScript(pc, script.end());
+	}
+
+}
+#if 0
+static void RemoveSolverDropPrefix(script)
+{
+	CScript::const_iterator pc = script.begin();
+	opcodetype opcode;
+	int idx;
+
+	idx = 0;
+	opcode = OP_0;
+	while (opcode != OP_2DROP && opcode != OP_DROP) {
+	  if (!script.GetOp(pc, opcode))
+			return;
+		idx++;
+	}
+	if (opcode == OP_DROP && idx < 2) {
+		script = CScript(pc, script.end());
+		return;
+	}
+	if (opcode == OP_2DROP && idx < 4) {
+		script = CScript(pc, script.end());
+		return;
+	}
+}
+#endif
 
 
 //
@@ -1503,8 +1543,9 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 //    mTemplates.insert(make_pair(TX_PUBKEYIF, CScript() << OP_IF << OP_PUBKEY << OP_CHECKSIG << OP_ELSE << OP_PUBKEY << OP_CHECKSIG << OP_ENDIF));
   }
 
-	/* remove extended transaction script prefix, if needed. */
+	/* remove any prefix that is dropped. */
 	RemoveExtOutputPrefix(scriptPubKeyCopy);
+	RemoveSolverDropPrefix(scriptPubKeyCopy);
 
   // Shortcut for pay-to-script-hash, which are more constrained than the other types:
   // it is always OP_HASH160 20 [20 byte hash] OP_EQUAL
@@ -2051,12 +2092,14 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
 }
 
 
-bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, const CScript& scriptPubKey, bool fValidatePayToScriptHash, int flags)
+bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, const CScript& scriptPubKey, int flags)
 {
   unsigned int nIn = sig.nTxIn;
   const CTransaction& txTo = *sig.tx;
   //int nHashType = sig.nHashType;
   bool hadWitness = false;
+	bool fValidatePayToScriptHash = (flags & SCRIPT_VERIFY_P2SH);
+	bool fValidateLockTime = (flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY);
 
   if ((flags & SCRIPT_VERIFY_SIGPUSHONLY) != 0 && !scriptSig.IsPushOnly()) {
     return (error(ERR_INVAL, "VerifyScript: !scriptSig.IsPushOnly"));
@@ -2064,12 +2107,12 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
 
   vector<vector<unsigned char> > stack, stackCopy;
 
-  if (!EvalScript(sig, stack, scriptSig, SIGVERSION_BASE, 0)) {
+  if (!EvalScript(sig, stack, scriptSig, SIGVERSION_BASE, flags)) {
     return error(SHERR_INVAL, "VerifyScript: error evaluating signature script.");
   }
   if (fValidatePayToScriptHash)
     stackCopy = stack;
-  if (!EvalScript(sig, stack, scriptPubKey, SIGVERSION_BASE, 0)) {
+  if (!EvalScript(sig, stack, scriptPubKey, SIGVERSION_BASE, flags)) {
     return error(SHERR_INVAL, "VerifyScript: error evaluating script [stack %d]: \"%s\"\n", stack.size(), scriptPubKey.ToString().c_str());
   }
   if (stack.empty()) {
@@ -2146,14 +2189,17 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
 }
 
 
-bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, bool fValidatePayToScriptHash, int nHashType, int flags)
+bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, int nHashType, int flags)
 {
-  assert(nIn < txTo.vin.size());
+
+	if (nIn >= txTo.vin.size())
+		return (false);
+
   const CTxIn& txin = txTo.vin[nIn];
   if (txin.prevout.n >= txFrom.vout.size())
     return false;
-  const CTxOut& txout = txFrom.vout[txin.prevout.n];
 
+  const CTxOut& txout = txFrom.vout[txin.prevout.n];
   if (txin.prevout.hash != txFrom.GetHash())
     return false;
 
@@ -2163,10 +2209,11 @@ bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransact
 	if (!txTo.wit.IsNull()) {
 		witness = txTo.wit.vtxinwit[nIn].scriptWitness.stack;
 	}
-  if (!VerifyScript(sig, txin.scriptSig, witness, txout.scriptPubKey, fValidatePayToScriptHash, flags)){
+  if (!VerifyScript(sig, txin.scriptSig, witness, txout.scriptPubKey, flags)){
     txSig->print(ifaceIndex);
     return (false);
   }
+
   return (true);
 }
 

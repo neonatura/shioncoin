@@ -303,6 +303,9 @@ b.GetHash())
 
     bool IsDependent(const CPoolTx& ptx) const; 
 
+		/* determine whether the transaction is ready to be committed on the blockchain. */
+		bool CheckFinal(CIface *iface) const;
+
 };
 
 typedef map<const uint256, CPoolTx> pool_map;

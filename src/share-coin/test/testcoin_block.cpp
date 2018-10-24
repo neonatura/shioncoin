@@ -1727,9 +1727,14 @@ _TEST(segwit)
     delete block;
   }
 
+  iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
+  iface->vDeployments[DEPLOYMENT_CSV].nStartTime = time(NULL);
+  iface->vDeployments[DEPLOYMENT_CSV].nTimeout = time(NULL) + 120;
+
   iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
   iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = time(NULL);
   iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = time(NULL) + 120;
+
 
   /* create some blocks */
   for (i = 0; i < 1024; i++) { 
@@ -2117,6 +2122,125 @@ _TEST(orphan_block)
   _TRUE(ProcessBlock(NULL, block) == true);
   _TRUE(false == test_IsOrphanBlock(hash));
   delete block;
+
+}
+
+_TEST(seqlocktx)
+{
+  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+  CWallet *wallet = GetWallet(iface);
+	string strAccount("");
+	int nHeight;
+
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+  _TRUE(addr.IsValid() == true);
+
+	/* v1 nLockTime */
+	nHeight = GetBestHeight(iface) + 1;
+	CTxCreator l_wtx(wallet, strAccount);
+	l_wtx.nLockTime = nHeight;
+	_TRUE(l_wtx.AddOutput(addr.Get(), (int64)COIN) == true);
+	_TRUE(l_wtx.Generate() == true);
+	l_wtx.vin[0].nSequence = CTxIn::SEQUENCE_FINAL-1;
+	_TRUE(l_wtx.Send() == true);
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+  _TRUE(l_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+  _TRUE(l_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+
+	/* OP_CHECKLOCKTIMEVERIFY */
+	CPubKey pubkey = GetAccountPubKey(wallet, "", true);
+	nHeight = GetBestHeight(iface) + 1;
+	CTxCreator spend_wtx(wallet, strAccount);
+	CScript script;
+	script << OP_CHECKLOCKTIMEVERIFY << OP_DROP << pubkey << OP_CHECKSIG;
+	_TRUE(spend_wtx.AddOutput(script, (int64)COIN) == true);
+	_TRUE(spend_wtx.Send());
+	int nOut = 0;
+	for (; nOut < spend_wtx.vout.size(); nOut++) {
+		if (spend_wtx.vout[nOut].scriptPubKey.at(0) == OP_CHECKLOCKTIMEVERIFY)
+			break;
+	}
+	_TRUE(nOut != spend_wtx.vout.size());
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+  _TRUE(spend_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+	pubkey = GetAccountPubKey(wallet, "", true);
+	CTxCreator lock_wtx(wallet, strAccount);
+	lock_wtx.nLockTime = nHeight;
+	_TRUE(lock_wtx.AddInput(&spend_wtx, nOut) == true);
+	script.clear();
+	script.SetDestination(pubkey.GetID());
+	_TRUE(lock_wtx.AddOutput(script,
+				(int64)COIN - (MIN_TX_FEE(iface)*2)) == true);
+	_TRUE(lock_wtx.Generate() == true);
+	_TRUE(lock_wtx.Send() == true);
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+  _TRUE(spend_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+
+	/* OP_CHECKSEQUENCEVERIFY */
+	pubkey = GetAccountPubKey(wallet, "", true);
+	nHeight = GetBestHeight(iface) + 1;
+	CTxCreator spend2_wtx(wallet, strAccount);
+	script.clear();
+	script << OP_CHECKSEQUENCEVERIFY << OP_DROP << pubkey << OP_CHECKSIG;
+	_TRUE(spend2_wtx.AddOutput(script, (int64)COIN) == true);
+	_TRUE(spend2_wtx.Send());
+	nOut = 0;
+	for (; nOut < spend2_wtx.vout.size(); nOut++) {
+		if (spend2_wtx.vout[nOut].scriptPubKey.at(0) == OP_CHECKSEQUENCEVERIFY)
+			break;
+	}
+	_TRUE(nOut != spend2_wtx.vout.size());
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+  _TRUE(spend2_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+	pubkey = GetAccountPubKey(wallet, "", true);
+	CTxCreator lock2_wtx(wallet, strAccount);
+	lock2_wtx.nFlag = 2;
+	_TRUE(lock2_wtx.AddInput(&spend2_wtx, nOut, 1) == true);
+	script.clear();
+	script.SetDestination(pubkey.GetID());
+	_TRUE(lock2_wtx.AddOutput(script,
+				(int64)COIN - (MIN_TX_FEE(iface)*2)) == true);
+	_TRUE(lock2_wtx.Generate() == true);
+	_TRUE(lock2_wtx.Send() == true);
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+  _TRUE(spend2_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 
 }
 

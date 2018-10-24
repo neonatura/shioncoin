@@ -48,6 +48,7 @@ class CTxCreator : public CWalletTx
     int64 nDebit;
     unsigned int nDepth;
     coin_set setInput;
+		map<unsigned int,unsigned int> setSeq;
 
     CPubKey changePubKey;
     int64 nReserveIndex;
@@ -104,9 +105,9 @@ class CTxCreator : public CWalletTx
 
     void SetAccount(string strAccountIn);
 
-    bool AddInput(CWalletTx *tx, unsigned int n);
+    bool AddInput(CWalletTx *tx, unsigned int n, unsigned int seq = CTxIn::SEQUENCE_FINAL);
 
-    bool AddInput(uint256 hashTx, unsigned int n);
+    bool AddInput(uint256 hashTx, unsigned int n, unsigned int seq = CTxIn::SEQUENCE_FINAL);
 
     bool HaveInput(CWalletTx *tx, unsigned int n);
 

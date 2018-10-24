@@ -48,7 +48,7 @@ void CTxCreator::SetAccount(string strAccountIn)
 }
 
 
-bool CTxCreator::AddInput(CWalletTx *tx, unsigned int n)
+bool CTxCreator::AddInput(CWalletTx *tx, unsigned int n, unsigned int seq)
 {
   int64 nValue;
 
@@ -64,6 +64,10 @@ bool CTxCreator::AddInput(CWalletTx *tx, unsigned int n)
   nCredit += tx->vout[n].nValue;
   nDepth += tx->GetDepthInMainChain(pwallet->ifaceIndex);
   setInput.insert(setInput.end(), make_pair(tx, n));
+	if (seq != CTxIn::SEQUENCE_FINAL) {
+		unsigned int nIn = setInput.size() - 1;
+		setSeq[nIn] = seq;
+	}
 
   return (true);
 }
@@ -466,13 +470,16 @@ bool CTxCreator::Generate()
 
   /* add inputs to transaction */
   vin.clear();
+  unsigned int nIn = 0;
   BOOST_FOREACH(const PAIRTYPE(CWalletTx *,unsigned int)& coin, setInput) {
-    if (nLockTime != 0) {
-      vin.push_back(CTxIn(coin.first->GetHash(), coin.second, 
-            CScript(), std::numeric_limits<unsigned int>::max()-1));
-    } else {
-      vin.push_back(CTxIn(coin.first->GetHash(), coin.second));
-    }
+		unsigned int seq = CTxIn::SEQUENCE_FINAL;
+		if (setSeq.count(nIn) != 0)
+			seq = setSeq[nIn];
+    if (nLockTime != 0 && seq == CTxIn::SEQUENCE_FINAL)
+			seq = CTxIn::SEQUENCE_FINAL - 1;
+		vin.push_back(CTxIn(coin.first->GetHash(), coin.second, CScript(), seq)); 
+
+		nIn++;
   }
 
   /* redundantly check before signing as signing takes the longest time */
@@ -483,7 +490,7 @@ bool CTxCreator::Generate()
   }
 
   /* sign inputs */
-  unsigned int nIn = 0;
+	nIn = 0;
   BOOST_FOREACH(const PAIRTYPE(CWalletTx *,unsigned int)& coin, setInput) {
     CSignature sig(pwallet->ifaceIndex, this, nIn);
     if (!sig.SignSignature(*coin.first)) {
@@ -579,7 +586,7 @@ size_t CTxCreator::GetSerializedSize()
   return (pwallet->GetVirtualTransactionSize(tx));
 }
 
-bool CTxCreator::AddInput(uint256 hashTx, unsigned int n)
+bool CTxCreator::AddInput(uint256 hashTx, unsigned int n, unsigned int seq)
 {
   
   if (pwallet->mapWallet.count(hashTx) == 0) {
@@ -598,7 +605,7 @@ bool CTxCreator::AddInput(uint256 hashTx, unsigned int n)
 	if (vOuts[n] != 0)
 		return (error(ERR_INVAL, "CTxCreator: input is already spent (%s).", vOuts[n].GetHex().c_str()));
 
-  return (AddInput(&wtx, n));
+  return (AddInput(&wtx, n, seq));
 }
 
 double CTxCreator::GetPriority(int64 nBytes)

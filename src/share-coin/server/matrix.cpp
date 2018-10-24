@@ -267,6 +267,8 @@ bool CreateValidateNotaryTx(CIface *iface, const CTransaction& txPrev, int nPrev
 
 	/* wait for originating matrix-tx to mature. */
 	tx.vin[0].nSequence  = 1;
+	if (tx.GetVersion() >= 2) 
+		tx.vin[0].nSequence |= CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG;
 	/* establish lock-time */
 	tx.nLockTime = matrix_GetNotaryLockTime(iface);
 
@@ -566,9 +568,8 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 		return false;
 	{
 		int nIn = 0;
-		bool fStrictPayToScriptHash = true;
 		int fVerify = GetBlockScriptFlags(iface, pindexBest);
-		if (!VerifySignature(ifaceIndex, txMatrix, tx, nIn, fStrictPayToScriptHash, 0, fVerify)) {
+		if (!VerifySignature(ifaceIndex, txMatrix, tx, nIn, 0, fVerify)) {
 			return (error(SHERR_ACCESS, "(%s) ProcessValidateMatrixNotaryTx: error verifying transaction \"%s\".", iface->name, tx.GetHash().GetHex().c_str()));
 		}
 	}
@@ -652,8 +653,11 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 	if (!fConsensus)
 		return; /* invalid state -- no consensus was formed. */
 
+	/* increment sequence index. */
+	uint32_t nSeq = (tx.vin[0].nSequence & 0xFFFF) + 1;
+	if (tx.GetVersion() >= 2) 
+		nSeq |= CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG;
 	/* use final 'locked' sequence for signing. */
-	uint32_t nSeq = tx.vin[0].nSequence + 1;
 	tx.vin[0].nSequence = CTxIn::SEQUENCE_FINAL - 1;
 
 	CScript scriptSig;
@@ -672,7 +676,7 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 
 		/* sign local pubkeys */
 		fSolved = false;
-		if (nUnsolved == 0 && /* notaries fill keys in order */ 
+		if (//nUnsolved == 0 && /* notaries fill keys in order */ 
 				wallet->GetKey(kSend[i].GetID(), key)) {
 			int nHashType = SIGHASH_ALL;
 			cbuff result;
