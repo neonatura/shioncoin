@@ -53,6 +53,10 @@ static const unsigned int LOCKTIME_VERIFY_SEQUENCE = (1 << 0);
 /** Use GetMedianTimePast() instead of nTime for end point timestamp. */
 static const unsigned int LOCKTIME_MEDIAN_TIME_PAST = (1 << 1);
 
+static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS = 
+		LOCKTIME_VERIFY_SEQUENCE |
+		LOCKTIME_MEDIAN_TIME_PAST;
+
 
 
 //map<uint256, CBlockIndex*> tableBlockIndex[MAX_COIN_IFACE];
@@ -1104,7 +1108,7 @@ bool CheckFinalTx(CIface *iface, const CTransaction& tx, CBlockIndex *pindexPrev
 	nHeight = pindexPrev->nHeight + 1;
 
 	if (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) { /* BIP68 */
-		nBlockTime = pindexPrev->GetMedianTimePast();
+		nBlockTime = pindexPrev->GetMedianTimePast(); /* BIP113 */
 	} else {
 		nBlockTime = GetAdjustedTime();
 	}
@@ -1524,9 +1528,19 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 #endif
 
     /* check that all transactions are finalized. */ 
-    if (!tx.IsFinal(ifaceIndex, nHeight, pblock->GetBlockTime())) {
-      return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u", nHeight));
-    }
+		unsigned int flags = GetBlockScriptFlags(iface, pindexPrev);
+		if (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) {
+			if (!tx.IsFinal(ifaceIndex, nHeight, pindexPrev->GetMedianTimePast()))
+				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [bip113].", nHeight));
+		} else {
+			if (!tx.IsFinal(ifaceIndex, nHeight, pblock->GetBlockTime()))
+				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [lock].", nHeight));
+		}
+		if (tx.GetVersion() >= 2) {
+			/* tx v2 lock/sequence test */
+			if (!CheckSequenceLocks(iface, tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
+				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [seq].", nHeight));
+		}
   }
 
   /* check that the block matches the known block hash for last checkpoint. */

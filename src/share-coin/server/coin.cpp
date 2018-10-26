@@ -893,48 +893,60 @@ bool ParseMoney(const char* pszIn, CAmount& nRet)
 	return true;
 }
 
-static vector<uint160> iface_hash_table;
-CIface *GetCoinByHash(uint160 hash)
+
+static vector<uint160> mapCoinHash;
+static void InitCoinHash()
 {
 	int ifaceIndex;
 
-	if (iface_hash_table.empty()) {
-		iface_hash_table.resize(MAX_COIN_IFACE);
+	if (mapCoinHash.size() == 0) {
 		for (ifaceIndex = 0; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-			if (ifaceIndex == COLOR_COIN_IFACE) continue;
-			CIface *iface = GetCoinByIndex(ifaceIndex);
-			if (!iface) continue;
-			string name(iface->name);
-			cbuff vchStr(name.begin(), name.end());
-			iface_hash_table[ifaceIndex] = Hash160(vchStr);
+			uint160 hash = 0;
+
+			if (ifaceIndex != COLOR_COIN_IFACE) { /* has no single genesis */
+				CIface *iface = GetCoinByIndex(ifaceIndex);
+				if (iface && iface->enabled) {
+					uint256 hGen = GetGenesisBlockHash(ifaceIndex);
+					cbuff raw(hGen.begin(), hGen.end());
+					hash = Hash160(raw);
+				}
+			}
+
+			mapCoinHash.push_back(hash);
 		}
 	}
-	for (ifaceIndex = 0; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-		if (ifaceIndex == COLOR_COIN_IFACE) continue;
-		CIface *iface = GetCoinByIndex(ifaceIndex);
-		if (!iface) continue;
 
-		if (hash == iface_hash_table[ifaceIndex])
-			return (iface);
-	}
-
-	return (GetCoinByIndex(COLOR_COIN_IFACE));
 }
 
 uint160 GetCoinHash(string name)
 {
 	int ifaceIndex;
-	uint160 hash;
 
-	for (ifaceIndex = 0; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-		if (ifaceIndex == COLOR_COIN_IFACE) continue;
-		CIface *iface = GetCoinByIndex(ifaceIndex);
-		if (!iface) continue;
-		if (0 == strcmp(name.c_str(), iface->name)) {
-			hash = Hash160(vchFromString(name));
-			break;
-		}
-	}
-	return (hash);
+	if (mapCoinHash.size() == 0)
+		InitCoinHash();
+
+	ifaceIndex = GetCoinIndex(GetCoin(name.c_str()));
+	if (ifaceIndex == -1)
+		return (uint160());
+
+	return (mapCoinHash[ifaceIndex]);
 }
+
+CIface *GetCoinByHash(uint160 hash)
+{
+	int ifaceIndex;
+
+	if (mapCoinHash.size() == 0)
+		InitCoinHash();
+
+	for (ifaceIndex = 0; ifaceIndex < mapCoinHash.size(); ifaceIndex++) {
+		if (mapCoinHash[ifaceIndex] == 0)
+			continue;
+		if (hash == mapCoinHash[ifaceIndex])
+			return (GetCoinByIndex(ifaceIndex));
+	}
+
+	return (NULL);
+}
+
 

@@ -299,6 +299,106 @@ void CTxCreator::CreateChangeAddr()
 
 }
 
+bool CTxCreator::SetLockHeight(uint32_t nHeight)
+{
+
+	if (nHeight >= LOCKTIME_THRESHOLD)
+		return (false);
+
+	nLockTime = nHeight;
+
+	return (true);
+}
+
+bool CTxCreator::SetLockTime(time_t t)
+{
+
+	if (t < LOCKTIME_THRESHOLD || t >= 0xfffffffe)
+		return (false);
+
+	nLockTime = (uint32_t)t;
+
+	return (true);
+}
+
+bool CTxCreator::SetLockHeightSpan(int nIn, uint32_t nHeight)
+{
+	uint32_t val;
+
+	if (nIn < 0 || nIn >= vin.size())
+		return (false);
+
+	val = nHeight;
+	if (val >= 0xffff)
+		return (false); /* invalid */
+
+	if (GetVersion() < 2)
+		SetVersion(2);
+	setSeq[nIn] = (uint32_t)val;
+
+	return (true);
+}
+
+bool CTxCreator::SetLockTimeSpan(int nIn, time_t t)
+{
+	uint32_t val;
+
+	if (nIn < 0 || nIn >= vin.size())
+		return (false);
+
+	val = ((t-1) / 512) + 1;
+	if (val >= 0xffff)
+		return (false);
+
+	/* this is a time-based lock */
+	val |= CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG;
+
+	if (GetVersion() < 2)
+		SetVersion(2);
+	setSeq[nIn] = (uint32_t)val;
+
+	return (true);
+}
+
+static uint32_t txcreator_RecentBlockHeight(CIface *iface)
+{
+	int nLockTime;
+
+	if (!iface)
+		return (0);
+
+	// Discourage fee sniping.
+	//
+	// For a large miner the value of the transactions in the best block and
+	// the mempool can exceed the cost of deliberately attempting to mine two
+	// blocks to orphan the current best block. By setting nLockTime such that
+	// only the next block can include the transaction, we discourage this
+	// practice as the height restricted and limited blocksize gives miners
+	// considering fee sniping fewer options for pulling off this attack.
+	//
+	// A simple way to think about this is from the wallet's point of view we
+	// always want the blockchain to move forward. By setting nLockTime this
+	// way we're basically making the statement that we only want this
+	// transaction to appear in the next block; we don't want to potentially
+	// encourage reorgs by allowing transactions to appear at lower heights
+	// than the next block in forks of the best chain.
+	//
+	// Of course, the subsidy is high enough, and transaction volume low
+	// enough, that fee sniping isn't a problem yet, but by implementing a fix
+	// now we ensure code won't be written that makes assumptions about
+	// nLockTime that preclude a fix later.
+	nLockTime = GetBestHeight(iface);
+
+	// Secondly occasionally randomly pick a nLockTime even further back, so
+	// that transactions that are delayed after signing for whatever reason,
+	// e.g. high-latency mix networks and some CoinJoin implementations, have
+	// better privacy.
+	if (0 == (shrand() % 10))
+		nLockTime = MAX(0, nLockTime - GetRandInt(100));
+
+	return ((uint32_t)nLockTime);
+}
+
 bool CTxCreator::Generate()
 {
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
@@ -332,6 +432,13 @@ bool CTxCreator::Generate()
       pwallet->SetAddressBookName(changePubKey.GetID(), strFromAccount);
 #endif
   }
+
+	if (isAutoLock() &&
+			pwallet->ifaceIndex != COLOR_COIN_IFACE && 
+			(ext_idx == -1)) {
+		/* auto set lock height to recent height */
+		SetLockHeight(txcreator_RecentBlockHeight(iface));
+	}
 
   vector<COutput> vCoins;
   if (fAccount) {
@@ -594,9 +701,11 @@ bool CTxCreator::AddInput(uint256 hashTx, unsigned int n, unsigned int seq)
 	}
 
   CWalletTx& wtx = pwallet->mapWallet[hashTx];
+#if 0
 	if (wtx.IsSpent(n)) {
-//		error(ERR_INVAL, "DEBUG: warning: CTxCreator.AddInput: error adding already spent input (%s) #%u.", hashTx.GetHex().c_str(), n);
+		return (error(ERR_INVAL, "warning: CTxCreator.AddInput: adding already spent input (%s) #%u.", hashTx.GetHex().c_str(), n));
 	}
+#endif
 	vector<uint256> vOuts;
 	if (!wtx.ReadCoins(pwallet->ifaceIndex, vOuts))
 		return (error(ERR_INVAL, "CTxCreator: error loading coin inputs."));

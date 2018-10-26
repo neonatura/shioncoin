@@ -41,6 +41,15 @@ CWallet* pwalletMaster[MAX_COIN_IFACE];
 
 const string NULL_ACCOUNT = "*";
 
+/** Flags for nSequence and nLockTime locks */
+/** Interpret sequence numbers as relative lock-time constraints. */
+static const unsigned int LOCKTIME_VERIFY_SEQUENCE = (1 << 0);
+/** Use GetMedianTimePast() instead of nTime for end point timestamp. */
+static const unsigned int LOCKTIME_MEDIAN_TIME_PAST = (1 << 1);
+
+static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS = 
+		LOCKTIME_VERIFY_SEQUENCE |
+		LOCKTIME_MEDIAN_TIME_PAST;
 
 CWallet *GetWallet(int iface_idx)
 {
@@ -868,8 +877,14 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
 			if (hColor != 0 && pcoin->GetColor() != hColor)
 				continue;
 
-			if (!pcoin->IsFinal(ifaceIndex))
-				continue;
+			if (!CheckFinalTx(iface, *pcoin, NULL))
+				continue; /* not finalized */
+			if (pcoin->GetVersion() >= 2) {
+				/* tx v2 lock/sequence test */
+				if (!CheckSequenceLocks(iface, *pcoin, STANDARD_LOCKTIME_VERIFY_FLAGS))
+					continue;
+			}
+//if (!pcoin->IsFinal(ifaceIndex)) continue;
 
 			if (fOnlyConfirmed) {
 				if (!pcoin->IsConfirmed()) {

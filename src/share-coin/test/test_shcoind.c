@@ -16,7 +16,6 @@ extern TEST_coinaddr(CuTest*);
 extern TEST_bignum(CuTest*);
 extern TEST_sha256transform(CuTest*);
 extern TEST_blockchain(CuTest*);
-extern TEST_truncate(CuTest*);
 extern TEST_reorganize(CuTest*);
 extern TEST_serializetx(CuTest*);
 extern TEST_matrix(CuTest*);
@@ -30,9 +29,6 @@ extern TEST_certtx(CuTest*);
 extern TEST_identtx(CuTest*);
 extern TEST_bloom_create_insert_key(CuTest*);
 extern TEST_bloom_match(CuTest*);
-//extern TEST_coin_hdkey(CuTest*);
-extern TEST_channeltx(CuTest*);
-extern TEST_hdtx(CuTest*);
 extern TEST_exectx(CuTest*);
 extern TEST_coin_spendall(CuTest*);
 extern TEST_coin_spendall_segwit(CuTest*);
@@ -95,14 +91,8 @@ int main(int argc, char *argv[])
 
   /* block-chain transaction tests */
   SUITE_ADD_TEST(suite, TEST_reorganize);
-  SUITE_ADD_TEST(suite, TEST_matrixtx);
   SUITE_ADD_TEST(suite, TEST_identtx);
-//  SUITE_ADD_TEST(suite, TEST_truncate);
-
-	/* currently (appears) creates pubkey's that cant be verified against. 
-  SUITE_ADD_TEST(suite, TEST_hdtx);
-	*/
-
+  SUITE_ADD_TEST(suite, TEST_matrixtx);
   SUITE_ADD_TEST(suite, TEST_signtx);
   SUITE_ADD_TEST(suite, TEST_cointx);
   SUITE_ADD_TEST(suite, TEST_aliastx);
@@ -112,7 +102,6 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_exectx);
 #endif
   SUITE_ADD_TEST(suite, TEST_ctxtx);
-//  SUITE_ADD_TEST(suite, TEST_channeltx);
   SUITE_ADD_TEST(suite, TEST_scriptid);
   SUITE_ADD_TEST(suite, TEST_chainwork);
   SUITE_ADD_TEST(suite, TEST_offertx);

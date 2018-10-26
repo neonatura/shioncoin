@@ -420,7 +420,6 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
 
 					case OP_CHECKLOCKTIMEVERIFY: /* BIP 65 */
 						{
-//              const CTransaction& txTo = *sig.tx;
 							int nIn = sig.nTxIn; 
 
 							// (nLockTime -- nLockTime )
@@ -482,7 +481,6 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
 
 					case OP_CHECKSEQUENCEVERIFY:
 						{
-              //const CTransaction& txTo = *sig.tx;
 							int nIn = sig.nTxIn;
 
 							if (!(flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)) {
@@ -560,7 +558,6 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
             {
               // <expression> if [statements] [else [statements]] endif
               bool fValue = false;
-fprintf(stderr, "DEBUG: EvalScript: OP_IF: fExec(%s)\n", (fExec ? "true" : "false"));
               if (fExec)
               {
                 if (stack.size() < 1)
@@ -579,7 +576,6 @@ fprintf(stderr, "DEBUG: EvalScript: OP_IF: fExec(%s)\n", (fExec ? "true" : "fals
                 popstack(stack);
               }
               vfExec.push_back(fValue);
-fprintf(stderr, "DEBUG: EvalScript: OP_IF: fValue(%s)\n", (fValue ? "true" : "false"));
             }
             break;
 
@@ -1258,18 +1254,20 @@ fprintf(stderr, "DEBUG: EvalScript: OP_IF: fValue(%s)\n", (fValue ? "true" : "fa
 
 					case OP_CHECKALTPROOF:
 						{
+
               if ((int)stack.size() < 2)
                 return false;
 							valtype& vchColor    = stacktop(-1);
 							valtype& vchTx = stacktop(-2);
-fprintf(stderr, "DEBUG: EvalScript: OP_CHECKALTPROOF: vchColor(%s) vchTx(%s)\n", uint160(vchColor).GetHex().c_str(), uint256(vchTx).GetHex().c_str()); 
-							//bool fSuccess = IsAltChainTxHash(vchColor, vchTx);
 							bool fSuccess = false;
 							{
-								CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-								fSuccess = (VerifyTxHash(iface, uint256(vchTx)));
+								CIface *iface = GetCoinByHash(uint160(vchColor));
+								if (iface == NULL)
+									iface = GetCoinByIndex(COLOR_COIN_IFACE);
+								if (iface) {
+									fSuccess = (VerifyTxHash(iface, uint256(vchTx)));
+								}
 							}
-							//bool fSuccess = IsAltChainTxHash(vchColor, vchTx);
 							popstack(stack);
 							popstack(stack);
 							stack.push_back(fSuccess ? vchTrue : vchFalse);
@@ -1463,21 +1461,28 @@ static bool core_CScript_IsPushOnly(const CScript& script, int of = 0)
   return true;
 }       
 
-static void RemoveSolverDropPrefix(CScript& script)
+static bool RemoveSolverDropPrefix(const CScript& script, CScript::const_iterator& pc1, opcodetype& opcode1, cbuff& vch1)
 {
-	CScript::const_iterator pc = script.begin();
-	opcodetype opcode;
+	CScript::const_iterator pc = pc1;
+	opcodetype opcode = opcode1;
+	cbuff vch;
 	int idx;
 
-	if (!script.GetOp(pc, opcode))
-		return;
-	if (!script.GetOp(pc, opcode))
-		return;
+	if (vch1.size() != 0 &&
+			!script.GetOp(pc, opcode))
+		return (false);
+	if (opcode == OP_0 || 
+			!script.GetOp(pc, opcode, vch))
+		return (false);
+
 	if (opcode == OP_DROP) {
-		script = CScript(pc, script.end());
+		pc1 = pc;
+		return (script.GetOp(pc1, opcode1, vch1));
 	}
 
+	return (false);
 }
+
 #if 0
 static void RemoveSolverDropPrefix(script)
 {
@@ -1503,6 +1508,38 @@ static void RemoveSolverDropPrefix(script)
 }
 #endif
 
+static bool SolverCheckAltProof(CScript& script, vector<vector<unsigned char> >& vSolutionsRet)
+{
+	cbuff vchTx;
+	cbuff vchColor;
+	opcodetype opcode;
+
+	CScript::const_iterator pc = script.begin();
+	if (!script.GetOp(pc, opcode, vchTx) || vchTx.size() != 32)
+		return (false);
+	if (!script.GetOp(pc, opcode, vchColor) || vchColor.size() != 20)
+		return (false);
+	if (!script.GetOp(pc, opcode) || opcode != OP_CHECKALTPROOF)
+		return (false);
+
+	CIface *iface = GetCoinByHash(uint160(vchColor));
+	if (iface == NULL)
+		iface = GetCoinByIndex(COLOR_COIN_IFACE);
+
+	if (iface) {
+		bool fSuccess = false;
+
+		fSuccess = VerifyTxHash(iface, uint256(vchTx));
+
+		if (fSuccess)
+			vSolutionsRet.push_back(vchTrue);
+		else
+			vSolutionsRet.push_back(vchFalse);
+	}
+
+	script = CScript(pc, script.end());
+	return (true);
+}
 
 //
 // Return public keys or hashes from scriptPubKey, for 'standard' transaction types.
@@ -1545,7 +1582,6 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
 	/* remove any prefix that is dropped. */
 	RemoveExtOutputPrefix(scriptPubKeyCopy);
-	RemoveSolverDropPrefix(scriptPubKeyCopy);
 
   // Shortcut for pay-to-script-hash, which are more constrained than the other types:
   // it is always OP_HASH160 20 [20 byte hash] OP_EQUAL
@@ -1576,6 +1612,11 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
 
 
+	vector<vector<unsigned char> > vSolutions;
+
+	/* handle OP_CHECKALTPROOF prefix x*/
+	SolverCheckAltProof(scriptPubKeyCopy, vSolutions);
+
   // Scan templates
   const CScript& script1 = scriptPubKeyCopy;
 
@@ -1583,7 +1624,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
   BOOST_FOREACH(const PAIRTYPE(txnouttype, CScript)& tplate, mTemplates)
   {
     const CScript& script2 = tplate.second;
-    vSolutionsRet.clear();
+    vSolutionsRet = vSolutions;
 
     vector<unsigned char> vch1, vch2;
 
@@ -1609,35 +1650,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
       if (!script1.GetOp(pc1, opcode1, vch1)) {
         break;
       }
-#if 0
-			/* <OP_EXT_XXX> <EXT OP (SMALLINT)> OP_HASH160 <OP_EXT_HASH> OP_2DROP */
-      if (opcode1 >= 0xf0 && opcode1 < 0xfa) { /* ext */
-        while (opcode1 != OP_2DROP && opcode1 != OP_DROP) {
-          if (!script1.GetOp(pc1, opcode1, vch1))
-            break;
-        }
-        while (opcode1 == OP_2DROP || opcode1 == OP_DROP) {
-          if (!script1.GetOp(pc1, opcode1, vch1))
-            break;
-        }
-      }
-#endif
-			/* OP_CHECKALTPROOF <hTx> <hColor|hCoin> */
-			if (opcode1 == OP_CHECKALTPROOF) {
-				/* hTx */
-				if (!script1.GetOp(pc1, opcode1, vch1)) break;
-				if (vch1.size() != sizeof(uint256)) break;
-				/* hColor|hCoin */
-				if (!script1.GetOp(pc1, opcode1, vch1)) break;
-				if (vch1.size() != sizeof(uint160)) break;
-fprintf(stderr, "DEBUG: Solver: found complete OP_CHECKALTPROOF\n"); 
 
-/* cheat */
-				vSolutionsRet.push_back(vchTrue);
-
-				/* next op-code */
-				if (!script1.GetOp(pc1, opcode1, vch1)) break;
-			}
 			if (opcode1 == OP_IF) {
 				if (vSolutionsRet.size() == 0) {
 					break;
@@ -1649,10 +1662,10 @@ fprintf(stderr, "DEBUG: Solver: found complete OP_CHECKALTPROOF\n");
 							break;
 					}
 					/* OP_ELSE */
-					if (!script1.GetOp(pc1, opcode1, vch1))
-						break;
+//					if (!script1.GetOp(pc1, opcode1, vch1)) break;
 				}
 				vSolutionsRet.pop_back();
+
 				/* next op */
 				if (!script1.GetOp(pc1, opcode1, vch1))
 					break;
@@ -1670,6 +1683,8 @@ fprintf(stderr, "DEBUG: Solver: found complete OP_CHECKALTPROOF\n");
       if (!script2.GetOp(pc2, opcode2, vch2)) {
         break;
       }
+
+			RemoveSolverDropPrefix(script1, pc1, opcode1, vch1); /* OP_DROP */
 
       // Template matching opcodes:
       if (opcode2 == OP_PUBKEYS)
@@ -1832,19 +1847,21 @@ bool IsStandard(const CScript& scriptPubKey)
     vector<valtype> vSolutions;
     txnouttype whichType;
     if (!Solver(scriptPubKey, whichType, vSolutions))
-        return false;
+        return error(ERR_INVAL, "IsStandard: cannot solve \"%s\" [size %d].", scriptPubKey.ToString().c_str(), vSolutions.size());
 
     if (whichType == TX_MULTISIG)
     {
         unsigned char m = vSolutions.front()[0];
         unsigned char n = vSolutions.back()[0];
         // Support up to x-of-3 multisig txns as standard
-        if (n < 1 || n > 3)
+        if (n < 1 || n > 20)
             return false;
         if (m < 1 || m > n)
             return false;
     }
 
+    if (whichType == TX_NONSTANDARD)
+			error(ERR_INVAL, "IsStandard: non-standard tx");
     return whichType != TX_NONSTANDARD;
 }
 

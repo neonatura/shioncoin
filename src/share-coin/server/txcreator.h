@@ -41,6 +41,7 @@ class CTxCreator : public CWalletTx
     bool fGenerate;
     bool fWitness;
     bool fAccount;
+		bool fAutoLock;
     string strError; 
 
     int64 nMinFee;
@@ -93,6 +94,7 @@ class CTxCreator : public CWalletTx
       fGenerate = false;
       fWitness = false;
       fAccount = false;
+			fAutoLock = true;
       nMinFee = 0;
       nCredit = 0;
       nDebit = 0;
@@ -145,6 +147,25 @@ class CTxCreator : public CWalletTx
 
     double GetPriority(int64 nBytes = 0);
 
+		bool SetLockTime(time_t t);
+
+		bool SetLockHeight(uint32_t nHeight);
+
+		bool SetLockTimeSpan(int nIn, time_t t);
+
+		bool SetLockHeightSpan(int nIn, uint32_t nHeight);
+
+		void setAutoLock(bool b)
+		{
+			fAutoLock = b;
+		}
+
+		bool isAutoLock()
+		{
+			if (nLockTime != 0)
+				return (false);
+			return (fAutoLock);
+		}
 
     string GetError()
     {

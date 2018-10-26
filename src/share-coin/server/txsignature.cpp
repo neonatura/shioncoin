@@ -233,7 +233,6 @@ bool CSignature::CheckSig(cbuff vchSig, cbuff vchPubKey, CScript scriptCode, int
       return false;
 
     if (!key.Verify(sighash, vch)) {
-//fprintf(stderr, "DEBUG: CSignature.CheckSig: !key.Verify: sighash(%s) sig(%s) pubkey(%s) nHashType(%d)\n", sighash.GetHex().c_str(), HexStr(vch.begin(), vch.end()).c_str(), HexStr(vchPubKey.begin(), vchPubKey.end()).c_str(), nHashType); 
       return (error(SHERR_ACCESS, "CSignature.CheckSig: signature verification failure: \"%s\" [script: %s].", HexStr(vchSig.begin(), vchSig.end()).c_str(), scriptCode.ToString().c_str()));
     }
   }
