@@ -194,7 +194,8 @@ static int64 test_CalculateSoftFee(CTransaction& tx)
   nBytes = wallet->GetVirtualTransactionSize(tx);
 
   /* base fee */
-  nFee = wallet->GetFeeRate() * (1 + (nBytes / 1000));
+	nFee = (int64)MIN_RELAY_TX_FEE(iface);
+  nFee += wallet->GetFeeRate() * (nBytes / 1000);
 
   /* dust penalty */
   BOOST_FOREACH(const CTxOut& out, tx.vout) {
@@ -202,7 +203,6 @@ static int64 test_CalculateSoftFee(CTransaction& tx)
       nFee += MIN_TX_FEE(iface);
   }
 
-  nFee = MAX(nFee, (int64)MIN_RELAY_TX_FEE(iface));
   nFee = MIN(nFee, (int64)MAX_TRANSACTION_FEE(iface) - 1);
 
   return (nFee);
@@ -215,22 +215,7 @@ int64 TEST_CTxMemPool::CalculateSoftFee(CTransaction& tx)
 
 int64 TEST_CTxMemPool::IsFreeRelay(CTransaction& tx, tx_cache& mapInputs)
 {
-  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  CWallet *wallet = GetWallet(iface);
-  unsigned int nBytes;
-
-#if 0
-  nBytes = ::GetSerializeSize(tx, SER_NETWORK, 
-      PROTOCOL_VERSION(iface) | SERIALIZE_TRANSACTION_NO_WITNESS);
-  if (nBytes < 1500)
-    return (true);
-#endif
-
-  double dPriority = wallet->GetPriority(tx, mapInputs);
-  if (dPriority > wallet->AllowFreeThreshold())
-    return (true);
-
-  return (false);
+	return (true);
 }
 
 double TEST_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)

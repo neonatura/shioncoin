@@ -85,14 +85,17 @@ extern "C" {
 #define MAX_MONEY(_iface) \
   ((_iface)->max_money)
 
-/**
- * The minimum fee applied to a tranaction.
- */
 #define MIN_TX_FEE(_iface) \
   (int64)((_iface) ? ((_iface)->min_tx_fee) : 0)
 
-#define MIN_RELAY_TX_FEE(_iface) \
+#define MIN_TX_FEE_RATE(_iface) \
   (MIN_TX_FEE(_iface))
+
+/**
+ * The minimum fee applied to a tranaction.
+ */
+#define MIN_RELAY_TX_FEE(_iface) \
+	(int64)( !(_iface) ? 0 : (_iface)->min_relay_fee )
 
 /**
  * The minimum coin value allowed to be transfered in a single transaction.
@@ -226,6 +229,7 @@ typedef struct coin_iface_t
   uint64_t max_orphan_tx;
   uint64_t max_tx_weight;
   uint64_t min_tx_fee;
+  uint64_t min_relay_fee;
   uint64_t max_tx_fee;
   uint64_t max_free_tx_size;
   uint64_t max_money;

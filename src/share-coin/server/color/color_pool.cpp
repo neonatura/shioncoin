@@ -63,7 +63,8 @@ static int64 color_CalculateFee(const CTransaction& tx)
   nBytes = wallet->GetVirtualTransactionSize(tx);
 
   /* base fee */
-  nFee = MIN_TX_FEE(iface) * (1 + (nBytes / 1000));
+	nFee = (int64)MIN_RELAY_TX_FEE(iface);
+  nFee = MIN_TX_FEE(iface) * (nBytes / 1000);
 
   /* dust penalty */
   BOOST_FOREACH(const CTxOut& out, tx.vout) {
@@ -71,7 +72,6 @@ static int64 color_CalculateFee(const CTransaction& tx)
       nFee += MIN_TX_FEE(iface);
   }
 
-  nFee = MAX(nFee, (int64)MIN_RELAY_TX_FEE(iface));
   nFee = MIN(nFee, (int64)MAX_TRANSACTION_FEE(iface) - 1);
 
   return (nFee);

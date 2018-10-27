@@ -813,7 +813,7 @@ double SHCWallet::AllowFreeThreshold()
 int64 SHCWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-  return (MIN_TX_FEE(iface));
+	return (MIN_TX_FEE_RATE(iface));
 }
 
 int SHCWallet::GetCoinbaseMaturity(uint160 hColor)

@@ -55,6 +55,8 @@ static opt_t _option_table[] = {
 		"Whether to participate in notary transactions." },
 	{ OPT_ADMIN, OPT_TYPE_BOOL, 0, NULL,
 		"Administrative RPC commands." },
+	{ OPT_FREE_RELAY, OPT_TYPE_BOOL, 0, NULL,
+		"Allow no-fee transactions (<= 512b)." },
 	{ OPT_BAN_SPAN, OPT_TYPE_NUM, 21600, NULL,
 		"The number of seconds to ban a node for suspicious activity." }, 
 	{ OPT_BAN_THRESHOLD, OPT_TYPE_NUM, 1000, NULL,
@@ -177,8 +179,27 @@ void opt_print(void)
 
 }
 
-/* Write out the defaults to "shc.conf" */ 
-//static void opt_write_defaults_datfile(void)
+/** Write out the defaults to "shc.conf". */ 
+static void write_default_shc_conf_file(void)
+{
+	char path[PATH_MAX+1];
+	const char *data;
+	size_t data_len;
+	int err;
+
+	data = opt_config_default_print();
+	if (!data)
+		return;
+
+#ifdef WINDOWS
+	sprintf(path, "%s\\.shc\\shc.conf", opt_home_dir());
+#else
+	sprintf(path, "%s/.shc/shc.conf", opt_home_dir());
+#endif
+	data_len = strlen(data);
+	(void)shfs_write_mem(path, data, data_len);
+
+}
 
 static void opt_set_defaults_datfile(void)
 {
@@ -197,6 +218,8 @@ static void opt_set_defaults_datfile(void)
 #endif
 	err = shfs_read_mem(path, &data, &data_len);
 	if (err) {
+		/* try to write a default config file. */
+		write_default_shc_conf_file();
 		return;
 	}
 
@@ -545,5 +568,64 @@ void opt_arg_interp(int argc, char **argv)
 		}
 	}
 
+}
+
+const char *opt_config_default_print(void)
+{
+	static shbuf_t *ret_buff;
+  char buf[1024];
+	int idx;
+
+	if (!ret_buff)
+		ret_buff = shbuf_init();
+	else
+		shbuf_clear(ret_buff);
+
+	for (idx = 0; _option_table[idx].opt_type != OPT_TYPE_NULL; idx++) {
+		memset(buf, 0, sizeof(buf));
+		switch (_option_table[idx].opt_type) {
+			case OPT_TYPE_BOOL:
+				sprintf(buf, 
+						"\n"
+						"#\n"
+						"# %s\n",
+						_option_table[idx].opt_desc);
+				if (_option_table[idx].opt_def) {
+					sprintf(buf+strlen(buf), "# Default: 1 (true)\n#%s=1\n",
+							_option_table[idx].opt_name);
+				} else {
+					sprintf(buf+strlen(buf), "# Default: 0 (false)\n#%s=0\n",
+							_option_table[idx].opt_name);
+				}
+				break;
+			case OPT_TYPE_NUM:
+				sprintf(buf,
+						"\n"
+						"#\n"
+						"# %s\n"
+						"# Default: %d\n"
+						"#%s=%d\n",
+						_option_table[idx].opt_desc,
+						_option_table[idx].opt_def,
+						_option_table[idx].opt_name, 
+						_option_table[idx].opt_def);
+				break;
+			case OPT_TYPE_STR:
+				sprintf(buf, 
+						"\n"
+						"#\n"
+						"# %s\n"
+						"# Default: %s\n"
+						"#%s=%s\n", 
+						_option_table[idx].opt_desc,
+						_option_table[idx].opt_strdef,
+						_option_table[idx].opt_name, 
+						_option_table[idx].opt_strdef);
+				break;
+		}
+		shbuf_catstr(ret_buff, buf); 
+	}
+
+	return ((const char *)shbuf_data(ret_buff));
 }
 

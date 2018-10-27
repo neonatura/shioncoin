@@ -879,6 +879,11 @@ int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 	return (0);
 }
 
+static void offer_SetBestLockTime(CIface *iface, CWalletTx *wtx)
+{
+	wtx->nLockTime = GetBestHeight(iface);
+}
+
 /**
  * Create an offer to send SHC in exchange for an alternate currency.
  */
@@ -914,21 +919,9 @@ int init_offer_tx(CIface *iface, std::string strAccount, int altIndex, int64 nMi
 		return (ERR_FEE);
 	}
 
-#if 0
-	int64 nAltFee = nMaxValue;
-	int64 bal;
-	if (altIndex == COLOR_COIN_IFACE) {
-		bal = GetAccountBalance(altIndex, hColor.GetHex(), 1);
-	} else {
-		bal = GetAccountBalance(altIndex, strAccount, 1);
-	}
-	if (bal < nAltFee) {
-		sprintf(errbuf, "init_offer_tx: alt account balance %llu < nFee %llu\n", (unsigned long long)bal, (unsigned long long)nAltFee);
-		return (ERR_FEE);
-	}
-#endif
-
 	CTxCreator s_wtx(wallet, strAccount);
+	offer_SetBestLockTime(iface, &s_wtx);
+
 	COffer *offer = s_wtx.CreateOffer();
 
 	offer->vchPayCoin = vchFromString(string(iface->name));
@@ -947,16 +940,6 @@ int init_offer_tx(CIface *iface, std::string strAccount, int altIndex, int64 nMi
 	offer->vchXferCoin = cbuff(sXferCoin.begin(), sXferCoin.end());
 
 	string strError;
-
-#if 0
-	/* send alt-coin to temp holding addr. */
-	CPubKey sinkAddr;
-	strError = OfferHoldAltCoin(alt_iface, strAccount, offer, nAltFee);
-	if (strError != "") {
-		error(SHERR_CANCELED, "(%s) init_offer_tx: OfferHoldAltCoin: %s", iface->name, strError.c_str());
-		return (SHERR_CANCELED);
-	}
-#endif
 
 	uint160 offerHash = offer->GetHash();
 
@@ -1019,6 +1002,7 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
 	}
 
 	CTxCreator s_wtx(wallet, strAccount);
+	offer_SetBestLockTime(iface, &s_wtx);
 
 	/* offer -> accept */
 	COffer *accept = s_wtx.AcceptOffer(offer);

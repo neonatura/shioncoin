@@ -794,14 +794,8 @@ bool AllowFree() {
 int64 LTCWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
-  int64 nVal;
-
-  nVal = core_GetFeeRate(LTC_COIN_IFACE);
-  nVal += MIN_TX_FEE(iface);
-
-  return (nVal);
+	return (MIN_TX_FEE_RATE(iface));
 }
-
 
 int LTCWallet::GetCoinbaseMaturity(uint160 hColor)
 {

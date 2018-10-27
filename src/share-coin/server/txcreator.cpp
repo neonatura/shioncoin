@@ -252,36 +252,8 @@ int64 CTxCreator::CalculateFee()
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
   int64 nFee;
 
-#if 0
-  int64 nFee = nMinFee;
-  if (nMinFee == 0) {
-    int64 nBytes = pwallet->GetVirtualTransactionSize(*this);
-    if (nBytes < 10000) {
-      double dPriority  = GetPriority(nBytes);
-      if (pwallet->AllowFree(dPriority))
-        return (0);
-    }
-  }
-#endif
-
   /* core */
   nFee = pwallet->CalculateFee(*this, nMinFee);
-
-#if 0
-  /* rolling */
-  CBlockPolicyEstimator *fee = GetFeeEstimator(iface);
-  if (fee) {
-    static const int confTarget = 2;
-    int64 nSoftFee;
-    int64 nBytes;
-
-    nBytes = pwallet->GetVirtualTransactionSize(*this);
-    nSoftFee = fee->estimateSmartFee(confTarget, NULL).GetFee(nBytes);
-    if (nSoftFee > MIN_TX_FEE(iface) &&
-        nSoftFee < MAX_TX_FEE(iface))
-      nFee = MAX(nFee, nSoftFee);
-  }
-#endif
 
   return (nFee);
 }

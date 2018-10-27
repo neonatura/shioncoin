@@ -795,12 +795,7 @@ bool AllowFree() {
 int64 EMC2Wallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
-  int64 nVal;
-
-  nVal = core_GetFeeRate(EMC2_COIN_IFACE);
-  nVal += MIN_TX_FEE(iface);
-
-  return (nVal);
+	return (MIN_TX_FEE_RATE(iface));
 }
 
 int EMC2Wallet::GetCoinbaseMaturity(uint160 hColor)

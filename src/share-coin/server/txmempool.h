@@ -489,11 +489,18 @@ class CPool : public CTxMemPool
       return (nTxSize);
     }
 
-    /** Obtain a pool tx from the active queue. */
+    /** Obtain a pool tx from the active or overflow queue. */
     CPoolTx *GetPoolTx(uint256 hash)
     {
 
+			/* check in active queue */
       for (map<uint256, CPoolTx>::iterator mi = active.begin(); mi != active.end(); ++mi) {
+        CPoolTx& ptx = (*mi).second;
+        if (ptx.GetHash() == hash)
+          return (&ptx);
+      }
+			/* check in overflow queue */
+      for (map<uint256, CPoolTx>::iterator mi = overflow.begin(); mi != overflow.end(); ++mi) {
         CPoolTx& ptx = (*mi).second;
         if (ptx.GetHash() == hash)
           return (&ptx);

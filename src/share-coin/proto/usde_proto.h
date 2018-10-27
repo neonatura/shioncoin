@@ -58,6 +58,7 @@ static const int USDE_PROTOCOL_VERSION = 1000400;
 
 static const int64 USDE_MIN_INPUT = 10000;
 static const int64 USDE_MIN_TX_FEE = 10000000;
+static const int64 USDE_MIN_RELAY_TX_FEE = 10000000;
 static const int64 USDE_MAX_MONEY = 1600000000 * USDE_COIN;
 
 /** The official USDE maturity is 100 depth. */

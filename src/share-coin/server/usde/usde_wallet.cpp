@@ -844,7 +844,7 @@ double USDEWallet::AllowFreeThreshold()
 int64 USDEWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
-  return (MIN_TX_FEE(iface));
+	return (MIN_TX_FEE_RATE(iface));
 }
 
 int USDEWallet::GetCoinbaseMaturity(uint160 hColor)

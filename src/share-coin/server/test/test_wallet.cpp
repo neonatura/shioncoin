@@ -799,7 +799,7 @@ double TESTWallet::AllowFreeThreshold()
 int64 TESTWallet::GetFeeRate(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  return (MIN_TX_FEE(iface));
+	return (MIN_TX_FEE_RATE(iface));
 }
 
 int TESTWallet::GetCoinbaseMaturity(uint160 hColor)

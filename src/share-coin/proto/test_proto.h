@@ -58,12 +58,13 @@ static const int TEST_PROTOCOL_VERSION = 1000000;
 
 #define TEST_DEFAULT_BYTES_PER_SIGOP 20
 
-/** Largest byte size permitted for potential no-fee transaction. */
-#define TEST_MAX_FREE_TX_SIZE 10000
+/*minimum tx size of free transactions. */
+#define TEST_MAX_FREE_TX_SIZE 512
+
 
 static const int64 TEST_MIN_INPUT = 100;
 static const int64 TEST_MIN_TX_FEE = 10000;
-//static const int64 TEST_MIN_RELAY_TX_FEE = 10000;
+static const int64 TEST_MIN_RELAY_TX_FEE = 1000;
 static const int64 TEST_MAX_MONEY = 1600000000 * TEST_COIN;
 //static const int TEST_COINBASE_MATURITY = 100;
 static const int TEST_COINBASE_MATURITY = 10;

@@ -63,7 +63,8 @@ static int64 shc_CalculateFee(const CTransaction& tx)
   nBytes = wallet->GetVirtualTransactionSize(tx);
 
   /* base fee */
-  nFee = MIN_TX_FEE(iface) * (1 + (nBytes / 1000));
+	nFee = MIN_RELAY_TX_FEE(iface);
+  nFee += MIN_TX_FEE(iface) * (nBytes / 1000);
 
   /* dust penalty */
   BOOST_FOREACH(const CTxOut& out, tx.vout) {
@@ -71,7 +72,6 @@ static int64 shc_CalculateFee(const CTransaction& tx)
       nFee += MIN_TX_FEE(iface);
   }
 
-  nFee = MAX(nFee, (int64)MIN_RELAY_TX_FEE(iface));
   nFee = MIN(nFee, (int64)MAX_TRANSACTION_FEE(iface) - 1);
 
   return (nFee);
@@ -187,7 +187,8 @@ static int64 shc_CalculateSoftFee(CTransaction& tx)
   nBytes = wallet->GetVirtualTransactionSize(tx);
 
   /* base fee */
-  nFee = wallet->GetFeeRate() * (1 + (nBytes / 1000));
+	nFee = (int64)MIN_RELAY_TX_FEE(iface);
+  nFee += wallet->GetFeeRate() * (nBytes / 1000);
 
   /* dust penalty */
   BOOST_FOREACH(const CTxOut& out, tx.vout) {
@@ -195,7 +196,6 @@ static int64 shc_CalculateSoftFee(CTransaction& tx)
       nFee += MIN_TX_FEE(iface);
   }
 
-  nFee = MAX(nFee, (int64)MIN_RELAY_TX_FEE(iface));
   nFee = MIN(nFee, (int64)MAX_TRANSACTION_FEE(iface) - 1);
 
   return (nFee);
@@ -209,22 +209,8 @@ int64 SHC_CTxMemPool::CalculateSoftFee(CTransaction& tx)
 
 int64 SHC_CTxMemPool::IsFreeRelay(CTransaction& tx, tx_cache& mapInputs)
 {
-  CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-  CWallet *wallet = GetWallet(iface);
-  unsigned int nBytes;
-
-#if 0
-  nBytes = ::GetSerializeSize(tx, SER_NETWORK, 
-      PROTOCOL_VERSION(iface) | SERIALIZE_TRANSACTION_NO_WITNESS);
-  if (nBytes < 1500)
-    return (true);
-#endif
-
-  double dPriority = wallet->GetPriority(tx, mapInputs);
-  if (dPriority > wallet->AllowFreeThreshold())
-    return (true);
-
-  return (false);
+	/* option "free-relay" (default: false) */
+	return (opt_bool(OPT_FREE_RELAY));
 }
 
 double SHC_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)

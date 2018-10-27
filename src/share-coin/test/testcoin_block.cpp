@@ -1004,7 +1004,6 @@ if (err) fprintf(stderr, "DEBUG: TEST: OFFER: %d = init_offer_tx()\n", err);
   _TRUE(acc_wtx.CheckTransaction(TEST_COIN_IFACE));
   _TRUE(VerifyOffer(acc_wtx, mode) == true);
   _TRUE(acc_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-fprintf(stderr, "DEBUG: ACCEPT: %s\n", acc_wtx.ToString(TEST_COIN_IFACE).c_str());
   {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
@@ -1017,7 +1016,6 @@ fprintf(stderr, "DEBUG: ACCEPT: %s\n", acc_wtx.ToString(TEST_COIN_IFACE).c_str()
   /* offer generate operation */
   CWalletTx gen_wtx;
   err = generate_offer_tx(iface, hashOffer, gen_wtx);
-fprintf(stderr, "DEBUG: generate_offer_tx: %d = generate(%s)\n", err, gen_wtx.ToString(TEST_COIN_IFACE).c_str());
   _TRUE(0 == err);
   uint160 hashGen = gen_wtx.offer.GetHash();
   _TRUE(gen_wtx.CheckTransaction(TEST_COIN_IFACE));
@@ -1038,7 +1036,6 @@ fprintf(stderr, "DEBUG: generate_offer_tx: %d = generate(%s)\n", err, gen_wtx.To
 	int nOut;
 	CScript scriptOut;
 _TRUE(GetExtOutput(gen_wtx, OP_OFFER, mode, nOut, scriptOut) == true);
-fprintf(stderr, "DEBUG: TEST: GEN: script \"%s\"\n", scriptOut.ToString().c_str());
 
   {
     CBlock *block = test_GenerateBlock();
@@ -1049,24 +1046,11 @@ fprintf(stderr, "DEBUG: TEST: GEN: script \"%s\"\n", scriptOut.ToString().c_str(
 	/* verify spend of generated offer transaction. */
 	CPubKey pubkey = GetAccountPubKey(wallet, strAccount, true);
 	CTxCreator spend_wtx(wallet, strAltLabel);
-	spend_wtx.SetLockTime(time(NULL));
 	_TRUE(spend_wtx.AddInput(&gen_wtx, nOut));
 	_TRUE(spend_wtx.AddOutput(pubkey.GetID(), (int64)COIN));
 	bool fSend = spend_wtx.Send();
 	_TRUE(fSend == true);
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-  {
+  for (int i = 0; i < 3; i++) {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);

@@ -164,6 +164,10 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
       AddInvalTx(ptx);
       return (false);
     }
+
+		/* deal with it later */
+		ptx.SetFlag(POOL_FEE_LOW);
+		return (AddOverflowTx(ptx));
   }
 
   if (!ptx.IsLocal() && !VerifySoftLimits(ptx)) {

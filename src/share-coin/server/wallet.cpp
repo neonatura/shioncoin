@@ -2810,10 +2810,11 @@ int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee)
 	//nBytes = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION(iface));
 
 	/* base fee */
+	nFee = (int64)MIN_RELAY_TX_FEE(iface);
 	if (ifaceIndex == COLOR_COIN_IFACE) {
-		nFee = GetFeeRate(tx.GetColor()) * (1 + (nBytes / 1000));
+		nFee += GetFeeRate(tx.GetColor()) * (nBytes / 1000);
 	} else {
-		nFee = GetFeeRate() * (1 + (nBytes / 1000));
+		nFee += GetFeeRate() * (nBytes / 1000);
 	}
 	/* dust penalty */
 	BOOST_FOREACH(const CTxOut& out, tx.vout) {
@@ -2833,8 +2834,7 @@ int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee)
 		}
 	}
 
-	/* constraints */
-	nFee = MAX(nFee, (int64)MIN_RELAY_TX_FEE(iface));
+	/* limit fee */
 	nFee = MIN(nFee, (int64)MAX_TRANSACTION_FEE(iface) - 1);
 
 	return (nFee);
@@ -2903,63 +2903,6 @@ double CWallet::GetPriority(const CTransaction& tx, tx_cache& inputs)
 	dPriority /= nBytes;
 
 	return (dPriority);
-}
-
-#if 0
-int64 core_GetFeeRate(int ifaceIndex)
-{
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	int64 nVal;
-	int nTot;
-
-	nVal = MIN_TX_FEE(iface);
-	nTot = 1;
-
-	{ /* determine absolute minimum fee */
-		LOCK(cs_vNodes);
-		NodeList &vNodes = GetNodeList(ifaceIndex);
-		BOOST_FOREACH(CNode* pnode, vNodes) {
-			if (pnode->nMinFee == 0)
-				continue;
-
-			nVal += pnode->nMinFee;
-			nTot++;
-		}
-	}
-
-	/* scan recent blocks for average tx fee */
-	CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
-	CWallet *wallet = GetWallet(iface);
-	int nr = 0;
-	while (pindexBest) {
-		nr++;
-		if (nr >= 32) break;
-
-		CBlock *block = GetBlockByHeight(iface, pindexBest->nHeight);
-		BOOST_FOREACH(const CTransaction& tx, block->vtx) {
-			if (tx.IsCoinBase())
-				continue; 
-
-			int64 nFee = wallet->GetTxFee(tx);
-			if (nFee < MIN_TX_FEE(iface) || nFee >= MAX_TRANSACTION_FEE(iface))
-				continue;
-
-			nVal += nFee;
-			nTot++;
-		}
-
-		delete block;
-	}
-
-	return (nVal / (int64)nTot);
-}
-#endif
-int64 core_GetFeeRate(int ifaceIndex)
-{
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	if (!iface)
-		return (0);
-	return (MIN_TX_FEE(iface));
 }
 
 void CWalletTx::AddSupportingTransactions()

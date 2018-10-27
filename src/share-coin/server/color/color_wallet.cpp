@@ -557,11 +557,8 @@ double COLORWallet::AllowFreeThreshold()
 
 int64 COLORWallet::GetFeeRate(uint160 hColor)
 {
-	return (color_GetMinTxFee(hColor));
-#if 0
   CIface *iface = GetCoinByIndex(COLOR_COIN_IFACE);
-  return (MIN_TX_FEE(iface));
-#endif
+	return (MIN_TX_FEE_RATE(iface));
 }
 
 int COLORWallet::GetCoinbaseMaturity(uint160 hColor)

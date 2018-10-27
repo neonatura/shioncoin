@@ -37,6 +37,7 @@ extern "C" {
 #define OPT_PEER_SEED "seed"
 #define OPT_NOTARY "notary"
 #define OPT_ADMIN "admin"
+#define OPT_FREE_RELAY "free-relay"
 #define OPT_BAN_SPAN "ban-span"
 #define OPT_BAN_THRESHOLD "ban-threshold"
 #define OPT_SHC_PORT "shc-port"
@@ -82,6 +83,8 @@ void opt_bool_set(const char *tag, int b);
 const char *opt_usage_print(void);
 
 void opt_arg_interp(int argc, char **argv);
+
+const char *opt_config_default_print(void);
 
 
 

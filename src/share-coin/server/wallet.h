@@ -991,8 +991,6 @@ bool core_CreateWalletAccountTransaction(CWallet *wallet, string strFromAccount,
 
 CScript GetScriptForWitness(const CScript& redeemscript);
 
-int64 core_GetFeeRate(int ifaceIndex);
-
 bool SelectCoins_Avg(int64 nTargetValue, vector<COutput>& vCoins, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet);
 
 

@@ -568,7 +568,8 @@ static bool CommitNewAltChainTx(CIface *iface, CTransaction& tx, CNode *pfrom, b
 		/* verify that block is stored in disk block-chain. */
 		CIface *clr_iface = GetCoinByIndex(COLOR_COIN_IFACE);
 		if (!HasBlockHash(clr_iface, alt->block.GetHash())) {
-			return (error(SHERR_INVAL, "CommitAltChainTx: non-commited block \"%s\"; skip.", alt->block.GetHash().GetHex().c_str()));
+			Debug("CommitAltChainTx: warning: non-commited block \"%s\"; skip.", alt->block.GetHash().GetHex().c_str());
+			return (false);
 		}
 	}
 

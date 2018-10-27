@@ -74,8 +74,9 @@ static const int TESTNET_PROTOCOL_VERSION = 2000000;
 
 #define TESTNET_DEFAULT_BYTES_PER_SIGOP 20
 
-/** Largest byte size permitted for potential no-fee transaction. */
-#define TESTNET_MAX_FREE_TX_SIZE 10000
+/* minimum tx size of free transactions. */
+#define TESTNET_MAX_FREE_TX_SIZE 512
+
 
 
 /**
@@ -84,9 +85,14 @@ static const int TESTNET_PROTOCOL_VERSION = 2000000;
 static const int64 TESTNET_MIN_INPUT = 100;
 
 /**
- * The minimum block transaction fee applied (0.00001000).
+ * The transaction fee per 1k of block content.
  */
 static const int64 TESTNET_MIN_TX_FEE = 10000;
+
+/**
+ * The minimum block transaction fee applied (0.00001000).
+ */
+static const int64 TESTNET_MIN_RELAY_TX_FEE = 1000;
 
 /** The maximum number of coins that will be generated during the life-time of the currency. */
 static const int64 TESTNET_MAX_MONEY = 1000000000 * TESTNET_COIN; /* 1bil max */

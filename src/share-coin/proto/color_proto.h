@@ -75,8 +75,7 @@ static const int COLOR_PROTOCOL_VERSION = 2000000;
 #define COLOR_DEFAULT_BYTES_PER_SIGOP 20
 
 /** Largest byte size permitted for potential no-fee transaction. */
-#define COLOR_MAX_FREE_TX_SIZE 512000
-
+#define COLOR_MAX_FREE_TX_SIZE 512
 
 /**
  * The minimum "satashi" permitted to be sent in a single transaction.
@@ -84,9 +83,14 @@ static const int COLOR_PROTOCOL_VERSION = 2000000;
 static const int64 COLOR_MIN_INPUT = 100;
 
 /**
- * The minimum block transaction fee applied.
+ * Transaction fee applied to every 1k of size.
  */
 static const int64 COLOR_MIN_TX_FEE = 1000;
+
+/**
+ * The minimum block transaction fee applied.
+ */
+static const int64 COLOR_MIN_RELAY_TX_FEE = 1000;
 
 /** The maximum number of coins that will be generated during the life-time of the currency. */
 static const int64 COLOR_MAX_MONEY = 722388 * COLOR_COIN; /* ~ 0.7mil max @ height 1.44mil */

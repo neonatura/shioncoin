@@ -608,7 +608,8 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
   obj.push_back(Pair("mininput",      ValueFromAmount(MIN_INPUT_VALUE(iface))));
   obj.push_back(Pair("maxblocksize",  (int)iface->max_block_size));
-  obj.push_back(Pair("mintxfee",      ValueFromAmount(MIN_TX_FEE(iface))));
+  obj.push_back(Pair("mintxfeerate",  ValueFromAmount(MIN_TX_FEE(iface))));
+  obj.push_back(Pair("minrelaytxfee", ValueFromAmount(MIN_RELAY_TX_FEE(iface))));
   obj.push_back(Pair("maxmoney",      ValueFromAmount(iface->max_money)));
   obj.push_back(Pair("maturity",      (int)iface->coinbase_maturity));
   obj.push_back(Pair("maxsigops",     (int)iface->max_sigops));
@@ -617,8 +618,8 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("blocksubmit",  (int)iface->stat.tot_block_submit));
   obj.push_back(Pair("blockaccept",  (int)iface->stat.tot_block_accept));
   obj.push_back(Pair("blockorphan",  (int)iface->stat.tot_block_orphan));
-  obj.push_back(Pair("txsubmit",  (int)iface->stat.tot_tx_submit));
-  obj.push_back(Pair("txaccept",  (int)iface->stat.tot_tx_accept));
+  obj.push_back(Pair("txsubmit",     (int)iface->stat.tot_tx_submit));
+  obj.push_back(Pair("txaccept",     (int)iface->stat.tot_tx_accept));
   obj.push_back(Pair("burnt-coins",  (double)iface->stat.tot_tx_return/COIN));
 
   {

@@ -58,9 +58,6 @@ static const int EMC2_PROTOCOL_VERSION = 70015;
 #define EMC2_MAX_STANDARD_TX_WEIGHT 400000
 #define EMC2_MAX_STANDARD_TX_SIGOP_COST 16000
 
-/** Largest byte size permitted for potential no-fee transaction. 
-#define EMC2_MAX_FREE_TX_SIZE 1000
-*/
 /* Disallow all free transactions. */
 #define EMC2_MAX_FREE_TX_SIZE 0
 
@@ -74,7 +71,7 @@ static const unsigned int EMC2_MAX_BLOCK_WEIGHT = 4000000;
 
 static const int64 EMC2_MIN_INPUT = 29400;
 static const int64 EMC2_MIN_TX_FEE = 100000;
-//static const int64 EMC2_MIN_RELAY_TX_FEE = 100000;
+static const int64 EMC2_MIN_RELAY_TX_FEE = 100000;
 
 static const int64 EMC2_MAX_TX_FEE = 0.1 * EMC2_COIN;
 

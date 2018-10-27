@@ -74,9 +74,8 @@ static const int SHC_PROTOCOL_VERSION = 2000000;
 
 #define SHC_DEFAULT_BYTES_PER_SIGOP 20
 
-/** Largest byte size permitted for potential no-fee transaction. */
-#define SHC_MAX_FREE_TX_SIZE 10000
-
+/* Minimum transaction size to allow for no tx fee. */
+#define SHC_MAX_FREE_TX_SIZE 512
 
 /**
  * The minimum "satashi" permitted to be sent in a single transaction.
@@ -84,9 +83,14 @@ static const int SHC_PROTOCOL_VERSION = 2000000;
 static const int64 SHC_MIN_INPUT = 100;
 
 /**
- * The minimum block transaction fee applied.
+ * The transaction fee per 1k of block content.
  */
 static const int64 SHC_MIN_TX_FEE = 10000;
+
+/**
+ * The minimum block transaction fee applied.
+ */
+static const int64 SHC_MIN_RELAY_TX_FEE = 1000;
 
 /** The maximum number of coins that will be generated during the life-time of the currency. */
 static const int64 SHC_MAX_MONEY = 991392063 * SHC_COIN; /* ~1bil max */
