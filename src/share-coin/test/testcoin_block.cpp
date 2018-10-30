@@ -689,6 +689,7 @@ _TEST(identtx)
   string hexSeed;
   uint160 issuer;
   err = init_cert_tx(iface, cert_wtx, strAccount, "test", hexSeed, 1);
+if (err) fprintf(stderr, "DEBUG: identtx: %d = init_cert_tx\n", err); 
   _TRUE(0 == err);
   uint160 hashCert = cert_wtx.certificate.GetHash();
 
@@ -919,7 +920,6 @@ _TEST(offertx)
   CWallet *wallet = GetWallet(TEST_COIN_IFACE);
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   CTransaction t_tx;
-	string strAccount;
   int64 nValue;
 	int mode;
   int idx;
@@ -1015,7 +1015,8 @@ if (err) fprintf(stderr, "DEBUG: TEST: OFFER: %d = init_offer_tx()\n", err);
 
   /* offer generate operation */
   CWalletTx gen_wtx;
-  err = generate_offer_tx(iface, hashOffer, gen_wtx);
+  err = generate_offer_tx(iface, strLabel, hashOffer, gen_wtx);
+if (err) fprintf(stderr, "DEBUG: %d = generate_offer_tx()\n", err);
   _TRUE(0 == err);
   uint160 hashGen = gen_wtx.offer.GetHash();
   _TRUE(gen_wtx.CheckTransaction(TEST_COIN_IFACE));
@@ -1044,7 +1045,7 @@ _TRUE(GetExtOutput(gen_wtx, OP_OFFER, mode, nOut, scriptOut) == true);
     delete block;
   }
 	/* verify spend of generated offer transaction. */
-	CPubKey pubkey = GetAccountPubKey(wallet, strAccount, true);
+	CPubKey pubkey = GetAccountPubKey(wallet, strLabel, true);
 	CTxCreator spend_wtx(wallet, strAltLabel);
 	_TRUE(spend_wtx.AddInput(&gen_wtx, nOut));
 	_TRUE(spend_wtx.AddOutput(pubkey.GetID(), (int64)COIN));

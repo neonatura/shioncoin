@@ -1811,7 +1811,7 @@ COffer *CTransaction::CreateOffer()
   nFlag |= CTransaction::TXF_OFFER;
 
   off = GetOffer();
-  off->SetExpireSpan((double)7200); /* 2 hours */
+  off->SetExpireSpan((double)1440); /* 24m */
 
   return (off);
 }
@@ -1825,51 +1825,44 @@ COffer *CTransaction::AcceptOffer(COffer *offerIn)
 
   nFlag |= CTransaction::TXF_OFFER;
 
-#if 0
-  int64 nPayValue = -1 * offerIn->nXferValue;
-  int64 nXferValue = -1 * offerIn->nPayValue;
-#endif
   hashOffer = offerIn->GetHash();
   offer = *offerIn;
 
 	COffer *off = GetOffer();
-
-#if 0
-  off->vPayAddr.clear();
-  off->vXferAddr.clear();
-  off.nPayValue = nPayValue;
-  off.nXferValue = nXferValue;
-#endif
   off->hashOffer = hashOffer;
 
-  off->SetExpireSpan((double)7200); /* 2 hours */
+	/* extend back expiration time */
+  off->SetExpireSpan((double)1440); /* 24m */
 
  return (off);
 }
 
 COffer *CTransaction::GenerateOffer(COffer *offerIn)
 {
+	COffer *off;
+
   if (nFlag & CTransaction::TXF_OFFER)
     return (NULL);
 
   nFlag |= CTransaction::TXF_OFFER;
   offer = *offerIn;
 
- return (&offer);
+	off = GetOffer();
+	if (!off)
+		return (NULL);
+
+  off->SetExpireSpan((double)1440); /* 24m */
+
+ return (off);
 }
 
 COffer *CTransaction::PayOffer(COffer *accept)
 {
-
-  if (nFlag & CTransaction::TXF_OFFER)
-    return (NULL);
-
-  nFlag |= CTransaction::TXF_OFFER;
-  offer = *accept;
-
- return ((COffer *)&offer);
+	/* n/a */
+	return (NULL);
 }
 
+/* cancel operation */
 COffer *CTransaction::RemoveOffer(uint160 hashOffer)
 {
   if (nFlag & CTransaction::TXF_OFFER)

@@ -136,18 +136,18 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/coin.h server/chain.h server/global.h \
 	server/allocators.h server/bignum.h server/rpcalias_proto.h \
 	server/rpccert_proto.h server/rpccontext_proto.h \
-	server/rpcexec_proto.h server/compat.h server/crypter.h \
-	server/txidx.h server/init.h server/key.h server/keystore.h \
-	server/mruset.h server/netbase.h server/net.h \
-	server/txsignature.h server/versionbits.h server/protocol.h \
-	server/script.h server/scrypt.h server/serialize.h \
-	server/strlcpy.h server/sync.h server/ui_interface.h \
-	server/uint256.h server/util.h server/version.h \
-	server/walletdb.h server/wallet.h server/txcreator.h \
-	shcoind_version.h server_iface.h shcoind_rpc.h shcoind_error.h \
-	shcoind_log.h shcoind_opt.h shcoind_signal.h \
-	shcoind_descriptor.h shcoind.h shcoind_rpc.c shcoind_error.c \
-	shcoind_log.c shcoind_opt.c shcoind_signal.c \
+	server/rpcexec_proto.h server/rpcoffer_proto.h server/compat.h \
+	server/crypter.h server/txidx.h server/init.h server/key.h \
+	server/keystore.h server/mruset.h server/netbase.h \
+	server/net.h server/txsignature.h server/versionbits.h \
+	server/protocol.h server/script.h server/scrypt.h \
+	server/serialize.h server/strlcpy.h server/sync.h \
+	server/ui_interface.h server/uint256.h server/util.h \
+	server/version.h server/walletdb.h server/wallet.h \
+	server/txcreator.h shcoind_version.h server_iface.h \
+	shcoind_rpc.h shcoind_error.h shcoind_log.h shcoind_opt.h \
+	shcoind_signal.h shcoind_descriptor.h shcoind.h shcoind_rpc.c \
+	shcoind_error.c shcoind_log.c shcoind_opt.c shcoind_signal.c \
 	shcoind_descriptor.c unet/unet_accept.c unet/unet_bind.c \
 	unet/unet_thread.c unet/unet.c unet/unet_close.c \
 	unet/unet_connect.c unet/unet_io.c unet/unet_timer.c \
@@ -225,21 +225,21 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/ext/altchain_color.h server/rpc/rpcalias_proto.cpp \
 	server/rpc/rpccert_proto.cpp server/rpc/rpccolor_proto.cpp \
 	server/rpc/rpccontext_proto.cpp server/rpc/rpcexec_proto.cpp \
-	server/rpc/rpcdump.cpp server/rpc/rpc_command.cpp \
-	server/rpc/rpcrawtransaction.cpp server/versionbits.cpp \
-	server/txsignature.cpp server/protocol.cpp server/block.cpp \
-	server/block.h server/txmempool.cpp server/txmempool.h \
-	server/coin.cpp server/chain.cpp server/matrix.cpp \
-	server/spring.c server/bloom.cpp server/global.cpp \
-	server/block_merkle.cpp server/wit_merkle.cpp \
-	server/crypter.cpp server/txidx.cpp server/init.cpp \
-	server/derkey.cpp server/hdkey.cpp server/keystore.cpp \
-	server/main.cpp server/script.cpp server/sync.cpp \
-	server/wallet.cpp server/txcreator.cpp server/walletdb.cpp \
-	server/scrypt.c server/addrman.h server/addrman.cpp \
-	server/base58.h server/base58.cpp wallet_iface.cpp \
-	block_iface.cpp server_iface.cpp shcoind.c shcoind_daemon.c \
-	shcoind_daemon.h shcoind_svc.c shcoind_svc.h
+	server/rpc/rpcoffer_proto.cpp server/rpc/rpcdump.cpp \
+	server/rpc/rpc_command.cpp server/rpc/rpcrawtransaction.cpp \
+	server/versionbits.cpp server/txsignature.cpp \
+	server/protocol.cpp server/block.cpp server/block.h \
+	server/txmempool.cpp server/txmempool.h server/coin.cpp \
+	server/chain.cpp server/matrix.cpp server/spring.c \
+	server/bloom.cpp server/global.cpp server/block_merkle.cpp \
+	server/wit_merkle.cpp server/crypter.cpp server/txidx.cpp \
+	server/init.cpp server/derkey.cpp server/hdkey.cpp \
+	server/keystore.cpp server/main.cpp server/script.cpp \
+	server/sync.cpp server/wallet.cpp server/txcreator.cpp \
+	server/walletdb.cpp server/scrypt.c server/addrman.h \
+	server/addrman.cpp server/base58.h server/base58.cpp \
+	wallet_iface.cpp block_iface.cpp server_iface.cpp shcoind.c \
+	shcoind_daemon.c shcoind_daemon.h shcoind_svc.c shcoind_svc.h
 am__objects_1 =
 am__objects_2 = shcoind-shcoind_rpc.$(OBJEXT) \
 	shcoind-shcoind_error.$(OBJEXT) shcoind-shcoind_log.$(OBJEXT) \
@@ -297,7 +297,8 @@ am__objects_6 = shcoind-txfeerate.$(OBJEXT) $(am__objects_3) \
 	shcoind-rpccert_proto.$(OBJEXT) \
 	shcoind-rpccolor_proto.$(OBJEXT) \
 	shcoind-rpccontext_proto.$(OBJEXT) \
-	shcoind-rpcexec_proto.$(OBJEXT) shcoind-rpcdump.$(OBJEXT) \
+	shcoind-rpcexec_proto.$(OBJEXT) \
+	shcoind-rpcoffer_proto.$(OBJEXT) shcoind-rpcdump.$(OBJEXT) \
 	shcoind-rpc_command.$(OBJEXT) \
 	shcoind-rpcrawtransaction.$(OBJEXT) \
 	shcoind-versionbits.$(OBJEXT) shcoind-txsignature.$(OBJEXT) \
@@ -416,6 +417,7 @@ am__objects_12 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_9) \
 	test_shcoind-rpccolor_proto.$(OBJEXT) \
 	test_shcoind-rpccontext_proto.$(OBJEXT) \
 	test_shcoind-rpcexec_proto.$(OBJEXT) \
+	test_shcoind-rpcoffer_proto.$(OBJEXT) \
 	test_shcoind-rpcdump.$(OBJEXT) \
 	test_shcoind-rpc_command.$(OBJEXT) \
 	test_shcoind-rpcrawtransaction.$(OBJEXT) \
@@ -969,6 +971,7 @@ common_includes = \
 	server/rpccert_proto.h \
 	server/rpccontext_proto.h \
 	server/rpcexec_proto.h \
+	server/rpcoffer_proto.h \
 	server/compat.h \
 	server/crypter.h \
 	server/txidx.h \
@@ -1125,6 +1128,7 @@ server_sources = \
 	server/rpc/rpccolor_proto.cpp \
 	server/rpc/rpccontext_proto.cpp \
 	server/rpc/rpcexec_proto.cpp \
+	server/rpc/rpcoffer_proto.cpp \
 	server/rpc/rpcdump.cpp \
 	server/rpc/rpc_command.cpp \
 	server/rpc/rpcrawtransaction.cpp \
@@ -1362,6 +1366,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpccontext_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcdump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcexec_proto.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcoffer_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcrawtransaction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-script.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-scrypt.Po@am__quote@
@@ -1493,6 +1498,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpccontext_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcdump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcexec_proto.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcoffer_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcrawtransaction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-script.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-scrypt.Po@am__quote@
@@ -3501,6 +3507,20 @@ shcoind-rpcexec_proto.obj: server/rpc/rpcexec_proto.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpcexec_proto.obj `if test -f 'server/rpc/rpcexec_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcexec_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcexec_proto.cpp'; fi`
 
+shcoind-rpcoffer_proto.o: server/rpc/rpcoffer_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpcoffer_proto.o -MD -MP -MF $(DEPDIR)/shcoind-rpcoffer_proto.Tpo -c -o shcoind-rpcoffer_proto.o `test -f 'server/rpc/rpcoffer_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcoffer_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpcoffer_proto.Tpo $(DEPDIR)/shcoind-rpcoffer_proto.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcoffer_proto.cpp' object='shcoind-rpcoffer_proto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpcoffer_proto.o `test -f 'server/rpc/rpcoffer_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcoffer_proto.cpp
+
+shcoind-rpcoffer_proto.obj: server/rpc/rpcoffer_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpcoffer_proto.obj -MD -MP -MF $(DEPDIR)/shcoind-rpcoffer_proto.Tpo -c -o shcoind-rpcoffer_proto.obj `if test -f 'server/rpc/rpcoffer_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcoffer_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcoffer_proto.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpcoffer_proto.Tpo $(DEPDIR)/shcoind-rpcoffer_proto.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcoffer_proto.cpp' object='shcoind-rpcoffer_proto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpcoffer_proto.obj `if test -f 'server/rpc/rpcoffer_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcoffer_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcoffer_proto.cpp'; fi`
+
 shcoind-rpcdump.o: server/rpc/rpcdump.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpcdump.o -MD -MP -MF $(DEPDIR)/shcoind-rpcdump.Tpo -c -o shcoind-rpcdump.o `test -f 'server/rpc/rpcdump.cpp' || echo '$(srcdir)/'`server/rpc/rpcdump.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpcdump.Tpo $(DEPDIR)/shcoind-rpcdump.Po
@@ -4788,6 +4808,20 @@ test_shcoind-rpcexec_proto.obj: server/rpc/rpcexec_proto.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcexec_proto.cpp' object='test_shcoind-rpcexec_proto.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpcexec_proto.obj `if test -f 'server/rpc/rpcexec_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcexec_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcexec_proto.cpp'; fi`
+
+test_shcoind-rpcoffer_proto.o: server/rpc/rpcoffer_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpcoffer_proto.o -MD -MP -MF $(DEPDIR)/test_shcoind-rpcoffer_proto.Tpo -c -o test_shcoind-rpcoffer_proto.o `test -f 'server/rpc/rpcoffer_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcoffer_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpcoffer_proto.Tpo $(DEPDIR)/test_shcoind-rpcoffer_proto.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcoffer_proto.cpp' object='test_shcoind-rpcoffer_proto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpcoffer_proto.o `test -f 'server/rpc/rpcoffer_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcoffer_proto.cpp
+
+test_shcoind-rpcoffer_proto.obj: server/rpc/rpcoffer_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpcoffer_proto.obj -MD -MP -MF $(DEPDIR)/test_shcoind-rpcoffer_proto.Tpo -c -o test_shcoind-rpcoffer_proto.obj `if test -f 'server/rpc/rpcoffer_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcoffer_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcoffer_proto.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpcoffer_proto.Tpo $(DEPDIR)/test_shcoind-rpcoffer_proto.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcoffer_proto.cpp' object='test_shcoind-rpcoffer_proto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpcoffer_proto.obj `if test -f 'server/rpc/rpcoffer_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcoffer_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcoffer_proto.cpp'; fi`
 
 test_shcoind-rpcdump.o: server/rpc/rpcdump.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpcdump.o -MD -MP -MF $(DEPDIR)/test_shcoind-rpcdump.Tpo -c -o test_shcoind-rpcdump.o `test -f 'server/rpc/rpcdump.cpp' || echo '$(srcdir)/'`server/rpc/rpcdump.cpp

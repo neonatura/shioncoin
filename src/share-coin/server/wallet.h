@@ -115,9 +115,13 @@ class CWallet : public CCryptoKeyStore
 		mutable std::map<uint256, std::string> mapAliasArch;
 
 		mutable std::map<uint160, uint256> mapLicense;
-		mutable std::map<uint160, uint256> mapOffer;
-		mutable std::map<uint160, uint256> mapOfferAccept;
 		mutable std::map<uint160, uint256> mapAsset;
+
+		mutable std::map<uint160, uint256> mapOffer;
+		mutable std::map<uint160, uint256> mapOfferArch;
+		mutable std::map<uint160, uint256> mapOfferAccept;
+		mutable std::map<uint160, uint256> mapOfferAcceptArch;
+		mutable std::map<uint160, uint256> mapOfferGenerate;
 
 		/** A vector of executable SEXE class & call tx's. */
 		mutable std::map<uint160, uint256> mapExec;

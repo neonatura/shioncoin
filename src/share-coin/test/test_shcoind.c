@@ -105,7 +105,6 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_scriptid);
   SUITE_ADD_TEST(suite, TEST_chainwork);
   SUITE_ADD_TEST(suite, TEST_offertx);
-#if 0
 
   /* tx memory pool */
   SUITE_ADD_TEST(suite, TEST_txmempool_pending);
@@ -125,7 +124,6 @@ int main(int argc, char *argv[])
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);
-#endif
 
 
   CuSuiteRun(suite);

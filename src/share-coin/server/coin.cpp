@@ -672,6 +672,10 @@ bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
 		}
 	}
 
+	if (IsOfferTx(*tx)) {
+		DisconnectOfferTx(iface, *tx);
+	}
+
   /* erase from 'coin' fmap */
   tx->EraseCoins(ifaceIndex);
 

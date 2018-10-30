@@ -212,15 +212,19 @@ int64 GetOfferOpFee(CIface *iface);
  */
 int init_offer_tx(CIface *iface, std::string strAccount, int altIndex, int64 nMinValue, int64 nMaxValue, double dRate, CWalletTx& wtx, uint160 hColor = 0);
 
-int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, int64 nValue, CWalletTx& wtx, uint160 hColor = 0);
+int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, int64 nValue, CWalletTx& wtx);
+
+int generate_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWalletTx& wtx);
+
+int cancel_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWalletTx& wtx);
 
 extern bool GetTxOfOffer(CIface *iface, const uint160& hash, CTransaction& tx);
-
-int generate_offer_tx(CIface *iface, uint160 hashOffer, CWalletTx& wtx);
 
 bool IsOfferTx(const CTransaction& tx);
 
 int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight);
+
+bool DisconnectOfferTx(CIface *iface, CTransaction& tx);
 
 
 

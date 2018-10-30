@@ -142,6 +142,24 @@ const RPCOp ALT_TX = {
   "Summary: Print information about an alt-chain transaction."
 };
 
+const RPCOp ALT_KEY = {
+  &rpc_alt_key, 1, {RPC_COINADDR},
+  "Syntax: <coin-addr>\n"
+  "Summary: Print the private key of a colored coin address."
+};
+
+const RPCOp ALT_SETKEY = {
+  &rpc_alt_setkey, 1, {RPC_STRING, RPC_ACCOUNT},
+  "Syntax: <coin-addr> [<account>]\n"
+  "Summary: Print the private key of a colored coin address."
+};
+
+const RPCOp ALT_UNSPENT = {
+  &rpc_alt_unspent, 1, {RPC_STRING, RPC_ACCOUNT},
+  "Syntax: <color> [<account>]\n"
+  "Summary: Print the unspent transaction associated with a colored alt-chain."
+};
+
 
 void color_RegisterRPCOp(int ifaceIndex)
 {
@@ -155,10 +173,13 @@ void color_RegisterRPCOp(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "alt.commit", ALT_COMMIT);
 	 */
   RegisterRPCOp(ifaceIndex, "alt.info", ALT_INFO);
+  RegisterRPCOp(ifaceIndex, "alt.key", ALT_KEY);
   RegisterRPCOp(ifaceIndex, "alt.mine", ALT_MINE);
   RegisterRPCOp(ifaceIndex, "alt.new", ALT_NEW);
   RegisterRPCOp(ifaceIndex, "alt.send", ALT_SEND);
+  RegisterRPCOp(ifaceIndex, "alt.setkey", ALT_SETKEY);
   RegisterRPCOp(ifaceIndex, "alt.tx", ALT_TX);
+  RegisterRPCOp(ifaceIndex, "alt.unspent", ALT_UNSPENT);
 
 }
 

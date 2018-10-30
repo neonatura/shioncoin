@@ -87,6 +87,7 @@ common_includes = \
 	server/rpccert_proto.h \
 	server/rpccontext_proto.h \
 	server/rpcexec_proto.h \
+	server/rpcoffer_proto.h \
 	server/compat.h \
 	server/crypter.h \
 	server/txidx.h \
@@ -243,6 +244,7 @@ server_sources = \
 	server/rpc/rpccolor_proto.cpp \
 	server/rpc/rpccontext_proto.cpp \
 	server/rpc/rpcexec_proto.cpp \
+	server/rpc/rpcoffer_proto.cpp \
 	server/rpc/rpcdump.cpp \
 	server/rpc/rpc_command.cpp \
 	server/rpc/rpcrawtransaction.cpp \

@@ -35,6 +35,7 @@
 #include "rpcalias_proto.h"
 #include "rpccontext_proto.h"
 #include "rpcexec_proto.h"
+#include "rpcoffer_proto.h"
 
 
 using namespace std;
@@ -505,6 +506,48 @@ const RPCOp ASSET_UPDATE = {
 };
 
 
+const RPCOp OFFER_NEW = {
+  &rpc_offer_new, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> <color> <min-value> <max-value> <rate>\n"
+  "Summary: Create a new exchange offer.\n"
+  "\n"
+  "Offer to send between <min-value> and <max-value> SHC in exchange for that value multiplied by <rate> of the specified color coins."
+};
+const RPCOp OFFER_ACCEPT = {
+  &rpc_offer_accept, 3, {RPC_ACCOUNT, RPC_STRING, RPC_DOUBLE},
+  "Syntax: <account> <offer> <value>\n"
+  "Summary: Accept an exchange offer.\n"
+  "\n"
+  "Accept an offer to receive <value> SHC in exchange for sending a pre-determined <rate> of color coins."
+};
+const RPCOp OFFER_COMMIT = {
+  &rpc_offer_commit, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> <offer>\n"
+  "Summary: Complete an offer exchange.\n"
+  "\n"
+  "Confirm a offer that has been accepted."
+};
+const RPCOp OFFER_CANCEL = {
+  &rpc_offer_cancel, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> <offer>\n"
+  "Summary: Cancel an offer exchange.\n"
+  "\n"
+  "Cancel an active offer before it is accepted."
+};
+const RPCOp OFFER_INFO = {
+  &rpc_offer_info, 0, {},
+  "Summary: General offer exchange transaction information."
+};
+const RPCOp OFFER_LIST = {
+  &rpc_offer_list, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> <color>\n"
+  "Summary: List available exchange offers that have not been accepted."
+};
+const RPCOp OFFER_STATUS = {
+  &rpc_offer_status, 1, {RPC_ACCOUNT, RPC_INT64},
+  "Syntax: <account> [<start-time>]\n"
+  "Summary: List the pending and completed exchanges for an account.\n"
+};
 
 
 void shc_RegisterRPCOp(int ifaceIndex)
@@ -567,6 +610,14 @@ void shc_RegisterRPCOp(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "exec.run", EXEC_RUN);
 //  RegisterRPCOp(ifaceIndex, "exec.transfer", EXEC_TRANSFER);
 #endif
+
+	RegisterRPCOp(ifaceIndex, "offer.new", OFFER_NEW);
+	RegisterRPCOp(ifaceIndex, "offer.accept", OFFER_ACCEPT);
+	RegisterRPCOp(ifaceIndex, "offer.commit", OFFER_COMMIT);
+	RegisterRPCOp(ifaceIndex, "offer.cancel", OFFER_CANCEL);
+	RegisterRPCOp(ifaceIndex, "offer.info", OFFER_INFO);
+	RegisterRPCOp(ifaceIndex, "offer.list", OFFER_LIST);
+	RegisterRPCOp(ifaceIndex, "offer.status", OFFER_STATUS);
 
   RegisterRPCOp(ifaceIndex, "wallet.csend", WALLET_CSEND);
   RegisterRPCOp(ifaceIndex, "wallet.donate", WALLET_DONATE);

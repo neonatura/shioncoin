@@ -605,14 +605,17 @@ bool CommitAltChainPoolTx(CIface *iface, CTransaction& tx, bool fPool)
 		return (error(SHERR_INVAL, "CommitAltChainPoolTx: error verifying alt-chain tx."));
 	}
 
-	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE)
-		return (true); /* nonstandard - soft error */
-	
 	alt = tx.GetAltChain();
 	if (!alt)
 		return (error(SHERR_INVAL, "CommitAltChainPool: !tx.GetAltChain"));
 
 	CBlockIndex *pindexBest = GetBestColorBlockIndex(iface, alt->hColor);
+
+	if (!pindexBest && mode != OP_EXT_NEW)
+		return (false); /* genesis is always created via EXT_NEW mode */
+	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE)
+		return (true); /* nonstandard - soft error */
+
 	if ( (!pindexBest && alt->block.hashPrevBlock != 0) ||
 			 (pindexBest && alt->block.hashPrevBlock != pindexBest->GetBlockHash()) ) {
 		/* if two blocks are present in a pool with the same prev-hash than the one that has the higher chain-work becomes valid virtue of the priority applied to it in the mempool [and redudantly this check here]. */

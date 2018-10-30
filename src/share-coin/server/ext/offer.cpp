@@ -31,6 +31,8 @@
 #include "txmempool.h"
 
 
+#define OFFER_EXPIRE_SPAN 1440 /* 24 mins */
+
 extern json_spirit::Value ValueFromAmount(int64 amount);
 
 
@@ -200,12 +202,12 @@ bool DecodeOfferScript(const CScript& script, int& op,
 
 	pc--;
 
-	if ((mode == OP_EXT_NEW && vvch.size() >= 1) ||
-      (mode == OP_EXT_ACTIVATE && vvch.size() >= 1) ||
-      (mode == OP_EXT_TRANSFER && vvch.size() >= 1) ||
-      (mode == OP_EXT_GENERATE && vvch.size() >= 1) ||
-      (mode == OP_EXT_PAY && vvch.size() >= 1) ||
-      (mode == OP_EXT_REMOVE && vvch.size() >= 1))
+	if ((mode == OP_EXT_NEW) ||
+      (mode == OP_EXT_ACTIVATE) ||
+      (mode == OP_EXT_TRANSFER) ||
+      (mode == OP_EXT_GENERATE) ||
+      (mode == OP_EXT_PAY) ||
+      (mode == OP_EXT_REMOVE))
     return (true);
 
 	return false;
@@ -772,6 +774,117 @@ CScript offer_CheckAltProofScript(CIface *iface, COffer *offer, const CPubKey& r
 	return (script);
 }
 
+bool DisconnectOfferTx(CIface *iface, CTransaction& tx)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+  CWallet *wallet = GetWallet(iface);
+	COffer *offer;
+	
+	offer = tx.GetOffer();
+	if (!offer)
+		return (error(ERR_INVAL, "DisconnectOfferTx: !Offer"));
+
+	int offer_mode;
+	int nTxOut;
+	CScript scriptOut;
+	if (!GetExtOutput(tx, OP_OFFER, offer_mode, nTxOut, scriptOut))
+		return (false); /* invalid tx */
+
+
+	switch (offer_mode) {
+		case OP_EXT_NEW:
+			RemoveOfferTable(ifaceIndex, offer->GetHash());
+			break;
+		case OP_EXT_ACTIVATE:
+			RemovePendingTable(ifaceIndex, offer->hashOffer);
+			break;
+		case OP_EXT_GENERATE:
+			wallet->mapOfferGenerate.erase(offer->hashOffer);
+			/* DEBUG: TODO: reinsert .. pending & offer.. or only purge very old pend/offer from tables*/
+			break;
+		case OP_EXT_REMOVE:
+			/* DEBUG: TODO: reinsert .. pending & offer.. */
+			break;
+	}
+
+	return (true);
+}
+
+static int offer_VerifyGenerateOffer(CIface *iface, COffer *gen)
+{
+	uint160 hashOffer = gen->hashOffer;
+
+	/* original offer */
+	CTransaction txOffer;
+	if (!GetTxOfOffer(iface, hashOffer, txOffer))
+		return (ERR_NOENT);
+	COffer *offer = txOffer.GetOffer();
+	if (!offer)
+		return (ERR_INVAL);
+
+	/* offer accept tx*/
+	CTransaction txAccept;
+	if (!GetTxOfAcceptOffer(iface, hashOffer, txAccept))
+		return (ERR_AGAIN);
+	COffer *acc = txAccept.GetOffer();
+
+	/* reserved (compatibilty) */
+	if (!(offer->nType & 16) ||
+			!(acc->nType & 16) ||
+			!(gen->nType & 16))
+		return (ERR_OPNOTSUPP);
+
+	/* verify original attributes. */
+	if (offer->nMinValue != gen->nMinValue)
+		return (ERR_INVAL);
+	if (offer->nMaxValue != gen->nMaxValue)
+		return (ERR_INVAL);
+	if (offer->nRate != gen->nRate)
+		return (ERR_INVAL);
+	if (offer->hashColor != gen->hashColor)
+		return (ERR_INVAL);
+	if (offer->vchPayAddr != gen->vchPayAddr)
+		return (ERR_INVAL);
+	if (offer->vchPayCoin != gen->vchPayCoin)
+		return (ERR_INVAL);
+	if (offer->vchXferCoin != gen->vchXferCoin)
+		return (ERR_INVAL);
+
+	/* verify accept tx */
+	if (acc->hSinkOut != gen->hSinkOut) /* initialized in accept tx */
+		return (ERR_INVAL);
+	if (acc->nValue != gen->nValue) /* initialized in accept tx */
+		return (ERR_INVAL);
+	if (acc->nMinValue != gen->nMinValue)
+		return (ERR_INVAL);
+	if (acc->nMaxValue != gen->nMaxValue)
+		return (ERR_INVAL);
+	if (acc->nRate != gen->nRate)
+		return (ERR_INVAL);
+	if (acc->hashColor != gen->hashColor)
+		return (ERR_INVAL);
+	if (acc->hPayTx != gen->hPayTx) /* initialized in accept tx */
+		return (ERR_INVAL);
+	if (acc->hSinkTx != gen->hSinkTx) /* initialized in accept tx */
+		return (ERR_INVAL);
+	if (acc->vchPayAddr != gen->vchPayAddr)
+		return (ERR_INVAL);
+	if (acc->vchXferAddr != gen->vchXferAddr) /* initialized in accept tx */
+		return (ERR_INVAL);
+	if (acc->vchPayCoin != gen->vchPayCoin)
+		return (ERR_INVAL);
+	if (acc->vchXferCoin != gen->vchXferCoin)
+		return (ERR_INVAL);
+
+	/* verify offer hash reference. */
+	if (acc->hashOffer != gen->hashOffer) /* initialized in accept tx */
+		return (ERR_INVAL);
+	if (offer->GetHash() != gen->hashOffer)
+		return (ERR_INVAL);
+
+	return (0);
+}
+
 /**
  * When a GENERATE OFFER TX is processed the receiver will submit the prepared alternate-coin tx if they have a matching key. Since the TX hash is pre-computed it is safe for multiple nodes to attempt to commit the transaction. If no nodes commit the transaction then the offer is cancelled and coins are returned to the original sender.
  */
@@ -781,10 +894,26 @@ bool CommitGenerateOffer(CIface *iface, COffer *offer)
 	CWallet *alt_wallet = GetWallet(alt_iface);
   int ifaceIndex = GetCoinIndex(iface);
 	CTransaction alt_tx;
+	int err;
 
 	if (!alt_iface || !alt_wallet) {
 		/* since we cannot process this we will consider our work done. */
 		return (true);
+	}
+
+	if (!offer)
+		return (ERR_INVAL);
+	if (offer->IsExpired()) {
+		/* no longer valid. */
+		return (ERR_STALE);
+	}
+	if ((offer->GetExpireTime() - time(NULL)) > OFFER_EXPIRE_SPAN)
+		return (ERR_INVAL);
+
+	err = offer_VerifyGenerateOffer(iface, offer);
+fprintf(stderr, "DEBUG: CommitGenerateOffer: %d = offer_VerifyGenerateOffer()\n", err); 
+	if (err) {
+		return (err);
 	}
 
 	/* retrieve the alt-coin intermediate transaction. */
@@ -804,7 +933,15 @@ bool CommitGenerateOffer(CIface *iface, COffer *offer)
 
 	/* retrieve prepared alt-coin tx [with sink as input] */
 	if (!GetAltTx(alt_tx, offer))
-		return (error(ERR_INVAL, "CommitGenerateOffer: !GetAltTx: hSinkTx %s\n", offer->hSinkTx.GetHex().c_str()));
+		return (error(ERR_INVAL, "CommitGenerateOffer: !GetAltTx: %s", offer->ToString().c_str()));
+	if (offer->hXferTx != alt_tx.GetHash())
+		return (error(ERR_INVAL, "CommitGenerateOffer: invalid offer hXferTx %s", offer->hSinkTx.GetHex().c_str()));
+
+	CTransaction txTemp;
+	if (GetTransaction(alt_iface, alt_tx.GetHash(), txTemp, NULL)) {
+		/* check for final alt tx */
+		return (true); /* nothing more to do */
+	}
 
 	CWalletTx alt_wtx(alt_wallet, alt_tx); 
 
@@ -828,6 +965,48 @@ bool CommitGenerateOffer(CIface *iface, COffer *offer)
 
 	return (true);
 }
+
+static bool offer_VerifyGenerateHier(CIface *iface, const CTransaction& tx, const uint160& hOffer)
+{
+
+	CTransaction txOffer;
+	if (!GetTxOfOffer(iface, hOffer, txOffer))
+		return (false); /* invalid param */
+
+	const uint256& hTxPrev = txOffer.GetHash();
+
+	int nTxOut;
+	int offer_mode;
+	CScript scriptOut;
+	if (!GetExtOutput(txOffer, OP_OFFER, offer_mode, nTxOut, scriptOut))
+		return (false); /* invalid tx */
+	if (offer_mode != OP_EXT_NEW)
+		return (false); /* invalid state */
+
+	int i;
+	for (i = 0; i < tx.vin.size(); i++) {
+		const CTxIn& in = tx.vin[i];
+		if (in.prevout.hash == hTxPrev &&
+				in.prevout.n == nTxOut)
+			break;
+	}
+	if (i == tx.vin.size())
+		return (false); /* perm denied */
+
+	/* verified this tx has original offer as input. */
+	return (true);
+}
+
+static bool CommitRemoveUnacceptedOffer(CIface *iface, COffer *offer)
+{
+	return (true);
+}
+
+static bool CommitRemoveAcceptedOffer(CIface *iface, COffer *offer)
+{
+	return (true);
+}
+
 
 int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 {
@@ -867,12 +1046,45 @@ int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 			if (wallet->mapOfferAccept.count(offer->hashOffer) == 0)
 				return (ERR_NOENT);
 
-			if (!CommitGenerateOffer(iface, offer))
+			if (!offer_VerifyGenerateHier(iface, tx, offer->hashOffer)) {
+fprintf(stderr, "DEBUG: !offer_VerifyGenerateHier\n");
+				return (ERR_ACCESS);
+			}
+			if (!CommitGenerateOffer(iface, offer)) {
+fprintf(stderr, "DEBUG: !CommitGenerateOffer\n");
 				return (SHERR_INVAL);
+			}
 
+			/* archive */
+			wallet->mapOfferGenerate[offer->hashOffer] = tx.GetHash();
+
+#if 0
 			/* erase after completion. */
 			RemoveOfferTable(ifaceIndex, offer->hashOffer);
 			RemovePendingTable(ifaceIndex, offer->hashOffer);
+#endif
+			break;
+		case OP_EXT_REMOVE:
+			if (wallet->mapOffer.count(offer->hashOffer) == 0)
+				return (ERR_NOENT);
+			if (wallet->mapOfferAccept.count(offer->hashOffer) == 0) {
+				/* verify original offer is input. */
+				if (!offer_VerifyGenerateHier(iface, tx, offer->hashOffer))
+					return (ERR_ACCESS);
+				/* remove an offer that has not been accepted. */
+				if (!CommitRemoveUnacceptedOffer(iface, offer))
+					return (ERR_INVAL);
+			} else {
+				/* remove an offer that has been accepted. */
+				if (!CommitRemoveAcceptedOffer(iface, offer))
+					return (ERR_INVAL);
+			}
+#if 0
+			/* erase after completion. */
+			RemoveOfferTable(ifaceIndex, offer->hashOffer);
+			RemovePendingTable(ifaceIndex, offer->hashOffer);
+			wallet->mapOfferGenerate.erase(offer->hashOffer);
+#endif
 			break;
 	}
 
@@ -964,7 +1176,7 @@ int init_offer_tx(CIface *iface, std::string strAccount, int altIndex, int64 nMi
 	return (0);
 }
 
-int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, int64 nValue, CWalletTx& wtx, uint160 hColor)
+int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, int64 nValue, CWalletTx& wtx)
 {
 	CWallet *wallet = GetWallet(iface);
 	int ifaceIndex = GetCoinIndex(iface);
@@ -980,6 +1192,13 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
 	COffer *offer = tx.GetOffer();
 	if (!offer)
 		return (SHERR_NOENT);
+
+	if (offer->IsExpired()) {
+		/* no longer valid. */
+		return (ERR_STALE);
+	}
+	if ((offer->GetExpireTime() - time(NULL)) > OFFER_EXPIRE_SPAN)
+		return (ERR_INVAL);
 
 	if (nValue <= 0 || nValue < offer->nMinValue || nValue > offer->nMaxValue) {
 		return (SHERR_INVAL);
@@ -1012,8 +1231,7 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
 
 	/* establish destination alt-coin address. */
 	if (destIndex == COLOR_COIN_IFACE) {
-		string strColorAccount = hColor.GetHex();
-		CPubKey xferAddr = GetAccountPubKey(alt_wallet, strColorAccount, true);
+		CPubKey xferAddr = GetAltChainAddr(offer->hashColor, strAccount, false);
 		accept->SetXferAddr(xferAddr);
 	} else {
 		CPubKey xferAddr = GetAccountPubKey(alt_wallet, strAccount, true);
@@ -1052,7 +1270,7 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
 }
 
 /* original offer sends SHC with alt-tx condition. */
-int generate_offer_tx(CIface *iface, uint160 hashOffer, CWalletTx& wtx)
+int generate_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWalletTx& wtx)
 {
 	int ifaceIndex = GetCoinIndex(iface);
 	CWallet *wallet = GetWallet(iface);
@@ -1076,16 +1294,26 @@ int generate_offer_tx(CIface *iface, uint160 hashOffer, CWalletTx& wtx)
 		return (SHERR_NOENT);
 	}
 
+	COffer *acc = txAccept.GetOffer();
+	if (!acc)
+		return (ERR_INVAL);
+	if (acc->IsExpired()) {
+		/* no longer valid. */
+		return (ERR_STALE);
+	}
+	if ((acc->GetExpireTime() - time(NULL)) > OFFER_EXPIRE_SPAN)
+		return (ERR_INVAL);
+
 	/* establish original tx */
 	uint256 wtxInHash = tx.GetHash();
 	if (wallet->mapWallet.count(wtxInHash) == 0)
 		return (false);
 
 	int64 nFeeValue;
-	string strAccount;
+	string strAccountPrev;
 	unsigned int nTxOut;
 	CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
-	if (!GetExtTxOut(ifaceIndex, wtxIn, nFeeValue, strAccount, nTxOut))
+	if (!GetExtTxOut(ifaceIndex, wtxIn, nFeeValue, strAccountPrev, nTxOut))
 		return (SHERR_REMOTE);
 
 	CTxCreator s_wtx(wallet, strAccount);
@@ -1102,6 +1330,13 @@ int generate_offer_tx(CIface *iface, uint160 hashOffer, CWalletTx& wtx)
 		if (!GetAltTx(alt_tx, offer))
 			return (error(ERR_INVAL, "generate_offer_tx: error creating alt-tx"));
 		offer->hXferTx = alt_tx.GetHash();
+
+#if 0
+		if (VerifyTxHash(iface, offer->hXferTx)) {
+			/* this offer has already been processed. */
+			return (ERR_INVAL);
+		}
+#endif
 	}
 
 	uint160 offerHash = offer->GetHash();
@@ -1124,6 +1359,124 @@ int generate_offer_tx(CIface *iface, uint160 hashOffer, CWalletTx& wtx)
 	}
 
 	Debug("(%s) SENT:OFFERGENERATE : offerhash=%s\n", 
+			iface->name, offer->GetHash().ToString().c_str());
+
+	wtx = (CWalletTx)s_wtx;
+	return (0);
+}
+
+
+int cancel_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWalletTx& wtx)
+{
+	int ifaceIndex = GetCoinIndex(iface);
+	CWallet *wallet = GetWallet(iface);
+	int64 minTxFee = MIN_TX_FEE(iface);
+	char errbuf[1024];
+	bool ret;
+
+	if (!offer_IsCompatibleIface(iface))
+		return (SHERR_OPNOTSUPP);
+
+	/* verify original offer */
+	CTransaction tx;
+	if (!GetTxOfOffer(iface, hashOffer, tx))
+		return (SHERR_NOENT);
+	if(!IsLocalOffer(iface, tx))
+		return (SHERR_REMOTE);
+	COffer *offer = tx.GetOffer();
+	if (!offer)
+		return (ERR_INVAL);
+
+	bool fAccepted;
+	CTransaction txAccept;
+	fAccepted = GetTxOfAcceptOffer(iface, hashOffer, txAccept);
+
+	/* establish original tx */
+	uint256 wtxInHash = tx.GetHash();
+	if (wallet->mapWallet.count(wtxInHash) == 0)
+		return (ERR_NOENT);
+
+	int64 nFeeValue;
+	string strAccountPrev;
+	unsigned int nTxOut;
+	CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
+	if (!GetExtTxOut(ifaceIndex, wtxIn, nFeeValue, strAccountPrev, nTxOut))
+		return (SHERR_REMOTE);
+
+	if (strAccountPrev != strAccount)
+		return (ERR_ACCESS);
+
+	CTxCreator s_wtx(wallet, strAccount);
+	COffer *rem_offer = s_wtx.RemoveOffer(hashOffer);
+	const uint160& hRemOffer = rem_offer->GetHash();
+
+	/* remove action */
+	CScript script;
+	script << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << hRemOffer << OP_2DROP << OP_RETURN << OP_0;
+	if (!s_wtx.AddOutput(script, MIN_TX_FEE(iface)))
+		return (ERR_INVAL);
+
+	if (!fAccepted) { /* return funds back from ext account. */
+		/* still have to wait until it expires. */
+		s_wtx.SetLockTime(offer->GetExpireTime());
+
+		if (!s_wtx.AddInput(&wtxIn, nTxOut))
+			return (ERR_INVAL);
+
+		/* back to user */
+		CPubKey retAddr = GetAccountPubKey(wallet, strAccount, true);
+		if (!s_wtx.AddOutput(retAddr, nFeeValue - MIN_TX_FEE(iface)))
+			return (ERR_INVAL);
+
+	} else { /* return final transaction to account. */
+		if (wallet->mapOfferGenerate.count(hashOffer) == 0) {
+			/* peer already accepted -- user must commit. */
+			return (ERR_AGAIN);
+		}
+
+		CIface *alt_iface = offer->GetXferIface();
+		if (VerifyTxHash(alt_iface, offer->hXferTx)) {
+			/* this offer has already been processed by peer. */
+			return (ERR_CANCELED);
+		}
+
+		/* the final tx already resolves to user after gen offer expires. */
+		const uint256& hGenTx = wallet->mapOfferGenerate[hashOffer];
+		if (wallet->mapWallet.count(hGenTx) == 0)
+			return (ERR_ACCESS);
+
+		CWalletTx& gen_wtx = wallet->mapWallet[hGenTx];
+		COffer *gen = gen_wtx.GetOffer();
+		if (!gen)
+			return (ERR_INVAL);
+
+		/* must wait until it has expired in order to claim return funds. */
+		if (!gen->IsExpired()) {
+			return (ERR_AGAIN);
+		}
+
+		int64 nGenValue;
+		unsigned int gen_out;
+		string strAccountGen;
+		if (!GetExtTxOut(ifaceIndex, gen_wtx, nGenValue, strAccountGen, gen_out))
+			return (SHERR_REMOTE);
+		if (strAccountGen != strAccount)
+			return (ERR_ACCESS); /* init = gen = this */
+
+		if (!s_wtx.AddInput(&gen_wtx, gen_out))
+			return (ERR_INVAL);
+
+		/* back to user */
+		CPubKey retAddr = GetAccountPubKey(wallet, strAccount, true);
+		if (!s_wtx.AddOutput(retAddr, nGenValue - MIN_TX_FEE(iface)))
+			return (ERR_INVAL);
+	}
+
+	/* ship it */
+	if (!s_wtx.Send())
+		return (ERR_CANCELED);
+
+	Debug("(%s) SENT:OFFERCANCEL : offerhash=%s\n", 
 			iface->name, offer->GetHash().ToString().c_str());
 
 	wtx = (CWalletTx)s_wtx;

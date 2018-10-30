@@ -48,6 +48,7 @@ extern string AccountFromValue(const Value& value);
 extern CBlockIndex *GetBestColorBlockIndex(CIface *iface, uint160 hColor);
 extern bool GetColorBlockHeight(CBlockIndex *pindex, unsigned int& nHeight);
 extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex = NULL);
+extern json_spirit::Value ValueFromAmount(int64 amount);
 
 
 static uint160 rpc_alt_key_from_value(CIface *iface, Value val)
@@ -676,5 +677,113 @@ Value rpc_alt_tx(CIface *iface, const Array& params, bool fStratum)
 	obj.push_back(Pair("blockhash", hBlock.GetHex()));
 
 	return (obj);
+}
+
+
+Value rpc_alt_key(CIface *iface, const Array& params, bool fStratum)
+{
+  CWallet *pwalletAlt = GetWallet(COLOR_COIN_IFACE);
+
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+
+  if (params.size() != 1)
+    throw runtime_error("rpc_alt_key");
+
+  string strAddress = params[0].get_str();
+  CCoinAddr address(strAddress);
+  if (!address.IsValid())
+    throw JSONRPCError(-5, "Invalid address");
+  CKeyID keyID;
+  if (!address.GetKeyID(keyID))
+    throw JSONRPCError(-3, "Address does not refer to a key");
+  CSecret vchSecret;
+  bool fCompressed;
+  if (!pwalletAlt->GetSecret(keyID, vchSecret, fCompressed))
+    throw JSONRPCError(-4,"Private key for address " + strAddress + " is not known");
+
+  return CCoinSecret(COLOR_COIN_IFACE, vchSecret, fCompressed).ToString();
+}
+
+Value rpc_alt_setkey(CIface *iface, const Array& params, bool fStratum)
+{
+  CWallet *pwalletAlt = GetWallet(COLOR_COIN_IFACE);
+	string strLabel("");
+
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+  if (params.size() != 2)
+    throw runtime_error("rpc_alt_setkey");
+
+  CCoinSecret vchSecret;
+  string strSecret = params[0].get_str();
+	if (params.size() != 1)
+		strLabel = params[1].get_str();
+
+  bool fGood = vchSecret.SetString(strSecret);
+  if (!fGood) {
+    /* invalid private key 'string' for particular coin interface. */
+    throw JSONRPCError(SHERR_ILSEQ, "private-key");
+  }
+
+  CKey key;
+  bool fCompressed = true;
+  CSecret secret = vchSecret.GetSecret(fCompressed); /* set's fCompressed */
+  key.SetSecret(secret, fCompressed);
+  CKeyID vchAddress = key.GetPubKey().GetID();
+
+  {
+    LOCK2(cs_main, pwalletAlt->cs_wallet);
+
+    if (pwalletAlt->HaveKey(vchAddress)) {
+      /* pubkey has already been assigned to an account. */
+      throw JSONRPCError(-8, "Private key already exists.");
+    }
+
+    if (!pwalletAlt->AddKey(key)) {
+      /* error adding key to wallet */
+      throw JSONRPCError(-4, "Error adding key to wallet."); 
+    }
+
+    /* create a link between account and coin address. */ 
+    pwalletAlt->SetAddressBookName(vchAddress, strLabel);
+    pwalletAlt->MarkDirty();
+  }
+
+	return (Value::null);
+}
+
+Value rpc_alt_unspent(CIface *iface, const Array& params, bool fStratum)
+{
+  CWallet *pwalletAlt = GetWallet(COLOR_COIN_IFACE);
+	string strAccount("");
+	uint160 hColor;
+
+  if (params.size() == 0 || params.size() > 2)
+    throw runtime_error("unsupported operation");
+
+	hColor = rpc_alt_key_from_value(iface, params[0]);
+	if (params.size() != 1)
+		strAccount = AccountFromValue(params[1]);
+
+  Array results;
+  vector<COutput> vecOutputs;
+  pwalletAlt->AvailableAccountCoins(strAccount, vecOutputs, false, hColor);
+  BOOST_FOREACH(const COutput& out, vecOutputs)
+  {
+    int64 nValue = out.tx->vout[out.i].nValue;
+    const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+    Object entry;
+    entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
+    entry.push_back(Pair("hash", out.tx->GetWitnessHash().GetHex()));
+    entry.push_back(Pair("vout", out.i));
+    entry.push_back(Pair("script", pk.ToString()));
+    entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
+    entry.push_back(Pair("amount",ValueFromAmount(nValue)));
+    entry.push_back(Pair("confirmations",out.nDepth));
+    results.push_back(entry);
+  }
+
+  return results;
 }
 

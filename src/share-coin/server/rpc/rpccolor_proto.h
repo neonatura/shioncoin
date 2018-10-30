@@ -59,6 +59,11 @@ Value rpc_alt_block(CIface *iface, const Array& params, bool fStratum);
 
 Value rpc_alt_tx(CIface *iface, const Array& params, bool fStratum); 
 
+Value rpc_alt_key(CIface *iface, const Array& params, bool fStratum);
+
+Value rpc_alt_setkey(CIface *iface, const Array& params, bool fStratum);
+
+Value rpc_alt_unspent(CIface *iface, const Array& params, bool fStratum);
 
 
 
