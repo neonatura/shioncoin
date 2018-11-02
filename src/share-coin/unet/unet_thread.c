@@ -39,18 +39,16 @@
 
 void *unet_thread_timer(unet_bind_t *bind)
 {
+	static const double ONE_SEC = 1000000;
 	shtime_t start_t;
 	double wait_t;
 	double idle_t;
 
 	usleep(1000); /* 1ms */
 
+	start_t = shtime();
+	idle_t = UTHREAD_MAX_TIME;
 	while (bind->fl_timer & UTHREAD_TIMER) {
-		start_t = shtime();
-
-		/* call timer function for timer mode */
-		unet_timer_cycle_mode(bind);
-
 		/* sleep based on activity load (>activity = <sleep) */
 		wait_t = shtimef(shtime()) - shtimef(start_t);
 		if (wait_t <= idle_t) {
@@ -61,7 +59,13 @@ void *unet_thread_timer(unet_bind_t *bind)
 			idle_t /= 2;
 		}
 		idle_t = MAX(0.01, MIN(UTHREAD_MAX_TIME, idle_t));
-		usleep(idle_t * 1000000);
+		usleep((unsigned int)(idle_t * ONE_SEC));
+
+		/* reset timer */
+		start_t = shtime();
+
+		/* call timer function for timer mode */
+		unet_timer_cycle_mode(bind);
 	}
 
 	return (NULL);
