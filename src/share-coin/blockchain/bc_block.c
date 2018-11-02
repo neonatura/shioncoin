@@ -31,7 +31,16 @@
 #include <stdio.h>
 #endif
 
+#ifdef USE_LIBPTHREAD
+#include <pthread.h>
+typedef pthread_mutex_t bclock_t;
+#else
+typedef void *bclock_t;
+#endif
+
 static shkey_t *BCMAP_LOCK_KEY;
+
+
 
 char *bc_name(bc_t *bc)
 {
@@ -42,18 +51,64 @@ char *bc_name(bc_t *bc)
   return (bc->name);
 }
 
-shlock_t *bc_lock(void)
+static bclock_t *bc_mutex(void)
 {
-  if (!BCMAP_LOCK_KEY)
-    BCMAP_LOCK_KEY = shkey_str(BCMAP_LOCK);
-  return (shlock_open(BCMAP_LOCK_KEY, 0));
+#ifdef USE_LIBPTHREAD
+	static pthread_mutex_t mutex;
+	static int _init;
+
+	if (!_init) {
+		pthread_mutexattr_t attr;
+
+		memset(&attr, 0, sizeof(attr));
+		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+		pthread_mutex_init(&mutex, &attr);
+	}
+
+	return (&mutex);
+#else
+	return (NULL);
+#endif
+}
+
+int bc_lock(void)
+{
+	bclock_t *mutex = bc_mutex();
+
+	if (!mutex)
+		return (TRUE);
+#ifdef USE_LIBPTHREAD
+	if (0 != pthread_mutex_lock(mutex)) {
+		return (FALSE);
+	}
+#endif
+
+	return (TRUE);
+}
+
+int bc_trylock(void)
+{
+	bclock_t *mutex = bc_mutex();
+
+	if (!mutex)
+		return (TRUE);
+#ifdef USE_LIBPTHREAD
+	if (0 != pthread_mutex_trylock(mutex))
+		return (FALSE);
+#endif
+
+	return (TRUE);
 }
 
 void bc_unlock(void)
 {
-  if (!BCMAP_LOCK_KEY)
-    BCMAP_LOCK_KEY = shkey_str(BCMAP_LOCK);
-  shlock_close(BCMAP_LOCK_KEY);
+	bclock_t *mutex = bc_mutex();
+
+	if (!mutex)
+		return;
+#ifdef USE_LIBPTHREAD
+	pthread_mutex_unlock(mutex);
+#endif
 }
 
 static int _bc_open(char *name, bc_t **bc_p)
@@ -62,11 +117,11 @@ static int _bc_open(char *name, bc_t **bc_p)
   int err;
 
   if (!bc_p)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   bc = (bc_t *)calloc(1, sizeof(bc_t));
   if (!bc)
-    return (SHERR_NOMEM);
+    return (ERR_NOMEM);
 
   strncpy(bc->name, name, sizeof(bc->name) - 1);
 
@@ -83,7 +138,8 @@ int bc_open(char *name, bc_t **bc_p)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_open(name, bc_p);
   bc_unlock();
 
@@ -117,9 +173,10 @@ static void _bc_close(bc_t *bc)
 
 void bc_close(bc_t *bc)
 {
-  bc_lock();
-  _bc_close(bc);
-  bc_unlock();
+  if (bc_lock()) {
+		_bc_close(bc);
+		bc_unlock();
+	}
 }
 
 /**
@@ -212,7 +269,7 @@ static int _bc_rewrite(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, i
     return (err);
 
   if (idx.size < data_len)
-    return (SHERR_EXIST);
+    return (ERR_EXIST);
 
   idx.size = data_len;
   idx.crc = shcrc32(data, data_len);
@@ -243,7 +300,7 @@ int bc_rewrite(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int data_
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_rewrite(bc, pos, hash, raw_data, data_len);
   bc_unlock();
@@ -285,7 +342,7 @@ static int _bc_write(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int
   /* store fresh block index */
   err = bc_idx_set(bc, pos, &idx);
   if (err) { 
-    if (err != SHERR_EXIST) {
+    if (err != ERR_EXIST) {
       sprintf(errbuf, "bc_write: error: bc_idx_set failure: %s.", sherrstr(err));
       shcoind_log(errbuf);
 			return (err);
@@ -318,7 +375,7 @@ int bc_write(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int data_le
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_write(bc, pos, hash, raw_data, data_len);
   bc_unlock();
@@ -366,7 +423,8 @@ int bc_append(bc_t *bc, bc_hash_t hash, void *data, size_t data_len)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_append(bc, hash, data, data_len);
   bc_unlock();
 
@@ -404,14 +462,14 @@ static int _bc_read(bc_t *bc, bcsize_t pos, void *data, bcsize_t data_len)
   map = bc->data_map + idx.jrnl;
 	if (idx.of >= map->size) {
     sprintf(errbuf, "bc_read: error: invalid record offset %u [max %u]\n", idx.of, map->size);
-    shcoind_err(SHERR_ILSEQ, "bc_read", errbuf);
-		return (SHERR_IO);
+    shcoind_err(ERR_ILSEQ, "bc_read", errbuf);
+		return (ERR_IO);
 	}
 
   if (shcrc32(map->raw + idx.of, idx.size) != idx.crc) {
     sprintf(errbuf, "bc_read: error: invalid crc {map: %x, idx: %x} mismatch at pos %d\n", shcrc32(map->raw + idx.of, idx.size), idx.crc, pos);
-    shcoind_err(SHERR_ILSEQ, "bc_read", errbuf);
-    return (SHERR_ILSEQ);
+    shcoind_err(ERR_ILSEQ, "bc_read", errbuf);
+    return (ERR_ILSEQ);
   }
 
   memcpy(data, map->raw + idx.of, data_len);
@@ -426,7 +484,7 @@ int bc_read(bc_t *bc, bcsize_t pos, void *data, bcsize_t data_len)
   int lk;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_read(bc, pos, data, data_len);
   bc_unlock();
@@ -447,7 +505,7 @@ static int _bc_get(bc_t *bc, bcpos_t pos, unsigned char **data_p, size_t *data_l
   if (!data_p) {
     sprintf(errbuf, "bc_get: error: no data pointer specified.");
     shcoind_log(errbuf);
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
   }
 
   /* obtain index for record position */
@@ -462,7 +520,7 @@ static int _bc_get(bc_t *bc, bcpos_t pos, unsigned char **data_p, size_t *data_l
 /* .. deal with idx.size == 0, i.e. prevent write of 0 */
   data = (unsigned char *)malloc(MAX(1, idx.size));
   if (!data)
-    return (SHERR_NOMEM);
+    return (ERR_NOMEM);
 
   /* read in serialized binary data */
   memset(data, '\000', idx.size);
@@ -485,7 +543,8 @@ int bc_get(bc_t *bc, bcpos_t pos, unsigned char **data_p, size_t *data_len_p)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_get(bc, pos, data_p, data_len_p);
   bc_unlock();
 
@@ -504,7 +563,7 @@ int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
   if (!data_p) {
     sprintf(errbuf, "bc_arch: no data pointer specified.");
     shcoind_log(errbuf);
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
   }
 
   *data_p = NULL;
@@ -523,7 +582,7 @@ int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
   data_len = idx.size;
   data = (unsigned char *)calloc(data_len, sizeof(char)); 
   if (!data)
-    return (SHERR_NOMEM);
+    return (ERR_NOMEM);
 
   /* ensure journal is allocated */
   err = bc_alloc(bc, idx.jrnl);
@@ -539,7 +598,7 @@ int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
   if (shcrc32(map->raw + idx.of, idx.size) != idx.crc) {
     sprintf(errbuf, "bc_arch: error: invalid crc {map: %x, idx: %x} mismatch at pos %d\n", shcrc32(map->raw + idx.of, idx.size), idx.crc, pos);
     shcoind_log(errbuf);
-    return (SHERR_ILSEQ);
+    return (ERR_ILSEQ);
   }
 
   memcpy(data, map->raw + idx.of, data_len);
@@ -595,7 +654,7 @@ static int _bc_purge(bc_t *bc, bcsize_t pos)
   int i;
 
   if (pos < 0)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   /* obtain index for record position */
   memset(&idx, 0, sizeof(idx));
@@ -613,7 +672,7 @@ static int _bc_purge(bc_t *bc, bcsize_t pos)
   if (shcrc32(map->raw + idx.of, idx.size) != idx.crc) {
     sprintf(errbuf, "bc_purge: invalid crc {map: %x, idx: %x} mismatch at pos %d\n", shcrc32(map->raw + idx.of, idx.size), idx.crc, pos);
     shcoind_log(errbuf);
-    return (SHERR_ILSEQ);
+    return (ERR_ILSEQ);
   }
 
   /* clear index of remaining entries */
@@ -645,7 +704,7 @@ int bc_purge(bc_t *bc, bcsize_t pos)
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_purge(bc, pos);
   bc_unlock();
@@ -788,7 +847,7 @@ int bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, bcsize_t data_len)
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_arch_write(bc, hash, raw_data, data_len);
   bc_unlock();
@@ -889,9 +948,10 @@ void bc_chain_idle(void)
   if (l_time == now)
     return;
 
-  bc_lock();
-  _bc_chain_idle();
-  bc_unlock();
+  if (bc_trylock()) {
+		_bc_chain_idle();
+		bc_unlock();
+	}
 
   l_time = now;
 }

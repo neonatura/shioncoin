@@ -343,7 +343,7 @@ AC_PATH_PROG(HELP2MAN, help2man, @echo WARNING: skipped: help2man )
 AM_CONDITIONAL(HAVE_HELP2MAN, [test x"$HELP2MAN" = x"help2man"])
 
 # Standard system "pthread" library for threading.
-AC_ARG_ENABLE([sexe],
+AC_ARG_ENABLE([pthread],
   AS_HELP_STRING([--disable-pthread], [Disable pthread library]))
 AM_CONDITIONAL(USE_LIBPTHREAD, [test "x$enable_pthread" != "xno"])
 if test "x$enable_pthread" != "xno" ; then

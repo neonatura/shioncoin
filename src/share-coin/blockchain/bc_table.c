@@ -73,11 +73,11 @@ static int _bc_table_get(bc_t *bc, bc_hash_t hash, bcpos_t *ret_pos)
 
   pos_p = bc_table_pos(bc, hash);
   if (!pos_p)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
   if (*pos_p == BC_TABLE_SEARCH_POS)
-    return (SHERR_SRCH);
+    return (ERR_SRCH);
   if (*pos_p == BC_TABLE_NULL_POS)
-    return (SHERR_NOENT); /* no record exists */
+    return (ERR_NOENT); /* no record exists */
 
   if (ret_pos) {
     *ret_pos = *pos_p;
@@ -90,7 +90,8 @@ int bc_table_get(bc_t *bc, bc_hash_t hash, bcpos_t *ret_pos)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_table_get(bc, hash, ret_pos);
   bc_unlock();
 
@@ -104,7 +105,7 @@ static int _bc_table_set(bc_t *bc, bc_hash_t hash, bcpos_t pos)
   int err;
 
   if (!bc || pos >= BC_TABLE_POS_MASK)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   err = bc_table_open(bc);
   if (err)
@@ -112,7 +113,7 @@ static int _bc_table_set(bc_t *bc, bc_hash_t hash, bcpos_t pos)
 
   pos_p = bc_table_pos(bc, hash);
   if (!pos_p)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   if (*pos_p < pos || *pos_p >= BC_TABLE_POS_MASK) {
     /* retain highest index position for hash entry */
@@ -126,7 +127,8 @@ int bc_table_set(bc_t *bc, bc_hash_t hash, bcpos_t pos)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_table_set(bc, hash, pos);
   bc_unlock();
 
@@ -140,7 +142,7 @@ static int _bc_table_unset(bc_t *bc, bc_hash_t hash)
   int err;
 
   if (!bc)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   err = bc_table_open(bc);
   if (err)
@@ -148,7 +150,7 @@ static int _bc_table_unset(bc_t *bc, bc_hash_t hash)
 
   pos_p = bc_table_pos(bc, hash);
   if (!pos_p)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   *pos_p = BC_TABLE_NULL_POS;
 
@@ -159,7 +161,8 @@ int bc_table_unset(bc_t *bc, bc_hash_t hash)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_table_unset(bc, hash);
   bc_unlock();
 
@@ -173,7 +176,7 @@ static int _bc_table_reset(bc_t *bc, bc_hash_t hash)
   int err;
 
   if (!bc)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   err = bc_table_open(bc);
   if (err)
@@ -181,7 +184,7 @@ static int _bc_table_reset(bc_t *bc, bc_hash_t hash)
 
   pos_p = bc_table_pos(bc, hash);
   if (!pos_p)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   
   *pos_p = BC_TABLE_SEARCH_POS;
@@ -193,7 +196,8 @@ int bc_table_reset(bc_t *bc, bc_hash_t hash)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_table_reset(bc, hash);
   bc_unlock();
 
@@ -206,7 +210,7 @@ static int _bc_table_open(bc_t *bc)
   int err;
 
   if (!bc)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   if (bc->tab_map.fd != 0) {
     return (0);
@@ -236,7 +240,8 @@ int bc_table_open(bc_t *bc)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_table_open(bc);
   bc_unlock();
 
@@ -255,7 +260,8 @@ static void _bc_table_close(bc_t *bc)
 void bc_table_close(bc_t *bc)
 {
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   _bc_table_close(bc);
   bc_unlock();
 
@@ -279,7 +285,8 @@ int bc_table_clear(bc_t *bc)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_table_clear(bc);
   bc_unlock();
 

@@ -38,7 +38,7 @@ static int _bc_idx_open(bc_t *bc)
   int err;
 
   if (!bc)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   if (bc->idx_map.fd != 0) {
     return (0);
@@ -69,9 +69,10 @@ int bc_idx_open(bc_t *bc)
   int err;
 
 	if (!bc)
-		return (SHERR_INVAL);
+		return (ERR_INVAL);
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_idx_open(bc);
   bc_unlock();
 
@@ -90,9 +91,10 @@ static void _bc_idx_close(bc_t *bc)
 void bc_idx_close(bc_t *bc)
 {
 
-  bc_lock();
-  _bc_idx_close(bc);
-  bc_unlock();
+  if (bc_lock()) {
+		_bc_idx_close(bc);
+		bc_unlock();
+	}
 
 }
 
@@ -117,8 +119,8 @@ static int _bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_po
   pos = 0;
   pos_high = -1;
   err = bc_table_get(bc, hash, &pos);
-  if (err == SHERR_NOENT)
-    return (SHERR_NOENT);
+  if (err == ERR_NOENT)
+    return (ERR_NOENT);
   if (err == 0) {
     /* current highest known position for table hash */
     pos_high = (int)pos;
@@ -163,7 +165,7 @@ static int _bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_po
 
   if (i < 0) {
     /* no index position found. */
-    return (SHERR_NOENT);
+    return (ERR_NOENT);
   }
 
   if (ret_idx)
@@ -178,7 +180,8 @@ int bc_idx_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_idx, int *ret_pos)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_idx_find(bc, hash, ret_idx, ret_pos);
   bc_unlock();
 
@@ -191,21 +194,21 @@ static int _bc_idx_get(bc_t *bc, bcsize_t pos, bc_idx_t *ret_idx)
   int err;
 
   if (!bc)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   if (pos < 0)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   err = bc_idx_open(bc);
   if (err)
     return (err);
 
   if (pos >= (bc->idx_map.hdr->of / sizeof(bc_idx_t)))
-    return (SHERR_NOENT);
+    return (ERR_NOENT);
 
   idx = (bc_idx_t *)bc->idx_map.raw;
   if (idx[pos].size == 0)
-    return (SHERR_NOENT); /* not filled in */
+    return (ERR_NOENT); /* not filled in */
 
   if (ret_idx) {
     memcpy(ret_idx, idx + pos, sizeof(bc_idx_t));
@@ -218,7 +221,8 @@ int bc_idx_get(bc_t *bc, bcsize_t pos, bc_idx_t *ret_idx)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_idx_get(bc, pos, ret_idx);
   bc_unlock();
 
@@ -233,7 +237,7 @@ static int _bc_idx_set(bc_t *bc, bcsize_t pos, bc_idx_t *idx)
   int err;
 
   if (!bc || pos < 0) {
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
   }
 
   err = bc_idx_open(bc);
@@ -255,8 +259,8 @@ static int _bc_idx_set(bc_t *bc, bcsize_t pos, bc_idx_t *idx)
   }
 #endif
 
-  if (bc_idx_get(bc, pos, NULL) != SHERR_NOENT)
-    return (SHERR_EXIST);
+  if (bc_idx_get(bc, pos, NULL) != ERR_NOENT)
+    return (ERR_EXIST);
 
   of = (pos * sizeof(bc_idx_t));
   if (pos >= (bc->idx_map.hdr->of / sizeof(bc_idx_t)) &&
@@ -284,7 +288,8 @@ int bc_idx_set(bc_t *bc, bcsize_t pos, bc_idx_t *idx)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_idx_set(bc, pos, idx);
   bc_unlock();
 
@@ -298,7 +303,7 @@ static int _bc_idx_reset(bc_t *bc, bcsize_t pos, bc_idx_t *idx)
   int err;
 
   if (!bc || pos < 0) {
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
   }
 
   err = bc_idx_open(bc);
@@ -321,12 +326,12 @@ static int _bc_idx_reset(bc_t *bc, bcsize_t pos, bc_idx_t *idx)
 #endif
 
   if (bc_idx_get(bc, pos, &n_idx) != 0)
-    return (SHERR_NOENT);
+    return (ERR_NOENT);
 
   of = (pos * sizeof(bc_idx_t));
   if (pos >= (bc->idx_map.hdr->of / sizeof(bc_idx_t)) ||
       (of + sizeof(bc_idx_t)) > bc->idx_map.size) {
-    return (SHERR_IO);
+    return (ERR_IO);
   }
 
   /* write to file map */
@@ -341,7 +346,8 @@ int bc_idx_reset(bc_t *bc, bcsize_t pos, bc_idx_t *idx)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_idx_reset(bc, pos, idx);
   bc_unlock();
 
@@ -360,7 +366,7 @@ static int _bc_idx_clear(bc_t *bc, bcsize_t pos)
   int err;
 
   if (!bc || pos < 0) {
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
   }
 
   err = bc_idx_open(bc);
@@ -388,7 +394,8 @@ int bc_idx_clear(bc_t *bc, bcsize_t pos)
 {
   int err;
 
-  bc_lock();
+  if (!bc_lock())
+		return (ERR_NOLCK);
   err = _bc_idx_clear(bc, pos);
   bc_unlock();
 

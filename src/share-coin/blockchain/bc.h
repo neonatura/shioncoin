@@ -92,8 +92,11 @@ typedef struct bc_t
 
 typedef struct bc_t CBlockChain;
 
-shlock_t *bc_lock(void);
+int bc_lock(void);
+int bc_trylock(void);
 void bc_unlock(void);
+
+
 
 #include "bc_fmap.h"
 #include "bc_index.h"

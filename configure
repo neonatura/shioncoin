@@ -850,8 +850,9 @@ with_sysroot
 enable_libtool_lock
 enable_largefile
 with_libshare
-enable_sexe
+enable_pthread
 enable_debug
+enable_sexe
 enable_usde
 enable_emc2
 enable_testnet
@@ -22124,9 +22125,9 @@ fi
 
 
 # Standard system "pthread" library for threading.
-# Check whether --enable-sexe was given.
-if test "${enable_sexe+set}" = set; then :
-  enableval=$enable_sexe;
+# Check whether --enable-pthread was given.
+if test "${enable_pthread+set}" = set; then :
+  enableval=$enable_pthread;
 fi
 
  if test "x$enable_pthread" != "xno"; then

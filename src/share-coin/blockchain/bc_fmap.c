@@ -94,7 +94,7 @@ static int _bc_map_open(bc_t *bc, bc_map_t *map)
   if (!S_ISREG(st.st_mode)) {
     //perror("bc_map_open [!reg]");
     close(fd);
-    return (SHERR_ISDIR);
+    return (ERR_ISDIR);
   }
   
   memset(&ini_hdr, 0, sizeof(ini_hdr));
@@ -133,7 +133,7 @@ int bc_map_open(bc_t *bc, bc_map_t *map)
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_map_open(bc, map);
   bc_unlock();
@@ -173,7 +173,7 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
   map_of = 0;
   size = st.st_size / BC_MAP_BLOCK_SIZE * BC_MAP_BLOCK_SIZE;
 	if (size >= MAX_BC_MAP_SIZE)
-		return (SHERR_OVERFLOW);
+		return (ERR_OVERFLOW);
 
   if (!map->hdr) { /* map has not been allocated */
     bc_hdr_t hdr;
@@ -216,7 +216,7 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
   if (raw == MAP_FAILED) {
     sprintf(errbuf, "bc_map_alloc: error: mmap failed on fd %d\n", map->fd); 
     shcoind_log(errbuf);
-    return (SHERR_NOMEM); 
+    return (ERR_NOMEM); 
   }
 
   /* fill in file map structure */
@@ -232,7 +232,7 @@ int bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_map_alloc(bc, map, len);
   bc_unlock();
@@ -271,7 +271,7 @@ int bc_map_trunc(bc_t *bc, bc_map_t *map, bcsize_t len)
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_map_trunc(bc, map, len);
   bc_unlock();
@@ -340,7 +340,7 @@ int bc_map_write(bc_t *bc, bc_map_t *map, bcsize_t of, void *raw_data, bcsize_t 
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_map_write(bc, map, of, raw_data, data_len);
   bc_unlock();
@@ -368,7 +368,7 @@ int bc_map_append(bc_t *bc, bc_map_t *map, void *raw_data, bcsize_t data_len)
   int err;
 
   if (!bc_lock())
-    return (SHERR_NOLCK);
+    return (ERR_NOLCK);
 
   err = _bc_map_append(bc, map, raw_data, data_len);
   bc_unlock();
@@ -380,7 +380,7 @@ static int _bc_map_read(bc_t *bc, bc_map_t *map, unsigned char *data, bcsize_t d
 {
 
   if ((data_of + data_len) >= map->hdr->of)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   memcpy(data, map->raw + data_of, data_len);
   map->stamp = time(NULL);

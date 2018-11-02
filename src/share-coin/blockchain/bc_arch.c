@@ -36,7 +36,7 @@ int bc_arch_open(bc_t *bc)
   int err;
 
   if (!bc)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   if (bc->arch_map.fd != 0)
     return (0);
@@ -120,7 +120,7 @@ int bc_arch_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_arch, bcsize_t *ret_pos
     }
   }
 
-  return (SHERR_NOENT);
+  return (ERR_NOENT);
 }
 
 int bc_arch_get(bc_t *bc, bcpos_t pos, bc_idx_t *ret_arch)
@@ -129,18 +129,18 @@ int bc_arch_get(bc_t *bc, bcpos_t pos, bc_idx_t *ret_arch)
   int err;
 
   if (!bc)
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
 
   err = bc_arch_open(bc);
   if (err)
     return (err);
 
   if (pos >= (bc->arch_map.hdr->of / sizeof(bc_idx_t)))
-    return (SHERR_NOENT);
+    return (ERR_NOENT);
 
   arch = (bc_idx_t *)bc->arch_map.raw;
   if (arch[pos].size == 0)
-    return (SHERR_NOENT); /* not filled in */
+    return (ERR_NOENT); /* not filled in */
 
   if (ret_arch) {
     memcpy(ret_arch, arch + pos, sizeof(bc_idx_t));
@@ -177,7 +177,7 @@ int bc_arch_set(bc_t *bc, bcpos_t pos, bc_idx_t *arch)
   int err;
 
   if (!bc) {
-    return (SHERR_INVAL);
+    return (ERR_INVAL);
   }
 
   err = bc_arch_open(bc);
@@ -185,8 +185,8 @@ int bc_arch_set(bc_t *bc, bcpos_t pos, bc_idx_t *arch)
     return (err);
   }
 
-  if (bc_arch_get(bc, pos, NULL) != SHERR_NOENT)
-    return (SHERR_EXIST);
+  if (bc_arch_get(bc, pos, NULL) != ERR_NOENT)
+    return (ERR_EXIST);
 
   of = (pos * sizeof(bc_idx_t));
   if (pos >= (bc->arch_map.hdr->of / sizeof(bc_idx_t)) &&

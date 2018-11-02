@@ -911,7 +911,6 @@ bool CommitGenerateOffer(CIface *iface, COffer *offer)
 		return (ERR_INVAL);
 
 	err = offer_VerifyGenerateOffer(iface, offer);
-fprintf(stderr, "DEBUG: CommitGenerateOffer: %d = offer_VerifyGenerateOffer()\n", err); 
 	if (err) {
 		return (err);
 	}
@@ -1047,11 +1046,9 @@ int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 				return (ERR_NOENT);
 
 			if (!offer_VerifyGenerateHier(iface, tx, offer->hashOffer)) {
-fprintf(stderr, "DEBUG: !offer_VerifyGenerateHier\n");
 				return (ERR_ACCESS);
 			}
 			if (!CommitGenerateOffer(iface, offer)) {
-fprintf(stderr, "DEBUG: !CommitGenerateOffer\n");
 				return (SHERR_INVAL);
 			}
 
