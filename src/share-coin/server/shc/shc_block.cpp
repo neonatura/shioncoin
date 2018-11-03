@@ -363,6 +363,13 @@ namespace SHC_Checkpoints
     ( 59127, uint256("0x7ddbb72740b40ff434717d5938fc1fedd1e9173d25d30e5554eef3b10743515d") )
     ( 59128, uint256("0xf19bc1a7e3416751daf8ea6ca116aded43b0f541ac4576ccd99a7c494fb50f20") )
 
+		/* Nov '18 */ 
+		( 78003, uint256("0x8759db8220ea122999cfdfcb8a2a3a332cf9189947955bd12bc9ed2c2ac71403") )
+		( 78004, uint256("0x9194d30c93aebd46d538a65f3962aced87c18a530ee947ca0200524c48fa67c6") )
+		( 78005, uint256("0x191d1b362ec5c04d80731a2f782bccefebdb4b976c19dfcc400e8eb1fd6b172a") )
+		( 78006, uint256("0x780128527b837c3456a111341d9e0b135c7afe335f0cfcfd8664efccfa1d577e") )
+		( 78007, uint256("0xcbb3bc5241bf4d528214b5bad95bc17e92d047db85a1d68587d505de60e76189") )
+
     ;
 
   bool CheckBlock(int nHeight, const uint256& hash)

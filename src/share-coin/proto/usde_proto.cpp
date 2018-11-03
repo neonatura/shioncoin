@@ -96,7 +96,10 @@ static int usde_bind(CIface *iface, void *_unused_)
 {
   int err;
 
-  err = unet_bind(UNET_USDE, opt_num(OPT_USDE_PORT), NULL);
+	/* set configured usde peer port for listening for new sockets. */
+	iface->port = opt_num(OPT_USDE_PORT);
+
+  err = unet_bind(UNET_USDE, iface->port, NULL);
   if (err) { 
     error(err, "error binding USDE socket port");
     return (err);

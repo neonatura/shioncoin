@@ -118,7 +118,9 @@ static int emc2_bind(CIface *iface, void *_unused_)
 {
   int err;
 
-  err = unet_bind(UNET_EMC2, get_emc2_bind_port(), NULL);
+	iface->port = get_emc2_bind_port();
+
+  err = unet_bind(UNET_EMC2, iface->port, NULL);
   if (err) { 
     error(err, "error binding EMC2 socket port");
     return (err);

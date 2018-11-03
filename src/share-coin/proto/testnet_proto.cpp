@@ -109,7 +109,9 @@ static int testnet_bind(CIface *iface, void *_unused_)
 {
   int err;
 
-  err = unet_bind(UNET_TESTNET, opt_num(OPT_TESTNET_PORT), NULL);
+	iface->port = opt_num(OPT_TESTNET_PORT);
+
+  err = unet_bind(UNET_TESTNET, iface->port, NULL);
   if (err) {
     error(err, "error binding TESTNET socket port");
     return (err);

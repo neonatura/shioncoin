@@ -385,8 +385,6 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
     *ret_diff = 0.0;
 
   if (mapWork.count(workId) == 0) {
-		Debug("(%s) submitblock: stale share rejected (workid: %u).", iface->name, nNonce, workId);
-		shcoind_log(errbuf);
     return (SHERR_TIME); /* task is stale */
   }
 
@@ -434,7 +432,6 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
     pblock->nNonce = nNonce;
  
 		Debug("(%s) submitblock: share received (nonce: %u) (workid: %u).", iface->name, nNonce, workId);
-		shcoind_log(errbuf);
 
 #if SUBMIT_ALT_BLOCK_CHAIN
     /* try nonce on alt coins */ 

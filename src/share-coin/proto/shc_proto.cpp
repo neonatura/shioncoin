@@ -115,7 +115,10 @@ static int shc_bind(CIface *iface, void *_unused_)
 {
   int err;
 
-  err = unet_bind(UNET_SHC, opt_num(OPT_SHC_PORT), NULL);
+	/* set configured port */
+	iface->port = opt_num(OPT_SHC_PORT);
+
+  err = unet_bind(UNET_SHC, iface->port, NULL);
   if (err) {
     error(err, "error binding SHC socket port");
     return (err);
