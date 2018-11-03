@@ -31,7 +31,7 @@
 
 #define BC_ARCH_EXTENSION "arch"
 
-int bc_arch_open(bc_t *bc)
+static int _bc_arch_open(bc_t *bc)
 {
   int err;
 
@@ -44,24 +44,47 @@ int bc_arch_open(bc_t *bc)
   /* set map file extension */
   strncpy(bc->arch_map.ext, BC_ARCH_EXTENSION, sizeof(bc->arch_map.ext)-1);
 
-  err = bc_map_open(bc, &bc->arch_map);
-  if (err)
-    return (err);
+	err = bc_map_open(bc, &bc->arch_map);
+	if (err) {
+		return (err);
+	}
 
-  err = bc_map_alloc(bc, &bc->arch_map, 0);
-  if (err)
-    return (err);
-  
+	err = bc_map_alloc(bc, &bc->arch_map, 0);
+	if (err) {
+		return (err);
+	}
+
   return (0);
 }
 
-void bc_arch_close(bc_t *bc)
+int bc_arch_open(bc_t *bc)
+{
+	int err;
+
+	if (!bc_lock(bc))
+		return (ERR_NOLCK);
+	err = _bc_arch_open(bc);
+	bc_unlock(bc);
+
+	return (err);
+}
+
+static void _bc_arch_close(bc_t *bc)
 {
 
   if (bc->arch_map.fd != 0) {
     bc_map_close(&bc->arch_map);
   }
   
+}
+
+void bc_arch_close(bc_t *bc)
+{
+
+	if (bc_lock(bc)) {
+		_bc_arch_close(bc);
+		bc_unlock(bc);
+	}
 }
 
 uint32_t bc_arch_crc(bc_hash_t hash)
@@ -123,7 +146,7 @@ int bc_arch_find(bc_t *bc, bc_hash_t hash, bc_idx_t *ret_arch, bcsize_t *ret_pos
   return (ERR_NOENT);
 }
 
-int bc_arch_get(bc_t *bc, bcpos_t pos, bc_idx_t *ret_arch)
+static int _bc_arch_get(bc_t *bc, bcpos_t pos, bc_idx_t *ret_arch)
 {
   bc_idx_t *arch;
   int err;
@@ -149,6 +172,18 @@ int bc_arch_get(bc_t *bc, bcpos_t pos, bc_idx_t *ret_arch)
   return (0);
 }
 
+int bc_arch_get(bc_t *bc, bcpos_t pos, bc_idx_t *ret_arch)
+{
+	int err;
+
+	if (!bc_lock(bc))
+		return (ERR_NOLCK);
+	err = _bc_arch_get(bc, pos, ret_arch);
+	bc_unlock(bc);
+
+	return (err);
+}
+
 /**
  * @returns The next record index.
  */
@@ -170,7 +205,7 @@ int bc_arch_next(bc_t *bc, bcpos_t *pos_p)
 /**
  * @todo consider clearing indexes which are brought back into main chain.
  */
-int bc_arch_set(bc_t *bc, bcpos_t pos, bc_idx_t *arch)
+static int _bc_arch_set(bc_t *bc, bcpos_t pos, bc_idx_t *arch)
 {
   bc_idx_t *f_arch;
   bcsize_t of;
@@ -204,6 +239,18 @@ int bc_arch_set(bc_t *bc, bcpos_t pos, bc_idx_t *arch)
     return (err);
 
   return (0);
+}
+
+int bc_arch_set(bc_t *bc, bcpos_t pos, bc_idx_t *arch)
+{
+	int err;
+
+	if (!bc_lock(bc))
+		return (ERR_NOLCK);
+	err = _bc_arch_set(bc, pos, arch);
+	bc_unlock(bc);
+
+	return (err);
 }
 
 int bc_arch_add(bc_t *bc, bc_idx_t *arch)

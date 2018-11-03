@@ -132,11 +132,11 @@ int bc_map_open(bc_t *bc, bc_map_t *map)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
 
   err = _bc_map_open(bc, map);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -231,11 +231,11 @@ int bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
 
   err = _bc_map_alloc(bc, map, len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -270,11 +270,11 @@ int bc_map_trunc(bc_t *bc, bc_map_t *map, bcsize_t len)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
 
   err = _bc_map_trunc(bc, map, len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -283,15 +283,11 @@ void bc_map_free(bc_map_t *map)
 {
 
   if (map->hdr) {
-    if (bc_lock()) {
-      munmap((void *)map->hdr, map->size); 
+		munmap((void *)map->hdr, map->size); 
 
-      map->hdr = NULL;
-      map->raw = NULL;
-      map->size = 0;
-
-      bc_unlock();
-    }
+		map->hdr = NULL;
+		map->raw = NULL;
+		map->size = 0;
   }
 
 }
@@ -311,10 +307,7 @@ void bc_map_close(bc_map_t *map)
 {
 
   if (map) {
-    if (bc_lock()) {
-      _bc_map_close(map);
-      bc_unlock();
-    }
+		_bc_map_close(map);
   }
 
 }
@@ -339,11 +332,10 @@ int bc_map_write(bc_t *bc, bc_map_t *map, bcsize_t of, void *raw_data, bcsize_t 
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
-
   err = _bc_map_write(bc, map, of, raw_data, data_len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -367,11 +359,10 @@ int bc_map_append(bc_t *bc, bc_map_t *map, void *raw_data, bcsize_t data_len)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
-
   err = _bc_map_append(bc, map, raw_data, data_len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -395,32 +386,13 @@ int bc_map_read(bc_t *bc, bc_map_t *map, unsigned char *data, bcsize_t data_of, 
 {
   int err;
 
-  if (bc_lock()) {
-    err = _bc_map_read(bc, map, data, data_of, data_len);
-    bc_unlock();
-    if (err)
-      return (err);
-  }
+  if (!bc_lock(bc))
+		return (ERR_NOLCK);
 
-  return (0);
-}
-
-#define BCMAP_IDLE_TIME 240
-int bc_map_idle(bc_t *bc, bc_map_t *map)
-{
-  time_t now;
-
-  if (!map)
-    return (0);
-
-  now = time(NULL);
-  if ((map->stamp + BCMAP_IDLE_TIME) > now)
-    return (1);
-
-  if (bc_lock()) {
-    bc_map_close(map);
-    bc_unlock();
-  }
+	err = _bc_map_read(bc, map, data, data_of, data_len);
+	bc_unlock(bc);
+	if (err)
+		return (err);
 
   return (0);
 }

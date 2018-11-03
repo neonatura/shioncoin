@@ -43,8 +43,6 @@ shkey_t *get_bcmap_lock(void);
 
 unsigned int bc_fmap_total(bc_t *bc);
 
-int bc_map_idle(bc_t *bc, bc_map_t *map);
-
 void bc_map_close(bc_map_t *map);
 
 

@@ -34,6 +34,7 @@
 //#define MAX_SERVER_NONCE 128
 #define MAX_SERVER_NONCE 8
 #define MAX_ROUND_TIME 600
+#define MAX_REWARD_WAIT_TIME 900
 
 #define POST_BLOCK_TIME 15
 
@@ -257,8 +258,8 @@ static void commit_payout(int ifaceIndex, int block_height)
     if (!*uname)
       continue;
 
-    if (user->reward_time < (now - MAX_ROUND_TIME))
-      break; /* waiting more than 10min for reward. */ 
+    if (user->reward_time < (now - MAX_REWARD_WAIT_TIME))
+      break; /* waited more than 15min for reward. */ 
 
     coin_val = floor(user->balance[ifaceIndex] * 1000) / 1000;
     if (coin_val > (user->balance_avg[ifaceIndex] * 10)) {

@@ -30,6 +30,10 @@ static void shcoind_diag_signal(int sig_num);
 static void shcoind_term_signal(int sig_num);
 
 
+static void shcoind_chld_signal(int sig_num)
+{
+	/* interrupt timer */
+}
 
 void shcoind_signal_init(void)
 {
@@ -39,6 +43,8 @@ void shcoind_signal_init(void)
   signal(SIGHUP, SIG_IGN);
   signal(SIGPIPE, SIG_IGN);
   signal(SIGUSR2, SIG_IGN);
+
+	signal(SIGCHLD, shcoind_chld_signal);
 
   signal(SIGTERM, shcoind_term_signal);
   signal(SIGQUIT, shcoind_term_signal);

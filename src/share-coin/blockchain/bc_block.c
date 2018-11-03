@@ -31,15 +31,7 @@
 #include <stdio.h>
 #endif
 
-#ifdef USE_LIBPTHREAD
-#include <pthread.h>
-typedef pthread_mutex_t bclock_t;
-#else
-typedef void *bclock_t;
-#endif
-
-static shkey_t *BCMAP_LOCK_KEY;
-
+#define BCMAP_IDLE_TIME 240
 
 
 char *bc_name(bc_t *bc)
@@ -51,65 +43,6 @@ char *bc_name(bc_t *bc)
   return (bc->name);
 }
 
-static bclock_t *bc_mutex(void)
-{
-#ifdef USE_LIBPTHREAD
-	static pthread_mutex_t mutex;
-	static int _init;
-
-	if (!_init) {
-		pthread_mutexattr_t attr;
-
-		memset(&attr, 0, sizeof(attr));
-		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-		pthread_mutex_init(&mutex, &attr);
-	}
-
-	return (&mutex);
-#else
-	return (NULL);
-#endif
-}
-
-int bc_lock(void)
-{
-	bclock_t *mutex = bc_mutex();
-
-	if (!mutex)
-		return (TRUE);
-#ifdef USE_LIBPTHREAD
-	if (0 != pthread_mutex_lock(mutex)) {
-		return (FALSE);
-	}
-#endif
-
-	return (TRUE);
-}
-
-int bc_trylock(void)
-{
-	bclock_t *mutex = bc_mutex();
-
-	if (!mutex)
-		return (TRUE);
-#ifdef USE_LIBPTHREAD
-	if (0 != pthread_mutex_trylock(mutex))
-		return (FALSE);
-#endif
-
-	return (TRUE);
-}
-
-void bc_unlock(void)
-{
-	bclock_t *mutex = bc_mutex();
-
-	if (!mutex)
-		return;
-#ifdef USE_LIBPTHREAD
-	pthread_mutex_unlock(mutex);
-#endif
-}
 
 static int _bc_open(char *name, bc_t **bc_p)
 {
@@ -125,6 +58,8 @@ static int _bc_open(char *name, bc_t **bc_p)
 
   strncpy(bc->name, name, sizeof(bc->name) - 1);
 
+	bc_mutex_init(bc);
+
   err = bc_idx_open(bc);
   if (err)
     return (err);
@@ -136,14 +71,7 @@ static int _bc_open(char *name, bc_t **bc_p)
 
 int bc_open(char *name, bc_t **bc_p)
 {
-  int err;
-
-  if (!bc_lock())
-		return (ERR_NOLCK);
-  err = _bc_open(name, bc_p);
-  bc_unlock();
-
-  return (err);
+  return (_bc_open(name, bc_p));
 }
 
 static void _bc_close(bc_t *bc)
@@ -151,32 +79,41 @@ static void _bc_close(bc_t *bc)
   bc_map_t *map;
   int i;
 
-  /* close index map */
-  bc_idx_close(bc);
+	/* wait for any pending access */
+	(void)bc_lock(bc);
 
-  /* close hash table */
-  bc_table_close(bc);
+	/* close index map */
+	bc_idx_close(bc);
 
-  /* close data maps */
-  for (i = 0; i < bc->data_map_len; i++) {
-    map = bc->data_map + i;
-    bc_map_close(map);
-  }
+	/* close hash table */
+	bc_table_close(bc);
 
-  /* free data map list */
-  free(bc->data_map);
-  bc->data_map = NULL;
-  bc->data_map_len = 0;
+	/* close data maps */
+	for (i = 0; i < bc->data_map_len; i++) {
+		map = bc->data_map + i;
+		bc_map_close(map);
+	}
+
+	/* free data map list */
+	free(bc->data_map);
+	bc->data_map = NULL;
+	bc->data_map_len = 0;
+
+	/* unlock and destroy mutex */
+	bc_unlock(bc);
+	bc_mutex_term(bc);
 
   free(bc);
 }
 
 void bc_close(bc_t *bc)
 {
-  if (bc_lock()) {
-		_bc_close(bc);
-		bc_unlock();
-	}
+
+	if (!bc)
+		return;
+
+	_bc_close(bc);
+	
 }
 
 /**
@@ -299,11 +236,10 @@ int bc_rewrite(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int data_
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
-
   err = _bc_rewrite(bc, pos, hash, raw_data, data_len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -374,11 +310,10 @@ int bc_write(bc_t *bc, bcsize_t pos, bc_hash_t hash, void *raw_data, int data_le
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
-
   err = _bc_write(bc, pos, hash, raw_data, data_len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -423,10 +358,10 @@ int bc_append(bc_t *bc, bc_hash_t hash, void *data, size_t data_len)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
 		return (ERR_NOLCK);
   err = _bc_append(bc, hash, data, data_len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -483,11 +418,10 @@ int bc_read(bc_t *bc, bcsize_t pos, void *data, bcsize_t data_len)
   int err;
   int lk;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
-
   err = _bc_read(bc, pos, data, data_len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -543,10 +477,10 @@ int bc_get(bc_t *bc, bcpos_t pos, unsigned char **data_p, size_t *data_len_p)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
 		return (ERR_NOLCK);
   err = _bc_get(bc, pos, data_p, data_len_p);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -703,11 +637,10 @@ int bc_purge(bc_t *bc, bcsize_t pos)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
-
   err = _bc_purge(bc, pos);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -756,18 +689,32 @@ const char *bc_path_base(void)
 void bc_idle(bc_t *bc)
 {
   bc_map_t *map;
+	time_t now;
   int i;
 
-  if (bc_lock()) {
-    for (i = 0; i < bc->data_map_len; i++) {
-      map = bc->data_map + i;
-      if (map->fd != 0) {
-        if (bc_map_idle(bc, map) == 0)
-          break; /* one at a time */
-      }
-    }
-    bc_unlock();
-  }
+  if (!bc_trylock(bc))
+		return; /* busy */
+
+	now = time(NULL);
+
+	map = NULL;
+	for (i = 0; i < bc->data_map_len; i++) {
+		map = bc->data_map + i;
+		if (map->fd != 0) {
+			if ((map->stamp + BCMAP_IDLE_TIME) <= now)
+				break; /* one at a time */
+		}
+
+		map = NULL;
+	}
+	bc_unlock(bc);
+	if (!map)
+		return;
+
+	if (bc_trylock(bc)) {
+		bc_map_close(map);
+		bc_unlock(bc);
+	}
 
 }
 
@@ -846,11 +793,10 @@ int bc_arch_write(bc_t *bc, bc_hash_t hash, void *raw_data, bcsize_t data_len)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
     return (ERR_NOLCK);
-
   err = _bc_arch_write(bc, hash, raw_data, data_len);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -948,10 +894,7 @@ void bc_chain_idle(void)
   if (l_time == now)
     return;
 
-  if (bc_trylock()) {
-		_bc_chain_idle();
-		bc_unlock();
-	}
+	_bc_chain_idle();
 
   l_time = now;
 }

@@ -23,9 +23,16 @@
  *  @endcopyright
  */  
 
-
 #ifndef __BLOCKCHAIN__BC_H__
 #define __BLOCKCHAIN__BC_H__
+
+
+#ifdef USE_LIBPTHREAD
+#include <pthread.h>
+typedef pthread_mutex_t bclock_t;
+#else
+typedef int bclock_t;
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,16 +95,14 @@ typedef struct bc_t
   bc_map_t arch_map;
   bc_map_t *data_map;
   size_t data_map_len;
+	bclock_t lk;
 } bc_t;
 
 typedef struct bc_t CBlockChain;
 
-int bc_lock(void);
-int bc_trylock(void);
-void bc_unlock(void);
 
 
-
+#include "bc_mutex.h"
 #include "bc_fmap.h"
 #include "bc_index.h"
 #include "bc_table.h"

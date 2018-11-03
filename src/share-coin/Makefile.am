@@ -15,18 +15,19 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/server/rpc
 
 blockchain_sources = \
+	$(srcdir)/blockchain/bc_arch.c \
 	$(srcdir)/blockchain/bc_block.c \
+	$(srcdir)/blockchain/bc_fmap.c \
 	$(srcdir)/blockchain/bc_index.c \
 	$(srcdir)/blockchain/bc_table.c \
-	$(srcdir)/blockchain/bc_arch.c \
-	$(srcdir)/blockchain/bc_fmap.c \
+	$(srcdir)/blockchain/bc_mutex.c \
 	$(srcdir)/blockchain/bc.h \
+	$(srcdir)/blockchain/bc_arch.h \
 	$(srcdir)/blockchain/bc_block.h \
+	$(srcdir)/blockchain/bc_fmap.h \
 	$(srcdir)/blockchain/bc_index.h \
-	$(srcdir)/blockchain/bc_table.h \
-	$(srcdir)/blockchain/bc_arch.h \
-	$(srcdir)/blockchain/bc_arch.h \
-	$(srcdir)/blockchain/bc_fmap.h
+	$(srcdir)/blockchain/bc_mutex.h \ 
+	$(srcdir)/blockchain/bc_table.h
 
 proto_sources = \
 	$(srcdir)/proto/coin_proto.c \

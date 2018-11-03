@@ -90,10 +90,10 @@ int bc_table_get(bc_t *bc, bc_hash_t hash, bcpos_t *ret_pos)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
 		return (ERR_NOLCK);
   err = _bc_table_get(bc, hash, ret_pos);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -127,10 +127,10 @@ int bc_table_set(bc_t *bc, bc_hash_t hash, bcpos_t pos)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
 		return (ERR_NOLCK);
   err = _bc_table_set(bc, hash, pos);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -161,10 +161,10 @@ int bc_table_unset(bc_t *bc, bc_hash_t hash)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
 		return (ERR_NOLCK);
   err = _bc_table_unset(bc, hash);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -196,10 +196,10 @@ int bc_table_reset(bc_t *bc, bc_hash_t hash)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
 		return (ERR_NOLCK);
   err = _bc_table_reset(bc, hash);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -240,10 +240,10 @@ int bc_table_open(bc_t *bc)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
 		return (ERR_NOLCK);
   err = _bc_table_open(bc);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
@@ -260,10 +260,10 @@ static void _bc_table_close(bc_t *bc)
 void bc_table_close(bc_t *bc)
 {
 
-  if (!bc_lock())
-		return (ERR_NOLCK);
-  _bc_table_close(bc);
-  bc_unlock();
+  if (bc_lock(bc)) {
+		_bc_table_close(bc);
+		bc_unlock(bc);
+	}
 
 }
 
@@ -285,10 +285,10 @@ int bc_table_clear(bc_t *bc)
 {
   int err;
 
-  if (!bc_lock())
+  if (!bc_lock(bc))
 		return (ERR_NOLCK);
   err = _bc_table_clear(bc);
-  bc_unlock();
+  bc_unlock(bc);
 
   return (err);
 }
