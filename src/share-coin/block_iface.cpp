@@ -51,9 +51,7 @@ using namespace std;
 using namespace boost;
 using namespace json_spirit;
 
-#define MAX_NONCE_SEQUENCE 8
-
-//std::map<uint256, CBlockIndex*> transactionMap;
+#define MAX_NONCE_SEQUENCE 4
 
 string blocktemplate_json; 
 string mininginfo_json; 
@@ -177,6 +175,8 @@ const char *c_getblocktemplate(int ifaceIndex)
 
   /* store "worker" block for until height increment. */
   work_id++;
+	if (work_id >= 0xFFFFFF)
+		work_id = 1;
   mapWork[work_id] = pblock; 
   altBlock[ifaceIndex] = pblock;
 
@@ -370,6 +370,7 @@ int c_processblock(CBlock* pblock)
 
 int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, char *xn_hex, char *ret_hash, double *ret_diff)
 {
+	static char errbuf[1024];
   CBlock *pblock;
   shtime_t ts;
   uint256 hash;
@@ -384,6 +385,8 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
     *ret_diff = 0.0;
 
   if (mapWork.count(workId) == 0) {
+		Debug("(%s) submitblock: stale share rejected (workid: %u).", iface->name, nNonce, workId);
+		shcoind_log(errbuf);
     return (SHERR_TIME); /* task is stale */
   }
 
@@ -430,12 +433,14 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
     /* retain for dup check */
     pblock->nNonce = nNonce;
  
+		Debug("(%s) submitblock: share received (nonce: %u) (workid: %u).", iface->name, nNonce, workId);
+		shcoind_log(errbuf);
+
 #if SUBMIT_ALT_BLOCK_CHAIN
     /* try nonce on alt coins */ 
     c_processaltblock(pblock->ifaceIndex, nNonce, xn_hex);
 #endif
   } else {
-    char errbuf[1024];
 
     err = c_processblock(pblock);
     if (!err) {
@@ -443,7 +448,7 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
       if (ret_hash)
         strcpy(ret_hash, submit_block_hash.c_str());
 
-      sprintf(errbuf, "submitblock[iface #%d (%s)]: mined block (%s) generated %s coins.", pblock->ifaceIndex, iface->name, submit_block_hash.c_str(), FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
+      sprintf(errbuf, "(%s) submitblock: mined block (%s) generated %s coins.", iface->name, submit_block_hash.c_str(), FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
       shcoind_log(errbuf);
     } else {
       shcoind_err(err, iface->name, "submit block");
@@ -1095,7 +1100,6 @@ uint64_t c_getblockheight(int ifaceIndex)
 string miningtransactioninfo_json;
 const char *c_getminingtransactions(int ifaceIndex, unsigned int workId)
 {
-  CIface *iface = GetCoinByIndex(ifaceIndex);
   Array result;
 //  map<uint256, int64_t> setTxIndex;
   int i = 0;
@@ -1108,6 +1112,9 @@ const char *c_getminingtransactions(int ifaceIndex, unsigned int workId)
   }
  
   pblock = mapWork[workId];
+  CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
+	if (!iface)
+		return (NULL);
 
   BOOST_FOREACH (CTransaction& tx, pblock->vtx)
   {

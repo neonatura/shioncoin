@@ -619,7 +619,7 @@ task_t *task_init(task_attr_t *attr)
   task_list = task;
 #endif
 
-  sprintf(errbuf, "(%s) task_init: created new mining task. (height: %d) (prev-hash: %s)\n", iface->name, (int)task->height, task->prev_hash);
+  sprintf(errbuf, "(%s) task_init: created new mining task. (height: %d) (prev-hash: %s) (reset: %s)\n", iface->name, (int)task->height, task->prev_hash, (task->work_reset ? "true" : "false"));
   shcoind_log(errbuf);
 
   return (task);
