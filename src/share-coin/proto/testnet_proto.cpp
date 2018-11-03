@@ -190,11 +190,9 @@ static int testnet_block_process(CIface *iface, CBlock *block)
 static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
 {
   static CPubKey ret_key;
-	static int renew_index;
+	string strAccount("");
 
-	renew_index++;
-  if ((0 == (renew_index % 50)) || !ret_key.IsValid()) {
-    string strAccount("");
+  if (!ret_key.IsValid()) {
     GetAccountAddress(wallet, strAccount, false);
 
 		ret_key = wallet->GenerateNewKey(true);
@@ -214,7 +212,25 @@ static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
     /* cpu miner */
     string strSystemAccount("system");
     GetAccountAddress(wallet, strSystemAccount, false);
-  }
+	}
+
+	/* check if this pubkey has been used in coinbase. */
+	CScript scriptPubKey;
+	bool bKeyUsed = false;
+	scriptPubKey << ret_key << OP_CHECKSIG;
+	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
+			it != wallet->mapWallet.end(); ++it) {
+		const CWalletTx& wtx = (*it).second;
+		if (!wtx.IsCoinBase())
+			continue;
+		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+			if (txout.scriptPubKey == scriptPubKey)
+				bKeyUsed = true;
+	}
+	if (bKeyUsed) {
+		/* create new pubkey */
+		ret_key = GetAccountPubKey(wallet, strAccount, true);
+	}
 
   return (ret_key);
 }

@@ -197,10 +197,10 @@ static int shc_block_process(CIface *iface, CBlock *block)
 static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 {
   static CPubKey ret_key;
+	string strAccount("");
 
   if (!ret_key.IsValid()) {
 		/* main account. */
-		string strAccount("");
 		GetAccountAddress(wallet, strAccount, false);
 
     /* mining pool fees */
@@ -216,6 +216,24 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 		CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
 		Debug("(shc) GetMainAccountPubKey: using '%s' for mining address.",
 				addr.ToString().c_str()); 
+	}
+
+	/* check if this pubkey has been used in coinbase. */
+	CScript scriptPubKey;
+	bool bKeyUsed = false;
+	scriptPubKey << ret_key << OP_CHECKSIG;
+	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
+			it != wallet->mapWallet.end(); ++it) {
+		const CWalletTx& wtx = (*it).second;
+		if (!wtx.IsCoinBase())
+			continue;
+		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+			if (txout.scriptPubKey == scriptPubKey)
+				bKeyUsed = true;
+	}
+	if (bKeyUsed) {
+		/* create new pubkey */
+		ret_key = GetAccountPubKey(wallet, strAccount, true);
 	}
 
   return (ret_key);
