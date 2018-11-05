@@ -34,6 +34,7 @@
 #include "ltc_wallet.h"
 #include "chain.h"
 #include "coin.h"
+#include "versionbits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -559,26 +560,6 @@ static void ltc_EraseFromWallets(uint256 hash)
   pwallet->EraseFromWallet(hash);
 }
 
-
-
-
-
-static bool ltc_IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned nRequired)
-{
-  unsigned int nFound = 0;
-
-  for (int i = 0; i < LTC_MAJORITY_WINDOW &&
-      nFound < nRequired && pstart != NULL; i++) {
-    if (pstart->nVersion >= minVersion)
-      ++nFound;
-    pstart = pstart->pprev;
-  }
-
-  return (nFound >= nRequired);
-}
-
-
-
 bool ltc_ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
   CBlockIndex *pindexBest = GetBestBlockIndex(LTC_COIN_IFACE);
@@ -1056,6 +1037,7 @@ bool LTCBlock::IsBestChain()
 
 bool LTCBlock::AcceptBlock()
 {
+  CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
   CBlockIndex* pindexPrev;
 
   pindexPrev = GetBlockIndexByHash(ifaceIndex, hashPrevBlock);
@@ -1073,31 +1055,30 @@ bool LTCBlock::AcceptBlock()
     return error(SHERR_INVAL, "(ltc) AcceptBlock() : block's timestamp too far in the past.");
   }
 
-  bool checkHeightMismatch = false;
-  if (nVersion >= 2) {
-    /* enforce BIP34 with BIP66 */
-    if (ltc_IsSuperMajority(3, pindexPrev, 2375))
-      checkHeightMismatch = true;
-  }
-  if (checkHeightMismatch) {
-    CScript expect;
-    unsigned int nHeight;
+	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
+	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
+		/* check for obsolete blocks. */
+		if (nVersion < 2)
+			return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP34].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
 
-    nHeight = pindexPrev ? (pindexPrev->nHeight + 1) : NULL;
-    expect << nHeight;
-
-    if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
-        !std::equal(expect.begin(), expect.end(),
-          vtx[0].vin[0].scriptSig.begin())) {
-      if (originPeer) {
-        unsigned char rejectCode = 0x10;
-        string bad_cb_height = "bad-cb-height";
-        string command = "block";
-        originPeer->PushMessage("reject", command, rejectCode, bad_cb_height, GetHash());
-      }
-      return error(SHERR_INVAL, "ltc_AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", GetHash().GetHex().c_str(), nHeight);
-    }
-  }
+		/* verify height inclusion. */
+		CScript expect = CScript() << nHeight;
+		if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
+				!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
+			return error(SHERR_INVAL, "(%s) AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", iface->name, GetHash().GetHex().c_str(), nHeight);
+	}
+	if (iface->BIP66Height != -1 && nVersion < 3 && 
+			nHeight >= iface->BIP66Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP66].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (iface->BIP65Height != -1 && nVersion < 4 && 
+			nHeight >= iface->BIP65Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP65].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (nVersion < VERSIONBITS_TOP_BITS &&
+			IsWitnessEnabled(iface, pindexPrev)) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [segwit].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
 
   return (core_AcceptBlock(this, pindexPrev));
 }

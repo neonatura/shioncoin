@@ -3003,6 +3003,7 @@ void core_ReacceptWalletTransactions(CWallet *wallet)
 
 	min_pindex = NULL;
 
+	vector<uint256> vErase;
 	BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, wallet->mapWallet) {
 		const uint256& tx_hash = item.first;
 		CWalletTx& wtx = item.second;
@@ -3023,7 +3024,8 @@ void core_ReacceptWalletTransactions(CWallet *wallet)
 		if (!pindex) {
 			/* reaccept into mempool. */
 			if (!wtx.AcceptWalletTransaction()) {
-				error(SHERR_INVAL, "core_ReacceptWalletTransactions: !wtx.AcceptWalletTransaction()");
+				Debug("(%s) ReacceptWalletTransactions: warning: unresolvable tx \"%s\".", iface->name, wtx.GetHash().GetHex().c_str());
+				vErase.push_back(tx_hash);
 			}
 		} else {
 			/* reference highest block with stored wallet tx */
@@ -3031,6 +3033,11 @@ void core_ReacceptWalletTransactions(CWallet *wallet)
 				min_pindex = pindex;
 		}
 	}
+#if 0
+	BOOST_FOREACH(const uint256& tx_hash, vErase) {
+		wallet->EraseFromWallet(tx_hash);
+	}
+#endif
 
 	/* rescan from height of newest wallet tx */
 	if (min_pindex)

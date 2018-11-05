@@ -546,6 +546,48 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
   shtime_t ts;
   int err;
 
+	unsigned int nHeight = (pindex->pprev ? (pindex->pprev->nHeight+1) : 0);
+
+	/* enforce BIP30 / BIP34 */
+	bool fEnforceBIP30 = false;
+	bool fEnforceBIP34 = false;
+	fEnforceBIP34 = (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height);
+	if (!fEnforceBIP34)
+		fEnforceBIP30 = (iface->BIP30Height != -1 && nHeight >= iface->BIP30Height);
+	if (fEnforceBIP30) {
+		BOOST_FOREACH(CTransaction& tx, block->vtx) {
+			if (!VerifyTxHash(iface, tx.GetHash()))
+				continue; /* not dup tx hash */
+
+			int i;
+			vector<uint256> vOuts;
+			tx.ReadCoins(block->ifaceIndex, vOuts);
+			for (i = 0; i < vOuts.size(); i++) {
+				if (vOuts[i].IsNull())
+					break; /* not spent */
+			}
+			if (i != vOuts.size()) {
+				/* attempting to re-use a tx hash with unspent output(s). */
+				return (error(ERR_INVAL, "(%s) core_AcceptBlock: rejecting block with duplicate transaction hash (%s) [BIP30].", iface->name, tx.GetHash().GetHex().c_str()));
+			}
+		}
+	}
+	if (block->ifaceIndex != EMC2_COIN_IFACE &&
+			block->ifaceIndex != USDE_COIN_IFACE &&
+			block->ifaceIndex != LTC_COIN_IFACE) {
+		/* non-standard */
+		if (fEnforceBIP34) {
+			BOOST_FOREACH(CTransaction& tx, block->vtx) {
+				CTransaction tmp_tx;
+				uint256 hBlock;
+				if (GetTransaction(iface, tx.GetHash(), tmp_tx, &hBlock)) {
+					if (hBlock != block->GetHash())
+						return (error(ERR_INVAL, "(%s) core_AcceptBlock: rejecting block with non-unique transaction hash (%s) [BIP34].", iface->name, tx.GetHash().GetHex().c_str()));
+				}
+			}
+		}
+	}
+
   int64 nFees = 0;
   int nSigOps = 0;
   tx_map mapOutputs;
@@ -559,8 +601,8 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
   if (nSigOps > MAX_BLOCK_SIGOPS(iface)) /* too many puppies */
     return error(SHERR_INVAL, "ConnectBlock() : too many sigops");
   if (block->vtx[0].GetValueOut() > 
-      wallet->GetBlockValue(pindex->nHeight, nFees)) {
-    return (error(SHERR_INVAL, "core_ConnectBlock: coinbaseValueOut(%f) > BlockValue(%f) @ height %d [fee %llu]\n", ((double)block->vtx[0].GetValueOut()/(double)COIN), ((double)wallet->GetBlockValue(pindex->nHeight, nFees)/(double)COIN), pindex->nHeight, (unsigned long long)nFees)); 
+      wallet->GetBlockValue(nHeight, nFees)) {
+    return (error(SHERR_INVAL, "core_ConnectBlock: coinbaseValueOut(%f) > BlockValue(%f) @ height %d [fee %llu]\n", ((double)block->vtx[0].GetValueOut()/(double)COIN), ((double)wallet->GetBlockValue(nHeight, nFees)/(double)COIN), nHeight, (unsigned long long)nFees)); 
   }
 
   /* success */
@@ -746,6 +788,8 @@ bool core_Truncate(CIface *iface, uint256 hash)
   if (!blockIndex || !blockIndex->count(hash))
     return error(SHERR_INVAL, "Erase: block not found in block-index.");
 
+	if (blockIndex->count(hash) == 0)
+		return false;
   cur_index = (*blockIndex)[hash];
   if (!cur_index)
     return error(SHERR_INVAL, "Erase: block not found in block-index.");
@@ -761,7 +805,21 @@ bool core_Truncate(CIface *iface, uint256 hash)
 	/* calculate highest block index */
 	(void)bc_idx_next(bc, &nMaxHeight);
 	nMaxHeight -= 1;
-    
+
+	pindex = pBestIndex;
+	for(; pindex && pindex != cur_index; pindex = pindex->pprev) {
+    CBlock *block = GetBlockByHeight(iface, pindex->nHeight);
+		if (block) {
+			block->DisconnectBlock(pindex);
+			delete block;
+		}
+	}
+	pindex = pBestIndex;
+	for(; pindex && pindex != cur_index; pindex = pindex->pprev) {
+    bc_clear(bc, pindex->nHeight);
+		bc_table_reset(bc, pindex->GetBlockHash().GetRaw());
+	}
+#if 0
   for (nHeight = nMaxHeight; nHeight > nMinHeight; nHeight--) {
     CBlock *block = GetBlockByHeight(iface, nHeight);
     if (block) {
@@ -778,16 +836,18 @@ bool core_Truncate(CIface *iface, uint256 hash)
       delete block;
     }
   }
-  for (nHeight = nMaxHeight; nHeight > nMinHeight; nHeight--) {
-    bc_clear(bc, nHeight);
-  }  
+#endif
 
   SetBestBlockIndex(iface, cur_index);
   WriteHashBestChain(iface, cur_index->GetBlockHash());
 
   cur_index->pnext = NULL;
   //TESTBlock::bnBestChainWork = cur_index->bnChainWork;
+
+/* todo: remove pindex's */
+
   InitServiceBlockEvent(ifaceIndex, cur_index->nHeight + 1);
+
 
   return (true);
 }

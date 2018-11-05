@@ -55,6 +55,7 @@ static int ltc_init(CIface *iface, void *_unused_)
 	/* P2SH */
 	iface->BIP16Height = 218579; // 87afb798a3ad9378fcd56123c81fb31cfd9a8df4719b9774d71730c16315a092 - October 1, 2012
 	/* v2.0 block (height in coinbase) */ 
+	iface->BIP30Height = 1; /* always enabled */
 	iface->BIP34Height = 710000; /* fa09d204a83a768ed5a7c8d441fa62f2043abf420cff1226c7b4329aeb9d51cf */
 	/* OP_CHECLOCKTIMEVERIFY */
 	iface->BIP65Height = 918684; /* bab3041e8977e0dc3eeff63fe707b92bde1dd449d8efafb248c27c8264cc311a */
@@ -210,6 +211,7 @@ static CPubKey ltc_GetMainAccountPubKey(CWallet *wallet)
     GetAccountAddress(wallet, strSystemAccount, false);
   }
 
+#if 0
 	/* check if this pubkey has been used in coinbase. */
 	CScript scriptPubKey;
 	bool bKeyUsed = false;
@@ -227,6 +229,7 @@ static CPubKey ltc_GetMainAccountPubKey(CWallet *wallet)
 		/* create new pubkey */
 		ret_key = GetAccountPubKey(wallet, strAccount, true);
 	}
+#endif
 
   return (ret_key);
 }

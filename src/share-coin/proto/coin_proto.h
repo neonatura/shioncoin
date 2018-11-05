@@ -252,6 +252,8 @@ typedef struct coin_iface_t
 
 	/** Block height at which BIP16 becomes active */
 	int BIP16Height;
+	/** Block height and hash at which BIP30 becomes active */
+	int BIP30Height;
 	/** Block height and hash at which BIP34 becomes active */
 	int BIP34Height;
 	/** Block height at which BIP65 becomes active */

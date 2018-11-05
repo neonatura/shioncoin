@@ -666,6 +666,11 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
 
 		if (flags & SCRIPT_VERIFY_P2SH)
 			flag_str += "BIP16 ";
+		if (iface->BIP34Height != -1 && pindexBest->nHeight >= iface->BIP34Height) {
+			flag_str += "BIP34 ";
+		} else if (iface->BIP30Height != -1 && pindexBest->nHeight >= iface->BIP30Height) {
+			flag_str += "BIP30 ";
+		}
 		if (flags & SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY)
 			flag_str += "BIP65 ";
 		if (flags & SCRIPT_VERIFY_DERSIG)

@@ -1,0 +1,34 @@
+ShareCoin (SHC) virtual currency reward by height.
+--
+height 0 : 800.000000 SHC
+height 1 : 333.400000 SHC
+height 749918 : 166.700000 SHC (~ 2020)
+height 1499836 : 83.350000 SHC (~ 2021)
+height 2249754 : 41.670000 SHC (~ 2023)
+height 2999672 : 20.830000 SHC (~ 2024)
+height 3749590 : 10.410000 SHC (~ 2025)
+height 4499508 : 5.200000 SHC (~ 2027)
+height 5249426 : 2.600000 SHC (~ 2028)
+height 5999344 : 1.300000 SHC (~ 2030)
+height 6749262 : 0.650000 SHC (~ 2031)
+height 7499180 : 0.320000 SHC (~ 2033)
+height 8249098 : 0.160000 SHC (~ 2034)
+height 8999016 : 0.080000 SHC (~ 2035)
+height 9748934 : 0.040000 SHC (~ 2037)
+height 10498852 : 0.020000 SHC (~ 2038)
+height 11248770 : 0.010000 SHC (~ 2040)
+height 11998688 : 0.000000 SHC (~ 2041)
+
+MAX COINS: 500000794 (~500mil)
+
+// Calculate block reward by height.
+#define SHC_COIN (int64)100000000
+int64 shc_GetBlockValue(int nHeight)
+{
+	if (nHeight == 0) return (800 * SHC_COIN);
+	int64 nSubsidy = 3334 * SHC_COIN;
+	nSubsidy >>= (nHeight / 749918);
+	nSubsidy /= 10000000;
+	nSubsidy *= 1000000;
+	return (nSubsidy);
+}

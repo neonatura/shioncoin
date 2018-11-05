@@ -34,6 +34,7 @@
 #include "shc_txidx.h"
 #include "chain.h"
 #include "coin.h"
+#include "versionbits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -261,71 +262,6 @@ unsigned int SHCBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
   return KimotoGravityWell(pindexLast, this, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
 }
 
-#if 0
-int64 shc_GetBlockValue(int nHeight, int64 nFees)
-{
-  uint64 nSubsidy = 2000 * SHC_COIN;
-  int base = nHeight;
-
-  if (nHeight == 0) {
-    /* burnt coins */
-    nSubsidy = 4000 * SHC_COIN;
-    base /= 9; /* 800bil cap. */
-    nSubsidy >>= (base / 139604);
-    nSubsidy /= 5;
-    return ((int64)nSubsidy + nFees);
-  }
-
-  base /= 9; /* base on 800bil cap. */
-
-  nSubsidy >>= (base / 139604);
-
-  /* reduces max coin cap to 80bil */
-  nSubsidy /= 10;
-
-  return ((int64)nSubsidy + nFees);
-}
-#endif
-
-#if 0
-/**
- * @note
- * info: height 2000000 rewards 200.000000 [20000000000] total coins.
- * info: height 3000000 rewards 100.000000 [10000000000] total coins.
- * info: height 6000000 rewards 50.000000 [5000000000] total coins.
- * info: height 10000000 rewards 25.000000 [2500000000] total coins.
- * info: height 20000000 rewards 1.562000 [156200000] total coins.
- * info: height 45000000 rewards 0.001000 [100000] total coins.
- * final: height 45000018 has 999985199.994008 total coins
- */
-int64 shc_GetBlockValue(int nHeight, int64 nFees)
-{
-
-  if (nHeight == 0)
-    return ((int64)800 * COIN);
-
-  int64 nSubsidy = 2000 * SHC_COIN;
-  nSubsidy >>= (nHeight / 2500001);
-  nSubsidy /= 1000000;
-  nSubsidy *= 100000;
-  nSubsidy = MIN(200 * COIN, nSubsidy);
-
-  return (nSubsidy + nFees);
-}
-#endif
-
-int64 shc_GetBlockValue(int nHeight, int64 nFees)
-{
-  if (nHeight == 0) return (800 * COIN);
-
-  int64 nSubsidy = 3334 * SHC_COIN;
-  nSubsidy >>= (nHeight / 1499836);
-  nSubsidy /= 10000000;
-  nSubsidy *= 1000000;
-  return ((int64)nSubsidy + nFees);
-}
-
-
 namespace SHC_Checkpoints
 {
   typedef std::map<int, uint256> MapCheckpoints;
@@ -409,83 +345,16 @@ namespace SHC_Checkpoints
 
 }
 
-
-#if 0
-bool shc_FetchInputs(CTransaction *tx, CTxDB& txdb, const map<uint256, CTxIndex>& mapTestPool, bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid)
+int64 shc_GetBlockValue(int nHeight, int64 nFees)
 {
-  // FetchInputs can return false either because we just haven't seen some inputs
-  // (in which case the transaction should be stored as an orphan)
-  // or because the transaction is malformed (in which case the transaction should
-  // be dropped).  If tx is definitely invalid, fInvalid will be set to true.
-  fInvalid = false;
+  if (nHeight == 0) return (800 * COIN);
 
-  if (tx->IsCoinBase())
-    return true; // Coinbase transactions have no inputs to fetch.
-
-  for (unsigned int i = 0; i < tx->vin.size(); i++)
-  {
-    COutPoint prevout = tx->vin[i].prevout;
-    if (inputsRet.count(prevout.hash))
-      continue; // Got it already
-
-    // Read txindex
-    CTxIndex& txindex = inputsRet[prevout.hash].first;
-    bool fFound = true;
-    if ((fBlock || fMiner) && mapTestPool.count(prevout.hash))
-    {
-      // Get txindex from current proposed changes
-      txindex = mapTestPool.find(prevout.hash)->second;
-    }
-    else
-    {
-      // Read txindex from txdb
-      fFound = txdb.ReadTxIndex(prevout.hash, txindex);
-    }
-    if (!fFound && (fBlock || fMiner))
-      return fMiner ? false : error(SHERR_INVAL, "FetchInputs() : %s prev tx %s index entry not found", tx->GetHash().ToString().substr(0,10).c_str(),  prevout.hash.ToString().substr(0,10).c_str());
-
-    // Read txPrev
-    CTransaction& txPrev = inputsRet[prevout.hash].second;
-    if (!fFound || txindex.pos == CDiskTxPos(0,0,0))
-    {
-      // Get prev tx from single transactions in memory
-      {
-        LOCK(SHCBlock::mempool.cs);
-        if (!SHCBlock::mempool.exists(prevout.hash))
-          return error(SHERR_INVAL, "FetchInputs() : %s SHCBlock::mempool Tx prev not found %s", tx->GetHash().ToString().substr(0,10).c_str(),  prevout.hash.ToString().substr(0,10).c_str());
-        txPrev = SHCBlock::mempool.lookup(prevout.hash);
-      }
-      if (!fFound)
-        txindex.vSpent.resize(txPrev.vout.size());
-    }
-    else
-    {
-      // Get prev tx from disk
-      if (!txPrev.ReadFromDisk(txindex.pos))
-        return error(SHERR_INVAL, "FetchInputs() : %s ReadFromDisk prev tx %s failed", tx->GetHash().ToString().substr(0,10).c_str(),  prevout.hash.ToString().substr(0,10).c_str());
-    }
-  }
-
-  // Make sure all prevout.n's are valid:
-  for (unsigned int i = 0; i < tx->vin.size(); i++)
-  {
-    const COutPoint prevout = tx->vin[i].prevout;
-    assert(inputsRet.count(prevout.hash) != 0);
-    const CTxIndex& txindex = inputsRet[prevout.hash].first;
-    const CTransaction& txPrev = inputsRet[prevout.hash].second;
-    if (prevout.n >= txPrev.vout.size() || prevout.n >= txindex.vSpent.size())
-    {
-      // Revisit this if/when transaction replacement is implemented and allows
-      // adding inputs:
-      fInvalid = true;
-      return error(SHERR_INVAL, "FetchInputs() : %s prevout.n out of range %d %d %d prev tx %s\n%s", tx->GetHash().ToString().substr(0,10).c_str(), prevout.n, txPrev.vout.size(), txindex.vSpent.size(), prevout.hash.ToString().substr(0,10).c_str(), txPrev.ToString().c_str());
-    }
-  }
-
-  return true;
+  int64 nSubsidy = 3334 * SHC_COIN;
+  nSubsidy >>= (nHeight / 749918);
+  nSubsidy /= 10000000;
+  nSubsidy *= 1000000;
+  return ((int64)nSubsidy + nFees);
 }
-#endif
-
 
 static int64_t shc_GetTxWeight(const CTransaction& tx)
 {
@@ -960,6 +829,31 @@ bool SHCBlock::AcceptBlock()
     print();
     return error(SHERR_INVAL, "(shc) AcceptBlock: block's timestamp is too old.");
   }
+
+	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
+	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
+		/* check for obsolete blocks. */
+		if (nVersion < 2)
+			return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP34].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+
+		/* verify height inclusion. */
+		CScript expect = CScript() << nHeight;
+		if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
+				!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
+			return error(SHERR_INVAL, "(%s) AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", iface->name, GetHash().GetHex().c_str(), nHeight);
+	}
+	if (iface->BIP66Height != -1 && nVersion < 3 && 
+			nHeight >= iface->BIP66Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP66].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (iface->BIP65Height != -1 && nVersion < 4 && 
+			nHeight >= iface->BIP65Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP65].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (nVersion < VERSIONBITS_TOP_BITS &&
+			IsWitnessEnabled(iface, pindexPrev)) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [segwit].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
 
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;

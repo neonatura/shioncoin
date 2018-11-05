@@ -55,11 +55,12 @@ static int shc_init(CIface *iface, void *_unused_)
 	/* P2SH */
 	iface->BIP16Height = 1; /* always enabled */
 	/* v2.0 block (height in coinbase) */
-	iface->BIP34Height = 59128; /* f19bc1a7e3416751daf8ea6ca116aded43b0f541ac4576ccd99a7c494fb50f20 */
+	iface->BIP30Height = 1; /* super-ceded by BIP30 */
+	iface->BIP34Height = 50001;
 	/* OP_CHECLOCKTIMEVERIFY */
-	iface->BIP65Height = 59128; /* f19bc1a7e3416751daf8ea6ca116aded43b0f541ac4576ccd99a7c494fb50f20 */
+	iface->BIP65Height = 78001;
 	/* strict DER signature */
-	iface->BIP66Height = 59128; /* f19bc1a7e3416751daf8ea6ca116aded43b0f541ac4576ccd99a7c494fb50f20 */
+	iface->BIP66Height = 50001;
 
   iface->nRuleChangeActivationThreshold = 9072;
   iface->nMinerConfirmationWindow = 12096;
@@ -196,6 +197,7 @@ static int shc_block_process(CIface *iface, CBlock *block)
 
 static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 {
+	static int _index = 0;
   static CPubKey ret_key;
 	string strAccount("");
 
@@ -218,22 +220,25 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 				addr.ToString().c_str()); 
 	}
 
-	/* check if this pubkey has been used in coinbase. */
-	CScript scriptPubKey;
-	bool bKeyUsed = false;
-	scriptPubKey << ret_key << OP_CHECKSIG;
-	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
-			it != wallet->mapWallet.end(); ++it) {
-		const CWalletTx& wtx = (*it).second;
-		if (!wtx.IsCoinBase())
-			continue;
-		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-			if (txout.scriptPubKey == scriptPubKey)
-				bKeyUsed = true;
-	}
-	if (bKeyUsed) {
-		/* create new pubkey */
-		ret_key = GetAccountPubKey(wallet, strAccount, true);
+	_index++;
+	if (0 == (_index % 1000)) {
+		/* check if this pubkey has been used in coinbase. */
+		CScript scriptPubKey;
+		bool bKeyUsed = false;
+		scriptPubKey << ret_key << OP_CHECKSIG;
+		for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
+				it != wallet->mapWallet.end(); ++it) {
+			const CWalletTx& wtx = (*it).second;
+			if (!wtx.IsCoinBase())
+				continue;
+			BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+				if (txout.scriptPubKey == scriptPubKey)
+					bKeyUsed = true;
+		}
+		if (bKeyUsed) {
+			/* create new pubkey */
+			ret_key = GetAccountPubKey(wallet, strAccount, true);
+		}
 	}
 
   return (ret_key);

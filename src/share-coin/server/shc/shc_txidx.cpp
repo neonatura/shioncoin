@@ -81,6 +81,9 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
 	int mode;
   int err;
 
+	vector<uint256> vTx;
+	vector<uint256> vBlock;
+
 	nMaxIndex = 0;
 	bc_idx_next(bc, &nMaxIndex);
 	nMaxIndex = MAX(1, nMaxIndex) - 1;
@@ -119,6 +122,15 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
 
 		opcodetype opcode;
 		BOOST_FOREACH(CTransaction& tx, block.vtx) {
+
+#if 0 /* BIP34 test */
+const uint256& tx_hash = tx.GetHash();
+if (find(vTx.begin(), vTx.end(), tx_hash) != vTx.end()) {
+fprintf(stderr, "DEBUG: SHC: LoadTxIndex: DUP TX: %s\n", tx_hash.GetHex().c_str()); 
+}
+vTx.push_back(tx_hash);
+#endif
+
 			/* stats */
 			BOOST_FOREACH(const CTxOut& out, tx.vout) {
 				const CScript& script = out.scriptPubKey;

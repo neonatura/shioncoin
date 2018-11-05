@@ -34,6 +34,7 @@
 #include "test_wallet.h"
 #include "chain.h"
 #include "coin.h"
+#include "versionbits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -841,142 +842,6 @@ void static TEST_SetBestChain(const CBlockLocator& loc)
   pwallet->SetBestChain(loc);
 }
 
-#if 0
-/* if block is over one day old than consider it history. */
-static bool TEST_IsInitialBlockDownload()
-{
-
-  if (pindexBest == NULL || GetBestHeight(TEST_COIN_IFACE) < TEST_Checkpoints::GetTotalBlocksEstimate())
-    return true;
-
-  static int64 nLastUpdate;
-  static CBlockIndex* pindexLastBest;
-  if (pindexBest != pindexLastBest)
-  {
-    pindexLastBest = pindexBest;
-    nLastUpdate = GetTime();
-  }
-  return (GetTime() - nLastUpdate < 15 &&
-      pindexBest->GetBlockTime() < GetTime() - 24 * 60 * 60);
-}
-#endif
-
-
-
-
-
-
-
-
-#ifdef USE_LEVELDB_TXDB
-bool TESTBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
-{
-  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  uint256 hash = GetHash();
-  shtime_t ts;
-  bool ret;
-
-//  Debug("TESTBlock::SetBestChain: setting best chain to block '%s' @ height %d.", pindexNew->GetBlockHash().GetHex().c_str(), pindexNew->nHeight);
-
-  if (!txdb.TxnBegin())
-    return error(SHERR_INVAL, "SetBestChain() : TxnBegin failed");
-
-  if (TESTBlock::pindexGenesisBlock == NULL && hash == test_hashGenesisBlock)
-  {
-    txdb.WriteHashBestChain(hash);
-    if (!txdb.TxnCommit())
-      return error(SHERR_INVAL, "SetBestChain() : TxnCommit failed");
-    TESTBlock::pindexGenesisBlock = pindexNew;
-  }
-  else if (hashPrevBlock == GetBestBlockChain(iface))
-  {
-    timing_init("SetBestChainInner", &ts);
-    if (!test_SetBestChainInner(txdb, this, pindexNew))
-      return error(SHERR_INVAL, "SetBestChain() : SetBestChainInner failed");
-    timing_term(TEST_COIN_IFACE, "SetBestChainInner", &ts);
-  }
-  else
-  {
-    /* reorg will attempt to read this block from db */
-    WriteArchBlock();
-
-		/* limit */
-    CBlockIndex *pindexIntermediate = pindexNew;
-		CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
-		while (pindexIntermediate->pprev && 
-				pindexIntermediate->pprev->bnChainWork > pindexBest->bnChainWork)
-    {
-      pindexIntermediate = pindexIntermediate->pprev;
-    }
-
-    ret = test_Reorganize(txdb, pindexIntermediate, &mempool);
-    if (!ret) {
-      txdb.TxnAbort();
-      InvalidChainFound(pindexNew);
-      return error(SHERR_INVAL, "SetBestChain() : Reorganize failed");
-    }
-  }
-
-  // Update best block in wallet (so we can detect restored wallets)
-  bool fIsInitialDownload = IsInitialBlockDownload(TEST_COIN_IFACE);
-  if (!fIsInitialDownload)
-  {
-    const CBlockLocator locator(TEST_COIN_IFACE, pindexNew);
-    timing_init("SetBestChain", &ts);
-    TEST_SetBestChain(locator);
-    timing_term(TEST_COIN_IFACE, "SetBestChain", &ts);
-  }
-
-  // New best block
-  SetBestBlockIndex(TEST_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
-  nTimeBestReceived = GetTime();
-  STAT_TX_ACCEPTS(iface)++;
-
-  // Check the version of the last 100 blocks to see if we need to upgrade:
-  if (!fIsInitialDownload)
-  {
-    int nUpgraded = 0;
-    const CBlockIndex* pindex = GetBestBlockIndex(TEST_COIN_IFACE);
-    for (int i = 0; i < 100 && pindex != NULL; i++)
-    {
-      if (pindex->nVersion > CURRENT_VERSION)
-        ++nUpgraded;
-      pindex = pindex->pprev;
-    }
-    if (nUpgraded > 0)
-      Debug("SetBestChain: %d of last 100 blocks above version %d\n", nUpgraded, CURRENT_VERSION);
-    //        if (nUpgraded > 100/2)
-    // strMiscWarning is read by GetWarnings(), called by Qt and the JSON-RPC code to warn the user:
-    //            strMiscWarning = _("Warning: this version is obsolete, upgrade required");
-  }
-
-  std::string strCmd = GetArg("-blocknotify", "");
-
-  if (!fIsInitialDownload && !strCmd.empty())
-  {
-    boost::replace_all(strCmd, "%s", GetBestBlockChain(iface).GetHex());
-    boost::thread t(runCommand, strCmd); // thread runs free
-  }
-
-  return true;
-}
-#endif
-
-static bool test_IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned nRequired)
-{
-  unsigned int nFound = 0;
-
-  for (int i = 0; i < TEST_MAJORITY_WINDOW &&
-      nFound < nRequired && pstart != NULL; i++) {
-    if (pstart->nVersion >= minVersion)
-      ++nFound;
-    pstart = pstart->pprev;
-  }
-
-  return (nFound >= nRequired);
-}
-
 bool TESTBlock::IsBestChain()
 {
   CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
@@ -1006,25 +871,30 @@ bool TESTBlock::AcceptBlock()
     return error(SHERR_INVAL, "(test) AcceptBlock: block's timestamp too old.");
   }
 
-  bool checkHeightMismatch = false;
-  if (nVersion >= 2) {
-    /* enforce BIP34 with BIP66 */
-    if (test_IsSuperMajority(3, pindexPrev, 2375))
-      checkHeightMismatch = true;
-  }
-  if (checkHeightMismatch) {
-    CScript expect;
-    unsigned int nHeight;
+	uint32_t nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
+	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
+		/* check for obsolete blocks. */
+		if (nVersion < 2)
+			return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP34].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
 
-    nHeight = pindexPrev ? (pindexPrev->nHeight + 1) : NULL;
-    expect << nHeight;
-
-    if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
-        !std::equal(expect.begin(), expect.end(),
-          vtx[0].vin[0].scriptSig.begin())) {
-      return error(SHERR_INVAL, "test_AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", GetHash().GetHex().c_str(), nHeight);
-    }
-  }
+		/* verify height inclusion. */
+		CScript expect = CScript() << nHeight;
+		if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
+				!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
+			return error(SHERR_INVAL, "(%s) AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u): %s", iface->name, GetHash().GetHex().c_str(), nHeight, vtx[0].vin[0].scriptSig.ToString().c_str());
+	}
+	if (iface->BIP66Height != -1 && nVersion < 3 && 
+			nHeight >= iface->BIP66Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP66].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (iface->BIP65Height != -1 && nVersion < 4 && 
+			nHeight >= iface->BIP65Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP65].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (nVersion < VERSIONBITS_TOP_BITS &&
+			IsWitnessEnabled(iface, pindexPrev)) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [segwit].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
 
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;

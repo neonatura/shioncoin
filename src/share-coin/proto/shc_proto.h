@@ -28,8 +28,8 @@
 #define __SHC_PROTO_H__
 
 
-#define SHC_VERSION_MAJOR  3
-#define SHC_VERSION_MINOR  1
+#define SHC_VERSION_MAJOR 3
+#define SHC_VERSION_MINOR 2 
 #define SHC_VERSION_REVISION 0
 #define SHC_VERSION_BUILD 0
 
@@ -93,7 +93,7 @@ static const int64 SHC_MIN_TX_FEE = 10000;
 static const int64 SHC_MIN_RELAY_TX_FEE = 1000;
 
 /** The maximum number of coins that will be generated during the life-time of the currency. */
-static const int64 SHC_MAX_MONEY = 991392063 * SHC_COIN; /* ~1bil max */
+static const int64 SHC_MAX_MONEY = 500000794 * SHC_COIN; /* ~500mil */
 
 /** The number of blocks generated before a "block reward" is considered spendable. */
 static const int SHC_COINBASE_MATURITY = 60;

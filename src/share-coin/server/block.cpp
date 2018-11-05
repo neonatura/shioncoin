@@ -1232,8 +1232,6 @@ bool CTransaction::CheckTransaction(int ifaceIndex)
     return error(SHERR_INVAL, "CTransaction::CheckTransaction() : vin empty: %s", ToString(ifaceIndex).c_str());
   if (vout.empty())
     return error(SHERR_INVAL, "CTransaction::CheckTransaction() : vout empty");
-	if (GetVersion() == 0)
-		return error(SHERR_INVAL, "(%s) CTransaction.CheckVersion: invalid version [tx %s].", iface->name, GetHash().GetHex().c_str());
   // Size limits
   if (::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION(iface)) > iface->max_block_size)
     return error(SHERR_INVAL, "CTransaction::CheckTransaction() : size limits failed");
@@ -1434,14 +1432,26 @@ bool CBlock::WriteArchBlock()
 
 bool VerifyTxHash(CIface *iface, uint256 hashTx)
 {
+#if 0
   bc_t *bc = GetBlockTxChain(iface);
+	unsigned char *data;
+	size_t data_len;
+	int txPos;
   int err;
 
-  err = bc_idx_find(bc, hashTx.GetRaw(), NULL, NULL);
+  err = bc_idx_find(bc, hashTx.GetRaw(), NULL, &txPos);
   if (err)
     return (false);
 
+	err = bc_get(bc, txPos, &data, &data_len);
+	free(data);
+	if (err)
+		return (false);
+
   return (true);
+#endif
+	CTransaction tmp_tx;
+	return (GetTransaction(iface, hashTx, tmp_tx, NULL)); 
 }
 
 
@@ -1457,11 +1467,11 @@ bool CTransaction::EraseTx(int ifaceIndex)
   if (err)
     return error(err, "CTransaction::EraseTx: tx '%s' not found.", GetHash().GetHex().c_str());
 
-  bc_table_reset(bc, hash.GetRaw());
   err = bc_idx_clear(bc, posTx);
   if (err)
     return error(err, "CTransaction::EraseTx: error clearing tx pos %d.", posTx);
 
+  bc_table_reset(bc, hash.GetRaw());
 #if 0
   /* clear cache entry */
   EraseTxIndex(ifaceIndex, hash);
@@ -1508,6 +1518,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
   }
 
   unsigned int nHeight = pindexPrev->nHeight+1;
+
 
   /* check proof of work */
   unsigned int nBits = pblock->GetNextWorkRequired(pindexPrev);
@@ -2268,7 +2279,7 @@ Object CBlockHeader::ToValue()
 
   obj.push_back(Pair("blockhash", hash.GetHex()));
 //  obj.push_back(Pair("size", (int)::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION(iface))));
-  obj.push_back(Pair("version", (nVersion & VERSIONBITS_TOP_BITS)));
+  obj.push_back(Pair("version", nVersion));
   obj.push_back(Pair("merkleroot", hashMerkleRoot.GetHex()));
   obj.push_back(Pair("time", (boost::int64_t)GetBlockTime()));
   obj.push_back(Pair("stamp", ToValue_date_format((time_t)GetBlockTime())));
@@ -3146,14 +3157,25 @@ void core_IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev)
 {
   CScript COINBASE_FLAGS = GetCoinbaseFlags(pblock->ifaceIndex);
   char hex[256];
+  unsigned int nHeight;
   unsigned int qual;
 
-  /* qualifier */ 
+  /* qualifier */
+	nHeight = pindexPrev ? (pindexPrev->nHeight+1) : 0;
+	CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
+	if (iface && iface->BIP34Height != -1 && 
+			nHeight >= iface->BIP34Height) { /* BIP34 */
+    qual = nHeight;
+	} else { /* BIP30 */
+    qual = pblock->nTime;
+	}
+#if 0
   if (pblock->ifaceIndex == USDE_COIN_IFACE) {
     qual = pblock->nTime;
   } else {
     qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
   }
+#endif
 
   sprintf(hex, "%sf0000000", GetSiteExtraNonceHex());
   string hexStr(hex, hex + strlen(hex));

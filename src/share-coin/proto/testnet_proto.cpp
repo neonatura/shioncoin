@@ -55,6 +55,7 @@ static int testnet_init(CIface *iface, void *_unused_)
 	/* P2SH */
 	iface->BIP16Height = 1; 
 	/* v2.0 block (height in coinbase) */
+	iface->BIP30Height = 1;
 	iface->BIP34Height = 1;
 	/* OP_CHECLOCKTIMEVERIFY */
 	iface->BIP65Height = 1;

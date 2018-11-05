@@ -56,6 +56,7 @@ static int color_init(CIface *iface, void *_unused_)
 	/* P2SH */
 	iface->BIP16Height = 0; /* always enabled */
 	/* v2.0 block (height in coinbase) */
+	iface->BIP30Height = 0; /* always enabled */
 	iface->BIP34Height = 0; /* always enabled */
 	/* OP_CHECLOCKTIMEVERIFY */
 	iface->BIP65Height = 0; /* always enabled */
@@ -200,6 +201,7 @@ static int color_block_process(CIface *iface, CBlock *block)
 static CPubKey color_GetMainAccountPubKey(CWallet *wallet)
 {
   static CPubKey ret_key;
+	static int _index;
 	string strAccount("");
 
   if (!ret_key.IsValid()) {
@@ -222,22 +224,25 @@ static CPubKey color_GetMainAccountPubKey(CWallet *wallet)
 
   }
 
-	/* check if this pubkey has been used in coinbase. */
-	CScript scriptPubKey;
-	bool bKeyUsed = false;
-	scriptPubKey << ret_key << OP_CHECKSIG;
-	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
-			it != wallet->mapWallet.end(); ++it) {
-		const CWalletTx& wtx = (*it).second;
-		if (!wtx.IsCoinBase())
-			continue;
-		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-			if (txout.scriptPubKey == scriptPubKey)
-				bKeyUsed = true;
-	}
-	if (bKeyUsed) {
-		/* create new pubkey */
-		ret_key = GetAccountPubKey(wallet, strAccount, true);
+	_index++;
+	if (0 == (_index % 1000)) {
+		/* check if this pubkey has been used in coinbase. */
+		CScript scriptPubKey;
+		bool bKeyUsed = false;
+		scriptPubKey << ret_key << OP_CHECKSIG;
+		for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
+				it != wallet->mapWallet.end(); ++it) {
+			const CWalletTx& wtx = (*it).second;
+			if (!wtx.IsCoinBase())
+				continue;
+			BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+				if (txout.scriptPubKey == scriptPubKey)
+					bKeyUsed = true;
+		}
+		if (bKeyUsed) {
+			/* create new pubkey */
+			ret_key = GetAccountPubKey(wallet, strAccount, true);
+		}
 	}
 
   return (ret_key);

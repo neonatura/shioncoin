@@ -51,7 +51,7 @@
 class COLORBlock : public CBlock
 {
 public:
-    static const int CURRENT_VERSION=2;
+    static const int CURRENT_VERSION=4;
 
     static COLOR_CTxMemPool mempool; 
     static CBlockIndex *pindexBest;

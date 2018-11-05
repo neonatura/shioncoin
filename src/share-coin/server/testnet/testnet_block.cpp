@@ -34,6 +34,7 @@
 #include "testnet_txidx.h"
 #include "chain.h"
 #include "coin.h"
+#include "versionbits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -604,6 +605,31 @@ bool TESTNETBlock::AcceptBlock()
     print();
     return error(SHERR_INVAL, "(testnet) AcceptBlock: block's timestamp too old.");
   }
+
+	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
+	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
+		/* check for obsolete blocks. */
+		if (nVersion < 2)
+			return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP34].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+
+		/* verify height inclusion. */
+		CScript expect = CScript() << nHeight;
+		if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
+				!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
+			return error(SHERR_INVAL, "(%s) AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", iface->name, GetHash().GetHex().c_str(), nHeight);
+	}
+	if (iface->BIP66Height != -1 && nVersion < 3 && 
+			nHeight >= iface->BIP66Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP66].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (iface->BIP65Height != -1 && nVersion < 4 && 
+			nHeight >= iface->BIP65Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP65].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (nVersion < VERSIONBITS_TOP_BITS &&
+			IsWitnessEnabled(iface, pindexPrev)) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [segwit].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
 
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;

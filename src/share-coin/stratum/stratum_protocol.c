@@ -30,7 +30,7 @@
 #include "coin_proto.h"
 #include "rpc/rpc_proto.h"
 
-#define DEFAULT_WORK_DIFFICULTY 8192
+#define DEFAULT_WORK_DIFFICULTY 4096
 
 #define WORK_ROUND_OFFSET 400000 
 

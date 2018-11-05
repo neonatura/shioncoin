@@ -808,6 +808,27 @@ bool COLORBlock::AcceptBlock()
 		}
 	}
 
+	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
+	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
+		/* check for obsolete blocks. */
+		if (nVersion < 2)
+			return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP34].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+
+		/* verify height inclusion. */
+		CScript expect = CScript() << nHeight;
+		if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
+				!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
+			return error(SHERR_INVAL, "(%s) AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", iface->name, GetHash().GetHex().c_str(), nHeight);
+	}
+	if (iface->BIP66Height != -1 && nVersion < 3 && 
+			nHeight >= iface->BIP66Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP66].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+	if (iface->BIP65Height != -1 && nVersion < 4 && 
+			nHeight >= iface->BIP65Height) {
+		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP65].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
+	}
+
 	unsigned int nBits = GetNextWorkRequired(pindexPrev);
 	if (nBits != nBits) {
 		return (trust(-100, "(core) AcceptBlock: invalid difficulty (%x) specified (next work required is %x) for block height %d [prev '%s']\n", nBits, nBits, pindexPrev?(pindexPrev->nHeight+1):0, pindexPrev->GetBlockHash().GetHex().c_str()));
@@ -848,8 +869,8 @@ bool COLORBlock::AcceptBlock()
 #endif
 
 	/* permanently establish block. */
-	uint64_t nHeight = (uint64_t)color_GetTotalBlocks();
-	if (!WriteBlock(nHeight)) {
+	uint64_t nTotalHeight = (uint64_t)color_GetTotalBlocks();
+	if (!WriteBlock(nTotalHeight)) {
 		return(error(SHERR_INVAL, "(color) AcceptBlock: error adding block to block-chain."));
 	}
 

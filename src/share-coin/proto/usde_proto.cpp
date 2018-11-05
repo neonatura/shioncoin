@@ -53,6 +53,7 @@ static int usde_init(CIface *iface, void *_unused_)
 	/* P2SH */
 	iface->BIP16Height = 1; 
 	/* v2.0 block (height in coinbase) */
+	iface->BIP30Height = 0; /* always enabled. */
 	iface->BIP34Height = -1; /* never enabled */
 	/* OP_CHECLOCKTIMEVERIFY */
 	iface->BIP65Height = -1; /* never enabled */
