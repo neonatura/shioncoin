@@ -86,6 +86,8 @@ int main(int argc, char *argv[])
 
   shcon_init();
 
+	signal(SIGPIPE, SIG_IGN);
+
   memset(prog_name, 0, sizeof(prog_name));
   strncpy(prog_name, argv[0], sizeof(prog_name));
   ptr = strrchr(prog_name, '/'); /* from end */
@@ -142,7 +144,11 @@ int main(int argc, char *argv[])
     }  
   } else {
     /* interactive prompt */
+#ifdef HAVE_LIBCURSES
+    shcon_gui_cycle();
+#else
     shcon_stream_cycle(stdin);
+#endif
   }
 
   shcon_term();

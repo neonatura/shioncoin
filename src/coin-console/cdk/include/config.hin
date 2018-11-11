@@ -1,0 +1,235 @@
+/* include/config.hin.  Generated from configure.in by autoheader.  */
+
+/* Define to const if improved const-typing should be used */
+#undef CDK_CONST
+
+/* Define to simplify casting CDK_CONST */
+#undef CDK_CSTRING
+
+/* Define to simplify casting CDK_CONST */
+#undef CDK_CSTRING2
+
+/* Define to noreturn-attribute for gcc */
+#undef GCC_NORETURN
+
+/* Define to 1 if the compiler supports gcc-like printf attribute. */
+#undef GCC_PRINTF
+
+/* Define to printf-attribute for gcc */
+#undef GCC_PRINTFLIKE
+
+/* Define to 1 if the compiler supports gcc-like scanf attribute. */
+#undef GCC_SCANF
+
+/* Define to sscanf-attribute for gcc */
+#undef GCC_SCANFLIKE
+
+/* Define to unused-attribute for gcc */
+#undef GCC_UNUSED
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* Define to 1 if you have the `getlogin' function. */
+#undef HAVE_GETLOGIN
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
+/* Define to 1 if getopt variables are declared in header */
+#undef HAVE_GETOPT_HEADER
+
+/* Define to 1 if you have the <grp.h> header file. */
+#undef HAVE_GRP_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `dbmalloc' library (-ldbmalloc). */
+#undef HAVE_LIBDBMALLOC
+
+/* Define to 1 if you have the `dmalloc' library (-ldmalloc). */
+#undef HAVE_LIBDMALLOC
+
+/* Define to 1 if we should include libutf8.h */
+#undef HAVE_LIBUTF8_H
+
+/* Define to 1 if we can compile with the Xt library */
+#undef HAVE_LIBXT
+
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define to 1 if we have lstat */
+#undef HAVE_LSTAT
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `mktime' function. */
+#undef HAVE_MKTIME
+
+/* Define to 1 if we have ncursesw/ncurses.h */
+#undef HAVE_NCURSESW_NCURSES_H
+
+/* Define to 1 if we have ncursesw/term.h */
+#undef HAVE_NCURSESW_TERM_H
+
+/* Define to 1 if we have ncursesw/unctrl.h */
+#undef HAVE_NCURSESW_UNCTRL_H
+
+/* Define to 1 if we have ncurses.h */
+#undef HAVE_NCURSES_H
+
+/* Define to 1 if we have ncurses/ncurses.h */
+#undef HAVE_NCURSES_NCURSES_H
+
+/* Define to 1 if we have ncurses/term.h */
+#undef HAVE_NCURSES_TERM_H
+
+/* Define to 1 if we have ncurses/unctrl.h */
+#undef HAVE_NCURSES_UNCTRL_H
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <pwd.h> header file. */
+#undef HAVE_PWD_H
+
+/* Define to 1 if we have setlocale function */
+#undef HAVE_SETLOCALE
+
+/* Define to 1 if you have the `sleep' function. */
+#undef HAVE_SLEEP
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if we have term.h */
+#undef HAVE_TERM_H
+
+/* Define to 1 if chtype is declared */
+#undef HAVE_TYPE_CHTYPE
+
+/* Define to 1 if we have unctrl.h */
+#undef HAVE_UNCTRL_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if using PDCurses on Unix */
+#undef HAVE_XCURSES
+
+/* Define to 1 if you have the `_nc_free_and_exit' function. */
+#undef HAVE__NC_FREE_AND_EXIT
+
+/* Define to 1 if we have locale support */
+#undef LOCALE
+
+/* Define to 1 if filesystem supports mixed-case filenames. */
+#undef MIXEDCASE_FILENAMES
+
+/* Define to 1 if we are using ncurses headers/libraries */
+#undef NCURSES
+
+/* Define to 1 if we must include getopt.h */
+#undef NEED_GETOPT_H
+
+/* Define to 1 if you want to perform memory-leak testing. */
+#undef NO_LEAKS
+
+/* Define to the package-name */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to the program extension (normally blank) */
+#undef PROG_EXT
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to the system name. */
+#undef SYSTEM_NAME
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#undef TM_IN_SYS_TIME
+
+/* Define to 1 if chtype is a scaler/integer */
+#undef TYPE_CHTYPE_IS_SCALAR
+
+/* Define to 1 if using PDCurses on Unix */
+#undef UNIX
+
+/* "Define to 1 if you want to use dbmalloc for testing." */
+#undef USE_DBMALLOC
+
+/* "Define to 1 if you want to use dmalloc for testing." */
+#undef USE_DMALLOC
+
+/* "Define to 1 if you want to use valgrind for testing." */
+#undef USE_VALGRIND
+
+/* Define to 1 if using PDCurses on Unix */
+#undef XCURSES
+
+/* Define to 1 if the X Window System is missing or not being used. */
+#undef X_DISPLAY_MISSING
+
+/* Define to 1 if you want to perform memory-leak testing. */
+#undef YY_NO_LEAKS
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef mode_t
+
+/* Define to function for setting window's y/x coordinates */
+#undef setbegyx

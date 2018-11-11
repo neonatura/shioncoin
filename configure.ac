@@ -163,7 +163,6 @@ AM_CONDITIONAL([SVR4], [test x$opsys = xsvr4])
 AM_CONDITIONAL([FREEBSD], [test x$opsys = xfreebsd])
 AM_CONDITIONAL([WINDOWS], [test x$opsys = xwindows])
 
-
 AS_IF([test "x$opsys" = "xwindows"],
   AC_DEFINE_UNQUOTED([_WIN32_WINNT], [0x0601], [Define to the windows os version.])
   AC_DEFINE_UNQUOTED([WINVER], [0x0601], [Define to the windows os version.])
@@ -232,6 +231,7 @@ AC_CHECK_LIB([gmp], [__gmp_version], ,
 AC_CHECK_FUNCS([mpn_copyi])
 
 AC_CHECK_LIB([crypto], [BN_new])
+
 
 AC_CHECK_PROGS([SYSTEMCTL], [systemctl])
 AM_CONDITIONAL([HAVE_SYSTEMCTL], [test -n "$SYSTEMCTL"])
@@ -342,6 +342,20 @@ AM_CONDITIONAL([HAVE_DOXYGEN],
 AC_PATH_PROG(HELP2MAN, help2man, @echo WARNING: skipped: help2man )
 AM_CONDITIONAL(HAVE_HELP2MAN, [test x"$HELP2MAN" = x"help2man"])
 
+AC_ARG_ENABLE([curses],
+  AS_HELP_STRING([--disable-curses], [Disable curses library]))
+use_libcurses="no"
+if test "x$enable_curses" != "xno" ; then
+	AC_CHECK_LIB([curses], [mousemask],
+		AC_CHECK_HEADERS([curses.h])
+		AC_DEFINE_UNQUOTED([HAVE_LIBCURSES], 1, [Define to enable curses library.])
+		use_libcurses="yes"
+	,
+		AC_MSG_WARN("libcurses is not installed")
+	)
+fi
+AM_CONDITIONAL(USE_LIBCURSES, [test "x$use_libcurses" != "xno"])
+
 # Standard system "pthread" library for threading.
 AC_ARG_ENABLE([pthread],
   AS_HELP_STRING([--disable-pthread], [Disable pthread library]))
@@ -414,5 +428,5 @@ fi
 #AM_CONDITIONAL(ENABLE_WALLET, [test "x$enable_wallet" != "xno"])
 #AM_CONDITIONAL([ENABLE_WALLET], 1, [Define to share-wallet functionality.])
 
-AC_OUTPUT(Makefile depend/Makefile src/secp256k1/Makefile src/coin-console/Makefile src/share-coin/Makefile doc/Makefile bin/Makefile)
+AC_OUTPUT(Makefile depend/Makefile src/secp256k1/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/share-coin/Makefile doc/Makefile bin/Makefile)
 

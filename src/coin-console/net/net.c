@@ -29,9 +29,18 @@ static int _client_socket;
 
 int net_json_send(shjson_t *j)
 {
+	struct timeval to;
   shbuf_t *buff;
   char *text;
   int err;
+
+  if (_client_socket != 0) {
+		err = shnet_write(_client_socket, NULL, 0);
+		if (err) {
+			shclose(_client_socket);
+			_client_socket = 0;
+		}
+	}
 
   if (_client_socket == 0) {
     int sk = net_conn();

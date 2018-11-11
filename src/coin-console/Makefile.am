@@ -1,7 +1,10 @@
 
+CDK_LIBS=$(builddir)/cdk/libcdk.a
+CDK_INCLUDES=$(builddir)/cdk/include
+
 bin_PROGRAMS = shc
 
-tool_flags =
+tool_flags = -I$(CDK_INCLUDES)
 if STATIC_LIBSHARE
 tool_flags += -I$(LIBSHARE)/include
 endif
@@ -15,6 +18,10 @@ if STATIC_LIBSHARE
 ld_flags = $(LIBSHARE)/src/share-lib/libshare.a
 else
 ld_flags = -lshare
+endif
+if USE_LIBCURSES
+ld_flags += $(CDK_LIBS)
+ld_flags += -lcurses
 endif
 
 # main source code for share-coin console client utility program.
@@ -31,6 +38,10 @@ console_sources = \
 	shcon_log.h \
 	shcon_stream.c \
 	shcon_stream.h \
+	shcon_gui.c \
+	shcon_gui.h \
+	shcon_mine.c \
+	shcon_mine.h \
 	net/net.c \
 	net/net.h \
 	net/net_conn.c \

@@ -174,10 +174,14 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	stratum/stratum_http.h stratum/stratum_message.h \
 	stratum/stratum_protocol.h stratum/stratum_user.h \
 	stratum/stratum_task.h stratum/stratum_sync.h \
-	stratum/stratum.c stratum/stratum_http.c \
+	stratum/http/http.h stratum/stratum.c stratum/stratum_http.c \
 	stratum/stratum_message.c stratum/stratum_protocol.c \
 	stratum/stratum_user.c stratum/stratum_task.c \
-	stratum/stratum_sync.c fractal/fractal.c fractal/fractal_bmp.c \
+	stratum/stratum_sync.c stratum/http/http.c \
+	stratum/http/http_alias.c stratum/http/http_coin.c \
+	stratum/http/http_context.c stratum/http/http_fractal.c \
+	stratum/http/http_matrix.c stratum/http/http_pool.c \
+	fractal/fractal.c fractal/fractal_bmp.c \
 	server/test/test_wallet.cpp server/test/test_wallet.h \
 	server/test/test_block.cpp server/test/test_block.h \
 	server/test/test_pool.cpp server/test/test_pool.h \
@@ -266,7 +270,10 @@ am__objects_5 = shcoind-stratum.$(OBJEXT) \
 	shcoind-stratum_message.$(OBJEXT) \
 	shcoind-stratum_protocol.$(OBJEXT) \
 	shcoind-stratum_user.$(OBJEXT) shcoind-stratum_task.$(OBJEXT) \
-	shcoind-stratum_sync.$(OBJEXT)
+	shcoind-stratum_sync.$(OBJEXT) shcoind-http.$(OBJEXT) \
+	shcoind-http_alias.$(OBJEXT) shcoind-http_coin.$(OBJEXT) \
+	shcoind-http_context.$(OBJEXT) shcoind-http_fractal.$(OBJEXT) \
+	shcoind-http_matrix.$(OBJEXT) shcoind-http_pool.$(OBJEXT)
 am__objects_6 = shcoind-txfeerate.$(OBJEXT) $(am__objects_3) \
 	$(am__objects_4) $(am__objects_5) shcoind-fractal.$(OBJEXT) \
 	shcoind-fractal_bmp.$(OBJEXT) shcoind-test_wallet.$(OBJEXT) \
@@ -369,7 +376,13 @@ am__objects_11 = test_shcoind-stratum.$(OBJEXT) \
 	test_shcoind-stratum_protocol.$(OBJEXT) \
 	test_shcoind-stratum_user.$(OBJEXT) \
 	test_shcoind-stratum_task.$(OBJEXT) \
-	test_shcoind-stratum_sync.$(OBJEXT)
+	test_shcoind-stratum_sync.$(OBJEXT) \
+	test_shcoind-http.$(OBJEXT) test_shcoind-http_alias.$(OBJEXT) \
+	test_shcoind-http_coin.$(OBJEXT) \
+	test_shcoind-http_context.$(OBJEXT) \
+	test_shcoind-http_fractal.$(OBJEXT) \
+	test_shcoind-http_matrix.$(OBJEXT) \
+	test_shcoind-http_pool.$(OBJEXT)
 am__objects_12 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_9) \
 	$(am__objects_10) $(am__objects_11) \
 	test_shcoind-fractal.$(OBJEXT) \
@@ -941,13 +954,21 @@ stratum_sources = \
 	stratum/stratum_user.h \
 	stratum/stratum_task.h \
 	stratum/stratum_sync.h \
+	stratum/http/http.h \
 	stratum/stratum.c \
 	stratum/stratum_http.c \
 	stratum/stratum_message.c \
 	stratum/stratum_protocol.c \
 	stratum/stratum_user.c \
 	stratum/stratum_task.c \
-	stratum/stratum_sync.c
+	stratum/stratum_sync.c \
+	stratum/http/http.c \
+	stratum/http/http_alias.c \
+	stratum/http/http_coin.c \
+	stratum/http/http_context.c \
+	stratum/http/http_fractal.c \
+	stratum/http/http_matrix.c \
+	stratum/http/http_pool.c
 
 common_includes = \
 	$(top_builddir)/config.h \
@@ -1348,6 +1369,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-fractal_bmp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-hdkey.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_alias.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_coin.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_context.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_fractal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_pool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-keystore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ltc_block.Po@am__quote@
@@ -1481,6 +1509,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-fractal_bmp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-hdkey.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_alias.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_coin.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_context.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_fractal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_pool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-keystore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ltc_block.Po@am__quote@
@@ -2034,6 +2069,104 @@ shcoind-stratum_sync.obj: stratum/stratum_sync.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-stratum_sync.obj `if test -f 'stratum/stratum_sync.c'; then $(CYGPATH_W) 'stratum/stratum_sync.c'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_sync.c'; fi`
 
+shcoind-http.o: stratum/http/http.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http.o -MD -MP -MF $(DEPDIR)/shcoind-http.Tpo -c -o shcoind-http.o `test -f 'stratum/http/http.c' || echo '$(srcdir)/'`stratum/http/http.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http.Tpo $(DEPDIR)/shcoind-http.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http.c' object='shcoind-http.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http.o `test -f 'stratum/http/http.c' || echo '$(srcdir)/'`stratum/http/http.c
+
+shcoind-http.obj: stratum/http/http.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http.obj -MD -MP -MF $(DEPDIR)/shcoind-http.Tpo -c -o shcoind-http.obj `if test -f 'stratum/http/http.c'; then $(CYGPATH_W) 'stratum/http/http.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http.Tpo $(DEPDIR)/shcoind-http.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http.c' object='shcoind-http.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http.obj `if test -f 'stratum/http/http.c'; then $(CYGPATH_W) 'stratum/http/http.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http.c'; fi`
+
+shcoind-http_alias.o: stratum/http/http_alias.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_alias.o -MD -MP -MF $(DEPDIR)/shcoind-http_alias.Tpo -c -o shcoind-http_alias.o `test -f 'stratum/http/http_alias.c' || echo '$(srcdir)/'`stratum/http/http_alias.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_alias.Tpo $(DEPDIR)/shcoind-http_alias.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_alias.c' object='shcoind-http_alias.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_alias.o `test -f 'stratum/http/http_alias.c' || echo '$(srcdir)/'`stratum/http/http_alias.c
+
+shcoind-http_alias.obj: stratum/http/http_alias.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_alias.obj -MD -MP -MF $(DEPDIR)/shcoind-http_alias.Tpo -c -o shcoind-http_alias.obj `if test -f 'stratum/http/http_alias.c'; then $(CYGPATH_W) 'stratum/http/http_alias.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_alias.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_alias.Tpo $(DEPDIR)/shcoind-http_alias.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_alias.c' object='shcoind-http_alias.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_alias.obj `if test -f 'stratum/http/http_alias.c'; then $(CYGPATH_W) 'stratum/http/http_alias.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_alias.c'; fi`
+
+shcoind-http_coin.o: stratum/http/http_coin.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_coin.o -MD -MP -MF $(DEPDIR)/shcoind-http_coin.Tpo -c -o shcoind-http_coin.o `test -f 'stratum/http/http_coin.c' || echo '$(srcdir)/'`stratum/http/http_coin.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_coin.Tpo $(DEPDIR)/shcoind-http_coin.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_coin.c' object='shcoind-http_coin.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_coin.o `test -f 'stratum/http/http_coin.c' || echo '$(srcdir)/'`stratum/http/http_coin.c
+
+shcoind-http_coin.obj: stratum/http/http_coin.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_coin.obj -MD -MP -MF $(DEPDIR)/shcoind-http_coin.Tpo -c -o shcoind-http_coin.obj `if test -f 'stratum/http/http_coin.c'; then $(CYGPATH_W) 'stratum/http/http_coin.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_coin.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_coin.Tpo $(DEPDIR)/shcoind-http_coin.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_coin.c' object='shcoind-http_coin.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_coin.obj `if test -f 'stratum/http/http_coin.c'; then $(CYGPATH_W) 'stratum/http/http_coin.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_coin.c'; fi`
+
+shcoind-http_context.o: stratum/http/http_context.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_context.o -MD -MP -MF $(DEPDIR)/shcoind-http_context.Tpo -c -o shcoind-http_context.o `test -f 'stratum/http/http_context.c' || echo '$(srcdir)/'`stratum/http/http_context.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_context.Tpo $(DEPDIR)/shcoind-http_context.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_context.c' object='shcoind-http_context.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_context.o `test -f 'stratum/http/http_context.c' || echo '$(srcdir)/'`stratum/http/http_context.c
+
+shcoind-http_context.obj: stratum/http/http_context.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_context.obj -MD -MP -MF $(DEPDIR)/shcoind-http_context.Tpo -c -o shcoind-http_context.obj `if test -f 'stratum/http/http_context.c'; then $(CYGPATH_W) 'stratum/http/http_context.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_context.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_context.Tpo $(DEPDIR)/shcoind-http_context.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_context.c' object='shcoind-http_context.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_context.obj `if test -f 'stratum/http/http_context.c'; then $(CYGPATH_W) 'stratum/http/http_context.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_context.c'; fi`
+
+shcoind-http_fractal.o: stratum/http/http_fractal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_fractal.o -MD -MP -MF $(DEPDIR)/shcoind-http_fractal.Tpo -c -o shcoind-http_fractal.o `test -f 'stratum/http/http_fractal.c' || echo '$(srcdir)/'`stratum/http/http_fractal.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_fractal.Tpo $(DEPDIR)/shcoind-http_fractal.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_fractal.c' object='shcoind-http_fractal.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_fractal.o `test -f 'stratum/http/http_fractal.c' || echo '$(srcdir)/'`stratum/http/http_fractal.c
+
+shcoind-http_fractal.obj: stratum/http/http_fractal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_fractal.obj -MD -MP -MF $(DEPDIR)/shcoind-http_fractal.Tpo -c -o shcoind-http_fractal.obj `if test -f 'stratum/http/http_fractal.c'; then $(CYGPATH_W) 'stratum/http/http_fractal.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_fractal.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_fractal.Tpo $(DEPDIR)/shcoind-http_fractal.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_fractal.c' object='shcoind-http_fractal.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_fractal.obj `if test -f 'stratum/http/http_fractal.c'; then $(CYGPATH_W) 'stratum/http/http_fractal.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_fractal.c'; fi`
+
+shcoind-http_matrix.o: stratum/http/http_matrix.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_matrix.o -MD -MP -MF $(DEPDIR)/shcoind-http_matrix.Tpo -c -o shcoind-http_matrix.o `test -f 'stratum/http/http_matrix.c' || echo '$(srcdir)/'`stratum/http/http_matrix.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_matrix.Tpo $(DEPDIR)/shcoind-http_matrix.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_matrix.c' object='shcoind-http_matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_matrix.o `test -f 'stratum/http/http_matrix.c' || echo '$(srcdir)/'`stratum/http/http_matrix.c
+
+shcoind-http_matrix.obj: stratum/http/http_matrix.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_matrix.obj -MD -MP -MF $(DEPDIR)/shcoind-http_matrix.Tpo -c -o shcoind-http_matrix.obj `if test -f 'stratum/http/http_matrix.c'; then $(CYGPATH_W) 'stratum/http/http_matrix.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_matrix.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_matrix.Tpo $(DEPDIR)/shcoind-http_matrix.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_matrix.c' object='shcoind-http_matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_matrix.obj `if test -f 'stratum/http/http_matrix.c'; then $(CYGPATH_W) 'stratum/http/http_matrix.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_matrix.c'; fi`
+
+shcoind-http_pool.o: stratum/http/http_pool.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_pool.o -MD -MP -MF $(DEPDIR)/shcoind-http_pool.Tpo -c -o shcoind-http_pool.o `test -f 'stratum/http/http_pool.c' || echo '$(srcdir)/'`stratum/http/http_pool.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_pool.Tpo $(DEPDIR)/shcoind-http_pool.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_pool.c' object='shcoind-http_pool.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_pool.o `test -f 'stratum/http/http_pool.c' || echo '$(srcdir)/'`stratum/http/http_pool.c
+
+shcoind-http_pool.obj: stratum/http/http_pool.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-http_pool.obj -MD -MP -MF $(DEPDIR)/shcoind-http_pool.Tpo -c -o shcoind-http_pool.obj `if test -f 'stratum/http/http_pool.c'; then $(CYGPATH_W) 'stratum/http/http_pool.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_pool.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-http_pool.Tpo $(DEPDIR)/shcoind-http_pool.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_pool.c' object='shcoind-http_pool.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-http_pool.obj `if test -f 'stratum/http/http_pool.c'; then $(CYGPATH_W) 'stratum/http/http_pool.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_pool.c'; fi`
+
 shcoind-fractal.o: fractal/fractal.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-fractal.o -MD -MP -MF $(DEPDIR)/shcoind-fractal.Tpo -c -o shcoind-fractal.o `test -f 'fractal/fractal.c' || echo '$(srcdir)/'`fractal/fractal.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-fractal.Tpo $(DEPDIR)/shcoind-fractal.Po
@@ -2579,6 +2712,104 @@ test_shcoind-stratum_sync.obj: stratum/stratum_sync.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/stratum_sync.c' object='test_shcoind-stratum_sync.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-stratum_sync.obj `if test -f 'stratum/stratum_sync.c'; then $(CYGPATH_W) 'stratum/stratum_sync.c'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_sync.c'; fi`
+
+test_shcoind-http.o: stratum/http/http.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http.o -MD -MP -MF $(DEPDIR)/test_shcoind-http.Tpo -c -o test_shcoind-http.o `test -f 'stratum/http/http.c' || echo '$(srcdir)/'`stratum/http/http.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http.Tpo $(DEPDIR)/test_shcoind-http.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http.c' object='test_shcoind-http.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http.o `test -f 'stratum/http/http.c' || echo '$(srcdir)/'`stratum/http/http.c
+
+test_shcoind-http.obj: stratum/http/http.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http.obj -MD -MP -MF $(DEPDIR)/test_shcoind-http.Tpo -c -o test_shcoind-http.obj `if test -f 'stratum/http/http.c'; then $(CYGPATH_W) 'stratum/http/http.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http.Tpo $(DEPDIR)/test_shcoind-http.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http.c' object='test_shcoind-http.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http.obj `if test -f 'stratum/http/http.c'; then $(CYGPATH_W) 'stratum/http/http.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http.c'; fi`
+
+test_shcoind-http_alias.o: stratum/http/http_alias.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_alias.o -MD -MP -MF $(DEPDIR)/test_shcoind-http_alias.Tpo -c -o test_shcoind-http_alias.o `test -f 'stratum/http/http_alias.c' || echo '$(srcdir)/'`stratum/http/http_alias.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_alias.Tpo $(DEPDIR)/test_shcoind-http_alias.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_alias.c' object='test_shcoind-http_alias.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_alias.o `test -f 'stratum/http/http_alias.c' || echo '$(srcdir)/'`stratum/http/http_alias.c
+
+test_shcoind-http_alias.obj: stratum/http/http_alias.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_alias.obj -MD -MP -MF $(DEPDIR)/test_shcoind-http_alias.Tpo -c -o test_shcoind-http_alias.obj `if test -f 'stratum/http/http_alias.c'; then $(CYGPATH_W) 'stratum/http/http_alias.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_alias.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_alias.Tpo $(DEPDIR)/test_shcoind-http_alias.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_alias.c' object='test_shcoind-http_alias.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_alias.obj `if test -f 'stratum/http/http_alias.c'; then $(CYGPATH_W) 'stratum/http/http_alias.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_alias.c'; fi`
+
+test_shcoind-http_coin.o: stratum/http/http_coin.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_coin.o -MD -MP -MF $(DEPDIR)/test_shcoind-http_coin.Tpo -c -o test_shcoind-http_coin.o `test -f 'stratum/http/http_coin.c' || echo '$(srcdir)/'`stratum/http/http_coin.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_coin.Tpo $(DEPDIR)/test_shcoind-http_coin.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_coin.c' object='test_shcoind-http_coin.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_coin.o `test -f 'stratum/http/http_coin.c' || echo '$(srcdir)/'`stratum/http/http_coin.c
+
+test_shcoind-http_coin.obj: stratum/http/http_coin.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_coin.obj -MD -MP -MF $(DEPDIR)/test_shcoind-http_coin.Tpo -c -o test_shcoind-http_coin.obj `if test -f 'stratum/http/http_coin.c'; then $(CYGPATH_W) 'stratum/http/http_coin.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_coin.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_coin.Tpo $(DEPDIR)/test_shcoind-http_coin.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_coin.c' object='test_shcoind-http_coin.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_coin.obj `if test -f 'stratum/http/http_coin.c'; then $(CYGPATH_W) 'stratum/http/http_coin.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_coin.c'; fi`
+
+test_shcoind-http_context.o: stratum/http/http_context.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_context.o -MD -MP -MF $(DEPDIR)/test_shcoind-http_context.Tpo -c -o test_shcoind-http_context.o `test -f 'stratum/http/http_context.c' || echo '$(srcdir)/'`stratum/http/http_context.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_context.Tpo $(DEPDIR)/test_shcoind-http_context.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_context.c' object='test_shcoind-http_context.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_context.o `test -f 'stratum/http/http_context.c' || echo '$(srcdir)/'`stratum/http/http_context.c
+
+test_shcoind-http_context.obj: stratum/http/http_context.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_context.obj -MD -MP -MF $(DEPDIR)/test_shcoind-http_context.Tpo -c -o test_shcoind-http_context.obj `if test -f 'stratum/http/http_context.c'; then $(CYGPATH_W) 'stratum/http/http_context.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_context.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_context.Tpo $(DEPDIR)/test_shcoind-http_context.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_context.c' object='test_shcoind-http_context.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_context.obj `if test -f 'stratum/http/http_context.c'; then $(CYGPATH_W) 'stratum/http/http_context.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_context.c'; fi`
+
+test_shcoind-http_fractal.o: stratum/http/http_fractal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_fractal.o -MD -MP -MF $(DEPDIR)/test_shcoind-http_fractal.Tpo -c -o test_shcoind-http_fractal.o `test -f 'stratum/http/http_fractal.c' || echo '$(srcdir)/'`stratum/http/http_fractal.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_fractal.Tpo $(DEPDIR)/test_shcoind-http_fractal.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_fractal.c' object='test_shcoind-http_fractal.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_fractal.o `test -f 'stratum/http/http_fractal.c' || echo '$(srcdir)/'`stratum/http/http_fractal.c
+
+test_shcoind-http_fractal.obj: stratum/http/http_fractal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_fractal.obj -MD -MP -MF $(DEPDIR)/test_shcoind-http_fractal.Tpo -c -o test_shcoind-http_fractal.obj `if test -f 'stratum/http/http_fractal.c'; then $(CYGPATH_W) 'stratum/http/http_fractal.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_fractal.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_fractal.Tpo $(DEPDIR)/test_shcoind-http_fractal.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_fractal.c' object='test_shcoind-http_fractal.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_fractal.obj `if test -f 'stratum/http/http_fractal.c'; then $(CYGPATH_W) 'stratum/http/http_fractal.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_fractal.c'; fi`
+
+test_shcoind-http_matrix.o: stratum/http/http_matrix.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_matrix.o -MD -MP -MF $(DEPDIR)/test_shcoind-http_matrix.Tpo -c -o test_shcoind-http_matrix.o `test -f 'stratum/http/http_matrix.c' || echo '$(srcdir)/'`stratum/http/http_matrix.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_matrix.Tpo $(DEPDIR)/test_shcoind-http_matrix.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_matrix.c' object='test_shcoind-http_matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_matrix.o `test -f 'stratum/http/http_matrix.c' || echo '$(srcdir)/'`stratum/http/http_matrix.c
+
+test_shcoind-http_matrix.obj: stratum/http/http_matrix.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_matrix.obj -MD -MP -MF $(DEPDIR)/test_shcoind-http_matrix.Tpo -c -o test_shcoind-http_matrix.obj `if test -f 'stratum/http/http_matrix.c'; then $(CYGPATH_W) 'stratum/http/http_matrix.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_matrix.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_matrix.Tpo $(DEPDIR)/test_shcoind-http_matrix.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_matrix.c' object='test_shcoind-http_matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_matrix.obj `if test -f 'stratum/http/http_matrix.c'; then $(CYGPATH_W) 'stratum/http/http_matrix.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_matrix.c'; fi`
+
+test_shcoind-http_pool.o: stratum/http/http_pool.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_pool.o -MD -MP -MF $(DEPDIR)/test_shcoind-http_pool.Tpo -c -o test_shcoind-http_pool.o `test -f 'stratum/http/http_pool.c' || echo '$(srcdir)/'`stratum/http/http_pool.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_pool.Tpo $(DEPDIR)/test_shcoind-http_pool.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_pool.c' object='test_shcoind-http_pool.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_pool.o `test -f 'stratum/http/http_pool.c' || echo '$(srcdir)/'`stratum/http/http_pool.c
+
+test_shcoind-http_pool.obj: stratum/http/http_pool.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-http_pool.obj -MD -MP -MF $(DEPDIR)/test_shcoind-http_pool.Tpo -c -o test_shcoind-http_pool.obj `if test -f 'stratum/http/http_pool.c'; then $(CYGPATH_W) 'stratum/http/http_pool.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_pool.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-http_pool.Tpo $(DEPDIR)/test_shcoind-http_pool.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/http/http_pool.c' object='test_shcoind-http_pool.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-http_pool.obj `if test -f 'stratum/http/http_pool.c'; then $(CYGPATH_W) 'stratum/http/http_pool.c'; else $(CYGPATH_W) '$(srcdir)/stratum/http/http_pool.c'; fi`
 
 test_shcoind-fractal.o: fractal/fractal.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-fractal.o -MD -MP -MF $(DEPDIR)/test_shcoind-fractal.Tpo -c -o test_shcoind-fractal.o `test -f 'fractal/fractal.c' || echo '$(srcdir)/'`fractal/fractal.c

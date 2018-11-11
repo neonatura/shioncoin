@@ -1168,6 +1168,94 @@ int GetTxDepthInMainChain(CIface *iface, uint256 txHash)
   return (GetBlockDepthInMainChain(iface, blockHash));
 }
 
+string aliaslist_json;
+const char *c_getaliaslist(int ifaceIndex)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  Object ret;
+  alias_list *list;
+  int nBestHeight;
+
+  list = GetAliasTable(ifaceIndex);
+
+  Object alias_list;
+  BOOST_FOREACH(PAIRTYPE(const string, uint256)& r, *list) {
+    const string& label = r.first;
+    uint256& hTx = r.second;
+    CTransaction tx;
+    uint256 hBlock;
+
+    if (!GetTransaction(iface, hTx, tx, NULL))
+      continue;
+
+    alias_list.push_back(Pair(label, tx.alias.ToValue(SHC_COIN_IFACE)));
+  }
+	ret.push_back(Pair("alias", alias_list));
+
+  aliaslist_json = JSONRPCReply(ret, Value::null, Value::null);
+  return (aliaslist_json.c_str());
+}
+
+string contextlist_json;
+const char *c_getcontextlist(int ifaceIndex)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
+  set<CTxDestination> setAddress;
+  Object ret;
+  ctx_list *list;
+  int nBestHeight;
+
+  list = GetContextTable(ifaceIndex);
+
+#if 0
+  string strAccount(account);
+  strAccount = AccountFromString(strAccount);
+  if (strAccount == "")
+    return (Value::null);
+
+  /* get set of pub keys assigned to extended account. */
+  string strExtAccount = "@" + strAccount;
+  GetAccountAddresses(wallet, strExtAccount, setAddress);
+  if (setAddress.size() == 0) {
+    return (ret);
+  }
+#endif
+
+  BOOST_FOREACH(const PAIRTYPE(uint160, uint256)& r, *list) {
+    const uint160& hContext = r.first;
+    const uint256& hTx = r.second;
+
+    CTransaction tx;
+    if (!GetTransaction(iface, hTx, tx, NULL))
+      continue;
+
+#if 0
+    /* filter by account name. */
+    int nOut = IndexOfExtOutput(tx);
+    if (nOut == -1)
+      continue;
+
+    CTxDestination dest;
+    const CTxOut& txout = tx.vout[nOut];
+    if (!ExtractDestination(txout.scriptPubKey, dest))
+      continue;
+
+    if (setAddress.count(dest) == 0)
+      continue;
+#endif
+
+		CContext *ctx = tx.GetContext();
+		if (!ctx)
+			continue;
+
+    ret.push_back(Pair(ctx->GetHash().GetHex().c_str(), ctx->ToValue()));
+  }
+
+  contextlist_json = JSONRPCReply(ret, Value::null, Value::null);
+  return (contextlist_json.c_str());
+}
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -1222,6 +1310,17 @@ const char *getminingtransactioninfo(int ifaceIndex, unsigned int workId)
 {
   return (c_getminingtransactions(ifaceIndex, workId));
 }
+
+const char *getaliaslist(int ifaceIndex)
+{
+	return (c_getaliaslist(ifaceIndex));
+}
+
+const char *getcontextlist(int ifaceIndex)
+{
+	return (c_getcontextlist(ifaceIndex));
+}
+
 #if 0
 const int reloadblockfile(const char *path)
 {

@@ -370,9 +370,9 @@ static int stratum_sync_wallet_setkey_req(user_t *user)
 
   if (!err) {
     user->sync_flags |= SYNC_RESP_WALLET_SET;
-    sprintf(errbuf, "stratum_sync_wallet_setkey_req [iface #%d]: info: sent new key (<%d bytes>) for account '%s'.", user->ifaceIndex, strlen(privkey), user->sync_acc);
+    sprintf(errbuf, "stratum_sync_wallet_setkey_req [iface #%d]: info: sent new key (<%d bytes>) for account '%s'.", user->ifaceIndex, (int)strlen(privkey), user->sync_acc);
   } else {
-    sprintf(errbuf, "stratum_sync_wallet_setkey_req [iface #%d]: error: send new key (<%d bytes>) for account '%s': %s", err, user->ifaceIndex, strlen(privkey), user->sync_acc, sherrstr(err));
+    sprintf(errbuf, "stratum_sync_wallet_setkey_req [iface #%d]: error: send new key (<%d bytes>) for account '%s': %s", user->ifaceIndex, (int)strlen(privkey), user->sync_acc, sherrstr(err));
   }
   shcoind_log(errbuf);
 

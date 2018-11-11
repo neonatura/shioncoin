@@ -83,9 +83,10 @@ bin_PROGRAMS = shc$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
 @STATIC_LIBSHARE_TRUE@am__append_1 = -I$(LIBSHARE)/include
 @DEBUG_TRUE@am__append_2 = -g
 @DEBUG_FALSE@am__append_3 = -O
-@USDE_SERVICE_TRUE@am__append_4 = usde
-@EMC2_SERVICE_TRUE@am__append_5 = emc2
-@TESTNET_SERVICE_TRUE@am__append_6 = testnet
+@USE_LIBCURSES_TRUE@am__append_4 = $(CDK_LIBS) -lcurses
+@USDE_SERVICE_TRUE@am__append_5 = usde
+@EMC2_SERVICE_TRUE@am__append_6 = emc2
+@TESTNET_SERVICE_TRUE@am__append_7 = testnet
 subdir = src/coin-console
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build-aux/depcomp
@@ -109,13 +110,15 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__emc2_SOURCES_DIST = shcon.c shcon.h shcon_init.c shcon_init.h \
 	shcon_term.c shcon_term.h shcon_opt.c shcon_opt.h shcon_log.c \
-	shcon_log.h shcon_stream.c shcon_stream.h net/net.c net/net.h \
+	shcon_log.h shcon_stream.c shcon_stream.h shcon_gui.c \
+	shcon_gui.h shcon_mine.c shcon_mine.h net/net.c net/net.h \
 	net/net_conn.c net/net_read.c net/net_write.c key/key.c \
 	key/key.h key/key_dat.c key/key_auth.c command/command.c \
 	command/command.h command/command_print.c
 am__objects_1 = emc2-shcon.$(OBJEXT) emc2-shcon_init.$(OBJEXT) \
 	emc2-shcon_term.$(OBJEXT) emc2-shcon_opt.$(OBJEXT) \
 	emc2-shcon_log.$(OBJEXT) emc2-shcon_stream.$(OBJEXT) \
+	emc2-shcon_gui.$(OBJEXT) emc2-shcon_mine.$(OBJEXT) \
 	emc2-net.$(OBJEXT) emc2-net_conn.$(OBJEXT) \
 	emc2-net_read.$(OBJEXT) emc2-net_write.$(OBJEXT) \
 	emc2-key.$(OBJEXT) emc2-key_dat.$(OBJEXT) \
@@ -123,9 +126,12 @@ am__objects_1 = emc2-shcon.$(OBJEXT) emc2-shcon_init.$(OBJEXT) \
 	emc2-command_print.$(OBJEXT)
 @EMC2_SERVICE_TRUE@am_emc2_OBJECTS = $(am__objects_1)
 emc2_OBJECTS = $(am_emc2_OBJECTS)
-@STATIC_LIBSHARE_TRUE@am__DEPENDENCIES_1 =  \
-@STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/share-lib/libshare.a
-@EMC2_SERVICE_TRUE@emc2_DEPENDENCIES = $(am__DEPENDENCIES_1)
+@USE_LIBCURSES_TRUE@am__DEPENDENCIES_1 = $(CDK_LIBS)
+@STATIC_LIBSHARE_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@STATIC_LIBSHARE_TRUE@am__DEPENDENCIES_2 =  \
+@STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/share-lib/libshare.a \
+@STATIC_LIBSHARE_TRUE@	$(am__DEPENDENCIES_1)
+@EMC2_SERVICE_TRUE@emc2_DEPENDENCIES = $(am__DEPENDENCIES_2)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -136,25 +142,28 @@ emc2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am__objects_2 = shc-shcon.$(OBJEXT) shc-shcon_init.$(OBJEXT) \
 	shc-shcon_term.$(OBJEXT) shc-shcon_opt.$(OBJEXT) \
 	shc-shcon_log.$(OBJEXT) shc-shcon_stream.$(OBJEXT) \
+	shc-shcon_gui.$(OBJEXT) shc-shcon_mine.$(OBJEXT) \
 	shc-net.$(OBJEXT) shc-net_conn.$(OBJEXT) \
 	shc-net_read.$(OBJEXT) shc-net_write.$(OBJEXT) \
 	shc-key.$(OBJEXT) shc-key_dat.$(OBJEXT) shc-key_auth.$(OBJEXT) \
 	shc-command.$(OBJEXT) shc-command_print.$(OBJEXT)
 am_shc_OBJECTS = $(am__objects_2)
 shc_OBJECTS = $(am_shc_OBJECTS)
-shc_DEPENDENCIES = $(am__DEPENDENCIES_1)
+shc_DEPENDENCIES = $(am__DEPENDENCIES_2)
 shc_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(shc_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am__testnet_SOURCES_DIST = shcon.c shcon.h shcon_init.c shcon_init.h \
 	shcon_term.c shcon_term.h shcon_opt.c shcon_opt.h shcon_log.c \
-	shcon_log.h shcon_stream.c shcon_stream.h net/net.c net/net.h \
+	shcon_log.h shcon_stream.c shcon_stream.h shcon_gui.c \
+	shcon_gui.h shcon_mine.c shcon_mine.h net/net.c net/net.h \
 	net/net_conn.c net/net_read.c net/net_write.c key/key.c \
 	key/key.h key/key_dat.c key/key_auth.c command/command.c \
 	command/command.h command/command_print.c
 am__objects_3 = testnet-shcon.$(OBJEXT) testnet-shcon_init.$(OBJEXT) \
 	testnet-shcon_term.$(OBJEXT) testnet-shcon_opt.$(OBJEXT) \
 	testnet-shcon_log.$(OBJEXT) testnet-shcon_stream.$(OBJEXT) \
+	testnet-shcon_gui.$(OBJEXT) testnet-shcon_mine.$(OBJEXT) \
 	testnet-net.$(OBJEXT) testnet-net_conn.$(OBJEXT) \
 	testnet-net_read.$(OBJEXT) testnet-net_write.$(OBJEXT) \
 	testnet-key.$(OBJEXT) testnet-key_dat.$(OBJEXT) \
@@ -162,19 +171,21 @@ am__objects_3 = testnet-shcon.$(OBJEXT) testnet-shcon_init.$(OBJEXT) \
 	testnet-command_print.$(OBJEXT)
 @TESTNET_SERVICE_TRUE@am_testnet_OBJECTS = $(am__objects_3)
 testnet_OBJECTS = $(am_testnet_OBJECTS)
-@TESTNET_SERVICE_TRUE@testnet_DEPENDENCIES = $(am__DEPENDENCIES_1)
+@TESTNET_SERVICE_TRUE@testnet_DEPENDENCIES = $(am__DEPENDENCIES_2)
 testnet_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(testnet_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am__usde_SOURCES_DIST = shcon.c shcon.h shcon_init.c shcon_init.h \
 	shcon_term.c shcon_term.h shcon_opt.c shcon_opt.h shcon_log.c \
-	shcon_log.h shcon_stream.c shcon_stream.h net/net.c net/net.h \
+	shcon_log.h shcon_stream.c shcon_stream.h shcon_gui.c \
+	shcon_gui.h shcon_mine.c shcon_mine.h net/net.c net/net.h \
 	net/net_conn.c net/net_read.c net/net_write.c key/key.c \
 	key/key.h key/key_dat.c key/key_auth.c command/command.c \
 	command/command.h command/command_print.c
 am__objects_4 = usde-shcon.$(OBJEXT) usde-shcon_init.$(OBJEXT) \
 	usde-shcon_term.$(OBJEXT) usde-shcon_opt.$(OBJEXT) \
 	usde-shcon_log.$(OBJEXT) usde-shcon_stream.$(OBJEXT) \
+	usde-shcon_gui.$(OBJEXT) usde-shcon_mine.$(OBJEXT) \
 	usde-net.$(OBJEXT) usde-net_conn.$(OBJEXT) \
 	usde-net_read.$(OBJEXT) usde-net_write.$(OBJEXT) \
 	usde-key.$(OBJEXT) usde-key_dat.$(OBJEXT) \
@@ -182,7 +193,7 @@ am__objects_4 = usde-shcon.$(OBJEXT) usde-shcon_init.$(OBJEXT) \
 	usde-command_print.$(OBJEXT)
 @USDE_SERVICE_TRUE@am_usde_OBJECTS = $(am__objects_4)
 usde_OBJECTS = $(am_usde_OBJECTS)
-@USDE_SERVICE_TRUE@usde_DEPENDENCIES = $(am__DEPENDENCIES_1)
+@USDE_SERVICE_TRUE@usde_DEPENDENCIES = $(am__DEPENDENCIES_2)
 usde_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(usde_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -395,9 +406,13 @@ version_info = @version_info@
 version_patch = @version_patch@
 with_kernel = @with_kernel@
 with_kerneldir = @with_kerneldir@
-tool_flags = $(am__append_1) $(am__append_2) $(am__append_3)
-@STATIC_LIBSHARE_FALSE@ld_flags = -lshare
-@STATIC_LIBSHARE_TRUE@ld_flags = $(LIBSHARE)/src/share-lib/libshare.a
+CDK_LIBS = $(builddir)/cdk/libcdk.a
+CDK_INCLUDES = $(builddir)/cdk/include
+tool_flags = -I$(CDK_INCLUDES) $(am__append_1) $(am__append_2) \
+	$(am__append_3)
+@STATIC_LIBSHARE_FALSE@ld_flags = -lshare $(am__append_4)
+@STATIC_LIBSHARE_TRUE@ld_flags = $(LIBSHARE)/src/share-lib/libshare.a \
+@STATIC_LIBSHARE_TRUE@	$(am__append_4)
 
 # main source code for share-coin console client utility program.
 console_sources = \
@@ -413,6 +428,10 @@ console_sources = \
 	shcon_log.h \
 	shcon_stream.c \
 	shcon_stream.h \
+	shcon_gui.c \
+	shcon_gui.h \
+	shcon_mine.c \
+	shcon_mine.h \
 	net/net.c \
 	net/net.h \
 	net/net_conn.c \
@@ -554,8 +573,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-net_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-net_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_gui.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_log.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_mine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_opt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emc2-shcon_term.Po@am__quote@
@@ -569,8 +590,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-net_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-net_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_gui.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_log.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_mine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_opt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shc-shcon_term.Po@am__quote@
@@ -584,8 +607,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-net_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-net_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_gui.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_log.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_mine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_opt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testnet-shcon_term.Po@am__quote@
@@ -599,8 +624,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-net_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-net_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_gui.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_log.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_mine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_opt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usde-shcon_term.Po@am__quote@
@@ -709,6 +736,34 @@ emc2-shcon_stream.obj: shcon_stream.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_stream.c' object='emc2-shcon_stream.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -c -o emc2-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
+
+emc2-shcon_gui.o: shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -MT emc2-shcon_gui.o -MD -MP -MF $(DEPDIR)/emc2-shcon_gui.Tpo -c -o emc2-shcon_gui.o `test -f 'shcon_gui.c' || echo '$(srcdir)/'`shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/emc2-shcon_gui.Tpo $(DEPDIR)/emc2-shcon_gui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_gui.c' object='emc2-shcon_gui.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -c -o emc2-shcon_gui.o `test -f 'shcon_gui.c' || echo '$(srcdir)/'`shcon_gui.c
+
+emc2-shcon_gui.obj: shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -MT emc2-shcon_gui.obj -MD -MP -MF $(DEPDIR)/emc2-shcon_gui.Tpo -c -o emc2-shcon_gui.obj `if test -f 'shcon_gui.c'; then $(CYGPATH_W) 'shcon_gui.c'; else $(CYGPATH_W) '$(srcdir)/shcon_gui.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/emc2-shcon_gui.Tpo $(DEPDIR)/emc2-shcon_gui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_gui.c' object='emc2-shcon_gui.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -c -o emc2-shcon_gui.obj `if test -f 'shcon_gui.c'; then $(CYGPATH_W) 'shcon_gui.c'; else $(CYGPATH_W) '$(srcdir)/shcon_gui.c'; fi`
+
+emc2-shcon_mine.o: shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -MT emc2-shcon_mine.o -MD -MP -MF $(DEPDIR)/emc2-shcon_mine.Tpo -c -o emc2-shcon_mine.o `test -f 'shcon_mine.c' || echo '$(srcdir)/'`shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/emc2-shcon_mine.Tpo $(DEPDIR)/emc2-shcon_mine.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_mine.c' object='emc2-shcon_mine.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -c -o emc2-shcon_mine.o `test -f 'shcon_mine.c' || echo '$(srcdir)/'`shcon_mine.c
+
+emc2-shcon_mine.obj: shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -MT emc2-shcon_mine.obj -MD -MP -MF $(DEPDIR)/emc2-shcon_mine.Tpo -c -o emc2-shcon_mine.obj `if test -f 'shcon_mine.c'; then $(CYGPATH_W) 'shcon_mine.c'; else $(CYGPATH_W) '$(srcdir)/shcon_mine.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/emc2-shcon_mine.Tpo $(DEPDIR)/emc2-shcon_mine.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_mine.c' object='emc2-shcon_mine.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -c -o emc2-shcon_mine.obj `if test -f 'shcon_mine.c'; then $(CYGPATH_W) 'shcon_mine.c'; else $(CYGPATH_W) '$(srcdir)/shcon_mine.c'; fi`
 
 emc2-net.o: net/net.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(emc2_CFLAGS) $(CFLAGS) -MT emc2-net.o -MD -MP -MF $(DEPDIR)/emc2-net.Tpo -c -o emc2-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c
@@ -920,6 +975,34 @@ shc-shcon_stream.obj: shcon_stream.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
 
+shc-shcon_gui.o: shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -MT shc-shcon_gui.o -MD -MP -MF $(DEPDIR)/shc-shcon_gui.Tpo -c -o shc-shcon_gui.o `test -f 'shcon_gui.c' || echo '$(srcdir)/'`shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shc-shcon_gui.Tpo $(DEPDIR)/shc-shcon_gui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_gui.c' object='shc-shcon_gui.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-shcon_gui.o `test -f 'shcon_gui.c' || echo '$(srcdir)/'`shcon_gui.c
+
+shc-shcon_gui.obj: shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -MT shc-shcon_gui.obj -MD -MP -MF $(DEPDIR)/shc-shcon_gui.Tpo -c -o shc-shcon_gui.obj `if test -f 'shcon_gui.c'; then $(CYGPATH_W) 'shcon_gui.c'; else $(CYGPATH_W) '$(srcdir)/shcon_gui.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shc-shcon_gui.Tpo $(DEPDIR)/shc-shcon_gui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_gui.c' object='shc-shcon_gui.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-shcon_gui.obj `if test -f 'shcon_gui.c'; then $(CYGPATH_W) 'shcon_gui.c'; else $(CYGPATH_W) '$(srcdir)/shcon_gui.c'; fi`
+
+shc-shcon_mine.o: shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -MT shc-shcon_mine.o -MD -MP -MF $(DEPDIR)/shc-shcon_mine.Tpo -c -o shc-shcon_mine.o `test -f 'shcon_mine.c' || echo '$(srcdir)/'`shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shc-shcon_mine.Tpo $(DEPDIR)/shc-shcon_mine.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_mine.c' object='shc-shcon_mine.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-shcon_mine.o `test -f 'shcon_mine.c' || echo '$(srcdir)/'`shcon_mine.c
+
+shc-shcon_mine.obj: shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -MT shc-shcon_mine.obj -MD -MP -MF $(DEPDIR)/shc-shcon_mine.Tpo -c -o shc-shcon_mine.obj `if test -f 'shcon_mine.c'; then $(CYGPATH_W) 'shcon_mine.c'; else $(CYGPATH_W) '$(srcdir)/shcon_mine.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shc-shcon_mine.Tpo $(DEPDIR)/shc-shcon_mine.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_mine.c' object='shc-shcon_mine.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -c -o shc-shcon_mine.obj `if test -f 'shcon_mine.c'; then $(CYGPATH_W) 'shcon_mine.c'; else $(CYGPATH_W) '$(srcdir)/shcon_mine.c'; fi`
+
 shc-net.o: net/net.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shc_CFLAGS) $(CFLAGS) -MT shc-net.o -MD -MP -MF $(DEPDIR)/shc-net.Tpo -c -o shc-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shc-net.Tpo $(DEPDIR)/shc-net.Po
@@ -1130,6 +1213,34 @@ testnet-shcon_stream.obj: shcon_stream.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
 
+testnet-shcon_gui.o: shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_gui.o -MD -MP -MF $(DEPDIR)/testnet-shcon_gui.Tpo -c -o testnet-shcon_gui.o `test -f 'shcon_gui.c' || echo '$(srcdir)/'`shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_gui.Tpo $(DEPDIR)/testnet-shcon_gui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_gui.c' object='testnet-shcon_gui.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_gui.o `test -f 'shcon_gui.c' || echo '$(srcdir)/'`shcon_gui.c
+
+testnet-shcon_gui.obj: shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_gui.obj -MD -MP -MF $(DEPDIR)/testnet-shcon_gui.Tpo -c -o testnet-shcon_gui.obj `if test -f 'shcon_gui.c'; then $(CYGPATH_W) 'shcon_gui.c'; else $(CYGPATH_W) '$(srcdir)/shcon_gui.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_gui.Tpo $(DEPDIR)/testnet-shcon_gui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_gui.c' object='testnet-shcon_gui.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_gui.obj `if test -f 'shcon_gui.c'; then $(CYGPATH_W) 'shcon_gui.c'; else $(CYGPATH_W) '$(srcdir)/shcon_gui.c'; fi`
+
+testnet-shcon_mine.o: shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_mine.o -MD -MP -MF $(DEPDIR)/testnet-shcon_mine.Tpo -c -o testnet-shcon_mine.o `test -f 'shcon_mine.c' || echo '$(srcdir)/'`shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_mine.Tpo $(DEPDIR)/testnet-shcon_mine.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_mine.c' object='testnet-shcon_mine.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_mine.o `test -f 'shcon_mine.c' || echo '$(srcdir)/'`shcon_mine.c
+
+testnet-shcon_mine.obj: shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-shcon_mine.obj -MD -MP -MF $(DEPDIR)/testnet-shcon_mine.Tpo -c -o testnet-shcon_mine.obj `if test -f 'shcon_mine.c'; then $(CYGPATH_W) 'shcon_mine.c'; else $(CYGPATH_W) '$(srcdir)/shcon_mine.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-shcon_mine.Tpo $(DEPDIR)/testnet-shcon_mine.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_mine.c' object='testnet-shcon_mine.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -c -o testnet-shcon_mine.obj `if test -f 'shcon_mine.c'; then $(CYGPATH_W) 'shcon_mine.c'; else $(CYGPATH_W) '$(srcdir)/shcon_mine.c'; fi`
+
 testnet-net.o: net/net.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testnet_CFLAGS) $(CFLAGS) -MT testnet-net.o -MD -MP -MF $(DEPDIR)/testnet-net.Tpo -c -o testnet-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/testnet-net.Tpo $(DEPDIR)/testnet-net.Po
@@ -1339,6 +1450,34 @@ usde-shcon_stream.obj: shcon_stream.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_stream.c' object='usde-shcon_stream.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -c -o usde-shcon_stream.obj `if test -f 'shcon_stream.c'; then $(CYGPATH_W) 'shcon_stream.c'; else $(CYGPATH_W) '$(srcdir)/shcon_stream.c'; fi`
+
+usde-shcon_gui.o: shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-shcon_gui.o -MD -MP -MF $(DEPDIR)/usde-shcon_gui.Tpo -c -o usde-shcon_gui.o `test -f 'shcon_gui.c' || echo '$(srcdir)/'`shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/usde-shcon_gui.Tpo $(DEPDIR)/usde-shcon_gui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_gui.c' object='usde-shcon_gui.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -c -o usde-shcon_gui.o `test -f 'shcon_gui.c' || echo '$(srcdir)/'`shcon_gui.c
+
+usde-shcon_gui.obj: shcon_gui.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-shcon_gui.obj -MD -MP -MF $(DEPDIR)/usde-shcon_gui.Tpo -c -o usde-shcon_gui.obj `if test -f 'shcon_gui.c'; then $(CYGPATH_W) 'shcon_gui.c'; else $(CYGPATH_W) '$(srcdir)/shcon_gui.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/usde-shcon_gui.Tpo $(DEPDIR)/usde-shcon_gui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_gui.c' object='usde-shcon_gui.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -c -o usde-shcon_gui.obj `if test -f 'shcon_gui.c'; then $(CYGPATH_W) 'shcon_gui.c'; else $(CYGPATH_W) '$(srcdir)/shcon_gui.c'; fi`
+
+usde-shcon_mine.o: shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-shcon_mine.o -MD -MP -MF $(DEPDIR)/usde-shcon_mine.Tpo -c -o usde-shcon_mine.o `test -f 'shcon_mine.c' || echo '$(srcdir)/'`shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/usde-shcon_mine.Tpo $(DEPDIR)/usde-shcon_mine.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_mine.c' object='usde-shcon_mine.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -c -o usde-shcon_mine.o `test -f 'shcon_mine.c' || echo '$(srcdir)/'`shcon_mine.c
+
+usde-shcon_mine.obj: shcon_mine.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-shcon_mine.obj -MD -MP -MF $(DEPDIR)/usde-shcon_mine.Tpo -c -o usde-shcon_mine.obj `if test -f 'shcon_mine.c'; then $(CYGPATH_W) 'shcon_mine.c'; else $(CYGPATH_W) '$(srcdir)/shcon_mine.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/usde-shcon_mine.Tpo $(DEPDIR)/usde-shcon_mine.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shcon_mine.c' object='usde-shcon_mine.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -c -o usde-shcon_mine.obj `if test -f 'shcon_mine.c'; then $(CYGPATH_W) 'shcon_mine.c'; else $(CYGPATH_W) '$(srcdir)/shcon_mine.c'; fi`
 
 usde-net.o: net/net.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(usde_CFLAGS) $(CFLAGS) -MT usde-net.o -MD -MP -MF $(DEPDIR)/usde-net.Tpo -c -o usde-net.o `test -f 'net/net.c' || echo '$(srcdir)/'`net/net.c

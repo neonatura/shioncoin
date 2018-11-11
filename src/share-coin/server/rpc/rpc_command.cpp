@@ -973,14 +973,10 @@ Value rpc_block_get(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(SHERR_NOENT, "block-chain");
   }
 
-  //Object ret = blockToJSON(iface, *block, pblockindex);
   Object ret = block->ToValue();
 
   ret.push_back(Pair("confirmations", 
         GetBlockDepthInMainChain(iface, block->GetHash())));
-  if (pblockindex->pprev)
-    ret.push_back(Pair("previousblockhash",
-          pblockindex->pprev->GetBlockHash().GetHex()));
   if (pblockindex->pnext)
     ret.push_back(Pair("nextblockhash", 
           pblockindex->pnext->GetBlockHash().GetHex()));
@@ -1006,13 +1002,15 @@ Value rpc_block_work(CIface *iface, const Array& params, bool fStratum)
         "  \"target\" : little endian hash target\n"
         "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
+#if 0
   if (vNodes.empty())
     throw JSONRPCError(-9, "coin service is not connected!");
 
   if (IsInitialBlockDownload(ifaceIndex))
     throw JSONRPCError(-10, "coin service is downloading blocks...");
+#endif
 
-  typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
+  typedef map<uint256, CBlock*> mapNewBlock_t;
   static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
   static vector<CBlock*> vNewBlock;
 
@@ -1024,7 +1022,7 @@ Value rpc_block_work(CIface *iface, const Array& params, bool fStratum)
     static int64 nStart;
     static CBlock* pblock;
     if (pindexPrev != GetBestBlockIndex(iface) ||
-        (STAT_TX_ACCEPTS(iface) != nTransactionsUpdatedLast && GetTime() - nStart > 60))
+        (STAT_TX_ACCEPTS(iface) != nTransactionsUpdatedLast && GetTime() - nStart >= 15))
     {
       if (pindexPrev != GetBestBlockIndex(iface))
       {
@@ -1049,18 +1047,21 @@ Value rpc_block_work(CIface *iface, const Array& params, bool fStratum)
       if (!pblock)
         throw JSONRPCError(-7, "Out of memory");
 
+
+			// Update nTime
+			pblock->UpdateTime(pindexPrev);
+			pblock->nNonce = 0;
+
+			// Update nExtraNonce
+			core_IncrementExtraNonce(pblock, pindexPrev);
+
+			pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+
       vNewBlock.push_back(pblock);
+		
+			// Save
+			mapNewBlock[pblock->hashMerkleRoot] = pblock;
     }
-
-    // Update nTime
-    pblock->UpdateTime(pindexPrev);
-    pblock->nNonce = 0;
-
-    // Update nExtraNonce
-    core_IncrementExtraNonce(pblock, pindexPrev);
-
-    // Save
-    mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
 
     // Prebuild hash buffers
     char pmidstate[32];
@@ -1080,27 +1081,43 @@ Value rpc_block_work(CIface *iface, const Array& params, bool fStratum)
   }
   else
   {
+		unsigned char data[128];
+
     // Parse parameters
     vector<unsigned char> vchData = ParseHex(params[0].get_str());
     if (vchData.size() != 128)
       throw JSONRPCError(-8, "Invalid parameter");
-    CBlock* pdata = (CBlock*)&vchData[0];
 
-    // Byte reverse
+		memcpy(data, vchData.data(), 128); 
+
     for (int i = 0; i < 128/4; i++)
-      ((unsigned int*)pdata)[i] = ByteReverse(((unsigned int*)pdata)[i]);
+      ((unsigned int*)data)[i] = ByteReverse(((unsigned int*)data)[i]);
+
+		uint256 hMerkleRoot;
+		memcpy(&hMerkleRoot, data + 36, sizeof(hMerkleRoot));
 
     // Get saved block
-    if (!mapNewBlock.count(pdata->hashMerkleRoot))
+    if (!mapNewBlock.count(hMerkleRoot)) {
       return false;
-    CBlock* pblock = mapNewBlock[pdata->hashMerkleRoot].first;
+		}
+    CBlock* pblock = mapNewBlock[hMerkleRoot];
 
-    pblock->nTime = pdata->nTime;
-    pblock->nNonce = pdata->nNonce;
-    pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
-    pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+		/* may be multiple */
+		if (pblock->hashMerkleRoot != hMerkleRoot)
+			return (false);
 
-    return CheckWork(pblock, *pwalletMain);
+		unsigned int nTime = *((unsigned int *)(data + 68)); 
+    pblock->nTime = nTime;//pdata->nTime;
+		unsigned int nNonce = *((unsigned int *)(data + 76)); 
+    pblock->nNonce = nNonce;//pdata->nNonce;
+//    pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
+//    pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+
+    bool ok =  CheckWork(pblock, *pwalletMain);
+		if (ok) {
+			Debug("(%s) rpc_block_work: generated block \"%s\".", iface->name, pblock->GetHash().GetHex().c_str());
+		}
+		return (ok);
   }
 }
 
@@ -1213,7 +1230,7 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
     if (vchData.size() != 128)
       throw JSONRPCError(-8, "Invalid parameter");
 
-    CBlock* pdata = (CBlock*)&vchData[0];
+		CBlockHeader *pdata = (CBlockHeader *)vchData.data();
 
     // Byte reverse
     for (int i = 0; i < 128/4; i++)
@@ -4757,7 +4774,7 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "sys.shutdown", SYS_SHUTDOWN);
   RegisterRPCAlias(ifaceIndex, "stop", SYS_SHUTDOWN);
 
-  RegisterRPCOp(ifaceIndex, "sys.url", SYS_URL);
+//  RegisterRPCOp(ifaceIndex, "sys.url", SYS_URL);
   
   RegisterRPCOp(ifaceIndex, "peer.add", PEER_ADD);
 

@@ -49,6 +49,7 @@ extern FILE *_shcon_fout;
 #include "shcon_log.h"
 #include "shcon_opt.h"
 #include "shcon_stream.h"
+#include "shcon_gui.h"
 #include "key/key.h"
 #include "net/net.h"
 #include "command/command.h"

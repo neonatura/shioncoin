@@ -26,7 +26,7 @@ blockchain_sources = \
 	$(srcdir)/blockchain/bc_block.h \
 	$(srcdir)/blockchain/bc_fmap.h \
 	$(srcdir)/blockchain/bc_index.h \
-	$(srcdir)/blockchain/bc_mutex.h \ 
+	$(srcdir)/blockchain/bc_mutex.h \
 	$(srcdir)/blockchain/bc_table.h
 
 proto_sources = \
@@ -56,13 +56,21 @@ stratum_sources = \
 	stratum/stratum_user.h \
 	stratum/stratum_task.h \
 	stratum/stratum_sync.h \
+	stratum/http/http.h \
 	stratum/stratum.c \
 	stratum/stratum_http.c \
 	stratum/stratum_message.c \
 	stratum/stratum_protocol.c \
 	stratum/stratum_user.c \
 	stratum/stratum_task.c \
-	stratum/stratum_sync.c
+	stratum/stratum_sync.c \
+	stratum/http/http.c \
+	stratum/http/http_alias.c \
+	stratum/http/http_coin.c \
+	stratum/http/http_context.c \
+	stratum/http/http_fractal.c \
+	stratum/http/http_matrix.c \
+	stratum/http/http_pool.c
 
 common_includes = \
 	$(top_builddir)/config.h \

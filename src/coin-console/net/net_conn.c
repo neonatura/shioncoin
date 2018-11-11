@@ -46,7 +46,7 @@ int net_conn(void)
   if (port == 0)
     port = DEFAULT_RPC_PORT;
 
-  err = shconnect_host(hostname, port, SHNET_ASYNC);
+  err = shconnect_host(hostname, port, 0);//SHNET_ASYNC);
   if (err) {
     if (err == -1) err = -errno;
     return (err);
