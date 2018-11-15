@@ -52,8 +52,6 @@ public:
     static TEST_CTxMemPool mempool; 
     static CBlockIndex *pindexBest;
     static CBlockIndex *pindexGenesisBlock;// = NULL;
-    static CBigNum bnBestChainWork;// = 0;
-    static CBigNum bnBestInvalidWork;// = 0;
     static int64 nTimeBestReceived ;//= 0;
 
     static int64 nTargetTimespan;
@@ -117,8 +115,6 @@ extern TEST_CTxMemPool TEST_mempool;
 
 extern CBlockIndex* TEST_pindexGenesisBlock;
 extern int TEST_nBestHeight;
-extern CBigNum TEST_bnBestChainWork;
-extern CBigNum TEST_bnBestInvalidWork;
 extern uint256 TEST_hashBestChain;
 extern CBlockIndex* TEST_pindexBest;
 extern int64 TEST_nTimeBestReceived;

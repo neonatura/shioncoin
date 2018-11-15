@@ -59,14 +59,6 @@ class USDETxDB : public CTxDB
     bool ReadDiskTx(COutPoint outpoint, CTransaction& tx);
 
     bool LoadBlockIndex();
-//    bool WriteBlockIndex(const CDiskBlockIndex& blockindex);
-
-#if 0
-    bool ReadHashBestChain(uint255& hashBestChain);
-    bool WriteHashBestChain(uint256 hashBestChain);
-    bool ReadBestInvalidWork(CBigNum& bnBestInvalidWork);
-    bool WriteBestInvalidWork(CBigNum bnBestInvalidWork);
-#endif
 
   private:
     bool LoadBlockIndexGuts();

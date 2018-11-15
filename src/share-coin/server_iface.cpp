@@ -970,14 +970,17 @@ int usde_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   unsigned char *data;
   int size;
 
+  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+    return (SHERR_AGAIN);
+
   size = shbuf_size(buff);
   if (size < SIZEOF_COINHDR_T)
     return (SHERR_AGAIN);
 
-  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
-    return (SHERR_AGAIN);
-
   data = (unsigned char *)shbuf_data(buff);
+	if (!data)
+		return (SHERR_AGAIN);
+
   mempcpy(&hdr, data, SIZEOF_COINHDR_T);
 
   /* verify magic sequence */
@@ -1211,14 +1214,17 @@ int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   unsigned char *data;
   int size;
 
+  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+    return (SHERR_AGAIN);
+
   size = shbuf_size(buff);
   if (size < SIZEOF_COINHDR_T)
     return (SHERR_AGAIN);
 
-  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
-    return (SHERR_AGAIN);
-
   data = (unsigned char *)shbuf_data(buff);
+	if (!data)
+		return (SHERR_AGAIN);
+
   mempcpy(&hdr, data, SIZEOF_COINHDR_T);
 
   /* verify magic sequence */
@@ -1522,14 +1528,17 @@ int testnet_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   unsigned char *data;
   int size;
 
+  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+    return (SHERR_AGAIN);
+
   size = shbuf_size(buff);
   if (size < SIZEOF_COINHDR_T)
     return (SHERR_AGAIN);
 
-  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
-    return (SHERR_AGAIN);
-
   data = (unsigned char *)shbuf_data(buff);
+	if (!data)
+		return (SHERR_AGAIN);
+
   mempcpy(&hdr, data, SIZEOF_COINHDR_T);
 
   /* verify magic sequence */
@@ -2301,14 +2310,17 @@ int emc2_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   unsigned char *data;
   int size;
 
+  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+    return (SHERR_AGAIN);
+
   size = shbuf_size(buff);
   if (size < SIZEOF_COINHDR_T)
     return (SHERR_AGAIN);
 
-  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+  data = (unsigned char *)shbuf_data(buff);
+	if (!data)
     return (SHERR_AGAIN);
 
-  data = (unsigned char *)shbuf_data(buff);
   mempcpy(&hdr, data, SIZEOF_COINHDR_T);
 
   /* verify magic sequence */
@@ -2588,14 +2600,17 @@ int ltc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   unsigned char *data;
   int size;
 
+  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+    return (SHERR_AGAIN);
+
   size = shbuf_size(buff);
   if (size < SIZEOF_COINHDR_T)
     return (SHERR_AGAIN);
 
-  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
+  data = (unsigned char *)shbuf_data(buff);
+	if (!data)
     return (SHERR_AGAIN);
 
-  data = (unsigned char *)shbuf_data(buff);
   mempcpy(&hdr, data, SIZEOF_COINHDR_T);
 
   /* verify magic sequence */
@@ -2863,4 +2878,18 @@ void ltc_server_close(int fd, struct sockaddr *addr)
     }
   }
 
+}
+
+bool CNode::HasHeader(CBlockIndex *pindex)
+{
+	if (pindexRecvHeader && 
+			pindex == pindexRecvHeader->GetAncestor(pindex->nHeight))
+		return true;
+	if (pindexRecv && 
+			pindex == pindexRecv->GetAncestor(pindex->nHeight))
+		return true;
+	if (pindexBestHeaderSend && 
+			pindex == pindexBestHeaderSend->GetAncestor(pindex->nHeight))
+		return true;
+	return false;
 }

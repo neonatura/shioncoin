@@ -738,18 +738,11 @@ void COLORBlock::InvalidChainFound(CBlockIndex* pindexNew)
   CIface *iface = GetCoinByIndex(COLOR_COIN_IFACE);
   char errbuf[1024];
 
-  if (pindexNew->bnChainWork > bnBestInvalidWork)
-  {
-    bnBestInvalidWork = pindexNew->bnChainWork;
-  }
   
   sprintf(errbuf, "COLOR: InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n", pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight, pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexNew->GetBlockTime()).c_str());
   unet_log(COLOR_COIN_IFACE, errbuf);
 
-  CBlockIndex *pindexBest = GetBestBlockIndex(COLOR_COIN_IFACE);
 
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
-    unet_log(COLOR_COIN_IFACE, "InvalidChainFound: WARNING: Displayed transactions may not be correct!  You may need to upgrade, or other nodes may need to upgrade.\n");
 }
 
 // notify wallets about a new best chain
@@ -1070,6 +1063,7 @@ int64_t COLORBlock::GetBlockWeight()
 bool COLORBlock::SetBestChain(CBlockIndex* pindexNew)
 {
   CIface *iface = GetCoinByIndex(COLOR_COIN_IFACE);
+	CWallet *wallet = GetWallet(iface);
   uint256 hash = GetHash();
   shtime_t ts;
   bool ret;
@@ -1098,7 +1092,7 @@ bool COLORBlock::SetBestChain(CBlockIndex* pindexNew)
 
   // New best block
   SetBestBlockIndex(COLOR_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 
   return true;

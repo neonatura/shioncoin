@@ -1132,7 +1132,9 @@ _TEST(matrixtx)
   CTransaction tx;
   CTxMatrix *m;
   double lat, lon;
-bool ret;
+	bool ret;
+	int mheight;
+	int mode;
   int idx;
   int err;
 
@@ -1160,9 +1162,44 @@ bool ret;
 
   /* ensure that block processing does not fail past x3 Validate matrix */
   for (idx = 0; idx < 108; idx++) { /* 27 * 3 = 81 */
+		bool fMatrix = false;
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
+
+		CTransaction& tx = block->vtx[0];
+		if (VerifyMatrixTx(tx, mode) && mode == OP_EXT_VALIDATE) {
+			fMatrix = true;
+		}
     _TRUE(ProcessBlock(NULL, block) == true);
+
+		/* test retract. */
+		if (fMatrix) {
+			CTxMatrix *matrix = tx.GetMatrix();
+			_TRUEPTR(matrix);
+
+			/* sub */
+			CBlockIndex *pindex = GetBestBlockIndex(iface);
+fprintf(stderr, "DEBUG: TEST: BlockRetractValidateMatrix()\n");
+			BlockRetractValidateMatrix(iface, tx, pindex);
+
+			/* add back */
+			bool fCheck = false;
+			_TRUE(true == BlockAcceptValidateMatrix(iface, tx, fCheck));
+			_TRUE(fCheck == true);
+#if 0
+			mheight = (pindex->nHeight - 27);
+			mheight /= 27;
+			mheight *= 27; 
+			while (pindex && pindex->pprev && pindex->nHeight > mheight)
+				pindex = pindex->pprev;
+			wallet->matrixValidate.Append(pindex->nHeight, pindex->GetBlockHash());
+#endif
+
+fprintf(stderr, "DEBUG: block matrix: %s\n", matrix->ToString().c_str()); 
+fprintf(stderr, "DEBUG: wallet matrix: %s\n", wallet->matrixValidate.ToString().c_str());
+			_TRUE(*matrix == wallet->matrixValidate);
+		}
+
     delete block;
   }
 

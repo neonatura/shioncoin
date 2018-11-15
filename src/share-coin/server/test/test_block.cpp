@@ -767,30 +767,14 @@ void TESTBlock::InvalidChainFound(CBlockIndex* pindexNew)
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   ValidIndexSet *setValid = GetValidIndexSet(TEST_COIN_IFACE);
 
-  pindexNew->nStatus |= BIS_FAIL_VALID;
+  pindexNew->nStatus |= BLOCK_FAILED_VALID;
   setValid->erase(pindexNew);
 
 
-  if (pindexNew->bnChainWork > bnBestInvalidWork)
-  {
-    bnBestInvalidWork = pindexNew->bnChainWork;
-#ifdef USE_LEVELDB_COINDB
-    TESTTxDB txdb;
-    txdb.WriteBestInvalidWork(bnBestInvalidWork);
-    txdb.Close();
-#endif
-    //    uiInterface.NotifyBlocksChanged();
-  }
   error(SHERR_INVAL, "TEST: InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
       pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight,
       pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S",
         pindexNew->GetBlockTime()).c_str());
-  CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE); 
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6) {
-    char errbuf[1024];
-    sprintf(errbuf, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(TEST_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-    unet_log(TEST_COIN_IFACE, errbuf);
-  }
 }
 
 #ifdef USE_LEVELDB_TXDB
@@ -928,6 +912,7 @@ bool TESTBlock::AddToBlockIndex()
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
   ValidIndexSet *setValid = GetValidIndexSet(TEST_COIN_IFACE);
   CBlockIndex *pindexNew;
   shtime_t ts;
@@ -956,10 +941,10 @@ bool TESTBlock::AddToBlockIndex()
   pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
 
   if (IsWitnessEnabled(iface, pindexNew->pprev)) {
-    pindexNew->nStatus |= BIS_OPT_WITNESS;
+    pindexNew->nStatus |= BLOCK_OPT_WITNESS;
   }
 
-  if (pindexNew->bnChainWork > bnBestChainWork) {
+  if (pindexNew->bnChainWork > wallet->bnBestChainWork) {
     bool ret = SetBestChain(pindexNew);
     if (!ret)
       return (false);
@@ -1051,6 +1036,7 @@ bool test_Truncate(uint256 hash)
 {
   blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
   CBlockIndex *pBestIndex;
   CBlockIndex *cur_index;
   CBlockIndex *pindex;
@@ -1103,7 +1089,7 @@ bool test_Truncate(uint256 hash)
     return error(SHERR_INVAL, "Truncate: WriteHashBestChain '%s' failed", hash.GetHex().c_str());
 
   cur_index->pnext = NULL;
-  TESTBlock::bnBestChainWork = cur_index->bnChainWork;
+  wallet->bnBestChainWork = cur_index->bnChainWork;
   InitServiceBlockEvent(TEST_COIN_IFACE, cur_index->nHeight + 1);
 
   return (true);
@@ -1535,8 +1521,6 @@ bool TESTBlock::DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex)
   CIface *iface = GetCoinByIndex(txdb.ifaceIndex);
 	CWallet *wallet = GetCoinByIndex(txdb.ifaceIndex);
 
-  if (!core_DisconnectBlock(txdb, pindex, this))
-    return (false);
 
   if (pindex->pprev) {
     if (txdb.ifaceIndex == TEST_COIN_IFACE ||
@@ -1556,6 +1540,9 @@ bool TESTBlock::DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex)
       }
     }
   }
+
+  if (!core_DisconnectBlock(txdb, pindex, this))
+    return (false);
 
   return true;
 }
@@ -1672,6 +1659,7 @@ bool test_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxInde
 bool TESTBlock::SetBestChain(CBlockIndex* pindexNew)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
   uint256 hash = GetHash();
   shtime_t ts;
   bool ret;
@@ -1708,7 +1696,7 @@ bool TESTBlock::SetBestChain(CBlockIndex* pindexNew)
 
   // New best block
   SetBestBlockIndex(TEST_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 
   return true;
@@ -1727,8 +1715,6 @@ bool TESTBlock::DisconnectBlock(CBlockIndex* pindex)
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
 	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
 
-  if (!core_DisconnectBlock(pindex, this))
-    return (false);
 
   if (pindex->pprev) {
     BOOST_FOREACH(CTransaction& tx, vtx) {
@@ -1749,6 +1735,9 @@ bool TESTBlock::DisconnectBlock(CBlockIndex* pindex)
       }
     }
   }
+
+  if (!core_DisconnectBlock(pindex, this))
+    return (false);
 
   return (true);
 }

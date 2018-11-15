@@ -37,8 +37,6 @@
 TESTNET_CTxMemPool TESTNETBlock::mempool;
 CBlockIndex *TESTNETBlock::pindexGenesisBlock = NULL;
 int64 TESTNETBlock::nTimeBestReceived;
-CBigNum TESTNETBlock::bnBestChainWork;
-CBigNum TESTNETBlock::bnBestInvalidWork;
 
 
 

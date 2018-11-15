@@ -37,8 +37,6 @@
 LTC_CTxMemPool LTCBlock::mempool;
 CBlockIndex *LTCBlock::pindexGenesisBlock = NULL;
 int64 LTCBlock::nTimeBestReceived;
-CBigNum LTCBlock::bnBestChainWork;
-CBigNum LTCBlock::bnBestInvalidWork;
 
 
 

@@ -174,6 +174,20 @@ typedef int (*coin_f)(struct coin_iface_t * /*iface*/, void * /* arg */);
 
 
 
+/* shared traits for services that support */
+/** Number of blocks that can be requested at any given time from a single peer. */ 
+static const int MAX_BLOCKS_IN_TRANSIT_PER_PEER = 16;
+/** Timeout in seconds during which a peer must stall block download progress before being disconnected. */
+static const unsigned int BLOCK_STALLING_TIMEOUT = 2;
+/** Number of headers sent in one getheaders result. We rely on the assumption that if a peer sends
+ *  *  less than this number, we reached their tip. Changing this value is a protocol upgrade. */
+static const unsigned int MAX_HEADERS_RESULTS = 2000;
+/** Size of the "block download window": how far ahead of our current height do we fetch?
+ *  *  Larger windows tolerate larger download speed differences between peer, but increase the potential
+ *   *  degree of disordering of blocks on disk (which make reindexing and in the future perhaps pruning
+ *    *  harder). We'll probably want to make this a per-peer adaptive value at some point. */
+static const unsigned int BLOCK_DOWNLOAD_WINDOW = 1024;
+
 enum DeploymentPos
 {
     DEPLOYMENT_TESTDUMMY,

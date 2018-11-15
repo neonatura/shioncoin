@@ -37,8 +37,6 @@
 COLOR_CTxMemPool COLORBlock::mempool;
 CBlockIndex *COLORBlock::pindexGenesisBlock = NULL;
 int64 COLORBlock::nTimeBestReceived;
-CBigNum COLORBlock::bnBestChainWork;
-CBigNum COLORBlock::bnBestInvalidWork;
 
 
 

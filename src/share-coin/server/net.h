@@ -369,6 +369,13 @@ public:
     CCriticalSection cs_filter;
     CBloomFilter *pfilter;
 
+		/* headers based relay */
+		CBlockIndex *pindexRecv;
+		CBlockIndex *pindexRecvHeader;
+		/* used for headers announcements; unfiltered blocks to relay. */
+		std::vector<uint256> vBlockHashesToAnnounce;
+		CBlockIndex *pindexBestHeaderSend;
+
     CNode(int ifaceIndexIn, unsigned int hSocketIn, CAddress addrIn, std::string addrNameIn = "", bool fInboundIn=false) : vSend(SER_NETWORK, MIN_PROTO_VERSION), vRecv(SER_NETWORK, MIN_PROTO_VERSION)
     {
         ifaceIndex = ifaceIndexIn;
@@ -405,6 +412,10 @@ public:
         fRelayTxes = false; /* enabled upon "version" message receival */
         pfilter = NULL;
 
+				pindexRecv = NULL;
+				pindexRecvHeader = NULL;
+				vBlockHashesToAnnounce.clear();
+				pindexBestHeaderSend = NULL;
 
         // Be shy and don't send version until we hear
         if (!fInbound)
@@ -511,6 +522,13 @@ public:
                 vInventoryToSend.push_back(inv);
         }
     }
+
+		void PushBlockHash(const uint256 &hash)
+		{
+			LOCK(cs_inventory);
+			vBlockHashesToAnnounce.push_back(hash);
+		}
+
 
     void AskFor(CInv& inv)
 		{
@@ -850,6 +868,9 @@ public:
     static bool IsBanned(CNetAddr ip);
     bool Misbehaving(int howmuch); // 1 == a little, 100 == a lot
     void copyStats(CNodeStats &stats);
+
+		bool HasHeader(CBlockIndex *pindex);
+
 };
 
 

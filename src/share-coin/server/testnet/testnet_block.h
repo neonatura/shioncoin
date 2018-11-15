@@ -45,8 +45,6 @@ public:
     static TESTNET_CTxMemPool mempool; 
     static CBlockIndex *pindexBest;
     static CBlockIndex *pindexGenesisBlock;
-    static CBigNum bnBestChainWork;
-    static CBigNum bnBestInvalidWork;
     static int64 nTimeBestReceived;
 
     TESTNETBlock()
@@ -116,8 +114,6 @@ extern uint256 testnet_hashGenesisBlock;
 
 
 extern int TESTNET_nBestHeight;
-extern CBigNum TESTNET_bnBestChainWork;
-extern CBigNum TESTNET_bnBestInvalidWork;
 extern uint256 TESTNET_hashBestChain;
 extern int64 TESTNET_nTimeBestReceived;
 

@@ -245,17 +245,12 @@ static bool usde_LoadBlockIndex()
 
   SetBestBlockIndex(USDE_COIN_IFACE, pindexBest);
   //  SetBestHeight(iface, pindexBest->nHeight);
-  USDEBlock::bnBestChainWork = pindexBest->bnChainWork;
+  wallet->bnBestChainWork = pindexBest->bnChainWork;
   pindexBest->pnext = NULL;
 
   Debug("(usde) LoadBlockIndex: hashBestChain=%s  height=%d  date=%s\n",
       hashBestChain.GetHex().c_str(), (int)GetBestHeight(USDE_COIN_IFACE),
       DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-
-#ifdef USE_LEVELDB_COINDB
-  // Load bnBestInvalidWork, OK if it doesn't exist
-  ReadBestInvalidWork(USDEBlock::bnBestInvalidWork);
-#endif
 
   int nCheckDepth = (GetBestHeight(USDE_COIN_IFACE) / 10000) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;

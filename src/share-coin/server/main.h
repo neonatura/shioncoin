@@ -78,15 +78,6 @@ extern CCriticalSection cs_mapAlerts;
 
 
 extern CCriticalSection cs_main;
-//extern std::map<uint256, CBlockIndex*> mapBlockIndex;
-//extern uint256 hashGenesisBlock;
-//extern CBlockIndex* pindexGenesisBlock;
-//extern int nBestHeight;
-//extern CBigNum bnBestChainWork;
-//extern CBigNum bnBestInvalidWork;
-//extern uint256 hashBestChain;
-//extern CBlockIndex* pindexBest;
-//extern unsigned int nTransactionsUpdated;
 extern uint64 nLastBlockTx;
 extern uint64 nLastBlockSize;
 extern const std::string strMessageMagic;

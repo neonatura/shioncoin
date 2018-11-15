@@ -37,8 +37,6 @@
 SHC_CTxMemPool SHCBlock::mempool;
 CBlockIndex *SHCBlock::pindexGenesisBlock = NULL;
 int64 SHCBlock::nTimeBestReceived;
-CBigNum SHCBlock::bnBestChainWork;
-CBigNum SHCBlock::bnBestInvalidWork;
 
 
 

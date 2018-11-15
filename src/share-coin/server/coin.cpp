@@ -842,7 +842,6 @@ bool core_Truncate(CIface *iface, uint256 hash)
   WriteHashBestChain(iface, cur_index->GetBlockHash());
 
   cur_index->pnext = NULL;
-  //TESTBlock::bnBestChainWork = cur_index->bnChainWork;
 
 /* todo: remove pindex's */
 

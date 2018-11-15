@@ -785,7 +785,7 @@ Value rpc_sys_url(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_block_info(CIface *iface, const Array& params, bool fStratum)
 {
-  CWallet *pwalletMain = GetWallet(iface);
+  CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
 
   if (fHelp || params.size() != 0)
@@ -798,9 +798,12 @@ Value rpc_block_info(CIface *iface, const Array& params, bool fStratum)
 
   obj.push_back(Pair("version",       (int)iface->proto_ver));
   obj.push_back(Pair("blockversion",  (int)iface->block_ver));
-  obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
+  obj.push_back(Pair("walletversion", wallet->GetVersion()));
 
   obj.push_back(Pair("blocks",        (int)GetBestHeight(iface)));
+	obj.push_back(Pair("headers",
+				wallet->pindexBestHeader ? wallet->pindexBestHeader->nHeight : -1));
+
   obj.push_back(Pair("difficulty",    (double)GetDifficulty(ifaceIndex)));
 
   CTxMemPool *pool = GetTxMemPool(iface);

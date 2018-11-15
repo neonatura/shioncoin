@@ -314,25 +314,26 @@ bool testnet_CreateGenesisBlock()
   block.vtx.push_back(txNew);
   block.hashPrevBlock = 0;
   block.hashMerkleRoot = block.BuildMerkleTree();
-  block.nVersion = TESTNETBlock::CURRENT_VERSION;
+  block.nVersion = 2;
   block.nTime    = 1461974400; /* 04/30/16 12:00am */
   block.nBits    = 0x1e0ffff0;
   block.nNonce   = 3293840;
 
 
-  block.print();
-  if (block.GetHash() != testnet_hashGenesisBlock)
-    return (false);
+  if (block.GetHash() != testnet_hashGenesisBlock) {
+fprintf(stderr, "DEBUG: Genesis fail: %s\n", block.ToString().c_str());
+    return (error(ERR_INVAL, "testnet_CreateGenesisBlock: !hash"));
+	}
   if (block.hashMerkleRoot != testnet_hashGenesisMerkle)
     return (false);
 
   if (!block.WriteBlock(0)) {
-    return (false);
+    return (error(ERR_INVAL, "testnet_CreateGenesisBlock: !WriteBlock"));
   }
 
   ret = block.AddToBlockIndex();
   if (!ret) {
-    return (false);
+		return (error(ERR_INVAL, "testnet_CreateGenesisBlock: !AddToBlockIndex"));
   }
 
   return (true);
@@ -553,19 +554,9 @@ void TESTNETBlock::InvalidChainFound(CBlockIndex* pindexNew)
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
   char errbuf[1024];
 
-  if (pindexNew->bnChainWork > bnBestInvalidWork)
-  {
-    bnBestInvalidWork = pindexNew->bnChainWork;
-  }
-  
   sprintf(errbuf, "TESTNET: InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n", pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight, pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexNew->GetBlockTime()).c_str());
   unet_log(TESTNET_COIN_IFACE, errbuf);
 
-  CBlockIndex *pindexBest = GetBestBlockIndex(TESTNET_COIN_IFACE);
-
-//fprintf(stderr, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(TESTNET_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
-    unet_log(TESTNET_COIN_IFACE, "InvalidChainFound: WARNING: Displayed transactions may not be correct!  You may need to upgrade, or other nodes may need to upgrade.\n");
 }
 
 // notify wallets about a new best chain
@@ -755,6 +746,7 @@ uint64_t TESTNETBlock::GetTotalBlocksEstimate()
 bool TESTNETBlock::AddToBlockIndex()
 {
   blkidx_t *blockIndex = GetBlockTable(TESTNET_COIN_IFACE);
+	CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
   uint256 hash = GetHash();
   CBlockIndex *pindexNew;
   shtime_t ts;
@@ -781,10 +773,10 @@ bool TESTNETBlock::AddToBlockIndex()
   pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
 
   if (IsWitnessEnabled(GetCoinByIndex(TESTNET_COIN_IFACE), pindexNew->pprev)) {
-    pindexNew->nStatus |= BIS_OPT_WITNESS;
+    pindexNew->nStatus |= BLOCK_OPT_WITNESS;
   }
 
-  if (pindexNew->bnChainWork > bnBestChainWork) {
+  if (pindexNew->bnChainWork > wallet->bnBestChainWork) {
     bool ret = SetBestChain(pindexNew);
     if (!ret)
       return (false);
@@ -810,6 +802,7 @@ int64_t TESTNETBlock::GetBlockWeight()
 bool TESTNETBlock::SetBestChain(CBlockIndex* pindexNew)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
+	CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
   uint256 hash = GetHash();
   shtime_t ts;
   bool ret;
@@ -838,7 +831,7 @@ bool TESTNETBlock::SetBestChain(CBlockIndex* pindexNew)
 
   // New best block
   SetBestBlockIndex(TESTNET_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 
   return true;
@@ -858,8 +851,6 @@ bool TESTNETBlock::DisconnectBlock(CBlockIndex* pindex)
 	CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
   CBlock *block = (CBlock *)this;
 
-  if (!core_DisconnectBlock(pindex, block))
-    return (false);
 
   if (pindex->pprev) {
     BOOST_FOREACH(CTransaction& tx, vtx) {
@@ -876,6 +867,9 @@ bool TESTNETBlock::DisconnectBlock(CBlockIndex* pindex)
       }
     }
   }
+
+  if (!core_DisconnectBlock(pindex, block))
+    return (false);
 
   return (true);
 }

@@ -306,10 +306,10 @@ static bool testnet_LoadBlockIndex()
 
   SetBestBlockIndex(TESTNET_COIN_IFACE, pindexBest);
   //  SetBestHeight(iface, pindexBest->nHeight);
-  TESTNETBlock::bnBestChainWork = pindexBest->bnChainWork;
+  wallet->bnBestChainWork = pindexBest->bnChainWork;
   pindexBest->pnext = NULL;
 
-  //printf("LoadBlockIndex(): TESTNETBlock::hashBestChain=%s  height=%d  date=%s\n", hashBestChain.ToString().substr(0,20).c_str(), GetBestHeight(iface), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
+  Debug("LoadBlockIndex(): TESTNETBlock::hashBestChain=%s  height=%d  date=%s\n", hashBestChain.ToString().substr(0,20).c_str(), GetBestHeight(iface), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
 
 
   int nCheckDepth = (GetBestHeight(TESTNET_COIN_IFACE) / 10000) + 640;

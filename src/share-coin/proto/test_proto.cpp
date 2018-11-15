@@ -37,8 +37,6 @@
 TEST_CTxMemPool TESTBlock::mempool;
 CBlockIndex *TESTBlock::pindexGenesisBlock = NULL;
 int64 TESTBlock::nTimeBestReceived;
-CBigNum TESTBlock::bnBestChainWork;
-CBigNum TESTBlock::bnBestInvalidWork;
 
 int64 TESTBlock::nTargetTimespan = 7200; /* two hours */
 int64 TESTBlock::nTargetSpacing = 60; /* one minute */

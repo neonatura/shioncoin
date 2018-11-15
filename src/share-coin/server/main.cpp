@@ -330,16 +330,6 @@ string GetWarnings(int ifaceIndex, string strFor)
     strStatusBar = strMiscWarning;
   }
 
-#if 0 /* DEBUG: */
-  // Longer invalid proof-of-work chain
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
-  {
-    /* !! */
-    nPriority = 2000;
-    strStatusBar = strRPC = "WARNING: Displayed transactions may not be correct!  You may need to upgrade, or other nodes may need to upgrade.";
-  }
-#endif
-
   // Alerts
   {
     LOCK(cs_mapAlerts);

@@ -1,6 +1,6 @@
 
 CDK_LIBS=$(builddir)/cdk/libcdk.a
-CDK_INCLUDES=$(builddir)/cdk/include
+CDK_INCLUDES=$(srcdir)/cdk/include
 
 bin_PROGRAMS = shc
 

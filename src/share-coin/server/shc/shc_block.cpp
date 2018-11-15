@@ -446,7 +446,7 @@ bool shc_CreateGenesisBlock()
   block.vtx.push_back(txNew);
   block.hashPrevBlock = 0;
   block.hashMerkleRoot = block.BuildMerkleTree();
-  block.nVersion = SHCBlock::CURRENT_VERSION;
+  block.nVersion = 2;
   block.nTime    = 1461974400; /* 04/30/16 12:00am */
   block.nBits    = 0x1e0ffff0;
   block.nNonce   = 3293840;
@@ -562,6 +562,12 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
       return error(SHERR_INVAL, "ProcessBlock() : block with too little proof-of-work");
     }
 #endif
+		/* yet another way..
+		 * CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint();
+		 * if (pcheckpoint && nHeight < pcheckpoint->nHeight)
+		 *  	return error();
+		 *
+		 */
   }
 
   /*
@@ -739,26 +745,9 @@ void SHCBlock::InvalidChainFound(CBlockIndex* pindexNew)
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   char errbuf[1024];
 
-  if (pindexNew->bnChainWork > bnBestInvalidWork)
-  {
-    bnBestInvalidWork = pindexNew->bnChainWork;
-#ifdef USE_LEVELDB_COINDB
-    SHCTxDB txdb;
-    txdb.WriteBestInvalidWork(bnBestInvalidWork);
-    txdb.Close();
-#endif
-    //    uiInterface.NotifyBlocksChanged();
-  }
-
-  
   sprintf(errbuf, "SHC: InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n", pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight, pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexNew->GetBlockTime()).c_str());
   unet_log(SHC_COIN_IFACE, errbuf);
 
-  CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
-
-//fprintf(stderr, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(SHC_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
-    unet_log(SHC_COIN_IFACE, "InvalidChainFound: WARNING: Displayed transactions may not be correct!  You may need to upgrade, or other nodes may need to upgrade.\n");
 }
 
 #ifdef USE_LEVELDB_TXDB
@@ -974,6 +963,7 @@ bool shc_Truncate(uint256 hash)
 {
   blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
   CBlockIndex *pBestIndex;
   CBlockIndex *cur_index;
   CBlockIndex *pindex;
@@ -1027,7 +1017,7 @@ bool shc_Truncate(uint256 hash)
     return error(SHERR_INVAL, "Truncate: WriteHashBestChain '%s' failed", hash.GetHex().c_str());
 
   cur_index->pnext = NULL;
-  SHCBlock::bnBestChainWork = cur_index->bnChainWork;
+	wallet->bnBestChainWork = cur_index->bnChainWork;
   InitServiceBlockEvent(SHC_COIN_IFACE, cur_index->nHeight + 1);
 
   return (true);
@@ -1046,6 +1036,30 @@ bool SHCBlock::Truncate()
 
 bool SHCBlock::VerifyCheckpoint(int nHeight)
 {
+  CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
+
+	if (hashPrevBlock != pindexBest->GetBlockHash()) {
+		CBlockIndex *checkpoint = shc_GetLastCheckpoint();
+		if (checkpoint) {
+			if (nHeight < checkpoint->nHeight) {
+				/* forked chain */
+				return (ERR_INVAL, "(shc) VerifyCheckpoint: unknown chain (height) [hash %s].", GetHash().GetHex().c_str());
+			}
+
+			int64 deltaTime = nTime - checkpoint->nTime;
+			if (deltaTime < 0)
+				return (ERR_INVAL, "(shc) VerifyCheckpoint: unknown chain (time) [hash %s].", GetHash().GetHex().c_str());
+
+			CBigNum bnNewBlock;
+			bnNewBlock.SetCompact(nBits);
+			CBigNum bnRequired;
+			bnRequired.SetCompact(checkpoint->nBits);
+			if (bnNewBlock > bnRequired) {
+				return error(SHERR_INVAL, "(shc) VerifyCheckpoint: unknown chain (pow) [hash %s].", GetHash().GetHex().c_str());
+			}
+		}
+	}
+
   return (SHC_Checkpoints::CheckBlock(nHeight, GetHash()));
 }
 uint64_t SHCBlock::GetTotalBlocksEstimate()
@@ -1056,6 +1070,7 @@ uint64_t SHCBlock::GetTotalBlocksEstimate()
 bool SHCBlock::AddToBlockIndex()
 {
   blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
   uint256 hash = GetHash();
   CBlockIndex *pindexNew;
   shtime_t ts;
@@ -1082,10 +1097,10 @@ bool SHCBlock::AddToBlockIndex()
   pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
 
   if (IsWitnessEnabled(GetCoinByIndex(SHC_COIN_IFACE), pindexNew->pprev)) {
-    pindexNew->nStatus |= BIS_OPT_WITNESS;
+    pindexNew->nStatus |= BLOCK_OPT_WITNESS;
   }
 
-  if (pindexNew->bnChainWork > bnBestChainWork) {
+  if (pindexNew->bnChainWork > wallet->bnBestChainWork) {
     bool ret = SetBestChain(pindexNew);
     if (!ret)
       return (false);
@@ -1109,6 +1124,7 @@ int64_t SHCBlock::GetBlockWeight()
 
 bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
 {
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   uint256 hash = GetHash();
   shtime_t ts;
@@ -1138,7 +1154,7 @@ bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
 
   // New best block
   SetBestBlockIndex(SHC_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 
   return true;
@@ -1158,9 +1174,6 @@ bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
 	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
 	CBlock *block = (CBlock *)this;
 
-	if (!core_DisconnectBlock(pindex, block))
-		return (false);
-
 	if (pindex->pprev) {
 		BOOST_FOREACH(CTransaction& tx, vtx) {
 			if (tx.IsCoinBase()) {
@@ -1176,6 +1189,9 @@ bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
 			}
 		}
 	}
+
+	if (!core_DisconnectBlock(pindex, block))
+		return (false);
 
 	return (true);
 }

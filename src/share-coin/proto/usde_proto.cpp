@@ -37,8 +37,6 @@
 USDE_CTxMemPool USDEBlock::mempool;
 CBlockIndex *USDEBlock::pindexGenesisBlock = NULL;
 int64 USDEBlock::nTimeBestReceived;
-CBigNum USDEBlock::bnBestChainWork;
-CBigNum USDEBlock::bnBestInvalidWork;
 
 int64 USDEBlock::nTargetTimespan = 7200; /* two hours */
 int64 USDEBlock::nTargetSpacing = 60; /* one minute */

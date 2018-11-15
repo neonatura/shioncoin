@@ -336,13 +336,6 @@ class CTxDB : public CDB
 
     bool ReadHashBestChain(uint256& hashBestChain);
     bool WriteHashBestChain(uint256 hashBestChain);
-    bool ReadBestInvalidWork(CBigNum& bnBestInvalidWork);
-    bool WriteBestInvalidWork(CBigNum bnBestInvalidWork);
-
-    //    bool LoadBlockIndex(CIface *iface);
-    //    bool InitBlockChainIndex(CIface *iface);
-    //  private:
-    //    bool LoadBlockIndexGuts(CIface *iface);
 
 };
 #endif

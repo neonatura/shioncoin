@@ -491,15 +491,6 @@ bool CTxDB::WriteHashBestChain(uint256 hashBestChain)
     return Write(string("hashBestChain"), hashBestChain);
 }
 
-bool CTxDB::ReadBestInvalidWork(CBigNum& bnBestInvalidWork)
-{
-    return Read(string("bnBestInvalidWork"), bnBestInvalidWork);
-}
-
-bool CTxDB::WriteBestInvalidWork(CBigNum bnBestInvalidWork)
-{
-    return Write(string("bnBestInvalidWork"), bnBestInvalidWork);
-}
 
 #endif
 

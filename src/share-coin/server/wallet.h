@@ -175,6 +175,12 @@ class CWallet : public CCryptoKeyStore
 		MasterKeyMap mapMasterKeys;
 		unsigned int nMasterKeyMaxID;
 
+		/* best work done on current chain */
+		CBigNum bnBestChainWork;
+
+		/* best known work based on block header alone. */
+		CBlockIndex *pindexBestHeader;
+
 		CWallet(int index)
 		{
 			nWalletVersion = FEATURE_BASE;
@@ -184,6 +190,9 @@ class CWallet : public CCryptoKeyStore
 			ifaceIndex = index;
 			nScanHeight = 0;
 			nValidateHeight = 0;
+
+			bnBestChainWork = 0;
+			pindexBestHeader = NULL;
 		}
 		CWallet(int index, std::string strWalletFileIn)
 		{
@@ -195,6 +204,9 @@ class CWallet : public CCryptoKeyStore
 			ifaceIndex = index;
 			nScanHeight = 0;
 			nValidateHeight = 0;
+
+			bnBestChainWork = 0;
+			pindexBestHeader = NULL;
 		}
 
 		std::map<uint256, CWalletTx> mapWallet;

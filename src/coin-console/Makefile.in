@@ -407,7 +407,7 @@ version_patch = @version_patch@
 with_kernel = @with_kernel@
 with_kerneldir = @with_kerneldir@
 CDK_LIBS = $(builddir)/cdk/libcdk.a
-CDK_INCLUDES = $(builddir)/cdk/include
+CDK_INCLUDES = $(srcdir)/cdk/include
 tool_flags = -I$(CDK_INCLUDES) $(am__append_1) $(am__append_2) \
 	$(am__append_3)
 @STATIC_LIBSHARE_FALSE@ld_flags = -lshare $(am__append_4)

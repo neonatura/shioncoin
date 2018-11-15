@@ -88,6 +88,7 @@ common_includes = \
 	$(top_srcdir)/src/share-lib/net/shnet.h \
 	unet/unet.h \
 	server/coin.h \
+	server/validation.h \
 	server/chain.h \
 	server/global.h \
 	server/allocators.h \
@@ -265,6 +266,7 @@ server_sources = \
 	server/txmempool.cpp \
 	server/txmempool.h \
 	server/coin.cpp \
+	server/validation.cpp \
 	server/chain.cpp \
 	server/matrix.cpp \
 	server/spring.c \

@@ -327,15 +327,10 @@ static bool shc_LoadBlockIndex()
 
   SetBestBlockIndex(SHC_COIN_IFACE, pindexBest);
   //  SetBestHeight(iface, pindexBest->nHeight);
-  SHCBlock::bnBestChainWork = pindexBest->bnChainWork;
+  wallet->bnBestChainWork = pindexBest->bnChainWork;
   pindexBest->pnext = NULL;
 
   //printf("LoadBlockIndex(): SHCBlock::hashBestChain=%s  height=%d  date=%s\n", hashBestChain.ToString().substr(0,20).c_str(), GetBestHeight(iface), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-
-#ifdef USE_LEVELDB_COINDB
-  // Load bnBestInvalidWork, OK if it doesn't exist
-  ReadBestInvalidWork(SHCBlock::bnBestInvalidWork);
-#endif
 
   int nCheckDepth = (GetBestHeight(SHC_COIN_IFACE) / 10000) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;

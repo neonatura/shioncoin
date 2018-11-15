@@ -879,31 +879,13 @@ void LTCBlock::InvalidChainFound(CBlockIndex* pindexNew)
   CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
   ValidIndexSet *setValid = GetValidIndexSet(LTC_COIN_IFACE);
 
-  pindexNew->nStatus |= BIS_FAIL_VALID;
+  pindexNew->nStatus |= BLOCK_FAILED_VALID;
   setValid->erase(pindexNew);
 
-  if (pindexNew->bnChainWork > bnBestInvalidWork)
-  {
-    bnBestInvalidWork = pindexNew->bnChainWork;
-#ifdef USE_LEVELDB_COINDB
-    LTCTxDB txdb;
-    txdb.WriteBestInvalidWork(bnBestInvalidWork);
-    txdb.Close();
-#endif
-    //    uiInterface.NotifyBlocksChanged();
-  }
   error(SHERR_INVAL, "LTC: InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
       pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight,
       pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S",
         pindexNew->GetBlockTime()).c_str());
-  CBlockIndex *pindexBest = GetBestBlockIndex(LTC_COIN_IFACE); 
-
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6) {
-    char errbuf[1024];
-    sprintf(errbuf, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", 
-        GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(LTC_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-    unet_log(LTC_COIN_IFACE, errbuf);
-  }
 
 }
 
@@ -992,7 +974,7 @@ bool LTCBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 //  LTCBlock::hashBestChain = hash;
   SetBestBlockIndex(LTC_COIN_IFACE, pindexNew);
 //  SetBestHeight(iface, pindexNew->nHeight);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
   STAT_TX_ACCEPTS(iface)++;
 
@@ -1274,7 +1256,7 @@ bool ltc_Truncate(uint256 hash)
     return error(SHERR_INVAL, "Truncate: WriteHashBestChain '%s' failed", hash.GetHex().c_str());
 
   cur_index->pnext = NULL;
-  LTCBlock::bnBestChainWork = cur_index->bnChainWork;
+  wallet->bnBestChainWork = cur_index->bnChainWork;
   InitServiceBlockEvent(LTC_COIN_IFACE, cur_index->nHeight + 1);
 
   return (true);
@@ -1304,6 +1286,7 @@ bool LTCBlock::AddToBlockIndex()
 {
   CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(LTC_COIN_IFACE);
+  CWallet *wallet = GetWallet(iface);
   ValidIndexSet *setValid = GetValidIndexSet(LTC_COIN_IFACE);
   uint256 hash = GetHash();
   CBlockIndex *pindexNew;
@@ -1331,11 +1314,11 @@ bool LTCBlock::AddToBlockIndex()
   pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
 
   if (IsWitnessEnabled(iface, pindexNew->pprev)) {
-    pindexNew->nStatus |= BIS_OPT_WITNESS;
+    pindexNew->nStatus |= BLOCK_OPT_WITNESS;
   }
 
 
-  if (pindexNew->bnChainWork > bnBestChainWork) {
+  if (pindexNew->bnChainWork > wallet->bnBestChainWork) {
 #ifdef USE_LEVELDB_COINDB
     LTCTxDB txdb;
     bool ret = SetBestChain(txdb, pindexNew);
@@ -1593,7 +1576,7 @@ bool LTCBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 
   // New best block
   SetBestBlockIndex(LTC_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 
   {
@@ -1839,6 +1822,7 @@ bool ltc_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxIndex
 bool LTCBlock::SetBestChain(CBlockIndex* pindexNew)
 {
   CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
+  CWallet *wallet = GetWallet(iface);
   uint256 hash = GetHash();
   shtime_t ts;
   bool ret;
@@ -1876,7 +1860,7 @@ bool LTCBlock::SetBestChain(CBlockIndex* pindexNew)
 
   // New best block
   SetBestBlockIndex(LTC_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 
   return true;

@@ -761,7 +761,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
 
 
 
-
+/* no longer used */
 bool CTransaction::ClientConnectInputs(int ifaceIndex)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -1497,167 +1497,6 @@ uint256 GetGenesisBlockHash(int ifaceIndex)
 extern int ProcessExecTx(CIface *iface, CNode *pfrom, CTransaction& tx);
 
 
-/**
- * The core method of accepting a new block onto the block-chain.
- */
-bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
-{
-  int ifaceIndex = pblock->ifaceIndex;
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  uint256 hash = pblock->GetHash();
-  shtime_t ts;
-	int mode;
-  bool ret;
-
-  if (!pblock || !pindexPrev) {
-    return error(SHERR_INVAL, "(core) AcceptBlock: invalid parameter.");
-  }
-
-  if (GetBlockIndexByHash(ifaceIndex, hash)) {
-    return error(SHERR_INVAL, "(core) AcceptBlock: block already in chain.");
-  }
-
-  unsigned int nHeight = pindexPrev->nHeight+1;
-
-
-  /* check proof of work */
-  unsigned int nBits = pblock->GetNextWorkRequired(pindexPrev);
-  if (pblock->nBits != nBits) {
-    return (pblock->trust(-100, "(core) AcceptBlock: invalid difficulty (%x) specified (next work required is %x) for block height %d [prev '%s']\n", pblock->nBits, nBits, nHeight, pindexPrev->GetBlockHash().GetHex().c_str()));
-  }
-
-  BOOST_FOREACH(const CTransaction& tx, pblock->vtx) {
-#if 0 /* not standard */
-    if (!tx.IsCoinBase()) { // Check that all inputs exist
-      BOOST_FOREACH(const CTxIn& txin, tx.vin) {
-        if (txin.prevout.IsNull())
-          return error(SHERR_INVAL, "AcceptBlock(): prevout is null");
-        if (!VerifyTxHash(iface, txin.prevout.hash))
-          return error(SHERR_INVAL, "AcceptBlock(): unknown prevout hash '%s'", txin.prevout.hash.GetHex().c_str());
-      }
-    }
-#endif
-
-    /* check that all transactions are finalized. */ 
-		unsigned int flags = GetBlockScriptFlags(iface, pindexPrev);
-		if (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) {
-			if (!tx.IsFinal(ifaceIndex, nHeight, pindexPrev->GetMedianTimePast()))
-				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [bip113].", nHeight));
-		} else {
-			if (!tx.IsFinal(ifaceIndex, nHeight, pblock->GetBlockTime()))
-				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [lock].", nHeight));
-		}
-		if (tx.GetVersion() >= 2) {
-			/* tx v2 lock/sequence test */
-			if (!CheckSequenceLocks(iface, tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
-				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [seq].", nHeight));
-		}
-  }
-
-  /* check that the block matches the known block hash for last checkpoint. */
-  if (!pblock->VerifyCheckpoint(nHeight)) {
-    return (pblock->trust(-100, "(core) AcceptBlock: rejected by checkpoint lockin at height %u", nHeight));
-  }
-
-  ret = pblock->AddToBlockIndex();
-  if (!ret) {
-    pblock->print();
-    return error(SHERR_IO, "AcceptBlock: AddToBlockIndex failed");
-  }
-
-  /* inventory relay */
-  int nBlockEstimate = pblock->GetTotalBlocksEstimate();
-  if (GetBestBlockChain(iface) == hash) {
-//    timing_init("AcceptBlock:PushInventory", &ts);
-    NodeList &vNodes = GetNodeList(ifaceIndex);
-    {
-      LOCK(cs_vNodes);
-      BOOST_FOREACH(CNode* pnode, vNodes) {
-        if (GetBestHeight(iface) > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate)) {
-          pnode->PushInventory(CInv(ifaceIndex, MSG_BLOCK, hash));
-        }
-      }
-    }
-//    timing_term(ifaceIndex, "AcceptBlock:PushInventory", &ts);
-  }
-
-  if (ifaceIndex == TEST_COIN_IFACE ||
-			ifaceIndex == TESTNET_COIN_IFACE ||
-      ifaceIndex == SHC_COIN_IFACE) {
-		/* handle exec checkpoints */
-    BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
-			if (tx.isFlag(CTransaction::TXF_EXEC) &&
-					IsExecTx(tx, mode) && mode == OP_EXT_UPDATE) {
-        ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
-			}
-		}
-
-    BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
-#if 0 
-      if (tx.isFlag(CTransaction::TXF_MATRIX)) {
-				/* handled in coinbase */
-			} 
-#endif
-
-			if (tx.isFlag(CTransaction::TXF_ALIAS)) {
-        bool fRet = CommitAliasTx(iface, tx, nHeight);
-        if (!fRet) {
-          error(SHERR_INVAL, "CommitAliasTx failure");
-        }
-      } 
-
-			if (tx.isFlag(CTransaction::TXF_ASSET)) {
-        bool fRet = ProcessAssetTx(iface, tx, nHeight);
-        if (!fRet) {
-          error(SHERR_INVAL, "ProcessAssetTx failure");
-        }
-			} else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
-        InsertCertTable(iface, tx, nHeight);
-      } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
-        int err = CommitContextTx(iface, tx, nHeight);
-        if (err) {
-          error(err, "CommitContextTx failure");
-        }
-      } else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
-				/* not implemented. */
-			} else if (tx.isFlag(CTransaction::TXF_IDENT)) {
-        InsertIdentTable(iface, tx);
-			} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
-        bool fRet = CommitLicenseTx(iface, tx, nHeight);
-        if (!fRet) {
-          error(SHERR_INVAL, "CommitLicenseTx failure");
-        }
-			} 
-
-			/* non-exlusive */
-			if (tx.isFlag(CTransaction::TXF_OFFER)) {
-        int err = CommitOfferTx(iface, tx, nHeight);
-				if (err)
-					error(err, "CommitOfferTx");
-      }
-
-			/* non-exclusive */
-			if (tx.isFlag(CTransaction::TXF_EXEC) &&
-					IsExecTx(tx, mode) && mode != OP_EXT_UPDATE) {
-        ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
-			}
-
-			/* non-exclusive */
-			if (tx.isFlag(CTransaction::TXF_ALTCHAIN)) {
-				if (IsAltChainTx(tx)) {
-					CommitAltChainTx(iface, tx, pblock->originPeer);
-				}
-			}
-
-			/* check for matrix validation notary tx's. */
-			ProcessValidateMatrixNotaryTx(iface, tx);
-    }
-
-  }
-
-  STAT_BLOCK_ACCEPTS(iface)++;
-  return true;
-}
 
 bool CTransaction::IsStandard() const
 {
@@ -1988,7 +1827,7 @@ bool CTransaction::VerifyValidateMatrix(int ifaceIndex, const CTxMatrix& matrix,
   while (pindex && pindex->pprev && pindex->nHeight > height)
     pindex = pindex->pprev;
   if (!pindex) {
-    return (false);
+    return (error(ERR_INVAL, "VerifyValidateMatrix: matrix root not found."));
   }
 
   bool ret;
@@ -1996,8 +1835,12 @@ bool CTransaction::VerifyValidateMatrix(int ifaceIndex, const CTxMatrix& matrix,
   cmp_matrix.SetType(CTxMatrix::M_VALIDATE);
   cmp_matrix.Append(pindex->nHeight, pindex->GetBlockHash()); 
   ret = (cmp_matrix == matrix);
+	if (!ret) {
+		CTxMatrix *mp = (CTxMatrix *)&matrix;
+		return (error(ERR_INVAL, "VerifyValidateMatrix: matrix mismatch: local matrix(%s) != block matrix(%s)\n", cmp_matrix.ToString().c_str(), mp->ToString().c_str()));
+	}
 
-  return (ret);
+  return (true);
 }
 
 /**
@@ -2682,12 +2525,12 @@ bool core_ConnectBestBlock(int ifaceIndex, CBlock *block, CBlockIndex *pindexNew
     CBlockIndex *pindexTest = pindexNewBest;
     std::vector<CBlockIndex*> vAttach;
     while (true) {
-      if ((pindexTest->nStatus & BIS_FAIL_VALID) ||
-          (pindexTest->nStatus & BIS_FAIL_CHILD)) {
+      if ((pindexTest->nStatus & BLOCK_FAILED_VALID) ||
+          (pindexTest->nStatus & BLOCK_FAILED_CHILD)) {
         CBlockIndex *pindexFailed = pindexNewBest;
 
         while (pindexTest != pindexFailed) {
-          pindexFailed->nStatus |= BIS_FAIL_CHILD;
+          pindexFailed->nStatus |= BLOCK_FAILED_CHILD;
           setValid->erase(pindexFailed);
           //pblocktree->WriteBlockIndex(CDiskBlockIndex(pindexFailed));
           pindexFailed = pindexFailed->pprev;

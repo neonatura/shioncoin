@@ -61,8 +61,6 @@ public:
     static LTC_CTxMemPool mempool; 
     static CBlockIndex *pindexBest;
     static CBlockIndex *pindexGenesisBlock;
-    static CBigNum bnBestChainWork;
-    static CBigNum bnBestInvalidWork;
     static int64 nTimeBestReceived;
 
     LTCBlock()
@@ -148,8 +146,6 @@ extern uint256 ltc_hashGenesisBlock;
 
 
 extern int LTC_nBestHeight;
-extern CBigNum LTC_bnBestChainWork;
-extern CBigNum LTC_bnBestInvalidWork;
 extern uint256 LTC_hashBestChain;
 extern int64 LTC_nTimeBestReceived;
 

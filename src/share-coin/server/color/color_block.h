@@ -56,8 +56,6 @@ public:
     static COLOR_CTxMemPool mempool; 
     static CBlockIndex *pindexBest;
     static CBlockIndex *pindexGenesisBlock;
-    static CBigNum bnBestChainWork;
-    static CBigNum bnBestInvalidWork;
     static int64 nTimeBestReceived;
 
     COLORBlock(uint160 hColorIn = 0)
@@ -142,8 +140,6 @@ extern CBlockIndex* COLOR_pindexBest;
 extern CBlockIndex* COLOR_pindexGenesisBlock;
 
 extern int COLOR_nBestHeight;
-extern CBigNum COLOR_bnBestChainWork;
-extern CBigNum COLOR_bnBestInvalidWork;
 extern uint256 COLOR_hashBestChain;
 extern int64 COLOR_nTimeBestReceived;
 

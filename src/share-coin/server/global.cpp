@@ -32,7 +32,6 @@ using namespace std;
 
 #define GL_VERSION "version"
 #define GL_BESTCHAIN "hashBestChain"
-#define GL_BESTINVALID "bnBestInvalidWork"
 
 const char *ReadGlobalVar(char *tag, char *var)
 {
@@ -76,18 +75,5 @@ void WriteBestChain(CIface *iface, uint256 hash)
   WriteGlobalVar(iface->name, GL_BESTCHAIN, hash.GetHex().c_str());
 }
 
-CBigNum ReadBestInvalid(CIface *iface)
-{
-  const char *str = ReadGlobalVar(iface->name, GL_BESTINVALID);
-  string sHex(str);
-  CBigNum bn;
-
-  bn.SetHex(sHex);
-  return (bn);
-}
-void WriteBestInvalid(CIface *iface, CBigNum bn)
-{
-  WriteGlobalVar(iface->name, GL_BESTINVALID, bn.GetHex().c_str()); 
-}
 
 

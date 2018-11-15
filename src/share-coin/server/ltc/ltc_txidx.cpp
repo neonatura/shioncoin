@@ -111,16 +111,6 @@ bool LTCTxDB::WriteBlockIndex(const CDiskBlockIndex& blockindex)
     return Write(make_pair('b', blockindex.GetBlockHash()), blockindex);
 }
 
-bool LTCTxDB::ReadBestInvalidWork(CBigNum& bnBestInvalidWork)
-{
-    return Read('I', bnBestInvalidWork);
-}
-
-bool LTCTxDB::WriteBestInvalidWork(const CBigNum& bnBestInvalidWork)
-{
-    return Write('I', bnBestInvalidWork);
-}
-
 bool LTCTxDB::WriteBlockFileInfo(int nFile, const CBlockFileInfo &info) {
     return Write(make_pair('f', nFile), info);
 }
@@ -457,7 +447,7 @@ static bool ltc_LoadBlockIndex()
 
   SetBestBlockIndex(LTC_COIN_IFACE, pindexBest);
   //  SetBestHeight(iface, pindexBest->nHeight);
-  LTCBlock::bnBestChainWork = pindexBest->bnChainWork;
+  wallet->bnBestChainWork = pindexBest->bnChainWork;
   pindexBest->pnext = NULL;
 
   //printf("LoadBlockIndex(): LTCBlock::hashBestChain=%s  height=%d  date=%s\n", hashBestChain.ToString().substr(0,20).c_str(), GetBestHeight(iface), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());

@@ -67,8 +67,6 @@ public:
     static SHC_CTxMemPool mempool; 
     static CBlockIndex *pindexBest;
     static CBlockIndex *pindexGenesisBlock;
-    static CBigNum bnBestChainWork;
-    static CBigNum bnBestInvalidWork;
     static int64 nTimeBestReceived;
 
     SHCBlock()
@@ -82,6 +80,13 @@ public:
         ifaceIndex = SHC_COIN_IFACE;
         SetNull();
         *((CBlock*)this) = block;
+    }
+
+    SHCBlock(const CBlockHeader &block)
+    {
+			ifaceIndex = SHC_COIN_IFACE;
+			SetNull();
+			*((CBlockHeader*)this) = block;
     }
 
     void SetNull()
@@ -147,8 +152,6 @@ extern uint256 shc_hashGenesisBlock;
 
 
 extern int SHC_nBestHeight;
-extern CBigNum SHC_bnBestChainWork;
-extern CBigNum SHC_bnBestInvalidWork;
 extern uint256 SHC_hashBestChain;
 extern int64 SHC_nTimeBestReceived;
 

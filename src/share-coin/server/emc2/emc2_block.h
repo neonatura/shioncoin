@@ -61,8 +61,6 @@ public:
     static EMC2_CTxMemPool mempool; 
     static CBlockIndex *pindexBest;
     static CBlockIndex *pindexGenesisBlock;
-    static CBigNum bnBestChainWork;
-    static CBigNum bnBestInvalidWork;
     static int64 nTimeBestReceived;
 
     EMC2Block()
@@ -148,8 +146,6 @@ extern uint256 emc2_hashGenesisBlock;
 
 
 extern int EMC2_nBestHeight;
-extern CBigNum EMC2_bnBestChainWork;
-extern CBigNum EMC2_bnBestInvalidWork;
 extern uint256 EMC2_hashBestChain;
 extern int64 EMC2_nTimeBestReceived;
 

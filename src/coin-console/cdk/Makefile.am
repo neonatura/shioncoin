@@ -1,5 +1,5 @@
 
-lib_LIBRARIES = libcdk.a
+noinst_LIBRARIES = libcdk.a
 
 BUILT_SOURCES = \
 	$(builddir)/scale.c \

@@ -59,8 +59,6 @@ public:
     static USDE_CTxMemPool mempool; 
     static CBlockIndex *pindexBest;
     static CBlockIndex *pindexGenesisBlock;// = NULL;
-    static CBigNum bnBestChainWork;// = 0;
-    static CBigNum bnBestInvalidWork;// = 0;
     static int64 nTimeBestReceived ;//= 0;
 
     static int64 nTargetTimespan;
@@ -125,8 +123,6 @@ extern USDE_CTxMemPool USDE_mempool;
 
 extern CBlockIndex* USDE_pindexGenesisBlock;
 extern int USDE_nBestHeight;
-extern CBigNum USDE_bnBestChainWork;
-extern CBigNum USDE_bnBestInvalidWork;
 extern uint256 USDE_hashBestChain;
 extern CBlockIndex* USDE_pindexBest;
 extern int64 USDE_nTimeBestReceived;

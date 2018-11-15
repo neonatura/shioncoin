@@ -998,31 +998,13 @@ void EMC2Block::InvalidChainFound(CBlockIndex* pindexNew)
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
   ValidIndexSet *setValid = GetValidIndexSet(EMC2_COIN_IFACE);
 
-  pindexNew->nStatus |= BIS_FAIL_VALID;
+  pindexNew->nStatus |= BLOCK_FAILED_VALID;
   setValid->erase(pindexNew);
 
-  if (pindexNew->bnChainWork > bnBestInvalidWork)
-  {
-    bnBestInvalidWork = pindexNew->bnChainWork;
-#ifdef USE_LEVELDB_COINDB
-    EMC2TxDB txdb;
-    txdb.WriteBestInvalidWork(bnBestInvalidWork);
-    txdb.Close();
-#endif
-    //    uiInterface.NotifyBlocksChanged();
-  }
   error(SHERR_INVAL, "EMC2: InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
       pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight,
       pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S",
         pindexNew->GetBlockTime()).c_str());
-  CBlockIndex *pindexBest = GetBestBlockIndex(EMC2_COIN_IFACE); 
-
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6) {
-    char errbuf[1024];
-    sprintf(errbuf, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", 
-        GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(EMC2_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-    unet_log(EMC2_COIN_IFACE, errbuf);
-  }
 
 }
 
@@ -1393,7 +1375,7 @@ bool emc2_Truncate(uint256 hash)
     return error(SHERR_INVAL, "Truncate: WriteHashBestChain '%s' failed", hash.GetHex().c_str());
 
   cur_index->pnext = NULL;
-  EMC2Block::bnBestChainWork = cur_index->bnChainWork;
+  wallet->bnBestChainWork = cur_index->bnChainWork;
   InitServiceBlockEvent(EMC2_COIN_IFACE, cur_index->nHeight + 1);
 
   return (true);
@@ -1423,6 +1405,7 @@ bool EMC2Block::AddToBlockIndex()
 {
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(EMC2_COIN_IFACE);
+	CWallet *wallet = GetWallet(EMC2_COIN_IFACE);
   ValidIndexSet *setValid = GetValidIndexSet(EMC2_COIN_IFACE);
   uint256 hash = GetHash();
   CBlockIndex *pindexNew;
@@ -1450,10 +1433,10 @@ bool EMC2Block::AddToBlockIndex()
   pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
 
   if (IsWitnessEnabled(iface, pindexNew->pprev)) {
-    pindexNew->nStatus |= BIS_OPT_WITNESS;
+    pindexNew->nStatus |= BLOCK_OPT_WITNESS;
   }
 
-  if (pindexNew->bnChainWork > bnBestChainWork) {
+  if (pindexNew->bnChainWork > wallet->bnBestChainWork) {
     bool ret = SetBestChain(pindexNew);
     if (!ret)
       return (false);
@@ -1948,6 +1931,7 @@ bool emc2_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxInde
 
 bool EMC2Block::SetBestChain(CBlockIndex* pindexNew)
 {
+  CWallet *wallet = GetWallet(EMC2_COIN_IFACE);
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
   uint256 hash = GetHash();
   shtime_t ts;
@@ -1986,7 +1970,7 @@ bool EMC2Block::SetBestChain(CBlockIndex* pindexNew)
 
   // New best block
   SetBestBlockIndex(EMC2_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 
   return true;

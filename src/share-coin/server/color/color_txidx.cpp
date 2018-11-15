@@ -205,7 +205,7 @@ static bool color_LoadBlockIndex()
   }
 
   SetBestBlockIndex(COLOR_COIN_IFACE, pindexBest);
-  COLORBlock::bnBestChainWork = pindexBest->bnChainWork;
+  wallet->bnBestChainWork = pindexBest->bnChainWork;
   pindexBest->pnext = NULL;
 
   int nCheckDepth = (GetBestHeight(COLOR_COIN_IFACE) / 10000) + 640;

@@ -30,6 +30,9 @@
 typedef int64 CAmount;
 
 
+
+
+
 bool core_VerifyCoinInputs(int ifaceIndex, CTransaction& tx, unsigned int nIn, CTxOut& prev);
 
 bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex);

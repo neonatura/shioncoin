@@ -173,7 +173,7 @@ bool VerifyValidateMatrixScript(CWallet *wallet, const uint256& hMatrixTx, const
 		return (false);
 	if (opcode != OP_RETURN &&
 			opcode != OP_HASH160)
-		return (false); /* not p2sh or burn. */
+		return (error(ERR_INVAL, "VerifyValidateMatrixScript: invalid output script.: %s", script.ToString().c_str())); /* not p2sh or burn */
 	if (opcode == OP_HASH160) {
 		bool fConsensus;
 
@@ -443,12 +443,15 @@ bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, bool& fCheck)
 			int nOut;
 			int mode;
 			CScript script;
-			if (!GetExtOutput(tx, OP_MATRIX, mode, nOut, script) ||
-      //!VerifyValidateMatrixScript(wallet, tx) ||
-					!VerifyValidateMatrixScript(wallet, 0, script) || 
-					!tx.VerifyValidateMatrix(ifaceIndex, matrix, pindex)) {
+			if (!GetExtOutput(tx, OP_MATRIX, mode, nOut, script)) {
         fCheck = false;
-        error(SHERR_INVAL, "BlockAcceptValidateMatrix: invalid matrix received: %s", matrix.ToString().c_str());
+        error(SHERR_INVAL, "BlockAcceptValidateMatrix: GetExtOutput: invalid matrix received: %s [script \"%s\"]", matrix.ToString().c_str(), script.ToString().c_str());
+			} else if (!VerifyValidateMatrixScript(wallet, 0, script)) {
+        fCheck = false;
+        error(SHERR_INVAL, "BlockAcceptValidateMatrix: VerifyValidateMatrixScript: invalid matrix received: %s", matrix.ToString().c_str());
+			} else if (!tx.VerifyValidateMatrix(ifaceIndex, matrix, pindex)) {
+        fCheck = false;
+        error(SHERR_INVAL, "BlockAcceptValidateMatrix: VerifyValidateMatrix: invalid matrix received: %s", matrix.ToString().c_str());
       } else {
 				/* validate matrix accepted successfully. */
         fCheck = true;
@@ -478,21 +481,38 @@ void BlockRetractValidateMatrix(CIface *iface, const CTransaction& tx, CBlockInd
 {
   CWallet *wallet = GetWallet(iface);
 	int nTxOut;
+	int height;
 
 	if (!wallet)
 		return;
 	if (!pindex)
 		return;
 
-	/* remove tx from matrix */
-	wallet->matrixValidate.Retract(pindex->nHeight, pindex->GetBlockHash());
+	height = (pindex->nHeight - 27);
+	height /= 27;
+	height *= 27;
 
+	if (wallet->matrixValidate.GetHeight() != height) {
+		error(SHERR_INVAL, "BlockRetractValidateMatrix: invalid height %d (matrix is %d)", height, wallet->matrixValidate.GetHeight());
+		return;
+	}
+	Debug("(%s) BlockRetractValidateMatrix: retracted matrix from block height %d", iface->name, pindex->nHeight); 
+
+	while (pindex && pindex->pprev && pindex->nHeight > height)
+		pindex = pindex->pprev;
+	if (pindex) {
+		/* remove tx from matrix */
+		wallet->matrixValidate.Retract(pindex->nHeight, pindex->GetBlockHash());
+	}
+
+	/* remove from archives. */
 	if (wallet->mapValidateTx.size() != 0) {
 		const uint256& hPrevTx = wallet->mapValidateTx.back();
 		if (hPrevTx == tx.GetHash())
 			wallet->mapValidateTx.pop_back();
 	}
 	
+	/* remove from notorary list. */
 	wallet->mapValidateNotary.erase(tx.GetHash());
 }
 

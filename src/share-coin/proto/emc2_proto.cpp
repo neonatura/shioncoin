@@ -37,8 +37,6 @@
 EMC2_CTxMemPool EMC2Block::mempool;
 CBlockIndex *EMC2Block::pindexGenesisBlock = NULL;
 int64 EMC2Block::nTimeBestReceived;
-CBigNum EMC2Block::bnBestChainWork;
-CBigNum EMC2Block::bnBestInvalidWork;
 
 extern void RegisterRPCOpDefaults(int ifaceIndex);
 

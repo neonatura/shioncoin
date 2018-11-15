@@ -59,6 +59,8 @@ using namespace boost;
 uint256 usde_hashGenesisBlock("0x33abc26f9a026f1279cb49600efdd63f42e7c2d3a15463ad8090505d3e967752");
 static CBigNum USDE_bnProofOfWorkLimit(~uint256(0) >> 20); // usde: starting difficulty is 1 / 2^12
 
+extern bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev);
+
 
 static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) 
 {
@@ -1239,26 +1241,10 @@ void USDEBlock::InvalidChainFound(CBlockIndex* pindexNew)
 {
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
 
-  if (pindexNew->bnChainWork > bnBestInvalidWork)
-  {
-    bnBestInvalidWork = pindexNew->bnChainWork;
-#ifdef USE_LEVELDB_COINDB
-    USDETxDB txdb;
-    txdb.WriteBestInvalidWork(bnBestInvalidWork);
-    txdb.Close();
-#endif
-    //    uiInterface.NotifyBlocksChanged();
-  }
   error(SHERR_INVAL, "USDE: InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
       pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight,
       pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S",
         pindexNew->GetBlockTime()).c_str());
-  CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE); 
-  if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6) {
-    char errbuf[1024];
-    sprintf(errbuf, "critical: InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n", GetBestBlockChain(iface).ToString().substr(0,20).c_str(), GetBestHeight(USDE_COIN_IFACE), bnBestChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-    unet_log(USDE_COIN_IFACE, errbuf);
-  }
 }
 
 #ifdef USE_LEVELDB_TXDB
@@ -1597,6 +1583,7 @@ bool USDEBlock::IsBestChain()
   return (pindexBest && GetHash() == pindexBest->GetBlockHash());
 }
 
+
 bool USDEBlock::AcceptBlock()
 {
   blkidx_t *blockIndex = GetBlockTable(USDE_COIN_IFACE);
@@ -1612,7 +1599,7 @@ bool USDEBlock::AcceptBlock()
     return error(SHERR_INVAL, "(usde) AcceptBlock: block timestamp is too early");
   }
 
-  return (core_AcceptBlock(this, pindexPrev));
+  return (legacy_AcceptBlock(this, pindexPrev));
 }
 
 CScript USDEBlock::GetCoinbaseFlags()
@@ -1832,7 +1819,8 @@ uint64_t USDEBlock::GetTotalBlocksEstimate()
 
 bool USDEBlock::AddToBlockIndex()
 {
-CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
+	CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
+	CWallet *wallet = GetWallet(USDE_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(USDE_COIN_IFACE);
   uint256 hash = GetHash();
   CBlockIndex *pindexNew;
@@ -1859,7 +1847,7 @@ CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
 
   pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
 
-  if (pindexNew->bnChainWork > bnBestChainWork) {
+  if (pindexNew->bnChainWork > wallet->bnBestChainWork) {
     bool ret = SetBestChain(pindexNew);
     if (!ret)
       return (false);
@@ -2362,6 +2350,7 @@ bool usde_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxInde
 bool USDEBlock::SetBestChain(CBlockIndex* pindexNew)
 {
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
+	CWallet *wallet = GetWallet(USDE_COIN_IFACE);
   uint256 hash = GetHash();
   shtime_t ts;
   bool ret;
@@ -2392,7 +2381,7 @@ bool USDEBlock::SetBestChain(CBlockIndex* pindexNew)
 
   // New best block
   SetBestBlockIndex(USDE_COIN_IFACE, pindexNew);
-  bnBestChainWork = pindexNew->bnChainWork;
+  wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 
   return true;
