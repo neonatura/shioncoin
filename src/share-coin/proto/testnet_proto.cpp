@@ -328,7 +328,7 @@ coin_iface_t testnet_coin_iface = {
   TRUE, /* enable */
   COIN_IFACE_VERSION(TESTNET_VERSION_MAJOR, TESTNET_VERSION_MINOR,
       TESTNET_VERSION_REVISION, TESTNET_VERSION_BUILD), /* cli ver */
-  2, /* block version */
+  4, /* block version */
   TESTNET_PROTOCOL_VERSION, /* network proto ver */
   TESTNET_COIN_DAEMON_PORT,
   { 0x09, 0xd9, 0xf9, 0xbd },

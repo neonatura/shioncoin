@@ -597,6 +597,8 @@ bool TESTNETBlock::AcceptBlock()
     return error(SHERR_INVAL, "(testnet) AcceptBlock: block's timestamp too old.");
   }
 
+	/* redundant */
+#if 0
 	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
 	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
 		/* check for obsolete blocks. */
@@ -621,6 +623,7 @@ bool TESTNETBlock::AcceptBlock()
 			IsWitnessEnabled(iface, pindexPrev)) {
 		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [segwit].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
 	}
+#endif
 
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;

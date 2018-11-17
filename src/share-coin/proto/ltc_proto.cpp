@@ -331,7 +331,7 @@ coin_iface_t ltc_coin_iface = {
   FALSE, /* disabled */
   COIN_IFACE_VERSION(LTC_VERSION_MAJOR, LTC_VERSION_MINOR,
       LTC_VERSION_REVISION, LTC_VERSION_BUILD), /* cli ver */
-  2, /* block version */
+  4, /* block version */
   LTC_PROTOCOL_VERSION, /* network proto ver */
   LTC_COIN_DAEMON_PORT,
   { 0xfb, 0xc0, 0xb6, 0xdb },

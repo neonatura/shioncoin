@@ -119,8 +119,10 @@ void unet_thread_free(int mode)
 	/* disable all modes from running. */
 	bind->fl_timer = 0;
 
+#if 0
 	/* send quit signal to thread. */
 	pthread_kill(bind->th_timer, SIGCHLD);
+#endif
 
 	/* wait for thread to terminate */
 	(void)pthread_join(bind->th_timer, &ret_code);

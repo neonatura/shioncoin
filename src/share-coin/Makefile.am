@@ -121,6 +121,7 @@ common_includes = \
 	server/version.h \
 	server/walletdb.h \
 	server/wallet.h \
+	server/account.h \
 	server/txcreator.h \
 	shcoind_version.h \
 	server_iface.h \
@@ -283,9 +284,10 @@ server_sources = \
 	server/main.cpp \
 	server/script.cpp \
 	server/sync.cpp \
-	server/wallet.cpp \
-	server/txcreator.cpp \
 	server/walletdb.cpp \
+	server/wallet.cpp \
+	server/account.cpp \
+	server/txcreator.cpp \
 	server/scrypt.c \
 	server/addrman.h \
 	server/addrman.cpp \

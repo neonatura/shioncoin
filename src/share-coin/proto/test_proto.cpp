@@ -203,7 +203,7 @@ coin_iface_t test_coin_iface = {
   TRUE, /* enabled */
   COIN_IFACE_VERSION(TEST_VERSION_MAJOR, TEST_VERSION_MINOR,
       TEST_VERSION_REVISION, TEST_VERSION_BUILD), /* cli ver */
-  1, /* block version */
+  4, /* block version */
   TEST_PROTOCOL_VERSION, /* network protocol version */ 
   TEST_COIN_DAEMON_PORT,
   { 0xd9, 0xd9, 0xf8, 0xbd },

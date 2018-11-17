@@ -1053,6 +1053,7 @@ void usde_server_timer(void)
 
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
+				shbuf_lock(pchBuf);
         TRY_LOCK(pnode->cs_vRecv, lockRecv);
         if (lockRecv) {
           err = 0;
@@ -1071,6 +1072,7 @@ void usde_server_timer(void)
             continue;
           }
         }
+				shbuf_unlock(pchBuf);
       }
 
       {
@@ -1214,8 +1216,10 @@ int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   unsigned char *data;
   int size;
 
+#if 0
   if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
     return (SHERR_AGAIN);
+#endif
 
   size = shbuf_size(buff);
   if (size < SIZEOF_COINHDR_T)
@@ -1256,6 +1260,8 @@ int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
     error(SHERR_INVAL, "shc_coin_server_recv: shc_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
   }
 
+	Debug("(shc) coin_server_recv: received <%u bytes> \"%s\" request from \"%s\".", hdr.size, hdr.cmd, addr.ToString().c_str());
+
   pnode->nLastRecv = GetTime();
   return (0);
 }
@@ -1292,6 +1298,7 @@ void shc_server_timer(void)
 
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
+				shbuf_lock(pchBuf);
         TRY_LOCK(pnode->cs_vRecv, lockRecv);
         if (lockRecv) {
           err = 0;
@@ -1310,6 +1317,7 @@ void shc_server_timer(void)
             continue;
           }
         }
+				shbuf_unlock(pchBuf);
       }
 
       {
@@ -1665,6 +1673,7 @@ void testnet_server_timer(void)
 
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
+				shbuf_lock(pchBuf);
         TRY_LOCK(pnode->cs_vRecv, lockRecv);
         if (lockRecv) {
           err = 0;
@@ -1683,6 +1692,7 @@ void testnet_server_timer(void)
             continue;
           }
         }
+				shbuf_unlock(pchBuf);
       }
 
       {
@@ -2438,6 +2448,7 @@ void emc2_server_timer(void)
 
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
+				shbuf_lock(pchBuf);
         TRY_LOCK(pnode->cs_vRecv, lockRecv);
         if (lockRecv) {
           err = 0;
@@ -2456,6 +2467,7 @@ void emc2_server_timer(void)
             continue;
           }
         }
+				shbuf_unlock(pchBuf);
       }
 
       {
@@ -2737,6 +2749,7 @@ void ltc_server_timer(void)
 
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
+				shbuf_lock(pchBuf);
         TRY_LOCK(pnode->cs_vRecv, lockRecv);
         if (lockRecv) {
           err = 0;
@@ -2755,6 +2768,7 @@ void ltc_server_timer(void)
             continue;
           }
         }
+				shbuf_unlock(pchBuf);
       }
 
       {

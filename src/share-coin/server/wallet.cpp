@@ -34,6 +34,7 @@
 #include "txmempool.h"
 #include "txfeerate.h"
 #include "txcreator.h"
+#include "account.h"
 
 using namespace std;
 
@@ -3124,6 +3125,105 @@ bool CWallet::EraseTx(uint256 hash)
 		return (error(err, "bc_idx_clear [CWallet.EraseTx]"));
 
 	return (true);
+}
+
+static void wallet_LoadAccount(CWallet *wallet, string strLabel, CAccount& account)
+{
+	CWalletDB walletdb(wallet->strWalletFile);
+	CPubKey pubkey;
+
+	account.SetNull();
+
+	/* load from wallet */
+	walletdb.ReadAccount(strAccount, account);
+	bool bValid = account.vchPubKey.IsValid();
+
+	if (!bValid) {
+		/* first time -- generate primary key for account */
+		account.vchPubKey = wallet->GenerateNewKey(true);
+		wallet->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
+		walletdb.WriteAccount(strAccount, account);
+	}
+
+	return (account);
+}
+
+CAccountCache *CWallet::GetAccount(string strAccount)
+{
+	if (vAddrCache.count(strAccount) == 0) {
+		CAccountCache ca(this);
+		ca.strAccount = strAccount;
+		wallet_LoadAccount(this, strAccount, ca.account);
+
+		vAddrCache[strLabel] = ca;
+	}
+	return (&vAddrCache[strLabel]);
+}
+
+CPubKey CWallet::GetChangePubKey(string strAccount)
+{
+	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_CHANGE));
+}
+
+CPubKey CWallet::GetExecPubKey(string strAccount)
+{
+	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_EXEC));
+}
+
+CPubKey CWallet::GetMinerPubKey(string strAccount)
+{
+	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_MINER));
+}
+
+CPubKey CWallet::GetExtPubKey(string strAccount)
+{
+	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_EXT));
+}
+
+CPubKey CWallet::GetRecvPubKey(string strAccount)
+{
+	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_RECV));
+}
+
+CPubKey CWallet::GetPrimaryPubKey(string strAccount)
+{
+	return (GetAccount(strAccount)->account.vchPubKey);
+}
+
+CCoinAddr CWallet::GetChangeAddr(string strAccount)
+{
+	const CPubKey& pubkey = GetChangePubKey(strAccount);
+	return CCoinAddr(ifaceIndex, pubkey.GetID());
+}
+
+CCoinAddr CWallet::GetExecAddr(string strAccount)
+{
+	const CPubKey& pubkey = GetExecPubKey(strAccount);
+	return CCoinAddr(ifaceIndex, pubkey.GetID());
+}
+
+CCoinAddr CWallet::GetExtAddr(string strAccount)
+{
+	const CPubKey& pubkey = GetExtPubKey(strAccount);
+	return CCoinAddr(ifaceIndex, pubkey.GetID());
+}
+
+CCoinAddr CWallet::GetMinerAddr(string strAccount)
+{
+	const CPubKey& pubkey = GetMinerPubKey(strAccount);
+	return CCoinAddr(ifaceIndex, pubkey.GetID());
+}
+
+CCoinAddr CWallet::GetRecvAddr(string strAccount)
+{
+	const CPubKey& pubkey = GetRecvPubKey(strAccount);
+	return CCoinAddr(ifaceIndex, pubkey.GetID());
+}
+
+CCoinAddr CWallet::GetPrimaryAddr(string strAccount)
+{
+	const CPubKey& pubkey = GetPrimaryPubKey(strAccount);
+	return CCoinAddr(ifaceIndex, pubkey.GetID());
 }
 
 

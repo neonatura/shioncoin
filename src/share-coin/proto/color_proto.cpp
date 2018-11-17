@@ -314,7 +314,7 @@ coin_iface_t color_coin_iface = {
   TRUE, /* enabled */
   COIN_IFACE_VERSION(COLOR_VERSION_MAJOR, COLOR_VERSION_MINOR,
       COLOR_VERSION_REVISION, COLOR_VERSION_BUILD), /* cli ver */
-  2, /* block version */
+  4, /* block version */
   COLOR_PROTOCOL_VERSION, /* network proto ver */
   0, //COLOR_COIN_DAEMON_PORT,
   { 0xd9, 0xd9, 0xf9, 0xbd },

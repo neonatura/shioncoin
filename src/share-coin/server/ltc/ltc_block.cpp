@@ -1037,6 +1037,9 @@ bool LTCBlock::AcceptBlock()
     return error(SHERR_INVAL, "(ltc) AcceptBlock() : block's timestamp too far in the past.");
   }
 
+
+	/* redundant */
+#if 0
 	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
 	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
 		/* check for obsolete blocks. */
@@ -1061,6 +1064,8 @@ bool LTCBlock::AcceptBlock()
 			IsWitnessEnabled(iface, pindexPrev)) {
 		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [segwit].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
 	}
+#endif
+
 
   return (core_AcceptBlock(this, pindexPrev));
 }

@@ -84,6 +84,26 @@ class CKeyPool
 
 typedef map<int, int> color_opt;
 
+class CAccountCache;
+
+/* current "receive" coin address. */
+#define ACCADDR_RECV 0
+/* address created for purpose of returning change. */
+#define ACCADDR_CHANGE 1
+/* address is for SEXE class "sender" address. */
+#define ACCADDR_EXEC 2
+/* primary pubkey used for hdkey */
+#define ACCADDR_HDKEY 3
+/* redeem pubkey for segwit addr. */
+#define ACCADDR_SEGWIT 4 
+/* ext transactions (@account) */
+#define ACCADDR_EXT 5 
+/* mining address */
+#define ACCADDR_MINER 5 
+
+#define MAX_ACCADDR 6
+
+
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
  */
@@ -455,6 +475,33 @@ class CWallet : public CCryptoKeyStore
 		bool WriteTx(uint256 hash, const CWalletTx& wtx);
 
 		bool EraseTx(uint256 hash);
+
+		CAccountCache *GetAccount(string strAccount);
+
+		CPubKey GetChangePubKey(string strAccount);
+
+		CPubKey GetExecPubKey(string strAccount);
+
+		CPubKey GetExtPubKey(string strAccount);
+
+		CPubKey GetMinerPubKey(string strAccount);
+
+		CPubKey GetRecvPubKey(string strAccount);
+
+		CPubKey GetPrimaryPubKey(string strAccount);
+
+		CCoinAddr GetChangeAddr(string strAccount);
+
+		CCoinAddr GetExecAddr(string strAccount);
+
+		CCoinAddr GetExtAddr(string strAccount);
+
+		CCoinAddr GetMinerAddr(string strAccount);
+
+		CCoinAddr GetRecvAddr(string strAccount);
+
+		CCoinAddr GetPrimaryAddr(string strAccount);
+
 };
 
 #if 0

@@ -397,7 +397,8 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 #endif
     CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
     if (pindexBest) {
-      InitServiceBlockEvent(SHC_COIN_IFACE, pfrom->nStartingHeight);
+			int nMaxHeight = MIN(pindexBest->nHeight + 2000, pfrom->nStartingHeight);
+      InitServiceBlockEvent(SHC_COIN_IFACE, nMaxHeight);
     }
 
     // Relay alerts
@@ -1116,6 +1117,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 			/* what you talking about willace */
 			CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
 			pfrom->PushMessage("getheaders", locator, uint256());
+			return (true);
 		}
 
 		/* verify block headers are continuous. */
@@ -1136,6 +1138,8 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 
 		/* update 'last best received header' for node. */
 		pfrom->pindexRecvHeader = pindexLast;
+
+		InitServiceBlockEvent(ifaceIndex, pindexLast->nHeight);
 
 		Debug("shc_ProcessBlock: received %d headers", nCount);
 

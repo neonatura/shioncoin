@@ -29,6 +29,7 @@
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
+#include "validation.h"
 #include "ltc_pool.h"
 #include "ltc_block.h"
 #include "ltc_txidx.h"
@@ -49,6 +50,9 @@
 
 using namespace std;
 using namespace boost;
+
+/** Maximum number of headers to announce when relaying blocks with headers message.*/
+static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; /* (bytes) */
 static const unsigned int MAX_INV_SZ = 50000;
@@ -190,6 +194,52 @@ public:
 }; 
 #define LIMITED_STRING(obj,n) REF(LimitedString< n >(REF(obj)))
 
+static void ltc_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *locator, uint256 hashStop)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+
+	if (IsInitialBlockDownload(LTC_COIN_IFACE))
+		return; /* busy */
+
+	CBlockIndex* pindex = NULL;
+	if (locator->IsNull()) {
+		// If locator is null, return the hashStop block
+		pindex = GetBlockIndexByHash(ifaceIndex, hashStop);
+	} else {
+		// Find the last block the caller has in the main chain
+		pindex = locator->GetBlockIndex();
+		if (pindex)
+			pindex = pindex->pnext;
+	}
+	if (!pindex)
+		return;
+
+//	CBlockIndex* pcheckpoint = ltc_GetLastCheckpoint();
+//	if (pcheckpoint->nHeight > pindex->nHeight) 
+
+	vector<LTCBlock> vHeaders;
+	int nLimit = 2000;
+	for (; pindex; pindex = pindex->pnext)
+	{
+		const CBlockHeader& header = pindex->GetBlockHeader();
+
+		LTCBlock block;
+		block.nVersion       = header.nVersion;
+		block.hashPrevBlock  = header.hashPrevBlock;
+		block.hashMerkleRoot = header.hashMerkleRoot;
+		block.nTime          = header.nTime;
+		block.nBits          = header.nBits;
+		block.nNonce         = header.nNonce;
+
+		vHeaders.push_back(block);
+		if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
+			break;
+	}
+	pfrom->PushMessage("headers", vHeaders);
+
+	Debug("ltc_ProcessGetHeaders: sent %d headers", vHeaders.size());
+}
+
 // The message start string is designed to be unlikely to occur in normal data.
 // The characters are rarely used upper ascii, not valid as UTF-8, and produce
 // a large 4-byte int at any alignment.
@@ -197,7 +247,7 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 {
   NodeList &vNodes = GetNodeList(iface);
 //  static map<CService, CPubKey> mapReuseKey;
-  CWallet *pwalletMain = GetWallet(iface);
+  CWallet *wallet = GetWallet(iface);
   CTxMemPool *pool = GetTxMemPool(iface);
   int ifaceIndex = GetCoinIndex(iface);
   char errbuf[256];
@@ -285,6 +335,9 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     pfrom->PushMessage("verack");
     pfrom->vSend.SetVersion(min(pfrom->nVersion, LTC_PROTOCOL_VERSION));
 
+		/* prefer headers */
+		pfrom->PushMessage("sendheaders");
+
     if (!pfrom->fInbound) { // Advertise our address
       if (/*!fNoListen &&*/ !IsInitialBlockDownload(LTC_COIN_IFACE))
       {
@@ -362,10 +415,10 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     vector<CTransaction> pool_list = pool->GetActiveTx();
     BOOST_FOREACH(const CTransaction& tx, pool_list) {
       const uint256& hash = tx.GetHash();
-      if (pwalletMain->mapWallet.count(hash) == 0)
+      if (wallet->mapWallet.count(hash) == 0)
         continue;
 
-      CWalletTx& wtx = pwalletMain->mapWallet[hash];
+      CWalletTx& wtx = wallet->mapWallet[hash];
       if (wtx.IsCoinBase()) 
         continue;
 
@@ -482,59 +535,78 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
         break;
       }
     }
-
-    for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
     {
-      CInv &inv = vInv[nInv];
-			int nFetchFlags = 0;
+      for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
+      {
+        CInv &inv = vInv[nInv];
+				int nFetchFlags = 0;
 
-      inv.ifaceIndex = LTC_COIN_IFACE;
+        inv.ifaceIndex = LTC_COIN_IFACE;
 
-      if (fShutdown)
-        return true;
+        if (fShutdown)
+          return true;
 
-      pfrom->AddInventoryKnown(inv);
+        bool fAlreadyHave = AlreadyHave(iface, inv);
+				bool fSent = false;
 
-      bool fAlreadyHave = AlreadyHave(iface, inv);
-      Debug("(ltc) INVENTORY: %s(%s) [%s]",
-          inv.GetCommand().c_str(), inv.hash.GetHex().c_str(),
-					fAlreadyHave ? "have" : "new");
+        Debug("(ltc) INVENTORY: %s(%s) [%s]", 
+            inv.GetCommand().c_str(), inv.hash.GetHex().c_str(), 
+            fAlreadyHave ? "have" : "new");
 
-			if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
-				nFetchFlags |= MSG_WITNESS_FLAG;
+				if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
+					nFetchFlags |= MSG_WITNESS_FLAG;
 
-			if (inv.type == MSG_TX ||
-					inv.type == MSG_BLOCK) {
-				inv.type |= nFetchFlags;
-			}
+				/* "headers" */
+    		if (pfrom->fPreferHeaders) {
+					if (inv.type == MSG_BLOCK) {
+						if (!fAlreadyHave) {
+							CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
+							pfrom->PushMessage("getheaders", locator, inv.hash); 
+						}
+						fSent = true;
+					}
+				}
 
-			if (inv.type == MSG_BLOCK && pfrom->fHaveWitness) {
-				inv.type |= nFetchFlags;
-			}
+				if (!fSent)
+					pfrom->AddInventoryKnown(inv);
 
-      if (!fAlreadyHave)
-        pfrom->AskFor(inv);
-      else if (inv.type == MSG_BLOCK && ltc_IsOrphanBlock(inv.hash)) {
-        Debug("(ltc) ProcessMessage[inv]: received known orphan \"%s\", requesting blocks.", inv.hash.GetHex().c_str());
-        pfrom->PushGetBlocks(GetBestBlockIndex(LTC_COIN_IFACE), ltc_GetOrphanRoot(inv.hash));
-//        ServiceBlockEventUpdate(LTC_COIN_IFACE);
-      } else if (nInv == nLastBlock) {
-        // In case we are on a very long side-chain, it is possible that we already have
-        // the last block in an inv bundle sent in response to getblocks. Try to detect
-        // this situation and push another getblocks to continue.
-        std::vector<CInv> vGetData(ifaceIndex, inv);
-        CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, inv.hash);
-        if (pindex) {
-          CBlockIndex* pcheckpoint = ltc_GetLastCheckpoint();
-          if (!pcheckpoint || pindex->nHeight >= pcheckpoint->nHeight)
-            pfrom->PushGetBlocks(pindex, uint256(0));
+				if (inv.type == MSG_TX ||
+						inv.type == MSG_BLOCK) {
+					inv.type |= nFetchFlags;
+				}
+
+				if (inv.type == MSG_BLOCK && pfrom->fHaveWitness) {
+					inv.type |= nFetchFlags;
+				}
+
+				if (!fSent) {
+					/* already handled. */
+				} if (!fAlreadyHave) {
+          pfrom->AskFor(inv);
+				} else if (inv.type == MSG_BLOCK && ltc_IsOrphanBlock(inv.hash)) {
+          Debug("(ltc) ProcessMessage[inv]: received known orphan \"%s\", requesting blocks.", inv.hash.GetHex().c_str());
+          pfrom->PushGetBlocks(GetBestBlockIndex(LTC_COIN_IFACE), ltc_GetOrphanRoot(inv.hash));
+//          ServiceBlockEventUpdate(LTC_COIN_IFACE);
+        } else if (nInv == nLastBlock) {
+
+          // In case we are on a very long side-chain, it is possible that we already have
+          // the last block in an inv bundle sent in response to getblocks. Try to detect
+          // this situation and push another getblocks to continue.
+          std::vector<CInv> vGetData(ifaceIndex, inv);
+          CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, inv.hash);
+          if (pindex) {
+            CBlockIndex* pcheckpoint = ltc_GetLastCheckpoint();
+            if (!pcheckpoint || pindex->nHeight >= pcheckpoint->nHeight) {
+              pfrom->PushGetBlocks(pindex, uint256(0));
+            }
+          }
         }
-      }
 
-      // Track requests for our stuff
-      Inventory(inv.hash);
+        // Track requests for our stuff
+        Inventory(inv.hash);
+        Debug("(ltc) ProcessBlock: processed %d inventory items.", vInv.size());
+      }
     }
-    Debug("(ltc) ProcessBlock: processed %d inventory items.", vInv.size());
   }
 
 
@@ -661,32 +733,7 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
-    CBlockIndex* pindex = NULL;
-    if (locator.IsNull())
-    {
-      // If locator is null, return the hashStop block
-      pindex = GetBlockIndexByHash(ifaceIndex, hashStop);
-      if (!pindex)
-        return (true);
-    }
-    else
-    {
-      // Find the last block the caller has in the main chain
-      pindex = locator.GetBlockIndex();
-      if (pindex)
-        pindex = pindex->pnext;
-    }
-
-    // we must use CBlocks, as CBlockHeaders won't include the 0x00 nTx count at the end
-    vector<LTCBlock> vHeaders;
-    int nLimit = 2000;
-    for (; pindex; pindex = pindex->pnext)
-    {
-      vHeaders.push_back(pindex->GetBlockHeader());
-      if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
-        break;
-    }
-    pfrom->PushMessage("headers", vHeaders);
+		ltc_ProcessGetHeaders(iface, pfrom, &locator, hashStop);
   }
 
 
@@ -930,7 +977,32 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
   }
 
   else if (strCommand == "cmpctblock") {
-    Debug("ltc_ProcessBlock: received 'cmpctblock'");
+		CBlockIndex *pindex;
+
+    CBlockHeader header;
+		vRecv >> header;
+
+
+		pindex = GetBlockIndexByHash(ifaceIndex, header.hashPrevBlock);
+		if (!pindex) {
+			/* ask for headers if prevhash is unknown. */
+			if (!IsInitialBlockDownload(LTC_COIN_IFACE)) {
+				CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
+				pfrom->PushMessage("getheaders", locator, uint256());
+			}
+		}
+
+		pindex = GetBlockIndexByHash(ifaceIndex, header.GetHash());
+		if (!pindex) { /* unknown */
+			CBlockIndex *pindexLast = NULL;
+			vector<CBlockHeader> headers;
+
+			/* process compact block as new header. */
+			headers.push_back(header);
+			ProcessNewBlockHeaders(iface, headers, &pindexLast);
+		}
+
+    Debug("ltc_ProcessBlock: processed 'cmpctblock'");
   }
 
   else if (strCommand == "getblocktxn") {
@@ -940,9 +1012,64 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
   else if (strCommand == "blocktxn") {
     Debug("ltc_ProcessBlock: receveed 'blocktxn'");
   }
+
+
   else if (strCommand == "headers") {
-    Debug("ltc_ProcessBlock: receveed 'headers'");
+		std::vector<CBlockHeader> headers;
+		CBlockIndex *pindexLast;
+
+		unsigned int nCount = ReadCompactSize(vRecv);
+		if (nCount > MAX_HEADERS_RESULTS) {
+			error(ERR_INVAL, "headers message size = %u", nCount);
+			return (true);
+		}
+		if (nCount == 0)
+			return (true); /* weird */
+		headers.resize(nCount);
+		for (unsigned int n = 0; n < nCount; n++) {
+			vRecv >> headers[n];
+			ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+		}
+
+		pindexLast = GetBlockIndexByHash(ifaceIndex, headers[0].hashPrevBlock);
+		if (!pindexLast) {
+			/* what you talking about willace */
+			CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
+			pfrom->PushMessage("getheaders", locator, uint256());
+			return (true);
+		}
+
+		/* verify block headers are continuous. */
+		uint256 hashLastBlock;
+		for (unsigned int i = 0; i < headers.size(); i++) {
+			const CBlockHeader& header = headers[i];
+			if (!hashLastBlock.IsNull() && header.hashPrevBlock != hashLastBlock) {
+				error(ERR_INVAL, "non-continuous headers sequence");
+				return (true);
+			}
+			hashLastBlock = header.GetHash();
+		}
+
+		if (!ProcessNewBlockHeaders(iface, headers, &pindexLast)) {
+			error(ERR_INVAL, "ltc_ProcessBlock: error receiving %d headers", nCount);
+			return (true);
+		}
+
+		/* update 'last best received header' for node. */
+		pfrom->pindexRecvHeader = pindexLast;
+
+		InitServiceBlockEvent(ifaceIndex, pindexLast->nHeight);
+
+		Debug("ltc_ProcessBlock: received %d headers", nCount);
+
+		if (nCount == MAX_HEADERS_RESULTS) {
+			/* headers message had its maximum size; ask peer for more headers. */
+			CBlockLocator locator(ifaceIndex, pindexLast);
+			pfrom->PushMessage("getheaders", locator, uint256());
+		}
+
   }
+
 
   else if (strCommand == "reject") { /* remote peer is reporting block/tx error */
     string strMsg;
@@ -1220,6 +1347,150 @@ bool ltc_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
       if (!vAddr.empty())
         pto->PushMessage("addr", vAddr);
     }
+
+		/* try sending block announcements via headers. */
+		{
+			// If we have less than MAX_BLOCKS_TO_ANNOUNCE in our
+			// list of block hashes we're relaying, and our peer wants
+			// headers announcements, then find the first header
+			// not yet known to our peer but would connect, and send.
+			// If no header would connect, or if we have too many
+			// blocks, or if the peer doesn't want headers, just
+			// add all to the inv queue.
+			LOCK(pto->cs_inventory);
+			std::vector<LTCBlock> vHeaders;
+#if 0
+			bool fRevertToInv = ((!pto->fPreferHeaders &&
+						(!pto->fPreferHeaderAndIDs || pto->vBlockHashesToAnnounce.size() > 1)) ||
+					pto->vBlockHashesToAnnounce.size() > MAX_BLOCKS_TO_ANNOUNCE);
+#endif
+			bool fRevertToInv = !pto->fPreferHeaders ||
+				(pto->vBlockHashesToAnnounce.size() > MAX_BLOCKS_TO_ANNOUNCE);
+			const CBlockIndex *pBestIndex = NULL; // last header queued for delivery
+//			ProcessBlockAvailability(pto->GetId()); // ensure pindexBestKnownBlock is up-to-date
+
+			if (!fRevertToInv) {
+				bool fFoundStartingHeader = false;
+				// Try to find first header that our peer doesn't have, and
+				// then send all headers past that one.  If we come across any
+				// headers that aren't on chainActive, give up.
+				for (unsigned int idx = 0; idx < pto->vBlockHashesToAnnounce.size(); idx++) {
+					const uint256 &hash = pto->vBlockHashesToAnnounce[idx];
+
+					CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, hash);
+					//assert(mi != mapBlockIndex.end());
+
+					if (GetBlockIndexByHeight(ifaceIndex, pindex->nHeight) != pindex) {
+						/* bail out if we reorged away from this block. */
+						fRevertToInv = true;
+						break;
+					}
+					if (pBestIndex != NULL && pindex->pprev != pBestIndex) {
+						// This means that the list of blocks to announce don't
+						// connect to each other.
+						// This shouldn't really be possible to hit during
+						// regular operation (because reorgs should take us to
+						// a chain that has some block not on the prior chain,
+						// which should be caught by the prior check), but one
+						// way this could happen is by using invalidateblock /
+						// reconsiderblock repeatedly on the tip, causing it to
+						// be added multiple times to vBlockHashesToAnnounce.
+						// Robustly deal with this rare situation by reverting
+						// to an inv.
+						fRevertToInv = true;
+						break;
+					}
+					pBestIndex = pindex;
+					if (fFoundStartingHeader) {
+						// add this to the headers message
+						vHeaders.push_back(pindex->GetBlockHeader());
+					} else if (pto->HasHeader(pindex)) {
+						continue; // keep looking for the first new block
+					} else if (pindex->pprev == NULL || 
+							pto->HasHeader(pindex->pprev)) {
+						// Peer doesn't have this header but they do have the prior one.
+						// Start sending headers.
+						fFoundStartingHeader = true;
+						vHeaders.push_back(pindex->GetBlockHeader());
+					} else {
+						// Peer doesn't have this header or the prior one -- nothing will
+						// connect, so bail out.
+						fRevertToInv = true;
+						break;
+					}
+				}
+			}
+			if (!fRevertToInv && !vHeaders.empty()) {
+#if 0
+				if (vHeaders.size() == 1 && pto->fPreferHeaderAndIDs) {
+					// We only send up to 1 block as header-and-ids, as otherwise
+					// probably means we're doing an initial-ish-sync or they're slow
+					LogPrint(BCLog::NET, "%s sending header-and-ids %s to peer=%d\n", __func__,
+							vHeaders.front().GetHash().ToString(), pto->GetId());
+
+					int nSendFlags = pto->fWantsCmpctWitness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
+
+					bool fGotBlockFromCache = false;
+					{
+						LOCK(cs_most_recent_block);
+						if (most_recent_block_hash == pBestIndex->GetBlockHash()) {
+							if (pto->fWantsCmpctWitness || !fWitnessesPresentInMostRecentCompactBlock)
+								connman->PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, *most_recent_compact_block));
+							else {
+								CBlockHeaderAndShortTxIDs cmpctblock(*most_recent_block, pto->fWantsCmpctWitness);
+								connman->PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
+							}
+							fGotBlockFromCache = true;
+						}
+					}
+					if (!fGotBlockFromCache) {
+						CBlock block;
+						bool ret = ReadBlockFromDisk(block, pBestIndex, consensusParams);
+						assert(ret);
+						CBlockHeaderAndShortTxIDs cmpctblock(block, pto->fWantsCmpctWitness);
+						connman->PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
+					}
+					pto->pindexBestHeaderSend = pBestIndex;
+				} else 
+#endif
+				if (pto->fPreferHeaders) {
+					if (vHeaders.size() > 1) {
+						Debug("(ltc) SendMessages: %u headers [range (%s, %s)] to peer \"%s\".",
+								vHeaders.size(),
+								vHeaders.front().GetHash().ToString().c_str(),
+								vHeaders.back().GetHash().ToString().c_str(), pto->addr.ToString().c_str());
+					} else {
+						Debug("(ltc) SendMessages: sending header \"%s\" to peer \"%s\".",
+								vHeaders.front().GetHash().ToString().c_str(), 
+								pto->addr.ToString().c_str());
+					}
+					pto->PushMessage("headers", vHeaders);
+					pto->pindexBestHeaderSend = (CBlockIndex *)pBestIndex;
+				} else {
+					fRevertToInv = true;
+				}
+			}
+			if (fRevertToInv) {
+				// If falling back to using an inv, just try to inv the tip.
+				// The last entry in vBlockHashesToAnnounce was our tip at some point
+				// in the past.
+				if (!pto->vBlockHashesToAnnounce.empty()) {
+					const uint256 &hashToAnnounce = pto->vBlockHashesToAnnounce.back();
+					CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, hashToAnnounce);
+					//assert(mi != mapBlockIndex.end());
+
+					/* ignores re-org check.. */
+
+					// If the peer's chain has this block, don't inv it back.
+					if (!pto->HasHeader(pindex)) {
+						pto->PushInventory(CInv(ifaceIndex, MSG_BLOCK, hashToAnnounce));
+						Debug("sending inv peer=%s hash=%s\n",
+								pto->addr.ToString().c_str(), hashToAnnounce.GetHex().c_str());
+					}
+				}
+			}
+			pto->vBlockHashesToAnnounce.clear();
+		}
 
     //
     // Message: inventory

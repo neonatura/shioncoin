@@ -35,6 +35,8 @@
 using namespace std;
 using namespace boost;
 
+#define MAX_BLOCK_DOWNLOAD_BATCH 64 /* 4m block * 64 = 256m */
+
 ChainOp chain;
 
 
@@ -488,15 +490,6 @@ bool ServiceBlockEvent(int ifaceIndex)
   if (iface->blockscan_max == 0)
     return (true); /* keep trying */
 
-  {
-    /* wait until all pending incoming data has been processed. */
-    NodeList &vNodes = GetNodeList(ifaceIndex);
-    BOOST_FOREACH(CNode* pnode, vNodes) {
-      if (!pnode->vRecv.empty())
-        return (true); /* keep trying */
-    }
-  }
-
 	if (wallet->pindexBestHeader &&
 			wallet->pindexBestHeader->nHeight != -1)
 		iface->blockscan_max = MAX(iface->blockscan_max, 
@@ -509,9 +502,21 @@ bool ServiceBlockEvent(int ifaceIndex)
     return (false);
   }
 
+		{
+			/* wait until all pending incoming data has been processed. */
+			NodeList &vNodes = GetNodeList(ifaceIndex);
+			BOOST_FOREACH(CNode* pnode, vNodes) {
+				if (!pnode->vRecv.empty())
+					return (true); /* keep trying */
+			}
+		}
+
+
 	int idx = (nNodeIndex % vNodes.size());
 	pfrom = vNodes[idx];
 	nNodeIndex++;
+
+
 
 	if (pfrom->nVersion == 0)
 		return (true); /* not ready yet */
@@ -522,7 +527,7 @@ bool ServiceBlockEvent(int ifaceIndex)
 	}
 
 	/* check if they use headers or legacy method */
-	if (pfrom->fPreferHeaders)
+	if (!pfrom->fPreferHeaders)
 		return (ServiceLegacyBlockEvent(ifaceIndex, pfrom));
 
 	CBlockIndex *pindex = NULL;
@@ -536,22 +541,52 @@ bool ServiceBlockEvent(int ifaceIndex)
 	}
 
 	if (pindex) {
-		if (pfrom->pindexRecv == pindex)
-			return (true); /* keep going */
+		/* determine next block to download. */
+		if (wallet->pindexBestHeader &&
+				wallet->pindexBestHeader->nHeight > pindexBest->nHeight) {
+			pindex = wallet->pindexBestHeader;
+			while (pindex && pindex->nHeight > (pindexBest->nHeight + MAX_BLOCK_DOWNLOAD_BATCH))
+				pindex = pindex->pprev;
+		}
 
-		/* ask for block */
+		bool bFound = false;
+#if 0
+		if (pindex == pfrom->pindexRecv)
+			return (true);
+#endif
+		CBlockIndex *p = pfrom->pindexRecv;
+		for (unsigned int i = 0; p && i < MAX_BLOCK_DOWNLOAD_BATCH; i++) {
+			if (p->nHeight <= pindexBest->nHeight)
+				break;
+			if (pindex == p)
+				return (true);
+			p = p->pprev;
+		}
+		pfrom->pindexRecv = pindex;
+		
+
 		int nFetchFlags = 0;
 		if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
 			nFetchFlags |= MSG_WITNESS_FLAG;
 
 		std::vector<CInv> vInv;
-		vInv.resize(1);
-		vInv[0] = CInv(ifaceIndex,
-				MSG_BLOCK | nFetchFlags, pindex->GetBlockHash());
-		pfrom->PushMessage("getdata", vInv);
+		//vInv.resize(1);
 
-		pfrom->pindexRecv = pindex;
+		/* ask for blocks */
+		while (pindex && 
+				pindexBest->nHeight < pindex->nHeight) {
+			/* request full block */
+			vInv.insert(vInv.begin(), CInv(ifaceIndex,
+						MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
+
+			/* iterate to next block */
+			pindex = pindex->pprev;
+		}
+
+		pfrom->PushMessage("getdata", vInv);
+fprintf(stderr, "DEBUG: ServerBlockEvent: downloading block %s [x%d]\n", pindex->GetBlockHash().GetHex().c_str(), vInv.size()); 
 	} else {
+
 		CBlockIndex *pindex = wallet->pindexBestHeader ?
 			wallet->pindexBestHeader : pindexBest;
 		if (pfrom->pindexRecvHeader == pindex)
@@ -845,7 +880,11 @@ void ServiceBlockEventUpdate(int ifaceIndex)
   if (!bestIndex)
     return;
 
-  if (iface->blockscan_max == bestIndex->nHeight)
+	int nHeight = bestIndex->nHeight;
+	if (wallet->pindexBestHeader)
+		nHeight = MAX(nHeight, wallet->pindexBestHeader->nHeight);
+
+  if (iface->blockscan_max == nHeight)
     return;
 
   iface->net_valid = time(NULL);
@@ -867,7 +906,7 @@ void ServiceBlockEventUpdate(int ifaceIndex)
 	}
 #endif
 
-  iface->blockscan_max = MAX(iface->blockscan_max, bestIndex->nHeight);
+  iface->blockscan_max = MAX(iface->blockscan_max, nHeight);
 }
 
 void event_cycle_chain(int ifaceIndex)

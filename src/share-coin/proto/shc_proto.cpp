@@ -336,7 +336,7 @@ coin_iface_t shc_coin_iface = {
   TRUE, /* enabled */
   COIN_IFACE_VERSION(SHC_VERSION_MAJOR, SHC_VERSION_MINOR,
       SHC_VERSION_REVISION, SHC_VERSION_BUILD), /* cli ver */
-  2, /* block version */
+  4, /* block version */
   SHC_PROTOCOL_VERSION, /* network proto ver */
   SHC_COIN_DAEMON_PORT,
   { 0xd9, 0xd9, 0xf9, 0xbd },

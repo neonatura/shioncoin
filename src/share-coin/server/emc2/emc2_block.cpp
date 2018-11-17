@@ -1155,6 +1155,8 @@ bool EMC2Block::AcceptBlock()
     return error(SHERR_INVAL, "(emc2) AcceptBlock() : block's timestamp too far in the past.");
   }
 
+	/* redundant */
+#if 0
   bool checkHeightMismatch = false;
   if (nVersion >= 2) {
     /* enforce BIP34 with BIP66 */
@@ -1180,6 +1182,7 @@ bool EMC2Block::AcceptBlock()
       return error(SHERR_INVAL, "emc2_AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", GetHash().GetHex().c_str(), nHeight);
     }
   }
+#endif
 
   return (core_AcceptBlock(this, pindexPrev));
 }

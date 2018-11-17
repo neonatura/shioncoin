@@ -310,8 +310,6 @@ namespace SHC_Checkpoints
 
   bool CheckBlock(int nHeight, const uint256& hash)
   {
-    if (fTestNet) return true; // Testnet has no checkpoints
-
     MapCheckpoints::const_iterator i = mapCheckpoints.find(nHeight);
     if (i == mapCheckpoints.end()) return true;
     return hash == i->second;
@@ -535,40 +533,12 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
   }
 #endif
 
+#if 0 /* redundant */
   // Preliminary checks
   if (!pblock->CheckBlock()) {
     return error(SHERR_INVAL, "ProcessBlock() : CheckBlock FAILED");
   }
-
-  CBlockIndex* pcheckpoint = SHC_Checkpoints::GetLastCheckpoint(*blockIndex);
-  if (pcheckpoint && pblock->hashPrevBlock != GetBestBlockChain(iface)) {
-    // Extra checks to prevent "fill up memory by spamming with bogus blocks"
-    int64 deltaTime = pblock->GetBlockTime() - pcheckpoint->nTime;
-    if (deltaTime < 0)
-    {
-      if (pfrom)
-        pfrom->Misbehaving(100);
-      return error(SHERR_INVAL, "ProcessBlock() : block with timestamp before last checkpoint");
-    }
-#if 0
-    CBigNum bnNewBlock;
-    bnNewBlock.SetCompact(pblock->nBits);
-    CBigNum bnRequired;
-    bnRequired.SetCompact(shc_ComputeMinWork(pcheckpoint->nBits, deltaTime));
-    if (bnNewBlock > bnRequired)
-    {
-      if (pfrom)
-        pfrom->Misbehaving(100);
-      return error(SHERR_INVAL, "ProcessBlock() : block with too little proof-of-work");
-    }
 #endif
-		/* yet another way..
-		 * CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint();
-		 * if (pcheckpoint && nHeight < pcheckpoint->nHeight)
-		 *  	return error();
-		 *
-		 */
-  }
 
   /*
    * SHC: If previous hash and it is unknown.
@@ -591,10 +561,12 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return true;
   }
 
+#if 0 /* redundant */
   if (!pblock->CheckTransactionInputs(SHC_COIN_IFACE)) {
     Debug("(shc) ProcessBlock: invalid input transaction [prev %s].", pblock->hashPrevBlock.GetHex().c_str());
     return (true);
   }
+#endif
 
   /* store to disk */
   if (!pblock->AcceptBlock()) {
@@ -819,6 +791,8 @@ bool SHCBlock::AcceptBlock()
     return error(SHERR_INVAL, "(shc) AcceptBlock: block's timestamp is too old.");
   }
 
+	/* redundant */
+#if 0
 	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
 	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
 		/* check for obsolete blocks. */
@@ -843,6 +817,8 @@ bool SHCBlock::AcceptBlock()
 			IsWitnessEnabled(iface, pindexPrev)) {
 		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [segwit].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
 	}
+#endif
+
 
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;

@@ -60,6 +60,13 @@ public:
         *((CBlock*)this) = block;
     }
 
+    TESTNETBlock(const CBlockHeader &block)
+    {
+        ifaceIndex = TESTNET_COIN_IFACE;
+        SetNull();
+        *((CBlockHeader*)this) = block;
+    }
+
     void SetNull()
     {
       nVersion = TESTNETBlock::CURRENT_VERSION;

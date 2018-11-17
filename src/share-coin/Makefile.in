@@ -144,11 +144,11 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/script.h server/scrypt.h server/serialize.h \
 	server/strlcpy.h server/sync.h server/ui_interface.h \
 	server/uint256.h server/util.h server/version.h \
-	server/walletdb.h server/wallet.h server/txcreator.h \
-	shcoind_version.h server_iface.h shcoind_rpc.h shcoind_error.h \
-	shcoind_log.h shcoind_opt.h shcoind_signal.h \
-	shcoind_descriptor.h shcoind.h shcoind_rpc.c shcoind_error.c \
-	shcoind_log.c shcoind_opt.c shcoind_signal.c \
+	server/walletdb.h server/wallet.h server/account.h \
+	server/txcreator.h shcoind_version.h server_iface.h \
+	shcoind_rpc.h shcoind_error.h shcoind_log.h shcoind_opt.h \
+	shcoind_signal.h shcoind_descriptor.h shcoind.h shcoind_rpc.c \
+	shcoind_error.c shcoind_log.c shcoind_opt.c shcoind_signal.c \
 	shcoind_descriptor.c unet/unet_accept.c unet/unet_bind.c \
 	unet/unet_thread.c unet/unet.c unet/unet_close.c \
 	unet/unet_connect.c unet/unet_io.c unet/unet_timer.c \
@@ -241,11 +241,11 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/crypter.cpp server/txidx.cpp server/init.cpp \
 	server/derkey.cpp server/hdkey.cpp server/keystore.cpp \
 	server/main.cpp server/script.cpp server/sync.cpp \
-	server/wallet.cpp server/txcreator.cpp server/walletdb.cpp \
-	server/scrypt.c server/addrman.h server/addrman.cpp \
-	server/base58.h server/base58.cpp wallet_iface.cpp \
-	block_iface.cpp server_iface.cpp shcoind.c shcoind_daemon.c \
-	shcoind_daemon.h shcoind_svc.c shcoind_svc.h
+	server/walletdb.cpp server/wallet.cpp server/account.cpp \
+	server/txcreator.cpp server/scrypt.c server/addrman.h \
+	server/addrman.cpp server/base58.h server/base58.cpp \
+	wallet_iface.cpp block_iface.cpp server_iface.cpp shcoind.c \
+	shcoind_daemon.c shcoind_daemon.h shcoind_svc.c shcoind_svc.h
 am__objects_1 =
 am__objects_2 = shcoind-shcoind_rpc.$(OBJEXT) \
 	shcoind-shcoind_error.$(OBJEXT) shcoind-shcoind_log.$(OBJEXT) \
@@ -321,11 +321,12 @@ am__objects_6 = shcoind-txfeerate.$(OBJEXT) $(am__objects_3) \
 	shcoind-init.$(OBJEXT) shcoind-derkey.$(OBJEXT) \
 	shcoind-hdkey.$(OBJEXT) shcoind-keystore.$(OBJEXT) \
 	shcoind-main.$(OBJEXT) shcoind-script.$(OBJEXT) \
-	shcoind-sync.$(OBJEXT) shcoind-wallet.$(OBJEXT) \
-	shcoind-txcreator.$(OBJEXT) shcoind-walletdb.$(OBJEXT) \
-	shcoind-scrypt.$(OBJEXT) shcoind-addrman.$(OBJEXT) \
-	shcoind-base58.$(OBJEXT) shcoind-wallet_iface.$(OBJEXT) \
-	shcoind-block_iface.$(OBJEXT) shcoind-server_iface.$(OBJEXT)
+	shcoind-sync.$(OBJEXT) shcoind-walletdb.$(OBJEXT) \
+	shcoind-wallet.$(OBJEXT) shcoind-account.$(OBJEXT) \
+	shcoind-txcreator.$(OBJEXT) shcoind-scrypt.$(OBJEXT) \
+	shcoind-addrman.$(OBJEXT) shcoind-base58.$(OBJEXT) \
+	shcoind-wallet_iface.$(OBJEXT) shcoind-block_iface.$(OBJEXT) \
+	shcoind-server_iface.$(OBJEXT)
 @WINDOWS_TRUE@am__objects_7 = shcoind-shcoind_svc.$(OBJEXT)
 am_shcoind_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_6) shcoind-shcoind.$(OBJEXT) \
@@ -450,9 +451,9 @@ am__objects_12 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_9) \
 	test_shcoind-init.$(OBJEXT) test_shcoind-derkey.$(OBJEXT) \
 	test_shcoind-hdkey.$(OBJEXT) test_shcoind-keystore.$(OBJEXT) \
 	test_shcoind-main.$(OBJEXT) test_shcoind-script.$(OBJEXT) \
-	test_shcoind-sync.$(OBJEXT) test_shcoind-wallet.$(OBJEXT) \
-	test_shcoind-txcreator.$(OBJEXT) \
-	test_shcoind-walletdb.$(OBJEXT) test_shcoind-scrypt.$(OBJEXT) \
+	test_shcoind-sync.$(OBJEXT) test_shcoind-walletdb.$(OBJEXT) \
+	test_shcoind-wallet.$(OBJEXT) test_shcoind-account.$(OBJEXT) \
+	test_shcoind-txcreator.$(OBJEXT) test_shcoind-scrypt.$(OBJEXT) \
 	test_shcoind-addrman.$(OBJEXT) test_shcoind-base58.$(OBJEXT) \
 	test_shcoind-wallet_iface.$(OBJEXT) \
 	test_shcoind-block_iface.$(OBJEXT) \
@@ -1021,6 +1022,7 @@ common_includes = \
 	server/version.h \
 	server/walletdb.h \
 	server/wallet.h \
+	server/account.h \
 	server/txcreator.h \
 	shcoind_version.h \
 	server_iface.h \
@@ -1183,9 +1185,10 @@ server_sources = \
 	server/main.cpp \
 	server/script.cpp \
 	server/sync.cpp \
-	server/wallet.cpp \
-	server/txcreator.cpp \
 	server/walletdb.cpp \
+	server/wallet.cpp \
+	server/account.cpp \
+	server/txcreator.cpp \
 	server/scrypt.c \
 	server/addrman.h \
 	server/addrman.cpp \
@@ -1332,6 +1335,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-account.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-addrman.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-alias.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-altchain.Po@am__quote@
@@ -1473,6 +1477,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-walletdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-wit_merkle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-CuTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-account.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-addrman.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-alias.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-altchain.Po@am__quote@
@@ -4140,6 +4145,20 @@ shcoind-sync.obj: server/sync.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-sync.obj `if test -f 'server/sync.cpp'; then $(CYGPATH_W) 'server/sync.cpp'; else $(CYGPATH_W) '$(srcdir)/server/sync.cpp'; fi`
 
+shcoind-walletdb.o: server/walletdb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-walletdb.o -MD -MP -MF $(DEPDIR)/shcoind-walletdb.Tpo -c -o shcoind-walletdb.o `test -f 'server/walletdb.cpp' || echo '$(srcdir)/'`server/walletdb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-walletdb.Tpo $(DEPDIR)/shcoind-walletdb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/walletdb.cpp' object='shcoind-walletdb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-walletdb.o `test -f 'server/walletdb.cpp' || echo '$(srcdir)/'`server/walletdb.cpp
+
+shcoind-walletdb.obj: server/walletdb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-walletdb.obj -MD -MP -MF $(DEPDIR)/shcoind-walletdb.Tpo -c -o shcoind-walletdb.obj `if test -f 'server/walletdb.cpp'; then $(CYGPATH_W) 'server/walletdb.cpp'; else $(CYGPATH_W) '$(srcdir)/server/walletdb.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-walletdb.Tpo $(DEPDIR)/shcoind-walletdb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/walletdb.cpp' object='shcoind-walletdb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-walletdb.obj `if test -f 'server/walletdb.cpp'; then $(CYGPATH_W) 'server/walletdb.cpp'; else $(CYGPATH_W) '$(srcdir)/server/walletdb.cpp'; fi`
+
 shcoind-wallet.o: server/wallet.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-wallet.o -MD -MP -MF $(DEPDIR)/shcoind-wallet.Tpo -c -o shcoind-wallet.o `test -f 'server/wallet.cpp' || echo '$(srcdir)/'`server/wallet.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-wallet.Tpo $(DEPDIR)/shcoind-wallet.Po
@@ -4154,6 +4173,20 @@ shcoind-wallet.obj: server/wallet.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-wallet.obj `if test -f 'server/wallet.cpp'; then $(CYGPATH_W) 'server/wallet.cpp'; else $(CYGPATH_W) '$(srcdir)/server/wallet.cpp'; fi`
 
+shcoind-account.o: server/account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-account.o -MD -MP -MF $(DEPDIR)/shcoind-account.Tpo -c -o shcoind-account.o `test -f 'server/account.cpp' || echo '$(srcdir)/'`server/account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-account.Tpo $(DEPDIR)/shcoind-account.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/account.cpp' object='shcoind-account.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-account.o `test -f 'server/account.cpp' || echo '$(srcdir)/'`server/account.cpp
+
+shcoind-account.obj: server/account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-account.obj -MD -MP -MF $(DEPDIR)/shcoind-account.Tpo -c -o shcoind-account.obj `if test -f 'server/account.cpp'; then $(CYGPATH_W) 'server/account.cpp'; else $(CYGPATH_W) '$(srcdir)/server/account.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-account.Tpo $(DEPDIR)/shcoind-account.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/account.cpp' object='shcoind-account.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-account.obj `if test -f 'server/account.cpp'; then $(CYGPATH_W) 'server/account.cpp'; else $(CYGPATH_W) '$(srcdir)/server/account.cpp'; fi`
+
 shcoind-txcreator.o: server/txcreator.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-txcreator.o -MD -MP -MF $(DEPDIR)/shcoind-txcreator.Tpo -c -o shcoind-txcreator.o `test -f 'server/txcreator.cpp' || echo '$(srcdir)/'`server/txcreator.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-txcreator.Tpo $(DEPDIR)/shcoind-txcreator.Po
@@ -4167,20 +4200,6 @@ shcoind-txcreator.obj: server/txcreator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txcreator.cpp' object='shcoind-txcreator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-txcreator.obj `if test -f 'server/txcreator.cpp'; then $(CYGPATH_W) 'server/txcreator.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txcreator.cpp'; fi`
-
-shcoind-walletdb.o: server/walletdb.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-walletdb.o -MD -MP -MF $(DEPDIR)/shcoind-walletdb.Tpo -c -o shcoind-walletdb.o `test -f 'server/walletdb.cpp' || echo '$(srcdir)/'`server/walletdb.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-walletdb.Tpo $(DEPDIR)/shcoind-walletdb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/walletdb.cpp' object='shcoind-walletdb.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-walletdb.o `test -f 'server/walletdb.cpp' || echo '$(srcdir)/'`server/walletdb.cpp
-
-shcoind-walletdb.obj: server/walletdb.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-walletdb.obj -MD -MP -MF $(DEPDIR)/shcoind-walletdb.Tpo -c -o shcoind-walletdb.obj `if test -f 'server/walletdb.cpp'; then $(CYGPATH_W) 'server/walletdb.cpp'; else $(CYGPATH_W) '$(srcdir)/server/walletdb.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-walletdb.Tpo $(DEPDIR)/shcoind-walletdb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/walletdb.cpp' object='shcoind-walletdb.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-walletdb.obj `if test -f 'server/walletdb.cpp'; then $(CYGPATH_W) 'server/walletdb.cpp'; else $(CYGPATH_W) '$(srcdir)/server/walletdb.cpp'; fi`
 
 shcoind-addrman.o: server/addrman.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-addrman.o -MD -MP -MF $(DEPDIR)/shcoind-addrman.Tpo -c -o shcoind-addrman.o `test -f 'server/addrman.cpp' || echo '$(srcdir)/'`server/addrman.cpp
@@ -5456,6 +5475,20 @@ test_shcoind-sync.obj: server/sync.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-sync.obj `if test -f 'server/sync.cpp'; then $(CYGPATH_W) 'server/sync.cpp'; else $(CYGPATH_W) '$(srcdir)/server/sync.cpp'; fi`
 
+test_shcoind-walletdb.o: server/walletdb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-walletdb.o -MD -MP -MF $(DEPDIR)/test_shcoind-walletdb.Tpo -c -o test_shcoind-walletdb.o `test -f 'server/walletdb.cpp' || echo '$(srcdir)/'`server/walletdb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-walletdb.Tpo $(DEPDIR)/test_shcoind-walletdb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/walletdb.cpp' object='test_shcoind-walletdb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-walletdb.o `test -f 'server/walletdb.cpp' || echo '$(srcdir)/'`server/walletdb.cpp
+
+test_shcoind-walletdb.obj: server/walletdb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-walletdb.obj -MD -MP -MF $(DEPDIR)/test_shcoind-walletdb.Tpo -c -o test_shcoind-walletdb.obj `if test -f 'server/walletdb.cpp'; then $(CYGPATH_W) 'server/walletdb.cpp'; else $(CYGPATH_W) '$(srcdir)/server/walletdb.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-walletdb.Tpo $(DEPDIR)/test_shcoind-walletdb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/walletdb.cpp' object='test_shcoind-walletdb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-walletdb.obj `if test -f 'server/walletdb.cpp'; then $(CYGPATH_W) 'server/walletdb.cpp'; else $(CYGPATH_W) '$(srcdir)/server/walletdb.cpp'; fi`
+
 test_shcoind-wallet.o: server/wallet.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-wallet.o -MD -MP -MF $(DEPDIR)/test_shcoind-wallet.Tpo -c -o test_shcoind-wallet.o `test -f 'server/wallet.cpp' || echo '$(srcdir)/'`server/wallet.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-wallet.Tpo $(DEPDIR)/test_shcoind-wallet.Po
@@ -5470,6 +5503,20 @@ test_shcoind-wallet.obj: server/wallet.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-wallet.obj `if test -f 'server/wallet.cpp'; then $(CYGPATH_W) 'server/wallet.cpp'; else $(CYGPATH_W) '$(srcdir)/server/wallet.cpp'; fi`
 
+test_shcoind-account.o: server/account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-account.o -MD -MP -MF $(DEPDIR)/test_shcoind-account.Tpo -c -o test_shcoind-account.o `test -f 'server/account.cpp' || echo '$(srcdir)/'`server/account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-account.Tpo $(DEPDIR)/test_shcoind-account.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/account.cpp' object='test_shcoind-account.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-account.o `test -f 'server/account.cpp' || echo '$(srcdir)/'`server/account.cpp
+
+test_shcoind-account.obj: server/account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-account.obj -MD -MP -MF $(DEPDIR)/test_shcoind-account.Tpo -c -o test_shcoind-account.obj `if test -f 'server/account.cpp'; then $(CYGPATH_W) 'server/account.cpp'; else $(CYGPATH_W) '$(srcdir)/server/account.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-account.Tpo $(DEPDIR)/test_shcoind-account.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/account.cpp' object='test_shcoind-account.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-account.obj `if test -f 'server/account.cpp'; then $(CYGPATH_W) 'server/account.cpp'; else $(CYGPATH_W) '$(srcdir)/server/account.cpp'; fi`
+
 test_shcoind-txcreator.o: server/txcreator.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-txcreator.o -MD -MP -MF $(DEPDIR)/test_shcoind-txcreator.Tpo -c -o test_shcoind-txcreator.o `test -f 'server/txcreator.cpp' || echo '$(srcdir)/'`server/txcreator.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-txcreator.Tpo $(DEPDIR)/test_shcoind-txcreator.Po
@@ -5483,20 +5530,6 @@ test_shcoind-txcreator.obj: server/txcreator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txcreator.cpp' object='test_shcoind-txcreator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-txcreator.obj `if test -f 'server/txcreator.cpp'; then $(CYGPATH_W) 'server/txcreator.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txcreator.cpp'; fi`
-
-test_shcoind-walletdb.o: server/walletdb.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-walletdb.o -MD -MP -MF $(DEPDIR)/test_shcoind-walletdb.Tpo -c -o test_shcoind-walletdb.o `test -f 'server/walletdb.cpp' || echo '$(srcdir)/'`server/walletdb.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-walletdb.Tpo $(DEPDIR)/test_shcoind-walletdb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/walletdb.cpp' object='test_shcoind-walletdb.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-walletdb.o `test -f 'server/walletdb.cpp' || echo '$(srcdir)/'`server/walletdb.cpp
-
-test_shcoind-walletdb.obj: server/walletdb.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-walletdb.obj -MD -MP -MF $(DEPDIR)/test_shcoind-walletdb.Tpo -c -o test_shcoind-walletdb.obj `if test -f 'server/walletdb.cpp'; then $(CYGPATH_W) 'server/walletdb.cpp'; else $(CYGPATH_W) '$(srcdir)/server/walletdb.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-walletdb.Tpo $(DEPDIR)/test_shcoind-walletdb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/walletdb.cpp' object='test_shcoind-walletdb.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-walletdb.obj `if test -f 'server/walletdb.cpp'; then $(CYGPATH_W) 'server/walletdb.cpp'; else $(CYGPATH_W) '$(srcdir)/server/walletdb.cpp'; fi`
 
 test_shcoind-addrman.o: server/addrman.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-addrman.o -MD -MP -MF $(DEPDIR)/test_shcoind-addrman.Tpo -c -o test_shcoind-addrman.o `test -f 'server/addrman.cpp' || echo '$(srcdir)/'`server/addrman.cpp

@@ -556,8 +556,16 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 		fEnforceBIP30 = (iface->BIP30Height != -1 && nHeight >= iface->BIP30Height);
 	if (fEnforceBIP30) {
 		BOOST_FOREACH(CTransaction& tx, block->vtx) {
-			if (!VerifyTxHash(iface, tx.GetHash()))
-				continue; /* not dup tx hash */
+			const uint256& hTx = tx.GetHash();
+			CTransaction cmp_tx;
+			uint256 hPrevBlock;
+
+			if (GetTransaction(iface, hTx, cmp_tx, &hPrevBlock) == false) {
+				continue;
+			}
+			if (hPrevBlock == block->GetHash()) {
+				continue; /* itself */
+			}
 
 			int i;
 			vector<uint256> vOuts;
@@ -568,7 +576,7 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 			}
 			if (i != vOuts.size()) {
 				/* attempting to re-use a tx hash with unspent output(s). */
-				return (error(ERR_INVAL, "(%s) core_AcceptBlock: rejecting block with duplicate transaction hash (%s) [BIP30].", iface->name, tx.GetHash().GetHex().c_str()));
+				return (error(ERR_INVAL, "(%s) core_AcceptBlock: rejecting block \"%s\" with duplicate transaction hash (%s) of block \"%s\" [BIP30].", iface->name, block->GetHash().GetHex().c_str(), hTx.GetHex().c_str(), hPrevBlock.GetHex().c_str()));
 			}
 		}
 	}
