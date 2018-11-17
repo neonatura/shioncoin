@@ -597,7 +597,7 @@ bool ltc_ProcessBlock(CNode* pfrom, CBlock* pblock)
   }
 
 
-
+#if 0
   CBlockIndex* pcheckpoint = LTC_Checkpoints::GetLastCheckpoint(*blockIndex);
   if (pcheckpoint && pblock->hashPrevBlock != GetBestBlockChain(iface))
   {
@@ -611,6 +611,7 @@ pblock->print();
       return error(SHERR_INVAL, "ProcessBlock() : block with timestamp before last checkpoint");
     }
   }
+#endif
 
   /*
    * LTC: If previous hash and it is unknown.

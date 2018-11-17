@@ -201,6 +201,8 @@ class CWallet : public CCryptoKeyStore
 		/* best known work based on block header alone. */
 		CBlockIndex *pindexBestHeader;
 
+		map<string, CAccountCache *> mapAddrCache;
+
 		CWallet(int index)
 		{
 			nWalletVersion = FEATURE_BASE;
@@ -1063,6 +1065,8 @@ void core_ReacceptWalletTransactions(CWallet *wallet);
 bool CreateTransactionWithInputTx(CIface *iface, string strAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxIn, int nTxOut, CWalletTx& wtxNew, int64 nTxFee);
 
 bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee);
+
+bool IsAccountValid(CIface *iface, std::string strAccount);
 
 
 #endif

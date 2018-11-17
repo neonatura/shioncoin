@@ -698,7 +698,7 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
   }
 
 
-
+#if 0
   CBlockIndex* pcheckpoint = EMC2_Checkpoints::GetLastCheckpoint(*blockIndex);
   if (pcheckpoint && pblock->hashPrevBlock != GetBestBlockChain(iface))
   {
@@ -724,6 +724,7 @@ pblock->print();
     }
 #endif
   }
+#endif
 
   /*
    * EMC2: If previous hash and it is unknown.

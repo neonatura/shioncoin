@@ -1260,7 +1260,7 @@ int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
     error(SHERR_INVAL, "shc_coin_server_recv: shc_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
   }
 
-	Debug("(shc) coin_server_recv: received <%u bytes> \"%s\" request from \"%s\".", hdr.size, hdr.cmd, addr.ToString().c_str());
+	Debug("(shc) coin_server_recv: received <%u bytes> \"%s\" request from \"%s\".", hdr.size, hdr.cmd, pnode->addr.ToString().c_str());
 
   pnode->nLastRecv = GetTime();
   return (0);

@@ -3127,7 +3127,7 @@ bool CWallet::EraseTx(uint256 hash)
 	return (true);
 }
 
-static void wallet_LoadAccount(CWallet *wallet, string strLabel, CAccount& account)
+static void wallet_LoadAccount(CWallet *wallet, string strAccount, CAccount& account)
 {
 	CWalletDB walletdb(wallet->strWalletFile);
 	CPubKey pubkey;
@@ -3144,20 +3144,18 @@ static void wallet_LoadAccount(CWallet *wallet, string strLabel, CAccount& accou
 		wallet->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
 		walletdb.WriteAccount(strAccount, account);
 	}
-
-	return (account);
 }
 
 CAccountCache *CWallet::GetAccount(string strAccount)
 {
-	if (vAddrCache.count(strAccount) == 0) {
-		CAccountCache ca(this);
-		ca.strAccount = strAccount;
-		wallet_LoadAccount(this, strAccount, ca.account);
+	if (mapAddrCache.count(strAccount) == 0) {
+		CAccountCache *ca = new CAccountCache(this);
+		ca->strAccount = strAccount;
+		wallet_LoadAccount(this, strAccount, ca->account);
 
-		vAddrCache[strLabel] = ca;
+		mapAddrCache[strAccount] = ca;
 	}
-	return (&vAddrCache[strLabel]);
+	return (mapAddrCache[strAccount]);
 }
 
 CPubKey CWallet::GetChangePubKey(string strAccount)

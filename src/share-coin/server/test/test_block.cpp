@@ -487,6 +487,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return error(SHERR_INVAL, "ProcessBlock() : CheckBlock FAILED");
   }
 
+#if 0
   CBlockIndex* pcheckpoint = TEST_Checkpoints::GetLastCheckpoint(*blockIndex);
   if (pcheckpoint && pblock->hashPrevBlock != GetBestBlockChain(iface))
   {
@@ -499,6 +500,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
       return error(SHERR_INVAL, "ProcessBlock() : block with timestamp before last checkpoint");
     }
   }
+#endif
 
   /* block is considered orphan when previous block or one of the transaction's input hashes is unknown. */
   if (pblock->hashPrevBlock != 0 && 
@@ -519,10 +521,12 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return true;
   }
 
+#if 0 /* redundant */
   if (!pblock->CheckTransactionInputs(TEST_COIN_IFACE)) {
     error(SHERR_INVAL, "(test) ProcessBlock: check transaction input failure [prev %s]", pblock->hashPrevBlock.GetHex().c_str());
     return (true);
   }
+#endif
 
   if (!pblock->AcceptBlock()) {
     iface->net_invalid = time(NULL);

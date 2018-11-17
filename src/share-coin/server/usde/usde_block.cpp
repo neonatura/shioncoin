@@ -956,6 +956,7 @@ pblock->print();
     return error(SHERR_INVAL, "ProcessBlock() : CheckBlock FAILED");
   }
 
+#if 0
   CBlockIndex* pcheckpoint = USDE_Checkpoints::GetLastCheckpoint(*blockIndex);
   if (pcheckpoint && pblock->hashPrevBlock != GetBestBlockChain(iface))
   {
@@ -979,6 +980,7 @@ pblock->print();
       return error(SHERR_INVAL, "ProcessBlock() : block with too little proof-of-work");
     }
   }
+#endif
 
   /*
    * USDE: unknown previous hash 

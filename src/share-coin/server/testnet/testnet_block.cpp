@@ -373,6 +373,7 @@ bool testnet_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return error(SHERR_INVAL, "ProcessBlock() : CheckBlock FAILED");
   }
 
+#if 0
   CBlockIndex* pcheckpoint = TESTNET_Checkpoints::GetLastCheckpoint(*blockIndex);
   if (pcheckpoint && pblock->hashPrevBlock != GetBestBlockChain(iface)) {
     // Extra checks to prevent "fill up memory by spamming with bogus blocks"
@@ -384,6 +385,7 @@ bool testnet_ProcessBlock(CNode* pfrom, CBlock* pblock)
       return error(SHERR_INVAL, "ProcessBlock() : block with timestamp before last checkpoint");
     }
   }
+#endif
 
   /*
    * TESTNET: If previous hash and it is unknown.
@@ -406,10 +408,12 @@ bool testnet_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return true;
   }
 
+#if 0 /* redundant */
   if (!pblock->CheckTransactionInputs(TESTNET_COIN_IFACE)) {
     Debug("(testnet) ProcessBlock: invalid input transaction [prev %s].", pblock->hashPrevBlock.GetHex().c_str());
     return (true);
   }
+#endif
 
   /* store to disk */
   if (!pblock->AcceptBlock()) {
