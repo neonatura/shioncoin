@@ -830,9 +830,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       shc_AddOrphanTx(vMsg);
 
       // DoS prevention: do not allow SHC_mapOrphanTransactions to grow unbounded
-      unsigned int nEvicted = shc_LimitOrphanTxSize(MAX_ORPHAN_TRANSACTIONS(iface));
-      if (nEvicted > 0)
-        fprintf(stderr, "DEBUG: SHC_mapOrphan overflow, removed %u tx\n", nEvicted);
     }
     txdb.Close();
 #endif
@@ -1169,7 +1166,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       ss << ": hash " << hash.ToString();
 
       if (strMsg == "tx") {
-        /* DEBUG: TODO: pool.DecrPriority(hash) */
+        /* TODO: pool.DecrPriority(hash) */
       }
     }
     error(SHERR_REMOTE, ss.str().c_str());
@@ -1262,7 +1259,7 @@ bool shc_ProcessMessages(CIface *iface, CNode* pfrom)
     memcpy(&nChecksum, &hash, sizeof(nChecksum));
     if (nChecksum != hdr.nChecksum)
     {
-//fprintf(stderr, "DEBUG: ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
+			Debug("(shc) ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
       continue;
     }
 

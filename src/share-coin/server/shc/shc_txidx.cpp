@@ -317,13 +317,9 @@ static bool shc_LoadBlockIndex()
     pindexBest = GetBestBlockIndex(iface);
     if (!pindexBest)
       return error(SHERR_INVAL, "SHCTxDB::LoadBlockIndex() : SHCBlock::hashBestChain not found in the block index");
-//fprintf(stderr, "DEBUG: LoadBlockIndex: falling back to highest block height %d\n", pindexBest->nHeight);
     hashBestChain = pindexBest->GetBlockHash();
   }
 
-  if (!pindexBest) {
-//fprintf(stderr, "DEBUG: SHCTxDB::LoadBlockIndex: error: hashBestChain '%s' not found in block index table\n", (hashBestChain).GetHex().c_str());
-  }
 
   SetBestBlockIndex(SHC_COIN_IFACE, pindexBest);
   //  SetBestHeight(iface, pindexBest->nHeight);
@@ -673,7 +669,7 @@ bool shc_RestoreBlockIndex()
   int err;
   bool ret;
 
-/* DEBUG: TODO: remove "shc_block.*" and "shc_tx.*" first */
+/* TODO: remove "shc_block.*" and "shc_tx.*" first */
 
 #if 0
   {

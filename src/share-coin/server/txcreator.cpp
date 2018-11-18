@@ -178,7 +178,7 @@ bool CTxCreator::AddOutput(const CTxDestination& address, int64 nValue, bool fIn
 }
 
 
-/* DEBUG: TODO: potentially prevent multiple outputs to same scriptPubKey */
+/* TODO: potentially prevent multiple outputs to same scriptPubKey */
 bool CTxCreator::AddOutput(CScript scriptPubKey, int64 nValue, bool fInsert)
 {
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
@@ -586,7 +586,7 @@ bool CTxCreator::Generate()
     return (false);
   }
 
-/* DEBUG: GetSigOpCost() */
+/* TODO: GetSigOpCost() */
   int64 nSigTotal = GetLegacySigOpCount(); 
   if (nSigTotal > MAX_BLOCK_SIGOPS(iface)/5) {
     strError = "The number of transaction signature operations exceed the maximum complexity allowed.";

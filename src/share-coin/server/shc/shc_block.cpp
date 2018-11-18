@@ -522,6 +522,12 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
   // Check for duplicate
   uint256 hash = pblock->GetHash();
 
+	if (pblock->hashPrevBlock == 0 &&
+			hash != shc_hashGenesisBlock) {
+		Debug("(shc) ProcessBlock: warning: invalid genesis block \"%s\" submitted by \"%s\".", hash.GetHex().c_str(), (pfrom?pfrom->addr.ToString().c_str():"<local>"));
+		return (false);
+	}
+
 #if 0
   if (blockIndex->count(hash)) {
     return Debug("(shc) ProcessBlock: already have block %s", hash.GetHex().c_str());

@@ -730,49 +730,11 @@ void SHCWallet::AddSupportingTransactions(CWalletTx& wtx)
   wtx.AddSupportingTransactions();
 }
 
-#ifdef USE_LEVELDB_COINDB
-bool SHCWallet::UnacceptWalletTransaction(const CTransaction& tx)
-{
-  CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-
-  if (!core_UnacceptWalletTransaction(iface, tx))
-    return (false);
-
-  {
-    SHCTxDB txdb;
-
-    BOOST_FOREACH(const CTxIn& in, tx.vin) {
-      const uint256& prev_hash = in.prevout.hash; 
-      int nTxOut = in.prevout.n;
-
-      CTxIndex txindex;
-      if (!txdb.ReadTxIndex(prev_hash, txindex))
-        continue;
-
-      if (nTxOut >= txindex.vSpent.size())
-        continue; /* bad */
-
-      /* set output as unspent */
-      txindex.vSpent[nTxOut].SetNull();
-      txdb.UpdateTxIndex(prev_hash, txindex);
-    }
-
-    /* remove pool tx from db */
-    txdb.EraseTxIndex(tx);
-
-    txdb.Close();
-  }
-
-  return (true);
-}
-#else
 bool SHCWallet::UnacceptWalletTransaction(const CTransaction& tx)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   return (core_UnacceptWalletTransaction(iface, tx));
 }
-
-#endif
 
 int64 SHCWallet::GetBlockValue(int nHeight, int64 nFees, uint160 hColor)
 {

@@ -163,14 +163,13 @@ const CTxOut& CTransaction::GetOutputFor(const CTxIn& input, const MapPrevTx& in
 
   MapPrevTx::const_iterator mi = inputs.find(input.prevout.hash);
   if (mi == inputs.end()) {
-    /* DEBUG: todo: check how critical this is */
+    /* TODO: check how critical this is */
     throw std::runtime_error("CTransaction::GetOutputFor() : prevout.hash not found");
   }
 
   const CTransaction& txPrev = (mi->second).second;
   if (input.prevout.n >= txPrev.vout.size()) {
-//    fprintf(stderr, "DEBUG: input.revout.n(%d) txprev.vout.size(%d) input.prevout.hash '%s'\n", (int)input.prevout.n, (int)txPrev.vout.size(), input.prevout.hash.GetHex().c_str()); 
-    /* DEBUG: todo: check how critical this is */
+    /* TODO: check how critical this is */
     sprintf(errbuf, "Transaction::GetOutputFor: prevout(%s).n(%d) out of range (>= %d)", input.prevout.hash.GetHex().c_str(), (int)input.prevout.n, (int)txPrev.vout.size());
     throw std::runtime_error((const char *)errbuf);
   }

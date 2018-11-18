@@ -1898,7 +1898,7 @@ bool GetCoinAddr(CWallet *wallet, CCoinAddr& addrAccount, string& strAccount)
 		if (fIsScript && !address.IsScript())
 			continue;
 
-		/* DEBUG: does not compare coinaddr version */
+		/* TODO: does not compare coinaddr version */
 		if (address.Get() == addrAccount.Get()) {
 			addrAccount = address;
 			strAccount = account;
@@ -2452,88 +2452,89 @@ bool core_UnacceptWalletTransaction(CIface *iface, const CTransaction& tx)
 	const uint256& tx_hash = tx.GetHash();
 	CTxMemPool *pool = GetTxMemPool(iface);
 	CWallet *wallet = GetWallet(iface);
+	vector<CTxIn> vIn;
+	tx_cache inputs;
+
+	if (VerifyTxHash(iface, tx_hash)) {
+		Debug("(%s) core_UnacceptWalletTransaction: unable to unaccept tx \"%s\" from wallet as it is already in block-chain.", iface->name, tx_hash.GetHex().c_str());
+		return (false);
+	}
+
+#if 0
+	if (!wallet->FillInputs(tx, inputs, true))
+		return (error(ERR_INVAL, "(%s) core_UnacceptWalletTranasction: error retrieving inputs for tx \"%s\".", tx_hash.GetHex().c_str()));
+	BOOST_FOREACH(const CTxIn& in, tx.vin) {
+		vIn.insert(vIn.end(), in);
+	}
+#endif
 
 	/* remove from wallet */
 	wallet->EraseFromWallet(tx_hash);
 
+	/* remove from mem-pool */
 	if (pool->exists(tx_hash)) {
 		pool->RemoveTx(tx_hash);
 	}
 
-	/* cycle through inputs */
-	BOOST_FOREACH(const CTxIn& in, tx.vin) {
+	{
+		CTransaction *tx_p = (CTransaction *)&tx;
+
+		/* erase from 'coin' fmap */
+		tx_p->EraseCoins(ifaceIndex);
+
+#if 0 /* we check above to ensure it's not in tx fmap */
+		/* erase from 'tx' fmap */
+		tx_p->EraseTx(ifaceIndex);
+#endif
+	}
+
+	/* mark inputs unspent */
+	BOOST_FOREACH(const CTxIn& in, vIn) {
 		const uint256& prevhash = in.prevout.hash;
-		CTransaction prevtx;
+		
+		if (wallet->mapWallet.count(prevhash) != 0) {
+			CWalletTx& wtx = wallet->mapWallet[prevhash];
 
-#if 0
-		if (pool->mapTx.count(prevhash) != 0)
-			continue; /* prevout is in pool */
+			/* mark output as unspent */
+			vector<char> vfNewSpent = wtx.vfSpent;
+			if (in.prevout.n >= wtx.vout.size()) {
+				error(SHERR_INVAL, "(%s) core_UnacceptWalletTransaction: in.prevout.n (%d) >= wtx.vout.size(%d)", iface->name, in.prevout.n, wtx.vout.size());
+				continue;    
+			}
+			vfNewSpent.resize(wtx.vout.size());
+			vfNewSpent[in.prevout.n] = false;
+			wtx.vfSpent = vfNewSpent;
+			wtx.fAvailableCreditCached = false;
+//			wtx.MarkDirty();
+			wtx.WriteToDisk();
+
+			Debug("(%s) core_UnacceptWalletTransaction: marked tx \"%s\" output #%d as unspent in wallet.\n", iface->name, prevhash.GetHex().c_str(), in.prevout.n); 
+		}
+
+#if 0 /* the coin fmap is not filled until tx is confirmed. */
+		if (inputs.count(prevhash) != 0) {
+			CTransaction& prevTx = inputs[prevhash]; 
+			int nTxOut = in.prevout.n;
+			vector<uint256> vOuts;
+
+			if (prevTx.ReadCoins(ifaceIndex, vOuts))
+				continue;
+
+			/* sanity */
+			if (nTxOut >= vOuts.size())
+				continue;
+
+			if (vOuts[nTxOut].IsNull())
+				continue;
+
+			/* set output as unspent */
+			vOuts[nTxOut].SetNull();
+			prevTx.WriteCoins(ifaceIndex, vOuts);
+		} else {
+			Debug("(%s) core_UnacceptWalletTransaction: warning: unknown input tx \"%s\".", iface->name, prevhash.GetHex().c_str());
+		}
 #endif
-		if (pool->exists(prevhash))
-			continue; /* prevout is in pool */
-
-		if (!::GetTransaction(iface, prevhash, prevtx, NULL))
-			continue; /* dito */
-
-		if (wallet->mapWallet.count(prevhash) == 0)
-			/* not being tracked by wallet. */
-			continue;
-
-		if (!wallet->IsMine(prevtx)) {
-			error(SHERR_REMOTE, "warning: core_UnacceptWalletTransaction: abandoning tx '%s' -- not owner\n", prevhash.GetHex().c_str()); 
-			continue; /* no longer owner */
-		}
-
-		CWalletTx& wtx = wallet->mapWallet[prevhash];
-
-		/* mark output as unspent */
-		vector<char> vfNewSpent = wtx.vfSpent;
-		if (in.prevout.n >= wtx.vout.size()) {
-			error(SHERR_INVAL, "core_UnacceptWalletTransaction: in.prevout.n (%d) >= wtx.vout.size(%d)", in.prevout.n, wtx.vout.size());
-			continue;    
-		}
-		vfNewSpent.resize(wtx.vout.size());
-		vfNewSpent[in.prevout.n] = false;
-		wtx.UpdateSpent(vfNewSpent);
-		wtx.MarkDirty();
-
-		if (!wtx.WriteToDisk()) {
-			Debug("rpc_tx_purge: error writing tx \"%s\" to tx database.", prevhash.GetHex().c_str());
-			continue;
-		}
-
-		/* push pool transaction's inputs back into wallet. */
-		wallet->mapWallet[prevhash] = wtx;
 	}
-
-#ifndef USE_LEVELDB_COINDB
-	BOOST_FOREACH(const CTxIn& in, tx.vin) {
-		const uint256& prev_hash = in.prevout.hash; 
-		int nTxOut = in.prevout.n;
-		vector<uint256> vOuts;
-
-		CTransaction prevTx;
-		if (wallet->mapWallet.count(prev_hash) != 0) {
-			prevTx = (CTransaction)wallet->mapWallet[prev_hash];
-		} else if (!GetTransaction(iface, prev_hash, prevTx, NULL)) {
-			continue; /* not found */
-		}
-
-		if (prevTx.ReadCoins(ifaceIndex, vOuts))
-			continue;
-
-		/* sanity */
-		if (nTxOut >= vOuts.size())
-			continue;
-
-		if (vOuts[nTxOut].IsNull())
-			continue;
-
-		/* set output as unspent */
-		vOuts[nTxOut].SetNull();
-		prevTx.WriteCoins(ifaceIndex, vOuts);
-	}
-#endif
 
 	return (true);
 }

@@ -664,32 +664,83 @@ bool CBlock::ConnectBlock(CBlockIndex* pindex)
 
 
 
+static bool core_DisconnectCoinInputs(CWallet *wallet, CTransaction& prevTx, const COutPoint& prevout)
+{
+	if (!wallet) return (false);
+  CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+	const uint256& prevhash = prevout.hash;
+	int nTxOut = prevout.n;
+	vector<uint256> vOuts;
 
 
+	if (!prevTx.ReadCoins(wallet->ifaceIndex, vOuts))
+		return (true); /* nothing to do */
 
+	/* sanity */
+	if (nTxOut >= vOuts.size())
+		return (false); /* invalid */
+
+	if (vOuts[nTxOut].IsNull())
+		return (true); /* already marked as unspent. */
+
+	/* set output as unspent */
+	vOuts[nTxOut].SetNull();
+	if (!prevTx.WriteCoins(wallet->ifaceIndex, vOuts))
+		return (false);
+
+	Debug("(%s) DisconnectCoinInputs: marked tx \"%s\" output #%d as unspent in coin-fmap.\n", iface->name, prevhash.GetHex().c_str(), prevout.n); 
+	return (true);
+}
+
+static bool core_DisconnectWalletInputs(CWallet *wallet, const COutPoint& prevout)
+{
+	if (!wallet) return (false);
+  CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+	const uint256& prevhash = prevout.hash;
+
+	if (wallet->mapWallet.count(prevhash) == 0)
+		return (true); /* all done */
+
+	CWalletTx& wtx = wallet->mapWallet[prevhash];
+	vector<char> vfNewSpent = wtx.vfSpent;
+	vfNewSpent.resize(wtx.vout.size());
+	if (vfNewSpent[prevout.n] == false)
+		return (true); /* already marked as unspent. */
+
+	/* mark output as unspent */
+	vfNewSpent[prevout.n] = false;
+	wtx.vfSpent = vfNewSpent;
+	wtx.fAvailableCreditCached = false;
+	if (!wtx.WriteToDisk())
+		return (false);
+
+	Debug("(%s) core_DisconnectCoinInputs: marked tx \"%s\" output #%d as unspent in wallet.\n", iface->name, prevhash.GetHex().c_str(), prevout.n); 
+	return (true);
+}
 
 
 bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(iface);
-  uint256 hash = tx->GetHash();
+
+	if (!wallet || !tx)
+		return (false);
 
   // Relinquish previous transactions' spent pointers
+  uint256 hash = tx->GetHash();
   if (!tx->IsCoinBase())
   {
-    BOOST_FOREACH(const CTxIn& txin, tx->vin)
+		tx_cache inputs;
+		wallet->FillInputs((const CTransaction)*tx, inputs, true); /* for coin db */
+
+		BOOST_FOREACH(const CTxIn& txin, tx->vin)
     {
       COutPoint prevout = txin.prevout;
-      vector<uint256> outs;
-      CTransaction prevtx;
+			core_DisconnectWalletInputs(wallet, prevout);
 
-      if (!GetTransaction(iface, prevout.hash, prevtx, NULL)) {
-        error(SHERR_INVAL, "core_DisconnectInputs: invalid input tx \"%s\".", prevout.hash.GetHex().c_str());
-        continue;
-      }
-
-      prevtx.WriteCoins(ifaceIndex, prevout.n, _blank_hash);
+			if (inputs.count(prevout.hash) != 0) 
+				core_DisconnectCoinInputs(wallet, inputs[prevout.hash], prevout);
     }
   }
 
@@ -726,16 +777,16 @@ bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
 		DisconnectOfferTx(iface, *tx);
 	}
 
+	/* erase from disk/mem wallet tx map */
+  wallet->EraseFromWallet(hash);
+
   /* erase from 'coin' fmap */
   tx->EraseCoins(ifaceIndex);
 
   /* erase from 'tx' fmap */
   tx->EraseTx(ifaceIndex);
 
-  wallet->EraseFromWallet(hash);
-//  wallet->mapWallet.erase(hash); 
-
-  return true;
+  return (true);
 }
 
 bool CTransaction::DisconnectInputs(int ifaceIndex)
@@ -784,13 +835,13 @@ bool ReadHashBestChain(CIface *iface, uint256& ret_hash)
 bool core_Truncate(CIface *iface, uint256 hash)
 {
   if (!iface || !iface->enabled) return (false);
+  CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex);
   CBlockIndex *pBestIndex;
   CBlockIndex *cur_index;
   CBlockIndex *pindex;
   unsigned int nHeight;
-	uint32_t nMaxHeight;
   int err;
 
   if (!blockIndex || !blockIndex->count(hash))
@@ -802,59 +853,72 @@ bool core_Truncate(CIface *iface, uint256 hash)
   if (!cur_index)
     return error(SHERR_INVAL, "Erase: block not found in block-index.");
 
+	int nTotal;
+	{
+		CBlock *block = GetBlockByHash(iface, pindexBest->GetBlockHash());
+		nTotal = block->GetTotalBlocksEstimate();
+		delete block;
+	}
+	if (cur_index->nHeight <= nTotal) {
+		return error(SHERR_INVAL, "(%s) Truncate: cannot truncate previous to last checkpoint at height %d.", iface->name, nTotal);
+	}
+
+	CBlockIndex *checkIndex = GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex)
+
+
   pBestIndex = GetBestBlockIndex(iface);
   if (!pBestIndex)
     return error(SHERR_INVAL, "Erase: no block-chain established.");
   if (cur_index->nHeight > pBestIndex->nHeight)
     return error(SHERR_INVAL, "Erase: height is not valid.");
 
-  bc_t *bc = GetBlockChain(iface);
-  unsigned int nMinHeight = cur_index->nHeight;
-	/* calculate highest block index */
-	(void)bc_idx_next(bc, &nMaxHeight);
-	nMaxHeight -= 1;
+	/* sanity: erase potential blocks higher than our tip */
+	bc_t *bc = GetBlockChain(iface);
+	unsigned int nMinHeight = pBestIndex->nHeight;
+	unsigned int nMaxHeight = 0;
+	if (0 == bc_idx_next(bc, &nMaxHeight)) { /* highest disk block index */
+		for (int idx = (nMaxHeight-1); idx > nMinHeight; idx--) {
+			bc_clear(bc, idx);
+			CBlockIndex *tpindex = GetBlockIndexByHeight(ifaceIndex, idx);
+			if (tpindex)
+				bc_table_reset(bc, tpindex->GetBlockHash().GetRaw());
+		}
+	}
 
+	/* mem: disconnect blocks from chain. */
 	pindex = pBestIndex;
 	for(; pindex && pindex != cur_index; pindex = pindex->pprev) {
-    CBlock *block = GetBlockByHeight(iface, pindex->nHeight);
+		CBlock *block = GetBlockByHeight(iface, pindex->nHeight);
 		if (block) {
 			block->DisconnectBlock(pindex);
 			delete block;
 		}
 	}
+
+	{
+		bc_t *bc = GetBlockChain(iface);
+		/* disk: remove all blocks from block-chain. */
+		pindex = pBestIndex;
+		for(; pindex && pindex != cur_index; pindex = pindex->pprev) {
+			bc_clear(bc, pindex->nHeight);
+			bc_table_reset(bc, pindex->GetBlockHash().GetRaw());
+		}
+	}
+	/* since there may be lingering memory references to the block chain we can not remove it. instead, mark the previous chain as if it were only headers. */
 	pindex = pBestIndex;
 	for(; pindex && pindex != cur_index; pindex = pindex->pprev) {
-    bc_clear(bc, pindex->nHeight);
-		bc_table_reset(bc, pindex->GetBlockHash().GetRaw());
+		pindex->pnext = NULL;
 	}
-#if 0
-  for (nHeight = nMaxHeight; nHeight > nMinHeight; nHeight--) {
-    CBlock *block = GetBlockByHeight(iface, nHeight);
-    if (block) {
-      uint256 t_hash = block->GetHash();
-      if (hash == cur_index->GetBlockHash()) {
-        delete block;
-        break; /* bad */
-      }
+  cur_index->pnext = NULL;
 
-      if (blockIndex->count(t_hash) != 0)
-        block->DisconnectBlock((*blockIndex)[t_hash]);
-      bc_table_reset(bc, t_hash.GetRaw());
-
-      delete block;
-    }
-  }
-#endif
-
+	/* establish new tip */
+	wallet->bnBestChainWork = cur_index->bnChainWork;
   SetBestBlockIndex(iface, cur_index);
   WriteHashBestChain(iface, cur_index->GetBlockHash());
 
-  cur_index->pnext = NULL;
-
-/* todo: remove pindex's */
-
-  InitServiceBlockEvent(ifaceIndex, cur_index->nHeight + 1);
-
+	/* initialize a re-download. */
+	iface->blockscan_max = 0;
+  InitServiceBlockEvent(ifaceIndex, cur_index->nHeight);
 
   return (true);
 }

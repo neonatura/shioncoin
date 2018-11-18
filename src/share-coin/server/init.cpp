@@ -715,7 +715,7 @@ bool AppInit2()
 
     RegisterWallet(pwalletMain);
 
-/* DEBUG: TODO: move to rpc_proto */
+/* TODO: move to rpc_proto */
     CBlockIndex *pindexRescan = pindexBest;
     if (GetBoolArg("-rescan"))
         pindexRescan = pindexGenesisBlock;

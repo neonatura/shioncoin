@@ -673,6 +673,13 @@ bool emc2_ProcessBlock(CNode* pfrom, CBlock* pblock)
   // Check for duplicate
   uint256 hash = pblock->GetHash();
 
+	if (pblock->hashPrevBlock == 0 &&
+			hash != emc2_hashGenesisBlock) {
+		Debug("(emc2) ProcessBlock: warning: invalid genesis block \"%s\" submitted by \"%s\".", hash.GetHex().c_str(), (pfrom?pfrom->addr.ToString().c_str():"<local>"));
+		return (false);
+	}
+
+
 #if 0
   if (blockIndex->count(hash)) {
     return Debug("(emc2) ProcessBlock: already have block %s", hash.GetHex().c_str());

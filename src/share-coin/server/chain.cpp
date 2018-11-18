@@ -462,6 +462,25 @@ bool ServiceLegacyBlockEvent(int ifaceIndex, CNode *pfrom)
   return (true);
 }
 
+static bool chain_IsNodesBusy(int ifaceIndex)
+{
+	bool fBusy = false;
+	NodeList &vNodes = GetNodeList(ifaceIndex);
+	BOOST_FOREACH(CNode* pnode, vNodes) {
+		shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
+		if (pchBuf) {
+			shbuf_lock(pchBuf);
+			if (shbuf_size(pchBuf) != 0)
+				fBusy = true;
+			shbuf_unlock(pchBuf);
+
+			if (fBusy)
+				return (true);
+		}
+	}
+	return (false);
+}
+
 bool ServiceBlockEvent(int ifaceIndex)
 {
   static int nNodeIndex;
@@ -502,15 +521,8 @@ bool ServiceBlockEvent(int ifaceIndex)
     return (false);
   }
 
-		{
-			/* wait until all pending incoming data has been processed. */
-			NodeList &vNodes = GetNodeList(ifaceIndex);
-			BOOST_FOREACH(CNode* pnode, vNodes) {
-				if (!pnode->vRecv.empty())
-					return (true); /* keep trying */
-			}
-		}
-
+	if (chain_IsNodesBusy(ifaceIndex))
+		return (true); /* receiving stuff */
 
 	int idx = (nNodeIndex % vNodes.size());
 	pfrom = vNodes[idx];
@@ -584,7 +596,6 @@ bool ServiceBlockEvent(int ifaceIndex)
 		}
 
 		pfrom->PushMessage("getdata", vInv);
-fprintf(stderr, "DEBUG: ServerBlockEvent: downloading block %s [x%d]\n", pindex->GetBlockHash().GetHex().c_str(), vInv.size()); 
 	} else {
 
 		CBlockIndex *pindex = wallet->pindexBestHeader ?

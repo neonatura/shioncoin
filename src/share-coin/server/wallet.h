@@ -724,7 +724,7 @@ class CWalletTx : public CMerkleTx
 				 }
 			 }
 
-			 /* DEBUG: todo:   retrieve from coin-db instead? */
+			 /* TODO:   retrieve from coin-db instead? */
 			 bool IsSpent(unsigned int nOut) const
 			 {
 				 if (nOut >= vout.size())
