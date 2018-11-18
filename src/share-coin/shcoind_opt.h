@@ -58,6 +58,8 @@ extern "C" {
 #define OPT_USDE_BACKUP_RESTORE "usde-backup-restore"
 #define OPT_EMC2_BACKUP_RESTORE "emc2-backup-restore"
 #define OPT_LTC_BACKUP_RESTORE "ltc-backup-restore"
+#define OPT_BLOCK_SIZE "block-size"
+#define OPT_MIN_FEE "min-fee"
 
 /* not used */
 #define OPT_FMAP_IDLE "fmap-idle"

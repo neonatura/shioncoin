@@ -42,6 +42,7 @@ class CTxCreator : public CWalletTx
     bool fWitness;
     bool fAccount;
 		bool fAutoLock;
+		bool fAutoParam;
     string strError; 
 
     int64 nMinFee;
@@ -95,6 +96,7 @@ class CTxCreator : public CWalletTx
       fWitness = false;
       fAccount = false;
 			fAutoLock = true;
+			fAutoParam = true;
       nMinFee = 0;
       nCredit = 0;
       nDebit = 0;
@@ -165,6 +167,16 @@ class CTxCreator : public CWalletTx
 			if (nLockTime != 0)
 				return (false);
 			return (fAutoLock);
+		}
+
+		void setAutoParam(bool b)
+		{
+			fAutoParam = b;
+		}
+
+		bool isAutoParam()
+		{
+			return (fAutoParam);
 		}
 
     string GetError()

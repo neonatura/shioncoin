@@ -853,24 +853,21 @@ bool core_Truncate(CIface *iface, uint256 hash)
   if (!cur_index)
     return error(SHERR_INVAL, "Erase: block not found in block-index.");
 
+  pBestIndex = GetBestBlockIndex(iface);
+  if (!pBestIndex)
+    return error(SHERR_INVAL, "Erase: no block-chain established.");
+  if (cur_index->nHeight > pBestIndex->nHeight)
+    return error(SHERR_INVAL, "Erase: height is not valid.");
+
 	int nTotal;
 	{
-		CBlock *block = GetBlockByHash(iface, pindexBest->GetBlockHash());
+		CBlock *block = GetBlockByHash(iface, pBestIndex->GetBlockHash());
 		nTotal = block->GetTotalBlocksEstimate();
 		delete block;
 	}
 	if (cur_index->nHeight <= nTotal) {
 		return error(SHERR_INVAL, "(%s) Truncate: cannot truncate previous to last checkpoint at height %d.", iface->name, nTotal);
 	}
-
-	CBlockIndex *checkIndex = GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex)
-
-
-  pBestIndex = GetBestBlockIndex(iface);
-  if (!pBestIndex)
-    return error(SHERR_INVAL, "Erase: no block-chain established.");
-  if (cur_index->nHeight > pBestIndex->nHeight)
-    return error(SHERR_INVAL, "Erase: height is not valid.");
 
 	/* sanity: erase potential blocks higher than our tip */
 	bc_t *bc = GetBlockChain(iface);

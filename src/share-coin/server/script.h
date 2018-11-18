@@ -125,6 +125,7 @@ enum opcodetype
     OP_16 = 0x60,
 
     /* extension ops */
+		OP_PARAM = 0x03,
 		OP_ALTCHAIN = 0x04,
     OP_CONTEXT = 0x05,
     OP_EXEC = 0x06,

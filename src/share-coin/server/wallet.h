@@ -131,6 +131,8 @@ class CWallet : public CCryptoKeyStore
 		vector<uint256> mapValidateTx;
 		map<uint256, CPubKey> mapValidateNotary;
 
+		mutable std::vector<CParam> mapParam;
+
 		mutable std::map<std::string, uint256> mapAlias;
 		mutable std::map<uint256, std::string> mapAliasArch;
 

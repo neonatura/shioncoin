@@ -36,6 +36,7 @@
 
 using namespace std;
 
+#define DEFAULT_PARAM_LIFESPAN 2592000 /* 30d */ 
 
 #define MAX_OPCODE(_iface) \
 	(0xf9)
@@ -1532,6 +1533,28 @@ bool CTransaction::IsStandard() const
   return true;
 }
 
+CParam *CTransaction::UpdateParam(std::string strName, int64_t nValue)
+{
+	CParam *par;
+
+  if (nFlag & CTransaction::TXF_PARAM)
+    return (NULL);
+
+  nFlag |= CTransaction::TXF_PARAM;
+
+  par = GetParam();
+	if (!par)
+		return (NULL);
+
+  par->SetLabel(strName);
+//	par->SetValue(nValue);
+	par->nValue = nValue;
+
+	/* expiration is primarily for creating a unique hash. */
+  par->SetExpireSpan((double)DEFAULT_PARAM_LIFESPAN);
+
+  return (par);
+}
 
 
 CAlias *CTransaction::CreateAlias(std::string name, int type)

@@ -219,33 +219,35 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/color/color_wallet.h server/color/color_txidx.cpp \
 	server/color/color_txidx.h server/color/color_pool.cpp \
 	server/color/color_pool.h server/color/color_rpc.cpp \
-	server/ext/txext.cpp server/ext/txext.h server/ext/alias.cpp \
-	server/ext/alias.h server/ext/certificate.cpp \
-	server/ext/certificate.h server/ext/offer.cpp \
-	server/ext/offer.h server/ext/asset.cpp server/ext/asset.h \
-	server/ext/exec.cpp server/ext/exec.h server/ext/channel.cpp \
-	server/ext/channel.h server/ext/context.cpp \
-	server/ext/context.h server/ext/altchain.cpp \
-	server/ext/altchain.h server/ext/altchain_color.c \
-	server/ext/altchain_color.h server/rpc/rpcalias_proto.cpp \
-	server/rpc/rpccert_proto.cpp server/rpc/rpccolor_proto.cpp \
-	server/rpc/rpccontext_proto.cpp server/rpc/rpcexec_proto.cpp \
-	server/rpc/rpcoffer_proto.cpp server/rpc/rpcdump.cpp \
-	server/rpc/rpc_command.cpp server/rpc/rpcrawtransaction.cpp \
-	server/versionbits.cpp server/txsignature.cpp \
-	server/protocol.cpp server/block.cpp server/block.h \
-	server/txmempool.cpp server/txmempool.h server/coin.cpp \
-	server/validation.cpp server/chain.cpp server/matrix.cpp \
-	server/spring.c server/bloom.cpp server/global.cpp \
-	server/block_merkle.cpp server/wit_merkle.cpp \
-	server/crypter.cpp server/txidx.cpp server/init.cpp \
-	server/derkey.cpp server/hdkey.cpp server/keystore.cpp \
-	server/main.cpp server/script.cpp server/sync.cpp \
-	server/walletdb.cpp server/wallet.cpp server/account.cpp \
-	server/txcreator.cpp server/scrypt.c server/addrman.h \
-	server/addrman.cpp server/base58.h server/base58.cpp \
-	wallet_iface.cpp block_iface.cpp server_iface.cpp shcoind.c \
-	shcoind_daemon.c shcoind_daemon.h shcoind_svc.c shcoind_svc.h
+	server/ext/txext.cpp server/ext/txext.h \
+	server/ext/ext_param.cpp server/ext/ext_param.h \
+	server/ext/alias.cpp server/ext/alias.h \
+	server/ext/certificate.cpp server/ext/certificate.h \
+	server/ext/offer.cpp server/ext/offer.h server/ext/asset.cpp \
+	server/ext/asset.h server/ext/exec.cpp server/ext/exec.h \
+	server/ext/channel.cpp server/ext/channel.h \
+	server/ext/context.cpp server/ext/context.h \
+	server/ext/altchain.cpp server/ext/altchain.h \
+	server/ext/altchain_color.c server/ext/altchain_color.h \
+	server/rpc/rpcalias_proto.cpp server/rpc/rpccert_proto.cpp \
+	server/rpc/rpccolor_proto.cpp server/rpc/rpccontext_proto.cpp \
+	server/rpc/rpcexec_proto.cpp server/rpc/rpcoffer_proto.cpp \
+	server/rpc/rpcdump.cpp server/rpc/rpc_command.cpp \
+	server/rpc/rpcrawtransaction.cpp server/versionbits.cpp \
+	server/txsignature.cpp server/protocol.cpp server/block.cpp \
+	server/block.h server/txmempool.cpp server/txmempool.h \
+	server/coin.cpp server/validation.cpp server/chain.cpp \
+	server/matrix.cpp server/spring.c server/bloom.cpp \
+	server/global.cpp server/block_merkle.cpp \
+	server/wit_merkle.cpp server/crypter.cpp server/txidx.cpp \
+	server/init.cpp server/derkey.cpp server/hdkey.cpp \
+	server/keystore.cpp server/main.cpp server/script.cpp \
+	server/sync.cpp server/walletdb.cpp server/wallet.cpp \
+	server/account.cpp server/txcreator.cpp server/scrypt.c \
+	server/addrman.h server/addrman.cpp server/base58.h \
+	server/base58.cpp wallet_iface.cpp block_iface.cpp \
+	server_iface.cpp shcoind.c shcoind_daemon.c shcoind_daemon.h \
+	shcoind_svc.c shcoind_svc.h
 am__objects_1 =
 am__objects_2 = shcoind-shcoind_rpc.$(OBJEXT) \
 	shcoind-shcoind_error.$(OBJEXT) shcoind-shcoind_log.$(OBJEXT) \
@@ -297,11 +299,11 @@ am__objects_6 = shcoind-txfeerate.$(OBJEXT) $(am__objects_3) \
 	shcoind-color_block.$(OBJEXT) shcoind-color_wallet.$(OBJEXT) \
 	shcoind-color_txidx.$(OBJEXT) shcoind-color_pool.$(OBJEXT) \
 	shcoind-color_rpc.$(OBJEXT) shcoind-txext.$(OBJEXT) \
-	shcoind-alias.$(OBJEXT) shcoind-certificate.$(OBJEXT) \
-	shcoind-offer.$(OBJEXT) shcoind-asset.$(OBJEXT) \
-	shcoind-exec.$(OBJEXT) shcoind-channel.$(OBJEXT) \
-	shcoind-context.$(OBJEXT) shcoind-altchain.$(OBJEXT) \
-	shcoind-altchain_color.$(OBJEXT) \
+	shcoind-ext_param.$(OBJEXT) shcoind-alias.$(OBJEXT) \
+	shcoind-certificate.$(OBJEXT) shcoind-offer.$(OBJEXT) \
+	shcoind-asset.$(OBJEXT) shcoind-exec.$(OBJEXT) \
+	shcoind-channel.$(OBJEXT) shcoind-context.$(OBJEXT) \
+	shcoind-altchain.$(OBJEXT) shcoind-altchain_color.$(OBJEXT) \
 	shcoind-rpcalias_proto.$(OBJEXT) \
 	shcoind-rpccert_proto.$(OBJEXT) \
 	shcoind-rpccolor_proto.$(OBJEXT) \
@@ -423,7 +425,7 @@ am__objects_12 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_9) \
 	test_shcoind-color_txidx.$(OBJEXT) \
 	test_shcoind-color_pool.$(OBJEXT) \
 	test_shcoind-color_rpc.$(OBJEXT) test_shcoind-txext.$(OBJEXT) \
-	test_shcoind-alias.$(OBJEXT) \
+	test_shcoind-ext_param.$(OBJEXT) test_shcoind-alias.$(OBJEXT) \
 	test_shcoind-certificate.$(OBJEXT) \
 	test_shcoind-offer.$(OBJEXT) test_shcoind-asset.$(OBJEXT) \
 	test_shcoind-exec.$(OBJEXT) test_shcoind-channel.$(OBJEXT) \
@@ -1133,6 +1135,8 @@ server_sources = \
 	server/color/color_rpc.cpp \
 	server/ext/txext.cpp \
 	server/ext/txext.h \
+	server/ext/ext_param.cpp \
+	server/ext/ext_param.h \
 	server/ext/alias.cpp \
 	server/ext/alias.h \
 	server/ext/certificate.cpp \
@@ -1373,6 +1377,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_txidx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_wallet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-exec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ext_param.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-fractal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-fractal_bmp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-global.Po@am__quote@
@@ -1515,6 +1520,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_txidx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_wallet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-exec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ext_param.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-fractal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-fractal_bmp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-global.Po@am__quote@
@@ -3599,6 +3605,20 @@ shcoind-txext.obj: server/ext/txext.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-txext.obj `if test -f 'server/ext/txext.cpp'; then $(CYGPATH_W) 'server/ext/txext.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/txext.cpp'; fi`
 
+shcoind-ext_param.o: server/ext/ext_param.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-ext_param.o -MD -MP -MF $(DEPDIR)/shcoind-ext_param.Tpo -c -o shcoind-ext_param.o `test -f 'server/ext/ext_param.cpp' || echo '$(srcdir)/'`server/ext/ext_param.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-ext_param.Tpo $(DEPDIR)/shcoind-ext_param.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ext_param.cpp' object='shcoind-ext_param.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-ext_param.o `test -f 'server/ext/ext_param.cpp' || echo '$(srcdir)/'`server/ext/ext_param.cpp
+
+shcoind-ext_param.obj: server/ext/ext_param.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-ext_param.obj -MD -MP -MF $(DEPDIR)/shcoind-ext_param.Tpo -c -o shcoind-ext_param.obj `if test -f 'server/ext/ext_param.cpp'; then $(CYGPATH_W) 'server/ext/ext_param.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ext_param.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-ext_param.Tpo $(DEPDIR)/shcoind-ext_param.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ext_param.cpp' object='shcoind-ext_param.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-ext_param.obj `if test -f 'server/ext/ext_param.cpp'; then $(CYGPATH_W) 'server/ext/ext_param.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ext_param.cpp'; fi`
+
 shcoind-alias.o: server/ext/alias.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-alias.o -MD -MP -MF $(DEPDIR)/shcoind-alias.Tpo -c -o shcoind-alias.o `test -f 'server/ext/alias.cpp' || echo '$(srcdir)/'`server/ext/alias.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-alias.Tpo $(DEPDIR)/shcoind-alias.Po
@@ -4928,6 +4948,20 @@ test_shcoind-txext.obj: server/ext/txext.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/txext.cpp' object='test_shcoind-txext.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-txext.obj `if test -f 'server/ext/txext.cpp'; then $(CYGPATH_W) 'server/ext/txext.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/txext.cpp'; fi`
+
+test_shcoind-ext_param.o: server/ext/ext_param.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-ext_param.o -MD -MP -MF $(DEPDIR)/test_shcoind-ext_param.Tpo -c -o test_shcoind-ext_param.o `test -f 'server/ext/ext_param.cpp' || echo '$(srcdir)/'`server/ext/ext_param.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-ext_param.Tpo $(DEPDIR)/test_shcoind-ext_param.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ext_param.cpp' object='test_shcoind-ext_param.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-ext_param.o `test -f 'server/ext/ext_param.cpp' || echo '$(srcdir)/'`server/ext/ext_param.cpp
+
+test_shcoind-ext_param.obj: server/ext/ext_param.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-ext_param.obj -MD -MP -MF $(DEPDIR)/test_shcoind-ext_param.Tpo -c -o test_shcoind-ext_param.obj `if test -f 'server/ext/ext_param.cpp'; then $(CYGPATH_W) 'server/ext/ext_param.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ext_param.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-ext_param.Tpo $(DEPDIR)/test_shcoind-ext_param.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ext_param.cpp' object='test_shcoind-ext_param.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-ext_param.obj `if test -f 'server/ext/ext_param.cpp'; then $(CYGPATH_W) 'server/ext/ext_param.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ext_param.cpp'; fi`
 
 test_shcoind-alias.o: server/ext/alias.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-alias.o -MD -MP -MF $(DEPDIR)/test_shcoind-alias.Tpo -c -o test_shcoind-alias.o `test -f 'server/ext/alias.cpp' || echo '$(srcdir)/'`server/ext/alias.cpp

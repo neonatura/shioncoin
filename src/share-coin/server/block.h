@@ -44,6 +44,7 @@ using namespace json_spirit;
 #include "coin_proto.h"
 #include "txext.h"
 #include "matrix.h"
+#include "ext_param.h"
 
 typedef std::map<uint256, CTransaction> tx_cache;
 
@@ -569,6 +570,7 @@ class CTransactionCore
     static const int TXF_LICENSE = (1 << 5);
     static const int TXF_ALIAS = (1 << 6);
     static const int TXF_OFFER = (1 << 7);
+    static const int TXF_PARAM = (1 << 8);
     static const int TXF_ASSET = (1 << 9);
     static const int TXF_IDENT = (1 << 10);
     static const int TXF_MATRIX = (1 << 11);
@@ -722,6 +724,7 @@ class CTransaction : public CTransactionCore
     CChannel channel;
 		CExecCore exec;
 		CAltChain altchain;
+		CParam param; 
 
     CTransaction()
     {
@@ -780,6 +783,9 @@ class CTransaction : public CTransactionCore
 
       if (this->nFlag & TXF_ALTCHAIN)
         READWRITE(altchain);
+
+      if (this->nFlag & TXF_PARAM)
+        READWRITE(param);
     )
 
     void Init(const CTransaction& tx);
@@ -795,6 +801,7 @@ class CTransaction : public CTransactionCore
       channel.SetNull();
 			exec.SetNull();
 			altchain.SetNull();
+			param.SetNull();
     }
 
     uint256 GetHash() const
@@ -967,6 +974,7 @@ class CTransaction : public CTransactionCore
 
     bool EraseTx(int ifaceIndex);
 
+		CParam *UpdateParam(std::string strName, int64_t nValue);
 
     CAlias *CreateAlias(std::string name, int type = CAlias::ALIAS_COINADDR);
     CAlias *UpdateAlias(std::string name, const uint160& hash);
@@ -1065,6 +1073,13 @@ class CTransaction : public CTransactionCore
 			if (!(this->nFlag & TXF_ALTCHAIN))
 				return (NULL);
 			return ((CAltChain *)&altchain);
+		}
+
+		CParam *GetParam() const
+		{
+			if (!(this->nFlag & TXF_PARAM))
+				return (NULL);
+			return ((CParam *)&param);
 		}
 
 		CAsset *GetAsset()

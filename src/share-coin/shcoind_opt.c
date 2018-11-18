@@ -36,7 +36,7 @@
 typedef struct opt_t {
 	const char *opt_name;
 	int opt_type;
-	int opt_def;
+	int64_t opt_def;
 	const char *opt_strdef;
 	const char *opt_desc;
 } opt_t;
@@ -62,8 +62,16 @@ static opt_t _option_table[] = {
 	{ OPT_BAN_THRESHOLD, OPT_TYPE_NUM, 1000, NULL,
 		"The amount of suspicious behaviour before banning a node." },
 
+	/* user concensus parameters */
+	{ OPT_BLOCK_SIZE, OPT_TYPE_NUM, 4096000, NULL,
+		"The preferred maximum block size." },
+	{ OPT_MIN_FEE, OPT_TYPE_NUM, 1000, NULL,
+		"The preferred minimum relay tx fee in sharetoshis." },
+
+	/* network options */
 	{ OPT_SHC_PORT, OPT_TYPE_NUM, 24104, NULL,
 		"The port to accept incoming SHC service connections." },
+
 
 	/* the stratum service provides a service for mining hardware to connect to in order to generate new blocks. */
 #ifdef STRATUM_SERVICE

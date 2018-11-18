@@ -232,6 +232,8 @@ server_sources = \
 	server/color/color_rpc.cpp \
 	server/ext/txext.cpp \
 	server/ext/txext.h \
+	server/ext/ext_param.cpp \
+	server/ext/ext_param.h \
 	server/ext/alias.cpp \
 	server/ext/alias.h \
 	server/ext/certificate.cpp \
