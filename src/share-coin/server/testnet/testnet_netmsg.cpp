@@ -329,9 +329,6 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     pfrom->PushMessage("verack");
     pfrom->vSend.SetVersion(min(pfrom->nVersion, TESTNET_PROTOCOL_VERSION));
 
-		/* prefer headers */
-		pfrom->PushMessage("sendheaders");
-
     if (!pfrom->fInbound) { // Advertise our address
       if (/*!fNoListen &&*/ !IsInitialBlockDownload(TESTNET_COIN_IFACE))
       {
@@ -379,6 +376,9 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
   else if (strCommand == "verack")
   {
     pfrom->vRecv.SetVersion(min(pfrom->nVersion, TESTNET_PROTOCOL_VERSION));
+
+		/* prefer headers */
+		pfrom->PushMessage("sendheaders");
 
     vector<CTransaction> pool_list = pool->GetActiveTx();
     BOOST_FOREACH(const CTransaction& tx, pool_list) {

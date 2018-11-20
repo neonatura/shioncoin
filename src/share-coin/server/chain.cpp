@@ -388,6 +388,71 @@ bool SaveExternalBlockchainFile()
   return (false);
 }
 
+#define NODE_TIMEOUT 60
+static bool chain_IsNodesBusy(int ifaceIndex)
+{
+	static time_t to_t;
+	bool fBusy = false;
+	time_t now;
+
+	now = time(NULL);
+	if ((to_t + NODE_TIMEOUT) < now)
+		return (false);
+	to_t = now;
+
+	NodeList &vNodes = GetNodeList(ifaceIndex);
+	BOOST_FOREACH(CNode* pnode, vNodes) {
+		shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
+		if (pchBuf) {
+			shbuf_lock(pchBuf);
+			if (shbuf_size(pchBuf) != 0)
+				fBusy = true;
+			shbuf_unlock(pchBuf);
+
+			if (fBusy)
+				return (true);
+		}
+	}
+
+	return (false);
+}
+
+static CNode *chain_GetNextNode(int ifaceIndex)
+{
+  static int nNodeIndex;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	CNode *pfrom;
+	int idx;
+
+	if (chain_IsNodesBusy(ifaceIndex))
+		return (NULL);
+
+	{
+		NodeList &vNodes = GetNodeList(ifaceIndex);
+		idx = (nNodeIndex % vNodes.size());
+		pfrom = vNodes[idx];
+		nNodeIndex++;
+	}
+
+	if (pfrom->nVersion == 0) {
+		/* uninitialized connection. */
+		return (NULL);
+	}
+
+	if (!pfrom->fPreferHeaders) {
+		/* incompatible. */
+		return (NULL);
+	}
+
+	if (!pfrom->fHaveWitness && 
+			IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+		/* incompatible. */
+		return (NULL);
+	}
+
+	return (pfrom);
+}
+
 bool ServiceLegacyBlockEvent(int ifaceIndex, CNode *pfrom)
 {
   CWallet *wallet = GetWallet(ifaceIndex);
@@ -414,14 +479,8 @@ bool ServiceLegacyBlockEvent(int ifaceIndex, CNode *pfrom)
   if (iface->blockscan_max == 0)
     return (true); /* keep trying */
 
-  {
-    /* wait until all pending incoming data has been processed. */
-    NodeList &vNodes = GetNodeList(ifaceIndex);
-    BOOST_FOREACH(CNode* pnode, vNodes) {
-      if (!pnode->vRecv.empty())
-        return (true); /* keep trying */
-    }
-  }
+	if (chain_IsNodesBusy(ifaceIndex))
+		return (true); /* receiving stuff */
 
   if (pindexBest->nHeight >= iface->blockscan_max) {
     ServiceBlockEventUpdate(ifaceIndex);
@@ -462,34 +521,100 @@ bool ServiceLegacyBlockEvent(int ifaceIndex, CNode *pfrom)
   return (true);
 }
 
-static bool chain_IsNodesBusy(int ifaceIndex)
+bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pindexBest)
 {
-	bool fBusy = false;
-	NodeList &vNodes = GetNodeList(ifaceIndex);
-	BOOST_FOREACH(CNode* pnode, vNodes) {
-		shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
-		if (pchBuf) {
-			shbuf_lock(pchBuf);
-			if (shbuf_size(pchBuf) != 0)
-				fBusy = true;
-			shbuf_unlock(pchBuf);
+  CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+	CBlockIndex *pindex = NULL;
+	CNode *pfrom;
+	bool bFound = false;
 
-			if (fBusy)
-				return (true);
+	/* determine next block to download. */
+	if (wallet->pindexBestHeader &&
+			wallet->pindexBestHeader->nHeight > pindexBest->nHeight) {
+		pindex = wallet->pindexBestHeader;
+		while (pindex && pindex->nHeight > (pindexBest->nHeight + MAX_BLOCK_DOWNLOAD_BATCH + 1))
+			pindex = pindex->pprev;
+	}
+	if (!pindex)
+		return (false);
+
+	pfrom = chain_GetNextNode(wallet->ifaceIndex);
+	if (!pfrom) {
+		return (false);
+	}
+
+	if (pfrom->pindexRecv == tip) {
+		return (false);
+	}
+	pfrom->pindexRecv = tip;
+#if 0
+	CBlockIndex *p = pfrom->pindexRecv;
+	if (p) {
+		for (unsigned int i = 0; p && i < MAX_BLOCK_DOWNLOAD_BATCH; i++) {
+			if (p->nHeight <= pindexBest->nHeight)
+				break;
+			if (pindex == p)
+				return (false);
+			p = p->pprev;
 		}
 	}
-	return (false);
+#endif
+
+	int nFetchFlags = 0;
+	if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
+		nFetchFlags |= MSG_WITNESS_FLAG;
+
+	/* ask for blocks */
+	std::vector<CInv> vInv;
+	while (pindex && 
+			pindexBest->nHeight < pindex->nHeight) {
+		/* request full block */
+		vInv.insert(vInv.begin(), CInv(wallet->ifaceIndex,
+					MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
+
+		/* iterate to next block */
+		pindex = pindex->pprev;
+	}
+
+	pfrom->PushMessage("getdata", vInv);
+
+	/* debug */
+	Debug("(%s) ServiceBlockEvent: requesting %d blocks (height %d) from \"%s\".", iface->name, vInv.size(),  pindex->nHeight, pfrom->addr.ToString().c_str());
+
+	return (true);
+}
+
+bool ServiceBlockHeadersEvent(CWallet *wallet, CBlockIndex *pindexBest)
+{
+  CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+	CNode *pfrom;
+
+	pfrom = chain_GetNextNode(wallet->ifaceIndex);
+	if (!pfrom)
+		return (false);
+
+	CBlockIndex *pindex = wallet->pindexBestHeader ?
+		wallet->pindexBestHeader : pindexBest;
+	if (pfrom->pindexRecvHeader == pindex)
+		return (false);
+
+	/* ask for headers */
+	CBlockLocator locator(wallet->ifaceIndex, wallet->pindexBestHeader);
+	pfrom->PushMessage("getheaders", locator, uint256(0));
+
+	/* retain */
+	pfrom->pindexRecvHeader = pindex;
+
+	Debug("(%s) ServiceBlockEvent: requesting block info (height %d) from \"%s\".", iface->name, pindex->nHeight, pfrom->addr.ToString().c_str());
+
+	return (true);
 }
 
 bool ServiceBlockEvent(int ifaceIndex)
 {
-  static int nNodeIndex;
-	static int lastHeight;
   CWallet *wallet = GetWallet(ifaceIndex);
   NodeList &vNodes = GetNodeList(ifaceIndex);
   CIface *iface;
-  CNode *pfrom;
-  time_t expire_t;
 
   iface = GetCoinByIndex(ifaceIndex);
   if (!iface)
@@ -509,6 +634,7 @@ bool ServiceBlockEvent(int ifaceIndex)
   if (iface->blockscan_max == 0)
     return (true); /* keep trying */
 
+	/* strive towards recognized best chain of headers. */
 	if (wallet->pindexBestHeader &&
 			wallet->pindexBestHeader->nHeight != -1)
 		iface->blockscan_max = MAX(iface->blockscan_max, 
@@ -521,30 +647,15 @@ bool ServiceBlockEvent(int ifaceIndex)
     return (false);
   }
 
-	if (chain_IsNodesBusy(ifaceIndex))
-		return (true); /* receiving stuff */
-
-	int idx = (nNodeIndex % vNodes.size());
-	pfrom = vNodes[idx];
-	nNodeIndex++;
-
-
-
-	if (pfrom->nVersion == 0)
-		return (true); /* not ready yet */
-	if (!pfrom->fHaveWitness && 
-			IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
-		/* incompatible, try next peer. */
-		return (true);
+	/* use headers or legacy method */
+	if (ifaceIndex == USDE_COIN_IFACE) {
+		CNode *pfrom = chain_GetNextNode(ifaceIndex);
+		if (!pfrom) return (true); /* keep trying */
+		return (ServiceLegacyBlockEvent(ifaceIndex, pfrom));
 	}
 
-	/* check if they use headers or legacy method */
-	if (!pfrom->fPreferHeaders)
-		return (ServiceLegacyBlockEvent(ifaceIndex, pfrom));
-
-	CBlockIndex *pindex = NULL;
-
 	/* determine next block to download. */
+	CBlockIndex *pindex = NULL;
 	if (wallet->pindexBestHeader &&
 			wallet->pindexBestHeader->nHeight > pindexBest->nHeight) {
 		pindex = wallet->pindexBestHeader;
@@ -553,65 +664,9 @@ bool ServiceBlockEvent(int ifaceIndex)
 	}
 
 	if (pindex) {
-		/* determine next block to download. */
-		if (wallet->pindexBestHeader &&
-				wallet->pindexBestHeader->nHeight > pindexBest->nHeight) {
-			pindex = wallet->pindexBestHeader;
-			while (pindex && pindex->nHeight > (pindexBest->nHeight + MAX_BLOCK_DOWNLOAD_BATCH))
-				pindex = pindex->pprev;
-		}
-
-		bool bFound = false;
-#if 0
-		if (pindex == pfrom->pindexRecv)
-			return (true);
-#endif
-		CBlockIndex *p = pfrom->pindexRecv;
-		for (unsigned int i = 0; p && i < MAX_BLOCK_DOWNLOAD_BATCH; i++) {
-			if (p->nHeight <= pindexBest->nHeight)
-				break;
-			if (pindex == p)
-				return (true);
-			p = p->pprev;
-		}
-		pfrom->pindexRecv = pindex;
-		
-
-		int nFetchFlags = 0;
-		if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
-			nFetchFlags |= MSG_WITNESS_FLAG;
-
-		std::vector<CInv> vInv;
-		//vInv.resize(1);
-
-		/* ask for blocks */
-		while (pindex && 
-				pindexBest->nHeight < pindex->nHeight) {
-			/* request full block */
-			vInv.insert(vInv.begin(), CInv(ifaceIndex,
-						MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
-
-			/* iterate to next block */
-			pindex = pindex->pprev;
-		}
-
-		pfrom->PushMessage("getdata", vInv);
+		ServiceBlockGetDataEvent(wallet, pindex, pindexBest);
 	} else {
-
-		CBlockIndex *pindex = wallet->pindexBestHeader ?
-			wallet->pindexBestHeader : pindexBest;
-		if (pfrom->pindexRecvHeader == pindex)
-			return (true); /* keep going */
-
-		/* ask for headers */
-		CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-		pfrom->PushMessage("getheaders", locator, uint256(0));
-
-		/* retain */
-		pfrom->pindexRecvHeader = pindex;
-
-		/* debug */
-		Debug("(%s) ServiceBlockEvent: requesting block info (height %d) from \"%s\".", iface->name, pindex->nHeight, pfrom->addr.ToString().c_str());
+		ServiceBlockHeadersEvent(wallet, pindexBest);
 	}
 
   return (true);

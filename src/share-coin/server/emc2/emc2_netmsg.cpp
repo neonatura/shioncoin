@@ -338,9 +338,6 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
     pfrom->PushMessage("verack");
     pfrom->vSend.SetVersion(min(pfrom->nVersion, EMC2_PROTOCOL_VERSION));
 
-		/* prefer headers */
-		pfrom->PushMessage("sendheaders");
-
     if (!pfrom->fInbound) { // Advertise our address
       if (/*!fNoListen &&*/ !IsInitialBlockDownload(EMC2_COIN_IFACE))
       {
@@ -408,12 +405,8 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
   {
     pfrom->vRecv.SetVersion(min(pfrom->nVersion, EMC2_PROTOCOL_VERSION));
 
-#if 0
-    if (pfrom->nVersion >= EMC2_SENDHEADERS_VERSION) {
-      /* inform peer to use 'sendheaders' protocol */
-      pfrom->PushMessage("sendheaders");
-    }
-#endif
+		/* prefer headers */
+		pfrom->PushMessage("sendheaders");
 
     vector<CTransaction> pool_list = pool->GetActiveTx();
     BOOST_FOREACH(const CTransaction& tx, pool_list) {

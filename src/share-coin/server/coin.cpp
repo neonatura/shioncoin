@@ -901,12 +901,14 @@ bool core_Truncate(CIface *iface, uint256 hash)
 			bc_table_reset(bc, pindex->GetBlockHash().GetRaw());
 		}
 	}
+#if 0
 	/* since there may be lingering memory references to the block chain we can not remove it. instead, mark the previous chain as if it were only headers. */
 	pindex = pBestIndex;
 	for(; pindex && pindex != cur_index; pindex = pindex->pprev) {
 		pindex->pnext = NULL;
 	}
   cur_index->pnext = NULL;
+#endif
 
 	/* establish new tip */
 	wallet->bnBestChainWork = cur_index->bnChainWork;
@@ -915,7 +917,7 @@ bool core_Truncate(CIface *iface, uint256 hash)
 
 	/* initialize a re-download. */
 	iface->blockscan_max = 0;
-  InitServiceBlockEvent(ifaceIndex, cur_index->nHeight);
+  InitServiceBlockEvent(ifaceIndex, cur_index->nHeight + 1);
 
   return (true);
 }

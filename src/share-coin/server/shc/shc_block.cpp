@@ -592,6 +592,7 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
 
   ServiceBlockEventUpdate(SHC_COIN_IFACE);
 
+/* TODO: move to core_AcceptBlock */
 	/* initiate notary tx, if needed. */
 	int mode;
 	const CTransaction& tx = pblock->vtx[0];

@@ -234,6 +234,7 @@ CBlockIndex *CreateBlockIndex(CIface *iface, CBlockHeader& block)
   return (pindexNew);
 }
 
+#if 0
 uint256 GetGenesisBlockHash(CIface *iface, CBlockIndex *pindex)
 {
 	uint256 blank = 0;
@@ -256,6 +257,7 @@ uint256 GetGenesisBlockHash(CIface *iface, CBlockIndex *pindex)
 	delete block;
 	return (hash);
 }
+#endif
 
 bool core_AcceptBlockHeader(CIface *iface, CBlockHeader& block, CBlockIndex **pindex_p)
 {
@@ -263,13 +265,11 @@ bool core_AcceptBlockHeader(CIface *iface, CBlockHeader& block, CBlockIndex **pi
 	CBlockIndex *pindex;
 	CBlockIndex *pindexPrev;
 	uint256 hash = block.GetHash();
-	uint256 hGenesis;
 
 	pindex = GetBlockIndexByHash(ifaceIndex, hash); 
 	pindexPrev = GetBlockIndexByHash(ifaceIndex, block.hashPrevBlock);
-	hGenesis = GetGenesisBlockHash(iface, pindex ? pindex : pindexPrev); 
 
-	if (hash != hGenesis) {
+	if (block.hashPrevBlock != 0) {
 		if (pindex) { /* already procesed */
 			if (pindex_p)
 				*pindex_p = pindex;

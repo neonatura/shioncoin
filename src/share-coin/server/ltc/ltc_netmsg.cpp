@@ -335,9 +335,6 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     pfrom->PushMessage("verack");
     pfrom->vSend.SetVersion(min(pfrom->nVersion, LTC_PROTOCOL_VERSION));
 
-		/* prefer headers */
-		pfrom->PushMessage("sendheaders");
-
     if (!pfrom->fInbound) { // Advertise our address
       if (/*!fNoListen &&*/ !IsInitialBlockDownload(LTC_COIN_IFACE))
       {
@@ -405,12 +402,8 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
   {
     pfrom->vRecv.SetVersion(min(pfrom->nVersion, LTC_PROTOCOL_VERSION));
 
-#if 0
-    if (pfrom->nVersion >= LTC_SENDHEADERS_VERSION) {
-      /* inform peer to use 'sendheaders' protocol */
-      pfrom->PushMessage("sendheaders");
-    }
-#endif
+		/* prefer headers */
+		pfrom->PushMessage("sendheaders");
 
     vector<CTransaction> pool_list = pool->GetActiveTx();
     BOOST_FOREACH(const CTransaction& tx, pool_list) {
