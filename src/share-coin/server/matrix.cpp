@@ -488,7 +488,7 @@ void BlockRetractValidateMatrix(CIface *iface, const CTransaction& tx, CBlockInd
 	if (!pindex)
 		return;
 
-	height = (pindex->nHeight - 27);
+	height = (pindex->nHeight - 1 - 27); /* -1 due to it not existing before generation. */
 	height /= 27;
 	height *= 27;
 

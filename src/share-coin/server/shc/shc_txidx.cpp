@@ -44,6 +44,7 @@ using namespace boost;
 
 extern bool IsIdentTx(const CTransaction& tx);
 
+extern bool shc_VerifyCheckpointHeight(int nHeight, uint256 hash);
 
 
 CBlockIndex static * InsertBlockIndex(uint256 hash)
@@ -95,6 +96,12 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
       break;
 
     hash = block.GetHash();
+
+		if (!shc_VerifyCheckpointHeight(nHeight, hash)) {
+			error(ERR_INVAL, "(shc) LoadBlockIndex: checkpoint failure at height %d (block \"%s\").", nHeight, hash.GetHex().c_str());
+			break;
+		}
+
 
     CBlockIndex* pindexNew = InsertBlockIndex(blockIndex, hash);
 		pindexNew->pprev = lastIndex;

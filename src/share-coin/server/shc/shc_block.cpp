@@ -1045,6 +1045,12 @@ bool SHCBlock::VerifyCheckpoint(int nHeight)
 
   return (SHC_Checkpoints::CheckBlock(nHeight, GetHash()));
 }
+
+bool shc_VerifyCheckpointHeight(int nHeight, uint256 hash)
+{
+  return (SHC_Checkpoints::CheckBlock(nHeight, hash));
+}
+
 uint64_t SHCBlock::GetTotalBlocksEstimate()
 {
   return ((uint64_t)SHC_Checkpoints::GetTotalBlocksEstimate());

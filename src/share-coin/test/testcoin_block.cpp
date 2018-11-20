@@ -1179,7 +1179,6 @@ _TEST(matrixtx)
 
 			/* sub */
 			CBlockIndex *pindex = GetBestBlockIndex(iface);
-fprintf(stderr, "DEBUG: TEST: BlockRetractValidateMatrix()\n");
 			BlockRetractValidateMatrix(iface, tx, pindex);
 
 			/* add back */
@@ -1195,8 +1194,6 @@ fprintf(stderr, "DEBUG: TEST: BlockRetractValidateMatrix()\n");
 			wallet->matrixValidate.Append(pindex->nHeight, pindex->GetBlockHash());
 #endif
 
-fprintf(stderr, "DEBUG: block matrix: %s\n", matrix->ToString().c_str()); 
-fprintf(stderr, "DEBUG: wallet matrix: %s\n", wallet->matrixValidate.ToString().c_str());
 			_TRUE(*matrix == wallet->matrixValidate);
 		}
 
