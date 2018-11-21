@@ -831,7 +831,7 @@ bool SHCBlock::AcceptBlock()
     bool fCheck = false;
     if (mode == OP_EXT_VALIDATE) {
       bool fValMatrix = false;
-      fValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], fCheck);
+      fValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], NULL, fCheck);
       if (fValMatrix && !fCheck)
         return error(SHERR_ILSEQ, "(shc) AcceptBlock: ValidateMatrix verification failure.");
     } else if (mode == OP_EXT_PAY) {

@@ -897,7 +897,7 @@ bool TESTBlock::AcceptBlock()
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;
     if (mode == OP_EXT_VALIDATE) {
-      bool fHasValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], fCheck);
+      bool fHasValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], NULL, fCheck);
       if (fHasValMatrix && !fCheck)
         return error(SHERR_ILSEQ, "AcceptBlock: test_Validate failure");
     } else if (mode == OP_EXT_PAY) {

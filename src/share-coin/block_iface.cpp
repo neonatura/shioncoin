@@ -1256,6 +1256,12 @@ const char *c_getcontextlist(int ifaceIndex)
   return (contextlist_json.c_str());
 }
 
+int cpp_stratum_isinitialdownload(int ifaceIndex)
+{
+	if (IsInitialBlockDownload(ifaceIndex))
+		return (TRUE);
+	return (FALSE);
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -1319,6 +1325,11 @@ const char *getaliaslist(int ifaceIndex)
 const char *getcontextlist(int ifaceIndex)
 {
 	return (c_getcontextlist(ifaceIndex));
+}
+
+int stratum_isinitialdownload(int ifaceIndex)
+{
+	return (cpp_stratum_isinitialdownload(ifaceIndex));
 }
 
 #if 0

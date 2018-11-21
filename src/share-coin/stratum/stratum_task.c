@@ -45,6 +45,9 @@ static user_t *sys_user;
 static int work_reset[MAX_COIN_IFACE];
 static uint64_t last_block_height[MAX_COIN_IFACE];
 
+extern int stratum_isinitialdownload(int ifaceIndex);
+
+
 
 #if 0
 void free_tasks(void)
@@ -310,6 +313,9 @@ static int task_verify(int ifaceIndex, int *work_reset_p)
     return (SHERR_AGAIN);
   }
 
+	if (stratum_isinitialdownload(ifaceIndex))
+		return (ERR_AGAIN);
+#if 0
   if (last_block_height[ifaceIndex] != 0) {
     CIface *iface = GetCoinByIndex(ifaceIndex);
     if (iface && iface->blockscan_max &&
@@ -317,6 +323,7 @@ static int task_verify(int ifaceIndex, int *work_reset_p)
       return (SHERR_AGAIN);
     }
   }
+#endif
 
   check_payout(ifaceIndex);
   commit_payout(ifaceIndex, block_height-1);
@@ -788,10 +795,14 @@ int is_stratum_task_pending(int *ret_iface)
     if (!iface || !iface->enabled) 
       continue; /* iface not enabled */
 
+		if (stratum_isinitialdownload(ifaceIndex))
+			continue;
     block_height = (uint64_t)getblockheight(ifaceIndex);
+#if 0
     if (iface->blockscan_max &&
         block_height < (iface->blockscan_max - 1))
       continue; /* downloading blocks.. */
+#endif
 
 		if (!usec_trigger && block_height == pend_block_height[ifaceIndex])
 			continue; /* no new block. */

@@ -427,7 +427,7 @@ bool RelayValidateMatrixNotaryTx(CIface *iface, const CTransaction& txMatrix, CT
 }
 
 
-bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, bool& fCheck)
+bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex, bool& fCheck)
 {
   int ifaceIndex = GetCoinIndex(iface);
 	CWallet *wallet = GetWallet(iface);
@@ -436,7 +436,9 @@ bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, bool& fCheck)
   int mode;
 
   if (VerifyMatrixTx(tx, mode) && mode == OP_EXT_VALIDATE) {
-    CBlockIndex *pindex = GetBestBlockIndex(ifaceIndex);
+
+		if (!pindex)
+			pindex = GetBestBlockIndex(ifaceIndex);
     CTxMatrix& matrix = *tx.GetMatrix();
     if (matrix.GetType() == CTxMatrix::M_VALIDATE &&
         matrix.GetHeight() > wallet->matrixValidate.GetHeight()) {
@@ -467,7 +469,7 @@ bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, bool& fCheck)
 				InsertValidateNotary(wallet, tx);
 
 				/* print debug. */
-        Debug("BlockAcceptValidateMatrix: Validate verify success [tx %s] [hash %s]: %s", hTx.GetHex().c_str(), wallet->matrixValidate.ToString().c_str(), matrix.ToString().c_str());
+//        Debug("BlockAcceptValidateMatrix: Validate verify success [tx %s] [hash %s]: %s", hTx.GetHex().c_str(), wallet->matrixValidate.ToString().c_str(), matrix.ToString().c_str());
       }
 
       return (true); /* matrix was found */

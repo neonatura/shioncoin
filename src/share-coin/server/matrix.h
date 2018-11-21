@@ -224,11 +224,12 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 
 bool BlockGenerateSpringMatrix(CIface *iface, CTransaction& tx, int64& nReward);
 
-bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, bool& fCheck);
+bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex, bool& fCheck);
 
 bool BlockAcceptSpringMatrix(CIface *iface, CTransaction& tx, bool& fCheck);
 
 void BlockRetractSpringMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex);
+
 
 
 #ifdef __cplusplus

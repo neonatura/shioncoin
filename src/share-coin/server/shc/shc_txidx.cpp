@@ -127,6 +127,8 @@ bool shc_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist&
 			(lastIndex ? lastIndex->bnChainWork : 0) + 
 			pindexNew->GetBlockWork();
 
+		bool fCheck = true;
+
 		opcodetype opcode;
 		BOOST_FOREACH(CTransaction& tx, block.vtx) {
 
@@ -152,21 +154,19 @@ vTx.push_back(tx_hash);
 
 			/* register extended transactions. */
 			if (tx.IsCoinBase()) {
-				if (tx.isFlag(CTransaction::TXF_MATRIX)) {
-					int mode;
-					if (VerifyMatrixTx(tx, mode)) {
-						if (mode == OP_EXT_VALIDATE)
-							vMatrix.push_back(pindexNew);
-						else if (mode == OP_EXT_PAY)
-							vSpring.push_back(pindexNew);
+				int nMode;
+				if (VerifyMatrixTx(tx, nMode)) {
+					if (nMode == OP_EXT_VALIDATE) {
+						BlockAcceptValidateMatrix(iface, tx, pindexNew, fCheck);
+					} else if (nMode == OP_EXT_PAY) {
+						vSpring.push_back(pindexNew);
 					}
 				}
 			} else {
 				/* check for notary tx */
 				if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
 						tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) {
-					if (std::find(vMatrix.begin(), vMatrix.end(), pindexNew) == vMatrix.end())
-						vMatrix.push_back(pindexNew);
+					ProcessValidateMatrixNotaryTx(iface, tx);
 				}
 			}
 
@@ -212,6 +212,11 @@ vTx.push_back(tx_hash);
 				}
 			}
     } /* FOREACH (tx) */
+
+		if (!fCheck) {
+			error(ERR_INVAL, "(shc) FillBlockIndex: invalid matrix at height %d (block \"%s\").", pindexNew->nHeight, pindexNew->GetBlockHash().GetHex().c_str());
+			break;
+		}
 
     lastIndex = pindexNew;
   }

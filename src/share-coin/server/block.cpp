@@ -3107,6 +3107,7 @@ bool core_DisconnectBlock(CBlockIndex* pindex, CBlock *pblock)
 bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 {
   CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
+	CWallet *wallet = GetWallet(pblock->ifaceIndex);
   CBlockIndex *pbest = GetBestBlockIndex(pblock->ifaceIndex);
   CTxMemPool *pool = GetTxMemPool(iface);
   vector<CBlockIndex*> vConnect;
@@ -3116,12 +3117,22 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   vector<CBlock *> vFree;
   bool fValid = true;
 
+	if (!iface || !iface->enabled)
+		return (false);
+	if (!wallet)
+		return (false);
+
   if  (!GetCommitBranches(pbest, pindexNew, vConnect, vDisconnect)) {
     return (error(SHERR_INVAL, "core_CommitBlock: error obtaining commit branches."));
   }
 
   if (pblock->hashPrevBlock != pbest->GetBlockHash()) {
     pblock->WriteArchBlock();
+
+#if 0
+		/* refresh headers */
+		wallet->pindexBestHeader = NULL;
+#endif
   }
 
   /* discon blocks */
