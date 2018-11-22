@@ -87,7 +87,7 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
 
 	nMaxIndex = 0;
 	bc_idx_next(bc, &nMaxIndex);
-	nMaxIndex = MAX(1, nMaxIndex) - 1;
+	nMaxIndex = MAX(1, nMaxIndex);// - 1;
 
 	lastIndex = NULL;
 	for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {

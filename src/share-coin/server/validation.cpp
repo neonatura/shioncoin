@@ -348,10 +348,12 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		return (error(SHERR_INVAL, "(%s) core_AcceptBlock: invalid inputs specified [hash %s].", iface->name, hash.GetHex().c_str()));
 
 	if (!core_AcceptBlockHeader(iface, *pblock, &pindex)) {
-		return (false);
+		return (error(SHERR_INVAL, "(%s) core_AcceptBlock: invalid block header [hash %s].", iface->name, hash.GetHex().c_str()));
 	}
 
-	if (HasBlockHash(iface, hash)) {
+	CBlockIndex *pindexBest = GetBestBlockIndex(pblock->ifaceIndex);
+	if (pindexBest && pindex->nHeight <= pindexBest->nHeight &&
+			HasBlockHash(iface, hash)) {
 		/* already processed. */
 		return (true);
 	}

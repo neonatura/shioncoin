@@ -561,7 +561,7 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 #endif
 
 	/* attempt to retrieve as many as possible from pre-archived db */
-	bool fArch = true;
+	bool fArch = wallet->pindexBestHeader ? true : false;
 	vector<CBlock *> vBlocks;
 	CBlockIndex *pindexArch = pindex;
 	while (pindexArch &&
@@ -601,6 +601,7 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 
 	/* ask for blocks */
 	std::vector<CInv> vInv;
+	uint256 hReq;
 	while (pindex && 
 			pindexBest->nHeight < pindex->nHeight) {
 		/* request full block */
@@ -689,11 +690,13 @@ bool ServiceBlockEvent(int ifaceIndex)
   }
 
 
+	CBlockIndex *pfork = NULL;
+#if 0
 	/* strive towards recognized best chain of headers. */
-	CBlockIndex *pfork = wallet->pindexBestHeader;
-	CBlockIndex *plonger = pindexBest;
 	if (wallet->pindexBestHeader &&
 			wallet->pindexBestHeader->nHeight != -1) {
+		pfork = wallet->pindexBestHeader;
+		plonger = pindexBest;
 		/* work backwards in order to find the first fork that connects the pindexBestHeader with the pindexBest */
 		while (pfork && pfork != plonger)
 		{
@@ -715,6 +718,7 @@ bool ServiceBlockEvent(int ifaceIndex)
 		if (plonger == pindexBest)
 			pfork = NULL; /* on correct chain already */
 	}
+#endif
 
 	/* determine next block to download. */
 	CBlockIndex *pindex = NULL;

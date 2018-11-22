@@ -1183,7 +1183,7 @@ _TEST(matrixtx)
 
 			/* add back */
 			bool fCheck = false;
-			_TRUE(true == BlockAcceptValidateMatrix(iface, tx, fCheck));
+			_TRUE(true == BlockAcceptValidateMatrix(iface, tx, NULL, fCheck));
 			_TRUE(fCheck == true);
 #if 0
 			mheight = (pindex->nHeight - 27);
