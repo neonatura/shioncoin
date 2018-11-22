@@ -68,7 +68,7 @@ CBlockIndex static * InsertBlockIndex(uint256 hash)
 }
 
 typedef vector<CBlockIndex*> txlist;
-bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec, txlist& vOffer)
+bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec, txlist& vOffer)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
   CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
@@ -117,6 +117,8 @@ bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txl
 			(lastIndex ? lastIndex->bnChainWork : 0) + 
 			pindexNew->GetBlockWork();
 
+		bool fCheck = true;
+
     BOOST_FOREACH(CTransaction& tx, block.vtx) {
 			/* stats */
 			BOOST_FOREACH(const CTxOut& out, tx.vout) {
@@ -130,23 +132,21 @@ bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txl
 				}
 			}
 
-      /* register extended transactions. */
+			/* register extended transactions. */
 			if (tx.IsCoinBase()) {
-				if (tx.isFlag(CTransaction::TXF_MATRIX)) {
-          int mode;
-          if (VerifyMatrixTx(tx, mode)) {
-            if (mode == OP_EXT_VALIDATE)
-              vMatrix.push_back(pindexNew);
-            else if (mode == OP_EXT_PAY)
-              vSpring.push_back(pindexNew);
-          }
-				} 
+				int nMode;
+				if (VerifyMatrixTx(tx, nMode)) {
+					if (nMode == OP_EXT_VALIDATE) {
+						BlockAcceptValidateMatrix(iface, tx, pindexNew, fCheck);
+					} else if (nMode == OP_EXT_PAY) {
+						vSpring.push_back(pindexNew);
+					}
+				}
 			} else {
 				/* check for notary tx */
 				if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
 						tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) {
-					if (std::find(vMatrix.begin(), vMatrix.end(), pindexNew) == vMatrix.end())
-						vMatrix.push_back(pindexNew);
+					ProcessValidateMatrixNotaryTx(iface, tx);
 				}
 			}
 
@@ -193,6 +193,11 @@ bool testnet_FillBlockIndex(txlist& vMatrix, txlist& vSpring, txlist& vCert, txl
 			}
     } /* FOREACH (tx) */
 
+		if (!fCheck) {
+			error(ERR_INVAL, "(shc) FillBlockIndex: invalid matrix at height %d (block \"%s\").", pindexNew->nHeight, pindexNew->GetBlockHash().GetHex().c_str());
+			break;
+		}
+
     lastIndex = pindexNew;
   }
   SetBestBlockIndex(iface, lastIndex);
@@ -228,7 +233,6 @@ static bool testnet_LoadBlockIndex()
 	int mode;
 
   txlist vSpring;
-  txlist vMatrix;
   txlist vCert;
   txlist vIdent;
   txlist vLicense;
@@ -236,7 +240,7 @@ static bool testnet_LoadBlockIndex()
   txlist vContext;
 	txlist vExec;
 	txlist vOffer;
-  if (!testnet_FillBlockIndex(vMatrix, vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec, vOffer))
+  if (!testnet_FillBlockIndex(vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec, vOffer))
     return (false);
 
   if (fRequestShutdown)
@@ -382,47 +386,6 @@ static bool testnet_LoadBlockIndex()
     BackupBlockChain(iface, maxHeight); 
   }
 #endif
-
-  /* Block-chain Validation Matrix */
-//  std::reverse(vMatrix.begin(), vMatrix.end());
-  BOOST_FOREACH(CBlockIndex *pindex, vMatrix) {
-    CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
-    if (!block) continue;
-
-		/* matrix tx */
-    CTransaction id_tx;
-    const CTransaction& m_tx = block->vtx[0];
-		if (m_tx.GetFlags() & CTransaction::TXF_MATRIX) {
-			const CTxMatrix *matrix = &m_tx.matrix;
-
-			if (matrix->nHeight > pindexBest->nHeight) {
-				delete block;
-				break;
-			}
-
-			CBlockIndex *tindex = pindex;
-			while (tindex->pprev && tindex->nHeight > matrix->nHeight)
-				tindex = tindex->pprev;
-
-			wallet->matrixValidate.Append(tindex->nHeight, tindex->GetBlockHash()); 
-
-			const uint256& hTx = m_tx.GetHash();
-			wallet->mapValidateTx.push_back(hTx);
-
-			InsertValidateNotary(wallet, m_tx);
-		}
-
-		/* notary tx */
-		for (int i = 1; i < block->vtx.size(); i++) {
-			const CTransaction& tx = block->vtx[i];
-			if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
-					tx.vout[0].nValue <= MIN_INPUT_VALUE(iface) &&
-					std::find(wallet->mapValidateTx.begin(), wallet->mapValidateTx.end(), tx.vin[0].prevout.hash) != wallet->mapValidateTx.end()) {
-				ProcessValidateMatrixNotaryTx(iface, tx);
-			}
-		}
-		delete block;
-  }
 
   /* ident */
 //  std::reverse(vIdent.begin(), vIdent.end());

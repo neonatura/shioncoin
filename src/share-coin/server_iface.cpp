@@ -1054,24 +1054,26 @@ void usde_server_timer(void)
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
 				shbuf_lock(pchBuf);
-        TRY_LOCK(pnode->cs_vRecv, lockRecv);
-        if (lockRecv) {
-          err = 0;
-          while (err == 0) {
-            timing_init("recv msg", &ts);
-            err = usde_coin_server_recv(iface, pnode, pchBuf);
-            timing_term(USDE_COIN_IFACE, "recv msg", &ts);
+				if (shbuf_size(pchBuf) != 0) {
+					TRY_LOCK(pnode->cs_vRecv, lockRecv);
+					if (lockRecv) {
+						err = 0;
+						while (err == 0) {
+							timing_init("recv msg", &ts);
+							err = usde_coin_server_recv(iface, pnode, pchBuf);
+							timing_term(USDE_COIN_IFACE, "recv msg", &ts);
 
-            double diff = shtime_diff(ts, shtime());
-            if (diff >= 0.4)
-              break;
-          }
-          if (err && err != SHERR_AGAIN) {
-            error(err, "usde_coin_server_recv");
-            pnode->CloseSocketDisconnect("usde_coin_server_recv");
-            continue;
-          }
-        }
+							double diff = shtime_diff(ts, shtime());
+							if (diff >= 0.4)
+								break;
+						}
+						if (err && err != SHERR_AGAIN) {
+							error(err, "usde_coin_server_recv");
+							pnode->CloseSocketDisconnect("usde_coin_server_recv");
+							continue;
+						}
+					}
+				}
 				shbuf_unlock(pchBuf);
       }
 
@@ -1299,24 +1301,26 @@ void shc_server_timer(void)
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
 				shbuf_lock(pchBuf);
-        TRY_LOCK(pnode->cs_vRecv, lockRecv);
-        if (lockRecv) {
-          err = 0;
-          while (err == 0) {
-            timing_init("recv msg", &ts);
-            err = shc_coin_server_recv(iface, pnode, pchBuf);
-            timing_term(SHC_COIN_IFACE, "recv msg", &ts);
+				if (shbuf_size(pchBuf) != 0) {
+					TRY_LOCK(pnode->cs_vRecv, lockRecv);
+					if (lockRecv) {
+						err = 0;
+						while (err == 0) {
+							timing_init("recv msg", &ts);
+							err = shc_coin_server_recv(iface, pnode, pchBuf);
+							timing_term(SHC_COIN_IFACE, "recv msg", &ts);
 
-            double diff = shtime_diff(ts, shtime());
-            if (diff >= 0.4)
-              break;
-          }
-          if (err && err != SHERR_AGAIN) {
-            error(err, "shc_coin_server_recv");
-            pnode->CloseSocketDisconnect("shc_coin_server_recv");
-            continue;
-          }
-        }
+							double diff = shtime_diff(ts, shtime());
+							if (diff >= 0.4)
+								break;
+						}
+						if (err && err != SHERR_AGAIN) {
+							error(err, "shc_coin_server_recv");
+							pnode->CloseSocketDisconnect("shc_coin_server_recv");
+							continue;
+						}
+					}
+				}
 				shbuf_unlock(pchBuf);
       }
 
@@ -1674,24 +1678,26 @@ void testnet_server_timer(void)
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
 				shbuf_lock(pchBuf);
-        TRY_LOCK(pnode->cs_vRecv, lockRecv);
-        if (lockRecv) {
-          err = 0;
-          while (err == 0) {
-            timing_init("recv msg", &ts);
-            err = testnet_coin_server_recv(iface, pnode, pchBuf);
-            timing_term(TESTNET_COIN_IFACE, "recv msg", &ts);
+				if (shbuf_size(pchBuf) != 0) {
+					TRY_LOCK(pnode->cs_vRecv, lockRecv);
+					if (lockRecv) {
+						err = 0;
+						while (err == 0) {
+							timing_init("recv msg", &ts);
+							err = testnet_coin_server_recv(iface, pnode, pchBuf);
+							timing_term(TESTNET_COIN_IFACE, "recv msg", &ts);
 
-            double diff = shtime_diff(ts, shtime());
-            if (diff >= 0.4)
-              break;
-          }
-          if (err && err != SHERR_AGAIN) {
-            error(err, "testnet_coin_server_recv");
-            pnode->CloseSocketDisconnect("testnet_coin_server_recv");
-            continue;
-          }
-        }
+							double diff = shtime_diff(ts, shtime());
+							if (diff >= 0.4)
+								break;
+						}
+						if (err && err != SHERR_AGAIN) {
+							error(err, "testnet_coin_server_recv");
+							pnode->CloseSocketDisconnect("testnet_coin_server_recv");
+							continue;
+						}
+					}
+				}
 				shbuf_unlock(pchBuf);
       }
 
@@ -2449,24 +2455,26 @@ void emc2_server_timer(void)
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
 				shbuf_lock(pchBuf);
-        TRY_LOCK(pnode->cs_vRecv, lockRecv);
-        if (lockRecv) {
-          err = 0;
-          while (err == 0) {
-            timing_init("recv msg", &ts);
-            err = emc2_coin_server_recv(iface, pnode, pchBuf);
-            timing_term(EMC2_COIN_IFACE, "recv msg", &ts);
+				if (shbuf_size(pchBuf) != 0) {
+					TRY_LOCK(pnode->cs_vRecv, lockRecv);
+					if (lockRecv) {
+						err = 0;
+						while (err == 0) {
+							timing_init("recv msg", &ts);
+							err = emc2_coin_server_recv(iface, pnode, pchBuf);
+							timing_term(EMC2_COIN_IFACE, "recv msg", &ts);
 
-            double diff = shtime_diff(ts, shtime());
-            if (diff >= 0.4)
-              break;
-          }
-          if (err && err != SHERR_AGAIN) {
-            error(err, "emc2_coin_server_recv");
-            pnode->CloseSocketDisconnect("emc2_coin_server_recv");
-            continue;
-          }
-        }
+							double diff = shtime_diff(ts, shtime());
+							if (diff >= 0.4)
+								break;
+						}
+						if (err && err != SHERR_AGAIN) {
+							error(err, "emc2_coin_server_recv");
+							pnode->CloseSocketDisconnect("emc2_coin_server_recv");
+							continue;
+						}
+					}
+				}
 				shbuf_unlock(pchBuf);
       }
 
@@ -2750,24 +2758,26 @@ void ltc_server_timer(void)
       shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
       if (pchBuf) {
 				shbuf_lock(pchBuf);
-        TRY_LOCK(pnode->cs_vRecv, lockRecv);
-        if (lockRecv) {
-          err = 0;
-          while (err == 0) {
-            timing_init("recv msg", &ts);
-            err = ltc_coin_server_recv(iface, pnode, pchBuf);
-            timing_term(LTC_COIN_IFACE, "recv msg", &ts);
+				if (shbuf_size(pchBuf) != 0) {
+					TRY_LOCK(pnode->cs_vRecv, lockRecv);
+					if (lockRecv) {
+						err = 0;
+						while (err == 0) {
+							timing_init("recv msg", &ts);
+							err = ltc_coin_server_recv(iface, pnode, pchBuf);
+							timing_term(LTC_COIN_IFACE, "recv msg", &ts);
 
-            double diff = shtime_diff(ts, shtime());
-            if (diff >= 0.4)
-              break;
-          }
-          if (err && err != SHERR_AGAIN) {
-            error(err, "ltc_coin_server_recv");
-            pnode->CloseSocketDisconnect("ltc_coin_server_recv");
-            continue;
-          }
-        }
+							double diff = shtime_diff(ts, shtime());
+							if (diff >= 0.4)
+								break;
+						}
+						if (err && err != SHERR_AGAIN) {
+							error(err, "ltc_coin_server_recv");
+							pnode->CloseSocketDisconnect("ltc_coin_server_recv");
+							continue;
+						}
+					}
+				}
 				shbuf_unlock(pchBuf);
       }
 

@@ -39,7 +39,23 @@ using namespace json_spirit;
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern int sexe_compile_pmain(sexe_t *L);
+extern sexe_t *sexe_init(void);
+extern int sexe_popen(shbuf_t *buff, sexe_t **mod_p);
 extern shpeer_t *shcoind_peer(void);
+extern int sexe_io_unserialize(sexe_t *S, char *tag, shjson_t **j_p);
+extern void sexe_pclose(sexe_t *S);
+extern int sexe_pgetdef(sexe_t *S, char *name, shjson_t **arg_p);
+extern int sexe_pget(sexe_t *S, char *name, shjson_t **arg_p);
+extern int sexe_pset(sexe_t *S, char *name, shjson_t *arg);
+extern int sexe_pevent(sexe_t *S, char *event_name, shjson_t *data);
+extern void sexe_pushboolean(sexe_t *S, int b);
+extern void sexe_event_register(lua_State *L, char *e_name, lua_CFunction f);
+extern int sexe_io_serialize(sexe_t *S, char *tag, shjson_t *j);
+extern int sexe_prun(sexe_t *S, int argc, char **argv);
+extern int sexe_pcall_json(sexe_t *S, char *func, shjson_t *call);
+
+
 
 #ifdef __cplusplus
 }

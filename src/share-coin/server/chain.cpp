@@ -560,6 +560,41 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 	}
 #endif
 
+	/* attempt to retrieve as many as possible from pre-archived db */
+	bool fArch = true;
+	vector<CBlock *> vBlocks;
+	CBlockIndex *pindexArch = pindex;
+	while (pindexArch &&
+			pindexBest->nHeight < pindexArch->nHeight) {
+		CBlock *block = GetArchBlockByHash(iface, pindexArch->GetBlockHash());
+		if (!block) {
+			fArch = false;
+			break;
+		}
+		vBlocks.insert(vBlocks.begin(), block);
+
+		pindexArch = pindexArch->pprev;
+	}
+	if (fArch && vBlocks.size() != 0) {
+		unsigned int i;
+
+		/* all blocks are available from archived storage. */
+		/* note there is chance of segwit vs nonsegwit mishap here */
+		for (i = 0; i < vBlocks.size(); i++) {
+			CBlock *pblock = vBlocks[i];
+			if (!pblock->AcceptBlock())
+				break;
+		}
+		if (i == vBlocks.size()) {
+			/* we processed all the neccessary blocks. */
+			return (true);
+		}
+	}
+	for (unsigned int i = 0; i < vBlocks.size(); i++) {
+		CBlock *pblock = vBlocks[i];
+		delete pblock;
+	}
+
 	int nFetchFlags = 0;
 	if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
 		nFetchFlags |= MSG_WITNESS_FLAG;
@@ -633,19 +668,11 @@ bool ServiceBlockEvent(int ifaceIndex)
 
   if (iface->blockscan_max == 0)
     return (true); /* keep trying */
-
-	/* strive towards recognized best chain of headers. */
 	if (wallet->pindexBestHeader &&
-			wallet->pindexBestHeader->nHeight != -1)
+			wallet->pindexBestHeader->nHeight != -1) {
 		iface->blockscan_max = MAX(iface->blockscan_max, 
 				wallet->pindexBestHeader->nHeight);
-
-  if (pindexBest->nHeight >= iface->blockscan_max) {
-    ServiceBlockEventUpdate(ifaceIndex);
-    Debug("(%s) ServiceBlockEvent: finished at height %d.\n", 
-        iface->name, (int)pindexBest->nHeight);
-    return (false);
-  }
+	}
 
 	/* use headers or legacy method */
 	if (ifaceIndex == USDE_COIN_IFACE) {
@@ -654,13 +681,59 @@ bool ServiceBlockEvent(int ifaceIndex)
 		return (ServiceLegacyBlockEvent(ifaceIndex, pfrom));
 	}
 
+  if (pindexBest == wallet->pindexBestHeader) { //	->nHeight >= iface->blockscan_max)
+    ServiceBlockEventUpdate(ifaceIndex);
+    Debug("(%s) ServiceBlockEvent: finished at height %d.\n", 
+        iface->name, (int)pindexBest->nHeight);
+    return (false);
+  }
+
+
+	/* strive towards recognized best chain of headers. */
+	CBlockIndex *pfork = wallet->pindexBestHeader;
+	CBlockIndex *plonger = pindexBest;
+	if (wallet->pindexBestHeader &&
+			wallet->pindexBestHeader->nHeight != -1) {
+		/* work backwards in order to find the first fork that connects the pindexBestHeader with the pindexBest */
+		while (pfork && pfork != plonger)
+		{
+			while (plonger->nHeight > pfork->nHeight) {
+				plonger = plonger->pprev;
+				if (!plonger)
+					break;
+			}
+			if (!plonger)
+				break;
+
+			if (pfork == plonger)
+				break;
+
+			pfork = pfork->pprev;
+			if (!pfork)
+				break;
+		}
+		if (plonger == pindexBest)
+			pfork = NULL; /* on correct chain already */
+	}
+
 	/* determine next block to download. */
 	CBlockIndex *pindex = NULL;
 	if (wallet->pindexBestHeader &&
 			wallet->pindexBestHeader->nHeight > pindexBest->nHeight) {
-		pindex = wallet->pindexBestHeader;
-		while (pindex && pindex->nHeight > (pindexBest->nHeight + 1))
-			pindex = pindex->pprev;
+		if (pfork) {
+			/* traverse back to one block past fork. */
+			pindex = wallet->pindexBestHeader;
+			while (pindex) {
+				if (pindex->pprev == pfork)
+					break;
+				pindex = pindex->pprev;
+			}
+		} else {
+			/* traverse back to one current best block. */
+			pindex = wallet->pindexBestHeader;
+			while (pindex && pindex->nHeight > (pindexBest->nHeight + 1))
+				pindex = pindex->pprev;
+		}
 	}
 
 	if (pindex) {

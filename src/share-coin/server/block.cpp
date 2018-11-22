@@ -2462,11 +2462,30 @@ CAltChain *CTransaction::CreateAltChain()
 
 
 
-static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *pindexNew, vector<CBlockIndex*>& vConnect, vector<CBlockIndex*>& vDisconnect)
+static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *tip, CBlockIndex *pindexNew, vector<CBlockIndex*>& vConnect, vector<CBlockIndex*>& vDisconnect)
 {
   CBlockIndex* pfork = pbest;
   CBlockIndex* plonger = pindexNew;
- 
+
+  vConnect.clear();
+  vDisconnect.clear();
+
+#if 0
+	if (tip) {
+		CBlockIndex *t_tip = tip;
+
+		/* ensure new pindex is relevant to chain */
+		while (t_tip &&
+				t_tip->GetBlockHash() != pindexNew->GetBlockHash()) {
+			if (t_tip->GetBlockHash() == pbest->GetBlockHash())
+				return (false); /* is not in download chain */
+			t_tip = t_tip->pprev;
+		}
+		if (!t_tip)
+			return (false); /* not in chain */
+	}
+#endif
+
   while (pfork && pfork != plonger)
   {   
     while (plonger->nHeight > pfork->nHeight) {
@@ -2483,12 +2502,10 @@ static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *pindexNew, vector
   }
 
   /* discon tree */
-  vDisconnect.clear();
   for (CBlockIndex* pindex = pbest; pindex != pfork; pindex = pindex->pprev)
     vDisconnect.push_back(pindex);
 
   /* connect tree */
-  vConnect.clear();
   for (CBlockIndex* pindex = pindexNew; pindex != pfork; pindex = pindex->pprev)
     vConnect.push_back(pindex);
   reverse(vConnect.begin(), vConnect.end());
@@ -3122,7 +3139,7 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 	if (!wallet)
 		return (false);
 
-  if  (!GetCommitBranches(pbest, pindexNew, vConnect, vDisconnect)) {
+  if  (!GetCommitBranches(pbest, wallet->pindexBestHeader, pindexNew, vConnect, vDisconnect)) {
     return (error(SHERR_INVAL, "core_CommitBlock: error obtaining commit branches."));
   }
 
@@ -3133,6 +3150,26 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 		/* refresh headers */
 		wallet->pindexBestHeader = NULL;
 #endif
+
+		if (wallet->pindexBestHeader) {
+			/* is this just a future block? */
+			CBlockIndex *tip = wallet->pindexBestHeader;
+			bool bFound = false;
+			while (tip) {
+				if (tip->nHeight <= pbest->nHeight + 1)
+					break;
+				if (tip == pindexNew) {
+					bFound = true;
+					break;
+				}
+
+				tip = tip->pprev;
+			}
+			if (bFound) {
+				/* suppress */
+				return (false);
+			}
+		}
   }
 
   /* discon blocks */
@@ -3170,8 +3207,27 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
         vFree.push_back(block);
     }
     if (!block) {
-      error(SHERR_INVAL, "core_CommitBlock: error obtaining connect block '%s'", hash.GetHex().c_str());
-      fValid = false;
+			bool fConnectable = false;
+			if (pindex->pprev && wallet->pindexBestHeader) {
+				CBlockIndex *tip = wallet->pindexBestHeader;
+				while (tip) {
+					if (tip->nHeight <= pbest->nHeight + 1)
+						break;
+					if (tip == pindexNew) {
+						fConnectable = true;
+						break;
+					}
+
+					tip = tip->pprev;
+				}
+			}
+			if (fConnectable) {
+				Debug("(%s) CommitBlock: stopping reorg at block \"%s\".", iface->name, hash.GetHex().c_str());
+				pindexNew = pindex->pprev;
+			} else {
+				error(SHERR_INVAL, "core_CommitBlock: unknown connect block '%s'", hash.GetHex().c_str());
+				fValid = false;
+			}
       break;
     }
 
@@ -3179,6 +3235,7 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   }
   if (!fValid)
     goto fin;
+
 
   /* perform discon */
   BOOST_FOREACH(CBlockIndex* pindex, vDisconnect) {
@@ -3196,6 +3253,8 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 
   /* perform connect */
   BOOST_FOREACH(CBlockIndex *pindex, vConnect) {
+		if (mConnectBlocks.count(pindex->GetBlockHash()) == 0)
+			continue;
     CBlock *block = mConnectBlocks[pindex->GetBlockHash()];
 
     if (!block->ConnectBlock(pindex)) {
@@ -3233,6 +3292,8 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 
   /* remove connectd block tx's from pool */ 
   BOOST_FOREACH(CBlockIndex* pindex, vConnect) {
+		if (mConnectBlocks.count(pindex->GetBlockHash()) == 0)
+			continue;
     CBlock *block = mConnectBlocks[pindex->GetBlockHash()];
     pool->Commit(*block);
   }

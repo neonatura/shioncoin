@@ -85,9 +85,9 @@ const char *descriptor_print(int fd);
 
 void descriptor_list_print(void);
 
-void descriptor_rbuff_add(int fd, unsigned char *data, size_t data_len);
+void descriptor_rbuff_add(int fd, unsigned char *data, ssize_t data_len);
 
-void descriptor_wbuff_add(int fd, unsigned char *data, size_t data_len);
+void descriptor_wbuff_add(int fd, unsigned char *data, ssize_t data_len);
 
 shbuf_t *descriptor_rbuff(int fd);
 

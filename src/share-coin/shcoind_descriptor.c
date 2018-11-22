@@ -240,6 +240,14 @@ void descriptor_release(int fd)
 
   d = (_descriptor_table + fd);
 
+	/* prevent thread from handling (locks) */
+	if (d->wbuff) {
+		shbuf_clear(d->wbuff);
+	}
+	if (d->rbuff) {
+		shbuf_clear(d->rbuff);
+	}
+
   if (0 == fstat(fd, &st)) {
     if (S_ISSOCK(st.st_mode)) {
       shnet_close(fd);
@@ -248,8 +256,11 @@ void descriptor_release(int fd)
     }
   }
 
+#if 0
+	/* let them be for thread-safety -- they will be re-init on claim */
   shbuf_free(&d->wbuff);
   shbuf_free(&d->rbuff);
+#endif
 
   memset(d, 0, sizeof(desc_t));
 
@@ -322,13 +333,15 @@ desc_t *descriptor_get(int fd)
   return (d);
 }
 
-void descriptor_rbuff_add(int fd, unsigned char *data, size_t data_len)
+void descriptor_rbuff_add(int fd, unsigned char *data, ssize_t data_len)
 {
   desc_t *d;
   char errbuf[256];
 
   if (fd >= MAX_UNET_SOCKETS)
     return; 
+	if (data_len <= 0)
+		return;
 
   d = (_descriptor_table + fd);
   if (!d->flag) {
@@ -342,13 +355,15 @@ void descriptor_rbuff_add(int fd, unsigned char *data, size_t data_len)
   shbuf_cat(d->rbuff, data, data_len);
 }
 
-void descriptor_wbuff_add(int fd, unsigned char *data, size_t data_len)
+void descriptor_wbuff_add(int fd, unsigned char *data, ssize_t data_len)
 {
   desc_t *d;
   char errbuf[256];
 
   if (fd >= get_max_descriptors())
     return; 
+	if (data_len <= 0)
+		return;
 
   d = (_descriptor_table + fd);
   if (!d->flag) {

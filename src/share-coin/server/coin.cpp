@@ -917,7 +917,7 @@ bool core_Truncate(CIface *iface, uint256 hash)
 
 	/* initialize a re-download (headers+blocks). */
 	iface->blockscan_max = 0;
-	wallet->pindexBestHeader = NULL;
+//	wallet->pindexBestHeader = NULL;
   InitServiceBlockEvent(ifaceIndex, cur_index->nHeight + 1);
 
   return (true);
