@@ -56,44 +56,6 @@ extern void AcentryToJSON(const CAccountingEntry& acentry, const string& strAcco
 extern string JSONRPCReply(const Value& result, const Value& error, const Value& id);
 
 
-#if 0
-class DescribeAddressVisitor : public boost::static_visitor<Object>
-{
-public:
-    Object operator()(const CNoDestination &dest) const { return Object(); }
-
-    Object operator()(CWallet *pwalletMain, const CKeyID &keyID) const {
-        Object obj;
-        CPubKey vchPubKey;
-        pwalletMain->GetPubKey(keyID, vchPubKey);
-        obj.push_back(Pair("isscript", false));
-        obj.push_back(Pair("pubkey", HexStr(vchPubKey.Raw())));
-        obj.push_back(Pair("iscompressed", vchPubKey.IsCompressed()));
-        return obj;
-    }
-
-    Object operator()(CWallet *pwalletMain, const CScriptID &scriptID) const {
-        Object obj;
-        obj.push_back(Pair("isscript", true));
-        CScript subscript;
-        pwalletMain->GetCScript(scriptID, subscript);
-        std::vector<CTxDestination> addresses;
-        txnouttype whichType;
-        int nRequired;
-        ExtractDestinations(subscript, whichType, addresses, nRequired);
-        obj.push_back(Pair("script", GetTxnOutputType(whichType)));
-        Array a;
-        BOOST_FOREACH(const CTxDestination& addr, addresses)
-            a.push_back(CCoinAddr(addr).ToString());
-        obj.push_back(Pair("addresses", a));
-        if (whichType == TX_MULTISIG)
-            obj.push_back(Pair("sigsrequired", nRequired));
-        return obj;
-    }
-};
-#endif
-
-
 string address;
 
 Object stratumerror_obj;
@@ -292,44 +254,9 @@ int c_LoadWallet(void)
 }
 #endif
 
-#if 0
-/** load peers */
-int c_LoadPeers(void)
-{
-  int64 nStart;
-
-  nStart = GetTimeMillis();
-#if 0
-  {
-    CAddrDB adb;
-    if (!adb.Read(addrman))
-      printf("Invalid or missing peers.dat; recreating\n");
-  }
-  printf("Loaded %i addresses from peers.dat  %"PRI64d"ms\n",
-      addrman.size(), GetTimeMillis() - nStart);
-#endif
-
-  RandAddSeedPerfmon();
-//  pwalletMain->ReacceptWalletTransactions();
-}
-#endif
 
 CCoinAddr GetNewAddress(CWallet *wallet, string strAccount)
 {
-
-#if 0
-  if (!wallet->IsLocked())
-    wallet->TopUpKeyPool();
-
-  // Generate a new key that is added to wallet
-  CPubKey newKey;
-  if (!wallet->GetKeyFromPool(newKey, false)) {
-    throw JSONRPCError(-12, "Error: Keypool ran out, please call keypoolrefill first");
-  }
-  CKeyID keyID = newKey.GetID();
-  wallet->SetAddressBookName(keyID, strAccount);
-  return CCoinAddr(keyID);
-#endif
 
   return GetAccountAddress(wallet, strAccount, true);
 }
@@ -343,35 +270,16 @@ const char *json_getnewaddress(int ifaceIndex, const char *account)
   if (!wallet)
     return (NULL);
 
-#if 0
-  if (!wallet->IsLocked())
-    wallet->TopUpKeyPool();
-#endif
-
   // Generate a new key that is added to wallet
   CPubKey newKey;
-#if 0
-  if (!wallet->GetKeyFromPool(newKey, false)) {
-    return (NULL);
-  }
-#endif
 
 	newKey = GetAccountPubKey(wallet, strAccount, true);
 
 	CKeyID keyID = newKey.GetID();
   getnewaddr_str = CCoinAddr(ifaceIndex, keyID).ToString();
 
-#if 0
-  CKeyID keyID = newKey.GetID();
-  wallet->SetAddressBookName(keyID, strAccount);
-  getnewaddr_str = CCoinAddr(keyID).ToString();
-#endif
-
   return (getnewaddr_str.c_str());
 }
-
-
-
 
 static CCoinAddr GetAddressByAccount(CWallet *wallet, const char *accountName, bool& found)
 {
@@ -964,114 +872,6 @@ void c_sendblockreward(int ifaceIndex)
 
 }
 
-#if 0
-int c_addblockreward(int ifaceIndex, const char *accountName, double dAmount)
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  CWallet *pwalletMain = GetWallet(ifaceIndex);
-  CWalletDB walletdb(pwalletMain->strWalletFile);
-  string strAccount(accountName);
-  string strMainAccount("");
-  int64 nAmount;
-  Array ret;
-  int nMinDepth = 1; /* single confirmation requirement */
-  int nMinConfirmDepth = 1; /* single confirmation requirement */
-  int64 nBalance;
-
-  if (dAmount <= 0)
-    return (-3);
-
-  bool found = false;
-  CCoinAddr address = GetAddressByAccount(pwalletMain, accountName, found);
-  if (!found || !address.IsValid()) {
-    return (-5);
-  }
-
-
-  if (dAmount <= 0.0 || dAmount > 84000000.0) {
-    return (-3);
-  }
-
-  nAmount = roundint64(dAmount * COIN);
-  if (!MoneyRange(ifaceIndex, nAmount)) {
-    return (-3);
-  }
-
-  nBalance  = GetAccountBalance(ifaceIndex, walletdb, strMainAccount, nMinConfirmDepth);
-  if (nAmount > nBalance) {
-    shcoind_log("c_setblockreward: warning: main account has insufficient funds for block reward distribution.");
-    return (-6);
-  }
-
-  /* add to list */
-  CScript scriptPubKey;
-  scriptPubKey.SetDestination(address.Get());
-  vecRewardSend.push_back(make_pair(scriptPubKey, nAmount));
-
-  return (0);
-}
-int c_sendblockreward(int ifaceIndex)
-{
-	static int64 nAvgFee;
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  CWallet *wallet = GetWallet(ifaceIndex);
-  string strMainAccount("");
-  int64 nFeeRet;
-  int nMinConfirmDepth = 1; /* single confirmation requirement */
-  bool fRet;
-
-  if (vecRewardSend.size() == 0)
-    return (0); /* all done */
-
-	if (nAvgFee == 0)
-		nAvgFee = MIN_TX_FEE(iface); 
-
-  /* calculate already-subtracted fee */
-  int64 nTotValue = 0;
-  int64 nValue = 0;
-  BOOST_FOREACH(const PAIRTYPE(CScript, int64)& item, vecRewardSend) {
-    nTotValue += item.second;
-  }
-
-	/* create new vector with tx fee subtracted. */
-	vector< pair<CScript, int64> > vecSend;
-	int64 nFee = nAvgFee / vecRewardSend.size();
-  BOOST_FOREACH(const PAIRTYPE(CScript, int64)& item, vecRewardSend) {
-		vecSend.push_back(make_pair(item.first, (item.second - nFee))); 
-	}
-  vecRewardSend.clear();
-
-#if 0
-  /* double-check balance */
-  nBalance  = GetAccountBalance(ifaceIndex, walletdb, strMainAccount, nMinConfirmDepth);
-  if (nAmount > nBalance) {
-    shcoind_log("c_setblockreward: warning: main account has insufficient funds for block reward distribution.");
-    return (-6);
-  }
-#endif
-
-  CWalletTx wtx;
-  wtx.strFromAccount = strMainAccount;
-
-  string strError;
-  fRet = wallet->CreateAccountTransaction(strMainAccount, vecSend, wtx, strError, nFeeRet);
-  if (!fRet)
-    return (-4);
-
-  fRet = wallet->CommitTransaction(wtx);
-  if (!fRet)
-    return (-4);
-
-	/* keep running average of tx-fee required to send coins. */
-	nAvgFee = (nAvgFee + nFeeRet) / 2;
-
-  Debug("sendblockreward: sent %f coins for stratum reward(s) [tx-fee %f].", (double)nTotValue/(double)COIN, (double)nFeeRet/(double)COIN);
-
-  return (0);
-}
-#endif
-
-
 /**
  * Transfer currency between two accounts.
  */
@@ -1444,108 +1244,6 @@ static const char *json_stratum_create_account(int ifaceIndex, const char *acc_n
 }
 
 char *transferaccount_json;
-#if 0
-/**
- * Creates an coin transaction for a single user account. 
- * @note charges 0.1 coins per each transaction to "bank" account.
- */
-string transferaccount_json;
-static const char *c_stratum_account_transfer(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount)
-{
-  CWallet *pwalletMain = GetWallet(ifaceIndex);
-  CWalletDB walletdb(pwalletMain->strWalletFile);
-  string strAccount(account);
-  string strDestAddress(dest);
-  CWalletTx wtx;
-  int64 nAmount;
-  string strAddress;
-  CKeyID keyID;
-  CSecret vchSecret;
-  bool fCompressed;
-  uint256 acc_pkey;
-  uint256 in_pkey;
-  int nMinDepth;
-  int64 nBalance;
-  int64 nFee = 0;
-  //int64 nFee = COIN / 10;
-  int64 nTxFee = 0;
-
-  try {
-    in_pkey = 0;
-    nMinDepth = 1;
-
-    if (pwalletMain->IsLocked()) {
-      throw JSONRPCError(STERR_ACCESS_NOKEY, "Account transactions are not currently available.");
-    }
-
-    CCoinAddr dest_address(strDestAddress);
-    if (!dest_address.IsValid()) {
-      throw JSONRPCError(STERR_INVAL, "invalid coin address");
-    }
-
-    in_pkey.SetHex(pkey_str);
-    if (!valid_pkey_hash(strAccount, in_pkey)) {
-      throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified.");
-    }
-
-    nAmount = roundint64(amount * COIN);
-    if (!MoneyRange(ifaceIndex, nAmount) || nAmount <= nFee) {
-      throw JSONRPCError(STERR_INVAL_AMOUNT, "Invalid coin amount.");
-    }
-
-    nBalance = GetAccountBalance(ifaceIndex, walletdb, strAccount, nMinDepth);
-    if (nAmount > nBalance) {
-      throw JSONRPCError(STERR_FUND_UNAVAIL, "Account has insufficient funds.");
-    }
-
-    vector<pair<CScript, int64> > vecSend;
-    bool bankAddressFound = false;
-    CScript scriptPubKey;
-
-#if 0
-    /* send fee to main account */
-    CCoinAddr bankAddress = GetAddressByAccount(pwalletMain, "", bankAddressFound);
-    if (!bankAddressFound || !bankAddress.IsValid()) {
-      nFee = 0;
-    }
-#endif
-
-    wtx.strFromAccount = strAccount;
-    //wtx.mapValue["comment"] = "sharelib.net";
-    wtx.mapValue["comment"] = "";
-#if 0
-    /* bank */
-    if (nFee) {
-      scriptPubKey.SetDestination(bankAddress.Get());
-      vecSend.push_back(make_pair(scriptPubKey, nFee));
-    }
-#endif
-    /* user */
-    string strError;
-    scriptPubKey.SetDestination(dest_address.Get());
-    vecSend.push_back(make_pair(scriptPubKey, nAmount - nFee));
-    if (!pwalletMain->CreateAccountTransaction(strAccount, vecSend, wtx, strError, nTxFee)) {
-      if (nAmount + nTxFee > pwalletMain->GetBalance())
-        throw JSONRPCError(STERR_FUND_UNAVAIL, "Insufficient funds for transaction.");
-      throw JSONRPCError(STERR_ACCESS_UNAVAIL, "Transaction creation failure.");
-    }
-
-    if (!pwalletMain->CommitTransaction(wtx)) {
-      throw JSONRPCError(STERR_ACCESS_UNAVAIL, "Transaction commit failed.");
-    }
-  } catch(Object& objError) {
-    SetStratumError(objError);
-    return (NULL);
-  }
-
-  Object result;
-  result.push_back(Pair("txid", wtx.GetHash().GetHex()));
-  result.push_back(Pair("fee", ValueFromAmount(nFee + nTxFee)));
-  result.push_back(Pair("amount", ValueFromAmount(nAmount - nFee - nTxFee)));
-  transferaccount_json = JSONRPCReply(result, Value::null, Value::null);
-  return (transferaccount_json.c_str());
-}
-#endif
 static const char *c_stratum_account_transfer(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -1681,106 +1379,6 @@ static const char *c_stratum_account_transfer(int ifaceIndex, char *account, cha
 }
 
 char *verifytransferaccount_json;
-#if 0
-static const char *c_stratum_account_verify_transfer(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount)
-{
-  CWallet *pwalletMain = GetWallet(ifaceIndex);
-  CWalletDB walletdb(pwalletMain->strWalletFile);
-  string strAccount(account);
-  string strDestAddress(dest);
-  CWalletTx wtx;
-  int64 nAmount;
-  string strAddress;
-  CKeyID keyID;
-  CSecret vchSecret;
-  bool fCompressed;
-  uint256 acc_pkey;
-  uint256 in_pkey;
-  int nMinDepth;
-  int64 nBalance;
-  int64 nFee = 0;
-  //int64 nFee = COIN / 10;
-  int64 nTxFee = 0;
-
-  if (!pwalletMain) {
-    throw JSONRPCError(STERR_INVAL, "invalid coin service");
-  }
-
-  try {
-    in_pkey = 0;
-    nMinDepth = 1;
-
-#if 0
-    if (pwalletMain->IsLocked()) {
-      throw JSONRPCError(STERR_ACCESS_NOKEY, "Account transactions are not currently available.");
-    }
-#endif
-
-    CCoinAddr dest_address(strDestAddress);
-    if (!dest_address.IsValid()) {
-      throw JSONRPCError(STERR_INVAL, "invalid coin address");
-    }
-
-    in_pkey.SetHex(pkey_str);
-    if (!valid_pkey_hash(strAccount, in_pkey)) {
-      throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified.");
-    }
-
-    nAmount = roundint64(amount * COIN);
-    if (!MoneyRange(ifaceIndex, nAmount) || nAmount <= nFee) {
-      throw JSONRPCError(STERR_INVAL_AMOUNT, "Invalid coin amount.");
-    }
-
-    nBalance = GetAccountBalance(ifaceIndex, walletdb, strAccount, nMinDepth);
-    if (nAmount > nBalance) {
-      throw JSONRPCError(STERR_FUND_UNAVAIL, "Account has insufficient funds.");
-    }
-
-    vector<pair<CScript, int64> > vecSend;
-    bool bankAddressFound = false;
-    CScript scriptPubKey;
-
-#if 0
-    /* send fee to main account */
-    CCoinAddr bankAddress = GetAddressByAccount(pwalletMain, "", bankAddressFound);
-    if (!bankAddressFound || !bankAddress.IsValid()) {
-      nFee = 0;
-    }
-#endif
-
-    wtx.strFromAccount = strAccount;
-    //wtx.mapValue["comment"] = "sharelib.net";
-    wtx.mapValue["comment"] = "";
-#if 0
-    /* bank */
-    if (nFee) {
-      scriptPubKey.SetDestination(bankAddress.Get());
-      vecSend.push_back(make_pair(scriptPubKey, nFee));
-    }
-#endif
-    /* user */
-    string strError;
-    scriptPubKey.SetDestination(dest_address.Get());
-    vecSend.push_back(make_pair(scriptPubKey, nAmount - nFee));
-    if (!pwalletMain->CreateAccountTransaction(strAccount, vecSend, wtx, strError, nTxFee)) {
-      if (nAmount + nTxFee > pwalletMain->GetBalance()) {
-        throw JSONRPCError(STERR_FUND_UNAVAIL, "Insufficient funds for transaction.");
-      }
-      throw JSONRPCError(STERR_ACCESS_UNAVAIL, "Transaction creation failure.");
-    }
-  } catch(Object& objError) {
-    SetStratumError(objError);
-    return (NULL);
-  }
-
-  Object result;
-  result.push_back(Pair("txid", wtx.GetHash().GetHex()));
-  result.push_back(Pair("fee", ValueFromAmount(nFee + nTxFee)));
-  result.push_back(Pair("amount", ValueFromAmount(nAmount - nFee - nTxFee)));
-  verifytransferaccount_json = JSONRPCReply(result, Value::null, Value::null);
-  return (verifytransferaccount_json.c_str());
-}
-#endif
 static const char *c_stratum_account_verify_transfer(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -2046,49 +1644,10 @@ const char *c_stratum_error_get(int req_id)
   return (stratumerror_json.c_str());
 }
 
-#if 0
-static const char *cpp_stratum_call_rpc(int ifaceIndex, const char *account, const char *pkey_str, shjson_t *json)
-{
-  string strAccount(account);
-  uint256 in_pkey;
-
-  if (account && pkey_str && *pkey_str) { 
-    in_pkey.SetHex(pkey_str);
-    if (!valid_pkey_hash(strAccount, in_pkey)) {
-      error(SHERR_ACCESS, "Invalid private key hash specified.");
-      return (NULL);
-    }
-  } else {
-    account = NULL;
-  }
-
-  return (ExecuteStratumRPC(ifaceIndex, account, json));
-}
-#endif
-
 
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if 0
-int load_wallet(void)
-{
-  return (c_LoadWallet());
-}
-
-int upgrade_wallet(void)
-{
-  return (cxx_UpgradeWallet());
-}
-#endif
-
-#if 0
-int load_peers(void)
-{
-  return (c_LoadPeers());
-}
 #endif
 
 const char *getaddressbyaccount(int ifaceIndex, const char *accountName)
@@ -2299,13 +1858,6 @@ void stratum_listaddrkey(int ifaceIndex, char *account, shjson_t *obj)
 
     string priv_str = CCoinSecret(ifaceIndex, vchSecret, fCompressed).ToString();
     shjson_str_add(obj, NULL, (char *)priv_str.c_str());
-#if 0
-    string pub_str = address.ToString(); 
-    string priv_str = CCoinSecret(ifaceIndex, vchSecret, fCompressed).ToString();
-
-    node = shjson_obj_add(obj, (char *)strAccount.c_str());
-    shjson_str_add(node, (char *)pub_str.c_str(), (char *)priv_str.c_str());
-#endif
   }
 
 }
@@ -2382,15 +1934,6 @@ int stratum_setdefaultkey(int ifaceIndex, char *account, char *pub_key)
 
   return (0);
 }
-
-  
-
-#if 0
-const char *stratum_call_rpc(int ifaceIndex, const char *account, const char *pkey_str, shjson_t *json)
-{
-  return (cpp_stratum_call_rpc(ifaceIndex, account, pkey_str, json));
-}
-#endif
 
 const char *stratum_accountalias(int ifaceIndex, char *account, char *pkey, char *mode, char *alias_name, char *alias_addr)
 {

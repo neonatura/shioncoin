@@ -122,13 +122,12 @@ const char *c_getblocktemplate(int ifaceIndex)
   if (!pindexPrev)
     return (NULL); /* chain not established */
 
-#if 0
   if (IsInitialBlockDownload(ifaceIndex))
     return (NULL);
-#endif
-
+#if 0
   if (iface->blockscan_max > pindexPrev->nHeight)
     return (NULL); /* downloading blocks */
+#endif
 
   /* prune stale worker blocks (see SHC_MAX_DRIFT_TIME) */
   vector<unsigned int> vDelete;

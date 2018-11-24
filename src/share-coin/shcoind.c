@@ -44,13 +44,6 @@ void shcoind_term(void)
 {
   int idx;
 
-#if 0
-  /* terminate rpc service */
-  rpc_term();
-
-  /* terminate stratum server */
-  stratum_term();
-#endif
   for (idx = 1; idx < MAX_UNET_MODES; idx++) {
     unet_unbind(idx);
   }
@@ -58,12 +51,6 @@ void shcoind_term(void)
   shpeer_free(&server_peer);
   shbuf_free(&server_msg_buff);
 
-#if 0
-  if (_rpc_thread_running) {
-    /* terminate coin server */
-    server_shutdown();
-  }
-#endif
   server_shutdown();
 
   /* de-allocate libsecp256k1 */
@@ -204,38 +191,6 @@ int shcoind_main(int argc, char *argv[])
   for (i = 1; i < argc; i++) {
     if (0 == strcmp(argv[i], "-nf")) {
       opt_no_fork = TRUE;
-#if 0
-		} else if (0 == strcmp(argv[i], "--debug")) {
-			opt_bool_set(OPT_DEBUG, TRUE);
-    } else if (0 == strcmp(argv[i], "--max-conn")) {
-      if (i + 1 < argc && isdigit(argv[i+1][0])) {
-        i++;
-        if (isdigit(argv[i][0]))
-          opt_num_set(OPT_MAX_CONN, MAX(0, atoi(argv[i])));
-      }
-    } else if (0 == strcmp(argv[i], "--no-seed")) {
-      opt_bool_set(OPT_PEER_SEED, FALSE);
-    } else if (0 == strcmp(argv[i], "--no-usde")) {
-      opt_bool_set(OPT_SERV_USDE, FALSE);
-    } else if (0 == strcmp(argv[i], "--no-emc2")) {
-      opt_bool_set(OPT_SERV_EMC2, FALSE);
-    } else if (0 == strcmp(argv[i], "--no-testnet")) {
-      opt_bool_set(OPT_SERV_TESTNET, FALSE);
-    } else if (0 == strcmp(argv[i], "--no-stratum")) {
-      opt_bool_set(OPT_SERV_STRATUM, FALSE);
-    } else if (0 == strcmp(argv[i], "--ban-span")) {
-      if (i + 1 < argc && isdigit(argv[i+1][0])) {
-        i++;
-        if (isdigit(argv[i][0]))
-          opt_num_set(OPT_BAN_SPAN, MAX(1, atoi(argv[i])));
-      }
-    } else if (0 == strcmp(argv[i], "--ban-threshold")) {
-      if (i + 1 < argc && isdigit(argv[i+1][0])) {
-        i++;
-        if (isdigit(argv[i][0]))
-          opt_num_set(OPT_BAN_THRESHOLD, MAX(1, atoi(argv[i])));
-      }
-#endif
     } else if (0 == strcmp(argv[i], "--check-addr")) {
       shpref_set("shcoind.net.addr.stamp", "0"); /* clear cached IP addr */
     } else if (0 == strcmp(argv[i], "--shc-rebuild-chain")) {
@@ -347,7 +302,7 @@ int shcoind_main(int argc, char *argv[])
     /* initialize stratum server */
     err = stratum_init();
     if (err) {
-      fprintf(stderr, "critical: init stratum: %s. [sherr %d]", sherrstr(err), err);
+			unet_log(UNET_STRATUM, "critical: error binding RPC port.");
       raise(SIGTERM);
     }
   }
@@ -358,7 +313,8 @@ int shcoind_main(int argc, char *argv[])
     /* initialize rpc server */
     err = rpc_init();
     if (err) {
-      fprintf(stderr, "critical: init rpc: %s. [sherr %d]", sherrstr(err), err);
+			char buf[256];
+			unet_log(UNET_RPC, "critical: error binding RPC port.");
       raise(SIGTERM);
     }
   }

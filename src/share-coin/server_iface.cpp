@@ -93,12 +93,6 @@ vector<CNode*> vNodes;
 CCriticalSection cs_vNodes;
 map<CInv, int64> mapAlreadyAskedFor;
 
-#if 0
-deque<pair<int64, CInv> > vRelayExpiration;
-map<CInv, CDataStream> mapRelay;
-CCriticalSection cs_mapRelay;
-#endif
-
 static deque<string> vOneShots;
 CCriticalSection cs_vOneShots;
 
@@ -428,63 +422,6 @@ CNode* FindNode(int ifaceIndex, unsigned int sk)
   }
   return NULL;
 }
-
-#if 0
-CNode* ConnectNode(int ifaceIndex, CAddress addrConnect, const char *pszDest, int64 nTimeout)
-{
-  if (pszDest == NULL) {
-    if (IsLocal(addrConnect))
-      return NULL;
-
-    // Look for an existing connection
-    CNode* pnode = FindNode(ifaceIndex, (CService)addrConnect);
-    if (pnode)
-    {
-      if (nTimeout != 0)
-        pnode->AddRef(nTimeout);
-      else
-        pnode->AddRef();
-      return pnode;
-    }
-  }
-
-  unsigned int hSocket;
-  struct hostent *h;
-  struct sockaddr_in in;
-  bool ok = false;
-  if (pszDest) {
-    char dest_str[256];
-    strcpy(dest_str, pszDest);
-    h = shresolve(dest_str);
-    if (h) {
-      memset(&in, 0, sizeof(sockaddr_in));
-      in.sin_family = AF_INET;
-      memcpy(&in.sin_addr, h->h_addr, sizeof(struct in_addr));
-      in.sin_port = htons(USDE_COIN_DAEMON_PORT);
-      ok = true;
-    }
-  } else {
-    memset(&in, 0, sizeof(sockaddr_in));
-    socklen_t in_len = sizeof(in);
-    if (addrConnect.GetSockAddr((struct sockaddr *)&in, &in_len)) {
-      ok = true;
-    }
-  }
-
-  if (!ok)
-    return (NULL);
-
-  int err = unet_connect(UNET_USDE, (struct sockaddr *)&in, &hSocket);
-  if (err)
-    return (NULL);
-
-  CNode* pnode = FindNode(ifaceIndex, hSocket);
-  if (pnode)
-    pnode->nTimeConnected = GetTime();
-
-  return pnode;
-}
-#endif
 
 void CNode::CloseSocketDisconnect(const char *reason)
 {
@@ -819,16 +756,6 @@ void usde_MessageHandler(CIface *iface)
     pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
   BOOST_FOREACH(CNode* pnode, vNodesCopy)
   {
-#if 0
-    // Receive messages
-    {
-      TRY_LOCK(pnode->cs_vRecv, lockRecv);
-      if (lockRecv)
-        usde_ProcessMessages(iface, pnode);
-    }
-    if (fShutdown)
-      return;
-#endif
 
     // Send messages
     timing_init("SendMessages", &ts);
@@ -872,16 +799,6 @@ void shc_MessageHandler(CIface *iface)
 #endif
   BOOST_FOREACH(CNode* pnode, vNodesCopy)
   {
-#if 0
-    // Receive messages
-    {
-      TRY_LOCK(pnode->cs_vRecv, lockRecv);
-      if (lockRecv)
-        shc_ProcessMessages(iface, pnode);
-    }
-    if (fShutdown)
-      return;
-#endif
 
     // Send messages
     timing_init("SendMessages", &ts);
@@ -1011,11 +928,6 @@ int usde_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   if (!fRet) {
     error(SHERR_INVAL, "usde_coin_server_recv: usde_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
   }
-
-#if 0
-  vRecv.erase(vRecv.begin(), vRecv.end());
-  vRecv.Compact();
-#endif
 
   pnode->nLastRecv = GetTime();
   return (0);
@@ -1582,11 +1494,6 @@ int testnet_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
     error(SHERR_INVAL, "testnet_coin_server_recv: testnet_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
   }
 
-#if 0
-  vRecv.erase(vRecv.begin(), vRecv.end());
-  vRecv.Compact();
-#endif
-
   pnode->nLastRecv = GetTime();
   return (0);
 }
@@ -1612,16 +1519,6 @@ void testnet_MessageHandler(CIface *iface)
 #endif
   BOOST_FOREACH(CNode* pnode, vNodesCopy)
   {
-#if 0
-    // Receive messages
-    {
-      TRY_LOCK(pnode->cs_vRecv, lockRecv);
-      if (lockRecv)
-        testnet_ProcessMessages(iface, pnode);
-    }
-    if (fShutdown)
-      return;
-#endif
 
     // Send messages
     timing_init("SendMessages", &ts);
@@ -1897,10 +1794,6 @@ void StartCoinServer(void)
     semOutbound = new CSemaphore(nMaxOutbound);
   }
 
-#if 0
-  if (pnodeLocalHost == NULL)
-    pnodeLocalHost = new CNode(INVALID_SOCKET, CAddress(CService("127.0.0.1", 0), nLocalServices));
-#endif
 
   Discover();
 
@@ -2390,16 +2283,6 @@ void emc2_MessageHandler(CIface *iface)
     pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
   BOOST_FOREACH(CNode* pnode, vNodesCopy)
   {
-#if 0
-    // Receive messages
-    {
-      TRY_LOCK(pnode->cs_vRecv, lockRecv);
-      if (lockRecv)
-        emc2_ProcessMessages(iface, pnode);
-    }
-    if (fShutdown)
-      return;
-#endif
 
     // Send messages
     timing_init("SendMessages", &ts);
@@ -2662,10 +2545,6 @@ int ltc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
     error(SHERR_INVAL, "ltc_coin_server_recv: ltc_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
   }
 
-#if 0
-  vRecv.erase(vRecv.begin(), vRecv.end());
-  vRecv.Compact();
-#endif
 
   pnode->nLastRecv = GetTime();
   return (0);
@@ -2692,16 +2571,6 @@ void ltc_MessageHandler(CIface *iface)
 #endif
   BOOST_FOREACH(CNode* pnode, vNodesCopy)
   {
-#if 0
-    // Receive messages
-    {
-      TRY_LOCK(pnode->cs_vRecv, lockRecv);
-      if (lockRecv)
-        ltc_ProcessMessages(iface, pnode);
-    }
-    if (fShutdown)
-      return;
-#endif
 
     // Send messages
     timing_init("SendMessages", &ts);

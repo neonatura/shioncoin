@@ -105,6 +105,8 @@ static bool color_FillBlockIndex()
     pindexNew->nBits          = block.nBits;
     pindexNew->nNonce         = block.nNonce;
 
+		pindexNew->nStatus |= BLOCK_HAVE_DATA;
+
 #if 0
     if (pindexNew->pprev)
       pindexNew->BuildSkip();

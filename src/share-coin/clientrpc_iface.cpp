@@ -50,10 +50,6 @@ using namespace boost;
 using namespace boost::asio;
 using namespace json_spirit;
 
-#if 0
-#include "SSLIOStreamDevice.h"
-#endif
-
 static std::string strRPCUserColonPass;
 
 static int64 nWalletUnlockTime;

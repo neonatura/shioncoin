@@ -125,6 +125,8 @@ bool usde_FillBlockIndex()
     pindexNew->nBits          = block.nBits;
     pindexNew->nNonce         = block.nNonce;
 
+		pindexNew->nStatus |= BLOCK_HAVE_DATA;
+
     if (lastIndex)
       pindexNew->BuildSkip();
 
