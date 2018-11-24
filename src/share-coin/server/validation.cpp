@@ -46,19 +46,14 @@ static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS =
 		LOCKTIME_MEDIAN_TIME_PAST;
 
 
-bool CheckBlockHeader(CBlock *pblock)
+bool CheckBlockHeader(CBlockHeader *pblock)
 {
-  CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
-
-	if (!iface || !iface->enabled)
-		return (false);
-
 	CBigNum bnTarget;
 	bnTarget.SetCompact(pblock->nBits);
 
   /* check proof of work exceeds block expectations. */
   if (pblock->GetPoWHash() > bnTarget.getuint256())
-    return error(SHERR_INVAL, "(%s) CheckBlockHeader: hash doesn't match nBits", iface->name);
+		return (false);
 
 	return (true);
 }
@@ -192,8 +187,9 @@ CBlockIndex *CreateBlockIndex(CIface *iface, CBlockHeader& block)
   CBlockIndex *pindexNew;
 
   /* check for duplicate. */
-  if (blockIndex->count(hash) != 0) 
+  if (blockIndex->count(hash) != 0) { 
 		return ( (*blockIndex)[hash] );
+	}
 
   /* create new index */
   pindexNew = new CBlockIndex(block);
@@ -213,9 +209,11 @@ CBlockIndex *CreateBlockIndex(CIface *iface, CBlockHeader& block)
 
   pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
 
+#if 0
   if (IsWitnessEnabled(iface, pindexNew->pprev)) {
     pindexNew->nStatus |= BLOCK_OPT_WITNESS;
   }
+#endif
 
 #if 0
   if (pindexNew->bnChainWork > bnBestChainWork) {
@@ -227,9 +225,12 @@ CBlockIndex *CreateBlockIndex(CIface *iface, CBlockHeader& block)
   }
 #endif
 
+	pindexNew->RaiseValidity(BLOCK_VALID_TREE);
+
 	if (!wallet->pindexBestHeader ||
-			wallet->pindexBestHeader->bnChainWork < pindexNew->bnChainWork)
+			wallet->pindexBestHeader->bnChainWork < pindexNew->bnChainWork) {
 		wallet->pindexBestHeader = pindexNew;
+	}
 
   return (pindexNew);
 }
@@ -269,20 +270,29 @@ bool core_AcceptBlockHeader(CIface *iface, CBlockHeader& block, CBlockIndex **pi
 	pindex = GetBlockIndexByHash(ifaceIndex, hash); 
 	pindexPrev = GetBlockIndexByHash(ifaceIndex, block.hashPrevBlock);
 
+	block.ifaceIndex = ifaceIndex;
 	if (block.hashPrevBlock != 0) {
 		if (pindex) { /* already procesed */
 			if (pindex_p)
 				*pindex_p = pindex;
+			if (pindex->nStatus & BLOCK_FAILED_MASK)
+				return (error(ERR_INVAL, "(%s) AcceptBlockHeader: block \"%s\" is marked as invalid.", iface->name, hash.GetHex().c_str()));
 			return (true);
 		}
-
 		if (!pindexPrev) {
 			/* unknown previous block hash */
 			return (error(ERR_NOENT, "(%s) core_AcceptBlockHeader: unknown previous block hash \"%s\".", iface->name, block.hashPrevBlock.GetHex().c_str()));
 		}
+		if (pindexPrev->nStatus & BLOCK_FAILED_MASK) {
+			return (error(ERR_INVAL, "(%s) AcceptBlockHeader: previous block of \"%s\" is marked as invalid.", iface->name, hash.GetHex().c_str()));
+		}
 
-		if (!ContextualCheckBlockHeader(iface, block, pindexPrev))
-			return (false);
+		if (!CheckBlockHeader(&block)) {
+			return (error(ERR_INVAL, "(%s) AcceptBlockHeader: unable to verify block header (%s)", iface->name, hash.GetHex().c_str()));
+		}
+		if (!ContextualCheckBlockHeader(iface, block, pindexPrev)) {
+			return (error(ERR_INVAL, "(%s) AcceptBlockHeader: unable to verify block header (%s) [contextual]", iface->name, hash.GetHex().c_str()));
+		}
 	}
 
 	if (!pindex) {
@@ -300,8 +310,9 @@ bool ProcessNewBlockHeaders(CIface *iface, std::vector<CBlockHeader>& headers, C
 
 	for (int i = 0; i < headers.size(); i++) {
 		CBlockHeader& header = headers[i];
-		if (!core_AcceptBlockHeader(iface, header, ppindex))
+		if (!core_AcceptBlockHeader(iface, header, ppindex)) {
 			return false;
+		}
 	}
 
 	return (true);
@@ -351,19 +362,29 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		return (error(SHERR_INVAL, "(%s) core_AcceptBlock: invalid block header [hash %s].", iface->name, hash.GetHex().c_str()));
 	}
 
+	if (pindex->nStatus & BLOCK_HAVE_DATA) {
+		Debug("AcceptBlock: skipping already processed block \"%s\".", hash.GetHex().c_str());
+		return (true);
+	}
+#if 0
 	CBlockIndex *pindexBest = GetBestBlockIndex(pblock->ifaceIndex);
 	if (pindexBest && pindex->nHeight <= pindexBest->nHeight &&
 			HasBlockHash(iface, hash)) {
 		/* already processed. */
 		return (true);
 	}
+#endif
 
   unsigned int nHeight = pindexPrev->nHeight+1;
 
 	if (!CheckBlock(pblock)) {
+		/* record that block could not be validated. */
+		pindex->nStatus |= BLOCK_FAILED_VALID;
 		return (error(ERR_INVAL, "(%s) core_AcceptBlock: error verifying block."));
 	}
 	if (!ContextualCheckBlock(pblock, pindexPrev)) {
+		/* record that block could not be validated. */
+		pindex->nStatus |= BLOCK_FAILED_VALID;
 		return (error(ERR_INVAL, "(%s) core_AcceptBlock: error verifying block [contextual]."));
 	}
 
@@ -374,11 +395,20 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	}
 #endif
 
+	/* record that whole valid block was received. */
+	pindex->nStatus |= BLOCK_HAVE_DATA;
+	if (IsWitnessEnabled(iface, pindex->pprev)) {
+		pindex->nStatus |= BLOCK_OPT_WITNESS;
+	}
+	pindex->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
+
 	/* ensure chain work is higher than previous block. */
   if (pindex->bnChainWork <= wallet->bnBestChainWork) {
 		/* treated as success. block work does not exceed last work. */
-    pblock->WriteArchBlock();
-		STAT_BLOCK_ACCEPTS(iface)++;
+    if (pblock->WriteArchBlock()) {
+			STAT_BLOCK_ACCEPTS(iface)++;
+			pindex->nStatus |= BLOCK_HAVE_UNDO;
+		}
 		return (true);
 	}
 	/* write to disk */
@@ -398,74 +428,14 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
   if (ifaceIndex == TEST_COIN_IFACE ||
 			ifaceIndex == TESTNET_COIN_IFACE ||
       ifaceIndex == SHC_COIN_IFACE) {
-		/* handle exec checkpoints */
-    BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
-			if (tx.isFlag(CTransaction::TXF_EXEC) &&
-					IsExecTx(tx, mode) && mode == OP_EXT_UPDATE) {
-        ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
-			}
+		/* initiate notary tx, if needed. */
+		int mode;
+		const CTransaction& tx = pblock->vtx[0];
+		if ((tx.GetFlags() & CTransaction::TXF_MATRIX) &&
+				GetExtOutputMode(tx, OP_MATRIX, mode) &&
+				mode == OP_EXT_VALIDATE) {
+			RelayValidateMatrixNotaryTx(iface, tx);
 		}
-
-    BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
-#if 0 
-      if (tx.isFlag(CTransaction::TXF_MATRIX)) {
-				/* handled in coinbase */
-			} 
-#endif
-
-			if (tx.isFlag(CTransaction::TXF_ALIAS)) {
-        bool fRet = CommitAliasTx(iface, tx, nHeight);
-        if (!fRet) {
-          error(SHERR_INVAL, "CommitAliasTx failure");
-        }
-      } 
-
-			if (tx.isFlag(CTransaction::TXF_ASSET)) {
-        bool fRet = ProcessAssetTx(iface, tx, nHeight);
-        if (!fRet) {
-          error(SHERR_INVAL, "ProcessAssetTx failure");
-        }
-			} else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
-        InsertCertTable(iface, tx, nHeight);
-      } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
-        int err = CommitContextTx(iface, tx, nHeight);
-        if (err) {
-          error(err, "CommitContextTx failure");
-        }
-      } else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
-				/* not implemented. */
-			} else if (tx.isFlag(CTransaction::TXF_IDENT)) {
-        InsertIdentTable(iface, tx);
-			} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
-        bool fRet = CommitLicenseTx(iface, tx, nHeight);
-        if (!fRet) {
-          error(SHERR_INVAL, "CommitLicenseTx failure");
-        }
-			} 
-
-			/* non-exlusive */
-			if (tx.isFlag(CTransaction::TXF_OFFER)) {
-        int err = CommitOfferTx(iface, tx, nHeight);
-				if (err)
-					error(err, "CommitOfferTx");
-      }
-
-			/* non-exclusive */
-			if (tx.isFlag(CTransaction::TXF_EXEC) &&
-					IsExecTx(tx, mode) && mode != OP_EXT_UPDATE) {
-        ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
-			}
-
-			/* non-exclusive */
-			if (tx.isFlag(CTransaction::TXF_ALTCHAIN)) {
-				if (IsAltChainTx(tx)) {
-					CommitAltChainTx(iface, tx, pblock->originPeer);
-				}
-			}
-
-			/* check for matrix validation notary tx's. */
-			ProcessValidateMatrixNotaryTx(iface, tx);
-    }
   }
 
   STAT_BLOCK_ACCEPTS(iface)++;
@@ -545,6 +515,10 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		pblock->print();
 		return error(SHERR_IO, "AcceptBlock: AddToBlockIndex failed");
 	}
+
+	CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, hash);
+	if (pindex)
+		pindex->nStatus |= BLOCK_HAVE_DATA;
 
 	/* inventory relay */
 	int nBlockEstimate = pblock->GetTotalBlocksEstimate();

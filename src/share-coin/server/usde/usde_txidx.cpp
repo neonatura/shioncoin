@@ -92,6 +92,9 @@ bool usde_FillBlockIndex()
 	nMaxIndex = 0;
 	(void)bc_idx_next(bc, &nMaxIndex);
 
+	uint256 hTip;
+	ReadHashBestChain(iface, hTip);
+
   lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
 		USDEBlock block;
@@ -136,6 +139,9 @@ bool usde_FillBlockIndex()
 			pindexNew->GetBlockWork();
 
     lastIndex = pindexNew;
+
+		if (hTip == hash)
+			break;
   }
   SetBestBlockIndex(iface, lastIndex);
 

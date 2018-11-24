@@ -35,7 +35,7 @@
 using namespace std;
 using namespace boost;
 
-#define MAX_BLOCK_DOWNLOAD_BATCH 64 /* 4m block * 64 = 256m */
+#define MAX_BLOCK_DOWNLOAD_BATCH 64 /* 4m block * 64 = max 256m */
 
 ChainOp chain;
 
@@ -453,6 +453,67 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 	return (pfrom);
 }
 
+static void FindNextBlocksToDownload(CIface *iface, CNode *pfrom, unsigned int count, vector<CBlockIndex*>& vBlocks)
+{
+	int ifaceIndex = GetCoinIndex(iface);
+
+	if (count == 0)
+		return;
+	if (!pfrom->pindexRecvHeader) {
+		return;
+	}
+
+	vBlocks.reserve(vBlocks.size() + count);
+
+  CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
+	CBlockIndex *pfork = LastCommonAncestor(pfrom->pindexRecvHeader, pindexBest);
+	CBlockIndex *pindexBestKnownBlock = pfrom->pindexRecvHeader;
+
+	vector<CBlockIndex *> vToFetch;
+	int nWindowEnd = pfork->nHeight + MAX_BLOCK_DOWNLOAD_BATCH;
+	int nMaxHeight = MIN(pfrom->pindexRecvHeader->nHeight, nWindowEnd + 1);
+	CBlockIndex *pindexWalk = pfork;
+	while (pindexWalk->nHeight < nMaxHeight) {
+		int nToFetch = std::min(nMaxHeight - pindexWalk->nHeight, std::max<int>(count - vBlocks.size(), 128));
+		vToFetch.resize(nToFetch);
+		pindexWalk = pindexBestKnownBlock->GetAncestor(pindexWalk->nHeight + nToFetch);
+		vToFetch[nToFetch - 1] = pindexWalk;
+		for (unsigned int i = nToFetch - 1; i > 0; i--) {
+			vToFetch[i - 1] = vToFetch[i]->pprev;
+		}
+
+		// Iterate over those blocks in vToFetch (in forward direction), adding the ones that
+		// are not yet downloaded and not in flight to vBlocks. In the mean time, update
+		// pindexLastCommonBlock as long as all ancestors are already downloaded, or if it's
+		// already part of our chain (and therefore don't need it even if pruned).
+		for (unsigned int idx = 0; idx < vToFetch.size(); idx++) {
+			CBlockIndex *pindex = vToFetch[idx];
+
+			if (!pindex->IsValid(BLOCK_VALID_TREE)) {
+				// We consider the chain that this peer is on invalid.
+				return;
+			}
+
+			if (!pfrom->fHaveWitness && 
+					IsWitnessEnabled(iface, pindex->pprev)) {
+				// We wouldn't download this block or its descendants from this peer.
+				return;
+			}
+
+			if (!(pindex->nStatus & BLOCK_HAVE_DATA)) {
+				/* block is not already on main chain. */
+				if (pindex->nHeight > nWindowEnd)
+					break;
+				vBlocks.push_back(pindex);
+				if (vBlocks.size() == count) {
+					return;
+				}
+			}
+		}
+	}
+
+}
+
 bool ServiceLegacyBlockEvent(int ifaceIndex, CNode *pfrom)
 {
   CWallet *wallet = GetWallet(ifaceIndex);
@@ -521,6 +582,7 @@ bool ServiceLegacyBlockEvent(int ifaceIndex, CNode *pfrom)
   return (true);
 }
 
+#if 0
 bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pindexBest)
 {
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
@@ -619,6 +681,69 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 
 	return (true);
 }
+#endif
+bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pindexBest)
+{
+  CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+	CBlockIndex *pindex = NULL;
+	std::vector<CInv> vInv;
+	CNode *pfrom;
+	bool bFound = false;
+
+	pfrom = chain_GetNextNode(wallet->ifaceIndex);
+	if (!pfrom)
+		return (false);
+
+	/* determine next block to download. */
+	vector<CBlockIndex *> vBlocks;
+	FindNextBlocksToDownload(iface, pfrom, MAX_BLOCK_DOWNLOAD_BATCH, vBlocks);
+	if (vBlocks.size() == 0)
+		return (false);
+
+	/* suppress duplicate requests. */
+	if (pfrom->pindexRecv == vBlocks.front())
+		return (false);
+	pfrom->pindexRecv = vBlocks.front();
+
+	unsigned int nIndex;
+	for (nIndex = 0; nIndex < vBlocks.size(); nIndex) {
+		CBlockIndex *pindex = vBlocks[nIndex];
+		if (!(pindex->nStatus & BLOCK_HAVE_UNDO))
+			break; /* no archive record available. */ 
+		bool fIsWitness = (pindex->nStatus & BLOCK_OPT_WITNESS) ? true : false;
+		if (fIsWitness != IsWitnessEnabled(iface, pindex->pprev))
+			break; /* incompatible */
+		CBlock *block = GetArchBlockByHash(iface, pindex->GetBlockHash());
+		if (!block) {
+			/* invalid state */
+			pindex->nStatus &= ~BLOCK_HAVE_UNDO;
+/* error .. */
+			break;
+		}
+		//bool ok = block->AcceptBlock();
+		bool ok = ProcessBlock(NULL, block);
+		delete block;
+		if (!ok) {
+			break; /* failure accepting block. */
+		}
+	}
+
+	/* ask for blocks */
+	int nFetchFlags = 0;
+	if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
+		nFetchFlags |= MSG_WITNESS_FLAG;
+	for (unsigned int idx = nIndex; idx < vBlocks.size(); idx++) {
+		vInv.insert(vInv.end(), CInv(wallet->ifaceIndex,
+					MSG_BLOCK | nFetchFlags, vBlocks[idx]->GetBlockHash()));
+	}
+	pfrom->PushMessage("getdata", vInv);
+
+	/* debug */
+	Debug("(%s) ServiceBlockEvent: requesting %d blocks (%s) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pfrom->addr.ToString().c_str());
+
+	return (true);
+}
+
 
 bool ServiceBlockHeadersEvent(CWallet *wallet, CBlockIndex *pindexBest)
 {
@@ -629,18 +754,18 @@ bool ServiceBlockHeadersEvent(CWallet *wallet, CBlockIndex *pindexBest)
 	if (!pfrom)
 		return (false);
 
-	CBlockIndex *pindex = wallet->pindexBestHeader ?
-		wallet->pindexBestHeader : pindexBest;
-	if (pfrom->pindexRecvHeader == pindex)
+	if (pfrom->pindexRecvHeader == pindexBest)
 		return (false);
+
+	/* suppress duplicate request */
+	pfrom->pindexRecvHeader = pindexBest;
 
 	/* ask for headers */
 	CBlockLocator locator(wallet->ifaceIndex, wallet->pindexBestHeader);
 	pfrom->PushMessage("getheaders", locator, uint256(0));
 
-	/* retain */
-	pfrom->pindexRecvHeader = pindex;
-
+	CBlockIndex *pindex = wallet->pindexBestHeader ?
+		wallet->pindexBestHeader : pindexBest;
 	Debug("(%s) ServiceBlockEvent: requesting block info (height %d) from \"%s\".", iface->name, pindex->nHeight, pfrom->addr.ToString().c_str());
 
 	return (true);

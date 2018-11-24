@@ -260,6 +260,8 @@ CBlock* test_CreateNewBlock(const CPubKey& rkey, CBlockIndex *pindexPrev)
 
   if (!pindexPrev)
     pindexPrev = GetBestBlockIndex(iface);
+	if (!pindexPrev)
+		return (NULL);
 
   // Create new block
   //auto_ptr<CBlock> pblock(new CBlock());
@@ -327,8 +329,11 @@ CBlock* test_CreateNewBlock(const CPubKey& rkey, CBlockIndex *pindexPrev)
 }
 
 
+extern CBlockIndex *CreateBlockIndex(CIface *iface, CBlockHeader& block);
+
 bool test_CreateGenesisBlock()
 {
+  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
   bool ret;
 
@@ -366,6 +371,7 @@ bool test_CreateGenesisBlock()
   ret = block.AddToBlockIndex();
   if (!ret)
     return (false);
+  (*blockIndex)[test_hashGenesisBlock]->nStatus |= BLOCK_HAVE_DATA;
 
   return (true);
 }
@@ -540,6 +546,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return error(SHERR_IO, "TESTBlock::AcceptBlock: error adding block '%s'.", pblock->GetHash().GetHex().c_str());
   }
 
+#if 0
   uint256 nextHash;
   while (test_GetOrphanNextHash(hash, nextHash)) {
     hash = nextHash;
@@ -550,17 +557,9 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
     test_RemoveOrphanBlock(hash);
     STAT_BLOCK_ORPHAN(iface)--;
   }
+#endif
 
   ServiceBlockEventUpdate(TEST_COIN_IFACE);
-
-	/* initiate notary tx, if needed. */
-	int mode;
-	const CTransaction& tx = pblock->vtx[0];
-	if ((tx.GetFlags() & CTransaction::TXF_MATRIX) &&
-			GetExtOutputMode(tx, OP_MATRIX, mode) &&
-			mode == OP_EXT_VALIDATE) {
-		RelayValidateMatrixNotaryTx(iface, tx);
-	}
 
   return true;
 }
@@ -1395,6 +1394,8 @@ bool TESTBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     if (!txdb.TxnCommit())
       return error(SHERR_INVAL, "SetBestChain() : TxnCommit failed");
     TESTBlock::pindexGenesisBlock = pindexNew;
+		WriteHashBestChain(iface, pindexNew->GetBlockHash());
+		SetBestBlockIndex(ifaceIndex, pindexNew);
   } else {
     timing_init("SetBestChain/commit", &ts);
     ret = core_CommitBlock(txdb, this, pindexNew); 
@@ -1403,6 +1404,7 @@ bool TESTBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
       return (false);
   }
 
+#if 0
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(TEST_COIN_IFACE);
   if (!fIsInitialDownload) {
@@ -1411,17 +1413,11 @@ bool TESTBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     TEST_SetBestChain(locator);
     timing_term(TEST_COIN_IFACE, "SetBestChain/locator", &ts);
   }
+#endif
 
   // New best block
-  SetBestBlockIndex(TEST_COIN_IFACE, pindexNew);
   bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
-
-  {
-    CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-    if (iface)
-      STAT_TX_ACCEPTS(iface)++;
-  }
 
   return true;
 }

@@ -883,6 +883,7 @@ bool usde_CreateGenesisBlock()
   ret = block.AddToBlockIndex();
   if (!ret)
     return (false);
+  (*blockIndex)[usde_hashGenesisBlock]->nStatus |= BLOCK_HAVE_DATA;
 
   return (true);
 }
@@ -2082,6 +2083,8 @@ bool USDEBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     if (!txdb.TxnCommit())
       return error(SHERR_INVAL, "SetBestChain() : TxnCommit failed");
     USDEBlock::pindexGenesisBlock = pindexNew;
+		WriteHashBestChain(iface, pindexNew->GetBlockHash());
+		SetBestBlockIndex(ifaceIndex, pindexNew);
   } else {
     timing_init("SetBestChain/commit", &ts);
     ret = core_CommitBlock(txdb, this, pindexNew);
@@ -2090,6 +2093,7 @@ bool USDEBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
       return (false);
   }
 
+#if 0
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(USDE_COIN_IFACE);
   if (!fIsInitialDownload) {
@@ -2098,17 +2102,11 @@ bool USDEBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     USDE_SetBestChain(locator);
     timing_term(USDE_COIN_IFACE, "SetBestChain/locator", &ts);
   }
+#endif
 
   // New best block
-  SetBestBlockIndex(USDE_COIN_IFACE, pindexNew);
   bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
-
-  {
-    CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
-    if (iface)
-      STAT_TX_ACCEPTS(iface)++;
-  }
 
   return true;
 }

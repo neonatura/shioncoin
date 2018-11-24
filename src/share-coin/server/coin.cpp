@@ -538,6 +538,81 @@ bool CTransaction::ConnectInputs(int ifaceIndex, const CBlockIndex* pindexBlock,
   return (ok);
 }
 
+void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+	int mode;
+
+  if (ifaceIndex != TEST_COIN_IFACE && 
+			ifaceIndex != TESTNET_COIN_IFACE && 
+      ifaceIndex != SHC_COIN_IFACE)
+		return;
+
+	/* handle exec checkpoints */
+	BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
+		if (tx.isFlag(CTransaction::TXF_EXEC) &&
+				IsExecTx(tx, mode) && mode == OP_EXT_UPDATE) {
+			ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
+		}
+	}
+
+	BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
+		if (tx.isFlag(CTransaction::TXF_ALIAS)) {
+			bool fRet = CommitAliasTx(iface, tx, nHeight);
+			if (!fRet) {
+				error(SHERR_INVAL, "CommitAliasTx failure");
+			}
+		} 
+
+		if (tx.isFlag(CTransaction::TXF_ASSET)) {
+			bool fRet = ProcessAssetTx(iface, tx, nHeight);
+			if (!fRet) {
+				error(SHERR_INVAL, "ProcessAssetTx failure");
+			}
+		} else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
+			InsertCertTable(iface, tx, nHeight);
+		} else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
+			int err = CommitContextTx(iface, tx, nHeight);
+			if (err) {
+				error(err, "CommitContextTx failure");
+			}
+		} else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
+			/* not implemented. */
+		} else if (tx.isFlag(CTransaction::TXF_IDENT)) {
+			InsertIdentTable(iface, tx);
+		} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
+			bool fRet = CommitLicenseTx(iface, tx, nHeight);
+			if (!fRet) {
+				error(SHERR_INVAL, "CommitLicenseTx failure");
+			}
+		} 
+
+		/* non-exlusive */
+		if (tx.isFlag(CTransaction::TXF_OFFER)) {
+			int err = CommitOfferTx(iface, tx, nHeight);
+			if (err)
+				error(err, "CommitOfferTx");
+		}
+
+		/* non-exclusive */
+		if (tx.isFlag(CTransaction::TXF_EXEC) &&
+				IsExecTx(tx, mode) && mode != OP_EXT_UPDATE) {
+			ProcessExecTx(iface, pblock->originPeer, tx, nHeight);
+		}
+
+		/* non-exclusive */
+		if (tx.isFlag(CTransaction::TXF_ALTCHAIN)) {
+			if (IsAltChainTx(tx)) {
+				CommitAltChainTx(iface, tx, pblock->originPeer);
+			}
+		}
+
+		/* check for matrix validation notary tx's. */
+		ProcessValidateMatrixNotaryTx(iface, tx);
+	}
+
+}
+
 
 bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 {
@@ -651,6 +726,11 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
     wallet->AddToWalletIfInvolvingMe(tx, block, true); 
   }
   timing_term(block->ifaceIndex, "ConnectBlock/AddToWallet", &ts);
+
+	/* handle processing extended tx operations. */
+  timing_init("ConnectBlock/ConnectExtTx", &ts);
+	core_ConnectExtTx(iface, block, nHeight);
+  timing_term(block->ifaceIndex, "ConnectBlock/ConnectExtTx", &ts);
 
   return true;
 }

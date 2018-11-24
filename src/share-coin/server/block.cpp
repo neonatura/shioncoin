@@ -1406,13 +1406,16 @@ bool CBlock::WriteArchBlock()
   unsigned int blockPos;
   long sBlockLen;
   char *sBlockData;
-  int n_height;
   int err;
 
   if (!bc)
     return (false);
 
   uint256 hash = GetHash();
+
+	err = bc_find(bc, hash.GetRaw(), NULL);
+	if (err == 0)
+		return true; /* already stored */
 
   /* serialize into binary */
   CDataStream sBlock(SER_DISK, CLIENT_VERSION);
@@ -2461,7 +2464,6 @@ CAltChain *CTransaction::CreateAltChain()
 
 
 
-
 static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *tip, CBlockIndex *pindexNew, vector<CBlockIndex*>& vConnect, vector<CBlockIndex*>& vDisconnect)
 {
   CBlockIndex* pfork = pbest;
@@ -2493,12 +2495,22 @@ static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *tip, CBlockIndex 
       if (!plonger)
         return (false);
     }
-    if (pfork == plonger)
-      break;
+		if (plonger != pindexNew && 
+				!(plonger->nStatus & BLOCK_HAVE_DATA) &&
+				!(plonger->nStatus & BLOCK_HAVE_UNDO)) {
+			/* we do not have the block data to connect this chain. */
+			return (error(ERR_INVAL, "GetCommitBranches: warning: cannot connect reorg chain due to missing block data for \"%s\".", plonger->GetBlockHash().GetHex().c_str(), plonger->nHeight));
+		}
+    if (pfork == plonger) {
+			/* progress until we have reached a fork that is on the current chain. */
+			break;
+		}
 
     pfork = pfork->pprev;
-    if (!pfork)
+    if (!pfork) {
+			/* could not find a fork. most likely invalid/malicious block data. */
       return (false);
+		}
   }
 
   /* discon tree */
@@ -2530,7 +2542,7 @@ ValidIndexSet *GetValidIndexSet(int ifaceIndex)
   return (&setBlockIndexValid[ifaceIndex]);
 }
 
-
+#if 0
 /* determine chain with greatest chain work */
 bool core_ConnectBestBlock(int ifaceIndex, CBlock *block, CBlockIndex *pindexNew)
 {
@@ -2638,6 +2650,7 @@ bail:
   block->WriteArchBlock();
   return (ret_val);
 }
+#endif
 
 
 int BackupBlockChain(CIface *iface, unsigned int maxHeight)
@@ -3109,6 +3122,7 @@ bool core_DisconnectBlock(CBlockIndex* pindex, CBlock *pblock)
   if (!iface || !iface->enabled)
     return error(SHERR_INVAL, "coin interface not enabled.");
 
+	pindex->nStatus &= ~BLOCK_HAVE_DATA;
   Debug("DisconnectBlock[%s]: disconnect block '%s' (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), (int)pindex->nHeight);
 
   // Disconnect in reverse order
@@ -3126,6 +3140,7 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
 	CWallet *wallet = GetWallet(pblock->ifaceIndex);
   CBlockIndex *pbest = GetBestBlockIndex(pblock->ifaceIndex);
+  CBlockIndex *pindexLast = pbest;
   CTxMemPool *pool = GetTxMemPool(iface);
   vector<CBlockIndex*> vConnect;
   vector<CBlockIndex*> vDisconnect;
@@ -3140,37 +3155,22 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 		return (false);
 
   if  (!GetCommitBranches(pbest, wallet->pindexBestHeader, pindexNew, vConnect, vDisconnect)) {
-    return (error(SHERR_INVAL, "core_CommitBlock: error obtaining commit branches."));
+    return (error(ERR_NOLINK, "(%s) CommitBlock: error obtaining commit branches.", iface->name));
   }
 
   if (pblock->hashPrevBlock != pbest->GetBlockHash()) {
-    pblock->WriteArchBlock();
-
-#if 0
-		/* refresh headers */
-		wallet->pindexBestHeader = NULL;
-#endif
-
-		if (wallet->pindexBestHeader) {
-			/* is this just a future block? */
-			CBlockIndex *tip = wallet->pindexBestHeader;
-			bool bFound = false;
-			while (tip) {
-				if (tip->nHeight <= pbest->nHeight + 1)
-					break;
-				if (tip == pindexNew) {
-					bFound = true;
-					break;
-				}
-
-				tip = tip->pprev;
-			}
-			if (bFound) {
-				/* suppress */
-				return (false);
+		/* ensure new chain has no previously invalidated blocks. */
+		for (unsigned int i = 0; i < vConnect.size(); i++) {
+			CBlockIndex *pindexTest = vConnect[i];
+			if (pindexTest->nStatus & BLOCK_FAILED_MASK) {
+				return (error(ERR_INVAL, "(%s) CommitBlock: rejecting new work; chain block \"%s\" is invalid.", iface->name, pindexTest->GetBlockHash().GetHex().c_str()));
 			}
 		}
-  }
+
+		/* retain in archive db */
+    if (pblock->WriteArchBlock())
+			pindexNew->nStatus |= BLOCK_HAVE_UNDO;
+	}
 
   /* discon blocks */
   BOOST_FOREACH(CBlockIndex* pindex, vDisconnect) {
@@ -3181,7 +3181,7 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
     if (!block)
       block = GetArchBlockByHash(iface, hash); /* orphan */
     if (!block) {
-      error(SHERR_INVAL, "core_CommitBlock: error obtaining disconnect block '%s'", hash.GetHex().c_str());
+      error(SHERR_INVAL, "(%s) CommitBlock: error obtaining disconnect block '%s'", iface->name, hash.GetHex().c_str());
       fValid = false;
       break;
     }
@@ -3207,27 +3207,8 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
         vFree.push_back(block);
     }
     if (!block) {
-			bool fConnectable = false;
-			if (pindex->pprev && wallet->pindexBestHeader) {
-				CBlockIndex *tip = wallet->pindexBestHeader;
-				while (tip) {
-					if (tip->nHeight <= pbest->nHeight + 1)
-						break;
-					if (tip == pindexNew) {
-						fConnectable = true;
-						break;
-					}
-
-					tip = tip->pprev;
-				}
-			}
-			if (fConnectable) {
-				Debug("(%s) CommitBlock: stopping reorg at block \"%s\".", iface->name, hash.GetHex().c_str());
-				pindexNew = pindex->pprev;
-			} else {
-				error(SHERR_INVAL, "core_CommitBlock: unknown connect block '%s'", hash.GetHex().c_str());
-				fValid = false;
-			}
+			error(SHERR_INVAL, "(%s) CommitBlock: unknown connect block '%s'", iface->name, hash.GetHex().c_str());
+			fValid = false;
       break;
     }
 
@@ -3235,7 +3216,6 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   }
   if (!fValid)
     goto fin;
-
 
   /* perform discon */
   BOOST_FOREACH(CBlockIndex* pindex, vDisconnect) {
@@ -3247,14 +3227,16 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
       break;
     }
 
+    if (pblock->WriteArchBlock())
+			pindex->nStatus |= BLOCK_HAVE_UNDO;
+		if (pindex->pprev) 
+			pindexLast = pindex->pprev;
   }
   if (!fValid)
     goto fin;
 
   /* perform connect */
   BOOST_FOREACH(CBlockIndex *pindex, vConnect) {
-		if (mConnectBlocks.count(pindex->GetBlockHash()) == 0)
-			continue;
     CBlock *block = mConnectBlocks[pindex->GetBlockHash()];
 
     if (!block->ConnectBlock(pindex)) {
@@ -3262,12 +3244,12 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
       fValid = false;
       break;
     }
+
+		pindex->nStatus |= BLOCK_HAVE_DATA;
+		pindexLast = pindex;
   }
   if (!fValid)
     goto fin;
-
-  /* persist */
-  WriteHashBestChain(iface, pindexNew->GetBlockHash());
 
   // Disconnect shorter branch
   BOOST_FOREACH(CBlockIndex* pindex, vDisconnect)
@@ -3282,18 +3264,16 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   /* add discon block tx's into pending pool */
   BOOST_FOREACH(CBlockIndex* pindex, vDisconnect) {
     CBlock *block = mDisconBlocks[pindex->GetBlockHash()];
-
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
       if (tx.IsCoinBase())
         continue;
+
       pool->AddTx(tx);
     }
   }
 
-  /* remove connectd block tx's from pool */ 
+  /* remove connected block tx's from pool */ 
   BOOST_FOREACH(CBlockIndex* pindex, vConnect) {
-		if (mConnectBlocks.count(pindex->GetBlockHash()) == 0)
-			continue;
     CBlock *block = mConnectBlocks[pindex->GetBlockHash()];
     pool->Commit(*block);
   }
@@ -3301,8 +3281,13 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 fin:
   if (!fValid) {
     pblock->InvalidChainFound(pindexNew);
-    error(SHERR_INVAL, "core_CommitBlock: invalid chain block: %s", pblock->ToString().c_str());
   }
+
+	if (pbest != pindexLast) {
+		/* re-establish chain at our failure/success point. */
+		WriteHashBestChain(iface, pindexLast->GetBlockHash());
+		SetBestBlockIndex(pblock->ifaceIndex, pindexLast);
+	}
 
   BOOST_FOREACH(CBlock *block, vFree) {
     delete block;
@@ -3544,4 +3529,24 @@ bool CheckSequenceLocks(CIface *iface, const CTransaction &tx, int flags)
 	lockPair = CalculateSequenceLocks(tx, flags, &prevheights, index);
 	return EvaluateSequenceLocks(index, lockPair);
 }
+
+/** Find the last common ancestor two blocks have.
+ *  Both pa and pb must be non-nullptr. */
+CBlockIndex* LastCommonAncestor(CBlockIndex* pa, CBlockIndex* pb) 
+{
+	if (pa->nHeight > pb->nHeight) {
+		pa = pa->GetAncestor(pb->nHeight);
+	} else if (pb->nHeight > pa->nHeight) {
+		pb = pb->GetAncestor(pa->nHeight);
+	}
+
+	while (pa != pb && pa && pb) {
+		pa = pa->pprev;
+		pb = pb->pprev;
+	}
+
+	// Eventually all chain branches meet at the genesis block.
+	//	assert(pa == pb);
+	return pa;
+} 
 

@@ -461,9 +461,9 @@ bool shc_CreateGenesisBlock()
   }
 
   ret = block.AddToBlockIndex();
-  if (!ret) {
+  if (!ret)
     return (false);
-  }
+  (*blockIndex)[shc_hashGenesisBlock]->nStatus |= BLOCK_HAVE_DATA;
 
   return (true);
 }
@@ -580,6 +580,7 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return error(SHERR_IO, "SHCBlock::AcceptBlock: error adding block '%s'.", pblock->GetHash().GetHex().c_str());
   }
 
+#if 0
   uint256 nextHash;
   while (shc_GetOrphanNextHash(hash, nextHash)) {
     hash = nextHash;
@@ -589,18 +590,9 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
     shc_RemoveOrphanBlock(hash);
     STAT_BLOCK_ORPHAN(iface)--;
   }
+#endif
 
   ServiceBlockEventUpdate(SHC_COIN_IFACE);
-
-/* TODO: move to core_AcceptBlock */
-	/* initiate notary tx, if needed. */
-	int mode;
-	const CTransaction& tx = pblock->vtx[0];
-	if ((tx.GetFlags() & CTransaction::TXF_MATRIX) &&
-			GetExtOutputMode(tx, OP_MATRIX, mode) &&
-			mode == OP_EXT_VALIDATE) {
-		RelayValidateMatrixNotaryTx(iface, tx);
-	}
 
   return true;
 }
@@ -830,10 +822,10 @@ bool SHCBlock::AcceptBlock()
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;
     if (mode == OP_EXT_VALIDATE) {
-      bool fValMatrix = false;
-      fValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], NULL, fCheck);
-      if (fValMatrix && !fCheck)
-        return error(SHERR_ILSEQ, "(shc) AcceptBlock: ValidateMatrix verification failure.");
+			bool fValMatrix = false;
+			fValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], NULL, fCheck);
+			if (fValMatrix && !fCheck)
+				return error(SHERR_ILSEQ, "(shc) AcceptBlock: ValidateMatrix verification failure.");
     } else if (mode == OP_EXT_PAY) {
       bool fHasSprMatrix = BlockAcceptSpringMatrix(iface, vtx[0], fCheck);
       if (fHasSprMatrix && !fCheck)
@@ -1122,6 +1114,8 @@ bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
   if (SHCBlock::pindexGenesisBlock == NULL && hash == shc_hashGenesisBlock)
   {
     SHCBlock::pindexGenesisBlock = pindexNew;
+		WriteHashBestChain(iface, pindexNew->GetBlockHash());
+		SetBestBlockIndex(ifaceIndex, pindexNew);
   } else {
     timing_init("SetBestChain/commit", &ts);
     ret = core_CommitBlock(this, pindexNew); 
@@ -1130,6 +1124,7 @@ bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
       return (false);
   }
 
+#if 0
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(SHC_COIN_IFACE);
   if (!fIsInitialDownload) {
@@ -1140,9 +1135,9 @@ bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
 
     WriteHashBestChain(iface, hash);
   }
+#endif
 
   // New best block
-  SetBestBlockIndex(SHC_COIN_IFACE, pindexNew);
   wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 

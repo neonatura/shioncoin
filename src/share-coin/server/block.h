@@ -1297,6 +1297,17 @@ public:
         return (int64)nTime;
     }
 
+    /**
+     * Obtain the block hash used to identify it's "difficulty".
+     * @see CBlockHeader.nBits
+     */
+    uint256 GetPoWHash() const
+    {
+      uint256 thash;
+      scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
+      return thash;
+    }
+
     friend bool operator==(const CBlockHeader& a, const CBlockHeader& b)
     {
         return (
@@ -1366,17 +1377,6 @@ class CBlock : public CBlockHeader
     bool IsNull() const
     {
       return (nBits == 0);
-    }
-
-    /**
-     * Obtain the block hash used to identify it's "difficulty".
-     * @see CBlockHeader.nBits
-     */
-    uint256 GetPoWHash() const
-    {
-      uint256 thash;
-      scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
-      return thash;
     }
 
     /**
@@ -1739,6 +1739,28 @@ class CBlockIndex
 
     void BuildSkip();
 
+    bool IsValid(int nUpTo = BLOCK_VALID_TRANSACTIONS) const
+    {
+//        assert(!(nUpTo & ~BLOCK_VALID_MASK)); // Only validity flags allowed.
+        if (nStatus & BLOCK_FAILED_MASK)
+            return false;
+        return ((nStatus & BLOCK_VALID_MASK) >= nUpTo);
+    }
+    
+    //! Raise the validity level of this block index entry.
+    //! Returns true if the validity was changed.
+    bool RaiseValidity(int nUpTo)
+    {
+//        assert(!(nUpTo & ~BLOCK_VALID_MASK)); // Only validity flags allowed.
+        if (nStatus & BLOCK_FAILED_MASK)
+            return false;
+        if ((nStatus & BLOCK_VALID_MASK) < nUpTo) {
+            nStatus = (nStatus & ~BLOCK_VALID_MASK) | nUpTo;
+            return true;
+        }
+        return false;
+    }
+
     std::string ToString() const
     {
       return strprintf("CBlockIndex(nprev=%08x, pnext=%08x, nHeight=%d, merkle=%s, hashBlock=%s)",
@@ -2002,6 +2024,8 @@ unsigned int GetBlockScriptFlags(CIface *iface, const CBlockIndex* pindex);
 bool CheckFinalTx(CIface *iface, const CTransaction& tx, CBlockIndex *pindexPrev, int flags = 0);
 
 bool CheckSequenceLocks(CIface *iface, const CTransaction &tx, int flags);
+
+CBlockIndex* LastCommonAncestor(CBlockIndex* pa, CBlockIndex* pb); 
 
 
 

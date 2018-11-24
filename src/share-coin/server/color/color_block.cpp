@@ -1082,16 +1082,16 @@ bool COLORBlock::SetBestChain(CBlockIndex* pindexNew)
 	if (!ret)
 		return (false);
 
+#if 0
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(COLOR_COIN_IFACE);
   if (!fIsInitialDownload) {
     const CBlockLocator locator(COLOR_COIN_IFACE, pindexNew);
     COLOR_SetBestChain(locator);
-    WriteHashBestChain(iface, hash);
   }
+#endif
 
   // New best block
-  SetBestBlockIndex(COLOR_COIN_IFACE, pindexNew);
   wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 

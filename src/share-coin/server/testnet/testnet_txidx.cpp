@@ -85,6 +85,9 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
 	nMaxIndex = 0;
 	(void)bc_idx_next(bc, &nMaxIndex);
 
+	uint256 hTip;
+	ReadHashBestChain(iface, hTip);
+
 	lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
 		TESTNETBlock block;
@@ -103,6 +106,8 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
     pindexNew->nTime          = block.nTime;
     pindexNew->nBits          = block.nBits;
     pindexNew->nNonce         = block.nNonce;
+
+		pindexNew->nStatus |= BLOCK_HAVE_DATA;
 
     if (lastIndex)
       pindexNew->BuildSkip();
@@ -199,6 +204,9 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
 		}
 
     lastIndex = pindexNew;
+
+		if (hTip == hash)
+			break;
   }
   SetBestBlockIndex(iface, lastIndex);
 

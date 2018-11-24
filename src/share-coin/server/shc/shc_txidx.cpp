@@ -89,6 +89,9 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
 	bc_idx_next(bc, &nMaxIndex);
 	nMaxIndex = MAX(1, nMaxIndex);// - 1;
 
+	uint256 hTip;
+	ReadHashBestChain(iface, hTip);
+
 	lastIndex = NULL;
 	for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
 		SHCBlock block;
@@ -113,6 +116,8 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
     pindexNew->nTime          = block.nTime;
     pindexNew->nBits          = block.nBits;
     pindexNew->nNonce         = block.nNonce;
+
+		pindexNew->nStatus |= BLOCK_HAVE_DATA;
 
     if (lastIndex)
       pindexNew->BuildSkip();
@@ -219,6 +224,9 @@ vTx.push_back(tx_hash);
 		}
 
     lastIndex = pindexNew;
+
+		if (hash == hTip)
+			break;
   }
   SetBestBlockIndex(iface, lastIndex);
 

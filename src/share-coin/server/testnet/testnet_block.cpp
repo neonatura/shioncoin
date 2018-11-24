@@ -293,6 +293,8 @@ CBlock* testnet_CreateNewBlock(const CPubKey& rkey)
   return pblock.release();
 }
 
+extern CBlockIndex *CreateBlockIndex(CIface *iface, CBlockHeader& block);
+
 bool testnet_CreateGenesisBlock()
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
@@ -332,9 +334,9 @@ fprintf(stderr, "DEBUG: Genesis fail: %s\n", block.ToString().c_str());
   }
 
   ret = block.AddToBlockIndex();
-  if (!ret) {
+  if (!ret)
 		return (error(ERR_INVAL, "testnet_CreateGenesisBlock: !AddToBlockIndex"));
-  }
+  (*blockIndex)[testnet_hashGenesisBlock]->nStatus |= BLOCK_HAVE_DATA;
 
   return (true);
 }
@@ -428,6 +430,7 @@ bool testnet_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return error(SHERR_IO, "TESTNETBlock::AcceptBlock: error adding block '%s'.", pblock->GetHash().GetHex().c_str());
   }
 
+#if 0
   uint256 nextHash;
   while (testnet_GetOrphanNextHash(hash, nextHash)) {
     hash = nextHash;
@@ -437,17 +440,9 @@ bool testnet_ProcessBlock(CNode* pfrom, CBlock* pblock)
     testnet_RemoveOrphanBlock(hash);
     STAT_BLOCK_ORPHAN(iface)--;
   }
+#endif
 
   ServiceBlockEventUpdate(TESTNET_COIN_IFACE);
-
-	/* initiate notary tx, if needed. */
-	int mode;
-	const CTransaction& tx = pblock->vtx[0];
-	if ((tx.GetFlags() & CTransaction::TXF_MATRIX) &&
-			GetExtOutputMode(tx, OP_MATRIX, mode) &&
-			mode == OP_EXT_VALIDATE) {
-		RelayValidateMatrixNotaryTx(iface, tx);
-	}
 
   return true;
 }
@@ -824,6 +819,8 @@ bool TESTNETBlock::SetBestChain(CBlockIndex* pindexNew)
   if (TESTNETBlock::pindexGenesisBlock == NULL && hash == testnet_hashGenesisBlock)
   {
     TESTNETBlock::pindexGenesisBlock = pindexNew;
+		WriteHashBestChain(iface, pindexNew->GetBlockHash());
+		SetBestBlockIndex(ifaceIndex, pindexNew);
   } else {
     timing_init("SetBestChain/commit", &ts);
     ret = core_CommitBlock(this, pindexNew); 
@@ -832,6 +829,7 @@ bool TESTNETBlock::SetBestChain(CBlockIndex* pindexNew)
       return (false);
   }
 
+#if 0
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(TESTNET_COIN_IFACE);
   if (!fIsInitialDownload) {
@@ -839,12 +837,10 @@ bool TESTNETBlock::SetBestChain(CBlockIndex* pindexNew)
     timing_init("SetBestChain/locator", &ts);
     TESTNET_SetBestChain(locator);
     timing_term(TESTNET_COIN_IFACE, "SetBestChain/locator", &ts);
-
-    WriteHashBestChain(iface, hash);
   }
+#endif
 
   // New best block
-  SetBestBlockIndex(TESTNET_COIN_IFACE, pindexNew);
   wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 

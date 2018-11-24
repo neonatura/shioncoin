@@ -543,6 +543,7 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(ifaceIndex);
+	CBlockIndex *pindexBest = GetBestBlockIndex(iface);
   const uint256& hash = ptx.GetHash();
   CTransaction& tx = ptx.GetTx();
 
@@ -570,19 +571,20 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
     return (error(SHERR_INVAL, "(%s) CPool.AddActiveTx: tx \"%s\" has unknown inputs specified -- marking as orphan.", iface->name, ptx.GetHash().GetHex().c_str()));
   }
 
-	/* resolve script */
-	for (int i = 0; i < tx.vin.size(); i++) {
-		const uint256& hPrevTx = tx.vin[i].prevout.hash;
-		const unsigned int nPrevOut = tx.vin[i].prevout.n;
-		tx_cache& inputs = ptx.GetInputs();
+  if (AreInputsSpent(ptx)) {
+    AddInvalTx(ptx);
+    return (error(SHERR_INVAL, "(%s) CPool.AddActiveTx: rejecting tx \"%s\" with spent input(s).", iface->name, ptx.GetHash().GetHex().c_str()));
+  }
 
-		if (inputs.count(hPrevTx) == 0) {
-			continue;
-		}
+	/* resolve script */
+	for (int i = 1; i < tx.vin.size(); i++) {
+		const uint256& hPrevTx = tx.vin[i].prevout.hash;
+		tx_cache& inputs = ptx.GetInputs();
+		if (inputs.count(hPrevTx) == 0) continue;
+		const unsigned int nPrevOut = tx.vin[i].prevout.n;
 		const CTransaction& txFrom = inputs[hPrevTx];
 
 		/* verify signature */
-		CBlockIndex *pindexBest = GetBestBlockIndex(iface);
 		int fVerify = GetBlockScriptFlags(iface, pindexBest);
 		if (nPrevOut >= txFrom.vout.size() ||
 				!VerifySignature(ifaceIndex, txFrom, tx, i, 0, fVerify)) {
@@ -596,10 +598,10 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
 				(previndex = GetBlockIndexByTx(iface, hPrevTx))) {
 			unsigned int nDepth = (unsigned int)(pindexBest->nHeight + 1 - previndex->nHeight);
 			unsigned int nMaturity = (unsigned int)wallet->GetCoinbaseMaturity(ptx.GetColor());
-			if (nDepth < nMaturity) {
-				/* immature */
-				AddInvalTx(ptx);
-				return (error(SHERR_INVAL, "(%s) AddActiveTx: reject: coinbase input is immature (%d < %d blocks).", iface->name, nDepth, nMaturity));
+			if (nDepth < nMaturity) { /* immature */
+				ptx.SetFlag(POOL_NOT_FINAL);
+				AddOverflowTx(ptx);
+				return (error(SHERR_INVAL, "(%s) AddActiveTx: warning: coinbase input is immature (%d < %d blocks) [tx: %s].", iface->name, nDepth, nMaturity, ptx.GetHash().GetHex().c_str()));
 			}
 		}
 	}
@@ -608,11 +610,6 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
   if (!ResolveConflicts(ptx)) {
     AddInvalTx(ptx);
     return (error(ERR_INVAL, "(%s) AddActiveTx: reject: another tx in mempool is already referencing a coin input [tx %s].", iface->name, ptx.GetHash().GetHex().c_str()));
-  }
-
-  if (AreInputsSpent(ptx)) {
-    AddInvalTx(ptx);
-    return (error(SHERR_INVAL, "(%s) CPool.AddActiveTx: rejecting tx \"%s\" with spent input(s).", iface->name, ptx.GetHash().GetHex().c_str()));
   }
 
 	if (!AcceptTx(ptx.tx)) {

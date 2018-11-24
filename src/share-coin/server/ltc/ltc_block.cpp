@@ -536,6 +536,7 @@ bool ltc_CreateGenesisBlock()
   ret = block.AddToBlockIndex();
   if (!ret)
     return (false);
+  (*blockIndex)[ltc_hashGenesisBlock]->nStatus |= BLOCK_HAVE_DATA;
 
   return (true);
 }
@@ -651,6 +652,7 @@ pblock->print();
     return error(SHERR_INVAL, "ProcessBlock() : AcceptBlock FAILED");
   }
 
+#if 0
   uint256 nextHash;
   while (ltc_GetOrphanNextHash(hash, nextHash)) {
     hash = nextHash;
@@ -661,6 +663,7 @@ pblock->print();
     ltc_RemoveOrphanBlock(hash);
     STAT_BLOCK_ORPHAN(iface)--;
   }
+#endif
 
   ServiceBlockEventUpdate(LTC_COIN_IFACE);
 
@@ -1843,6 +1846,8 @@ bool LTCBlock::SetBestChain(CBlockIndex* pindexNew)
   if (LTCBlock::pindexGenesisBlock == NULL && hash == ltc_hashGenesisBlock)
   {
     LTCBlock::pindexGenesisBlock = pindexNew;
+		WriteHashBestChain(iface, pindexNew->GetBlockHash());
+		SetBestBlockIndex(ifaceIndex, pindexNew);
   } else {
     timing_init("SetBestChain/commit", &ts);
     ret = core_CommitBlock(this, pindexNew); 
@@ -1851,6 +1856,7 @@ bool LTCBlock::SetBestChain(CBlockIndex* pindexNew)
       return (false);
   }
 
+#if 0
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(LTC_COIN_IFACE);
   if (!fIsInitialDownload) {
@@ -1858,21 +1864,10 @@ bool LTCBlock::SetBestChain(CBlockIndex* pindexNew)
     timing_init("SetBestChain/locator", &ts);
     LTC_SetBestChain(locator);
     timing_term(LTC_COIN_IFACE, "SetBestChain/locator", &ts);
-
-#ifdef USE_LEVELDB_COINDB
-    {
-      LTCTxDB txdb;
-      txdb.WriteHashBestChain(hash);
-      txdb.Close();
-    }
-#else
-    WriteHashBestChain(iface, hash);
+  }
 #endif
 
-  }
-
   // New best block
-  SetBestBlockIndex(LTC_COIN_IFACE, pindexNew);
   wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 

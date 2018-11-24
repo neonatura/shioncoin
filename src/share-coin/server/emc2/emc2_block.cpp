@@ -597,6 +597,7 @@ bool emc2_CreateGenesisBlock()
   ret = block.AddToBlockIndex();
   if (!ret)
     return (false);
+  (*blockIndex)[emc2_hashGenesisBlock]->nStatus |= BLOCK_HAVE_DATA;
 
   return (true);
 }
@@ -769,6 +770,7 @@ pblock->print();
     return error(SHERR_INVAL, "ProcessBlock() : AcceptBlock FAILED");
   }
 
+#if 0
   uint256 nextHash;
   while (emc2_GetOrphanNextHash(hash, nextHash)) {
     hash = nextHash;
@@ -779,6 +781,7 @@ pblock->print();
     emc2_RemoveOrphanBlock(hash);
     STAT_BLOCK_ORPHAN(iface)--;
   }
+#endif
 
   ServiceBlockEventUpdate(EMC2_COIN_IFACE);
 
@@ -1956,6 +1959,8 @@ bool EMC2Block::SetBestChain(CBlockIndex* pindexNew)
   if (EMC2Block::pindexGenesisBlock == NULL && hash == emc2_hashGenesisBlock)
   {
     EMC2Block::pindexGenesisBlock = pindexNew;
+		WriteHashBestChain(iface, pindexNew->GetBlockHash());
+		SetBestBlockIndex(ifaceIndex, pindexNew);
   } else {
     timing_init("SetBestChain/commit", &ts);
     ret = core_CommitBlock(this, pindexNew); 
@@ -1964,6 +1969,7 @@ bool EMC2Block::SetBestChain(CBlockIndex* pindexNew)
       return (false);
   }
 
+#if 0
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(EMC2_COIN_IFACE);
   if (!fIsInitialDownload) {
@@ -1971,21 +1977,10 @@ bool EMC2Block::SetBestChain(CBlockIndex* pindexNew)
     timing_init("SetBestChain/locator", &ts);
     EMC2_SetBestChain(locator);
     timing_term(EMC2_COIN_IFACE, "SetBestChain/locator", &ts);
-
-#ifdef USE_LEVELDB_COINDB
-    {
-      EMC2TxDB txdb;
-      txdb.WriteHashBestChain(hash);
-      txdb.Close();
-    }
-#else
-    WriteHashBestChain(iface, hash);
+  }
 #endif
 
-  }
-
   // New best block
-  SetBestBlockIndex(EMC2_COIN_IFACE, pindexNew);
   wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
 

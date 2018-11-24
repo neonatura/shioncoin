@@ -27,7 +27,7 @@
 #define __SERVER__VALIDATION_H__
 
 
-bool CheckBlockHeader(CBlock *pblock);
+bool CheckBlockHeader(CBlockHeader *pblock);
 
 bool ContextualCheckBlockHeader(CIface *iface, const CBlockHeader& block, CBlockIndex *pindexPrev);
 

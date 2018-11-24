@@ -819,8 +819,8 @@ Value rpc_block_info(CIface *iface, const Array& params, bool fStratum)
 
   obj.push_back(Pair("errors",        GetWarnings(ifaceIndex, "statusbar")));
 
-	CBlock *block = GetBlockByHash(iface, pindexBest->GetBlockHash());
 	if (pindexBest) {
+		CBlock *block = GetBlockByHash(iface, pindexBest->GetBlockHash());
 		int nTotal = block->GetTotalBlocksEstimate();
 		delete block;
 		obj.push_back(Pair("checkpoint", nTotal));

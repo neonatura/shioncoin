@@ -809,7 +809,7 @@ _TEST(certtx)
   _TRUE(VerifyCert(iface, chain_wtx, nBestHeight) == true);
   _TRUE(chain_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
-  { /* insert derived cert into chain */
+  for (unsigned int i = 0; i < 3; i++) { /* insert derived cert into chain */
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);

@@ -88,6 +88,9 @@ bool emc2_FillBlockIndex()
 	nMaxIndex = 0;
 	(void)bc_idx_next(bc, &nMaxIndex);
 
+	uint256 hTip;
+	ReadHashBestChain(iface, hTip);
+
   lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
 		EMC2Block block;
@@ -133,6 +136,9 @@ bool emc2_FillBlockIndex()
 			pindexNew->GetBlockWork();
 
     lastIndex = pindexNew;
+
+		if (hTip == hash)
+			break;
   }
   SetBestBlockIndex(iface, lastIndex);
 

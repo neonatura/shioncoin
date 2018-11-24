@@ -302,6 +302,9 @@ bool ltc_FillBlockIndex()
 	nMaxIndex = 0;
 	(void)bc_idx_next(bc, &nMaxIndex);
 
+	uint256 hTip;
+	ReadHashBestChain(iface, hTip);
+
   lastIndex = NULL;
   for (nHeight = 0; nHeight < nMaxIndex; nHeight++) {
 		LTCBlock block;
@@ -346,6 +349,9 @@ bool ltc_FillBlockIndex()
 			pindexNew->GetBlockWork();
 
     lastIndex = pindexNew;
+
+		if (hTip == hash)
+			break;
   }
   SetBestBlockIndex(iface, lastIndex);
 
