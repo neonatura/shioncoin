@@ -1999,6 +1999,7 @@ void GetMyExternalIP(void)
 
 void AddPeerAddress(CIface *iface, const char *hostname, int port)
 {
+  int ifaceIndex = GetCoinIndex(iface);
   shpeer_t *peer;
   char addr_str[256];
 
@@ -2013,11 +2014,14 @@ void AddPeerAddress(CIface *iface, const char *hostname, int port)
 
   /* add peer to tracking database. */
   peer = shpeer_init(iface->name, addr_str);
+#if 0
   create_uevent_verify_peer(GetCoinIndex(iface), peer);
+#endif
+	unet_peer_incr(ifaceIndex, peer);
+	shpeer_free(&peer);
 
-  Debug("(%s) AddPeerAddress: verify host '%s' (port: %d).", 
+  Debug("(%s) AddPeerAddress: host '%s' (port: %d).", 
       iface->name, (char *)hostname, port);
-
 }
 
 

@@ -454,22 +454,14 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     vector<CAddress> vAddr;
     vRecv >> vAddr;
 
-#if 0
-    // Don't want addr from older versions unless seeding
-    if (pfrom->nVersion < CADDR_TIME_VERSION && addrman.size() > 1000)
-      return true;
-#endif
-    if (pfrom->nVersion < CADDR_TIME_VERSION)
-      return true;
-
     if (vAddr.size() > 1000)
     {
       pfrom->Misbehaving(20);
       return error(SHERR_INVAL, "message addr size() = %d", vAddr.size());
     }
 
-#if 0
-    // Store the new addresses
+		Debug("(%s) ProcessMessage: received %d node addresses.", iface->name, vAddr.size()); 
+
     vector<CAddress> vAddrOk;
     int64 nNow = GetAdjustedTime();
     int64 nSince = nNow - 10 * 60;
@@ -497,8 +489,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
           multimap<uint256, CNode*> mapMix;
           BOOST_FOREACH(CNode* pnode, vNodes)
           {
-            if (pnode->nVersion < CADDR_TIME_VERSION)
-              continue;
             unsigned int nPointer;
             memcpy(&nPointer, &pnode, sizeof(nPointer));
             uint256 hashKey = hashRand ^ nPointer;
@@ -514,19 +504,14 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       if (fReachable)
         vAddrOk.push_back(addr);
     }
-    BOOST_FOREACH(const CAddress &addr, vAddrOk) {
-      AddPeerAddress(iface, addr.ToStringIP().c_str(), addr.GetPort());
-    }
-#endif
 
-    BOOST_FOREACH(CAddress& addr, vAddr) {
+    BOOST_FOREACH(const CAddress &addr, vAddrOk) {
       AddPeerAddress(iface, addr.ToStringIP().c_str(), addr.GetPort());
     }
 
     if (vAddr.size() < 1000)
       pfrom->fGetAddr = false;
   }
-
 
   else if (strCommand == "inv")
   {
@@ -1339,40 +1324,41 @@ bool shc_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
     static int64 nLastRebroadcast;
     if (!IsInitialBlockDownload(SHC_COIN_IFACE) && (GetTime() - nLastRebroadcast > 24 * 60 * 60))
     {
-      {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
-        {
-          // Periodically clear setAddrKnown to allow refresh broadcasts
-          if (nLastRebroadcast)
-            pnode->setAddrKnown.clear();
+			LOCK(cs_vNodes);
+			BOOST_FOREACH(CNode* pnode, vNodes)
+			{
+				// Periodically clear setAddrKnown to allow refresh broadcasts
+				if (nLastRebroadcast)
+					pnode->setAddrKnown.clear();
 
-          // Rebroadcast our address
-          CAddress addr = GetLocalAddress(&pnode->addr);
-          addr.SetPort(iface->port);
-          if (addr.IsRoutable()) {
-            pnode->PushAddress(addr);
-            pnode->addrLocal = addr;
-          }
-        }
-      }
-      nLastRebroadcast = GetTime();
+				// Rebroadcast our address
+				CAddress addr = GetLocalAddress(&pnode->addr);
+				addr.SetPort(iface->port);
+				if (addr.IsRoutable()) {
+					pnode->PushAddress(addr);
+					pnode->addrLocal = addr;
+				}
+			}
+			nLastRebroadcast = GetTime();
     }
+
 
     /* msg: "addr" */
     if (!pto->vAddrToSend.empty()) {
-      const CAddress& addr = pto->vAddrToSend.front();
-      if (0 == pto->setAddrKnown.count(addr)) {
-        vector<CAddress> vAddr;
-        vAddr.push_back(addr);
-        pto->PushMessage("addr", vAddr);
-        pto->setAddrKnown.insert(addr);
-      }
-      pto->vAddrToSend.erase(pto->vAddrToSend.begin());
+			vector<CAddress> vAddr;
+      vAddr.reserve(pto->vAddrToSend.size());
+			BOOST_FOREACH(const CAddress& addr, pto->vAddrToSend) {
+				if (pto->setAddrKnown.insert(addr).second) { /* if not known */
+					vAddr.push_back(addr);
+					if (vAddr.size() >= 1000)
+						break;
+				}
+			}
+			pto->vAddrToSend.clear();
+			if (!vAddr.empty())
+				pto->PushMessage("addr", vAddr);
+		}
 
-      if (pto->setAddrKnown.size() >= SHC_MAX_GETADDR)
-        pto->vAddrToSend.clear(); 
-    }
 
 		/* try sending block announcements via headers. */
 		{

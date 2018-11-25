@@ -363,7 +363,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	}
 
 	if (pindex->nStatus & BLOCK_HAVE_DATA) {
-		Debug("AcceptBlock: skipping already processed block \"%s\".", hash.GetHex().c_str());
+		Debug("(%s) AcceptBlock: skipping already processed block \"%s\".", iface->name, hash.GetHex().c_str(), pblock->originPeer ? pblock->originPeer->addr.ToString().c_str() : "<local>");
 		return (true);
 	}
 #if 0

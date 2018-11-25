@@ -81,7 +81,7 @@ static int _bc_map_open(bc_t *bc, bc_map_t *map)
 #endif
   if (fd == -1) {
     perror("bc_map_open [open]");
-    return (-errno);
+    return (errno2sherr());
   }
 
   memset(&st, 0, sizeof(st));
@@ -89,7 +89,7 @@ static int _bc_map_open(bc_t *bc, bc_map_t *map)
   if (err) {
     //perror("bc_map_open [fstat]");
     close(fd);
-    return (-errno);
+    return (errno2sherr());
   }
   if (!S_ISREG(st.st_mode)) {
     //perror("bc_map_open [!reg]");
@@ -108,7 +108,7 @@ static int _bc_map_open(bc_t *bc, bc_map_t *map)
     if (err) {
       //perror("bc_map_open [truncate]");
       close(fd);
-      return (-errno);
+      return (errno2sherr());
     }
 
     lseek(fd, 0L, SEEK_SET);
@@ -165,9 +165,9 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
   memset(&st, 0, sizeof(st));
   err = fstat(map->fd, &st);
   if (err) {
-    sprintf(errbuf, "bc_map_alloc: fstat errno %d [map fd %d]\n", -errno, map->fd);
+    sprintf(errbuf, "bc_map_alloc: fstat errno %d [map fd %d]\n", errno, map->fd);
     shcoind_log(errbuf);
-    return (-errno);
+    return (errno2sherr());
   }
 
   map_of = 0;
@@ -203,7 +203,7 @@ static int _bc_map_alloc(bc_t *bc, bc_map_t *map, bcsize_t len)
     if (err) {
       sprintf(errbuf, "bc_map_alloc: %d = ftruncate(fd %d, <%d bytes>) [errno %d]\n", err, map->fd, size, errno); 
       shcoind_log(errbuf);
-      return (-errno);
+      return (errno2sherr());
     }
   }
 

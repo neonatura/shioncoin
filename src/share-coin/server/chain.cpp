@@ -500,7 +500,8 @@ static void FindNextBlocksToDownload(CIface *iface, CNode *pfrom, unsigned int c
 				return;
 			}
 
-			if (!(pindex->nStatus & BLOCK_HAVE_DATA)) {
+			if (!(pindex->nStatus & BLOCK_HAVE_DATA) &&
+					!(pindex->nStatus & BLOCK_HAVE_UNDO)) {
 				/* block is not already on main chain. */
 				if (pindex->nHeight > nWindowEnd)
 					break;
@@ -514,34 +515,18 @@ static void FindNextBlocksToDownload(CIface *iface, CNode *pfrom, unsigned int c
 
 }
 
-bool ServiceLegacyBlockEvent(int ifaceIndex, CNode *pfrom)
+bool ServiceLegacyBlockEvent(CIface *iface, CNode *pfrom)
 {
+	int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(ifaceIndex);
   NodeList &vNodes = GetNodeList(ifaceIndex);
-  CIface *iface;
   time_t expire_t;
-
-  iface = GetCoinByIndex(ifaceIndex);
-  if (!iface)
-    return (false);
-
-  if (!iface->enabled)
-    return (false);
-
-  if (vNodes.size() == 0)
-    return (true); /* keep trying */
 
   CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
   if (!pindexBest) {
     Debug("(%s) ServiceBlockEvent: no block hiearchy established.\n", iface->name);
     return (true); /* keep trying */
   }
-
-  if (iface->blockscan_max == 0)
-    return (true); /* keep trying */
-
-	if (chain_IsNodesBusy(ifaceIndex))
-		return (true); /* receiving stuff */
 
   if (pindexBest->nHeight >= iface->blockscan_max) {
     ServiceBlockEventUpdate(ifaceIndex);
@@ -705,9 +690,13 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 		return (false);
 	pfrom->pindexRecv = vBlocks.front();
 
-	unsigned int nIndex;
+	unsigned int nIndex = 0;
+#if 0
+	/* skip blocks we have already stored */
 	for (nIndex = 0; nIndex < vBlocks.size(); nIndex) {
 		CBlockIndex *pindex = vBlocks[nIndex];
+		if (pindex->nHeight <= pbest->nHeight)
+			break; /* invalid */
 		if (!(pindex->nStatus & BLOCK_HAVE_UNDO))
 			break; /* no archive record available. */ 
 		bool fIsWitness = (pindex->nStatus & BLOCK_OPT_WITNESS) ? true : false;
@@ -720,6 +709,7 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 /* error .. */
 			break;
 		}
+
 		//bool ok = block->AcceptBlock();
 		bool ok = ProcessBlock(NULL, block);
 		delete block;
@@ -727,6 +717,7 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 			break; /* failure accepting block. */
 		}
 	}
+#endif
 
 	/* ask for blocks */
 	int nFetchFlags = 0;
@@ -804,7 +795,7 @@ bool ServiceBlockEvent(int ifaceIndex)
 	if (ifaceIndex == USDE_COIN_IFACE) {
 		CNode *pfrom = chain_GetNextNode(ifaceIndex);
 		if (!pfrom) return (true); /* keep trying */
-		return (ServiceLegacyBlockEvent(ifaceIndex, pfrom));
+		return (ServiceLegacyBlockEvent(iface, pfrom));
 	}
 
   if (pindexBest == wallet->pindexBestHeader) { //	->nHeight >= iface->blockscan_max)

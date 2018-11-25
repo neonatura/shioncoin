@@ -406,16 +406,58 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     vector<CAddress> vAddr;
     vRecv >> vAddr;
 
-    if (pfrom->nVersion < CADDR_TIME_VERSION)
-      return true;
-
     if (vAddr.size() > 1000)
     {
       pfrom->Misbehaving(20);
       return error(SHERR_INVAL, "message addr size() = %d", vAddr.size());
     }
 
-    BOOST_FOREACH(CAddress& addr, vAddr) {
+		Debug("(%s) ProcessMessage: received %d node addresses.", iface->name, vAddr.size()); 
+
+    vector<CAddress> vAddrOk;
+    int64 nNow = GetAdjustedTime();
+    int64 nSince = nNow - 10 * 60;
+    BOOST_FOREACH(CAddress& addr, vAddr)
+    {
+      if (fShutdown)
+        return true;
+      if (addr.nTime <= 100000000 || addr.nTime > nNow + 10 * 60)
+        addr.nTime = nNow - 5 * 24 * 60 * 60;
+      pfrom->AddAddressKnown(addr);
+      bool fReachable = IsReachable(addr);
+      if (addr.nTime > nSince && !pfrom->fGetAddr && vAddr.size() <= 10 && addr.IsRoutable())
+      {
+        // Relay to a limited number of other nodes
+        {
+          LOCK(cs_vNodes);
+          // Use deterministic randomness to send to the same nodes for 24 hours
+          // at a time so the setAddrKnowns of the chosen nodes prevent repeats
+          static uint256 hashSalt;
+          if (hashSalt == 0)
+            hashSalt = GetRandHash();
+          uint64 hashAddr = addr.GetHash();
+          uint256 hashRand = hashSalt ^ (hashAddr<<32) ^ ((GetTime()+hashAddr)/(24*60*60));
+          hashRand = Hash(BEGIN(hashRand), END(hashRand));
+          multimap<uint256, CNode*> mapMix;
+          BOOST_FOREACH(CNode* pnode, vNodes)
+          {
+            unsigned int nPointer;
+            memcpy(&nPointer, &pnode, sizeof(nPointer));
+            uint256 hashKey = hashRand ^ nPointer;
+            hashKey = Hash(BEGIN(hashKey), END(hashKey));
+            mapMix.insert(make_pair(hashKey, pnode));
+          }
+          int nRelayNodes = fReachable ? 2 : 1; // limited relaying of addresses outside our network(s)
+          for (multimap<uint256, CNode*>::iterator mi = mapMix.begin(); mi != mapMix.end() && nRelayNodes-- > 0; ++mi)
+            ((*mi).second)->PushAddress(addr);
+        }
+      }
+      // Do not store addresses outside our network
+      if (fReachable)
+        vAddrOk.push_back(addr);
+    }
+
+    BOOST_FOREACH(const CAddress &addr, vAddrOk) {
       AddPeerAddress(iface, addr.ToStringIP().c_str(), addr.GetPort());
     }
 
@@ -1157,22 +1199,24 @@ bool testnet_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
         }
       }
       nLastRebroadcast = GetTime();
-    }
+		}
 
-    /* msg: "addr" */
-    if (!pto->vAddrToSend.empty()) {
-      const CAddress& addr = pto->vAddrToSend.front();
-      if (0 == pto->setAddrKnown.count(addr)) {
-        vector<CAddress> vAddr;
-        vAddr.push_back(addr);
-        pto->PushMessage("addr", vAddr);
-        pto->setAddrKnown.insert(addr);
-      }
-      pto->vAddrToSend.erase(pto->vAddrToSend.begin());
+		/* msg: "addr" */
+		if (!pto->vAddrToSend.empty()) {
+			vector<CAddress> vAddr;
+			vAddr.reserve(pto->vAddrToSend.size());
+			BOOST_FOREACH(const CAddress& addr, pto->vAddrToSend) {
+				if (pto->setAddrKnown.insert(addr).second) { /* if not known */
+					vAddr.push_back(addr);
+					if (vAddr.size() >= 1000)
+						break;
+				}
+			}
+			pto->vAddrToSend.clear();
+			if (!vAddr.empty())
+				pto->PushMessage("addr", vAddr);
+		}
 
-      if (pto->setAddrKnown.size() >= TESTNET_MAX_GETADDR)
-        pto->vAddrToSend.clear(); 
-    }
 
 		/* try sending block announcements via headers. */
 		{

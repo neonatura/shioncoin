@@ -148,10 +148,9 @@ now = shtime();
     /* async connection socket timeout */
     err = SHERR_TIMEDOUT;
 
-#if 0
+/* DEBUG: */
     sprintf(buf, "unet_peer_verify: error: peer '%s' (%s) [wait %-1.1fs] [sherr %d] [fd %d].", shpeer_print(peer), sherrstr(err), shtime_diff(bind->scan_stamp, now), err, e->fd);
     unet_log(e->mode, buf);
-#endif
 
     /* error */
     unet_peer_decr(e->mode, peer);

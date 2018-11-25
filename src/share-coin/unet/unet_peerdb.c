@@ -334,7 +334,7 @@ int unet_peer_wait(unet_bind_t *bind)
 {
   double dur;
 
-  dur = MAX(4, MIN(540, 540 * bind->scan_freq));
+  dur = MAX(4, MIN(300, 300 * bind->scan_freq));
   if (shtime_after(shtime(), shtime_adj(bind->scan_stamp, dur)))
     return (FALSE);
 
