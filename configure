@@ -12281,6 +12281,12 @@ $as_echo "#define SH 1" >>confdefs.h
 $as_echo "#define X86_64 1" >>confdefs.h
 
   ;;
+  aarch64)
+  arch=x86_64
+
+$as_echo "#define X86_64 1" >>confdefs.h
+
+  ;;
   cris|crisv10)
   arch=crisv10
 

@@ -323,6 +323,8 @@ public:
 					ifaceIndex = idx; 
 				}
 			}
+
+			return (ifaceIndex);
 		}
 
 

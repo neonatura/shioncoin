@@ -260,6 +260,8 @@ server_sources = \
 	server/rpc/rpcoffer_proto.cpp \
 	server/rpc/rpcdump.cpp \
 	server/rpc/rpc_command.cpp \
+	server/rpc/rpc_parse.cpp \
+	server/rpc/rpcwallet_proto.cpp \
 	server/rpc/rpcrawtransaction.cpp \
 	server/versionbits.cpp \
 	server/txsignature.cpp \

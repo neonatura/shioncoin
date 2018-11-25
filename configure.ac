@@ -135,6 +135,10 @@ AC_DEFINE([SH], 1, [Define for the SH architecture.])
   arch=x86_64
 AC_DEFINE([X86_64], 1, [Define for the AMD x86-64 architecture.])
   ;;
+  aarch64)
+  arch=x86_64
+AC_DEFINE([X86_64], 1, [Define for the ARM 64-bit architecture.])
+  ;;
   cris|crisv10)
   arch=crisv10
 AC_DEFINE([CRISV10], 1, [Define for the CRISv10 architecture.])

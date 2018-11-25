@@ -1029,6 +1029,7 @@ int GetBestHeight(int ifaceIndex)
   return (GetBestHeight(GetCoinByIndex(ifaceIndex)));
 }
 
+#define MAX_BLOCK_DOWNLOAD_TIME 2592000
 bool IsInitialBlockDownload(int ifaceIndex)
 {
   CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
@@ -1044,7 +1045,7 @@ bool IsInitialBlockDownload(int ifaceIndex)
     nLastUpdate = GetTime();
   }
   return (GetTime() - nLastUpdate < 15 &&
-      pindexBest->GetBlockTime() < GetTime() - 24 * 60 * 60);
+      pindexBest->GetBlockTime() < (GetTime() - MAX_BLOCK_DOWNLOAD_TIME));
 }
 
 uint256 GetBestBlockChain(CIface *iface)

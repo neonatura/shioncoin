@@ -606,7 +606,7 @@
 /* Define to the windows os version. */
 #undef WINVER
 
-/* Define for the AMD x86-64 architecture. */
+/* Define for the ARM 64-bit architecture. */
 #undef X86_64
 
 /* Enable large inode numbers on Mac OS X 10.5. */

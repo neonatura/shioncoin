@@ -64,6 +64,7 @@ extern "C" {
 #elif defined(HAVE_NCURSES_NCURSES_H)
 #include <ncurses/ncurses.h>
 #elif defined(HAVE_NCURSES_H)
+#define NCURSES_INTERNALS
 #include <ncurses.h>
 #else
 #include <curses.h>

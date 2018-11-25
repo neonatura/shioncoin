@@ -468,9 +468,10 @@ bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex*
     }
 
     if (!outs[prevout.n].IsNull() && /* spent on something */
-        outs[prevout.n] != tx->GetHash()) { /* check for repeat */ 
+        outs[prevout.n] != tx->GetHash() &&
+				VerifyTxHash(iface, outs[prevout.n])) {
       /* already spent */
-      return (error(SHERR_INVAL, "core_ConnectInputs: double spend"));
+      return (error(SHERR_INVAL, "(%s) ConnectInputs: double spend: input tx \"%s\" already spent in tx \"%s\".", iface->name, prevout.hash.GetHex().c_str(), outs[prevout.n].GetHex().c_str()));
     }
 
 
