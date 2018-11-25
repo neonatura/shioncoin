@@ -347,7 +347,7 @@ static bool shc_LoadBlockIndex()
 
   //printf("LoadBlockIndex(): SHCBlock::hashBestChain=%s  height=%d  date=%s\n", hashBestChain.ToString().substr(0,20).c_str(), GetBestHeight(iface), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
 
-  int nCheckDepth = (GetBestHeight(SHC_COIN_IFACE) / 10000) + 640;
+  int nCheckDepth = (GetBestHeight(SHC_COIN_IFACE) / 1000) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;
   int nValidateCheckDepth = nCheckDepth * 4;
   int total = 0;

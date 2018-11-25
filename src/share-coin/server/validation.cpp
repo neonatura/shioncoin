@@ -614,3 +614,5 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	STAT_BLOCK_ACCEPTS(iface)++;
 	return true;
 }
+
+

@@ -686,38 +686,42 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 		return (false);
 
 	/* suppress duplicate requests. */
-	if (pfrom->pindexRecv == vBlocks.front())
+	CBlockIndex *pindexFirst = vBlocks.front();
+	if (pfrom->pindexRecv == pindexFirst)
 		return (false);
-	pfrom->pindexRecv = vBlocks.front();
+	pfrom->pindexRecv = pindexFirst;
 
 	unsigned int nIndex = 0;
-#if 0
-	/* skip blocks we have already stored */
-	for (nIndex = 0; nIndex < vBlocks.size(); nIndex) {
-		CBlockIndex *pindex = vBlocks[nIndex];
-		if (pindex->nHeight <= pbest->nHeight)
-			break; /* invalid */
-		if (!(pindex->nStatus & BLOCK_HAVE_UNDO))
-			break; /* no archive record available. */ 
-		bool fIsWitness = (pindex->nStatus & BLOCK_OPT_WITNESS) ? true : false;
-		if (fIsWitness != IsWitnessEnabled(iface, pindex->pprev))
-			break; /* incompatible */
-		CBlock *block = GetArchBlockByHash(iface, pindex->GetBlockHash());
-		if (!block) {
-			/* invalid state */
-			pindex->nStatus &= ~BLOCK_HAVE_UNDO;
-/* error .. */
-			break;
-		}
+	if (pindexBest && pindexFirst->pprev &&
+			pindexBest->GetBlockHash() == pindexFirst->pprev->GetBlockHash()) {
+		/* skip blocks we have already stored */
+		for (nIndex = 0; nIndex < vBlocks.size(); nIndex) {
+			CBlockIndex *pindex = vBlocks[nIndex];
+			if (pindex->nHeight <= pindexBest->nHeight)
+				break; /* invalid state */
+			if (pindex->nStatus & BLOCK_HAVE_DATA)
+				break; /* invalid state */
+			if (!(pindex->nStatus & BLOCK_HAVE_UNDO))
+				break; /* no archive record available. */ 
+			bool fIsWitness = (pindex->nStatus & BLOCK_OPT_WITNESS) ? true : false;
+			if (fIsWitness != IsWitnessEnabled(iface, pindex->pprev))
+				break; /* incompatible */
+			CBlock *block = GetArchBlockByHash(iface, pindex->GetBlockHash());
+			if (!block) {
+				/* invalid state */
+				pindex->nStatus &= ~BLOCK_HAVE_UNDO;
+	/* error .. */
+				break;
+			}
 
-		//bool ok = block->AcceptBlock();
-		bool ok = ProcessBlock(NULL, block);
-		delete block;
-		if (!ok) {
-			break; /* failure accepting block. */
+			//bool ok = block->AcceptBlock();
+			bool ok = ProcessBlock(NULL, block);
+			delete block;
+			if (!ok) {
+				break; /* failure accepting block. */
+			}
 		}
 	}
-#endif
 
 	/* ask for blocks */
 	int nFetchFlags = 0;
