@@ -1,27 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
 	xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-    <Product Id="*" UpgradeCode="9cd08531-4f3f-4c8a-842e-f8a088b44fd1" Version="3.1.0.0" Language="1033" Name="Share Coin Virtual Currency" Manufacturer="Neo Natura">
+    <Product Id="*" UpgradeCode="a6a01e81-7586-4fc3-ae5e-7e14a1a7c045" Version="3.2.0.0" Language="1033" Name="Share Coin Virtual Currency" Manufacturer="Neo Natura">
         <Package InstallerVersion="300" Compressed="yes"/>
         <Media Id="1" Cabinet="myapplication.cab" EmbedCab="yes" />
 	<Icon Id="shc.ico" SourceFile="shc.ico" />
 	<Property Id="ARPPRODUCTICON" Value="shc.ico" />
 
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="ProgramFilesFolder">
-                <Directory Id="APPLICATIONROOTDIRECTORY" Name="ShareCoin" />
+        	<Directory Id="ProgramFilesFolder">
+	        	<Directory Id="APPLICATIONROOTDIRECTORY" Name="ShareCoin" />
+	        </Directory>
 
-            </Directory>
-	   <Directory Id="ProgramMenuFolder">
-                <Directory Id="ApplicationProgramsFolder" Name="Share Coin"/>
-            </Directory>
-          <Directory Id="DesktopFolder"/>
+		<Directory Id="ProgramMenuFolder">
+                	<Directory Id="ApplicationProgramsFolder" Name="Share Coin"/>
+           	</Directory>
+
+	        <Directory Id="DesktopFolder"/>
+
+		<Directory Id="CommonAppDataFolder">
+	        	<Directory Id="APPLICATIONDATADIRECTORY" Name="share"/>
+	      	</Directory>
         </Directory>
 
         <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
             <Component Id="shcoind.exe" Guid="d3590c35-e6f7-40e3-a1d5-b9ba2273b189">
                 <File Id="shcoind.exe" Name="shcoind.exe" Source="C:\release\share-coin\bin\shcoind.exe" DiskId="1" KeyPath="yes" Checksum="yes" />
-		<ServiceInstall Id="ServiceInstaller" Type="ownProcess" Name="shcoind" DisplayName="Share Coin" Description="The share coin virtual currency service." Start="auto" Account="[SERVICEACCOUNT]" Password="[SERVICEPASSWORD]" ErrorControl="normal" />
+		<ServiceInstall Id="ServiceInstaller" Type="ownProcess" Name="shcoind" DisplayName="Share Coin" Description="The share coin virtual currency service." Start="auto" Account="[SERVICEACCOUNT]" Password="[SERVICEPASSWORD]" ErrorControl="normal" >
+			<ServiceDependency Id="Tcpip" />
+		</ServiceInstall>
 		<ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="shcoind" Wait="yes" />
             </Component>
             <Component Id="shc.exe" Guid="892f4e24-3b2b-4809-a7e6-c4c836040f3c">
@@ -64,7 +71,7 @@
         </DirectoryRef>
 
 	<DirectoryRef Id="ApplicationProgramsFolder">
-		<Component Id="ApplicationShortcut" Guid="3c56b87b-d552-4ade-b611-34655f7f3c5d">
+		<Component Id="ApplicationShortcut" Guid="f4ae5e81-5f4e-41ac-bd7d-0ced0651a044">
                 <Shortcut Id="UninstallProduct"             
                           Name="Uninstall Share Coin"
                           Description="Uninstalls the Share Coin currency service."

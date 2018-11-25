@@ -2,7 +2,7 @@
 @echo off
 
 set PKG=ShareCoin
-set VER=3.01
+set VER=3.02
 
 set WIX="C:\program files (x86)\wix toolset v3.11\bin"
 set BUILD=C:\msys64\home\root\src\share-coin\build
