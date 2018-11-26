@@ -72,9 +72,6 @@
 /* Define to 1 if you have the <cstdatomic> header file. */
 #undef HAVE_CSTDATOMIC
 
-/* Define to 1 if you have the <curses.h> header file. */
-#undef HAVE_CURSES_H
-
 /* Define to 1 if you have the declaration of `getgrgid', and to 0 if you
    don't. */
 #undef HAVE_DECL_GETGRGID
@@ -200,7 +197,7 @@
 /* Define to 1 if you have the `crypto' library (-lcrypto). */
 #undef HAVE_LIBCRYPTO
 
-/* Define to enable curses library. */
+/* Define to enable ncurses library. */
 #undef HAVE_LIBCURSES
 
 /* Define to 1 if you have the `gmp' library (-lgmp). */
@@ -263,6 +260,9 @@
 
 /* Define to 1 if you have the `munmap' function. */
 #undef HAVE_MUNMAP
+
+/* Define to 1 if you have the <ncurses.h> header file. */
+#undef HAVE_NCURSES_H
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H

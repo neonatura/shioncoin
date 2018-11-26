@@ -346,19 +346,19 @@ AM_CONDITIONAL([HAVE_DOXYGEN],
 AC_PATH_PROG(HELP2MAN, help2man, @echo WARNING: skipped: help2man )
 AM_CONDITIONAL(HAVE_HELP2MAN, [test x"$HELP2MAN" = x"help2man"])
 
-AC_ARG_ENABLE([curses],
-  AS_HELP_STRING([--disable-curses], [Disable curses library]))
-use_libcurses="no"
-if test "x$enable_curses" != "xno" ; then
-	AC_CHECK_LIB([curses], [mousemask],
-		AC_CHECK_HEADERS([curses.h])
-		AC_DEFINE_UNQUOTED([HAVE_LIBCURSES], 1, [Define to enable curses library.])
-		use_libcurses="yes"
+AC_ARG_ENABLE([ncurses],
+  AS_HELP_STRING([--disable-ncurses], [Disable ncurses library]))
+use_libncurses="no"
+if test "x$enable_ncurses" != "xno" ; then
+	AC_CHECK_LIB([ncurses], [mousemask],
+		AC_CHECK_HEADERS([ncurses.h])
+		AC_DEFINE_UNQUOTED([HAVE_LIBCURSES], 1, [Define to enable ncurses library.])
+		use_libncurses="yes"
 	,
-		AC_MSG_WARN("libcurses is not installed")
+		AC_MSG_WARN("libncurses is not installed")
 	)
 fi
-AM_CONDITIONAL(USE_LIBCURSES, [test "x$use_libcurses" != "xno"])
+AM_CONDITIONAL(USE_LIBCURSES, [test "x$use_libncurses" != "xno"])
 
 # Standard system "pthread" library for threading.
 AC_ARG_ENABLE([pthread],

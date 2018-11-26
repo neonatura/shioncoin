@@ -852,7 +852,7 @@ with_sysroot
 enable_libtool_lock
 enable_largefile
 with_libshare
-enable_curses
+enable_ncurses
 enable_pthread
 enable_debug
 enable_sexe
@@ -1509,7 +1509,7 @@ Optional Features:
                           speeds up one-time build
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --disable-largefile     omit support for large files
-  --disable-curses        Disable curses library
+  --disable-ncurses       Disable ncurses library
   --disable-pthread       Disable pthread library
   --enable-debug          enable debugging, default: no
   --disable-sexe          Disable execution of SEXE programs.
@@ -22134,20 +22134,20 @@ else
 fi
 
 
-# Check whether --enable-curses was given.
-if test "${enable_curses+set}" = set; then :
-  enableval=$enable_curses;
+# Check whether --enable-ncurses was given.
+if test "${enable_ncurses+set}" = set; then :
+  enableval=$enable_ncurses;
 fi
 
-use_libcurses="no"
-if test "x$enable_curses" != "xno" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mousemask in -lcurses" >&5
-$as_echo_n "checking for mousemask in -lcurses... " >&6; }
-if ${ac_cv_lib_curses_mousemask+:} false; then :
+use_libncurses="no"
+if test "x$enable_ncurses" != "xno" ; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mousemask in -lncurses" >&5
+$as_echo_n "checking for mousemask in -lncurses... " >&6; }
+if ${ac_cv_lib_ncurses_mousemask+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lcurses  $LIBS"
+LIBS="-lncurses  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -22167,23 +22167,23 @@ return mousemask ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_curses_mousemask=yes
+  ac_cv_lib_ncurses_mousemask=yes
 else
-  ac_cv_lib_curses_mousemask=no
+  ac_cv_lib_ncurses_mousemask=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_mousemask" >&5
-$as_echo "$ac_cv_lib_curses_mousemask" >&6; }
-if test "x$ac_cv_lib_curses_mousemask" = xyes; then :
-  for ac_header in curses.h
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ncurses_mousemask" >&5
+$as_echo "$ac_cv_lib_ncurses_mousemask" >&6; }
+if test "x$ac_cv_lib_ncurses_mousemask" = xyes; then :
+  for ac_header in ncurses.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
-if test "x$ac_cv_header_curses_h" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "ncurses.h" "ac_cv_header_ncurses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_CURSES_H 1
+#define HAVE_NCURSES_H 1
 _ACEOF
 
 fi
@@ -22195,16 +22195,16 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBCURSES 1
 _ACEOF
 
-		use_libcurses="yes"
+		use_libncurses="yes"
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"libcurses is not installed\"" >&5
-$as_echo "$as_me: WARNING: \"libcurses is not installed\"" >&2;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"libncurses is not installed\"" >&5
+$as_echo "$as_me: WARNING: \"libncurses is not installed\"" >&2;}
 
 fi
 
 fi
- if test "x$use_libcurses" != "xno"; then
+ if test "x$use_libncurses" != "xno"; then
   USE_LIBCURSES_TRUE=
   USE_LIBCURSES_FALSE='#'
 else

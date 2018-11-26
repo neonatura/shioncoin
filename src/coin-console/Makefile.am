@@ -21,7 +21,7 @@ ld_flags = -lshare
 endif
 if USE_LIBCURSES
 ld_flags += $(CDK_LIBS)
-ld_flags += -lcurses
+ld_flags += -lncurses
 endif
 
 # main source code for share-coin console client utility program.
