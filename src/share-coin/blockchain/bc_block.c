@@ -485,7 +485,7 @@ int bc_get(bc_t *bc, bcpos_t pos, unsigned char **data_p, size_t *data_len_p)
   return (err);
 }
 
-int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
+static int _bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
 {
   bc_idx_t idx;
   bc_map_t *map;
@@ -542,6 +542,18 @@ int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
     *data_len_p = idx.size;
 
   return (0);
+}
+
+int bc_arch(bc_t *bc, bcsize_t pos, unsigned char **data_p, size_t *data_len_p)
+{
+	int err;
+
+	if (!bc_lock(bc))
+		return (ERR_NOLCK);
+	err = _bc_arch(bc, pos, data_p, data_len_p);
+	bc_unlock(bc);
+
+	return (err);
 }
 
 int bc_get_hash(bc_t *bc, bcpos_t pos, bc_hash_t ret_hash)
