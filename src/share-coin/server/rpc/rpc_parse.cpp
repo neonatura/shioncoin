@@ -792,11 +792,13 @@ const RPCOp WALLET_LISTBYADDR = {
   "  \"amount\" : total amount received by the address\n"
   "  \"confirmations\" : number of confirmations of the most recent transaction included"
 };
+#if 0
 const RPCOp WALLET_MOVE = {
   &rpc_wallet_move, 3, {RPC_ACCOUNT, RPC_STRING, RPC_DOUBLE, RPC_INT64, RPC_STRING},
   "Syntax: <fromaccount> <toaccount> <amount> [minconf=1] [comment]\n"
   "Move from one account in your wallet to another."
 };
+#endif
 const RPCOp WALLET_MULTISEND = {
   &rpc_wallet_multisend, 2, {RPC_ACCOUNT, RPC_OBJECT, RPC_INT64, RPC_INT, RPC_STRING}, 
   "Syntax: <fromaccount> {address:amount,...} [minconf=1] [comment]\n"
@@ -1047,7 +1049,7 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "wallet.listbyaddr", WALLET_LISTBYADDR);
   RegisterRPCAlias(ifaceIndex, "listreceivedbyaddress", WALLET_LISTBYADDR);
 
-  RegisterRPCOp(ifaceIndex, "wallet.move", WALLET_MOVE);
+//  RegisterRPCOp(ifaceIndex, "wallet.move", WALLET_MOVE);
   RegisterRPCOp(ifaceIndex, "wallet.multisend", WALLET_MULTISEND);
 
   RegisterRPCOp(ifaceIndex, "wallet.new", WALLET_NEW);

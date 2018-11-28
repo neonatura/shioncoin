@@ -601,7 +601,7 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
 			if (nDepth < nMaturity) { /* immature */
 				ptx.SetFlag(POOL_NOT_FINAL);
 				AddOverflowTx(ptx);
-				return (error(SHERR_INVAL, "(%s) AddActiveTx: warning: coinbase input is immature (%d < %d blocks) [tx: %s].", iface->name, nDepth, nMaturity, ptx.GetHash().GetHex().c_str()));
+				return (error(SHERR_INVAL, "(%s) AddActiveTx: warning: coinbase input is immature (%d < %d blocks): %s", iface->name, nDepth, nMaturity, tx.ToString(ifaceIndex).c_str()));
 			}
 		}
 	}

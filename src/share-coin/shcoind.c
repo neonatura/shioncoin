@@ -123,7 +123,7 @@ void usage_help(void)
       "Visit 'https://shcoins.com/' for additional information.\n"
       "Report bugs to <support@neo-natura.com>.\n",
 #ifdef WINDOWS
-		getenv("HOMEDIR")
+		getenv("HOMEPATH")
 #else
 		getenv("HOME")
 #endif

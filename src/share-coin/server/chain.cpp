@@ -27,6 +27,7 @@
 #include "wallet.h"
 #include "chain.h"
 #include "coin.h"
+#include "validation.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -214,7 +215,7 @@ static bool ServiceValidateEvent(int ifaceIndex)
       CBlock *block = GetBlockByHeight(iface, nHeight);
       if (!block) continue;
 
-      if (!block->CheckBlock()) {
+			if (!CheckBlock(block)) {
         error(SHERR_INVAL, "ServiceValidateEvent: block \"%s\" validation failure.", block->GetHash().GetHex().c_str());
       } else {
         if (!UpdateBlockCoins(*block)) {

@@ -131,9 +131,9 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
   vector<uint256> vWalletUpgrade;
   bool fIsEncrypted = false;
 
-  //// todo: shouldn't we catch exceptions and try to recover and continue?
   {
     LOCK(pwallet->cs_wallet);
+
     int nMinVersion = 0;
     if (Read((string)"minversion", nMinVersion))
     {
@@ -141,7 +141,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
       if (nMinVersion > CLIENT_VERSION)
         return DB_TOO_NEW;
 #endif
-      pwallet->LoadMinVersion(nMinVersion);
+//      pwallet->LoadMinVersion(nMinVersion);
     }
 
     // Get cursor
@@ -185,8 +185,10 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         ssValue >> wtx;
         wtx.BindWallet(pwallet);
 
+#if 0
         if (wtx.GetHash() != hash)
           fprintf(stderr, "Error in wallet.dat, hash mismatch\n");
+#endif
 
         // Undo serialize changes in 31600
         if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)

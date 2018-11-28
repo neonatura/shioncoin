@@ -25,7 +25,6 @@
 
 #include "shcoind.h"
 #include "db.h"
-#include "walletdb.h"
 #include "net.h"
 #include "init.h"
 #include "util.h"
@@ -172,88 +171,6 @@ Object JSONAddressInfo(int ifaceIndex, CCoinAddr address, bool show_priv)
 
   return (result);
 }
-
-#if 0
-int cxx_UpgradeWallet(void)
-{
-  int nMaxVersion = 0;//GetArg("-upgradewallet", 0);
-  if (nMaxVersion == 0) // the -upgradewallet without argument case
-  {
-    nMaxVersion = CLIENT_VERSION;
-    pwalletMain->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-    Debug("using wallet version %d", FEATURE_LATEST);
-  }
-  else
-    printf("Allowing wallet upgrade up to %i\n", nMaxVersion);
-
-  if (nMaxVersion > pwalletMain->GetVersion()) {
-    pwalletMain->SetMaxVersion(nMaxVersion);
-  }
-
-}
-int c_LoadWallet(void)
-{
-  CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
-  std::ostringstream strErrors;
-
-  const char* pszP2SH = "/P2SH/";
-  COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
-
-  if (!bitdb.Open(GetDataDir()))
-  {
-    return (-1);
-  }
-
-  if (!LoadBlockIndex(iface)) {
-    return (-1);
-  }
-
-  bool fFirstRun = true;
-  pwalletMain = new CWallet("wallet.dat");
-  SetWallet(USDE_COIN_IFACE, pwalletMain);
-  pwalletMain->LoadWallet(fFirstRun);
-
-  if (fFirstRun)
-  {
-
-    // Create new keyUser and set as default key
-    RandAddSeedPerfmon();
-
-    CPubKey newDefaultKey;
-    if (!pwalletMain->GetKeyFromPool(newDefaultKey, false))
-      strErrors << _("Cannot initialize keypool") << "\n";
-    pwalletMain->SetDefaultKey(newDefaultKey);
-    if (!pwalletMain->SetAddressBookName(pwalletMain->vchDefaultKey.GetID(), ""))
-      strErrors << _("Cannot write default address") << "\n";
-  }
-
-  printf("%s", strErrors.str().c_str());
-
-  RegisterWallet(pwalletMain);
-
-  CBlockIndex *pindexRescan = pindexBest;
-  if (GetBoolArg("-rescan"))
-    pindexRescan = pindexGenesisBlock;
-  else
-  {
-    CWalletDB walletdb("wallet.dat");
-    CBlockLocator locator(GetCoinIndex(iface));
-    if (walletdb.ReadBestBlock(locator))
-      pindexRescan = locator.GetBlockIndex();
-  }
-  if (pindexBest != pindexRescan && pindexBest && pindexRescan && pindexBest->nHeight > pindexRescan->nHeight)
-  {
-    int64 nStart;
-
-    printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
-    nStart = GetTimeMillis();
-    pwalletMain->ScanForWalletTransactions(pindexRescan, true);
-    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
-  }
-
-}
-#endif
-
 
 CCoinAddr GetNewAddress(CWallet *wallet, string strAccount)
 {
@@ -674,7 +591,6 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *pwalletMain = GetWallet(ifaceIndex);
-  CWalletDB walletdb(pwalletMain->strWalletFile);
   string strMainAccount("");
   string strAccount(accountName);
   string strComment("sharenet");
@@ -711,7 +627,7 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
     return (-3);
   }
 
-  nBalance  = GetAccountBalance(ifaceIndex, walletdb, strMainAccount, nMinConfirmDepth);
+  nBalance  = GetAccountBalance(ifaceIndex, strMainAccount, nMinConfirmDepth);
   if (nAmount > nBalance) {
     shcoind_log("c_setblockreward: warning: main account has insufficient funds for block reward distribution.");
     return (-6);
@@ -736,7 +652,6 @@ int c_addblockreward(int ifaceIndex, const char *accountName, double dAmount)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *pwalletMain = GetWallet(ifaceIndex);
-  CWalletDB walletdb(pwalletMain->strWalletFile);
   string strAccount(accountName);
   string strMainAccount("");
   int64 nAmount;
@@ -799,10 +714,7 @@ void c_sendblockreward(int ifaceIndex)
 
 	/* check main account balance. */
   if (nTotal > MIN_INPUT_VALUE(iface)) {
-		CWalletDB walletdb(wallet->strWalletFile);
-
-		int64 nBalance  = GetAccountBalance(ifaceIndex, walletdb,
-				strMainAccount, nMinConfirmDepth);
+		int64 nBalance  = GetAccountBalance(ifaceIndex, strMainAccount, nMinConfirmDepth);
 		if (nTotal > nBalance) {
 			shcoind_log("c_setblockreward: warning: main account has insufficient funds for block reward distribution.");
 			return;
@@ -882,7 +794,6 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
   if (0 == strcmp(sourceAccountName, ""))
     return (-14);
 
-  CWalletDB walletdb(pwalletMain->strWalletFile);
   string strMainAccount(sourceAccountName);
   string strAccount(accountName);
   string strComment(comment);
@@ -920,7 +831,7 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
   }
 
 
-  nBalance  = GetAccountBalance(ifaceIndex, walletdb, strMainAccount, nMinConfirmDepth);
+  nBalance  = GetAccountBalance(ifaceIndex, strMainAccount, nMinConfirmDepth);
   if (nAmount > nBalance) {
     //throw JSONRPCError(-6, "Account has insufficient funds");
     return (-6);
@@ -946,11 +857,10 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
 double c_getaccountbalance(int ifaceIndex, const char *accountName)
 {
   CWallet *pwalletMain = GetWallet(ifaceIndex);
-  CWalletDB walletdb(pwalletMain->strWalletFile);
   string strAccount(accountName);
 
   int nMinDepth = 1;
-  int64 nBalance = GetAccountBalance(ifaceIndex, walletdb, strAccount, nMinDepth);
+  int64 nBalance = GetAccountBalance(ifaceIndex, strAccount, nMinDepth);
 
   return ((double)nBalance / (double)COIN);
 }
@@ -1518,7 +1428,6 @@ static const char *c_stratum_account_info(int ifaceIndex, const char *acc_name, 
 {
   CWallet *pwalletMain = GetWallet(ifaceIndex);
   CIface *iface = GetCoinByIndex(ifaceIndex);
-  CWalletDB walletdb(pwalletMain->strWalletFile);
   string strAccount(acc_name);
   int64 nConfirm;
   int64 nUnconfirm;
@@ -1541,8 +1450,8 @@ static const char *c_stratum_account_info(int ifaceIndex, const char *acc_name, 
       }
     }
 
-    nConfirm = GetAccountBalance(ifaceIndex, walletdb, strAccount, nMinDepth);
-    nUnconfirm = GetAccountBalance(ifaceIndex, walletdb, strAccount, 0) - nConfirm;
+    nConfirm = GetAccountBalance(ifaceIndex, strAccount, nMinDepth);
+    nUnconfirm = GetAccountBalance(ifaceIndex, strAccount, 0) - nConfirm;
     result.push_back(Pair("confirmed", ValueFromAmount(nConfirm)));
     result.push_back(Pair("unconfirmed", ValueFromAmount(nUnconfirm)));
 

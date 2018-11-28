@@ -64,15 +64,6 @@ CScript TESTNET_COINBASE_FLAGS;
 static unsigned int testnet_nBytesPerSigOp = TESTNET_DEFAULT_BYTES_PER_SIGOP;
 
 
-int testnet_UpgradeWallet(void)
-{
-
-    testnetWallet->SetMinVersion(FEATURE_LATEST);
-    testnetWallet->SetMaxVersion(FEATURE_LATEST);
-
-
-}
-
 bool testnet_LoadWallet(void)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
@@ -93,19 +84,21 @@ bool testnet_LoadWallet(void)
 		testnetWallet->SetAddressBookName(testnetWallet->vchDefaultKey.GetID(), "");
   }
 
-  printf("%s", strErrors.str().c_str());
-
   //RegisterWallet(testnetWallet);
 
+#if 0
   CBlockIndex *pindexRescan = GetBestBlockIndex(TESTNET_COIN_IFACE);
   if (GetBoolArg("-rescan"))
     pindexRescan = TESTNETBlock::pindexGenesisBlock;
   else
   {
+    LOCK(cs_wallet);
+
     CWalletDB walletdb("testnet_wallet.dat");
     CBlockLocator locator(GetCoinIndex(iface));
     if (walletdb.ReadBestBlock(locator))
       pindexRescan = locator.GetBlockIndex();
+		walletdb.Close();
   }
   CBlockIndex *pindexBest = GetBestBlockIndex(TESTNET_COIN_IFACE);
   if (pindexBest != pindexRescan && pindexBest && pindexRescan && pindexBest->nHeight > pindexRescan->nHeight)
@@ -115,10 +108,8 @@ bool testnet_LoadWallet(void)
     Debug("(testnet) LoadWallet: Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
     nStart = GetTimeMillis();
     testnetWallet->ScanForWalletTransactions(pindexRescan, true);
-//    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
-
-  testnet_UpgradeWallet();
+#endif
 
   // Add wallet transactions that aren't already in a block to mapTransactions
   testnetWallet->ReacceptWalletTransactions();
@@ -281,7 +272,7 @@ bool TESTNETWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
+//      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
       // Add tx to wallet, because if it has change it's also ours,
       // otherwise just for transaction history.
@@ -298,7 +289,7 @@ bool TESTNETWallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-			delete pwalletdb;
+//			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets

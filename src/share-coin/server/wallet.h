@@ -53,35 +53,6 @@ enum WalletFeature
 
 typedef std::map<std::string, std::string> mapval_t;
 
-#if 0
-/** A key pool entry */
-class CKeyPool
-{
-	public:
-		int64 nTime;
-		CPubKey vchPubKey;
-
-		CKeyPool()
-		{
-			nTime = GetTime();
-		}
-
-		CKeyPool(const CPubKey& vchPubKeyIn)
-		{
-			nTime = GetTime();
-			vchPubKey = vchPubKeyIn;
-		}
-
-		IMPLEMENT_SERIALIZE
-			(
-			 if (!(nType & SER_GETHASH))
-			 READWRITE(nVersion);
-			 READWRITE(nTime);
-			 READWRITE(vchPubKey);
-			)
-};
-#endif
-
 typedef map<int, int> color_opt;
 
 class CAccountCache;
@@ -110,16 +81,7 @@ class CAccountCache;
 class CWallet : public CCryptoKeyStore
 {
 	private:
-
 		CWalletDB *pwalletdbEncryption;
-
-		// the current wallet version: clients below this version are not able to load the wallet
-		int nWalletVersion;
-
-		// the maximum wallet format version: memory-only variable that specifies to what version this wallet may be upgraded
-		int nWalletMaxVersion;
-
-	protected:
 
 	public:
 		mutable CCriticalSection cs_wallet;
@@ -207,8 +169,6 @@ class CWallet : public CCryptoKeyStore
 
 		CWallet(int index)
 		{
-			nWalletVersion = FEATURE_BASE;
-			nWalletMaxVersion = FEATURE_BASE;
 			nMasterKeyMaxID = 0;
 			pwalletdbEncryption = NULL;
 			ifaceIndex = index;
@@ -220,8 +180,6 @@ class CWallet : public CCryptoKeyStore
 		}
 		CWallet(int index, std::string strWalletFileIn)
 		{
-			nWalletVersion = FEATURE_BASE;
-			nWalletMaxVersion = FEATURE_BASE;
 			strWalletFile = strWalletFileIn;
 			nMasterKeyMaxID = 0;
 			pwalletdbEncryption = NULL;
@@ -243,7 +201,7 @@ class CWallet : public CCryptoKeyStore
 		bool SelectCoins(int64 nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
 
 		// check whether we are allowed to upgrade (or already support) to the named feature
-		bool CanSupportFeature(enum WalletFeature wf) { return nWalletMaxVersion >= wf; }
+		bool CanSupportFeature(enum WalletFeature wf) { return true; }
 
 		void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed =true)  const;
 		void AvailableAccountCoins(string strAccount, std::vector<COutput>& vCoins, bool fOnlyConfirmed =true, uint160 hColor = 0)  const;
@@ -264,12 +222,10 @@ class CWallet : public CCryptoKeyStore
 		// Adds a key to the store, without saving it to disk (used by LoadWallet)
 		bool LoadKey(const CKey& key) { return CCryptoKeyStore::AddKey(key); }
 
-		bool LoadMinVersion(int nVersion) { nWalletVersion = nVersion; nWalletMaxVersion = std::max(nWalletMaxVersion, nVersion); return true; }
-
 		// Adds an encrypted key to the store, and saves it to disk.
 		bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
 		// Adds an encrypted key to the store, without saving it to disk (used by LoadWallet)
-		bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret) { SetMinVersion(FEATURE_WALLETCRYPT); return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret); }
+		bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret) { return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret); }
 		bool AddCScript(const CScript& redeemScript);
 		bool LoadCScript(const CScript& redeemScript) { return CCryptoKeyStore::AddCScript(redeemScript); }
 
@@ -405,15 +361,6 @@ class CWallet : public CCryptoKeyStore
 
 		bool SetDefaultKey(const CPubKey &vchPubKey);
 
-		// signify that a particular wallet feature is now used. this may change nWalletVersion and nWalletMaxVersion if those are lower
-		bool SetMinVersion(enum WalletFeature, CWalletDB* pwalletdbIn = NULL, bool fExplicit = false);
-
-		// change which version we're allowed to upgrade to (note that this does not immediately imply upgrading to that format)
-		bool SetMaxVersion(int nVersion);
-
-		// get the current wallet format (the oldest client version guaranteed to understand this wallet)
-		int GetVersion() { return nWalletVersion; }
-
 		bool GetMergedAddress(string strAccount, const char *tag, CCoinAddr& addrRet);
 		bool GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubkey);
 
@@ -479,6 +426,17 @@ class CWallet : public CCryptoKeyStore
 		bool WriteTx(uint256 hash, const CWalletTx& wtx);
 
 		bool EraseTx(uint256 hash);
+
+		/**
+		 * Start tracking a local wallet transaction.
+		 * @note replaces pre-existing records.
+		 */
+		bool AddWalletTx(CWalletTx& wtx);
+
+		/**
+		 * Stop tracking a local wallet transaction.
+		 */
+		bool RemoveWalletTx(CWalletTx& wtx);
 
 		CAccountCache *GetAccount(string strAccount);
 
@@ -1042,9 +1000,7 @@ extern const string NULL_ACCOUNT;
 
 int64 GetTxFee(int ifaceIndex, CTransaction tx);
 
-int64 GetAccountBalance(int ifaceIndex, CWalletDB& walletdb, const std::string& strAccount, int nMinDepth);
-
-int64 GetAccountBalance(int ifaceIndex, const std::string& strAccount, int nMinDepth);
+int64 GetAccountBalance(int ifaceIndex, const string& strAccount, int nMinDepth);
 
 bool SyncWithWallets(CIface *iface, CTransaction& tx, CBlock *pblock = NULL);
 

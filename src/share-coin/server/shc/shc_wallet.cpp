@@ -64,29 +64,6 @@ CScript SHC_COINBASE_FLAGS;
 static unsigned int shc_nBytesPerSigOp = SHC_DEFAULT_BYTES_PER_SIGOP;
 
 
-int shc_UpgradeWallet(void)
-{
-
-    shcWallet->SetMinVersion(FEATURE_LATEST);
-    shcWallet->SetMaxVersion(FEATURE_LATEST);
-
-#if 0
-  int nMaxVersion = 0;//GetArg("-upgradewallet", 0);
-  if (nMaxVersion == 0) // the -upgradewallet without argument case
-  {
-    nMaxVersion = CLIENT_VERSION;
-    shcWallet->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-  }
-  else
-    printf("Allowing wallet upgrade up to %i\n", nMaxVersion);
-
-  if (nMaxVersion > shcWallet->GetVersion()) {
-    shcWallet->SetMaxVersion(nMaxVersion);
-  }
-#endif
-
-}
-
 bool shc_LoadWallet(void)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
@@ -120,19 +97,21 @@ bool shc_LoadWallet(void)
 		shcWallet->SetAddressBookName(shcWallet->vchDefaultKey.GetID(), "");
   }
 
-  printf("%s", strErrors.str().c_str());
-
   //RegisterWallet(shcWallet);
 
+#if 0
   CBlockIndex *pindexRescan = GetBestBlockIndex(SHC_COIN_IFACE);
   if (GetBoolArg("-rescan"))
     pindexRescan = SHCBlock::pindexGenesisBlock;
   else
   {
+    LOCK(cs_wallet);
+
     CWalletDB walletdb("shc_wallet.dat");
     CBlockLocator locator(GetCoinIndex(iface));
     if (walletdb.ReadBestBlock(locator))
       pindexRescan = locator.GetBlockIndex();
+		walletdb.Close();
   }
   CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
   if (pindexBest != pindexRescan && pindexBest && pindexRescan && pindexBest->nHeight > pindexRescan->nHeight)
@@ -142,10 +121,8 @@ bool shc_LoadWallet(void)
     Debug("(shc) LoadWallet: Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
     nStart = GetTimeMillis();
     shcWallet->ScanForWalletTransactions(pindexRescan, true);
-//    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
-
-  shc_UpgradeWallet();
+#endif
 
   // Add wallet transactions that aren't already in a block to mapTransactions
   shcWallet->ReacceptWalletTransactions();
@@ -376,7 +353,7 @@ bool SHCWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
+//      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
       // Add tx to wallet, because if it has change it's also ours,
       // otherwise just for transaction history.
@@ -393,7 +370,7 @@ bool SHCWallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-			delete pwalletdb;
+//			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets

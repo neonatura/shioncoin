@@ -545,7 +545,6 @@ Value rpc_wallet_info(CIface *iface, const Array& params, bool fStratum)
 
 	Object obj;
 	obj.push_back(Pair("version",       (int)CLIENT_VERSION));
-	obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
 
 	obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
 
@@ -1698,6 +1697,7 @@ Value rpc_wallet_listbyaccount(CIface *iface, const Array& params, bool fStratum
 	return ListReceived(GetWallet(iface), params, true);
 }
 
+#if 0
 Value rpc_wallet_move(CIface *iface, const Array& params, bool fStratum)
 {
 
@@ -1750,6 +1750,7 @@ Value rpc_wallet_move(CIface *iface, const Array& params, bool fStratum)
 
 	return true;
 }
+#endif
 
 Value rpc_wallet_multisend(CIface *iface, const Array& params, bool fStratum)
 {

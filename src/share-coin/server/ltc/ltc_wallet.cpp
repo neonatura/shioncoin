@@ -59,28 +59,6 @@ CScript LTC_COINBASE_FLAGS;
 static const unsigned int MAX_LTC_STANDARD_TX_WEIGHT = 400000;
 
 
-int ltc_UpgradeWallet(void)
-{
-
-  ltcWallet->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-  ltcWallet->SetMaxVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-#if 0
-  int nMaxVersion = 0;//GetArg("-upgradewallet", 0);
-  if (nMaxVersion == 0) // the -upgradewallet without argument case
-  {
-    nMaxVersion = CLIENT_VERSION;
-    ltcWallet->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-  }
-  else
-    printf("Allowing wallet upgrade up to %i\n", nMaxVersion);
-
-  if (nMaxVersion > ltcWallet->GetVersion()) {
-    ltcWallet->SetMaxVersion(nMaxVersion);
-  }
-#endif
-
-}
-
 bool ltc_LoadWallet(void)
 {
   CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
@@ -114,19 +92,21 @@ bool ltc_LoadWallet(void)
 		ltcWallet->SetAddressBookName(ltcWallet->vchDefaultKey.GetID(), "");
   }
 
-  printf("%s", strErrors.str().c_str());
-
   //RegisterWallet(ltcWallet);
 
+#if 0
   CBlockIndex *pindexRescan = GetBestBlockIndex(LTC_COIN_IFACE);
   if (GetBoolArg("-rescan"))
     pindexRescan = LTCBlock::pindexGenesisBlock;
   else
   {
+    LOCK(cs_wallet);
+
     CWalletDB walletdb("ltc_wallet.dat");
     CBlockLocator locator(GetCoinIndex(iface));
     if (walletdb.ReadBestBlock(locator))
       pindexRescan = locator.GetBlockIndex();
+		walletdb.Close();
   }
   CBlockIndex *pindexBest = GetBestBlockIndex(LTC_COIN_IFACE);
   if (pindexBest != pindexRescan && pindexBest && pindexRescan && pindexBest->nHeight > pindexRescan->nHeight)
@@ -136,10 +116,8 @@ bool ltc_LoadWallet(void)
     Debug("(ecm2) LoadWallet: Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
     nStart = GetTimeMillis();
     ltcWallet->ScanForWalletTransactions(pindexRescan, true);
-//    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
-
-  ltc_UpgradeWallet();
+#endif
 
   // Add wallet transactions that aren't already in a block to mapTransactions
   ltcWallet->ReacceptWalletTransactions(); 
@@ -328,7 +306,7 @@ bool LTCWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
+//      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
 
       // Add tx to wallet, because if it has change it's also ours,
@@ -346,7 +324,7 @@ bool LTCWallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-			delete pwalletdb;
+//			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets

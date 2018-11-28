@@ -27,7 +27,6 @@
 #include "main.h"
 #include "wallet.h"
 #include "db.h"
-#include "walletdb.h"
 #include "net.h"
 #include "init.h"
 #include "ui_interface.h"
@@ -553,7 +552,6 @@ const char *c_getblocktransactions(int ifaceIndex)
   if (!pwalletMain)
     return (NULL);
 
-  CWalletDB walletdb(pwalletMain->strWalletFile);
   string strAccount = "";
   int nCount = 1;
   int nFrom = 0;
@@ -571,15 +569,6 @@ const char *c_getblocktransactions(int ifaceIndex)
     CWalletTx* wtx = &((*it).second);
     txByTime.insert(make_pair(wtx->GetTxTime(), TxPair(wtx, (CAccountingEntry*)0)));
   }
-
-/*
-  list<CAccountingEntry> acentries;
-  walletdb.ListAccountCreditDebit(strAccount, acentries);
-  BOOST_FOREACH(CAccountingEntry& entry, acentries)
-  {
-    txByTime.insert(make_pair(entry.nTime, TxPair((CWalletTx*)0, &entry)));
-  }
-*/
 
   if ((int)vNodes.size() >= 1) { /* if more than one coin connection */
     // iterate backwards until we have nCount items to return:
@@ -618,55 +607,6 @@ const char *c_getblocktransactions(int ifaceIndex)
     blocktemplate_json = JSONRPCReply(ret, Value::null, Value::null);
   return (blocktemplate_json.c_str());
 }
-
-#if 0
-const char *c_getblocktransactions(void)
-{
-
-  string strAccount = "*";
-  int nCount = 10;
-  int nFrom = 0;
-
-
-//  Array ret;
-  CWalletDB walletdb(pwalletMain->strWalletFile);
-
-  // First: get all CWalletTx and CAccountingEntry into a sorted-by-time multimap.
-  typedef pair<CWalletTx*, CAccountingEntry*> TxPair;
-  typedef multimap<int64, TxPair > TxItems;
-  TxItems txByTime;
-
-  // Note: maintaining indices in the database of (account,time) --> txid and (account, time) --> acentry
-  // would make this much faster for applications that do this a lot.
-  for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-  {
-    CWalletTx* wtx = &((*it).second);
-    txByTime.insert(make_pair(wtx->GetTxTime(), TxPair(wtx, (CAccountingEntry*)0)));
-  }
-  list<CAccountingEntry> acentries;
-  walletdb.ListAccountCreditDebit(strAccount, acentries);
-  BOOST_FOREACH(CAccountingEntry& entry, acentries)
-  {
-    txByTime.insert(make_pair(entry.nTime, TxPair((CWalletTx*)0, &entry)));
-  }
-
-  Object result;
-
-  // iterate backwards until we have nCount items to return:
-  for (TxItems::reverse_iterator it = txByTime.rbegin(); it != txByTime.rend(); ++it)
-  {
-    CWalletTx *const pwtx = (*it).second.first;
-    if (pwtx != 0) {
-      if (c_ListGenerateTransactions(*pwtx, result))
-        break; /* found mature generation. */
-    }
-  }
-  // ret is newest to oldest
-
-  blocktemplate_json = JSONRPCReply(result, Value::null, Value::null);
-  return (blocktemplate_json.c_str());
-}
-#endif
 
 double c_GetNetworkHashRate(int ifaceIndex)
 {

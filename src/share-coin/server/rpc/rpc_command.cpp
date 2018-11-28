@@ -200,7 +200,6 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   /* versioning */
   obj.push_back(Pair("version",       (int)iface->proto_ver));
   obj.push_back(Pair("blockversion",  (int)iface->block_ver));
-  obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
 
   /* attributes */
   obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
@@ -396,7 +395,6 @@ Value rpc_block_info(CIface *iface, const Array& params, bool fStratum)
 
   obj.push_back(Pair("version",       (int)iface->proto_ver));
   obj.push_back(Pair("blockversion",  (int)iface->block_ver));
-  obj.push_back(Pair("walletversion", wallet->GetVersion()));
 
   obj.push_back(Pair("blocks",        (int)GetBestHeight(iface)));
 	if (wallet->pindexBestHeader) {
@@ -1648,7 +1646,6 @@ Value rpc_tx_list(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(-8, "Negative from");
 
   Array ret;
-  CWalletDB walletdb(pwalletMain->strWalletFile);
 
   // First: get all CWalletTx and CAccountingEntry into a sorted-by-time multimap.
   typedef pair<CWalletTx*, CAccountingEntry*> TxPair;
@@ -1661,12 +1658,6 @@ Value rpc_tx_list(CIface *iface, const Array& params, bool fStratum)
   {
     CWalletTx* wtx = &((*it).second);
     txByTime.insert(make_pair(wtx->GetTxTime(), TxPair(wtx, (CAccountingEntry*)0)));
-  }
-  list<CAccountingEntry> acentries;
-  walletdb.ListAccountCreditDebit(strAccount, acentries);
-  BOOST_FOREACH(CAccountingEntry& entry, acentries)
-  {
-    txByTime.insert(make_pair(entry.nTime, TxPair((CWalletTx*)0, &entry)));
   }
 
   // iterate backwards until we have nCount items to return:

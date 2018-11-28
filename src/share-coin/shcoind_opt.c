@@ -138,7 +138,7 @@ static const char *opt_home_dir(void)
 
 		if (!homedir) {
 #ifdef WINDOWS
-			homedir = getenv("HOMEDIR");
+			homedir = getenv("HOMEPATH");
 #else
 			homedir = getenv("HOME");
 #endif
@@ -200,10 +200,12 @@ static void write_default_shc_conf_file(void)
 		return;
 
 #ifdef WINDOWS
-	sprintf(path, "%s\\.shc\\shc.conf", opt_home_dir());
+	sprintf(path, "%s\\.shc\\", opt_home_dir());
 #else
-	sprintf(path, "%s/.shc/shc.conf", opt_home_dir());
+	sprintf(path, "%s/.shc/", opt_home_dir());
 #endif
+	mkdir(path, 0777);
+	strcat(path, "shc.conf");
 	data_len = strlen(data);
 	(void)shfs_write_mem(path, data, data_len);
 

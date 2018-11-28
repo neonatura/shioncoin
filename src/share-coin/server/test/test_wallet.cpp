@@ -63,14 +63,6 @@ CScript TEST_COINBASE_FLAGS;
 static unsigned int test_nBytesPerSigOp = TEST_DEFAULT_BYTES_PER_SIGOP;
 
 
-int test_UpgradeWallet(void)
-{
-
-  testWallet->SetMinVersion(FEATURE_LATEST);
-  testWallet->SetMaxVersion(FEATURE_LATEST);
-
-}
-
 bool test_LoadWallet(void)
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
@@ -104,8 +96,6 @@ bool test_LoadWallet(void)
 //    testWallet->SetAddressBookName(testWallet->vchDefaultKey.GetID(), "");
   }
 
-  //printf("%s", strErrors.str().c_str());
-
   //RegisterWallet(testWallet);
 
 #if 0
@@ -124,14 +114,10 @@ bool test_LoadWallet(void)
   {
     int64 nStart;
 
-    printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
     nStart = GetTimeMillis();
     testWallet->ScanForWalletTransactions(pindexRescan, true);
-    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
 #endif
-
-  test_UpgradeWallet();
 
   // Add wallet transactions that aren't already in a block to mapTransactions
   testWallet->ReacceptWalletTransactions(); 
@@ -341,7 +327,7 @@ bool TESTWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
+//      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
       // Add tx to wallet, because if it has change it's also ours,
       // otherwise just for transaction history.
@@ -358,7 +344,7 @@ bool TESTWallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-			delete pwalletdb;
+//			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets

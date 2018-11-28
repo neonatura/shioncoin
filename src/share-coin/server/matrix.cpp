@@ -601,8 +601,9 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 	if (!pblock)
 		return (false);
 	int nCheck = pblock->GetTotalBlocksEstimate();
-	if ((nCheck + iface->coinbase_maturity) < nBestHeight)
+	if ((nCheck + iface->coinbase_maturity) < nBestHeight) {
 		pblock->CreateCheckpoint();
+	}
 	delete pblock;
 
 	return (true);

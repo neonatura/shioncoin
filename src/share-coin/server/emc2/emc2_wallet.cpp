@@ -59,27 +59,6 @@ CScript EMC2_COINBASE_FLAGS;
 static const unsigned int MAX_EMC2_STANDARD_TX_WEIGHT = 400000;
 
 
-int emc2_UpgradeWallet(void)
-{
-
-  emc2Wallet->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-  emc2Wallet->SetMaxVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-#if 0
-  int nMaxVersion = 0;//GetArg("-upgradewallet", 0);
-  if (nMaxVersion == 0) // the -upgradewallet without argument case
-  {
-    nMaxVersion = CLIENT_VERSION;
-    emc2Wallet->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-  }
-  else
-    printf("Allowing wallet upgrade up to %i\n", nMaxVersion);
-
-  if (nMaxVersion > emc2Wallet->GetVersion()) {
-    emc2Wallet->SetMaxVersion(nMaxVersion);
-  }
-#endif
-
-}
 
 bool emc2_LoadWallet(void)
 {
@@ -114,10 +93,9 @@ bool emc2_LoadWallet(void)
 		emc2Wallet->SetAddressBookName(emc2Wallet->vchDefaultKey.GetID(), "");
   }
 
-  printf("%s", strErrors.str().c_str());
-
   //RegisterWallet(emc2Wallet);
 
+#if 0
   CBlockIndex *pindexRescan = GetBestBlockIndex(EMC2_COIN_IFACE);
   if (GetBoolArg("-rescan"))
     pindexRescan = EMC2Block::pindexGenesisBlock;
@@ -127,6 +105,7 @@ bool emc2_LoadWallet(void)
     CBlockLocator locator(GetCoinIndex(iface));
     if (walletdb.ReadBestBlock(locator))
       pindexRescan = locator.GetBlockIndex();
+		walletdb.Close();
   }
   CBlockIndex *pindexBest = GetBestBlockIndex(EMC2_COIN_IFACE);
   if (pindexBest != pindexRescan && pindexBest && pindexRescan && pindexBest->nHeight > pindexRescan->nHeight)
@@ -136,10 +115,8 @@ bool emc2_LoadWallet(void)
     Debug("(ecm2) LoadWallet: Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
     nStart = GetTimeMillis();
     emc2Wallet->ScanForWalletTransactions(pindexRescan, true);
-//    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
-
-  emc2_UpgradeWallet();
+#endif
 
   // Add wallet transactions that aren't already in a block to mapTransactions
   emc2Wallet->ReacceptWalletTransactions(); 
@@ -328,7 +305,7 @@ bool EMC2Wallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
+//      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
 
       // Add tx to wallet, because if it has change it's also ours,
@@ -346,7 +323,7 @@ bool EMC2Wallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-			delete pwalletdb;
+//			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets

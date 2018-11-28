@@ -110,9 +110,11 @@ CPubKey CWallet::GenerateNewKey(bool fCompressed)
 
 		key.MakeNewKey(fCompressed);
 
+#if 0
 		// Compressed public keys were introduced in version 0.6.0
 		if (fCompressed)
 			SetMinVersion(FEATURE_COMPRPUBKEY);
+#endif
 
 		if (!AddKey(key))
 			throw std::runtime_error("CWallet::GenerateNewKey() : AddKey failed");
@@ -128,7 +130,13 @@ bool CWallet::AddKey(const CKey& key)
 	if (!CCryptoKeyStore::AddKey(key))
 		return (error(SHERR_INVAL, "CWallet.AddKey: error adding key to crypto key-store."));
 	if (!IsCrypted()) {
-		bool ret = CWalletDB(strWalletFile).WriteKey(key.GetPubKey(), key.GetPrivKey());
+		bool ret = false;
+		{
+			LOCK(cs_wallet);
+			CWalletDB db(strWalletFile);
+			db.WriteKey(key.GetPubKey(), key.GetPrivKey());
+			db.Close();
+		}
 		if (!ret)
 			return (error(SHERR_INVAL, "CWallet.AddKey: error writing key to wallet."));
 	}
@@ -145,9 +153,11 @@ HDPubKey CWallet::GenerateNewHDKey(bool fCompressed)
 
 		key.MakeNewKey(fCompressed);
 
+#if 0
 		// Compressed public keys were introduced in version 0.6.0
 		if (fCompressed)
 			SetMinVersion(FEATURE_COMPRPUBKEY);
+#endif
 
 		if (!AddKey(key))
 			throw std::runtime_error("CWallet::GenerateNewKey() : AddKey failed");
@@ -161,8 +171,13 @@ bool CWallet::AddKey(const HDPrivKey& key)
 {
 	if (!CCryptoKeyStore::AddKey(key))
 		return false;
-	if (!IsCrypted())
-		return CWalletDB(strWalletFile).WriteKey(key.GetPubKey(), key.GetPrivKey());
+	if (!IsCrypted()) {
+		LOCK(cs_wallet);
+
+		CWalletDB db(strWalletFile);
+		db.WriteKey(key.GetPubKey(), key.GetPrivKey());
+		db.Close();
+	}
 	return true;
 }
 
@@ -172,20 +187,36 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey, const vector<unsigned char
 		return false;
 	{
 		LOCK(cs_wallet);
+
 		if (pwalletdbEncryption)
 			return pwalletdbEncryption->WriteCryptedKey(vchPubKey, vchCryptedSecret);
-		else
-			return CWalletDB(strWalletFile).WriteCryptedKey(vchPubKey, vchCryptedSecret);
+
+		CWalletDB db(strWalletFile);
+		db.WriteCryptedKey(vchPubKey, vchCryptedSecret);
+		db.Close();
 	}
+
 	return false;
 }
 
 bool CWallet::AddCScript(const CScript& redeemScript)
 {
+
 	if (!CCryptoKeyStore::AddCScript(redeemScript))
 		return false;
+
 	uint160 sid = Hash160(redeemScript);
-	return CWalletDB(strWalletFile).WriteCScript(sid, redeemScript);
+	bool ok;
+
+	{
+		LOCK(cs_wallet);
+
+		CWalletDB db(strWalletFile);
+		ok = db.WriteCScript(sid, redeemScript);
+		db.Close();
+	}
+
+	return (ok);
 }
 
 void CWallet::SetBestChain(const CBlockLocator& loc)
@@ -194,63 +225,8 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
 
 	CWalletDB walletdb(strWalletFile);
 	walletdb.WriteBestBlock(loc);
+	walletdb.Close();
 }
-
-// This class implements an addrIncoming entry that causes pre-0.4
-// clients to crash on startup if reading a private-key-encrypted wallet.
-class CCorruptAddress
-{
-	public:
-		IMPLEMENT_SERIALIZE
-			(
-			 if (nType & SER_DISK)
-			 READWRITE(nVersion);
-			)
-};
-
-bool CWallet::SetMinVersion(enum WalletFeature nVersion, CWalletDB* pwalletdbIn, bool fExplicit)
-{
-	if (nWalletVersion >= nVersion)
-		return true;
-
-	// when doing an explicit upgrade, if we pass the max version permitted, upgrade all the way
-	if (fExplicit && nVersion > nWalletMaxVersion)
-		nVersion = FEATURE_LATEST;
-
-	nWalletVersion = nVersion;
-
-	if (nVersion > nWalletMaxVersion)
-		nWalletMaxVersion = nVersion;
-
-	{
-		CWalletDB* pwalletdb = pwalletdbIn ? pwalletdbIn : new CWalletDB(strWalletFile);
-		if (nWalletVersion >= 40000)
-		{
-			// Versions prior to 0.4.0 did not support the "minversion" record.
-			// Use a CCorruptAddress to make them crash instead.
-			CCorruptAddress corruptAddress;
-			pwalletdb->WriteSetting("addrIncoming", corruptAddress);
-		}
-		if (nWalletVersion > 40000)
-			pwalletdb->WriteMinVersion(nWalletVersion);
-		if (!pwalletdbIn)
-			delete pwalletdb;
-	}
-
-	return true;
-}
-
-bool CWallet::SetMaxVersion(int nVersion)
-{
-	// cannot downgrade below current version
-	if (nWalletVersion > nVersion)
-		return false;
-
-	nWalletMaxVersion = nVersion;
-
-	return true;
-}
-
 
 /**
  * Anytime a signature is successfully verified, it's proof the outpoint is spent.
@@ -404,8 +380,11 @@ bool CWallet::EraseFromWallet(uint256 hash)
 {
 	{
 		LOCK(cs_wallet);
-		if (mapWallet.erase(hash))
-			CWalletDB(strWalletFile).EraseTx(hash);
+		if (mapWallet.erase(hash)) {
+			CWalletDB db(strWalletFile);
+			db.EraseTx(hash);
+			db.Close();
+		}
 	}
 	return true;
 }
@@ -652,7 +631,13 @@ void CWalletTx::GetAccountAmounts(const string& strAccount, int64& nReceived, in
 
 bool CWalletTx::WriteToDisk()
 {
-	return CWalletDB(pwallet->strWalletFile).WriteTx(GetHash(), *this);
+	{
+		LOCK(pwallet->cs_wallet);
+
+		CWalletDB db(pwallet->strWalletFile);
+		db.WriteTx(GetHash(), *this);
+		db.Close();
+	}
 }
 
 #if 0
@@ -1339,29 +1324,22 @@ string CWallet::SendMoney(string strFromAccount, const CTxDestination& address, 
 
 int CWallet::LoadWallet(bool& fFirstRunRet)
 {
+	int nLoadWalletRet;
+
+	fFirstRunRet = false;
+
 	{
 		LOCK(cs_wallet);
 
-		fFirstRunRet = false;
-		int nLoadWalletRet = CWalletDB(strWalletFile,"cr+").LoadWallet(this);
-#if 0
-		if (nLoadWalletRet == DB_NEED_REWRITE)
-		{
-			if (CDB::Rewrite(strWalletFile, "\x04pool"))
-			{
-				setKeyPool.clear();
-				// Note: can't top-up keypool here, because wallet is locked.
-				// User will be prompted to unlock wallet the next operation
-				// the requires a new key.
-			}
-			nLoadWalletRet = DB_NEED_REWRITE;
-		}
-#endif
-
-		if (nLoadWalletRet != DB_LOAD_OK)
-			return nLoadWalletRet;
-		fFirstRunRet = !vchDefaultKey.IsValid();
+		CWalletDB db(strWalletFile,"cr+");
+		nLoadWalletRet = db.LoadWallet(this);
+		db.Close();
 	}
+
+	if (nLoadWalletRet != DB_LOAD_OK)
+		return nLoadWalletRet;
+
+	fFirstRunRet = !vchDefaultKey.IsValid();
 
 	return DB_LOAD_OK;
 }
@@ -1376,8 +1354,14 @@ bool CWallet::SetAddressBookName(const CTxDestination& address, const string& st
 
 		std::map<CTxDestination, std::string>::iterator mi = mapAddressBook.find(address);
 		mapAddressBook[address] = strName;
-		//NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address), (mi == mapAddressBook.end()) ? CT_NEW : CT_UPDATED);
-		ok = CWalletDB(strWalletFile).WriteName(CCoinAddr(ifaceIndex, address).ToString(), strName);
+	}
+
+	{
+		LOCK(cs_wallet);
+
+		CWalletDB db(strWalletFile);
+		ok = db.WriteName(CCoinAddr(ifaceIndex, address).ToString(), strName);
+		db.Close();
 	}
 
 	return (ok);
@@ -1385,14 +1369,19 @@ bool CWallet::SetAddressBookName(const CTxDestination& address, const string& st
 
 bool CWallet::DelAddressBookName(const CTxDestination& address)
 {
+	bool ok;
+
 	{
 		LOCK(cs_wallet);
 
 		mapAddressBook.erase(address);
-		return CWalletDB(strWalletFile).EraseName(CCoinAddr(ifaceIndex, address).ToString());
+		CWalletDB db(strWalletFile);
+		ok = db.EraseName(CCoinAddr(ifaceIndex, address).ToString());
+		db.Close();
 	}
-}
 
+	return (ok);
+}
 
 void CWallet::PrintWallet(const CBlock& block)
 {
@@ -1423,15 +1412,20 @@ bool CWallet::GetTransaction(const uint256 &hashTx, CWalletTx& wtx)
 
 bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
 {
+	bool ok;
+
 	{
 		LOCK(cs_wallet);
 
-		if (!CWalletDB(strWalletFile).WriteDefaultKey(vchPubKey))
-			return false;
-
-		vchDefaultKey = vchPubKey;
-		return true;
+		CWalletDB db(strWalletFile);
+		ok = db.WriteDefaultKey(vchPubKey);
+		db.Close();
 	}
+
+	if (ok)
+		vchDefaultKey = vchPubKey;
+
+	return (ok);
 }
 
 bool GetWalletFile(CWallet* pwallet, string &strWalletFileOut)
@@ -1460,7 +1454,7 @@ int64 GetTxFee(int ifaceIndex, CTransaction tx)
 	return (wallet->GetTxFee(tx));
 }
 
-int64 GetAccountBalance(int ifaceIndex, CWalletDB& walletdb, const string& strAccount, int nMinDepth)
+int64 GetAccountBalance(int ifaceIndex, const string& strAccount, int nMinDepth)
 {
 	CWallet *pwalletMain = GetWallet(ifaceIndex);
 	int64 nBalance = 0;
@@ -1472,13 +1466,6 @@ int64 GetAccountBalance(int ifaceIndex, CWalletDB& walletdb, const string& strAc
 	}
 
 	return nBalance;
-}
-
-int64 GetAccountBalance(int ifaceIndex, const string& strAccount, int nMinDepth)
-{
-	CWallet *wallet = GetWallet(ifaceIndex);
-	CWalletDB walletdb(wallet->strWalletFile);
-	return GetAccountBalance(ifaceIndex, walletdb, strAccount, nMinDepth);
 }
 
 bool SyncWithWallets(CIface *iface, CTransaction& tx, CBlock *pblock)
@@ -1568,14 +1555,20 @@ int CMerkleTx::SetMerkleBranch(int ifaceIndex)
 
 CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 {
-	CWalletDB walletdb(wallet->strWalletFile);
 	bool bKeyUsed = false;
+	bool bValid = false;
 	CAccount account;
 	CPubKey pubkey;
 
-	/* load from wallet */
-	walletdb.ReadAccount(strAccount, account);
-	bool bValid = account.vchPubKey.IsValid();
+	{
+		LOCK(wallet->cs_wallet);
+
+		CWalletDB walletdb(wallet->strWalletFile);
+		/* load from wallet */
+		walletdb.ReadAccount(strAccount, account);
+		bValid = account.vchPubKey.IsValid();
+		walletdb.Close();
+	}
 
 	if (!bForceNew && bValid) {
 		/* check if the current key has been used */
@@ -1596,7 +1589,14 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 		/* first time -- generate primary key for account */
 		account.vchPubKey = wallet->GenerateNewKey(true);
 		wallet->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
-		walletdb.WriteAccount(strAccount, account);
+
+		{
+			LOCK(wallet->cs_wallet);
+
+			CWalletDB walletdb(wallet->strWalletFile);
+			walletdb.WriteAccount(strAccount, account);
+			walletdb.Close();
+		}
 
 		pubkey = account.vchPubKey;
 	} else if (bForceNew && bKeyUsed) {
@@ -1622,21 +1622,22 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
 	{
 		LOCK(cs_wallet);
 
-		CWalletDB walletdb(strWalletFile);
 		CAccount account;
 		CKey pkey;
 
+		CWalletDB walletdb(strWalletFile);
 		walletdb.ReadAccount(strAccount, account);
+		walletdb.Close();
 
 		if (!account.vchPubKey.IsValid()) {
 			account.vchPubKey = GenerateNewKey(true);
-#if 0
-			if (!GetKeyFromPool(account.vchPubKey, false))
-				return false;
-#endif
 
 			SetAddressBookName(account.vchPubKey.GetID(), strAccount);
-			walletdb.WriteAccount(strAccount, account);
+			{
+				CWalletDB walletdb(strWalletFile);
+				walletdb.WriteAccount(strAccount, account);
+				walletdb.Close();
+			}
 		}
 
 		if (!GetKey(account.vchPubKey.GetID(), pkey)) {
@@ -3130,21 +3131,36 @@ bool CWallet::EraseTx(uint256 hash)
 
 static void wallet_LoadAccount(CWallet *wallet, string strAccount, CAccount& account)
 {
-	CWalletDB walletdb(wallet->strWalletFile);
 	CPubKey pubkey;
 
 	account.SetNull();
 
-	/* load from wallet */
-	walletdb.ReadAccount(strAccount, account);
+	{
+		LOCK(wallet->cs_wallet);
+
+		/* load from wallet */
+		CWalletDB walletdb(wallet->strWalletFile);
+		walletdb.ReadAccount(strAccount, account);
+		walletdb.Close();
+	}
+
 	bool bValid = account.vchPubKey.IsValid();
 
 	if (!bValid) {
 		/* first time -- generate primary key for account */
 		account.vchPubKey = wallet->GenerateNewKey(true);
 		wallet->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
-		walletdb.WriteAccount(strAccount, account);
+
+		{
+			LOCK(wallet->cs_wallet);
+
+			/* load from wallet */
+			CWalletDB walletdb(wallet->strWalletFile);
+			walletdb.WriteAccount(strAccount, account);
+			walletdb.Close();
+		}
 	}
+
 }
 
 CAccountCache *CWallet::GetAccount(string strAccount)
@@ -3225,4 +3241,98 @@ CCoinAddr CWallet::GetPrimaryAddr(string strAccount)
 	return CCoinAddr(ifaceIndex, pubkey.GetID());
 }
 
+static const char *wallet_wtx_filename(CWallet *wallet)
+{
+	static char ret_buf[PATH_MAX+1];
+
+	if (!*ret_buf) {
+		CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+		if (!iface)
+			return ("null.dat");
+		sprintf(ret_buf, "%s_wtx.dat", iface->name);
+	}
+
+	return (ret_buf);
+}
+
+static void wallet_UpdateSpent(CWallet *wallet, const CTransaction &tx)
+{
+
+	BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+		map<uint256, CWalletTx>::iterator mi = wallet->mapWallet.find(txin.prevout.hash);
+		if (mi != wallet->mapWallet.end()) {
+			CWalletTx& wtx = (*mi).second;
+			if (txin.prevout.n >= wtx.vout.size()) {
+				/* mis-match */
+				continue;
+			}
+
+			if (!wtx.IsSpent(txin.prevout.n)) {
+				wtx.MarkSpent(txin.prevout.n);
+			}
+		}
+	}
+
+}
+
+bool CWallet::AddWalletTx(CWalletTx& wtx)
+{
+	const uint256& hash = wtx.GetHash();
+	bool ok;
+
+	if (!IsFromMe(wtx) && !IsMine(wtx))
+		return (true);
+
+	{ /* mark any spent not already */
+		LOCK(cs_wallet);
+		wallet_UpdateSpent(this, wtx);
+	}
+	
+	/* check whether all outputs have been spent. */
+	bool fArch = true;
+	unsigned int idx;
+	for (idx = 0; idx < wtx.vout.size(); idx++) {
+		if (!wtx.IsSpent(idx)) {
+			fArch = false;
+			break;
+		}
+	}
+
+	if (!fArch) { /* active local wallet transaction database. */
+		LOCK(cs_wallet);
+
+		/* write to actively tracked storage. */
+		CWalletDB wtx_db(wallet_wtx_filename(this), "cr+");
+		ok = wtx_db.WriteTx(hash, wtx);
+		wtx_db.Close();
+	} else { /* archived wallet transaction database. */
+		/* write to arch wtx db */
+		ok = WriteTx(hash, wtx);
+		if (ok) {
+			LOCK(cs_wallet);
+
+			/* remove from actively tracked transactions. */
+			CWalletDB wtx_db(wallet_wtx_filename(this), "cr+");
+			wtx_db.EraseTx(hash);
+			wtx_db.Close();
+		}
+	}
+
+	return (ok);
+}
+
+bool CWallet::RemoveWalletTx(CWalletTx& wtx)
+{
+	const uint256& hash = wtx.GetHash();
+
+	/* remove from active storage. no records are removed from arch. */
+	{
+		LOCK(cs_wallet);
+		CWalletDB wtx_db(wallet_wtx_filename(this), "cr+");
+		wtx_db.EraseTx(hash);
+		wtx_db.Close();
+	}
+
+	return (true);
+}
 

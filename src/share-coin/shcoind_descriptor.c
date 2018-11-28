@@ -71,6 +71,10 @@ int get_max_descriptors(void)
 
     sprintf(errbuf, "maximum %d descriptors available", _max_fd);
     shcoind_info("max-descriptors", errbuf);
+
+#ifdef WINDOWS
+		_max_fd = MAX(16384, _max_fd);
+#endif
 	}
 
 	return (_max_fd);
@@ -155,7 +159,7 @@ desc_t *descriptor_claim(int fd, int mode, int flag)
     return (NULL); 
 
   if (!_descriptor_table) /* init */
-    _descriptor_table = (desc_t *)calloc(get_max_descriptors(), sizeof(desc_t));
+    _descriptor_table = (desc_t *)calloc(get_max_descriptors() + 1, sizeof(desc_t));
 
   d = (_descriptor_table + fd);
 
@@ -232,7 +236,7 @@ void descriptor_release(int fd)
   struct stat st;
   desc_t *d;
 
-  if (fd >= MAX_UNET_SOCKETS)
+  if (fd >= get_max_descriptors())
     return; 
 
   if (!_descriptor_table) /* init */
@@ -323,7 +327,7 @@ desc_t *descriptor_get(int fd)
 {
   desc_t *d;
 
-  if (fd >= MAX_UNET_SOCKETS)
+  if (fd >= get_max_descriptors())
     return (NULL); 
 
   d = (_descriptor_table + fd);
@@ -338,7 +342,7 @@ void descriptor_rbuff_add(int fd, unsigned char *data, ssize_t data_len)
   desc_t *d;
   char errbuf[256];
 
-  if (fd >= MAX_UNET_SOCKETS)
+  if (fd >= get_max_descriptors())
     return; 
 	if (data_len <= 0)
 		return;
@@ -389,7 +393,7 @@ shbuf_t *descriptor_rbuff(int fd)
   desc_t *d;
   char errbuf[256];
 
-  if (fd >= MAX_UNET_SOCKETS)
+  if (fd >= get_max_descriptors())
     return (NULL); 
 
   d = (_descriptor_table + fd);
@@ -410,7 +414,7 @@ shbuf_t *descriptor_wbuff(int fd)
   desc_t *d;
   char errbuf[256];
 
-  if (fd >= MAX_UNET_SOCKETS)
+  if (fd >= get_max_descriptors())
     return (NULL); 
 
   d = (_descriptor_table + fd);

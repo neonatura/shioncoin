@@ -57,30 +57,6 @@ USDEWallet *usdeWallet;
 CScript USDE_COINBASE_FLAGS;
 
 
-int usde_UpgradeWallet(void)
-{
-
-  
-  usdeWallet->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-  usdeWallet->SetMaxVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-
-#if 0
-  int nMaxVersion = 0;//GetArg("-upgradewallet", 0);
-  if (nMaxVersion == 0) // the -upgradewallet without argument case
-  {
-    nMaxVersion = CLIENT_VERSION;
-    usdeWallet->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
-  }
-  else
-    printf("Allowing wallet upgrade up to %i\n", nMaxVersion);
-
-  if (nMaxVersion > usdeWallet->GetVersion()) {
-    usdeWallet->SetMaxVersion(nMaxVersion);
-  }
-#endif
-
-}
-
 bool usde_LoadWallet(void)
 {
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
@@ -114,19 +90,21 @@ bool usde_LoadWallet(void)
 		usdeWallet->SetAddressBookName(usdeWallet->vchDefaultKey.GetID(), "");
   }
 
-  printf("%s", strErrors.str().c_str());
-
   //RegisterWallet(usdeWallet);
 
+#if 0
   CBlockIndex *pindexRescan = GetBestBlockIndex(USDE_COIN_IFACE);
   if (GetBoolArg("-rescan"))
     pindexRescan = USDEBlock::pindexGenesisBlock;
   else
   {
+    LOCK(cs_wallet);
+
     CWalletDB walletdb("usde_wallet.dat");
     CBlockLocator locator(GetCoinIndex(iface));
     if (walletdb.ReadBestBlock(locator))
       pindexRescan = locator.GetBlockIndex();
+		walletdb.Close();
   }
   CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
   if (pindexBest != pindexRescan && pindexBest && pindexRescan && pindexBest->nHeight > pindexRescan->nHeight)
@@ -136,10 +114,8 @@ bool usde_LoadWallet(void)
     Debug("(usde) LoadWallet: Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
     nStart = GetTimeMillis();
     usdeWallet->ScanForWalletTransactions(pindexRescan, true);
-//    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
-
-  usde_UpgradeWallet();
+#endif
 
   // Add wallet transactions that aren't already in a block to mapTransactions
   usdeWallet->ReacceptWalletTransactions(); 

@@ -418,8 +418,6 @@ Value rpc_alt_info(CIface *iface, const Array& params, bool fStratum)
 
 	obj.push_back(Pair("version",       (int)alt_iface->proto_ver));
 
-	obj.push_back(Pair("walletversion", alt_wallet->GetVersion()));
-
 	int nAddrTotal = 0;
 	string hex = hColor.GetHex();
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, alt_wallet->mapAddressBook)

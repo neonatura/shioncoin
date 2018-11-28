@@ -63,13 +63,6 @@ CScript COLOR_COINBASE_FLAGS;
 static unsigned int color_nBytesPerSigOp = COLOR_DEFAULT_BYTES_PER_SIGOP;
 
 
-int color_UpgradeWallet(void)
-{
-
-	colorWallet->SetMinVersion(FEATURE_LATEST);
-	colorWallet->SetMaxVersion(FEATURE_LATEST);
-
-}
 
 bool color_LoadWallet(void)
 {
@@ -104,19 +97,20 @@ bool color_LoadWallet(void)
 		colorWallet->SetAddressBookName(colorWallet->vchDefaultKey.GetID(), "");
   }
 
-//  printf("%s", strErrors.str().c_str());
-
   //RegisterWallet(colorWallet);
 
+#if 0
   CBlockIndex *pindexRescan = GetBestBlockIndex(COLOR_COIN_IFACE);
-  if (GetBoolArg("-rescan"))
+  if (GetBoolArg("-rescan")) {
     pindexRescan = COLORBlock::pindexGenesisBlock;
-  else
-  {
+	} else {
+		LOCK(cs_wallet);
+
     CWalletDB walletdb("color_wallet.dat");
     CBlockLocator locator(GetCoinIndex(iface));
     if (walletdb.ReadBestBlock(locator))
       pindexRescan = locator.GetBlockIndex();
+		walletdb.Close();
   }
   CBlockIndex *pindexBest = GetBestBlockIndex(COLOR_COIN_IFACE);
   if (pindexBest != pindexRescan && pindexBest && pindexRescan && pindexBest->nHeight > pindexRescan->nHeight)
@@ -128,8 +122,7 @@ bool color_LoadWallet(void)
     colorWallet->ScanForWalletTransactions(pindexRescan, true);
 //    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
   }
-
-  color_UpgradeWallet();
+#endif
 
   // Add wallet transactions that aren't already in a block to mapTransactions
   colorWallet->ReacceptWalletTransactions();
@@ -279,7 +272,7 @@ bool COLORWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
+//      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
       // Add tx to wallet, because if it has change it's also ours,
       // otherwise just for transaction history.
@@ -296,7 +289,7 @@ bool COLORWallet::CommitTransaction(CWalletTx& wtxNew)
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
 
-			delete pwalletdb;
+//			delete pwalletdb;
     }
 
 #if 0
