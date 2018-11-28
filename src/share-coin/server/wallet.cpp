@@ -134,7 +134,7 @@ bool CWallet::AddKey(const CKey& key)
 		{
 			LOCK(cs_wallet);
 			CWalletDB db(strWalletFile);
-			db.WriteKey(key.GetPubKey(), key.GetPrivKey());
+			ret = db.WriteKey(key.GetPubKey(), key.GetPrivKey());
 			db.Close();
 		}
 		if (!ret)

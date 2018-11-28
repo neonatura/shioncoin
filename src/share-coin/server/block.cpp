@@ -3151,6 +3151,7 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 	CWallet *wallet = GetWallet(pblock->ifaceIndex);
   CBlockIndex *pbest = GetBestBlockIndex(pblock->ifaceIndex);
   CBlockIndex *pindexLast = pbest;
+  CBlockIndex *pindexFail = NULL;
   CTxMemPool *pool = GetTxMemPool(iface);
   vector<CBlockIndex*> vConnect;
   vector<CBlockIndex*> vDisconnect;
@@ -3234,6 +3235,7 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
     if (!block->DisconnectBlock(pindex)) {
       error(SHERR_INVAL, "Reorganize() : DisonnectBlock %s failed", pindex->GetBlockHash().ToString().c_str());
       fValid = false;
+			pindexFail = pindex;
       break;
     }
 
@@ -3252,6 +3254,7 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
     if (!block->ConnectBlock(pindex)) {
       error(SHERR_INVAL, "Reorganize() : ConnectBlock %s failed", pindex->GetBlockHash().ToString().c_str());
       fValid = false;
+			pindexFail = pindex;
       break;
     }
 
@@ -3289,9 +3292,17 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   }
 
 fin:
+#if 0
   if (!fValid) {
-    pblock->InvalidChainFound(pindexNew);
-  }
+		pblock->InvalidChainFound(pindexNew);
+	}
+#endif
+	if (!fValid && pindexFail) {
+		error(SHERR_INVAL, "(%s): InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
+				iface->name, pindexFail->GetBlockHash().GetHex().c_str(),
+				pindexFail->nHeight, pindexFail->bnChainWork.ToString().c_str(),
+				DateTimeStrFormat("%x %H:%M:%S", pindexFail->GetBlockTime()).c_str());
+	}
 
 	if (pbest != pindexLast) {
 		/* re-establish chain at our failure/success point. */
