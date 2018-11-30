@@ -48,7 +48,7 @@ static opt_t _option_table[] = {
 	{ OPT_DEBUG, OPT_TYPE_BOOL, 0, NULL,
 		"Verbose logging information." },
 	{ OPT_MAX_CONN, OPT_TYPE_NUM, 300, NULL,
-		"The maximum number of socket connections." }, 
+		"The maximum number of socket connections allowed for all services." }, 
 	{ OPT_PEER_SEED, OPT_TYPE_NUM, 1, NULL, 
 		"Whether to auto-seed the core node peers." }, 
 	{ OPT_NOTARY, OPT_TYPE_BOOL, 1, NULL,

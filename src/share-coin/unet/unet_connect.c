@@ -40,7 +40,7 @@ int unet_connect(int mode, struct sockaddr *net_addr, unsigned int *sk_p)
   if (cli_fd < 0) 
     return (cli_fd);
 
-  if (cli_fd >= MAX_UNET_SOCKETS) {
+	if (cli_fd >= get_max_descriptors()) {
     char buf[256];
 
     sprintf(buf, "unet_connect: socket descriptor (%u) exceeds supported maximum.", (unsigned int)cli_fd);

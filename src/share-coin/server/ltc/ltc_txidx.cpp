@@ -465,7 +465,7 @@ static bool ltc_LoadBlockIndex()
   ReadBestInvalidWork(LTCBlock::bnBestInvalidWork);
 #endif
 
-  int nCheckDepth = (GetBestHeight(LTC_COIN_IFACE) / 1000) + 640;
+  int nCheckDepth = (GetBestHeight(LTC_COIN_IFACE) / 640) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;
   int nValidateCheckDepth = nCheckDepth * 4;
   int total = 0;

@@ -25,19 +25,6 @@
 
 #include "shcoind.h"
 
-#if 0
-static unet_table_t _unet_table[MAX_UNET_SOCKETS];
-
-unet_table_t *get_unet_table(unsigned int sk)
-{
-
-  if (sk <= 0 || sk >= MAX_UNET_SOCKETS)
-    return (NULL);
-
-  return (_unet_table + sk);
-}
-#endif
-
 unet_table_t *get_unet_table(unsigned int sk)
 {
   return (descriptor_get(sk));
@@ -97,7 +84,7 @@ int unet_accept(int mode, unsigned int *sk_p)
     return ((int)cli_fd);
   }
 
-  if (cli_fd >= (get_max_descriptors() / MAX_UNET_COIN_MODES)) {
+  if (cli_fd >= get_max_descriptors()) {
     char buf[256];
 
     sprintf(buf, "unet_accept: socket descriptor (%u) exceeds supported maximum.", (unsigned int)cli_fd);

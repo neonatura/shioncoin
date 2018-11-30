@@ -1236,3 +1236,4 @@ void CNode::PushBlock(const CBlock& block, int nFlag)
 	}
 
 }
+

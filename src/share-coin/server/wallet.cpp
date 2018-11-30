@@ -1385,6 +1385,7 @@ bool CWallet::DelAddressBookName(const CTxDestination& address)
 
 void CWallet::PrintWallet(const CBlock& block)
 {
+#if 0
 	{
 		LOCK(cs_wallet);
 		if (mapWallet.count(block.vtx[0].GetHash()))
@@ -1394,6 +1395,7 @@ void CWallet::PrintWallet(const CBlock& block)
 		}
 	}
 	printf("\n");
+#endif
 }
 
 bool CWallet::GetTransaction(const uint256 &hashTx, CWalletTx& wtx)
@@ -1515,7 +1517,7 @@ int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
 	{
 		vMerkleBranch.clear();
 		nIndex = -1;
-		printf("ERROR: SetMerkleBranch() : couldn't find tx in block\n");
+		//printf("ERROR: SetMerkleBranch() : couldn't find tx in block\n");
 		return 0;
 	}
 

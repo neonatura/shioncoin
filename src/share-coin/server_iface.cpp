@@ -2014,10 +2014,12 @@ void AddPeerAddress(CIface *iface, const char *hostname, int port)
 
   /* add peer to tracking database. */
   peer = shpeer_init(iface->name, addr_str);
+	/* store persistently */
+	unet_peer_incr(ifaceIndex, peer);
 #if 0
+	/* connect immediately */
   create_uevent_verify_peer(GetCoinIndex(iface), peer);
 #endif
-	unet_peer_incr(ifaceIndex, peer);
 	shpeer_free(&peer);
 
   Debug("(%s) AddPeerAddress: host '%s' (port: %d).", 

@@ -1953,20 +1953,49 @@ bool CBlock::trust(int deg, const char *msg, ...)
 
   if (deg > 0) {
     if (originPeer) {
-      unet_log(ifaceIndex, errbuf); 
+//      unet_log(ifaceIndex, errbuf); 
       if (originPeer->nMisbehavior > deg)
         originPeer->nMisbehavior -= deg;
     }
     return (true);
   }
 
-  if (originPeer)
-    originPeer->Misbehaving(-deg);
-
-  shcoind_err(SHERR_INVAL, iface->name, errbuf);
-  Debug("TRUST: %s", ToString().c_str());
+  if (originPeer) {
+		if (deg < 0)
+			originPeer->Misbehaving(-deg);
+		Debug("TRUST[%s]: %s",
+				originPeer->addr.ToString().c_str(), ToString().c_str());
+	}
 
   return (false);
+}
+
+void CBlockHeader::reject(CValidateState *state, int err_code, string err_text)
+{
+	if (!state->peer) return;
+	const uint256& hash = GetHash();
+//	trust(-10, "block \"%s\": %s", hash.GetHex().c_str(), err_text.c_str()); 
+	state->hash = hash;
+	state->nTrust -= 10;
+	state->nError = err_code;
+	state->sError = err_text;
+
+	Debug("REJECT[%s]: block: %s",
+			state->peer->addr.ToString().c_str(), ToString().c_str());
+}
+
+void CTransaction::reject(CValidateState *state, int err_code, string err_text)
+{
+	if (!state->peer) return;
+	const uint256& hash = GetHash();
+//	trust(-10, "tx \"%s\": %s", hash.GetHex().c_str(), err_text.c_str()); 
+	state->nTrust -= 10;
+	state->hash = hash;
+	state->nError = err_code;
+	state->sError = err_text;
+
+	Debug("REJECT[%s]: tx: %s",
+			state->peer->addr.ToString().c_str(), ToString(state->ifaceIndex).c_str());
 }
 
 std::string CTransactionCore::ToString(int ifaceIndex)

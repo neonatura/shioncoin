@@ -686,6 +686,8 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
     return error(SHERR_INVAL, "ConnectBlock() : too many sigops");
   if (block->vtx[0].GetValueOut() > 
       wallet->GetBlockValue(nHeight, nFees)) {
+		if (block->originPeer)
+			block->originPeer->PushReject("block", block->GetHash(), REJECT_INVALID, "bad-cb-amount"); 
     return (error(SHERR_INVAL, "core_ConnectBlock: coinbaseValueOut(%f) > BlockValue(%f) @ height %d [fee %llu]\n", ((double)block->vtx[0].GetValueOut()/(double)COIN), ((double)wallet->GetBlockValue(nHeight, nFees)/(double)COIN), nHeight, (unsigned long long)nFees)); 
   }
 

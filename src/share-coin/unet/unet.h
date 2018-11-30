@@ -78,7 +78,6 @@ extern "C" {
 typedef int socklen_t;
 #endif
 
-#define MAX_UNET_SOCKETS 4096
 
 #define MAX_CONNECT_IDLE_TIME 45
 #define MAX_IDLE_TIME 3600

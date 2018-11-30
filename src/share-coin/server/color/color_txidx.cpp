@@ -210,7 +210,7 @@ static bool color_LoadBlockIndex()
   wallet->bnBestChainWork = pindexBest->bnChainWork;
   pindexBest->pnext = NULL;
 
-  int nCheckDepth = (GetBestHeight(COLOR_COIN_IFACE) / 1000) + 640;
+  int nCheckDepth = (GetBestHeight(COLOR_COIN_IFACE) / 640) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;
   int nValidateCheckDepth = nCheckDepth * 4;
   int total = 0;

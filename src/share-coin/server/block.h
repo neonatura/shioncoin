@@ -1235,6 +1235,8 @@ class CTransaction : public CTransactionCore
     bool DisconnectInputs(int ifaceIndex);
 #endif
 
+		void reject(CValidateState *state, int err_code, string err_text);
+
 protected:
     /* leveldb */
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
@@ -1307,6 +1309,8 @@ public:
       scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
       return thash;
     }
+
+		void reject(CValidateState *state, int err_code, string err_text);
 
     friend bool operator==(const CBlockHeader& a, const CBlockHeader& b)
     {
@@ -1450,6 +1454,8 @@ class CBlock : public CBlockHeader
 			return (header);
 		}
 
+
+
     /**
      * Obtain a JSON representation of the block's content.
      */
@@ -1524,6 +1530,7 @@ class CBlock : public CBlockHeader
 #endif
 
 };
+
 
 /**
  * Obtain a blank block template for a coin interface.

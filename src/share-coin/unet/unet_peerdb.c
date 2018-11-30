@@ -309,7 +309,7 @@ int unet_peer_find(int mode, struct sockaddr *addr)
 
   strcpy(peer_ip, unet_netaddr_str(addr)); 
 
-  for (sk = 1; sk < MAX_UNET_SOCKETS; sk++) {
+  for (sk = 1; sk < get_max_descriptors(); sk++) {
     t = get_unet_table(sk);
     if (!t)
       continue; /* non-active */

@@ -462,7 +462,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 
 		Debug("(%s) ProcessMessage: received %d node addresses.", iface->name, vAddr.size()); 
 
-    vector<CAddress> vAddrOk;
     int64 nNow = GetAdjustedTime();
     int64 nSince = nNow - 10 * 60;
     BOOST_FOREACH(CAddress& addr, vAddr)
@@ -472,7 +471,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       if (addr.nTime <= 100000000 || addr.nTime > nNow + 10 * 60)
         addr.nTime = nNow - 5 * 24 * 60 * 60;
       pfrom->AddAddressKnown(addr);
-      bool fReachable = IsReachable(addr);
       if (addr.nTime > nSince && !pfrom->fGetAddr && vAddr.size() <= 10 && addr.IsRoutable())
       {
         // Relay to a limited number of other nodes
@@ -495,22 +493,21 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
             hashKey = Hash(BEGIN(hashKey), END(hashKey));
             mapMix.insert(make_pair(hashKey, pnode));
           }
-          int nRelayNodes = fReachable ? 2 : 1; // limited relaying of addresses outside our network(s)
+          int nRelayNodes = 2;
           for (multimap<uint256, CNode*>::iterator mi = mapMix.begin(); mi != mapMix.end() && nRelayNodes-- > 0; ++mi)
             ((*mi).second)->PushAddress(addr);
         }
       }
-      // Do not store addresses outside our network
-      if (fReachable)
-        vAddrOk.push_back(addr);
     }
 
-    BOOST_FOREACH(const CAddress &addr, vAddrOk) {
+    BOOST_FOREACH(const CAddress &addr, vAddr) {
       AddPeerAddress(iface, addr.ToStringIP().c_str(), addr.GetPort());
     }
 
+#if 0
     if (vAddr.size() < 1000)
       pfrom->fGetAddr = false;
+#endif
   }
 
   else if (strCommand == "inv")
@@ -848,29 +845,14 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       return true;
     }
 
+		/* our own addr */
+		CAddress addrLocal = GetLocalAddress(&pfrom->addr);
+		addrLocal.SetPort(iface->port);
+
     pfrom->vAddrToSend.clear();
-
-#if 0
-    /* send our own */
-    if (pfrom->fSuccessfullyConnected)
-    {
-      CAddress addrLocal = GetLocalAddress(&pfrom->addr);
-      addr.SetPort(iface->port);
-      if (addrLocal.IsRoutable() && (CService)addrLocal != (CService)pfrom->addrLocal)
-      {
-        pfrom->PushAddress(addrLocal);
-        pfrom->addrLocal = addrLocal;
-      }
-    }
-#endif
-
-#if 0
-    vector<CAddress> vAddr = GetAddresses(iface, SHC_MAX_GETADDR);
-    BOOST_FOREACH(const CAddress &addr, vAddr)
-      pfrom->PushAddress(addr);
-#endif
-
     pfrom->vAddrToSend = GetAddresses(iface, SHC_MAX_GETADDR);
+		pfrom->vAddrToSend.insert(pfrom->vAddrToSend.begin(), addrLocal);
+		Debug("(shc) ProcessMessage[getaddr]: sending %d addresses to node \"%s\".", pfrom->vAddrToSend.size(), pfrom->addr.ToString().c_str());
   }
 
 

@@ -768,7 +768,7 @@ sprintf(ntime, "%-8.8x", (unsigned int)task->curtime);
       }
     }
   } else {
-    luck++;
+    luck = (luck % 100) + 2;
   }
 
 }

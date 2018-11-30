@@ -54,6 +54,16 @@ extern int nBestHeight;
 
 #define SERIALIZE_TRANSACTION_NO_WITNESS 0x40000000
 
+static const unsigned char REJECT_MALFORMED = 0x01;
+static const unsigned char REJECT_INVALID = 0x10;
+static const unsigned char REJECT_OBSOLETE = 0x11;
+static const unsigned char REJECT_DUPLICATE = 0x12;
+static const unsigned char REJECT_NONSTANDARD = 0x40;
+// static const unsigned char REJECT_DUST = 0x41; // part of BIP 61
+static const unsigned char REJECT_INSUFFICIENTFEE = 0x42;
+static const unsigned char REJECT_CHECKPOINT = 0x43;
+
+
 
 inline unsigned int ReceiveBufferSize() { return 1000*GetArg("-maxreceivebuffer", 5*1000); }
 inline unsigned int SendBufferSize() { return 1000*GetArg("-maxsendbuffer", 1*1000); }
@@ -871,10 +881,24 @@ public:
 
 		bool HasHeader(CBlockIndex *pindex);
 
+		void PushReject(std::string mode, uint256 hash, int err_code, std::string err_text)
+		{
+			PushMessage("reject", mode, err_code, err_text);
+		}
+
+
 };
 
-
-
+class CValidateState
+{
+	public:
+		int ifaceIndex;
+		uint256 hash;
+		CNode *peer;
+		int nTrust;
+		std::string sError;
+		unsigned int nError;
+};
 
 
 

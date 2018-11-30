@@ -87,40 +87,55 @@ bool ContextualCheckBlockHeader(CIface *iface, const CBlockHeader& block, CBlock
 	return (true);
 }
 
-bool CheckBlock(CBlock *pblock)
+bool CheckBlock(CBlock *block)
 {
-  CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
+  CIface *iface = GetCoinByIndex(block->ifaceIndex);
 	uint32_t nSigOps;
 
-	if (!CheckBlockHeader(pblock))
+	if (!CheckBlockHeader(block)) {
+		if (block->originPeer)
+			block->originPeer->PushReject("block", block->GetHash(), REJECT_INVALID, "bad-diffbits");
 		return (false);
+	}
 
 	/* check merkleroot. */
-	if (pblock->hashMerkleRoot != pblock->BuildMerkleTree())
+	if (block->hashMerkleRoot != block->BuildMerkleTree()) {
+		if (block->originPeer)
+			block->originPeer->PushReject("block", block->GetHash(), REJECT_INVALID, "bad-txnmrklroot");
 		return error(SHERR_INVAL, "(%s) CheckBlock: hashMerkleRoot mismatch", iface->name);
+	}
 
 	/* verify coinbase integrity */
-	if (pblock->vtx.empty() || !pblock->vtx[0].IsCoinBase())
+	if (block->vtx.empty() || !block->vtx[0].IsCoinBase()) {
+		if (block->originPeer)
+			block->originPeer->PushReject("block", block->GetHash(), REJECT_INVALID, "bad-cb-missing"); 
 		return error(SHERR_INVAL, "(%s) CheckBlock: first tx is not coinbase", iface->name);
-	for (unsigned int i = 1; i < pblock->vtx.size(); i++) {
-		if (pblock->vtx[i].IsCoinBase())
+	}
+	for (unsigned int i = 1; i < block->vtx.size(); i++) {
+		if (block->vtx[i].IsCoinBase()) {
+			if (block->originPeer)
+				block->originPeer->PushReject("block", block->GetHash(), REJECT_INVALID, "bad-cb-multiple");
 			return error(SHERR_INVAL, "(%s) CheckBlock: more than one coinbase", iface->name);
+		}
 	}
 
 	/* check transactions. */
-	BOOST_FOREACH(CTransaction& tx, pblock->vtx) {
-		if (!tx.CheckTransaction(pblock->ifaceIndex))
+	BOOST_FOREACH(CTransaction& tx, block->vtx) {
+		if (!tx.CheckTransaction(block->ifaceIndex))
 			return error(SHERR_INVAL, "(%s) CheckBlock: CheckTransaction failed", iface->name);
 	}
 
 	nSigOps = 0;
-	BOOST_FOREACH(const CTransaction& tx, pblock->vtx)
+	BOOST_FOREACH(const CTransaction& tx, block->vtx)
 		nSigOps += tx.GetLegacySigOpCount();
-	if (nSigOps > MAX_BLOCK_SIGOPS(iface))
-		return (pblock->trust(-100, "(%s) CheckBlock: out-of-bounds SigOpCount", iface->name));
+	if (nSigOps > MAX_BLOCK_SIGOPS(iface)) {
+		if (block->originPeer)
+			block->originPeer->PushReject("block", block->GetHash(), REJECT_INVALID, "bad-blk-sigops");
+		return (block->trust(-100, "(%s) CheckBlock: out-of-bounds SigOpCount", iface->name));
+	}
 
 	/* coin service specific checks (non-contextual). */
-	return (pblock->CheckBlock());
+	return (block->CheckBlock());
 }
 
 bool ContextualCheckBlock(CBlock *pblock, CBlockIndex *pindexPrev)
@@ -155,6 +170,8 @@ bool ContextualCheckBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 
   /* check that the block matches the known block hash for last checkpoint. */
   if (!pblock->VerifyCheckpoint(nHeight)) {
+		if (pblock->originPeer)
+			pblock->originPeer->PushReject("block", pblock->GetHash(), REJECT_INVALID, "bad-fork-prior-to-checkpoint");
     return (pblock->trust(-100, "(%s) ContextualCheckBlock: rejected by checkpoint lockin at height %u", iface->name, nHeight));
 	}
 
@@ -162,8 +179,11 @@ bool ContextualCheckBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		/* verify height inclusion. */
 		CScript expect = CScript() << nHeight;
 		if (pblock->vtx[0].vin[0].scriptSig.size() < expect.size() ||
-				!std::equal(expect.begin(), expect.end(), pblock->vtx[0].vin[0].scriptSig.begin()))
-			return error(SHERR_INVAL, "(%s) AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", iface->name, pblock->GetHash().GetHex().c_str(), nHeight);
+				!std::equal(expect.begin(), expect.end(), pblock->vtx[0].vin[0].scriptSig.begin())) {
+			if (pblock->originPeer)
+				pblock->originPeer->PushReject("block", pblock->GetHash(), REJECT_INVALID, "block height mismatch in coinbase");
+			return error(SHERR_INVAL, "(%s) AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u): %s.", iface->name, pblock->GetHash().GetHex().c_str(), nHeight, pblock->vtx[0].vin[0].scriptSig.ToString().c_str());
+		}
 	}
 
 	if (!core_CheckBlockWitness(iface, pblock, pindexPrev)) {
@@ -172,6 +192,8 @@ bool ContextualCheckBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 
 	nWeight = pblock->GetBlockWeight();
 	if (nWeight > MAX_BLOCK_WEIGHT(iface)) {
+		if (pblock->originPeer)
+			pblock->originPeer->PushReject("block", pblock->GetHash(), REJECT_INVALID, "bad-blk-weight");
 		return (pblock->trust(-80, "(%s) CheckBlock: block weight (%d) > max (%d) [hash %s]", iface->name, nWeight, MAX_BLOCK_WEIGHT(iface), pblock->GetHash().GetHex().c_str()));
 	}
 
@@ -385,7 +407,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	if (!ContextualCheckBlock(pblock, pindexPrev)) {
 		/* record that block could not be validated. */
 		pindex->nStatus |= BLOCK_FAILED_VALID;
-		return (error(ERR_INVAL, "(%s) core_AcceptBlock: error verifying block [contextual]."));
+		return (error(ERR_INVAL, "(%s) core_AcceptBlock: error verifying block \"%s\" with height %d [contextual].", iface->name, hash.GetHex().c_str(), nHeight));
 	}
 
 #if 0

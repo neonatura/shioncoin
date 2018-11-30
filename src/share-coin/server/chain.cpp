@@ -910,57 +910,40 @@ void PerformBlockChainOperation(int ifaceIndex)
 
 bool ServicePeerEvent(int ifaceIndex)
 {
-  NodeList &vNodes = GetNodeList(ifaceIndex);
+	static time_t to;
+	NodeList &vNodes = GetNodeList(ifaceIndex);
   CNode *pfrom;
-  int tot;
+	time_t now;
+	int idx;
 
-  if (vNodes.empty())
-    return (true); /* keep checking. */
+	if (vNodes.empty())
+		return (true); /* keep checking. */
 
-  pfrom = NULL;
-  BOOST_FOREACH(CNode *node, vNodes) {
-    if (node->fGetAddr)
-      continue; /* already asked peer for addresses */
-    if (node->fInbound)
-      continue; /* mitigate fingerprinting */
-    if (node->nVersion == 0)
-      continue; /* stream not initialized */
+	/* move on if we are incapable */
+	now = time(NULL);
+	if (to == 0)
+		to = now;
+	if (to < (now - 30))
+		return (false); /* give up */
 
-    /* found match */
-    pfrom = node;
-    break;
-  }
-  if (!pfrom) {
-    pfrom = vNodes.front();
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	if (iface && iface->enabled) {
+		LOCK(cs_vNodes);
+
+		idx = (shrand() % vNodes.size());
+		pfrom = vNodes[idx];
+
+    if (pfrom->fGetAddr)
+      return (true); /* already asked peer for addresses */
+    if (pfrom->fInbound)
+      return (true); /* opposite of how they will see request */
     if (pfrom->nVersion == 0)
-      return (true); /* keep checking. */
+      return (true); /* stream not initialized */
 
-    /* nothing suitable found. */
-    return (false); 
-  }
-
-#if 0
-  pfrom = vNodes.front();
-  if (pfrom->fGetAddr)
-    return (false); /* op already performed against this node */
-  if (!pfrom->fInbound)
-    return (false); /* prevent fingerprinting attack */
-
-  if (pfrom->nVersion == 0)
-    return (true); /* not ready yet */
-#endif
-
-#if 0
-  tot = unet_peer_total(ifaceIndex);
-  if (tot < 5000) {
-    pfrom->PushMessage("getaddr");
-    pfrom->fGetAddr = true;
-    Debug("ServicePeerEvent: requesting node address list for iface #%d (known: %d).\n", ifaceIndex, tot);
-  }
-#endif
-  pfrom->PushMessage("getaddr");
-  pfrom->fGetAddr = true;
-  Debug("ServicePeerEvent: requesting node address list for iface #%d.\n", ifaceIndex);
+		pfrom->PushMessage("getaddr");
+		pfrom->fGetAddr = true;
+		Debug("(%s) ServicePeerEvent: requesting node address list from \"%s\".\n", iface->name, pfrom->addr.ToString().c_str());
+	}
 
   return (false); /* all done */
 }

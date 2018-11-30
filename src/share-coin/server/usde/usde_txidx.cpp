@@ -260,7 +260,7 @@ static bool usde_LoadBlockIndex()
       hashBestChain.GetHex().c_str(), (int)GetBestHeight(USDE_COIN_IFACE),
       DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
 
-  int nCheckDepth = (GetBestHeight(USDE_COIN_IFACE) / 1000) + 640;
+  int nCheckDepth = (GetBestHeight(USDE_COIN_IFACE) / 640) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;
   int nValidateCheckDepth = nCheckDepth * 4;
   int total = 0;

@@ -118,7 +118,7 @@ unet_table_t *t;
         "<select onchange=\"window.location.href=this.options[this.selectedIndex].value;\" style=\"font-variant : small-caps; background : linear-gradient(to bottom, #1e5799 0%,#2989d8 50%,#207cca 51%,#7db9e8 100%); color : #e8e8e9; border-radius : 9px; border : 0; -webkit-appearance : none; -moz-appearance : none; text-indent: 0.01px; text-overflow: ''; overflow : none;\">\r\n");
 
     shbuf_catstr(buff, "<option selected disabled value=\" \" style=\"color : #666; outline : 0;\"> </option>");
-    for (t_sk = 1; t_sk < MAX_UNET_SOCKETS; t_sk++) {
+    for (t_sk = 1; t_sk < get_max_descriptors(); t_sk++) {
       t = get_unet_table(t_sk);
       if (!t)
         continue; /* non-active */

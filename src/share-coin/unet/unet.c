@@ -160,7 +160,7 @@ void unet_cycle(double max_t)
   FD_ZERO(&r_set);
   FD_ZERO(&w_set);
   FD_ZERO(&x_set);
-  for (fd = 1; fd < MAX_UNET_SOCKETS; fd++) {
+  for (fd = 1; fd < get_max_descriptors(); fd++) {
     t = get_unet_table(fd);
     if (!t)
       continue;

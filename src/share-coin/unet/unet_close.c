@@ -63,7 +63,7 @@ int unet_close_all(int mode)
   unet_table_t *t;
   int sk;
 
-  for (sk = 1; sk < MAX_UNET_SOCKETS; sk++) {
+  for (sk = 1; sk < get_max_descriptors(); sk++) {
     t = get_unet_table(sk);
     if (!t)
       continue; /* not active */
@@ -95,7 +95,7 @@ void unet_close_idle(void)
   conn_idle_t = shtime_adj(now, -60);
   idle_t = shtime_adj(now, -3600);
 
-  for (sk = 1; sk < MAX_UNET_SOCKETS; sk++) {
+  for (sk = 1; sk < get_max_descriptors(); sk++) {
     t = get_unet_table(sk);
     if (!t)
       continue; /* non-active */
@@ -130,27 +130,4 @@ void unet_close_idle(void)
 
 }
 
-#if 0
-/**
- * Closes and de-allocates resourcs for all socket connections (regardless of service).
- */
-void unet_close_free(void)
-{
-  unet_table_t *t;
-  int sk;
-
-  for (sk = 1; sk < MAX_UNET_SOCKETS; sk++) {
-    t = get_unet_table(sk);
-    if (!t)
-      continue; /* active */
-    if (t->mode == UNET_NONE)
-      continue; /* already cleared */ 
-    if (!(t->flag & DF_SOCK))
-      continue;
-
-    descriptor_release(sk);
-  }
-
-}
-#endif
 
