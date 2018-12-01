@@ -115,6 +115,7 @@ class CPoolTx
       nChainInputValue = 0;
       flags = 0;
       mapInputs.clear();
+			fLocal = false;
     }
 
 		void SetColor(const uint160& hColorIn)

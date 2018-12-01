@@ -401,11 +401,13 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 
 	if (!CheckBlock(pblock)) {
 		/* record that block could not be validated. */
+		iface->net_invalid = time(NULL);
 		pindex->nStatus |= BLOCK_FAILED_VALID;
 		return (error(ERR_INVAL, "(%s) core_AcceptBlock: error verifying block."));
 	}
 	if (!ContextualCheckBlock(pblock, pindexPrev)) {
 		/* record that block could not be validated. */
+		iface->net_invalid = time(NULL);
 		pindex->nStatus |= BLOCK_FAILED_VALID;
 		return (error(ERR_INVAL, "(%s) core_AcceptBlock: error verifying block \"%s\" with height %d [contextual].", iface->name, hash.GetHex().c_str(), nHeight));
 	}
@@ -461,6 +463,8 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
   }
 
   STAT_BLOCK_ACCEPTS(iface)++;
+	iface->net_valid = time(NULL);
+
   return true;
 }
 

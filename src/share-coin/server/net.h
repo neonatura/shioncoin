@@ -408,7 +408,7 @@ public:
         fSuccessfullyConnected = false;
         fDisconnect = false;
         fHaveWitness = false;
-        fPreferHeaders = true;
+        fPreferHeaders = false;
         nRefCount = 0;
         nReleaseTime = 0;
         hashContinue = 0;

@@ -946,11 +946,8 @@ void CBlockLocator::Set(const CBlockIndex* pindex)
     // Exponentially larger steps back, plus the genesis block.
     int nHeight = std::max(pindex->nHeight - nStep, 0);
 
-//    pindex = GetBlockIndexByHeight(ifaceIndex, nHeight);
-		/* traverse down chain until height is hit */
-		pindex = pindex->pprev;
-		while (pindex && pindex->pprev && pindex->nHeight > nHeight)
-			pindex = pindex->pprev;
+		/* traverse down chain until next height is hit */
+		pindex = pindex->GetAncestor(nHeight);
 
     if (vHave.size() > 10)
       nStep *= 2;

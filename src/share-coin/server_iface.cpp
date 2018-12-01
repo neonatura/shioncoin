@@ -361,6 +361,7 @@ bool IsLocal(const CService& addr)
     return mapLocalHost.count(addr) > 0;
 }
 
+#if 0
 /** check whether a given address is in a network we can probably connect to */
 bool IsReachable(const CNetAddr& addr)
 {
@@ -368,6 +369,7 @@ bool IsReachable(const CNetAddr& addr)
     enum Network net = addr.GetNetwork();
     return vfReachable[net] && !vfLimited[net];
 }
+#endif
 
 void AddressCurrentlyConnected(const CService& addr)
 {

@@ -439,6 +439,10 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 		/* uninitialized connection. */
 		return (NULL);
 	}
+	if (!pfrom->fSuccessfullyConnected) {
+		/* still connecting */
+		return (NULL);
+	}
 
 	if (!pfrom->fPreferHeaders) {
 		/* incompatible. */
@@ -687,11 +691,12 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 		return (false);
 
 	/* suppress duplicate requests. */
-	CBlockIndex *pindexFirst = vBlocks.front();
-	if (pfrom->pindexRecv == pindexFirst)
+	CBlockIndex *pindexLast = vBlocks.back();
+	if (pfrom->pindexRecv == pindexLast)
 		return (false);
-	pfrom->pindexRecv = pindexFirst;
+	pfrom->pindexRecv = pindexLast;
 
+	CBlockIndex *pindexFirst = vBlocks.front();
 	unsigned int nIndex = 0;
 	if (pindexBest && pindexFirst->pprev &&
 			pindexBest->GetBlockHash() == pindexFirst->pprev->GetBlockHash()) {
@@ -1133,8 +1138,6 @@ void ServiceBlockEventUpdate(int ifaceIndex)
 
   if (iface->blockscan_max == nHeight)
     return;
-
-  iface->net_valid = time(NULL);
 
 #if 0
 			/* this is handled exclusively in acceptblock after new chain tip. */

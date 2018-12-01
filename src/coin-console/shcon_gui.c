@@ -418,8 +418,8 @@ void shcon_gui_netstate(shjson_t *resp)
 		}
 		mesg[0] = buf;
 
-		setCDKLabel (infoBox, (CDK_CSTRING2) mesg, 1, TRUE);
-		drawCDKLabel (infoBox, TRUE);
+		setCDKLabel (infoBox, (CDK_CSTRING2) mesg, 1, FALSE);
+		drawCDKLabel(infoBox, TRUE);
 	}
 
 }
@@ -434,12 +434,6 @@ static int shcon_gui_command_init(void)
 	history.current = 0;
 	history.count = 0;
 
-	/* Create the scrolling window. */
-	char *upper = uc((char *)opt_str(OPT_IFACE));
-	sprintf(title, "<C></B/5>%s Coin Console", upper);
-	free(upper);
-	commandOutput = newCDKSwindow (cdkscreen, CENTER, 1, -6, -2,
-			title, 1000, TRUE, FALSE);
 
 	/* Convert the prompt to a chtype and determine its length. */
 	convert = char2Chtype (prompt, &promptLen, &junk);
@@ -452,14 +446,22 @@ static int shcon_gui_command_init(void)
 			A_BOLD | COLOR_PAIR (8),
 			COLOR_PAIR (24) | '_',
 			vMIXED, commandFieldWidth, 1, 512, FALSE, FALSE);
+	moveCDKEntry(commandEntry, 0, -1, TRUE, FALSE);
+
+
+
+	/* Create the scrolling window. */
+	char *upper = uc((char *)opt_str(OPT_IFACE));
+	sprintf(title, "<C></B/5>%s Coin Console", upper);
+	free(upper);
+	commandOutput = newCDKSwindow (cdkscreen, CENTER, 1, -5, -2,
+			title, 1000, TRUE, FALSE);
 
 	/* Create the key bindings. */
 	bindCDKObject (vENTRY, commandEntry, KEY_UP, historyUpCB, &history);
 	bindCDKObject (vENTRY, commandEntry, KEY_DOWN, historyDownCB, &history);
 	bindCDKObject (vENTRY, commandEntry, KEY_TAB, viewHistoryCB, commandOutput);
-//	bindCDKObject (vENTRY, commandEntry, CTRL ('^'), listHistoryCB, &history);
 	bindCDKObject (vENTRY, commandEntry, CTRL ('G'), jumpWindowCB, commandOutput);
-//	bindCDKObject (vENTRY, commandEntry, CTRL ('H'), helpCB, commandOutput);
 
 	/* menubar shortcuts */
 	bindCDKObject (vENTRY, commandEntry, CTRL ('F'), activateMenuCB, "file");
@@ -467,6 +469,7 @@ static int shcon_gui_command_init(void)
 	bindCDKObject (vENTRY, commandEntry, CTRL ('R'), activateMenuCB, "report");
 	bindCDKObject (vENTRY, commandEntry, CTRL ('A'), activateMenuCB, "admin");
 	bindCDKObject (vENTRY, commandEntry, CTRL ('H'), activateMenuCB, "help");
+	bindCDKObject (vENTRY, commandEntry, KEY_F1, activateMenuCB, "help");
 
 	/* Draw the screen. */
 	refreshCDKScreen (cdkscreen);
@@ -546,14 +549,16 @@ int shcon_gui_init(void)
 
 	shcon_gui_menu_init();
 
-	shcon_gui_command_init();
-
 	{
 		char *mesg[4];
 		mesg[0] = "            ";
 		infoBox = newCDKLabel(cdkscreen, RIGHT, BOTTOM,
-				(CDK_CSTRING2)mesg, 1, TRUE, FALSE);
+				(CDK_CSTRING2)mesg, 1, FALSE, FALSE);
+		moveCDKLabel(infoBox, 0, -1, TRUE, FALSE);
 	}
+
+	shcon_gui_command_init();
+
 
 }
 

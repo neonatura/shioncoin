@@ -137,10 +137,14 @@ static const char *opt_home_dir(void)
 #endif
 
 		if (!homedir) {
+			/* a env. var that the share-coin MSI installer creates based on the user who installs it. */
+			homedir = getenv("SHCOIND_HOME");
+			if (!homedir)
 #ifdef WINDOWS
-			homedir = getenv("HOMEPATH");
+			/* kick back to windows set env. var. note that this is probably not defined for a 'system account'. */
+				homedir = getenv("HOMEPATH");
 #else
-			homedir = getenv("HOME");
+				homedir = getenv("HOME");
 #endif
 		}
 		if (homedir) {
