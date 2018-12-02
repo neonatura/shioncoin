@@ -324,6 +324,8 @@ bool core_AcceptBlockHeader(CIface *iface, CBlockHeader& block, CBlockIndex **pi
 		*pindex_p = pindex;
 	}
 
+	Debug("(%s) AcceptBlockHeader: successfully processed block \"%s\" header (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight);
+
 	return (true);
 }
 
@@ -447,6 +449,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		BOOST_FOREACH(CNode* pnode, vNodes) {
 			pnode->PushBlockHash(hash);
 		}
+		Debug("(%s) AcceptBlock: informed %d nodes of block \"%s\".", iface->name, vNodes.size(), hash.GetHex().c_str()); 
 	}
 
   if (ifaceIndex == TEST_COIN_IFACE ||

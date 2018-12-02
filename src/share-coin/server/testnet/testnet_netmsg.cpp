@@ -212,6 +212,7 @@ static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
 static void testnet_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *locator, uint256 hashStop)
 {
+	CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
 
 	if (IsInitialBlockDownload(TESTNET_COIN_IFACE))
@@ -223,12 +224,14 @@ static void testnet_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator
 		pindex = GetBlockIndexByHash(ifaceIndex, hashStop);
 	} else {
 		// Find the last block the caller has in the main chain
-		pindex = locator->GetBlockIndex();
+		pindex = wallet->GetLocatorIndex(*locator);
 		if (pindex)
 			pindex = pindex->pnext;
 	}
-	if (!pindex)
+	if (!pindex) {
+		Debug("(testnet) ProcessGetHeaders: unable to locate headers for \"%s\".", pfrom->addr.ToString().c_str()); 
 		return;
+	}
 
 	vector<TESTNETBlock> vHeaders;
 	int nLimit = 2000;
@@ -248,6 +251,7 @@ static void testnet_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator
 		if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
 			break;
 	}
+	pfrom->pindexBestHeaderSend = pindex ? pindex : GetBestBlockIndex(iface);
 	pfrom->PushMessage("headers", vHeaders);
 
 	Debug("testnet_ProcessGetHeaders: sent %d headers", vHeaders.size());
@@ -503,9 +507,9 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 				/* "headers" */
     		if (pfrom->fPreferHeaders) {
 					if (inv.type == MSG_BLOCK) {
+						UpdateBlockAvailability(ifaceIndex, pfrom, inv.hash);
 						if (!fAlreadyHave) {
-							CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-							pfrom->PushMessage("getheaders", locator, inv.hash); 
+							pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), inv.hash); 
 						}
 						fSent = true;
 					}
@@ -637,12 +641,11 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 
   else if (strCommand == "getblocks")
   {
-    CBlockLocator locator(ifaceIndex);
+    CBlockLocator locator;
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
-    // Find the last block the caller has in the main chain
-    CBlockIndex* pindex = locator.GetBlockIndex();
+		CBlockIndex *pindex = wallet->GetLocatorIndex(locator); 
 
     // Send the rest of the chain
     if (pindex)
@@ -672,7 +675,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 
   else if (strCommand == "getheaders")
   {
-    CBlockLocator locator(ifaceIndex);
+    CBlockLocator locator;
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
@@ -889,6 +892,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 
   else if (strCommand == "sendheaders") {
     pfrom->fPreferHeaders = true;
+		Debug("(testnet) ProcessMessage: received 'sendheaders' request from \"%s\".", pfrom->addr.ToString().c_str());
   }
 
   else if (strCommand == "sendcmpct") {
@@ -905,13 +909,14 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 		CBlockHeader header;
 		vRecv >> header;
 
+		const uint256& hBlock = header.GetHash();
+		UpdateBlockAvailability(ifaceIndex, pfrom, hBlock);
 
 		pindex = GetBlockIndexByHash(ifaceIndex, header.hashPrevBlock);
 		if (!pindex) {
 			/* ask for headers if prevhash is unknown. */
 			if (!IsInitialBlockDownload(TESTNET_COIN_IFACE)) {
-				CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-				pfrom->PushMessage("getheaders", locator, uint256());
+				pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), uint256());
 			}
 		}
 
@@ -958,9 +963,11 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 
 		pindexLast = GetBlockIndexByHash(ifaceIndex, headers[0].hashPrevBlock);
 		if (!pindexLast) {
-			/* what you talking about willace */
-			CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-			pfrom->PushMessage("getheaders", locator, uint256());
+			if (nCount < MAX_BLOCKS_TO_ANNOUNCE) {
+				/* what you talking about willace */
+				pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), uint256());
+				UpdateBlockAvailability(ifaceIndex, pfrom, headers.back().GetHash());
+			}
 			return (true);
 		}
 
@@ -980,8 +987,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 			return (true);
 		}
 
-		/* update 'last best received header' for node. */
-		pfrom->pindexRecvHeader = pindexLast;
+		UpdateBlockAvailability(ifaceIndex, pfrom, pindexLast->GetBlockHash());
 
 		InitServiceBlockEvent(ifaceIndex, pindexLast->nHeight);
 
@@ -989,8 +995,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 
 		if (nCount == MAX_HEADERS_RESULTS) {
 			/* headers message had its maximum size; ask peer for more headers. */
-			CBlockLocator locator(ifaceIndex, pindexLast);
-			pfrom->PushMessage("getheaders", locator, uint256());
+			pfrom->PushMessage("getheaders", wallet->GetLocator(pindexLast), uint256());
 		}
   }
 
@@ -1240,8 +1245,7 @@ bool testnet_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
 			bool fRevertToInv = !pto->fPreferHeaders ||
 				(pto->vBlockHashesToAnnounce.size() > MAX_BLOCKS_TO_ANNOUNCE);
 			const CBlockIndex *pBestIndex = NULL; // last header queued for delivery
-//			ProcessBlockAvailability(pto->GetId()); // ensure pindexBestKnownBlock is up-to-date
-
+      ProcessBlockAvailability(ifaceIndex, pto);
 			if (!fRevertToInv) {
 				bool fFoundStartingHeader = false;
 				// Try to find first header that our peer doesn't have, and
@@ -1368,29 +1372,21 @@ bool testnet_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
     /* msg: "inventory" */
     if (!pto->vInventoryToSend.empty()) {
       vector<CInv> vInv;
-      vector<CInv> vInvWait;
       {
         LOCK(pto->cs_inventory);
         vInv.reserve(pto->vInventoryToSend.size());
-        vInvWait.reserve(pto->vInventoryToSend.size());
         BOOST_FOREACH(const CInv& inv, pto->vInventoryToSend)
         {
-          if (pto->setInventoryKnown.count(inv)) {
-            continue;
-          }
-
-          // returns true if wasn't already contained in the set
-          if (pto->setInventoryKnown.insert(inv).second)
-          {
+          if (inv.type == MSG_BLOCK ||
+							pto->setInventoryKnown.insert(inv).second) {
             vInv.push_back(inv);
-            if (vInv.size() >= 1000)
-            {
+            if (vInv.size() >= 1000) {
               pto->PushMessage("inv", vInv);
               vInv.clear();
             }
           }
         }
-        pto->vInventoryToSend = vInvWait;
+        pto->vInventoryToSend.clear();
       }
       if (!vInv.empty()) {
         pto->PushMessage("inv", vInv);

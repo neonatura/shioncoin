@@ -1099,10 +1099,8 @@ bool EMC2Block::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(EMC2_COIN_IFACE);
-  if (!fIsInitialDownload)
-  {
-    const CBlockLocator locator(EMC2_COIN_IFACE, pindexNew);
-    EMC2_SetBestChain(locator);
+  if (!fIsInitialDownload) {
+    EMC2_SetBestChain(wallet->GetLocator(pindexNew));
   }
 
   // New best block
@@ -1693,9 +1691,8 @@ bool EMC2Block::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(EMC2_COIN_IFACE);
   if (!fIsInitialDownload) {
-    const CBlockLocator locator(EMC2_COIN_IFACE, pindexNew);
     timing_init("SetBestChain/locator", &ts);
-    EMC2_SetBestChain(locator);
+    EMC2_SetBestChain(wallet->GetLocator(pindexNew));
     timing_term(EMC2_COIN_IFACE, "SetBestChain/locator", &ts);
 
 #ifndef USE_LEVELDB_COINDB
@@ -1968,17 +1965,6 @@ bool EMC2Block::SetBestChain(CBlockIndex* pindexNew)
     if (!ret)
       return (false);
   }
-
-#if 0
-  // Update best block in wallet (so we can detect restored wallets)
-  bool fIsInitialDownload = IsInitialBlockDownload(EMC2_COIN_IFACE);
-  if (!fIsInitialDownload) {
-    const CBlockLocator locator(EMC2_COIN_IFACE, pindexNew);
-    timing_init("SetBestChain/locator", &ts);
-    EMC2_SetBestChain(locator);
-    timing_term(EMC2_COIN_IFACE, "SetBestChain/locator", &ts);
-  }
-#endif
 
   // New best block
   wallet->bnBestChainWork = pindexNew->bnChainWork;

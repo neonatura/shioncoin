@@ -3338,3 +3338,50 @@ bool CWallet::RemoveWalletTx(CWalletTx& wtx)
 	return (true);
 }
 
+
+CBlockLocator CWallet::GetLocator(CBlockIndex *pindex)
+{
+	std::vector<uint256> vHave;
+	int nStep = 1;
+
+	vHave.clear();
+	vHave.reserve(32);
+
+	if (!pindex)
+		pindex = GetBestBlockIndex(ifaceIndex);
+
+	while (pindex) {
+		vHave.push_back(pindex->GetBlockHash());
+
+		/* stop when we have added the genesis block. */
+		if (pindex->nHeight == 0)
+			break;
+
+		/* exponentially larger steps back, plus the genesis block. */
+		int nHeight = std::max(pindex->nHeight - nStep, 0);
+		while (pindex->nHeight > nHeight)
+			pindex = pindex->pprev;
+
+		if (vHave.size() > 10)
+			nStep *= 2;
+	}
+
+	return CBlockLocator(vHave);
+}
+
+CBlockIndex *CWallet::GetLocatorIndex(const CBlockLocator& loc)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CBlockIndex *pindex;
+
+  /* find the first block the caller has in the main chain. */
+  BOOST_FOREACH(const uint256& hash, loc.vHave) {
+    pindex = GetBlockIndexByHash(ifaceIndex, hash);
+    if (pindex && pindex->IsInMainChain(ifaceIndex))
+      return pindex;
+  }
+
+  return (GetGenesisBlockIndex(iface));
+}
+
+

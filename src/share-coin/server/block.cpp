@@ -823,204 +823,28 @@ bool CTransaction::ClientConnectInputs(int ifaceIndex)
   return true;
 }
 
-
-
-#if 0
-bool CBlockIndex::IsInMainChain(int ifaceIndex) const
+static bool legacy_IsInMainChain(int ifaceIndex, const CBlockIndex *pindex)
 {
-  if (pnext)
-    return (true);
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  if (!iface) return (false);
-  CBlock *block = GetBlockByHash(iface, GetBlockHash()); 
-  if (!block) return (false);
-  bool ret = block->IsBestChain();
-  delete block;
-  return (ret);
-} 
-#endif
+	if (pindex->pnext)
+		return (true); /* has valid parent */
+
+	CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
+	if (pindexBest && pindex->GetBlockHash() == pindexBest->GetBlockHash());
+	return (true);
+
+	return (false);
+}
 
 bool CBlockIndex::IsInMainChain(int ifaceIndex) const
 {
-  if (pnext)
-    return (true); /* has valid parent */
+	bool ok;
 
-  CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
-  if (pindexBest && GetBlockHash() == pindexBest->GetBlockHash());
-    return (true);
+	if (ifaceIndex == USDE_COIN_IFACE) 
+		ok = legacy_IsInMainChain(ifaceIndex, this);
+	else
+		ok = (nStatus & BLOCK_HAVE_DATA);
 
-  return (false);
-}
-
-uint256 CBlockLocator::GetBlockHash()
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  CBlockIndex *pindex;
-
-  // Find the first block the caller has in the main chain
-  BOOST_FOREACH(const uint256& hash, vHave)
-  {
-    pindex = GetBlockIndexByHash(ifaceIndex, hash);
-    if (pindex && pindex->IsInMainChain(ifaceIndex))
-      return hash;
-  }
-  return GetGenesisBlockHash(ifaceIndex);
-}
-#if 0
-uint256 CBlockLocator::GetBlockHash()
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
-
-  // Find the first block the caller has in the main chain
-  BOOST_FOREACH(const uint256& hash, vHave)
-  {
-    std::map<uint256, CBlockIndex*>::iterator mi = blockIndex->find(hash);
-    if (mi != blockIndex->end())
-    {
-      CBlockIndex* pindex = (*mi).second;
-      if (pindex->IsInMainChain(ifaceIndex))
-        return hash;
-    }
-  }
-
-  CBlock *block = GetBlockByHeight(iface, 0);
-  if (!block) {
-    uint256 hash;
-    return (hash);
-  }
-  uint256 hashBlock = block->GetHash();
-  delete block;
-  return hashBlock;
-//  return block->hashGenesisBlock;
-}
-#endif
-
-
-int CBlockLocator::GetHeight()
-{
-  CBlockIndex* pindex = GetBlockIndex();
-  if (!pindex)
-    return 0;
-  return pindex->nHeight;
-}
-
-
-CBlockIndex* CBlockLocator::GetBlockIndex()
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  CBlockIndex *pindex;
-
-  // Find the first block the caller has in the main chain
-  BOOST_FOREACH(const uint256& hash, vHave)
-  {
-    pindex = GetBlockIndexByHash(ifaceIndex, hash);
-    if (pindex && pindex->IsInMainChain(ifaceIndex))
-      return pindex;
-  }
-
-  return (GetGenesisBlockIndex(iface));
-}
-
-void CBlockLocator::Set(const CBlockIndex* pindex)
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  int nStep = 1;
-
-  vHave.clear();
-  vHave.reserve(32);
-
-  if (!pindex)
-    pindex = GetBestBlockIndex(iface);
-	if (!pindex)
-		return;
-
-	int nTip = pindex->nHeight;
-  while (pindex) {
-    vHave.push_back(pindex->GetBlockHash());
-
-    // Stop when we have added the genesis block.
-    if (pindex->nHeight == 0)
-      break;
-
-    // Exponentially larger steps back, plus the genesis block.
-    int nHeight = std::max(pindex->nHeight - nStep, 0);
-
-		/* traverse down chain until next height is hit */
-		pindex = pindex->GetAncestor(nHeight);
-
-    if (vHave.size() > 10)
-      nStep *= 2;
-  }
-}
-
-#if 0
-void CBlockLocator::Set(const CBlockIndex* pindex)
-{
-  vHave.clear();
-  int nStep = 1;
-  while (pindex)
-  {
-    vHave.push_back(pindex->GetBlockHash());
-
-    // Exponentially larger steps back
-    for (int i = 0; pindex && i < nStep; i++)
-      pindex = pindex->pprev;
-    if (vHave.size() > 10)
-      nStep *= 2;
-  }
-  vHave.push_back(GetGenesisBlockHash(ifaceIndex));
-}
-#endif
-#if 0
-void CBlockLocator::Set(const CBlockIndex* pindex)
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  int nStep = 1;
-
-  vHave.clear();
-  while (pindex)
-  {
-    vHave.push_back(pindex->GetBlockHash());
-
-    // Exponentially larger steps back
-    for (int i = 0; pindex && i < nStep; i++)
-      pindex = pindex->pprev;
-    if (vHave.size() > 10)
-      nStep *= 2;
-  }
-
-  /* all the way back */
-  pindex = 
-  CBlock *block = GetBlockByHeight(iface, 0);
-  if (block) {
-    uint256 hashBlock = block->GetHash();
-    vHave.push_back(hashBlock);// hashGenesisBlock);
-    delete block; 
-  }
-}
-#endif
-
-
-
-int CBlockLocator::GetDistanceBack()
-{
-  CBlockIndex *pindex;
-
-  // Retrace how far back it was in the sender's branch
-  int nDistance = 0;
-  int nStep = 1;
-  BOOST_FOREACH(const uint256& hash, vHave)
-  {
-    pindex = GetBlockIndexByHash(ifaceIndex, hash);
-    if (pindex && pindex->IsInMainChain(ifaceIndex))
-      return nDistance;
-
-    nDistance += nStep;
-    if (nDistance > 10)
-      nStep *= 2;
-  }
-  return nDistance;
+	return (ok);
 }
 
 int GetBestHeight(CIface *iface)

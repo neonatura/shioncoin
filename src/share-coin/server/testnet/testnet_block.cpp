@@ -829,17 +829,6 @@ bool TESTNETBlock::SetBestChain(CBlockIndex* pindexNew)
       return (false);
   }
 
-#if 0
-  // Update best block in wallet (so we can detect restored wallets)
-  bool fIsInitialDownload = IsInitialBlockDownload(TESTNET_COIN_IFACE);
-  if (!fIsInitialDownload) {
-    const CBlockLocator locator(TESTNET_COIN_IFACE, pindexNew);
-    timing_init("SetBestChain/locator", &ts);
-    TESTNET_SetBestChain(locator);
-    timing_term(TESTNET_COIN_IFACE, "SetBestChain/locator", &ts);
-  }
-#endif
-
   // New best block
   wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();

@@ -1404,17 +1404,6 @@ bool TESTBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
       return (false);
   }
 
-#if 0
-  // Update best block in wallet (so we can detect restored wallets)
-  bool fIsInitialDownload = IsInitialBlockDownload(TEST_COIN_IFACE);
-  if (!fIsInitialDownload) {
-    const CBlockLocator locator(TEST_COIN_IFACE, pindexNew);
-    timing_init("SetBestChain/locator", &ts);
-    TEST_SetBestChain(locator);
-    timing_term(TEST_COIN_IFACE, "SetBestChain/locator", &ts);
-  }
-#endif
-
   // New best block
   bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
@@ -1688,9 +1677,8 @@ bool TESTBlock::SetBestChain(CBlockIndex* pindexNew)
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(TEST_COIN_IFACE);
   if (!fIsInitialDownload) {
-    const CBlockLocator locator(TEST_COIN_IFACE, pindexNew);
     timing_init("SetBestChain/locator", &ts);
-    TEST_SetBestChain(locator);
+    TEST_SetBestChain(wallet->GetLocator(pindexNew));
     timing_term(TEST_COIN_IFACE, "SetBestChain/locator", &ts);
 
 #ifdef USE_LEVELDB_COINDB

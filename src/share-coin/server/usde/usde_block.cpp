@@ -1543,8 +1543,7 @@ bool USDEBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
   bool fIsInitialDownload = IsInitialBlockDownload(USDE_COIN_IFACE);
   if (!fIsInitialDownload)
   {
-    const CBlockLocator locator(USDE_COIN_IFACE, pindexNew);
-    USDE_SetBestChain(locator);
+    USDE_SetBestChain(wallet->GetLocator(pindexNew));
   }
 
   // New best block
@@ -2093,17 +2092,6 @@ bool USDEBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
       return (false);
   }
 
-#if 0
-  // Update best block in wallet (so we can detect restored wallets)
-  bool fIsInitialDownload = IsInitialBlockDownload(USDE_COIN_IFACE);
-  if (!fIsInitialDownload) {
-    const CBlockLocator locator(USDE_COIN_IFACE, pindexNew);
-    timing_init("SetBestChain/locator", &ts);
-    USDE_SetBestChain(locator);
-    timing_term(USDE_COIN_IFACE, "SetBestChain/locator", &ts);
-  }
-#endif
-
   // New best block
   bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();
@@ -2376,9 +2364,8 @@ bool USDEBlock::SetBestChain(CBlockIndex* pindexNew)
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(USDE_COIN_IFACE);
   if (!fIsInitialDownload) {
-    const CBlockLocator locator(USDE_COIN_IFACE, pindexNew);
     timing_init("SetBestChain/locator", &ts);
-    USDE_SetBestChain(locator);
+    USDE_SetBestChain(wallet->GetLocator(pindexNew));
     timing_term(USDE_COIN_IFACE, "SetBestChain/locator", &ts);
 
 #ifndef USE_LEVELDB_COINDB

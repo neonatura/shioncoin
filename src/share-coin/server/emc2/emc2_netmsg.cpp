@@ -199,6 +199,7 @@ public:
 
 static void emc2_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *locator, uint256 hashStop)
 {
+	CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
 
 	if (IsInitialBlockDownload(EMC2_COIN_IFACE))
@@ -210,7 +211,7 @@ static void emc2_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *l
 		pindex = GetBlockIndexByHash(ifaceIndex, hashStop);
 	} else {
 		// Find the last block the caller has in the main chain
-		pindex = locator->GetBlockIndex();
+		pindex = wallet->GetLocatorIndex(*locator);
 		if (pindex)
 			pindex = pindex->pnext;
 	}
@@ -238,6 +239,7 @@ static void emc2_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *l
 		if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
 			break;
 	}
+	pfrom->pindexBestHeaderSend = pindex ? pindex : GetBestBlockIndex(iface);
 	pfrom->PushMessage("headers", vHeaders);
 
 	Debug("emc2_ProcessGetHeaders: sent %d headers", vHeaders.size());
@@ -531,9 +533,9 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 				/* "headers" */
     		if (pfrom->fPreferHeaders) {
 					if (inv.type == MSG_BLOCK) {
+						UpdateBlockAvailability(ifaceIndex, pfrom, inv.hash);
 						if (!fAlreadyHave) {
-							CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-							pfrom->PushMessage("getheaders", locator, inv.hash); 
+							pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), inv.hash); 
 						}
 						fSent = true;
 					}
@@ -670,12 +672,12 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
   else if (strCommand == "getblocks")
   {
-    CBlockLocator locator(ifaceIndex);
+    CBlockLocator locator;
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
     // Find the last block the caller has in the main chain
-    CBlockIndex* pindex = locator.GetBlockIndex();
+    CBlockIndex* pindex = wallet->GetLocatorIndex(locator);
 
     // Send the rest of the chain
     if (pindex)
@@ -701,7 +703,7 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
   else if (strCommand == "getheaders")
   {
-    CBlockLocator locator(ifaceIndex);
+    CBlockLocator locator;
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
@@ -943,13 +945,14 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
     CBlockHeader header;
 		vRecv >> header;
 
+		const uint256& hBlock = header.GetHash();
+		UpdateBlockAvailability(ifaceIndex, pfrom, hBlock);
 
 		pindex = GetBlockIndexByHash(ifaceIndex, header.hashPrevBlock);
 		if (!pindex) {
 			/* ask for headers if prevhash is unknown. */
 			if (!IsInitialBlockDownload(EMC2_COIN_IFACE)) {
-				CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-				pfrom->PushMessage("getheaders", locator, uint256());
+				pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), uint256());
 			}
 		}
 
@@ -993,9 +996,11 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
 		pindexLast = GetBlockIndexByHash(ifaceIndex, headers[0].hashPrevBlock);
 		if (!pindexLast) {
-			/* what you talking about willace */
-			CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-			pfrom->PushMessage("getheaders", locator, uint256());
+			if (nCount < MAX_BLOCKS_TO_ANNOUNCE) {
+				/* what you talking about willace */
+				pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), uint256());
+				UpdateBlockAvailability(ifaceIndex, pfrom, headers.back().GetHash());
+			}
 			return (true);
 		}
 
@@ -1015,8 +1020,7 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 			return (true);
 		}
 
-		/* update 'last best received header' for node. */
-		pfrom->pindexRecvHeader = pindexLast;
+		UpdateBlockAvailability(ifaceIndex, pfrom, pindexLast->GetBlockHash());
 
 		InitServiceBlockEvent(ifaceIndex, pindexLast->nHeight);
 
@@ -1024,8 +1028,7 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
 		if (nCount == MAX_HEADERS_RESULTS) {
 			/* headers message had its maximum size; ask peer for more headers. */
-			CBlockLocator locator(ifaceIndex, pindexLast);
-			pfrom->PushMessage("getheaders", locator, uint256());
+			pfrom->PushMessage("getheaders", wallet->GetLocator(pindexLast), uint256());
 		}
 
   }
@@ -1312,8 +1315,7 @@ bool emc2_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
 			bool fRevertToInv = !pto->fPreferHeaders ||
 				(pto->vBlockHashesToAnnounce.size() > MAX_BLOCKS_TO_ANNOUNCE);
 			const CBlockIndex *pBestIndex = NULL; // last header queued for delivery
-//			ProcessBlockAvailability(pto->GetId()); // ensure pindexBestKnownBlock is up-to-date
-
+      ProcessBlockAvailability(ifaceIndex, pto);
 			if (!fRevertToInv) {
 				bool fFoundStartingHeader = false;
 				// Try to find first header that our peer doesn't have, and
@@ -1441,49 +1443,14 @@ bool emc2_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
     // Message: inventory
     //
     vector<CInv> vInv;
-    vector<CInv> vInvWait;
     {
       LOCK(pto->cs_inventory);
+
       vInv.reserve(pto->vInventoryToSend.size());
-      vInvWait.reserve(pto->vInventoryToSend.size());
       BOOST_FOREACH(const CInv& inv, pto->vInventoryToSend)
       {
-        if (pto->setInventoryKnown.count(inv))
-          continue;
-
-#if 0
-        // trickle out tx inv to protect privacy
-        if (inv.type == MSG_TX && !fSendTrickle)
-        {
-          // 1/4 of tx invs blast to all immediately
-          static uint256 hashSalt;
-          if (hashSalt == 0)
-            hashSalt = GetRandHash();
-          uint256 hashRand = inv.hash ^ hashSalt;
-          hashRand = Hash(BEGIN(hashRand), END(hashRand));
-          bool fTrickleWait = ((hashRand & 3) != 0);
-
-          // always trickle our own transactions
-          if (!fTrickleWait)
-          {
-            CWalletTx wtx;
-            if (GetTransaction(inv.hash, wtx)) {
-              if (wtx.fFromMe)
-                fTrickleWait = true;
-            }
-          }
-
-          if (fTrickleWait)
-          {
-            vInvWait.push_back(inv);
-            continue;
-          }
-        }
-#endif
-
-        // returns true if wasn't already contained in the set
-        if (pto->setInventoryKnown.insert(inv).second)
-        {
+        if (inv.type == MSG_BLOCK ||
+						pto->setInventoryKnown.insert(inv).second) {
           vInv.push_back(inv);
           if (vInv.size() >= 1000)
           {
@@ -1492,7 +1459,7 @@ bool emc2_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
           }
         }
       }
-      pto->vInventoryToSend = vInvWait;
+      pto->vInventoryToSend.clear();
     }
     if (!vInv.empty()) {
       pto->PushMessage("inv", vInv);

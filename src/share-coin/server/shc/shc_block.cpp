@@ -1124,19 +1124,6 @@ bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
       return (false);
   }
 
-#if 0
-  // Update best block in wallet (so we can detect restored wallets)
-  bool fIsInitialDownload = IsInitialBlockDownload(SHC_COIN_IFACE);
-  if (!fIsInitialDownload) {
-    const CBlockLocator locator(SHC_COIN_IFACE, pindexNew);
-    timing_init("SetBestChain/locator", &ts);
-    SHC_SetBestChain(locator);
-    timing_term(SHC_COIN_IFACE, "SetBestChain/locator", &ts);
-
-    WriteHashBestChain(iface, hash);
-  }
-#endif
-
   // New best block
   wallet->bnBestChainWork = pindexNew->bnChainWork;
   nTimeBestReceived = GetTime();

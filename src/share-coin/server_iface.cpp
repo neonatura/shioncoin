@@ -131,6 +131,7 @@ unsigned short GetListenPort(CIface *iface)
 
 void CNode::PushGetBlocks(CBlockIndex* pindexBegin, uint256 hashEnd)
 {
+	CWallet *wallet = GetWallet(ifaceIndex);
 
 #if 0
   /* last block may have been orphan */
@@ -156,7 +157,7 @@ void CNode::PushGetBlocks(CBlockIndex* pindexBegin, uint256 hashEnd)
   pindexLastGetBlocksBegin = pindexBegin;
   hashLastGetBlocksEnd = hashEnd;
 
-  PushMessage("getblocks", CBlockLocator(ifaceIndex, pindexBegin), hashEnd);
+  PushMessage("getblocks", wallet->GetLocator(pindexBegin), hashEnd);
 
 }
 
@@ -2783,11 +2784,8 @@ void ltc_server_close(int fd, struct sockaddr *addr)
 
 bool CNode::HasHeader(CBlockIndex *pindex)
 {
-	if (pindexRecvHeader && 
-			pindex == pindexRecvHeader->GetAncestor(pindex->nHeight))
-		return true;
-	if (pindexRecv && 
-			pindex == pindexRecv->GetAncestor(pindex->nHeight))
+	if (pindexBestKnownBlock && 
+			pindex == pindexBestKnownBlock->GetAncestor(pindex->nHeight))
 		return true;
 	if (pindexBestHeaderSend && 
 			pindex == pindexBestHeaderSend->GetAncestor(pindex->nHeight))

@@ -458,30 +458,33 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 	return (pfrom);
 }
 
-static void FindNextBlocksToDownload(CIface *iface, CNode *pfrom, unsigned int count, vector<CBlockIndex*>& vBlocks)
+static bool FindNextBlocksToDownload(CIface *iface, CNode *pfrom, unsigned int count, vector<CBlockIndex*>& vBlocks)
 {
 	int ifaceIndex = GetCoinIndex(iface);
 
 	if (count == 0)
-		return;
-	if (!pfrom->pindexRecvHeader) {
-		return;
-	}
+		return (true); /* all done. */
+
+#if 0
+	/* do not start downloading until we ask for headers. */
+	if (!pfrom->pindexBestKnownBlockHeader)
+		return (false);
+#endif
+
 
 	vBlocks.reserve(vBlocks.size() + count);
 
   CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
-	CBlockIndex *pfork = LastCommonAncestor(pfrom->pindexRecvHeader, pindexBest);
-	CBlockIndex *pindexBestKnownBlock = pfrom->pindexRecvHeader;
+	CBlockIndex *pfork = LastCommonAncestor(pfrom->pindexBestKnownBlock, pindexBest);
 
 	vector<CBlockIndex *> vToFetch;
 	int nWindowEnd = pfork->nHeight + MAX_BLOCK_DOWNLOAD_BATCH;
-	int nMaxHeight = MIN(pfrom->pindexRecvHeader->nHeight, nWindowEnd + 1);
+	int nMaxHeight = MIN(pfrom->pindexBestKnownBlock->nHeight, nWindowEnd + 1);
 	CBlockIndex *pindexWalk = pfork;
 	while (pindexWalk->nHeight < nMaxHeight) {
 		int nToFetch = std::min(nMaxHeight - pindexWalk->nHeight, std::max<int>(count - vBlocks.size(), 128));
 		vToFetch.resize(nToFetch);
-		pindexWalk = pindexBestKnownBlock->GetAncestor(pindexWalk->nHeight + nToFetch);
+		pindexWalk = pfrom->pindexBestKnownBlock->GetAncestor(pindexWalk->nHeight + nToFetch);
 		vToFetch[nToFetch - 1] = pindexWalk;
 		for (unsigned int i = nToFetch - 1; i > 0; i--) {
 			vToFetch[i - 1] = vToFetch[i]->pprev;
@@ -496,13 +499,13 @@ static void FindNextBlocksToDownload(CIface *iface, CNode *pfrom, unsigned int c
 
 			if (!pindex->IsValid(BLOCK_VALID_TREE)) {
 				// We consider the chain that this peer is on invalid.
-				return;
+				return (false);
 			}
 
 			if (!pfrom->fHaveWitness && 
 					IsWitnessEnabled(iface, pindex->pprev)) {
 				// We wouldn't download this block or its descendants from this peer.
-				return;
+				return (false);
 			}
 
 			if (!(pindex->nStatus & BLOCK_HAVE_DATA) &&
@@ -512,26 +515,47 @@ static void FindNextBlocksToDownload(CIface *iface, CNode *pfrom, unsigned int c
 					break;
 				vBlocks.push_back(pindex);
 				if (vBlocks.size() == count) {
-					return;
+					return (true);
 				}
 			}
 		}
 	}
 
+	if (vBlocks.size() == 0)
+		return (false); /* nothing of interest found. */
+
+	return (true);
 }
 
-bool ServiceLegacyBlockEvent(CIface *iface, CNode *pfrom)
+bool ServiceLegacyBlockEvent(CIface *iface)
 {
 	int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(ifaceIndex);
   NodeList &vNodes = GetNodeList(ifaceIndex);
   time_t expire_t;
 
+  if (!iface->enabled)
+    return (false);
+
+  if (vNodes.size() == 0)
+    return (true); /* keep trying */
+
   CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
   if (!pindexBest) {
-    Debug("(%s) ServiceBlockEvent: no block hiearchy established.\n", iface->name);
     return (true); /* keep trying */
   }
+
+  if (iface->blockscan_max == 0)
+    return (true); /* keep trying */
+	if (wallet->pindexBestHeader &&
+			wallet->pindexBestHeader->nHeight != -1) {
+		iface->blockscan_max = MAX(iface->blockscan_max, 
+				wallet->pindexBestHeader->nHeight);
+	}
+
+	CNode *pfrom = chain_GetNextNode(ifaceIndex);
+	if (!pfrom)
+		return (true); /* keep trying */
 
   if (pindexBest->nHeight >= iface->blockscan_max) {
     ServiceBlockEventUpdate(ifaceIndex);
@@ -572,129 +596,32 @@ bool ServiceLegacyBlockEvent(CIface *iface, CNode *pfrom)
   return (true);
 }
 
-#if 0
-bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pindexBest)
-{
-  CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
-	CBlockIndex *pindex = NULL;
-	CNode *pfrom;
-	bool bFound = false;
-
-	/* determine next block to download. */
-	if (wallet->pindexBestHeader &&
-			wallet->pindexBestHeader->nHeight > pindexBest->nHeight) {
-		pindex = wallet->pindexBestHeader;
-		while (pindex && pindex->nHeight > (pindexBest->nHeight + MAX_BLOCK_DOWNLOAD_BATCH + 1))
-			pindex = pindex->pprev;
-	}
-	if (!pindex)
-		return (false);
-
-	pfrom = chain_GetNextNode(wallet->ifaceIndex);
-	if (!pfrom) {
-		return (false);
-	}
-
-	if (pfrom->pindexRecv == tip) {
-		return (false);
-	}
-	pfrom->pindexRecv = tip;
-#if 0
-	CBlockIndex *p = pfrom->pindexRecv;
-	if (p) {
-		for (unsigned int i = 0; p && i < MAX_BLOCK_DOWNLOAD_BATCH; i++) {
-			if (p->nHeight <= pindexBest->nHeight)
-				break;
-			if (pindex == p)
-				return (false);
-			p = p->pprev;
-		}
-	}
-#endif
-
-	/* attempt to retrieve as many as possible from pre-archived db */
-	bool fArch = wallet->pindexBestHeader ? true : false;
-	vector<CBlock *> vBlocks;
-	CBlockIndex *pindexArch = pindex;
-	while (pindexArch &&
-			pindexBest->nHeight < pindexArch->nHeight) {
-		CBlock *block = GetArchBlockByHash(iface, pindexArch->GetBlockHash());
-		if (!block) {
-			fArch = false;
-			break;
-		}
-		vBlocks.insert(vBlocks.begin(), block);
-
-		pindexArch = pindexArch->pprev;
-	}
-	if (fArch && vBlocks.size() != 0) {
-		unsigned int i;
-
-		/* all blocks are available from archived storage. */
-		/* note there is chance of segwit vs nonsegwit mishap here */
-		for (i = 0; i < vBlocks.size(); i++) {
-			CBlock *pblock = vBlocks[i];
-			if (!pblock->AcceptBlock())
-				break;
-		}
-		if (i == vBlocks.size()) {
-			/* we processed all the neccessary blocks. */
-			return (true);
-		}
-	}
-	for (unsigned int i = 0; i < vBlocks.size(); i++) {
-		CBlock *pblock = vBlocks[i];
-		delete pblock;
-	}
-
-	int nFetchFlags = 0;
-	if ((pfrom->nServices & NODE_WITNESS) && pfrom->fHaveWitness)
-		nFetchFlags |= MSG_WITNESS_FLAG;
-
-	/* ask for blocks */
-	std::vector<CInv> vInv;
-	uint256 hReq;
-	while (pindex && 
-			pindexBest->nHeight < pindex->nHeight) {
-		/* request full block */
-		vInv.insert(vInv.begin(), CInv(wallet->ifaceIndex,
-					MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
-
-		/* iterate to next block */
-		pindex = pindex->pprev;
-	}
-
-	pfrom->PushMessage("getdata", vInv);
-
-	/* debug */
-	Debug("(%s) ServiceBlockEvent: requesting %d blocks (height %d) from \"%s\".", iface->name, vInv.size(),  pindex->nHeight, pfrom->addr.ToString().c_str());
-
-	return (true);
-}
-#endif
-bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pindexBest)
+bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *pfrom)
 {
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
 	CBlockIndex *pindex = NULL;
 	std::vector<CInv> vInv;
-	CNode *pfrom;
 	bool bFound = false;
 
-	pfrom = chain_GetNextNode(wallet->ifaceIndex);
-	if (!pfrom)
-		return (false);
+	ProcessBlockAvailability(wallet->ifaceIndex, pfrom);
+
+	if (pfrom->pindexBestKnownBlock == NULL ||
+			pfrom->pindexBestKnownBlock->bnChainWork < pindexBest->bnChainWork)
+		return (false); /* nothing of importance to provide */
 
 	/* determine next block to download. */
 	vector<CBlockIndex *> vBlocks;
-	FindNextBlocksToDownload(iface, pfrom, MAX_BLOCK_DOWNLOAD_BATCH, vBlocks);
-	if (vBlocks.size() == 0)
+	if (!FindNextBlocksToDownload(iface, pfrom, 
+				MAX_BLOCK_DOWNLOAD_BATCH, vBlocks))
 		return (false);
 
 	/* suppress duplicate requests. */
 	CBlockIndex *pindexLast = vBlocks.back();
-	if (pfrom->pindexRecv == pindexLast)
+#if 0
+	if (pfrom->pindexBestKnownBlock == pindexLast)
 		return (false);
-	pfrom->pindexRecv = pindexLast;
+	pfrom->pindexBestKnownBlock = pindexLast;
+#endif
 
 	CBlockIndex *pindexFirst = vBlocks.front();
 	unsigned int nIndex = 0;
@@ -741,33 +668,36 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex *tip, CBlockIndex* pi
 
 	/* debug */
 	Debug("(%s) ServiceBlockEvent: requesting %d blocks (%s) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pfrom->addr.ToString().c_str());
+fprintf(stderr, "[%s] ServiceBlockEvent: requesting %d blocks (%s) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pfrom->addr.ToString().c_str());
 
 	return (true);
 }
 
 
-bool ServiceBlockHeadersEvent(CWallet *wallet, CBlockIndex *pindexBest)
+bool ServiceBlockHeadersEvent(CWallet *wallet, CBlockIndex *pindexBest, CNode *pfrom)
 {
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
-	CNode *pfrom;
 
-	pfrom = chain_GetNextNode(wallet->ifaceIndex);
-	if (!pfrom)
-		return (false);
+	ProcessBlockAvailability(wallet->ifaceIndex, pfrom);
 
-	if (pfrom->pindexRecvHeader == pindexBest)
+	/* do not ask for additional headers if the best known block that they have is the best known header that we have. */
+	if (pfrom->pindexBestKnownBlock &&
+			pfrom->pindexBestKnownBlock == wallet->pindexBestHeader)
 		return (false);
 
 	/* suppress duplicate request */
-	pfrom->pindexRecvHeader = pindexBest;
+	CBlockIndex *tip = wallet->pindexBestHeader ? wallet->pindexBestHeader : pindexBest;
+	if (pfrom->pindexBestKnownBlockHeader == tip)
+		return (false);
+	pfrom->pindexBestKnownBlockHeader = tip;
 
 	/* ask for headers */
-	CBlockLocator locator(wallet->ifaceIndex, wallet->pindexBestHeader);
-	pfrom->PushMessage("getheaders", locator, uint256(0));
+	CBlockLocator loc = wallet->GetLocator(wallet->pindexBestHeader);
+	pfrom->PushMessage("getheaders", loc, uint256());
 
 	CBlockIndex *pindex = wallet->pindexBestHeader ?
 		wallet->pindexBestHeader : pindexBest;
-	Debug("(%s) ServiceBlockEvent: requesting block info (height %d) from \"%s\".", iface->name, pindex->nHeight, pfrom->addr.ToString().c_str());
+	Debug("(%s) ServiceBlockEvent: requesting block info (height %d) from \"%s\" [stack %d / %s].\n", iface->name, pindex->nHeight, pfrom->addr.ToString().c_str(), loc.vHave.size(), loc.vHave.front().GetHex().c_str());
 
 	return (true);
 }
@@ -776,6 +706,7 @@ bool ServiceBlockEvent(int ifaceIndex)
 {
   CWallet *wallet = GetWallet(ifaceIndex);
   NodeList &vNodes = GetNodeList(ifaceIndex);
+	CNode *pfrom;
   CIface *iface;
 
   iface = GetCoinByIndex(ifaceIndex);
@@ -801,55 +732,24 @@ bool ServiceBlockEvent(int ifaceIndex)
 				wallet->pindexBestHeader->nHeight);
 	}
 
-	/* use headers or legacy method */
-	if (ifaceIndex == USDE_COIN_IFACE) {
-		CNode *pfrom = chain_GetNextNode(ifaceIndex);
-		if (!pfrom) return (true); /* keep trying */
-		return (ServiceLegacyBlockEvent(iface, pfrom));
-	}
+	pfrom = chain_GetNextNode(wallet->ifaceIndex);
+	if (!pfrom)
+		return (true);
 
-  if (pindexBest == wallet->pindexBestHeader) { //	->nHeight >= iface->blockscan_max)
+#if 0
+	if (pfrom->pindexBestKnownBlockHeader &&
+			pindexBest == wallet->pindexBestHeader) {
     ServiceBlockEventUpdate(ifaceIndex);
     Debug("(%s) ServiceBlockEvent: finished at height %d.\n", 
         iface->name, (int)pindexBest->nHeight);
     return (false);
   }
 
-
-	CBlockIndex *pfork = NULL;
-#if 0
-	/* strive towards recognized best chain of headers. */
-	if (wallet->pindexBestHeader &&
-			wallet->pindexBestHeader->nHeight != -1) {
-		pfork = wallet->pindexBestHeader;
-		plonger = pindexBest;
-		/* work backwards in order to find the first fork that connects the pindexBestHeader with the pindexBest */
-		while (pfork && pfork != plonger)
-		{
-			while (plonger->nHeight > pfork->nHeight) {
-				plonger = plonger->pprev;
-				if (!plonger)
-					break;
-			}
-			if (!plonger)
-				break;
-
-			if (pfork == plonger)
-				break;
-
-			pfork = pfork->pprev;
-			if (!pfork)
-				break;
-		}
-		if (plonger == pindexBest)
-			pfork = NULL; /* on correct chain already */
-	}
-#endif
-
 	/* determine next block to download. */
 	CBlockIndex *pindex = NULL;
-	if (wallet->pindexBestHeader &&
+	if (pfrom->pindexBestKnownBlockHeader && wallet->pindexBestHeader &&
 			wallet->pindexBestHeader->nHeight > pindexBest->nHeight) {
+		CBlockIndex *pfork = NULL;
 		if (pfork) {
 			/* traverse back to one block past fork. */
 			pindex = wallet->pindexBestHeader;
@@ -867,9 +767,17 @@ bool ServiceBlockEvent(int ifaceIndex)
 	}
 
 	if (pindex) {
-		ServiceBlockGetDataEvent(wallet, pindex, pindexBest);
+		ServiceBlockGetDataEvent(wallet, pindexBest, pfrom);
 	} else {
-		ServiceBlockHeadersEvent(wallet, pindexBest);
+		ServiceBlockHeadersEvent(wallet, pindexBest, pfrom);
+fprintf(stderr, "DEBUG: [%s] ServiceBlockGetDataEvent: downloading %d blocks..\n", iface->name, vBlocks.size()); 
+	}
+#endif
+
+	/* attempt d/l blocks */
+	if (!ServiceBlockGetDataEvent(wallet, pindexBest, pfrom)) {
+		/* fallback to headers */
+		ServiceBlockHeadersEvent(wallet, pindexBest, pfrom);
 	}
 
   return (true);
@@ -958,9 +866,13 @@ void ServiceEventState(int ifaceIndex)
   CIface *iface = GetCoinByIndex(ifaceIndex);
 
   if (serv_state(iface, COINF_DL_SCAN)) {
-    if (!ServiceBlockEvent(ifaceIndex)) {
-      unset_serv_state(iface, COINF_DL_SCAN);
-    }
+		if (ifaceIndex == USDE_COIN_IFACE) {
+			if (!ServiceLegacyBlockEvent(iface)) {
+				unset_serv_state(iface, COINF_DL_SCAN);
+			}
+		} else {
+			unset_serv_state(iface, COINF_DL_SCAN);
+		}
     return;
   }
 
@@ -1166,6 +1078,11 @@ void event_cycle_chain(int ifaceIndex)
 
   ServiceEventState(ifaceIndex);
 
+	/* the "block event" continuously runs. */
+	if (ifaceIndex != USDE_COIN_IFACE) {
+		ServiceBlockEvent(ifaceIndex);
+	}
+
 }
 
 int InitServiceBlockEvent(int ifaceIndex, uint64_t nHeight)
@@ -1307,6 +1224,54 @@ bool UpdateServiceMinerEvent(int ifaceIndex)
 	}
 
 	return (true);
+}
+
+
+
+/** Check whether the last unknown block a peer advertised is not yet known. */
+void ProcessBlockAvailability(int ifaceIndex, CNode *pfrom)
+{
+
+	if (pfrom->hashLastUnknownBlock == 0)
+		return;
+
+	CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, pfrom->hashLastUnknownBlock);
+	if (!pindex)
+		return;
+	if (pindex->bnChainWork == 0)
+		return;
+
+	if (pfrom->pindexBestKnownBlock == NULL ||
+			pindex->bnChainWork >= pfrom->pindexBestKnownBlock->bnChainWork) {
+		pfrom->pindexBestKnownBlock = pindex;
+	}
+
+}
+
+
+/** Track the highest known block hash a site has (via pfrom->pindexBestKnownBlock). */
+void UpdateBlockAvailability(int ifaceIndex, CNode *pfrom, const uint256& hash)
+{
+	CBlockIndex *pindex;
+
+	if (!pfrom)
+		return;
+
+	ProcessBlockAvailability(ifaceIndex, pfrom);
+
+	pindex = GetBlockIndexByHash(ifaceIndex, hash);
+	if (!pindex) {
+		pfrom->hashLastUnknownBlock = hash;
+		return;
+	}
+	if (pindex->bnChainWork == 0)
+		return;
+
+	if (pfrom->pindexBestKnownBlock == NULL ||
+			pindex->bnChainWork >= pfrom->pindexBestKnownBlock->bnChainWork) {
+		pfrom->pindexBestKnownBlock = pindex;
+	}
+
 }
 
 

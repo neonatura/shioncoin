@@ -220,7 +220,8 @@ static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
 static void shc_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *locator, uint256 hashStop)
 {
-  int ifaceIndex = GetCoinIndex(iface);
+  const int ifaceIndex = GetCoinIndex(iface);
+	CWallet *wallet = GetWallet(iface);
 
 	if (IsInitialBlockDownload(SHC_COIN_IFACE))
 		return; /* busy */
@@ -231,12 +232,14 @@ static void shc_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *lo
 		pindex = GetBlockIndexByHash(ifaceIndex, hashStop);
 	} else {
 		// Find the last block the caller has in the main chain
-		pindex = locator->GetBlockIndex();
+		pindex = wallet->GetLocatorIndex(*locator);
 		if (pindex)
 			pindex = pindex->pnext;
 	}
-	if (!pindex)
+	if (!pindex) {
+		Debug("(shc) ProcessGetHeaders: unable to locate headers for \"%s\".", pfrom->addr.ToString().c_str());
 		return;
+	}
 
 //	CBlockIndex* pcheckpoint = shc_GetLastCheckpoint();
 //	if (pcheckpoint->nHeight > pindex->nHeight) 
@@ -259,9 +262,10 @@ static void shc_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *lo
 		if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
 			break;
 	}
+	pfrom->pindexBestHeaderSend = pindex ? pindex : GetBestBlockIndex(iface);
 	pfrom->PushMessage("headers", vHeaders);
 
-	Debug("shc_ProcessGetHeaders: sent %d headers", vHeaders.size());
+	Debug("(shc) ProcessGetHeaders: sent %d headers to \"%s\"", vHeaders.size(), pfrom->addr.ToString().c_str());
 }
 
 
@@ -552,9 +556,9 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 				/* "headers" */
     		if (pfrom->fPreferHeaders) {
 					if (inv.type == MSG_BLOCK) {
+						UpdateBlockAvailability(ifaceIndex, pfrom, inv.hash);
 						if (!fAlreadyHave) {
-							CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-							pfrom->PushMessage("getheaders", locator, inv.hash); 
+							pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), inv.hash); 
 						}
 						fSent = true;
 					}
@@ -700,12 +704,11 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 
   else if (strCommand == "getblocks")
   {
-    CBlockLocator locator(ifaceIndex);
+    CBlockLocator locator;
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
-    // Find the last block the caller has in the main chain
-    CBlockIndex* pindex = locator.GetBlockIndex();
+		CBlockIndex *pindex = wallet->GetLocatorIndex(locator); 
 
     // Send the rest of the chain
     if (pindex)
@@ -731,7 +734,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 
   else if (strCommand == "getheaders")
   {
-    CBlockLocator locator(ifaceIndex);
+    CBlockLocator locator;
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
@@ -1026,17 +1029,18 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     CBlockHeader header;
 		vRecv >> header;
 
+		const uint256& hBlock = header.GetHash();
+		UpdateBlockAvailability(ifaceIndex, pfrom, hBlock);
 
 		pindex = GetBlockIndexByHash(ifaceIndex, header.hashPrevBlock);
 		if (!pindex) {
 			/* ask for headers if prevhash is unknown. */
 			if (!IsInitialBlockDownload(SHC_COIN_IFACE)) {
-				CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-				pfrom->PushMessage("getheaders", locator, uint256());
+				pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), uint256());
 			}
 		}
 
-		pindex = GetBlockIndexByHash(ifaceIndex, header.GetHash());
+		pindex = GetBlockIndexByHash(ifaceIndex, hBlock);
 		if (!pindex) { /* unknown */
 			CBlockIndex *pindexLast = NULL;
 			vector<CBlockHeader> headers;
@@ -1059,7 +1063,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
   }
 
   else if (strCommand == "headers") {
-
 		std::vector<CBlockHeader> headers;
 		CBlockIndex *pindexLast;
 
@@ -1078,9 +1081,11 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 
 		pindexLast = GetBlockIndexByHash(ifaceIndex, headers[0].hashPrevBlock);
 		if (!pindexLast) {
-			/* what you talking about willace */
-			CBlockLocator locator(ifaceIndex, wallet->pindexBestHeader);
-			pfrom->PushMessage("getheaders", locator, uint256());
+			if (nCount < MAX_BLOCKS_TO_ANNOUNCE) {
+				/* what you talking about willace */
+				pfrom->PushMessage("getheaders", wallet->GetLocator(wallet->pindexBestHeader), uint256());
+				UpdateBlockAvailability(ifaceIndex, pfrom, headers.back().GetHash());
+			}
 			return (true);
 		}
 
@@ -1100,17 +1105,14 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 			return (true);
 		}
 
-		/* update 'last best received header' for node. */
-		pfrom->pindexRecvHeader = pindexLast;
-
+		UpdateBlockAvailability(ifaceIndex, pfrom, pindexLast->GetBlockHash());
 		InitServiceBlockEvent(ifaceIndex, pindexLast->nHeight);
 
-		Debug("shc_ProcessBlock: received %d headers", nCount);
+		Debug("shc_ProcessBlock: received %d headers from \"%s\".", nCount, pfrom->addr.ToString().c_str());
 
 		if (nCount == MAX_HEADERS_RESULTS) {
 			/* headers message had its maximum size; ask peer for more headers. */
-			CBlockLocator locator(ifaceIndex, pindexLast);
-			pfrom->PushMessage("getheaders", locator, uint256());
+			pfrom->PushMessage("getheaders", wallet->GetLocator(pindexLast), uint256());
 		}
 
   }
@@ -1361,8 +1363,7 @@ bool shc_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
 			bool fRevertToInv = !pto->fPreferHeaders ||
 				(pto->vBlockHashesToAnnounce.size() > MAX_BLOCKS_TO_ANNOUNCE);
 			const CBlockIndex *pBestIndex = NULL; // last header queued for delivery
-//			ProcessBlockAvailability(pto->GetId()); // ensure pindexBestKnownBlock is up-to-date
-
+			ProcessBlockAvailability(ifaceIndex, pto);
 			if (!fRevertToInv) {
 				bool fFoundStartingHeader = false;
 				// Try to find first header that our peer doesn't have, and
@@ -1489,58 +1490,21 @@ bool shc_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
     /* msg: "inventory" */
     if (!pto->vInventoryToSend.empty()) {
       vector<CInv> vInv;
-      vector<CInv> vInvWait;
       {
         LOCK(pto->cs_inventory);
         vInv.reserve(pto->vInventoryToSend.size());
-        vInvWait.reserve(pto->vInventoryToSend.size());
         BOOST_FOREACH(const CInv& inv, pto->vInventoryToSend)
         {
-          if (pto->setInventoryKnown.count(inv)) {
-            continue;
-          }
-
-#if 0
-          // trickle out tx inv to protect privacy
-          if (inv.type == MSG_TX && !fSendTrickle)
-          {
-            // 1/4 of tx invs blast to all immediately
-            static uint256 hashSalt;
-            if (hashSalt == 0)
-              hashSalt = GetRandHash();
-            uint256 hashRand = inv.hash ^ hashSalt;
-            hashRand = Hash(BEGIN(hashRand), END(hashRand));
-            bool fTrickleWait = ((hashRand & 3) != 0);
-
-            // always trickle our own transactions
-            if (!fTrickleWait)
-            {
-              CWalletTx wtx;
-              if (GetTransaction(inv.hash, wtx))
-                if (wtx.fFromMe)
-                  fTrickleWait = true;
-            }
-
-            if (fTrickleWait)
-            {
-              vInvWait.push_back(inv);
-              continue;
-            }
-          }
-#endif
-
-          // returns true if wasn't already contained in the set
-          if (pto->setInventoryKnown.insert(inv).second)
-          {
+          if (inv.type == MSG_BLOCK ||
+							pto->setInventoryKnown.insert(inv).second) {
             vInv.push_back(inv);
-            if (vInv.size() >= 1000)
-            {
+            if (vInv.size() >= 1000) {
               pto->PushMessage("inv", vInv);
               vInv.clear();
             }
           }
         }
-        pto->vInventoryToSend = vInvWait;
+        pto->vInventoryToSend.clear();
       }
       if (!vInv.empty()) {
         pto->PushMessage("inv", vInv);

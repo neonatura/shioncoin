@@ -1792,62 +1792,31 @@ CBlockIndex *GetBlockIndexByHash(int ifaceIndex, const uint256 hash);
  */
 class CBlockLocator
 {
-  protected:
-    std::vector<uint256> vHave;
-    mutable int ifaceIndex;
-  public:
 
-    CBlockLocator(int ifaceIndexIn)
-    {
-      ifaceIndex = ifaceIndexIn;
-    }
+	public:
+		std::vector<uint256> vHave;
 
-    explicit CBlockLocator(int ifaceIndexIn, const CBlockIndex* pindex)
-    {
-      ifaceIndex = ifaceIndexIn;
-      Set(pindex);
-    }
+		CBlockLocator() { }
 
-    explicit CBlockLocator(int ifaceIndexIn, uint256 hashBlock)
-    {
-      ifaceIndex = ifaceIndexIn;
-      CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, hashBlock);
-      if (pindex)
-        Set(pindex);
-    }
-
-    CBlockLocator(int ifaceIndexIn, const std::vector<uint256>& vHaveIn)
-    {
-      ifaceIndex = ifaceIndex;
-      vHave = vHaveIn;
-    }
+		explicit CBlockLocator(const std::vector<uint256>& vHaveIn) : vHave(vHaveIn) {}
 
     IMPLEMENT_SERIALIZE
-      (
-       if (!(nType & SER_GETHASH))
-       READWRITE(nVersion);
-       READWRITE(vHave);
-      )
+		(
+			if (!(nType & SER_GETHASH))
+			 READWRITE(nVersion);
+			READWRITE(vHave);
+		)
 
-      void SetNull()
-      {
-        vHave.clear();
-      }
+		void SetNull()
+		{
+			vHave.clear();
+		}
 
     bool IsNull()
     {
       return vHave.empty();
     }
 
-    void Set(const CBlockIndex* pindex);
-
-    int GetDistanceBack();
-
-    CBlockIndex* GetBlockIndex();
-
-    uint256 GetBlockHash();
-
-    int GetHeight();
 };
 
 /** Used to marshal pointers into hashes for db storage. */

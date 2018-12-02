@@ -438,6 +438,10 @@ class CWallet : public CCryptoKeyStore
 		 */
 		bool RemoveWalletTx(CWalletTx& wtx);
 
+		CBlockLocator GetLocator(CBlockIndex *pindex = NULL);
+
+		CBlockIndex *GetLocatorIndex(const CBlockLocator& loc);
+
 		CAccountCache *GetAccount(string strAccount);
 
 		CPubKey GetChangePubKey(string strAccount);

@@ -975,10 +975,8 @@ bool LTCBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(LTC_COIN_IFACE);
-  if (!fIsInitialDownload)
-  {
-    const CBlockLocator locator(LTC_COIN_IFACE, pindexNew);
-    LTC_SetBestChain(locator);
+  if (!fIsInitialDownload) {
+    LTC_SetBestChain(wallet->GetLocator(pindexNew));
   }
 
   // New best block
@@ -1580,9 +1578,8 @@ bool LTCBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
   // Update best block in wallet (so we can detect restored wallets)
   bool fIsInitialDownload = IsInitialBlockDownload(LTC_COIN_IFACE);
   if (!fIsInitialDownload) {
-    const CBlockLocator locator(LTC_COIN_IFACE, pindexNew);
     timing_init("SetBestChain/locator", &ts);
-    LTC_SetBestChain(locator);
+    LTC_SetBestChain(wallet->GetLocator(pindexNew));
     timing_term(LTC_COIN_IFACE, "SetBestChain/locator", &ts);
 
 #ifndef USE_LEVELDB_COINDB
@@ -1855,17 +1852,6 @@ bool LTCBlock::SetBestChain(CBlockIndex* pindexNew)
     if (!ret)
       return (false);
   }
-
-#if 0
-  // Update best block in wallet (so we can detect restored wallets)
-  bool fIsInitialDownload = IsInitialBlockDownload(LTC_COIN_IFACE);
-  if (!fIsInitialDownload) {
-    const CBlockLocator locator(LTC_COIN_IFACE, pindexNew);
-    timing_init("SetBestChain/locator", &ts);
-    LTC_SetBestChain(locator);
-    timing_term(LTC_COIN_IFACE, "SetBestChain/locator", &ts);
-  }
-#endif
 
   // New best block
   wallet->bnBestChainWork = pindexNew->bnChainWork;

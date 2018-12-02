@@ -154,6 +154,56 @@ static bool AlreadyHave(CIface *iface, const CInv& inv)
 
 
 
+static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
+static void usde_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *locator, uint256 hashStop)
+{
+	CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+
+	if (IsInitialBlockDownload(USDE_COIN_IFACE))
+		return; /* busy */
+
+	CBlockIndex* pindex = NULL;
+	if (locator->IsNull()) {
+		// If locator is null, return the hashStop block
+		pindex = GetBlockIndexByHash(ifaceIndex, hashStop);
+	} else {
+		// Find the last block the caller has in the main chain
+		pindex = wallet->GetLocatorIndex(*locator);
+		if (pindex)
+			pindex = pindex->pnext;
+	}
+	if (!pindex) {
+		Debug("(usde) ProcessGetHeaders: unable to locate headers for \"%s\".", pfrom->addr.ToString().c_str());
+		return;
+	}
+
+//	CBlockIndex* pcheckpoint = usde_GetLastCheckpoint();
+//	if (pcheckpoint->nHeight > pindex->nHeight) 
+
+	vector<USDEBlock> vHeaders;
+	int nLimit = 2000;
+	for (; pindex; pindex = pindex->pnext)
+	{
+		const CBlockHeader& header = pindex->GetBlockHeader();
+
+		USDEBlock block;
+		block.nVersion       = header.nVersion;
+		block.hashPrevBlock  = header.hashPrevBlock;
+		block.hashMerkleRoot = header.hashMerkleRoot;
+		block.nTime          = header.nTime;
+		block.nBits          = header.nBits;
+		block.nNonce         = header.nNonce;
+
+		vHeaders.push_back(block);
+		if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
+			break;
+	}
+	pfrom->pindexBestHeaderSend = pindex ? pindex : GetBestBlockIndex(iface);
+	pfrom->PushMessage("headers", vHeaders);
+
+	Debug("usde_ProcessGetHeaders: sent %d headers", vHeaders.size());
+}
 
 
 // The message start string is designed to be unlikely to occur in normal data.
@@ -164,7 +214,7 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 {
   NodeList &vNodes = GetNodeList(iface);
   static map<CService, CPubKey> mapReuseKey;
-  CWallet *pwalletMain = GetWallet(iface);
+  CWallet *wallet = GetWallet(iface);
   CTxMemPool *pool = GetTxMemPool(iface);
   int ifaceIndex = GetCoinIndex(iface);
   char errbuf[1024];
@@ -315,10 +365,10 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
     vector<CTransaction> pool_list = pool->GetActiveTx();
     BOOST_FOREACH(const CTransaction& tx, pool_list) {
       const uint256& hash = tx.GetHash();
-      if (pwalletMain->mapWallet.count(hash) == 0)
+      if (wallet->mapWallet.count(hash) == 0)
         continue;
 
-      CWalletTx& wtx = pwalletMain->mapWallet[hash];
+      CWalletTx& wtx = wallet->mapWallet[hash];
       if (wtx.IsCoinBase())
         continue;
 
@@ -524,12 +574,12 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
   else if (strCommand == "getblocks")
   {
-    CBlockLocator locator(ifaceIndex);
+    CBlockLocator locator;
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
     // Find the last block the caller has in the main chain
-    CBlockIndex* pindex = locator.GetBlockIndex();
+    CBlockIndex* pindex = wallet->GetLocatorIndex(locator);
 
     // Send the rest of the chain
     if (pindex)
@@ -562,35 +612,12 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
   else if (strCommand == "getheaders")
   {
-    CBlockLocator locator(ifaceIndex);
+    CBlockLocator locator;
     uint256 hashStop;
     vRecv >> locator >> hashStop;
 
-    CBlockIndex* pindex = NULL;
-    if (locator.IsNull())
-    {
-      // If locator is null, return the hashStop block
-      pindex = GetBlockIndexByHash(ifaceIndex, hashStop); 
-      if (!pindex)
-        return (true);
-    }
-    else
-    {
-      // Find the last block the caller has in the main chain
-      pindex = locator.GetBlockIndex();
-      if (pindex)
-        pindex = pindex->pnext;
-    }
-
-    vector<CBlockHeader> vHeaders;
-    int nLimit = 2000;
-    for (; pindex; pindex = pindex->pnext)
-    {
-      vHeaders.push_back(pindex->GetBlockHeader());
-      if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
-        break;
-    }
-    pfrom->PushMessage("headers", vHeaders);
+		/* technically, this is not a supported USDE request. */
+    usde_ProcessGetHeaders(iface, pfrom, &locator, hashStop);
   }
 
 
@@ -721,9 +748,9 @@ bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 
     // Keep giving the same key to the same ip until they use it
     if (!mapReuseKey.count(pfrom->addr)) {
-    //  pwalletMain->GetKeyFromPool(mapReuseKey[pfrom->addr], true);
+    //  wallet->GetKeyFromPool(mapReuseKey[pfrom->addr], true);
 			string strAccount("");
-			mapReuseKey[pfrom->addr] = GetAccountPubKey(pwalletMain, strAccount, true);
+			mapReuseKey[pfrom->addr] = GetAccountPubKey(wallet, strAccount, true);
 		}
 
     // Send back approval of order and pubkey to use
@@ -1003,58 +1030,21 @@ bool usde_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
     // Message: inventory
     //
     vector<CInv> vInv;
-    vector<CInv> vInvWait;
     {
       LOCK(pto->cs_inventory);
       vInv.reserve(pto->vInventoryToSend.size());
-      vInvWait.reserve(pto->vInventoryToSend.size());
       BOOST_FOREACH(const CInv& inv, pto->vInventoryToSend)
       {
-        if (pto->setInventoryKnown.count(inv))
-          continue;
-
-#if 0
-        // trickle out tx inv to protect privacy
-        if (inv.type == MSG_TX && !fSendTrickle)
-        {
-          // 1/4 of tx invs blast to all immediately
-          static uint256 hashSalt;
-          if (hashSalt == 0)
-            hashSalt = GetRandHash();
-          uint256 hashRand = inv.hash ^ hashSalt;
-          hashRand = Hash(BEGIN(hashRand), END(hashRand));
-          bool fTrickleWait = ((hashRand & 3) != 0);
-
-          // always trickle our own transactions
-          if (!fTrickleWait)
-          {
-            CWalletTx wtx;
-            if (GetTransaction(inv.hash, wtx)) {
-              if (wtx.fFromMe)
-                fTrickleWait = true;
-            }
-          }
-
-          if (fTrickleWait)
-          {
-            vInvWait.push_back(inv);
-            continue;
-          }
-        }
-#endif
-
-        // returns true if wasn't already contained in the set
-        if (pto->setInventoryKnown.insert(inv).second)
-        {
+        if (inv.type == MSG_BLOCK ||
+						pto->setInventoryKnown.insert(inv).second) {
           vInv.push_back(inv);
-          if (vInv.size() >= 1000)
-          {
+          if (vInv.size() >= 1000) {
             pto->PushMessage("inv", vInv);
             vInv.clear();
           }
         }
       }
-      pto->vInventoryToSend = vInvWait;
+      pto->vInventoryToSend.clear();
     }
     if (!vInv.empty()) {
       pto->PushMessage("inv", vInv);

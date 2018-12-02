@@ -52,6 +52,10 @@ int InitServiceMinerEvent(int ifaceIndex, uint64_t nHeight);
 
 bool UpdateServiceMinerEvent(int ifaceIndex);
 
+void ProcessBlockAvailability(int ifaceIndex, CNode *pfrom);
+
+void UpdateBlockAvailability(int ifaceIndex, CNode *pfrom, const uint256& hash);
+
 
 #ifdef __cplusplus
 }

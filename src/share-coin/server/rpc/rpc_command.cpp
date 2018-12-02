@@ -1164,7 +1164,7 @@ Value rpc_block_listsince(CIface *iface, const Array& params, bool fStratum)
   if (fStratum)
     throw runtime_error("unsupported operation");
 
-  CWallet *pwalletMain = GetWallet(iface);
+  CWallet *wallet = GetWallet(iface);
   CBlockIndex *pindexBest = GetBestBlockIndex(iface);
   int ifaceIndex = GetCoinIndex(iface);
 
@@ -1181,7 +1181,7 @@ Value rpc_block_listsince(CIface *iface, const Array& params, bool fStratum)
     uint256 blockId = 0;
 
     blockId.SetHex(params[0].get_str());
-    pindex = CBlockLocator(ifaceIndex, blockId).GetBlockIndex();
+		pindex = GetBlockIndexByHash(GetCoinIndex(iface), blockId);
   }
 
   if (params.size() > 1)
@@ -1196,7 +1196,7 @@ Value rpc_block_listsince(CIface *iface, const Array& params, bool fStratum)
 
   Array transactions;
 
-  for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); it++)
+  for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); it++)
   {
     CWalletTx tx = (*it).second;
 
