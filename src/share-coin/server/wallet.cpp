@@ -3381,6 +3381,12 @@ CBlockIndex *CWallet::GetLocatorIndex(const CBlockLocator& loc)
       return pindex;
   }
 
+	if (loc.vHave.empty()) {
+		Debug("(%s) GetLocatorIndex: warning: empty block hierarchy.", iface->name);
+	} else {
+		Debug("(%s) GetLocatorIndex: unable to find block \"%s\" hierarchy in chain.", iface->name, loc.vHave.front().GetHex().c_str());
+	}
+
   return (GetGenesisBlockIndex(iface));
 }
 

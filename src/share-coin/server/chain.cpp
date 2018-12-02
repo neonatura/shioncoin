@@ -668,7 +668,6 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 
 	/* debug */
 	Debug("(%s) ServiceBlockEvent: requesting %d blocks (%s) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pfrom->addr.ToString().c_str());
-fprintf(stderr, "[%s] ServiceBlockEvent: requesting %d blocks (%s) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pfrom->addr.ToString().c_str());
 
 	return (true);
 }

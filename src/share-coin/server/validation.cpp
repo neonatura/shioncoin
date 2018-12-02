@@ -324,7 +324,7 @@ bool core_AcceptBlockHeader(CIface *iface, CBlockHeader& block, CBlockIndex **pi
 		*pindex_p = pindex;
 	}
 
-	Debug("(%s) AcceptBlockHeader: successfully processed block \"%s\" header (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight);
+//	Debug("(%s) AcceptBlockHeader: successfully processed block \"%s\" header (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight);
 
 	return (true);
 }
