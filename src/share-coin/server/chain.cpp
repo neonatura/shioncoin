@@ -444,15 +444,17 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 		return (NULL);
 	}
 
-	if (!pfrom->fPreferHeaders) {
-		/* incompatible. */
-		return (NULL);
-	}
+	if (ifaceIndex != USDE_COIN_IFACE) { 
+		if (!pfrom->fPreferHeaders) {
+			/* incompatible. */
+			return (NULL);
+		}
 
-	if (!pfrom->fHaveWitness && 
-			IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
-		/* incompatible. */
-		return (NULL);
+		if (!pfrom->fHaveWitness && 
+				IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+			/* incompatible. */
+			return (NULL);
+		}
 	}
 
 	return (pfrom);
@@ -547,11 +549,6 @@ bool ServiceLegacyBlockEvent(CIface *iface)
 
   if (iface->blockscan_max == 0)
     return (true); /* keep trying */
-	if (wallet->pindexBestHeader &&
-			wallet->pindexBestHeader->nHeight != -1) {
-		iface->blockscan_max = MAX(iface->blockscan_max, 
-				wallet->pindexBestHeader->nHeight);
-	}
 
 	CNode *pfrom = chain_GetNextNode(ifaceIndex);
 	if (!pfrom)
@@ -578,11 +575,6 @@ bool ServiceLegacyBlockEvent(CIface *iface)
 
     if (pfrom->nVersion == 0)
       return (true); /* not ready yet */
-    if (!pfrom->fHaveWitness && 
-        IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
-      /* incompatible, try next peer. */
-      return (true);
-    }
 
     Debug("(%s) ServiceBlockEvent: requesting blocks (height: %d)\n",
         iface->name, (int)pindexBest->nHeight);
