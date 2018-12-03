@@ -384,7 +384,6 @@ public:
 		CBlockIndex *pindexBestHeaderSend;
 		uint256 hashLastUnknownBlock;
 		CBlockIndex *pindexBestKnownBlock;
-		CBlockIndex *pindexBestKnownBlockHeader;
 
     CNode(int ifaceIndexIn, unsigned int hSocketIn, CAddress addrIn, std::string addrNameIn = "", bool fInboundIn=false) : vSend(SER_NETWORK, MIN_PROTO_VERSION), vRecv(SER_NETWORK, MIN_PROTO_VERSION)
     {
@@ -425,7 +424,6 @@ public:
 				vBlockHashesToAnnounce.clear();
 				pindexBestHeaderSend = NULL;
 				pindexBestKnownBlock = NULL;
-				pindexBestKnownBlockHeader = NULL;
 				hashLastUnknownBlock = 0;
 
         // Be shy and don't send version until we hear
