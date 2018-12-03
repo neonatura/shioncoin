@@ -588,24 +588,6 @@ bool ServiceLegacyBlockEvent(CIface *iface)
   return (true);
 }
 
-static bool chain_Timer(uint256 hash, string tag)
-{
-	static time_t timerExpire;
-	static uint256 timerHash;
-	static string timeTag;
-	time_t now;
-
-	now = time(NULL);
-
-	if (tag != timeTag || hash != timerHash || now > timerExpire) {
-		timerExpire = now + 60;
-		timerTag = tag;
-		return (true);
-	}
-
-	return (false);
-}
-
 bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *pfrom)
 {
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
@@ -627,8 +609,9 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 
 	/* suppress duplicate requests. */
 	CBlockIndex *pindexLast = vBlocks.back();
-	if (!chain_Timer(pindexLast->GetBlockHash(), "ServiceBlockGetDataEvent"))
+	if (pfrom->pindexLastBlock == pindexLast)
 		return (false);
+	pfrom->pindexLastBlock = pindexLast;
 
 	CBlockIndex *pindexFirst = vBlocks.front();
 	unsigned int nIndex = 0;
@@ -693,8 +676,9 @@ bool ServiceBlockHeadersEvent(CWallet *wallet, CBlockIndex *pindexBest, CNode *p
 
 	/* suppress duplicate request */
 	CBlockIndex *tip = wallet->pindexBestHeader ? wallet->pindexBestHeader : pindexBest;
-	if (!chain_Timer(tip->GetBlockHash(), "ServiceBlockHeadersEvent"))
+	if (pfrom->pindexLastHeader == tip)
 		return (false);
+	pfrom->pindexLastHeader = tip;
 
 	/* ask for headers */
 	CBlockLocator loc = wallet->GetLocator(wallet->pindexBestHeader);
