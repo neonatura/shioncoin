@@ -233,15 +233,11 @@ static void shc_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *lo
 	} else {
 		// Find the last block the caller has in the main chain
 		pindex = wallet->GetLocatorIndex(*locator);
-		if (pindex) {
-			if (!pindex->pnext) {
-				Debug("(shc) ProcessGetHeaders: found block (height %d) but has no pnext", pindex->nHeight);
-			}
+		if (pindex)
 			pindex = pindex->pnext;
-		}
 	}
 	if (!pindex) {
-		Debug("(shc) ProcessGetHeaders: unable to locate headers for \"%s\".", pfrom->addr.ToString().c_str());
+//		Debug("(shc) ProcessGetHeaders: unable to locate headers for \"%s\".", pfrom->addr.ToString().c_str());
 		return;
 	}
 
@@ -580,7 +576,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 					inv.type |= nFetchFlags;
 				}
 
-				if (!fSent) {
+				if (fSent) {
 					/* already handled. */
 				} if (!fAlreadyHave) {
           pfrom->AskFor(inv);

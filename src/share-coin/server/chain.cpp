@@ -607,13 +607,13 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 				MAX_BLOCK_DOWNLOAD_BATCH, vBlocks))
 		return (false);
 
-	/* suppress duplicate requests. */
-	CBlockIndex *pindexLast = vBlocks.back();
-	if (pfrom->pindexLastBlock == pindexLast)
-		return (false);
-	pfrom->pindexLastBlock = pindexLast;
-
 	CBlockIndex *pindexFirst = vBlocks.front();
+
+	/* suppress duplicate requests. */
+	if (pfrom->pindexLastBlock == pindexFirst)
+		return (false);
+	pfrom->pindexLastBlock = pindexFirst;
+
 	unsigned int nIndex = 0;
 	if (pindexBest && pindexFirst->pprev &&
 			pindexBest->GetBlockHash() == pindexFirst->pprev->GetBlockHash()) {
@@ -1156,13 +1156,6 @@ bool UpdateServiceMinerEvent(int ifaceIndex)
 		}
 
 		block->hashMerkleRoot = block->BuildMerkleTree();
-
-		{ /* debug */
-			char errbuf[256];
-			double dDiff = (double)GetDifficulty(block->nBits);
-			sprintf(errbuf, "UpdateServiceMinerEvent: mining new block (diff %f): %s", dDiff, block->ToString().c_str());
-			unet_log(ifaceIndex, errbuf);
-		}
 
 	}
 

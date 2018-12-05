@@ -638,6 +638,8 @@ bool CWalletTx::WriteToDisk()
 		db.WriteTx(GetHash(), *this);
 		db.Close();
 	}
+
+	return (true);
 }
 
 #if 0
@@ -1484,12 +1486,14 @@ bool SyncWithWallets(CIface *iface, CTransaction& tx, CBlock *pblock)
 int CMerkleTx::GetBlocksToMaturity(int ifaceIndex) const
 {
 	CWallet *wallet = GetWallet(ifaceIndex);
-	int nMaturity = wallet ? wallet->GetCoinbaseMaturity() : 0;
-
-	if (!IsCoinBase())
-		return 0;
+	if (!wallet)
+		return (0);
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 	if (!iface)
+		return 0;
+
+	int nMaturity = wallet->GetCoinbaseMaturity();
+	if (!IsCoinBase())
 		return 0;
 
 	int depth = GetDepthInMainChain(ifaceIndex);

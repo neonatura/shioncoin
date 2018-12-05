@@ -527,7 +527,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 					inv.type |= nFetchFlags;
 				}
 
-				if (!fSent) {
+				if (fSent) {
 					/* already handled. */
 				} if (!fAlreadyHave) {
           pfrom->AskFor(inv);

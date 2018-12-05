@@ -736,8 +736,7 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 		scriptSig += scriptSuffix;
 		tx.vin[0].scriptSig = scriptSig; 
 
-		Debug("(%s) UpdateValidateNotaryTx: updated tx: %s\n", 
-				iface->name, tx.ToString(ifaceIndex).c_str());
+		Debug("(%s) UpdateValidateNotaryTx: updated tx \"%s\" with %d unsolved signatures.\n", iface->name, tx.ToString(ifaceIndex).c_str(), nUnsolved);
 	}
 
 }

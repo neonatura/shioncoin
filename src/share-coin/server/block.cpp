@@ -2355,12 +2355,14 @@ static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *tip, CBlockIndex 
       if (!plonger)
         return (false);
     }
+#if 0
 		if (plonger != pindexNew && 
 				!(plonger->nStatus & BLOCK_HAVE_DATA) &&
 				!(plonger->nStatus & BLOCK_HAVE_UNDO)) {
 			/* we do not have the block data to connect this chain. */
 			return (error(ERR_INVAL, "GetCommitBranches: warning: cannot connect reorg chain due to missing block data for \"%s\".", plonger->GetBlockHash().GetHex().c_str(), plonger->nHeight));
 		}
+#endif
     if (pfork == plonger) {
 			/* progress until we have reached a fork that is on the current chain. */
 			break;
@@ -3031,6 +3033,15 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
 		/* retain in archive db */
     if (pblock->WriteArchBlock())
 			pindexNew->nStatus |= BLOCK_HAVE_UNDO;
+	}
+	/* ensure we can connect chain. */
+	for (unsigned int i = 0; i < vConnect.size(); i++) {
+		CBlockIndex *pindexTest = vConnect[i];
+		if (pindexTest != pindexNew &&
+				!(pindexTest->nStatus & BLOCK_HAVE_DATA) &&
+				!(pindexTest->nStatus & BLOCK_HAVE_UNDO)) {
+			return (error(ERR_NOLINK, "GetCommitBranches: warning: cannot connect reorg chain due to missing block data for \"%s\" (height %d).", pindexTest->GetBlockHash().GetHex().c_str(), pindexTest->nHeight));
+		}
 	}
 
   /* discon blocks */

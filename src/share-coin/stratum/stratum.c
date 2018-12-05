@@ -200,8 +200,10 @@ static void stratum_timer(void)
       stratum_register_html_task(peer, data + strlen("GET "));
     } else if (*data == '{') {
       if (peer->flags & USER_SYNC) {
+#if 0 /* not implemented yet */
         /* response from a remote stratum service */
         stratum_sync_recv(peer, data);
+#endif
       } else {
         /* normal user request (miner / api) */
         stratum_register_client_task(peer, data);

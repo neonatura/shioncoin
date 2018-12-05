@@ -453,6 +453,7 @@ bool DisconnectAliasTx(CIface *iface, CTransaction& tx)
     wallet->mapAlias.erase(strTitle);
   }
 
+	return (true);
 }
 
 bool RemoveAliasTx(CIface *iface, CTransaction& tx)

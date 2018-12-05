@@ -553,7 +553,7 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
 					inv.type |= nFetchFlags;
 				}
 
-				if (!fSent) {
+				if (fSent) {
 					/* already handled. */
 				} if (!fAlreadyHave) {
           pfrom->AskFor(inv);
