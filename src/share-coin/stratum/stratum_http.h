@@ -38,6 +38,7 @@ typedef void (*http_f)(struct httpreq_t *);
 
 typedef struct http_t {
 	char *page;
+	char *title;
 	char *mime;
 	http_f f_content;
 	http_f f_blurb;

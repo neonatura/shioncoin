@@ -579,27 +579,26 @@ void stratum_http_spring_html(unsigned int sk, char *url, shbuf_t *buff)
 
 
 http_t http_table[] = {
-	{ "/coin/", MIME_HTML, 
+	{ "/coin/", "Block Chain", MIME_HTML, 
 		http_coin_content, http_coin_blurb },
 
-	{ "/pool/", MIME_HTML, 
+	{ "/pool/", "Miner Pool", MIME_HTML, 
 		http_pool_content, http_pool_blurb },
 
-	{ "/spring/", MIME_HTML,
-		http_matrix_spring_content, http_matrix_spring_blurb },
-
-	{ "/validate/", MIME_HTML,
-		http_matrix_validate_content, http_matrix_validate_blurb },
-
-	{ "/alias/", MIME_HTML,
+	{ "/alias/", "Address Alias", MIME_HTML,
 		http_alias_content, http_alias_blurb },
 
-	{ "/context/", MIME_HTML,
+	{ "/context/", "Context", MIME_HTML,
 		http_context_content, http_context_blurb },
 
-	{ "/i/spring.bmp", MIME_BMP, http_fractal_spring_cb },
-	{ "/i/validate.bmp", MIME_BMP, http_fractal_validate_cb },
+	{ "/spring/", "Spring Matrix", MIME_HTML,
+		http_matrix_spring_content, http_matrix_spring_blurb },
 
+	{ "/validate/", "Validate Matrix", MIME_HTML,
+		http_matrix_validate_content, http_matrix_validate_blurb },
+
+	{ "/i/spring.bmp", "Spring Fractal", MIME_BMP, http_fractal_spring_cb },
+	{ "/i/validate.bmp", "Validate Fractal", MIME_BMP, http_fractal_validate_cb },
 
 	{ NULL, NULL }
 };
@@ -695,12 +694,13 @@ shbuf_t *stratum_html_main_content(struct httpreq_t *req)
 	shbuf_catstr(buff, 
 			"<head>\r\n"
 			"<style type=\"text/css\">\r\n"
-			".box { margin : 1em 1em 1em 1em; font-size: 16px; min-height: 280px; overflow: hidden; width: 342px; z-index: 1; border-radius: 2px; box-sizing: border-box; background : linear-gradient(90deg, #4b6cb7 0%, #182848 100%); float : left; text-decoration : none; border-right : 1px solid #ccc; border-bottom : 1px solid #ccc; }\r\n"
+			".box { margin : 1em 1em 1em 1em; font-size: 16px; min-height: 210px; max-height : 450px; overflow: hidden; width: 684px; z-index: 1; border-radius: 2px; box-sizing: border-box; background : linear-gradient(90deg, #4b6cb7 0%, #182848 100%); float : left; text-decoration : none; border-top : 4px solid #eee; border-left : 4px solid #eee; border-right : 4px solid #ccc; border-bottom : 4px solid #ccc; }\r\n" 
 			".item { height: 32px; line-height: 32px; padding: 0 12px 0 12px; border: 0; border-radius: 6px; background-color: rgba(222,222,222,0.5); color: rgba(0,0,0,.87); font-size: 12px; white-space: nowrap; width : auto; text-align : center; min-width : 64px; }\r\n"
 			".title { display : none; }\r\n"
 			".value { clear : both; }\r\n"
 			".list { width : 100%; linear-gradient(to bottom, #1e9957,#29d889,#20ca7c,#8de8b9); color : #666; }\r\n"
 			".listheader { background-color : rgba(128,128,128,0.5); color : #eee; text-align : center; }\r\n"
+			".boxtitle { background-color : rgba(92,92,92,0.5); color : #eee; text-align : center; width : 100%; height : 24px; line-height : 24px; border : 1px solid rgba(128,128,128,0.5); }\r\n"
 			"</style>\r\n"
 			"</head>\r\n"); 
 
@@ -715,6 +715,10 @@ shbuf_t *stratum_html_main_content(struct httpreq_t *req)
 
 			/* blurb content */
 			shbuf_catstr(buff, "<div class=\"box\">\r\n");
+			/* blurb title */
+			sprintf(html, "<div class=\"boxtitle\">%s</div>\r\n",
+					http_table[idx].title);
+			shbuf_catstr(buff, html);
 			(*http_table[idx].f_blurb)(req);
 			shbuf_catstr(buff, "</div>");
 

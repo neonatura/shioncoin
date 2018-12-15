@@ -74,7 +74,7 @@ int get_max_descriptors(void)
 
 #ifdef WINDOWS
 		/* windows msys64 file descriptors can be higher than reported max allowed. */
-		_max_fd = MAX(8192, _max_fd);
+		_max_fd = MAX(65535, _max_fd);
 #endif
 	}
 

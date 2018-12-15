@@ -172,7 +172,7 @@ int shcoind_main(int argc, char *argv[])
 
   server_start_t = shtime();
 
-#if WINDOWS 
+#ifdef WINDOWS 
   /* quash stdin/stdout confusion for windows service. */
   (void)open(".tmp-1", O_RDWR | O_CREAT, 0777);
   (void)open(".tmp-2", O_RDWR | O_CREAT, 0777);

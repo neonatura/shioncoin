@@ -39,12 +39,14 @@ void http_matrix_blurb(httpreq_t *req, const char *tag)
 	strncpy(label, tag, sizeof(label));
 	label[0] = toupper(label[0]);
 
+#if 0
 	sprintf(html,
 			"<div style=\"width : 256px; margin-left : auto; margin-right : auto;\">\n"
 			"<div style=\"width : 120px; margin-left : auto; margin-right : auto;;\"><span style=\"color : #333;\">%s Matrix</span> </div>\n"
 			"</div>\n",
 			label);
 	shbuf_catstr(buff, html);
+#endif
 
 	sprintf(html,
       "<div id=\"%s_matrix\" name=\"%s_matrix\" style=\"width : 256px; height : 256px; padding : 0 0 0 0; margin-left : auto; margin-right : auto; border : 0;\">\n"

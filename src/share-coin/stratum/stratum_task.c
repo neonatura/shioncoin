@@ -887,7 +887,7 @@ void stratum_task_weight(task_attr_t *attr)
 
     /* trinary - "how difficult is next block" (lower=better) */
     attr->avg_diff[idx] = (dDiff + (attr->avg_diff[idx] * 3)) / 4;
-    weight -= MAX(0.01, MIN(300, attr->avg_diff[idx] / 10));
+    weight -= MAX(0.01, MIN(300, sqrt(attr->avg_diff[idx])));
 
 #if 0
     /* bonus - current mined coin post-submit period. */ 
