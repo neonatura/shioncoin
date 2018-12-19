@@ -9,7 +9,7 @@ URL:            http://www.shcoins.com/
 Source0:        ftp://ftp.shcoins.com/release/share-coin/share-coin-3.02.tar.gz
 
 #Requires:       libshare
-#Requires:       info 
+Requires:       info 
 
 %description
 

@@ -1,0 +1,8 @@
+Algorithm: Scrypt PoW
+Total Coins: 500,000,794 
+Initial Block Value: 800 SHC
+Reward Reduction Method: Block Halving
+Block Target Time: 60 seconds
+Difficulty Re-targeting: KGW
+RPC Port: 9447 
+P2P Port: 24104

@@ -1,0 +1,100 @@
+# REBUILD_CHAIN.txt
+
+A backup of the main block-chain for each service is retained. This backup will only contain a sub-set of the block-chain. The backup block-chain is stored in the "blockchain/backup/" directory. 
+
+You can review the number of blocks stored by enabling debug mode ("shcoind --debug") and reviewing the log file ("/var/log/share/shcoind.log") while the service is starting up.
+
+On linux, the "blockchain" directory is located in "/var/lib/share/blockchain". On windows, it is located under "%PROGDATA%\share\blockchain\".
+
+The rebuild process will restore all blocks from the backup directory until finished or an error occurs. A block verification error results in the chain being truncated at that block height. Once started up, the service will automatically download the remainder of the blocks from peer nodes.
+
+
+BACKUP IMPORTANT FILES
+
+The following instructions should be performed before rebuilding a block-chain. In addition, it is recommended to perform these step periodically in order to preserve important information.
+
+1. Make a JSON backup file containing the wallet.
+> mkdir -p ~/.shc/
+> shc wallet.export ~/.shc/wallet.`date+%b%d.%y.json`
+
+2. Make a JSON backup file containing the peer-list.
+> mkdir -p ~/.shc/
+> shc peer.export ~/.shc/peer.`date+%b%d.%y.json`
+
+3. Make a backup of the entire "blockchain" directory (i.e. "/var/lib/share/blockchain/" on linux) while the service is NOT running.
+> cd /var/lib/share/
+> cp -fr blockchain blockchain.`date +%b%d.%y`
+
+
+REMOVING THE PREVIOUS BLOCK-CHAIN
+
+The following instructions are revert an existing block-chain into a single genesis block. This is required in order to rebuild the block-chain.
+
+1. Stop the shcoind service (if running).
+> shc sys.shutdown
+
+2. Remove all files which start with the service's name from the "blockchain" directory except for "XXX_peer.*" and "XXX_wallet.dat". Examples of service names are "testnet" and "shc". 
+Note: Retaining the file with a "_wallet.dat" suffix will result in all saved coin addresses (i.e. your wallet balance) being preserved. For the main ShareCoin (SHC) block-chain; the file is "shc_wallet.dat". 
+Note: You can alternately restore the wallet or peer-list via the "wallet.import" and "peer.import" RPC commands.
+> cd /var/lib/share/blockchain
+> cp shc_wallet.dat backup
+> cp shc_peer.* backup
+> rm shc_*.*
+> cp backup/shc_wallet.dat .
+> cp backup/shc_peer.* .
+
+Note: You can simply remove "shc_*.*" if you are not intending to retain the current wallet and peer-list.
+
+3. Start up the coin service normally in order for it to generate the genesis block and initialize new database files.
+> systemctl start shcoind
+
+Note: You can remove the "shc_peer.*" or "shc_wallet.dat", while the shcoind service is not running, in order to purposely remove your existing wallet or peer-list.
+
+
+INSTALL BLOCK CHAIN FROM SNAPSHOT
+
+A snapshot of a recent ShareCoin (SHC) block-chain is available at "ftp://ftp.neo-natura.com/snapshot/shc/shc_chain.bin". This snapshot is updated each time a new programmatic block-chain check-point is added to the software. Installing a snapshot is not required to in order for the shcoind service to download the block-chain. 
+
+You can install the snapshot via the following RPC commands:
+> cd /tmp
+> wget ftp://ftp.neo-natura.com/snapshot/shc/shc_chain.bin
+> shc block.import /tmp/shc_chain.bin 
+
+
+REBUILD BLOCK CHAIN
+
+The following instructions are recommended in order to rebuild a block-chain from the "blockchain/backup/" storage area. The backup block-chain import process will not over-write existing blocks, and therefore it may be neccessary to remove the current block-chain before proceeding (see instructions above).
+
+1. Stop the coin service (if running).
+> shc sys.shutdown
+
+2. Start the coin service using the command-line flag associated with the rebuild (--<service>-rebuild-chain). The program will exit once the rebuild has completed.
+> shcoind --shc-rebuild-chain -nf
+
+
+PRUNING BLOCK CHAIN
+
+It is possible to revert a block-chain to a previous height. This process is only recommended to truncate the tail of the block-chain by 50,0000 blocks or less.
+
+This process will revert all transactions associated with the blocks being truncated. Transactions will be processed again once the block-chain is redownloaded.
+
+1. Start the shcoind service in admin mode.
+> shc sys.shutdown
+> mkdir -p ~/.shc/
+> echo "admin=1" >> ~/.shc/shc.conf
+> systemctl start shcoind
+
+2. Prune the block-chain with the administrative "block.purge" RPC command.
+> shc block.purge <block-height>
+
+3. Stop the shcoind service.
+> shc sys.shutdown
+
+4. Remove the "<service>_*.arch" files from the "blockchain" directory.
+Note: This ensures that unwanted orphan blocks are not re-introduced when the truncated portion of the block-chain is re-downloaded.
+> cd /var/lib/share/blockchain
+> rm shc_*.arch
+
+4. Start the shcoind service.
+> systemctl start shcoind
+
