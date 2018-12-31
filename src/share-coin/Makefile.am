@@ -6,6 +6,7 @@ check_PROGRAMS = test_shcoind
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/secp256k1/include \
+	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include \
 	-I$(top_srcdir)/src/share-lib \
 	-I$(srcdir)/proto \
 	-I$(srcdir)/fractal \
@@ -72,6 +73,36 @@ stratum_sources = \
 	stratum/http/http_matrix.c \
 	stratum/http/http_pool.c
 
+
+#bn_sources = \
+#	server/bn/bn_add.c \
+#	server/bn/bn_asm.c \
+#	server/bn/bn_blind.c \
+#	server/bn/bn_const.c \
+#	server/bn/bn_ctx.c \
+#	server/bn/bn_depr.c \
+#	server/bn/bn_div.c \
+#	server/bn/bn_err.c \
+#	server/bn/bn_exp2.c \
+#	server/bn/bn_exp.c \
+#	server/bn/bn_gcd.c \
+#	server/bn/bn_gf2m.c \
+#	server/bn/bn_kron.c \
+#	server/bn/bn_lcl.h \
+#	server/bn/bn_lib.c \
+#	server/bn/bn_mod.c \
+#	server/bn/bn_mpi.c \
+#	server/bn/bn_mul.c \
+#	server/bn/bn_prime.c \
+#	server/bn/bn_prime.h \
+#	server/bn/bn_print.c \
+#	server/bn/bn_rand.c \
+#	server/bn/bn_recp.c \
+#	server/bn/bn_shift.c \
+#	server/bn/bn_sqr.c \
+#	server/bn/bn_sqrt.c \
+#	server/bn/bn_word.c
+
 common_includes = \
 	$(top_builddir)/config.h \
 	$(top_srcdir)/src/share-lib/share.h \
@@ -99,7 +130,6 @@ common_includes = \
 	server/rpcexec_proto.h \
 	server/rpcoffer_proto.h \
 	server/compat.h \
-	server/crypter.h \
 	server/txidx.h \
 	server/init.h \
 	server/key.h \
@@ -158,10 +188,10 @@ common_sources = \
 	server/util.cpp
 
 server_sources = \
-	server/txfeerate.cpp \
 	$(blockchain_sources) \
 	$(proto_sources) \
 	$(stratum_sources) \
+	server/txfeerate.cpp \
 	fractal/fractal.c \
 	fractal/fractal_bmp.c \
 	server/test/test_wallet.cpp \
@@ -279,7 +309,6 @@ server_sources = \
 	server/global.cpp \
 	server/block_merkle.cpp \
 	server/wit_merkle.cpp \
-	server/crypter.cpp \
 	server/txidx.cpp \
 	server/init.cpp \
 	server/derkey.cpp \
@@ -316,13 +345,15 @@ shcoind_SOURCES += \
 endif
 
 shcoind_LDADD = \
-	$(top_builddir)/src/secp256k1/libsecp256k1.a
+	$(top_builddir)/src/secp256k1/libsecp256k1.a \
+	$(top_builddir)/src/libcrypto/libcrypto.a
 if STATIC_LIBSHARE
 shcoind_LDADD += \
 	$(LIBSHARE)/src/share-lib/libshare.a \
 	$(LIBSHARE)/src/sexe/libshare_sexe.a
-shcoind_CFLAGS = -I$(LIBSHARE)/include
-shcoind_CXXFLAGS = -I$(LIBSHARE)/include
+shcoind_CFLAGS = -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
+
+shcoind_CXXFLAGS = -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
 else
 shcoind_LDADD += -lshare -lshare_sexe
 endif
@@ -346,15 +377,17 @@ test_shcoind_SOURCES = \
 	test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp
 
-test_shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a 
+test_shcoind_LDADD = \
+	$(top_builddir)/src/secp256k1/libsecp256k1.a \
+	$(top_builddir)/src/libcrypto/libcrypto.a
 test_shcoind_CFLAGS = -g -O0 -DTEST_SHCOIND
 test_shcoind_CXXFLAGS = -g -O0 -DTEST_SHCOIND
 if STATIC_LIBSHARE
 test_shcoind_LDADD += \
 	$(LIBSHARE)/src/share-lib/libshare.a \
 	$(LIBSHARE)/src/sexe/libshare_sexe.a
-test_shcoind_CFLAGS += -I$(LIBSHARE)/include
-test_shcoind_CXXFLAGS += -I$(LIBSHARE)/include
+test_shcoind_CFLAGS += -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
+test_shcoind_CXXFLAGS += -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
 else
 test_shcoind_LDADD += -lshare -lshare_sexe
 endif

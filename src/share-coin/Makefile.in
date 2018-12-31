@@ -94,8 +94,8 @@ check_PROGRAMS = test_shcoind$(EXEEXT)
 @STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/share-lib/libshare.a \
 @STATIC_LIBSHARE_TRUE@	$(LIBSHARE)/src/sexe/libshare_sexe.a
 
-@STATIC_LIBSHARE_TRUE@am__append_5 = -I$(LIBSHARE)/include
-@STATIC_LIBSHARE_TRUE@am__append_6 = -I$(LIBSHARE)/include
+@STATIC_LIBSHARE_TRUE@am__append_5 = -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
+@STATIC_LIBSHARE_TRUE@am__append_6 = -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
 @STATIC_LIBSHARE_FALSE@am__append_7 = -lshare -lshare_sexe
 @DEBUG_TRUE@am__append_8 = -g3 
 @DEBUG_TRUE@am__append_9 = -g3
@@ -137,26 +137,26 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/global.h server/allocators.h server/bignum.h \
 	server/rpcalias_proto.h server/rpccert_proto.h \
 	server/rpccontext_proto.h server/rpcexec_proto.h \
-	server/rpcoffer_proto.h server/compat.h server/crypter.h \
-	server/txidx.h server/init.h server/key.h server/keystore.h \
-	server/mruset.h server/netbase.h server/net.h \
-	server/txsignature.h server/versionbits.h server/protocol.h \
-	server/script.h server/scrypt.h server/serialize.h \
-	server/strlcpy.h server/sync.h server/ui_interface.h \
-	server/uint256.h server/util.h server/version.h \
-	server/walletdb.h server/wallet.h server/account.h \
-	server/txcreator.h shcoind_version.h server_iface.h \
-	shcoind_rpc.h shcoind_error.h shcoind_log.h shcoind_opt.h \
-	shcoind_signal.h shcoind_descriptor.h shcoind.h shcoind_rpc.c \
-	shcoind_error.c shcoind_log.c shcoind_opt.c shcoind_signal.c \
+	server/rpcoffer_proto.h server/compat.h server/txidx.h \
+	server/init.h server/key.h server/keystore.h server/mruset.h \
+	server/netbase.h server/net.h server/txsignature.h \
+	server/versionbits.h server/protocol.h server/script.h \
+	server/scrypt.h server/serialize.h server/strlcpy.h \
+	server/sync.h server/ui_interface.h server/uint256.h \
+	server/util.h server/version.h server/walletdb.h \
+	server/wallet.h server/account.h server/txcreator.h \
+	shcoind_version.h server_iface.h shcoind_rpc.h shcoind_error.h \
+	shcoind_log.h shcoind_opt.h shcoind_signal.h \
+	shcoind_descriptor.h shcoind.h shcoind_rpc.c shcoind_error.c \
+	shcoind_log.c shcoind_opt.c shcoind_signal.c \
 	shcoind_descriptor.c unet/unet_accept.c unet/unet_bind.c \
 	unet/unet_thread.c unet/unet.c unet/unet_close.c \
 	unet/unet_connect.c unet/unet_io.c unet/unet_timer.c \
 	unet/unet_peerdb.c unet/unet_event.c unet/unet_local.c \
 	server/mnemonic.cpp server/netbase.cpp server/version.cpp \
-	server/util.cpp server/txfeerate.cpp \
-	$(srcdir)/blockchain/bc_arch.c $(srcdir)/blockchain/bc_block.c \
-	$(srcdir)/blockchain/bc_fmap.c $(srcdir)/blockchain/bc_index.c \
+	server/util.cpp $(srcdir)/blockchain/bc_arch.c \
+	$(srcdir)/blockchain/bc_block.c $(srcdir)/blockchain/bc_fmap.c \
+	$(srcdir)/blockchain/bc_index.c \
 	$(srcdir)/blockchain/bc_table.c \
 	$(srcdir)/blockchain/bc_mutex.c $(srcdir)/blockchain/bc.h \
 	$(srcdir)/blockchain/bc_arch.h $(srcdir)/blockchain/bc_block.h \
@@ -182,7 +182,7 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	stratum/http/http_alias.c stratum/http/http_coin.c \
 	stratum/http/http_context.c stratum/http/http_fractal.c \
 	stratum/http/http_matrix.c stratum/http/http_pool.c \
-	fractal/fractal.c fractal/fractal_bmp.c \
+	server/txfeerate.cpp fractal/fractal.c fractal/fractal_bmp.c \
 	server/test/test_wallet.cpp server/test/test_wallet.h \
 	server/test/test_block.cpp server/test/test_block.h \
 	server/test/test_pool.cpp server/test/test_pool.h \
@@ -240,15 +240,14 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/coin.cpp server/validation.cpp server/chain.cpp \
 	server/matrix.cpp server/spring.c server/bloom.cpp \
 	server/global.cpp server/block_merkle.cpp \
-	server/wit_merkle.cpp server/crypter.cpp server/txidx.cpp \
-	server/init.cpp server/derkey.cpp server/hdkey.cpp \
-	server/keystore.cpp server/main.cpp server/script.cpp \
-	server/sync.cpp server/walletdb.cpp server/wallet.cpp \
-	server/account.cpp server/txcreator.cpp server/scrypt.c \
-	server/addrman.h server/addrman.cpp server/base58.h \
-	server/base58.cpp wallet_iface.cpp block_iface.cpp \
-	server_iface.cpp shcoind.c shcoind_daemon.c shcoind_daemon.h \
-	shcoind_svc.c shcoind_svc.h
+	server/wit_merkle.cpp server/txidx.cpp server/init.cpp \
+	server/derkey.cpp server/hdkey.cpp server/keystore.cpp \
+	server/main.cpp server/script.cpp server/sync.cpp \
+	server/walletdb.cpp server/wallet.cpp server/account.cpp \
+	server/txcreator.cpp server/scrypt.c server/addrman.h \
+	server/addrman.cpp server/base58.h server/base58.cpp \
+	wallet_iface.cpp block_iface.cpp server_iface.cpp shcoind.c \
+	shcoind_daemon.c shcoind_daemon.h shcoind_svc.c shcoind_svc.h
 am__objects_1 =
 am__objects_2 = shcoind-shcoind_rpc.$(OBJEXT) \
 	shcoind-shcoind_error.$(OBJEXT) shcoind-shcoind_log.$(OBJEXT) \
@@ -279,8 +278,8 @@ am__objects_5 = shcoind-stratum.$(OBJEXT) \
 	shcoind-http_alias.$(OBJEXT) shcoind-http_coin.$(OBJEXT) \
 	shcoind-http_context.$(OBJEXT) shcoind-http_fractal.$(OBJEXT) \
 	shcoind-http_matrix.$(OBJEXT) shcoind-http_pool.$(OBJEXT)
-am__objects_6 = shcoind-txfeerate.$(OBJEXT) $(am__objects_3) \
-	$(am__objects_4) $(am__objects_5) shcoind-fractal.$(OBJEXT) \
+am__objects_6 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	shcoind-txfeerate.$(OBJEXT) shcoind-fractal.$(OBJEXT) \
 	shcoind-fractal_bmp.$(OBJEXT) shcoind-test_wallet.$(OBJEXT) \
 	shcoind-test_block.$(OBJEXT) shcoind-test_pool.$(OBJEXT) \
 	shcoind-shc_netmsg.$(OBJEXT) shcoind-shc_block.$(OBJEXT) \
@@ -321,16 +320,15 @@ am__objects_6 = shcoind-txfeerate.$(OBJEXT) $(am__objects_3) \
 	shcoind-matrix.$(OBJEXT) shcoind-spring.$(OBJEXT) \
 	shcoind-bloom.$(OBJEXT) shcoind-global.$(OBJEXT) \
 	shcoind-block_merkle.$(OBJEXT) shcoind-wit_merkle.$(OBJEXT) \
-	shcoind-crypter.$(OBJEXT) shcoind-txidx.$(OBJEXT) \
-	shcoind-init.$(OBJEXT) shcoind-derkey.$(OBJEXT) \
-	shcoind-hdkey.$(OBJEXT) shcoind-keystore.$(OBJEXT) \
-	shcoind-main.$(OBJEXT) shcoind-script.$(OBJEXT) \
-	shcoind-sync.$(OBJEXT) shcoind-walletdb.$(OBJEXT) \
-	shcoind-wallet.$(OBJEXT) shcoind-account.$(OBJEXT) \
-	shcoind-txcreator.$(OBJEXT) shcoind-scrypt.$(OBJEXT) \
-	shcoind-addrman.$(OBJEXT) shcoind-base58.$(OBJEXT) \
-	shcoind-wallet_iface.$(OBJEXT) shcoind-block_iface.$(OBJEXT) \
-	shcoind-server_iface.$(OBJEXT)
+	shcoind-txidx.$(OBJEXT) shcoind-init.$(OBJEXT) \
+	shcoind-derkey.$(OBJEXT) shcoind-hdkey.$(OBJEXT) \
+	shcoind-keystore.$(OBJEXT) shcoind-main.$(OBJEXT) \
+	shcoind-script.$(OBJEXT) shcoind-sync.$(OBJEXT) \
+	shcoind-walletdb.$(OBJEXT) shcoind-wallet.$(OBJEXT) \
+	shcoind-account.$(OBJEXT) shcoind-txcreator.$(OBJEXT) \
+	shcoind-scrypt.$(OBJEXT) shcoind-addrman.$(OBJEXT) \
+	shcoind-base58.$(OBJEXT) shcoind-wallet_iface.$(OBJEXT) \
+	shcoind-block_iface.$(OBJEXT) shcoind-server_iface.$(OBJEXT)
 @WINDOWS_TRUE@am__objects_7 = shcoind-shcoind_svc.$(OBJEXT)
 am_shcoind_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_6) shcoind-shcoind.$(OBJEXT) \
@@ -338,7 +336,8 @@ am_shcoind_OBJECTS = $(am__objects_1) $(am__objects_2) \
 shcoind_OBJECTS = $(am_shcoind_OBJECTS)
 am__DEPENDENCIES_1 =
 shcoind_DEPENDENCIES = $(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(am__append_2) $(am__DEPENDENCIES_1)
+	$(top_builddir)/src/libcrypto/libcrypto.a $(am__append_2) \
+	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -390,8 +389,8 @@ am__objects_11 = test_shcoind-stratum.$(OBJEXT) \
 	test_shcoind-http_fractal.$(OBJEXT) \
 	test_shcoind-http_matrix.$(OBJEXT) \
 	test_shcoind-http_pool.$(OBJEXT)
-am__objects_12 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_9) \
-	$(am__objects_10) $(am__objects_11) \
+am__objects_12 = $(am__objects_9) $(am__objects_10) $(am__objects_11) \
+	test_shcoind-txfeerate.$(OBJEXT) \
 	test_shcoind-fractal.$(OBJEXT) \
 	test_shcoind-fractal_bmp.$(OBJEXT) \
 	test_shcoind-test_wallet.$(OBJEXT) \
@@ -452,8 +451,7 @@ am__objects_12 = test_shcoind-txfeerate.$(OBJEXT) $(am__objects_9) \
 	test_shcoind-matrix.$(OBJEXT) test_shcoind-spring.$(OBJEXT) \
 	test_shcoind-bloom.$(OBJEXT) test_shcoind-global.$(OBJEXT) \
 	test_shcoind-block_merkle.$(OBJEXT) \
-	test_shcoind-wit_merkle.$(OBJEXT) \
-	test_shcoind-crypter.$(OBJEXT) test_shcoind-txidx.$(OBJEXT) \
+	test_shcoind-wit_merkle.$(OBJEXT) test_shcoind-txidx.$(OBJEXT) \
 	test_shcoind-init.$(OBJEXT) test_shcoind-derkey.$(OBJEXT) \
 	test_shcoind-hdkey.$(OBJEXT) test_shcoind-keystore.$(OBJEXT) \
 	test_shcoind-main.$(OBJEXT) test_shcoind-script.$(OBJEXT) \
@@ -477,7 +475,8 @@ am_test_shcoind_OBJECTS = $(am__objects_1) $(am__objects_8) \
 	test_shcoind-testcoin_bloom.$(OBJEXT)
 test_shcoind_OBJECTS = $(am_test_shcoind_OBJECTS)
 test_shcoind_DEPENDENCIES =  \
-	$(top_builddir)/src/secp256k1/libsecp256k1.a $(am__append_4) \
+	$(top_builddir)/src/secp256k1/libsecp256k1.a \
+	$(top_builddir)/src/libcrypto/libcrypto.a $(am__append_4) \
 	$(am__DEPENDENCIES_1)
 test_shcoind_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(test_shcoind_CXXFLAGS) \
@@ -914,6 +913,7 @@ with_kerneldir = @with_kerneldir@
 AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/secp256k1/include \
+	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include \
 	-I$(top_srcdir)/src/share-lib \
 	-I$(srcdir)/proto \
 	-I$(srcdir)/fractal \
@@ -979,6 +979,35 @@ stratum_sources = \
 	stratum/http/http_matrix.c \
 	stratum/http/http_pool.c
 
+
+#bn_sources = \
+#	server/bn/bn_add.c \
+#	server/bn/bn_asm.c \
+#	server/bn/bn_blind.c \
+#	server/bn/bn_const.c \
+#	server/bn/bn_ctx.c \
+#	server/bn/bn_depr.c \
+#	server/bn/bn_div.c \
+#	server/bn/bn_err.c \
+#	server/bn/bn_exp2.c \
+#	server/bn/bn_exp.c \
+#	server/bn/bn_gcd.c \
+#	server/bn/bn_gf2m.c \
+#	server/bn/bn_kron.c \
+#	server/bn/bn_lcl.h \
+#	server/bn/bn_lib.c \
+#	server/bn/bn_mod.c \
+#	server/bn/bn_mpi.c \
+#	server/bn/bn_mul.c \
+#	server/bn/bn_prime.c \
+#	server/bn/bn_prime.h \
+#	server/bn/bn_print.c \
+#	server/bn/bn_rand.c \
+#	server/bn/bn_recp.c \
+#	server/bn/bn_shift.c \
+#	server/bn/bn_sqr.c \
+#	server/bn/bn_sqrt.c \
+#	server/bn/bn_word.c
 common_includes = \
 	$(top_builddir)/config.h \
 	$(top_srcdir)/src/share-lib/share.h \
@@ -1006,7 +1035,6 @@ common_includes = \
 	server/rpcexec_proto.h \
 	server/rpcoffer_proto.h \
 	server/compat.h \
-	server/crypter.h \
 	server/txidx.h \
 	server/init.h \
 	server/key.h \
@@ -1065,10 +1093,10 @@ common_sources = \
 	server/util.cpp
 
 server_sources = \
-	server/txfeerate.cpp \
 	$(blockchain_sources) \
 	$(proto_sources) \
 	$(stratum_sources) \
+	server/txfeerate.cpp \
 	fractal/fractal.c \
 	fractal/fractal_bmp.c \
 	server/test/test_wallet.cpp \
@@ -1186,7 +1214,6 @@ server_sources = \
 	server/global.cpp \
 	server/block_merkle.cpp \
 	server/wit_merkle.cpp \
-	server/crypter.cpp \
 	server/txidx.cpp \
 	server/init.cpp \
 	server/derkey.cpp \
@@ -1212,10 +1239,11 @@ shcoind_SOURCES = $(common_includes) $(common_sources) \
 	$(server_sources) shcoind.c shcoind_daemon.c shcoind_daemon.h \
 	$(am__append_1)
 shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(am__append_2) $(am__append_3) -lboost_system \
-	-lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
-@STATIC_LIBSHARE_TRUE@shcoind_CFLAGS = -I$(LIBSHARE)/include
-@STATIC_LIBSHARE_TRUE@shcoind_CXXFLAGS = -I$(LIBSHARE)/include
+	$(top_builddir)/src/libcrypto/libcrypto.a $(am__append_2) \
+	$(am__append_3) -lboost_system -lboost_filesystem \
+	-lboost_thread -ldb_cxx -lpthread -ldl
+@STATIC_LIBSHARE_TRUE@shcoind_CFLAGS = -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
+@STATIC_LIBSHARE_TRUE@shcoind_CXXFLAGS = -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
 test_shcoind_SOURCES = \
 	$(common_includes) $(common_sources) \
 	$(server_sources) \
@@ -1233,8 +1261,9 @@ test_shcoind_SOURCES = \
 	test/testcoin_bloom.cpp
 
 test_shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(am__append_4) $(am__append_7) -lboost_system \
-	-lboost_filesystem -lboost_thread -ldb_cxx -lpthread -ldl
+	$(top_builddir)/src/libcrypto/libcrypto.a $(am__append_4) \
+	$(am__append_7) -lboost_system -lboost_filesystem \
+	-lboost_thread -ldb_cxx -lpthread -ldl
 test_shcoind_CFLAGS = -g -O0 -DTEST_SHCOIND $(am__append_5)
 test_shcoind_CXXFLAGS = -g -O0 -DTEST_SHCOIND $(am__append_6)
 @HAVE_SYSTEMCTL_TRUE@SYSD_FILE = /etc/systemd/system/shcoind.service
@@ -1374,7 +1403,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-color_txidx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-color_wallet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-context.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-crypter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-derkey.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_netmsg.Po@am__quote@
@@ -1519,7 +1547,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-color_txidx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-color_wallet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-context.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-crypter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-derkey.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_netmsg.Po@am__quote@
@@ -3013,20 +3040,6 @@ shcoind-util.obj: server/util.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-util.obj `if test -f 'server/util.cpp'; then $(CYGPATH_W) 'server/util.cpp'; else $(CYGPATH_W) '$(srcdir)/server/util.cpp'; fi`
 
-shcoind-txfeerate.o: server/txfeerate.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-txfeerate.o -MD -MP -MF $(DEPDIR)/shcoind-txfeerate.Tpo -c -o shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-txfeerate.Tpo $(DEPDIR)/shcoind-txfeerate.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txfeerate.cpp' object='shcoind-txfeerate.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
-
-shcoind-txfeerate.obj: server/txfeerate.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-txfeerate.obj -MD -MP -MF $(DEPDIR)/shcoind-txfeerate.Tpo -c -o shcoind-txfeerate.obj `if test -f 'server/txfeerate.cpp'; then $(CYGPATH_W) 'server/txfeerate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txfeerate.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-txfeerate.Tpo $(DEPDIR)/shcoind-txfeerate.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txfeerate.cpp' object='shcoind-txfeerate.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-txfeerate.obj `if test -f 'server/txfeerate.cpp'; then $(CYGPATH_W) 'server/txfeerate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txfeerate.cpp'; fi`
-
 shcoind-shc_proto.o: $(srcdir)/proto/shc_proto.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-shc_proto.o -MD -MP -MF $(DEPDIR)/shcoind-shc_proto.Tpo -c -o shcoind-shc_proto.o `test -f '$(srcdir)/proto/shc_proto.cpp' || echo '$(srcdir)/'`$(srcdir)/proto/shc_proto.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-shc_proto.Tpo $(DEPDIR)/shcoind-shc_proto.Po
@@ -3124,6 +3137,20 @@ shcoind-color_proto.obj: $(srcdir)/proto/color_proto.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(srcdir)/proto/color_proto.cpp' object='shcoind-color_proto.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-color_proto.obj `if test -f '$(srcdir)/proto/color_proto.cpp'; then $(CYGPATH_W) '$(srcdir)/proto/color_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/proto/color_proto.cpp'; fi`
+
+shcoind-txfeerate.o: server/txfeerate.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-txfeerate.o -MD -MP -MF $(DEPDIR)/shcoind-txfeerate.Tpo -c -o shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-txfeerate.Tpo $(DEPDIR)/shcoind-txfeerate.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txfeerate.cpp' object='shcoind-txfeerate.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
+
+shcoind-txfeerate.obj: server/txfeerate.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-txfeerate.obj -MD -MP -MF $(DEPDIR)/shcoind-txfeerate.Tpo -c -o shcoind-txfeerate.obj `if test -f 'server/txfeerate.cpp'; then $(CYGPATH_W) 'server/txfeerate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txfeerate.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-txfeerate.Tpo $(DEPDIR)/shcoind-txfeerate.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txfeerate.cpp' object='shcoind-txfeerate.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-txfeerate.obj `if test -f 'server/txfeerate.cpp'; then $(CYGPATH_W) 'server/txfeerate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txfeerate.cpp'; fi`
 
 shcoind-test_wallet.o: server/test/test_wallet.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-test_wallet.o -MD -MP -MF $(DEPDIR)/shcoind-test_wallet.Tpo -c -o shcoind-test_wallet.o `test -f 'server/test/test_wallet.cpp' || echo '$(srcdir)/'`server/test/test_wallet.cpp
@@ -4077,20 +4104,6 @@ shcoind-wit_merkle.obj: server/wit_merkle.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-wit_merkle.obj `if test -f 'server/wit_merkle.cpp'; then $(CYGPATH_W) 'server/wit_merkle.cpp'; else $(CYGPATH_W) '$(srcdir)/server/wit_merkle.cpp'; fi`
 
-shcoind-crypter.o: server/crypter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-crypter.o -MD -MP -MF $(DEPDIR)/shcoind-crypter.Tpo -c -o shcoind-crypter.o `test -f 'server/crypter.cpp' || echo '$(srcdir)/'`server/crypter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-crypter.Tpo $(DEPDIR)/shcoind-crypter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/crypter.cpp' object='shcoind-crypter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-crypter.o `test -f 'server/crypter.cpp' || echo '$(srcdir)/'`server/crypter.cpp
-
-shcoind-crypter.obj: server/crypter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-crypter.obj -MD -MP -MF $(DEPDIR)/shcoind-crypter.Tpo -c -o shcoind-crypter.obj `if test -f 'server/crypter.cpp'; then $(CYGPATH_W) 'server/crypter.cpp'; else $(CYGPATH_W) '$(srcdir)/server/crypter.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-crypter.Tpo $(DEPDIR)/shcoind-crypter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/crypter.cpp' object='shcoind-crypter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-crypter.obj `if test -f 'server/crypter.cpp'; then $(CYGPATH_W) 'server/crypter.cpp'; else $(CYGPATH_W) '$(srcdir)/server/crypter.cpp'; fi`
-
 shcoind-txidx.o: server/txidx.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-txidx.o -MD -MP -MF $(DEPDIR)/shcoind-txidx.Tpo -c -o shcoind-txidx.o `test -f 'server/txidx.cpp' || echo '$(srcdir)/'`server/txidx.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-txidx.Tpo $(DEPDIR)/shcoind-txidx.Po
@@ -4385,20 +4398,6 @@ test_shcoind-util.obj: server/util.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-util.obj `if test -f 'server/util.cpp'; then $(CYGPATH_W) 'server/util.cpp'; else $(CYGPATH_W) '$(srcdir)/server/util.cpp'; fi`
 
-test_shcoind-txfeerate.o: server/txfeerate.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-txfeerate.o -MD -MP -MF $(DEPDIR)/test_shcoind-txfeerate.Tpo -c -o test_shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-txfeerate.Tpo $(DEPDIR)/test_shcoind-txfeerate.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txfeerate.cpp' object='test_shcoind-txfeerate.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
-
-test_shcoind-txfeerate.obj: server/txfeerate.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-txfeerate.obj -MD -MP -MF $(DEPDIR)/test_shcoind-txfeerate.Tpo -c -o test_shcoind-txfeerate.obj `if test -f 'server/txfeerate.cpp'; then $(CYGPATH_W) 'server/txfeerate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txfeerate.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-txfeerate.Tpo $(DEPDIR)/test_shcoind-txfeerate.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txfeerate.cpp' object='test_shcoind-txfeerate.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-txfeerate.obj `if test -f 'server/txfeerate.cpp'; then $(CYGPATH_W) 'server/txfeerate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txfeerate.cpp'; fi`
-
 test_shcoind-shc_proto.o: $(srcdir)/proto/shc_proto.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-shc_proto.o -MD -MP -MF $(DEPDIR)/test_shcoind-shc_proto.Tpo -c -o test_shcoind-shc_proto.o `test -f '$(srcdir)/proto/shc_proto.cpp' || echo '$(srcdir)/'`$(srcdir)/proto/shc_proto.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-shc_proto.Tpo $(DEPDIR)/test_shcoind-shc_proto.Po
@@ -4496,6 +4495,20 @@ test_shcoind-color_proto.obj: $(srcdir)/proto/color_proto.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(srcdir)/proto/color_proto.cpp' object='test_shcoind-color_proto.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-color_proto.obj `if test -f '$(srcdir)/proto/color_proto.cpp'; then $(CYGPATH_W) '$(srcdir)/proto/color_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/proto/color_proto.cpp'; fi`
+
+test_shcoind-txfeerate.o: server/txfeerate.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-txfeerate.o -MD -MP -MF $(DEPDIR)/test_shcoind-txfeerate.Tpo -c -o test_shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-txfeerate.Tpo $(DEPDIR)/test_shcoind-txfeerate.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txfeerate.cpp' object='test_shcoind-txfeerate.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
+
+test_shcoind-txfeerate.obj: server/txfeerate.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-txfeerate.obj -MD -MP -MF $(DEPDIR)/test_shcoind-txfeerate.Tpo -c -o test_shcoind-txfeerate.obj `if test -f 'server/txfeerate.cpp'; then $(CYGPATH_W) 'server/txfeerate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txfeerate.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-txfeerate.Tpo $(DEPDIR)/test_shcoind-txfeerate.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/txfeerate.cpp' object='test_shcoind-txfeerate.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-txfeerate.obj `if test -f 'server/txfeerate.cpp'; then $(CYGPATH_W) 'server/txfeerate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/txfeerate.cpp'; fi`
 
 test_shcoind-test_wallet.o: server/test/test_wallet.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-test_wallet.o -MD -MP -MF $(DEPDIR)/test_shcoind-test_wallet.Tpo -c -o test_shcoind-test_wallet.o `test -f 'server/test/test_wallet.cpp' || echo '$(srcdir)/'`server/test/test_wallet.cpp
@@ -5448,20 +5461,6 @@ test_shcoind-wit_merkle.obj: server/wit_merkle.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/wit_merkle.cpp' object='test_shcoind-wit_merkle.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-wit_merkle.obj `if test -f 'server/wit_merkle.cpp'; then $(CYGPATH_W) 'server/wit_merkle.cpp'; else $(CYGPATH_W) '$(srcdir)/server/wit_merkle.cpp'; fi`
-
-test_shcoind-crypter.o: server/crypter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-crypter.o -MD -MP -MF $(DEPDIR)/test_shcoind-crypter.Tpo -c -o test_shcoind-crypter.o `test -f 'server/crypter.cpp' || echo '$(srcdir)/'`server/crypter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-crypter.Tpo $(DEPDIR)/test_shcoind-crypter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/crypter.cpp' object='test_shcoind-crypter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-crypter.o `test -f 'server/crypter.cpp' || echo '$(srcdir)/'`server/crypter.cpp
-
-test_shcoind-crypter.obj: server/crypter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-crypter.obj -MD -MP -MF $(DEPDIR)/test_shcoind-crypter.Tpo -c -o test_shcoind-crypter.obj `if test -f 'server/crypter.cpp'; then $(CYGPATH_W) 'server/crypter.cpp'; else $(CYGPATH_W) '$(srcdir)/server/crypter.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-crypter.Tpo $(DEPDIR)/test_shcoind-crypter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/crypter.cpp' object='test_shcoind-crypter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-crypter.obj `if test -f 'server/crypter.cpp'; then $(CYGPATH_W) 'server/crypter.cpp'; else $(CYGPATH_W) '$(srcdir)/server/crypter.cpp'; fi`
 
 test_shcoind-txidx.o: server/txidx.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-txidx.o -MD -MP -MF $(DEPDIR)/test_shcoind-txidx.Tpo -c -o test_shcoind-txidx.o `test -f 'server/txidx.cpp' || echo '$(srcdir)/'`server/txidx.cpp
