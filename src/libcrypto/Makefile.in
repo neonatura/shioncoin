@@ -260,9 +260,9 @@ am__objects_15 = libcrypto_a-dsa_ameth.$(OBJEXT) \
 am__objects_16 = libcrypto_a-md5.$(OBJEXT) \
 	libcrypto_a-md5_dgst.$(OBJEXT) libcrypto_a-md5_one.$(OBJEXT)
 am__objects_17 = libcrypto_a-sha_dgst.$(OBJEXT) \
-	libcrypto_a-sha1dgst.$(OBJEXT) sha1-x86_64.$(OBJEXT) \
-	libcrypto_a-sha_one.$(OBJEXT) libcrypto_a-sha1_one.$(OBJEXT) \
-	libcrypto_a-sha256.$(OBJEXT) libcrypto_a-sha512.$(OBJEXT)
+	libcrypto_a-sha1dgst.$(OBJEXT) libcrypto_a-sha_one.$(OBJEXT) \
+	libcrypto_a-sha1_one.$(OBJEXT) libcrypto_a-sha256.$(OBJEXT) \
+	libcrypto_a-sha512.$(OBJEXT)
 am__objects_18 = libcrypto_a-aes_cfb.$(OBJEXT) \
 	libcrypto_a-aes_ctr.$(OBJEXT) libcrypto_a-aes_ecb.$(OBJEXT) \
 	libcrypto_a-aes_ige.$(OBJEXT) libcrypto_a-aes_misc.$(OBJEXT) \
@@ -302,13 +302,13 @@ am__objects_22 = libcrypto_a-bn_add.$(OBJEXT) \
 	libcrypto_a-bn_shift.$(OBJEXT) libcrypto_a-bn_sqr.$(OBJEXT) \
 	libcrypto_a-bn_sqrt.$(OBJEXT) libcrypto_a-bn_word.$(OBJEXT)
 am__objects_23 = libcrypto_a-cversion.$(OBJEXT) \
-	libcrypto_a-cryptlib.$(OBJEXT) libcrypto_a-mem.$(OBJEXT) \
-	libcrypto_a-mem_dbg.$(OBJEXT) libcrypto_a-ex_data.$(OBJEXT) \
-	libcrypto_a-cpt_err.$(OBJEXT) libcrypto_a-ebcdic.$(OBJEXT) \
-	libcrypto_a-uid.$(OBJEXT) libcrypto_a-o_time.$(OBJEXT) \
-	libcrypto_a-o_str.$(OBJEXT) libcrypto_a-o_dir.$(OBJEXT) \
-	libcrypto_a-o_fips.$(OBJEXT) libcrypto_a-o_init.$(OBJEXT) \
-	libcrypto_a-fips_ers.$(OBJEXT) x86_64cpuid.$(OBJEXT) \
+	libcrypto_a-mem_clr.$(OBJEXT) libcrypto_a-cryptlib.$(OBJEXT) \
+	libcrypto_a-mem.$(OBJEXT) libcrypto_a-mem_dbg.$(OBJEXT) \
+	libcrypto_a-ex_data.$(OBJEXT) libcrypto_a-cpt_err.$(OBJEXT) \
+	libcrypto_a-ebcdic.$(OBJEXT) libcrypto_a-uid.$(OBJEXT) \
+	libcrypto_a-o_time.$(OBJEXT) libcrypto_a-o_str.$(OBJEXT) \
+	libcrypto_a-o_dir.$(OBJEXT) libcrypto_a-o_fips.$(OBJEXT) \
+	libcrypto_a-o_init.$(OBJEXT) libcrypto_a-fips_ers.$(OBJEXT) \
 	libcrypto_a-err.$(OBJEXT) libcrypto_a-err_all.$(OBJEXT) \
 	libcrypto_a-err_prn.$(OBJEXT) libcrypto_a-stack.$(OBJEXT) \
 	libcrypto_a-lhash.$(OBJEXT) libcrypto_a-lh_stats.$(OBJEXT) \
@@ -361,14 +361,6 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-CCASCOMPILE = $(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)
-LTCCASCOMPILE = $(LIBTOOL) $(AM_V_lt) $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=compile $(CCAS) $(AM_CCASFLAGS) \
-	$(CCASFLAGS)
-AM_V_CCAS = $(am__v_CCAS_@AM_V@)
-am__v_CCAS_ = $(am__v_CCAS_@AM_DEFAULT_V@)
-am__v_CCAS_0 = @echo "  CCAS    " $@;
-am__v_CCAS_1 = 
 SOURCES = $(libcrypto_a_SOURCES)
 DIST_SOURCES = $(libcrypto_a_SOURCES)
 am__can_run_installinfo = \
@@ -603,7 +595,8 @@ buffer_sources = \
 	$(SSL_DIR)/crypto/buffer/buf_err.c
 
 sha_sources = \
-	$(SSL_DIR)/crypto/sha/sha_dgst.c $(SSL_DIR)/crypto/sha/sha1dgst.c $(SSL_DIR)/crypto/sha/sha1-x86_64.s $(SSL_DIR)/crypto/sha/sha_one.c $(SSL_DIR)/crypto/sha/sha1_one.c $(SSL_DIR)/crypto/sha/sha256.c $(SSL_DIR)/crypto/sha/sha512.c 
+	$(SSL_DIR)/crypto/sha/sha_dgst.c $(SSL_DIR)/crypto/sha/sha1dgst.c \
+	$(SSL_DIR)/crypto/sha/sha_one.c $(SSL_DIR)/crypto/sha/sha1_one.c $(SSL_DIR)/crypto/sha/sha256.c $(SSL_DIR)/crypto/sha/sha512.c 
 
 aes_sources = \
 	$(SSL_DIR)/crypto/aes/aes_cfb.c \
@@ -953,7 +946,8 @@ pem_sources = \
 
 libcrypto_sources = \
 	$(SSL_DIR)/crypto/cversion.c \
-	$(SSL_DIR)/crypto/cryptlib.c $(SSL_DIR)/crypto/mem.c $(SSL_DIR)/crypto/mem_dbg.c $(SSL_DIR)/crypto/ex_data.c $(SSL_DIR)/crypto/cpt_err.c $(SSL_DIR)/crypto/ebcdic.c $(SSL_DIR)/crypto/uid.c $(SSL_DIR)/crypto/o_time.c $(SSL_DIR)/crypto/o_str.c $(SSL_DIR)/crypto/o_dir.c $(SSL_DIR)/crypto/o_fips.c $(SSL_DIR)/crypto/o_init.c $(SSL_DIR)/crypto/fips_ers.c $(SSL_DIR)/crypto/x86_64cpuid.s \
+	$(SSL_DIR)/crypto/mem_clr.c \
+	$(SSL_DIR)/crypto/cryptlib.c $(SSL_DIR)/crypto/mem.c $(SSL_DIR)/crypto/mem_dbg.c $(SSL_DIR)/crypto/ex_data.c $(SSL_DIR)/crypto/cpt_err.c $(SSL_DIR)/crypto/ebcdic.c $(SSL_DIR)/crypto/uid.c $(SSL_DIR)/crypto/o_time.c $(SSL_DIR)/crypto/o_str.c $(SSL_DIR)/crypto/o_dir.c $(SSL_DIR)/crypto/o_fips.c $(SSL_DIR)/crypto/o_init.c $(SSL_DIR)/crypto/fips_ers.c \
 	$(SSL_DIR)/crypto/err/err.c \
 	$(SSL_DIR)/crypto/err/err_all.c \
 	$(SSL_DIR)/crypto/err/err_prn.c \
@@ -1007,15 +1001,17 @@ libcrypto_a_CFLAGS = \
 	-I$(SSL_DIR)/crypto/modes \
 	-I$(SSL_DIR)/ \
 	-I$(SSL_DIR)/ssl \
-	-DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Wa,--noexecstack -DL_ENDIAN -DTERMIO -Wall -DOPENSSL_IA32_SSE2 \
+	-DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H \
+	-DL_ENDIAN -DTERMIO -Wall -DOPENSSL_IA32_SSE2 \
 	-DOPENSSL_NO_ENGINE -DOPENSSL_NO_DH \
 	-DOPENSSL_NO_WHIRLPOOL -DOPENSSL_NO_SEED -DOPENSSL_NO_EC2M \
-	-DOPENSSL_NO_ASN1_OLD -DOPENSSL_NO_CMS -DOPENSSL_NO_OCSP
+	-DOPENSSL_NO_ASN1_OLD -DOPENSSL_NO_CMS -DOPENSSL_NO_OCSP \
+	-DOPENSSL_NO_ASM
 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj .s
+.SUFFIXES: .c .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1025,9 +1021,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/libcrypto/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/libcrypto/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/libcrypto/Makefile
+	  $(AUTOMAKE) --foreign src/libcrypto/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -1259,6 +1255,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcrypto_a-md5_one.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcrypto_a-md_rand.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcrypto_a-mem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcrypto_a-mem_clr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcrypto_a-mem_dbg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcrypto_a-n_pkey.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcrypto_a-names.Po@am__quote@
@@ -1482,6 +1479,20 @@ libcrypto_a-cversion.obj: $(SSL_DIR)/crypto/cversion.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(SSL_DIR)/crypto/cversion.c' object='libcrypto_a-cversion.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcrypto_a_CFLAGS) $(CFLAGS) -c -o libcrypto_a-cversion.obj `if test -f '$(SSL_DIR)/crypto/cversion.c'; then $(CYGPATH_W) '$(SSL_DIR)/crypto/cversion.c'; else $(CYGPATH_W) '$(srcdir)/$(SSL_DIR)/crypto/cversion.c'; fi`
+
+libcrypto_a-mem_clr.o: $(SSL_DIR)/crypto/mem_clr.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcrypto_a_CFLAGS) $(CFLAGS) -MT libcrypto_a-mem_clr.o -MD -MP -MF $(DEPDIR)/libcrypto_a-mem_clr.Tpo -c -o libcrypto_a-mem_clr.o `test -f '$(SSL_DIR)/crypto/mem_clr.c' || echo '$(srcdir)/'`$(SSL_DIR)/crypto/mem_clr.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcrypto_a-mem_clr.Tpo $(DEPDIR)/libcrypto_a-mem_clr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(SSL_DIR)/crypto/mem_clr.c' object='libcrypto_a-mem_clr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcrypto_a_CFLAGS) $(CFLAGS) -c -o libcrypto_a-mem_clr.o `test -f '$(SSL_DIR)/crypto/mem_clr.c' || echo '$(srcdir)/'`$(SSL_DIR)/crypto/mem_clr.c
+
+libcrypto_a-mem_clr.obj: $(SSL_DIR)/crypto/mem_clr.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcrypto_a_CFLAGS) $(CFLAGS) -MT libcrypto_a-mem_clr.obj -MD -MP -MF $(DEPDIR)/libcrypto_a-mem_clr.Tpo -c -o libcrypto_a-mem_clr.obj `if test -f '$(SSL_DIR)/crypto/mem_clr.c'; then $(CYGPATH_W) '$(SSL_DIR)/crypto/mem_clr.c'; else $(CYGPATH_W) '$(srcdir)/$(SSL_DIR)/crypto/mem_clr.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcrypto_a-mem_clr.Tpo $(DEPDIR)/libcrypto_a-mem_clr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(SSL_DIR)/crypto/mem_clr.c' object='libcrypto_a-mem_clr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcrypto_a_CFLAGS) $(CFLAGS) -c -o libcrypto_a-mem_clr.obj `if test -f '$(SSL_DIR)/crypto/mem_clr.c'; then $(CYGPATH_W) '$(SSL_DIR)/crypto/mem_clr.c'; else $(CYGPATH_W) '$(srcdir)/$(SSL_DIR)/crypto/mem_clr.c'; fi`
 
 libcrypto_a-cryptlib.o: $(SSL_DIR)/crypto/cryptlib.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcrypto_a_CFLAGS) $(CFLAGS) -MT libcrypto_a-cryptlib.o -MD -MP -MF $(DEPDIR)/libcrypto_a-cryptlib.Tpo -c -o libcrypto_a-cryptlib.o `test -f '$(SSL_DIR)/crypto/cryptlib.c' || echo '$(srcdir)/'`$(SSL_DIR)/crypto/cryptlib.c
@@ -6872,27 +6883,6 @@ libcrypto_a-rmd_one.obj: $(SSL_DIR)/crypto/ripemd/rmd_one.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(SSL_DIR)/crypto/ripemd/rmd_one.c' object='libcrypto_a-rmd_one.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcrypto_a_CFLAGS) $(CFLAGS) -c -o libcrypto_a-rmd_one.obj `if test -f '$(SSL_DIR)/crypto/ripemd/rmd_one.c'; then $(CYGPATH_W) '$(SSL_DIR)/crypto/ripemd/rmd_one.c'; else $(CYGPATH_W) '$(srcdir)/$(SSL_DIR)/crypto/ripemd/rmd_one.c'; fi`
-
-.s.o:
-	$(AM_V_CCAS)$(CCASCOMPILE) -c -o $@ $<
-
-.s.obj:
-	$(AM_V_CCAS)$(CCASCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.s.lo:
-	$(AM_V_CCAS)$(LTCCASCOMPILE) -c -o $@ $<
-
-x86_64cpuid.o: $(SSL_DIR)/crypto/x86_64cpuid.s
-	$(AM_V_CCAS)$(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS) -c -o x86_64cpuid.o `test -f '$(SSL_DIR)/crypto/x86_64cpuid.s' || echo '$(srcdir)/'`$(SSL_DIR)/crypto/x86_64cpuid.s
-
-x86_64cpuid.obj: $(SSL_DIR)/crypto/x86_64cpuid.s
-	$(AM_V_CCAS)$(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS) -c -o x86_64cpuid.obj `if test -f '$(SSL_DIR)/crypto/x86_64cpuid.s'; then $(CYGPATH_W) '$(SSL_DIR)/crypto/x86_64cpuid.s'; else $(CYGPATH_W) '$(srcdir)/$(SSL_DIR)/crypto/x86_64cpuid.s'; fi`
-
-sha1-x86_64.o: $(SSL_DIR)/crypto/sha/sha1-x86_64.s
-	$(AM_V_CCAS)$(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS) -c -o sha1-x86_64.o `test -f '$(SSL_DIR)/crypto/sha/sha1-x86_64.s' || echo '$(srcdir)/'`$(SSL_DIR)/crypto/sha/sha1-x86_64.s
-
-sha1-x86_64.obj: $(SSL_DIR)/crypto/sha/sha1-x86_64.s
-	$(AM_V_CCAS)$(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS) -c -o sha1-x86_64.obj `if test -f '$(SSL_DIR)/crypto/sha/sha1-x86_64.s'; then $(CYGPATH_W) '$(SSL_DIR)/crypto/sha/sha1-x86_64.s'; else $(CYGPATH_W) '$(srcdir)/$(SSL_DIR)/crypto/sha/sha1-x86_64.s'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -63,7 +63,8 @@ buffer_sources = \
 	$(SSL_DIR)/crypto/buffer/buf_err.c
 
 sha_sources = \
-	$(SSL_DIR)/crypto/sha/sha_dgst.c $(SSL_DIR)/crypto/sha/sha1dgst.c $(SSL_DIR)/crypto/sha/sha1-x86_64.s $(SSL_DIR)/crypto/sha/sha_one.c $(SSL_DIR)/crypto/sha/sha1_one.c $(SSL_DIR)/crypto/sha/sha256.c $(SSL_DIR)/crypto/sha/sha512.c 
+	$(SSL_DIR)/crypto/sha/sha_dgst.c $(SSL_DIR)/crypto/sha/sha1dgst.c \
+	$(SSL_DIR)/crypto/sha/sha_one.c $(SSL_DIR)/crypto/sha/sha1_one.c $(SSL_DIR)/crypto/sha/sha256.c $(SSL_DIR)/crypto/sha/sha512.c 
 
 aes_sources = \
 	$(SSL_DIR)/crypto/aes/aes_cfb.c \
@@ -418,7 +419,8 @@ pem_sources = \
 
 libcrypto_sources = \
 	$(SSL_DIR)/crypto/cversion.c \
-	$(SSL_DIR)/crypto/cryptlib.c $(SSL_DIR)/crypto/mem.c $(SSL_DIR)/crypto/mem_dbg.c $(SSL_DIR)/crypto/ex_data.c $(SSL_DIR)/crypto/cpt_err.c $(SSL_DIR)/crypto/ebcdic.c $(SSL_DIR)/crypto/uid.c $(SSL_DIR)/crypto/o_time.c $(SSL_DIR)/crypto/o_str.c $(SSL_DIR)/crypto/o_dir.c $(SSL_DIR)/crypto/o_fips.c $(SSL_DIR)/crypto/o_init.c $(SSL_DIR)/crypto/fips_ers.c $(SSL_DIR)/crypto/x86_64cpuid.s \
+	$(SSL_DIR)/crypto/mem_clr.c \
+	$(SSL_DIR)/crypto/cryptlib.c $(SSL_DIR)/crypto/mem.c $(SSL_DIR)/crypto/mem_dbg.c $(SSL_DIR)/crypto/ex_data.c $(SSL_DIR)/crypto/cpt_err.c $(SSL_DIR)/crypto/ebcdic.c $(SSL_DIR)/crypto/uid.c $(SSL_DIR)/crypto/o_time.c $(SSL_DIR)/crypto/o_str.c $(SSL_DIR)/crypto/o_dir.c $(SSL_DIR)/crypto/o_fips.c $(SSL_DIR)/crypto/o_init.c $(SSL_DIR)/crypto/fips_ers.c \
 	$(SSL_DIR)/crypto/err/err.c \
 	$(SSL_DIR)/crypto/err/err_all.c \
 	$(SSL_DIR)/crypto/err/err_prn.c \
@@ -472,10 +474,12 @@ libcrypto_a_CFLAGS = \
 	-I$(SSL_DIR)/crypto/modes \
 	-I$(SSL_DIR)/ \
 	-I$(SSL_DIR)/ssl \
-	-DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Wa,--noexecstack -DL_ENDIAN -DTERMIO -Wall -DOPENSSL_IA32_SSE2 \
+	-DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H \
+	-DL_ENDIAN -DTERMIO -Wall -DOPENSSL_IA32_SSE2 \
 	-DOPENSSL_NO_ENGINE -DOPENSSL_NO_DH \
 	-DOPENSSL_NO_WHIRLPOOL -DOPENSSL_NO_SEED -DOPENSSL_NO_EC2M \
-	-DOPENSSL_NO_ASN1_OLD -DOPENSSL_NO_CMS -DOPENSSL_NO_OCSP
+	-DOPENSSL_NO_ASN1_OLD -DOPENSSL_NO_CMS -DOPENSSL_NO_OCSP \
+	-DOPENSSL_NO_ASM
 
 #-DMD5_ASM -DAES_ASM -DVPAES_ASM -DBSAES_ASM -DWHIRLPOOL_ASM -DGHASH_ASM
 #-DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m
