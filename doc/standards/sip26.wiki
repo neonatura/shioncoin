@@ -1,0 +1,36 @@
+<pre>
+  SIP: 26
+  Layer: Core
+  Title: Executable SEXE Class (ref SIP7)
+  Author: Brian Burrell <bburrell@neo-natura.com>
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip26.wiki
+  Status: Extensionable
+  Type: Standards Track
+  Created: 2018-12-15
+  License: PD
+</pre>
+== Abstract ==
+This SIP defines a new Executable Extended Transaction that is used in order to provide smart-contract capabilities.
+
+The executable extended transaction consists of publishing a SEXE class and sub-sequent calls to methods in that class. A persistent data storage mechanism is provided which is synchronized between all nodes. 
+
+== Motivation ==
+The executable extended transaction provides the capability to create programs which can define rules for a system of operations that deliver consistent results among all participants.
+
+== Examples ==
+One of the most popular examples of a smart-contract program is the Token asset. A token tracks an arbitrary metric that can be defined as having a interinsic value based of the intended purpose of it's use. 
+
+==Specification==
+The SEXE programming language is based off of the LUA scripting language. The libshare runtime suite is used in order to provide the development environment. 
+
+The executable extended transaction consists of the generation of a new SEXE class on the blockchain or calling a method from a published class.
+
+The SEXE class is provided a permanent data storage area in order to update variables based on the functions called. 
+
+The SEXE class can require a SHC coin payment in order to perform an operation. Class method calls that do not require a change to the permanent data storage area do not require a payment. The minimum fee for a class call which modifies the data storage area is 0.00001 SHC. 
+
+When a class calls is received by a node the basic integrity is validated. The actual execution of the call will only occur on a 'as needed' basis, in that, a user must specifically require the use of a SEXE class before any preceding operations are performed.
+
+== Copyright ==
+This document is placed in the public domain.

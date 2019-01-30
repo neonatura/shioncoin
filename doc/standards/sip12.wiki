@@ -1,0 +1,40 @@
+<pre>
+  SIP: 12
+  Layer: Core
+  Title: Dynamic Blockchain Parameters
+  Author: Brian Burrell <bburrell@neo-natura.com>
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/sip12.wiki
+  Status: Extensionable
+  Type: Standards Track
+  Created: 2018-12-15
+  License: PD
+</pre>
+
+==Abstract==
+
+This SIP defines a new extended transaction called a "parameter" that is attached to coinbase and normal fund transfer transactions. The structure defines a set of rules that are being proposed for the blockchain. 
+
+==Motivation==
+
+The "extended parameter transaction" provides the ability to dynamically change aspects of the blockchain based on a user concensus.
+
+==Specification==
+
+This SIP introduces two initial parameters; the "maximum block size" and the "minimum relay fee". 
+
+..
+
+== Examples ==
+
+
+== Future extensions ==
+
+== Footnotes ==
+
+<references />
+
+== Copyright ==
+
+This document is placed in the public domain.
+

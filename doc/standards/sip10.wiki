@@ -1,0 +1,73 @@
+<pre>
+  SIP: 10
+  Layer: Core
+  Title: Coin Address Alias (Extended Transaction)
+  Author: Brian Burrell < bburrell@neo-natura.com >
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip10.wiki
+  Status: Final
+  Type: Standard Track
+  Created: 2018-12-29
+  License: PD
+</pre>
+
+==Abstract==
+This document introduces the ability to associate a string based label which a data payload.
+
+==Motivation==
+The Context Extended Transaction provides the ability to create a definition for abstract contextually information. This information may be associated with a person, place, or time-frame. 
+
+
+The context name typically includes a colon-ized prefix (i.e. "url: http://domain.com") and the data content is typically in JSON format.
+
+==Specification==
+A context extended transaction is based on top of a standard sharecoin extended transaction structure.
+
+The context name is stored as a 160-bit hash digest of a label defined for it. In addition, a small summary title is stored. It is expected to know the name before-hand in order to retrieve the value associated with it.
+
+A new context is created using the OP_EXT_NEW opcode. A context is updated using the OP_EXT_UPDATE opcode. 
+
+The maximum size of the data payload is 4MB. 
+
+A context will expire after 2 years after it has been created or updated. 
+
+The name of the context is typically in a URI format indicating the group of information and a particular entity of that group. 
+
+The value of the context is typically in JSON and tends to use "common names" for variables in order to provide compatibility between applications. File formats containing gzip, bz1, rar, jpeg, zip, xz, shz, gif, png, and windows executable data is prohibited.
+
+=== Transaction Fee ===
+The transaction coin fee of creating or updating a context can be derived via the following formula where nSize is the size of the data payload and nHeight is the associated block height:
+<pre>
+{
+  double base = ((nHeight+1) / 10240) + 1;
+  double nRes = 5200 / base * COIN;
+  double nDif = 5000 /base * COIN;
+  int64 nFee = (int64)(nRes - nDif);
+  double nFact;
+
+  nFact = 4096 / (double)MIN(4096, MAX(32, nSize));
+  nFee = (int64)((double)nFee / nFact);
+  /* floor */
+  nFee /= 100000;
+  nFee *= 100000;
+  nFee = MAX(100000, nFee);
+  nFee = MIN(100000000000, nFee);
+  return (nFee / COIN);
+}
+</pre>
+
+A context is signed with "secp160r1" ECDSA using a private key derived from the content's name hash and a message composed of the data payload. This signature is provided for integrity purposes only.
+
+
+==Examples==
+A description of a geodetic location can be provided using the name format "geo:< lat >,< lon >" with a JSON payload consisting of the following variables:
+<pre>
+"name"     A common name of the location.
+"code"     A "place type" code (i.e. "AREA").
+"country"  The country code associated with this location.
+"summary"  A description of the location.
+</pre>
+
+===Copyright===
+This document is placed in the public domain.
+

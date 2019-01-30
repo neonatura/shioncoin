@@ -1,0 +1,58 @@
+<pre>
+  SIP: 31
+  Layer: Consensus (soft fork)
+  Title: BOLO Checkpoint on external blockchain
+  Author: Brian Burrell <bburrell@neo-natura.com>
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip31.wiki
+  Status: Proposed
+  Type: Standards Track
+  Created: 2018-11-26
+</pre>
+
+==Abstract==
+
+This SIP describes a method to establish a new dynamic checkpoint on the ShareCoin blockchain by creating a "notorized transaction" on an external blockchain. The external blockchain intended for use is litecoin.
+
+In other words, the "BOLO" system notorizes blocks on the ShareCoin blockchain by creating a special transaction on the Litecoin blockchain.
+
+==Motivation==
+
+A notorized transaction, or a transaction signed by independant users who participate in the ShareCoin ecosystem, provides a method to create a concensus about a particular blockchain and a means to declare it as the official branch. This is only possible if at least 11 participants are in agreement about the current blockchain hierarchy.
+
+The block utilized for a potential checkpoint concensus is the block associated with notorized transaction created by SIP30, and in turn adds an additional layer of security.
+
+==Specification==
+
+The transactions created on the external blockchain are associated with the following output script.
+
+"Bolo" Notorization Output Script:
+	OP_RETURN << OP_11 << OP_1 << OP_HASH160 << OP_HASH256 << <height> << OP_0
+
+The notorization script references the coin interface (literally Hash160("shc")) as the OP_HASH160. The OP_HASH256 is the hash of the SHC block that is being notarized. The height is a 4-byte "integer" of the block's height.
+
+The ShareCoin will only notorize blocks that have been established as checkpoints. Dynamic checkpoints are created on the ShareCoin blockchain by several nodes providing a multi-sig transaction verifying a validation matrix. This, in effect, provides three layers of security in order to establish the blockchain. Refer to SIP30 for more information.
+
+As mentioned, each time a validation matrix is notarized on the local (SHC) blockchain a dynamic checkpoint is created. This SIP implementation extends this by taking the block which contains the notary tx and publishing it to the litecoin blockchain for potential "bolo notarization" by active participants. Note that the litecoin notary tx references the ShareCoin validation notary tx's block, which in turn references the validation matrix tx's block.
+
+A bolo litecoin transaction requires that at least eleven (11) nodes are in agreement with the last established dynamic checkpoint. A noterized bolo transaction will over-ride a locally established dynamic checkpoint when the bolo transaction references the same height. A re-org below any single bolo established checkpoint will clear them all until another is encountered.
+
+As mentioned, potential notaries publish a "bolo proposal tx" on the litecoin block-chain. The first output contains a 0.00001 coin output value to themselves. A second output is a CScript ID of the redeem script with a zero coin value. The potential notary endures a 0.0001 tx fee to initiate the transaction, and therefore will spend a total of 0.00011 LTC for each proposal tx submitted.
+
+A tx which includes all potential notaries is submitted, with a lock time of 27 blocks, until at least eleven participants have provided a signature for the tx. The tx will fail after the lock time period if not enough signatures are gathered. A transaction cannot be commited to the blockchain until it's "lock time" has elapsed.
+
+A final notarized transaction consists of the described notary proposal outputs (which each contain 0.00001 ltc). When available notaries with eleven or more signatures has been gathered, the final transaction is commited with the original lock time and a "final sequence". A single output is the full redeem script with a zero coin value.
+
+When the final notarized transaction is commited to the external blockchain, a new dynamic checkpoint will be created on the sharecoin blockchain for the block height of the original SHC notary tx. The individual inputs comprise the tx fee in order to publish the transaction. For example, a transaction comprising of eleven notaries would generate a 0.00011 LTC paid fee.
+
+The external blockchain transaction is composed of a SIGHASH_ANYONECANPAY input type. This is done in order to allow for "signatures to be gathered" as nodes relay the notary transaction with more compiled inputs. The inputs are sorted in a manner so that the same transaction will be submitted regardless of origin node [where all nodes see the same information]. Non-signed inputs of participants are included until at least eleven signed inputs are aquired, and are marked with a incremental non-final sequence number based on the number of signatures aquired. All signed inputs will have a final sequence include as the SIGHASH_ANYONECANPAY input type disallows changing the input's sequence number once signed. Only active participants which have already commited a notary proposal on the external blockchain are considered for inclusion in the final notarized tx. 
+
+==Rationale==
+
+This BIP provides a supplemental layer of verification derived from the capabilities provided in SIP30; which itself derives from the verification capabilities provided in SIP20. This intentional "chained" design provides a robust method of verification and integrity.
+
+
+==Backwards Compatibility==
+
+The transactions described in this SIP are an optional implementation, and are expected to be available to the user as a configuration option which is disabled by default. This "notary participant" option, when enabled, will both generate the initial proposal transactions on the external blockchain and the sub-sequent signing process. No participation is required and none will be taken without the available funds in the litecoin service for the default (blank) account name.
+

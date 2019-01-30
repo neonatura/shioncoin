@@ -1,0 +1,26 @@
+<pre>
+  SIP: 24
+  Layer: Core
+  Title: Certified License
+  Author: Brian Burrell <bburrell@neo-natura.com>
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip24.wiki
+  Status: Final
+  Type: Standards Track
+  Created: 2019-01-26
+  License: PD
+</pre>
+
+==Abstract==
+
+This SIP defines a new transaction called a "License". A license is derived from an already exstablished certificate.
+
+==Specifications==
+A license contains a title of up to 135 characters, an coin address of the creator, and a parent chain certificate hash. A fee must be paid to generate the license if the certificate being derived specifies one. In addition to any certificate fee, a 0.0001 SHC transaction fee is applied.
+
+A license will include the geodetic location of the node which generated the transaction unless the node is configured otherwise.
+
+Licenses are used in order to indicate a usage of a certificate's context. For example, a software or audio license may be require to be attained before the program will run or be played.
+
+==Copyright==
+This document is placed in the public domain.

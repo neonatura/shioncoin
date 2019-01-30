@@ -1,0 +1,22 @@
+SIP0 ShareCoin Whitepaper
+SIP1 Extended Transactions 
+SIP2 Matrix (Extended Transaction)
+SIP3 Transaction Certification
+SIP4 Alternate Blockchain (Extended Transaction)
+SIP5 Certificate (Extended Transaction)
+SIP6 Coin Address Alias (Extended Transaction)
+SIP7 Executable (Extended Transaction)
+SIP8 Ident (Extended Transaction)
+SIP9 Channel (Extended Transaction)
+SIP10 Context (Extended Transaction)
+SIP11 Coin Exchange Offer (Extended Transaction)
+SIP12 Dynamic Blockchain Parameters
+SIP20 The Verification Matrix (ref SIP2) 
+SIP21 The Spring Matrix (ref SIP2, SIPx8)
+SIP22 Colored Alternate Blockchain (ref SIP4)
+SIP23 Certified Coin Transfer (ref SIP3, SIP8)
+SIP24 Certified License (ref SIP3, SIP5)
+SIP25 Licensed Asset (ref SIP3, SIP14)
+SIP26 Executable SEXE Class (ref SIP7)
+SIP27 Trust Channel (ref SIP9)
+SIP31 BOLO Checkpoint on external blockchain

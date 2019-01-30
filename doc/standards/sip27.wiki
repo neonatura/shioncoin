@@ -1,0 +1,86 @@
+<pre>
+  SIP: 27
+  Layer: Standard (soft fork)
+  Title: Trust Extended Transaction
+  Author: Brian Burrell (bburrell@neo-natura.com)
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip27.wiki
+  Status: Proposed
+  Type: Standards Track
+  Created: 2018-09-28
+  License: None
+</pre>
+
+==Abstract==
+
+This document specifies proposed changes to the ShareCoin Virtual Currency servic's transaction capabilities in order to provide temporary transfer of SHC coins, a SHC asset, or a SHC license. 
+
+==Copyright==
+
+This SIP is not licensed.
+
+==Motivation==
+
+Sharecoin implementation currently relies on committed transaction, and therefore does not inherently provide mechanics for dividend distribution of coins or limited time-period transfer of extended transactions.
+
+This document proposes a mechanism to temporarily hold coins, assets, and licenses. In adddition, held coins may be distributed to a destination coino address on a dividend basis.
+
+==Specification==
+
+The Trust structure is composed of the following;
+
+A "Trust Type" which is defined as "coin", "asset", or "license".
+
+A "Trust Coin Value" which records the total coin value to dispense to a destination address.
+
+A "Trust Expiration Date" which specifies the maximum life-time of the trust.
+
+A "Trust Dividend Value" which specifies a coin value that is distributed as a dividend.
+
+A "Trust Dividend Span" which specifies how often that the devidend is distributed.
+
+A "Trust Fee" whic specifies a on-eitme fee paid to the trustee based on the asociated certificate fee.
+
+=== Trust Channel ===
+
+The Trust Channel is embedded into a Channel Extended Transaction. The channel functions as a temporary holding platform for information.
+
+A trust is given a life-span determined by it's expiration time. the maximum life-span is 72 years. This life-span is used to base calculations on, and such a trust transaction is considered valid until all pending assets are liquidated or the trustee performs a trust remove tx operation.
+
+A trust may be canceled by the owner/trustee, at which point all remaining assets are transferred back to the sender's refund address, and any pending transactions not finalized become void.
+
+The sender assigns a refund coin address to the trust tx, and otherwise is not specifically identified as part of the contract.
+
+A trustee must be a pre-registered certificate coin address. it can be appointed to one-self or another entity. The trustee is paid an optional fee based on this certificate's fee.
+
+The benefactor may be the sender, trustee, or otherwise. the benefactor is represented by a single coin address.
+
+Creating a trust against a self-owned cert will cause instant activation. otherwise, the trustee must activate the trust by signing a multi-sig tx which in turn creates a set of non-finalized transactions that fulfill the agreement of the trust. The trustee is primarily reponsible for distributing these non-finalized transactions on the network.
+
+A trust tx that is not activated after 24 hours is considered void, and any transfer of assets to the trustee is reverted.
+
+A "coin" trust either holds currency until expiration and/or creates a set of transactions that sends up to <dividend-value> every <dividend-span> seconds until the entirety of the coin trust is dissolved.
+
+The "asset" and "license" trusts transfer control of an asset or license over to the trustee. upon expiration of the trust tx, control is transferred to the assigned benefactor.
+
+===Examples===
+
+An example of a trust is a "vault" which simply sends back coins that are sent to it after a given time-span.
+
+> shc cert.new "" "Vault Certificate"
+cert {
+	hash : <cert-hash>
+}
+> shc trust.vault "" <cert-hash> coin 1 172800 
+trust {
+	type : "coin",
+	value : 1,
+	expire : <two days>
+}
+
+==Compatibility==
+
+A Trust Channel transaction relies on the Channel Extended Transaction.
+
+All "half signed" multi-sig tx's pushed onto the network are relayed to all nodes.
+

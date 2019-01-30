@@ -1,0 +1,39 @@
+<pre>
+  SIP: 2
+  Layer: Core
+  Title: Matrix (Extended Transaction)
+  Author: Brian Burrell <bburrell@neo-natura.com>
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip2.wiki
+  Status: Final
+  Type: Standards Track
+  Created: 2018-12-29
+  License: PD
+</pre>
+
+==Abstract==
+
+This SIP defines a new structure called a "matrix" that is committed to blocks as an extended transaction.
+
+==Motivation==
+
+The matrix extended transaction is used to store a set of numbers computed with a arbitrary algorythm.
+
+==Implementation==
+
+The matrix extended transaction uses the core extended transaction structure with the addition of the following variables:
+<pre>
+nType (uint32)
+  The type of matrix.
+nHeight (uint32)
+  An associated block height.
+hRef (uint16)
+  Reserved.
+vData (uint32[3][3])
+  The payload contents of the matrix.
+</pre>
+
+== Copyright ==
+
+This document is placed in the public domain.
+

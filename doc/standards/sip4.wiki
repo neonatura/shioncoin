@@ -1,0 +1,76 @@
+<pre>
+  SIP: 4
+  Layer: Core
+  Title: Alternate Blockchain (Extended Transaction)
+  Author: Brian Burrell <bburrell@neo-natura.com>
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip4.wiki
+  Status: Final
+  Type: Standards Track
+  Created: 2018-12-29
+  License: PD
+</pre>
+
+==Abstract==
+
+This SIP defines a new transaction which is capable of tracking an alternate block-chain. 
+
+The alternate blockchain extended transaction stores the block header and the individual transactions associated.  
+
+==Motivation==
+
+By providing a method to track an anternate blockchain it becomes possible to create "colored" chains which can have independent value, purpose, and blockchain parameters.
+
+== Implementation ==
+
+The alternate blockchain extended transaction is built on top of the standard extended transaction structure. A 32-bit color code identifies each individual block-chain. 
+
+Each altchain transaction holds a block header and a set of transactions. 
+
+A standard block header structure is used:
+<pre>
+  unsigned int nFlag;
+
+  uint256 hashPrevBlock;
+
+  uint256 hashMerkleRoot;
+
+  unsigned int nTime;
+
+  unsigned int nBits;
+
+  unsigned int nNonce;
+</pre>
+
+Followed by one or more transactions with the following structure:
+<pre>
+unsigned int nFlag;
+std::vector<CTxIn> vin;
+std::vector<CTxOut> vout;
+unsigned int nLockTime;
+cbuff vchAux;
+</pre>
+
+The "vchAux" variable is a proprietary packet of information that is optionally defined and used by the developer of the particular alternate blockchain.
+
+Segregated witness operations are not supported for the alternate blockchain extended transaction.
+
+All coinbase transactions include a BIP39 input which encapsulates the block height of the block being generated.
+
+=== New Chain ===
+
+A new chain is created using the OP_EXT_NEW opcode.
+
+The coinbase consists of an "OP_RETURN 0x0" output script with an output coin value determined by the underlying "reward value" blockchain parameter provided.
+
+Parameters are appended after the "OP_RETURN 0x0" is the format "< mode > < value >" where < mode > is a 8-bit number representing the parameter and < value > consisting of a 8-bit code.
+
+The blockchain parameters provided are beyond the scope of this document.
+
+=== Update Chain ===
+
+Supplemental blocks are appended to the chain, for the particular color specified, using the OP_EXT_UPDATE opcode. 
+
+== Copyright ==
+
+This document is placed in the public domain.

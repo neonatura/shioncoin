@@ -1,0 +1,30 @@
+<pre>
+  SIP: 25
+  Layer: Core
+  Title: Certified Asset
+  Author: Brian Burrell <bburrell@neo-natura.com>
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip25.wiki
+  Status: Final
+  Type: Standards Track
+  Created: 2019-01-26
+  Asset: PD
+</pre>
+
+==Abstract==
+
+This SIP defines a new transaction called a "Asset". A asset is derived from an already established certificate.
+
+==Specifications==
+An asset contains a title of up to 135 characters, an coin address of the creator, a parent chain certificate hash, and a data payload. 
+
+Asset transaction initially cost around 8 SHC and goes down over time. 
+
+An asset will include the geodetic location of the node which generated the transaction unless the node is configured otherwise.
+
+Assets provide a method to attach auxiliary information to a certificate. The asset may itself be a reference (such as a barcode) or contain authority/proprietary information by itself. Up to 4095 characters may be used for the payload.
+
+An asset will expire when the underlying certificate expires (which is after 48 years).
+
+==Copyright==
+This document is placed in the public domain.
