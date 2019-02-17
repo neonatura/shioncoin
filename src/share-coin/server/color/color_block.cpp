@@ -385,7 +385,7 @@ COLORBlock* color_CreateNewBlock(uint160 hColor, CBlockIndex *pindexPrev, const 
 	pblock->vtx[0].vout[0].nValue = color_GetBlockValue(hColor, nHeight+1, nFees);
 
   /* define core header */
-  pblock->nVersion = 1;//core_ComputeBlockVersion(iface, pindexPrev);
+  pblock->nVersion = 4;//core_ComputeBlockVersion(iface, pindexPrev);
   pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
   pblock->UpdateTime(pindexPrev);
   pblock->nBits          = pblock->GetNextWorkRequired(pindexPrev);
@@ -484,7 +484,7 @@ COLORBlock *color_CreateGenesisBlock(uint160 hColor, const color_opt& opt)
   pblock->vtx.push_back(txNew);
 
   /* define core header */
-  pblock->nVersion = 1;
+  pblock->nVersion = 4;
   pblock->hashPrevBlock  = 0;
   pblock->nBits          = pblock->GetNextWorkRequired(NULL);
   pblock->UpdateTime(NULL);

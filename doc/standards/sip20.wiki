@@ -26,7 +26,7 @@ Every 27 blocks a "validation matrix" is required to be generated on the block-c
 
 The numeric information in the "validation matrix" is composed of a running hash split into 9 cells which is directly based on the preceeding block-chain. The validation matrix acts as a redundant security measure in order to ensure that the block-chain is viewed in a consistent manner between all nodes. Note that the validation matrix does not provide in itself anything more than an additional checksum mechanism to the existing block-chain. 
 
-In addition to providing a supplemental level of integrity to the block-chain in the form of a "redundant merkle hash", the verification matrix is also used to initiate a sequence of events that potentially lead to a new dynamic checkpoint being established. This is performed by a consensus vote led by active partipants (referred to as notaries) on the block-chain. 
+In addition to providing a supplemental level of integrity to the block-chain in the form of a "redundant merkle hash", the validation matrix is also used to initiate a sequence of events that potentially lead to a new dynamic checkpoint being established. This is performed by a consensus vote led by active partipants (referred to as notaries) on the block-chain. 
 
 Each node which generates a "validation matrix" becomes a candidate to become a "notary". When enough notaries are available the validation matrix which use a multi-sig output which contains the pubkeys from all participating notary nodes. 
 

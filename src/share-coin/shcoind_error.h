@@ -26,6 +26,10 @@
 #ifndef __SHCOIND_ERROR_H__
 #define __SHCOIND_ERROR_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* reserved */
 #define ERR_UNKNOWN -1
@@ -62,6 +66,10 @@ const char *error_str(int code);
 /* convert a posix system error (errno) into a local error code */
 int error_code(int err_no);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ndef __SHCOIND_ERROR_H__ */
 

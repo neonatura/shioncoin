@@ -132,10 +132,12 @@ bool CTxCreator::AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxF
     return (false);
   }
 
+	int64 nHoldFee = ((MIN_TX_FEE(iface) * 2) + MIN_RELAY_TX_FEE(iface));
+
   /* value left from previous extended transaction. */
   nTxValue = tx->vout[nTxOut].nValue;
-  nTxFee = MAX(0, MIN(nTxValue - MIN_TX_FEE(iface), nTxFee));
-  nTxFee = MAX(nTxFee, MIN_TX_FEE(iface));
+  nTxFee = MAX(0, MIN(nTxValue - nHoldFee, nTxFee));
+  nTxFee = MAX(nTxFee, nHoldFee);
   nValue = nTxValue - nTxFee;
 
   if (!MoneyRange(iface, nValue)) {

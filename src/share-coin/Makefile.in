@@ -178,11 +178,12 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	stratum/http/http.h stratum/stratum.c stratum/stratum_http.c \
 	stratum/stratum_message.c stratum/stratum_protocol.c \
 	stratum/stratum_user.c stratum/stratum_task.c \
-	stratum/stratum_sync.c stratum/http/http.c \
-	stratum/http/http_alias.c stratum/http/http_coin.c \
-	stratum/http/http_context.c stratum/http/http_fractal.c \
-	stratum/http/http_matrix.c stratum/http/http_pool.c \
-	server/txfeerate.cpp fractal/fractal.c fractal/fractal_bmp.c \
+	stratum/stratum_sync.c stratum/stratum_api.cpp \
+	stratum/http/http.c stratum/http/http_alias.c \
+	stratum/http/http_coin.c stratum/http/http_context.c \
+	stratum/http/http_fractal.c stratum/http/http_matrix.c \
+	stratum/http/http_pool.c server/txfeerate.cpp \
+	fractal/fractal.c fractal/fractal_bmp.c \
 	server/test/test_wallet.cpp server/test/test_wallet.h \
 	server/test/test_block.cpp server/test/test_block.h \
 	server/test/test_pool.cpp server/test/test_pool.h \
@@ -274,10 +275,11 @@ am__objects_5 = shcoind-stratum.$(OBJEXT) \
 	shcoind-stratum_message.$(OBJEXT) \
 	shcoind-stratum_protocol.$(OBJEXT) \
 	shcoind-stratum_user.$(OBJEXT) shcoind-stratum_task.$(OBJEXT) \
-	shcoind-stratum_sync.$(OBJEXT) shcoind-http.$(OBJEXT) \
-	shcoind-http_alias.$(OBJEXT) shcoind-http_coin.$(OBJEXT) \
-	shcoind-http_context.$(OBJEXT) shcoind-http_fractal.$(OBJEXT) \
-	shcoind-http_matrix.$(OBJEXT) shcoind-http_pool.$(OBJEXT)
+	shcoind-stratum_sync.$(OBJEXT) shcoind-stratum_api.$(OBJEXT) \
+	shcoind-http.$(OBJEXT) shcoind-http_alias.$(OBJEXT) \
+	shcoind-http_coin.$(OBJEXT) shcoind-http_context.$(OBJEXT) \
+	shcoind-http_fractal.$(OBJEXT) shcoind-http_matrix.$(OBJEXT) \
+	shcoind-http_pool.$(OBJEXT)
 am__objects_6 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	shcoind-txfeerate.$(OBJEXT) shcoind-fractal.$(OBJEXT) \
 	shcoind-fractal_bmp.$(OBJEXT) shcoind-test_wallet.$(OBJEXT) \
@@ -383,7 +385,8 @@ am__objects_11 = test_shcoind-stratum.$(OBJEXT) \
 	test_shcoind-stratum_user.$(OBJEXT) \
 	test_shcoind-stratum_task.$(OBJEXT) \
 	test_shcoind-stratum_sync.$(OBJEXT) \
-	test_shcoind-http.$(OBJEXT) test_shcoind-http_alias.$(OBJEXT) \
+	test_shcoind-stratum_api.$(OBJEXT) test_shcoind-http.$(OBJEXT) \
+	test_shcoind-http_alias.$(OBJEXT) \
 	test_shcoind-http_coin.$(OBJEXT) \
 	test_shcoind-http_context.$(OBJEXT) \
 	test_shcoind-http_fractal.$(OBJEXT) \
@@ -971,6 +974,7 @@ stratum_sources = \
 	stratum/stratum_user.c \
 	stratum/stratum_task.c \
 	stratum/stratum_sync.c \
+	stratum/stratum_api.cpp \
 	stratum/http/http.c \
 	stratum/http/http_alias.c \
 	stratum/http/http_coin.c \
@@ -1469,6 +1473,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-shcoind_svc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-spring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_api.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_http.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_message.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_protocol.Po@am__quote@
@@ -1610,6 +1615,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-shcoind_signal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-spring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_api.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_http.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_message.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_protocol.Po@am__quote@
@@ -3138,6 +3144,20 @@ shcoind-color_proto.obj: $(srcdir)/proto/color_proto.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-color_proto.obj `if test -f '$(srcdir)/proto/color_proto.cpp'; then $(CYGPATH_W) '$(srcdir)/proto/color_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/proto/color_proto.cpp'; fi`
 
+shcoind-stratum_api.o: stratum/stratum_api.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-stratum_api.o -MD -MP -MF $(DEPDIR)/shcoind-stratum_api.Tpo -c -o shcoind-stratum_api.o `test -f 'stratum/stratum_api.cpp' || echo '$(srcdir)/'`stratum/stratum_api.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-stratum_api.Tpo $(DEPDIR)/shcoind-stratum_api.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api.cpp' object='shcoind-stratum_api.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-stratum_api.o `test -f 'stratum/stratum_api.cpp' || echo '$(srcdir)/'`stratum/stratum_api.cpp
+
+shcoind-stratum_api.obj: stratum/stratum_api.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-stratum_api.obj -MD -MP -MF $(DEPDIR)/shcoind-stratum_api.Tpo -c -o shcoind-stratum_api.obj `if test -f 'stratum/stratum_api.cpp'; then $(CYGPATH_W) 'stratum/stratum_api.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-stratum_api.Tpo $(DEPDIR)/shcoind-stratum_api.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api.cpp' object='shcoind-stratum_api.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-stratum_api.obj `if test -f 'stratum/stratum_api.cpp'; then $(CYGPATH_W) 'stratum/stratum_api.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api.cpp'; fi`
+
 shcoind-txfeerate.o: server/txfeerate.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-txfeerate.o -MD -MP -MF $(DEPDIR)/shcoind-txfeerate.Tpo -c -o shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-txfeerate.Tpo $(DEPDIR)/shcoind-txfeerate.Po
@@ -4495,6 +4515,20 @@ test_shcoind-color_proto.obj: $(srcdir)/proto/color_proto.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(srcdir)/proto/color_proto.cpp' object='test_shcoind-color_proto.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-color_proto.obj `if test -f '$(srcdir)/proto/color_proto.cpp'; then $(CYGPATH_W) '$(srcdir)/proto/color_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/proto/color_proto.cpp'; fi`
+
+test_shcoind-stratum_api.o: stratum/stratum_api.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-stratum_api.o -MD -MP -MF $(DEPDIR)/test_shcoind-stratum_api.Tpo -c -o test_shcoind-stratum_api.o `test -f 'stratum/stratum_api.cpp' || echo '$(srcdir)/'`stratum/stratum_api.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-stratum_api.Tpo $(DEPDIR)/test_shcoind-stratum_api.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api.cpp' object='test_shcoind-stratum_api.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-stratum_api.o `test -f 'stratum/stratum_api.cpp' || echo '$(srcdir)/'`stratum/stratum_api.cpp
+
+test_shcoind-stratum_api.obj: stratum/stratum_api.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-stratum_api.obj -MD -MP -MF $(DEPDIR)/test_shcoind-stratum_api.Tpo -c -o test_shcoind-stratum_api.obj `if test -f 'stratum/stratum_api.cpp'; then $(CYGPATH_W) 'stratum/stratum_api.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-stratum_api.Tpo $(DEPDIR)/test_shcoind-stratum_api.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api.cpp' object='test_shcoind-stratum_api.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-stratum_api.obj `if test -f 'stratum/stratum_api.cpp'; then $(CYGPATH_W) 'stratum/stratum_api.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api.cpp'; fi`
 
 test_shcoind-txfeerate.o: server/txfeerate.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-txfeerate.o -MD -MP -MF $(DEPDIR)/test_shcoind-txfeerate.Tpo -c -o test_shcoind-txfeerate.o `test -f 'server/txfeerate.cpp' || echo '$(srcdir)/'`server/txfeerate.cpp

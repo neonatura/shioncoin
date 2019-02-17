@@ -194,6 +194,7 @@ typedef struct task_attr_t
 #include "stratum_message.h"
 #include "stratum_task.h"
 #include "stratum_http.h"
+#include "stratum_api.h"
 #include "http/http.h"
 
 

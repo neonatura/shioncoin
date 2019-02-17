@@ -189,6 +189,7 @@ CScript RemoveAliasScriptPrefix(const CScript& scriptIn)
 
 int64 GetAliasOpFee(CIface *iface, int nHeight) 
 {
+	if (GetCoinIndex(iface) == TESTNET_COIN_IFACE) return ((int64)COIN);
   double base = ((nHeight+1) / 10240) + 1;
   double nRes = 5000 / base * COIN;
   double nDif = 4750 /base * COIN;
@@ -649,19 +650,15 @@ int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalle
   scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_ALIAS) << OP_HASH160 << aliasHash << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
 
-#if 0
-  // send transaction
-  string strError = wallet->SendMoney(scriptPubKey, nFee, wtx, false);
-  if (strError != "") {
-    error(ifaceIndex, strError.c_str());
-    return (SHERR_INVAL);
-  }
-#endif
-  if (!s_wtx.AddOutput(scriptPubKey, nFee))
-    return (false);
+  if (!s_wtx.AddOutput(scriptPubKey, nFee)) {
+    error(ERR_INVAL, "AddOutput: %s", s_wtx.GetError().c_str());
+		return (ERR_INVAL);
+	}
 
-  if (!s_wtx.Send())
-    return (false);
+  if (!s_wtx.Send()) {
+    error(ERR_CANCELED, "Send: %s", s_wtx.GetError().c_str());
+		return (ERR_CANCELED);
+	}
 
   wtx = s_wtx;
   Debug("(%s) SENT:ALIASNEW : title=%s, aliashash=%s, tx=%s\n", 

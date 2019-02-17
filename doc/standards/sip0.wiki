@@ -37,7 +37,5 @@ An "Exec Transaction" is used in order to publish and run methods against SEXE c
 
 The "Offer Transaction" is used in order to transfer coins between one virtual currency block-chain and another. For example, an individual offers to exchange two colored alt-coins for one SHC coin. Another individual can then accept the offer with an exchange between block-chains ultimately occuring. The offer transaction utilizes a OP_CHECKALTPROOF opcode as part of the transaction signature in order to ensure that the exchange occurs safely.
 
-The "Channel Transaction" provides a method to dispense dividends over a period or freeze funds for a period of time. An example of a channel transaction is a vault operation whereby funds are returned to the originating sender after so many days.
-
 Lightning network facilities for ShareCoin are provide by a Lightning Node service available at https://github.com/neonatura/sharecoin-lnd.
 

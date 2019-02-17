@@ -2,7 +2,7 @@
 /*
  * @copyright
  *
- *  Copyright 2014 Neo Natura
+ *  Copyright 2015 Neo Natura
  *
  *  This file is part of the Share Library.
  *  (https://github.com/neonatura/share)
@@ -23,28 +23,21 @@
  *  @endcopyright
  */  
 
-#ifndef __STRATUM__PROTOCOL_H__
-#define __STRATUM__PROTOCOL_H__
+#ifndef __STRATUM__API_H__
+#define __STRATUM__API_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+extern void shjson_AddItemToArray(shjson_t *array, shjson_t *item);
 
-int stratum_request_message(user_t *user, shjson_t *json);
-
-int stratum_send_template(user_t *user, int clean);
-
-int stratum_set_difficulty(user_t *user, int diff);
-
-void set_stratum_error(shjson_t *reply, int code, char *str);
-
-int stratum_validate_submit(user_t *user, shjson_t *json);
+shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson_t *params, shjson_t *auth);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __STRATUM__PROTOCOL_H__ */
+#endif /* __STRATUM__API_H__ */
 

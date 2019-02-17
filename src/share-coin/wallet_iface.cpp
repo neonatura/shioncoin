@@ -97,6 +97,9 @@ static bool valid_pkey_hash(string strAccount, uint256 in_pkey)
   int ifaceIndex;
   int valid;
 
+	if (in_pkey == 0)
+		return (false);
+
   valid = 0;
   for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
     wallet = GetWallet(ifaceIndex);
@@ -995,6 +998,12 @@ const char *json_getaddressinfo(int ifaceIndex, const char *addr_hash, const cha
   CWallet *wallet = GetWallet(ifaceIndex);
   string strAddr(addr_hash);
   Object result;
+	uint256 in_pkey = 0;
+
+	in_pkey.SetHex(pkey_str);
+	if (in_pkey == 0) {
+		throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified.");
+	}
 
   try {
     CCoinAddr address(strAddr);
@@ -1005,14 +1014,12 @@ const char *json_getaddressinfo(int ifaceIndex, const char *addr_hash, const cha
     }
 
     if (pkey_str && strlen(pkey_str) > 1) {
-      uint256 in_pkey = 0;
       uint256 acc_pkey;
 
       if (!address.GetKeyID(keyID)) {
         throw JSONRPCError(STERR_ACCESS, "Address does not refer to a key.");
       }
 
-      in_pkey.SetHex(pkey_str);
       acc_pkey = get_private_key_hash(wallet, keyID);
       if (acc_pkey != in_pkey) {
         throw JSONRPCError(STERR_ACCESS, "Invalid private key hash specified.");

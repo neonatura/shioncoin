@@ -56,7 +56,7 @@ static int emc2_init(CIface *iface, void *_unused_)
 	iface->BIP16Height = 1; /* always enabled */
 	/* v2.0 block (height in coinbase) */
 	iface->BIP30Height = 1; /* always enabled */
-	iface->BIP34Height = 1; /* always enabled */
+	iface->BIP34Height = 1500000;
 	/* OP_CHECLOCKTIMEVERIFY */
 	iface->BIP65Height = 1; /* always enabled */
 	/* strict DER signature */

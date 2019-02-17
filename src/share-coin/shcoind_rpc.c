@@ -343,6 +343,30 @@ void rpc_term(void)
   unet_unbind(UNET_RPC);
 }
 
+unsigned char *hd_master_secret(void)
+{
+	static unsigned char raw_key[64];
+	static const char *host = "127.0.0.1";
+	shkey_t *key;
+	unsigned char *raw;
+	shec_t *ec;
+
+	key = get_rpc_dat_password(host);
+	if (!key)
+		return (NULL);
+
+	memset(raw_key, 0, sizeof(raw_key));
+
+	ec = shec_init(SHALG_ECDSA256K);
+	raw = (unsigned char *)key + sizeof(uint32_t);
+	(void)shec_priv_gen(ec, raw, sizeof(shkey_t) - sizeof(uint32_t));
+	shhex_bin(ec->priv, raw_key, sizeof(raw_key));
+	shkey_free(&key);
+	shec_free(&ec);
+
+	return (raw_key);
+}
+
 #ifdef __cplusplus
 }
 #endif

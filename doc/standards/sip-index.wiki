@@ -11,7 +11,7 @@ SIP9 Channel (Extended Transaction)
 SIP10 Context (Extended Transaction)
 SIP11 Coin Exchange Offer (Extended Transaction)
 SIP12 Dynamic Blockchain Parameters
-SIP20 The Verification Matrix (ref SIP2) 
+SIP20 The Validation Matrix (ref SIP2) 
 SIP21 The Spring Matrix (ref SIP2, SIPx8)
 SIP22 Colored Alternate Blockchain (ref SIP4)
 SIP23 Certified Coin Transfer (ref SIP3, SIP8)

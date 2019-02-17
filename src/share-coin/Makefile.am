@@ -65,6 +65,7 @@ stratum_sources = \
 	stratum/stratum_user.c \
 	stratum/stratum_task.c \
 	stratum/stratum_sync.c \
+	stratum/stratum_api.cpp \
 	stratum/http/http.c \
 	stratum/http/http_alias.c \
 	stratum/http/http_coin.c \

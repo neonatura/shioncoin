@@ -31,6 +31,7 @@
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include "wallet.h"
 #include "context.h"
+#include "txcreator.h"
 
 using namespace std;
 using namespace json_spirit;
@@ -255,6 +256,7 @@ CScript RemoveContextScriptPrefix(const CScript& scriptIn)
 
 int64 GetContextOpFee(CIface *iface, int nHeight, int nSize) 
 {
+	if (GetCoinIndex(iface) == TESTNET_COIN_IFACE) return ((int64)COIN);
   double base = ((nHeight+1) / 10240) + 1;
   double nRes = 5200 / base * COIN;
   double nDif = 5000 /base * COIN;
@@ -910,6 +912,7 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
+  string strExtAccount = "@" + strAccount;
   CContext *ctx;
 	int err;
 
@@ -945,17 +948,11 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
 
   if (wallet->mapWallet.count(wtxInHash) == 0)
     return (SHERR_REMOTE);
-
-/* DEBUG: TODO: ensure is same account */
-
-
   CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
 
-  wtx.SetNull();
-  wtx.strFromAccount = strAccount; /* originating account for payment */
-
   /* embed ctx content into transaction */
-  ctx = wtx.CreateContext();
+	CTxCreator s_wtx(wallet, strAccount);
+  ctx = s_wtx.CreateContext();
   if (!ctx) {
     error(SHERR_INVAL, "init_ctx_tx: error initializing context transaction.");
     return (SHERR_INVAL);
@@ -984,26 +981,25 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
 
   uint160 hContext = ctx->GetHash();
 
-
-  CScript scriptPubKey;
-  scriptPubKey << OP_EXT_UPDATE << CScript::EncodeOP_N(OP_CONTEXT) << OP_HASH160 << hContext << OP_2DROP;
-
-  string strExtAccount = "@" + strAccount;
   CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
   CScript destPubKey;
   destPubKey.SetDestination(extAddr.Get());
+
+  CScript scriptPubKey;
+  scriptPubKey << OP_EXT_UPDATE << CScript::EncodeOP_N(OP_CONTEXT) << OP_HASH160 << hContext << OP_2DROP;
   scriptPubKey += destPubKey;
+	if (!s_wtx.AddExtTx(&wtxIn, scriptPubKey))
+    return (SHERR_INVAL);
 
-  vector<pair<CScript, int64> > vecSend;
-  if (!SendMoneyWithExtTx(iface, strAccount, wtxIn, wtx, scriptPubKey, vecSend)) {
+	/* commit transaction. */
+	if (!s_wtx.Send())
     return (SHERR_CANCELED);
-  }
 
+	wtx = (CWalletTx)s_wtx;
   Debug("SENT:CONTEXTUPDATE : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), wtx.GetHash().GetHex().c_str());
 
-  if (GetCoinIndex(iface) == SHC_COIN_IFACE) {
+  if (GetCoinIndex(iface) == SHC_COIN_IFACE)
     share_geo_save(ctx, strName);
-  }
 
   return (0);
 }

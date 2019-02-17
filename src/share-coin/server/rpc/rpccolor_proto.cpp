@@ -323,8 +323,7 @@ Value rpc_alt_color(CIface *iface, const Array& params, bool fStratum)
 	return ret;
 }
 
-static double print_rpc_difficulty(CBigNum val)
-{
+double print_rpc_difficulty(CBigNum val)
 {
 	unsigned int nBits = val.GetCompact();
 	int nShift = (nBits >> 24) & 0xff;
@@ -344,8 +343,6 @@ static double print_rpc_difficulty(CBigNum val)
 	}
 
 	return dDiff;
-}
-
 }
 
 Value rpc_alt_info(CIface *iface, const Array& params, bool fStratum) 

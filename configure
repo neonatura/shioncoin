@@ -12114,9 +12114,9 @@ CC="$lt_save_CC"
 
 
 
-version_patch=2
+version_patch=3
 
-version_info=3:2:0
+version_info=3:2:1
 
 
 ac_config_files="$ac_config_files doc/NEWS"

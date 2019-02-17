@@ -1768,13 +1768,17 @@ bool CBlock::trust(int deg, const char *msg, ...)
     va_end(arg_ptr);
   }
 
-  sprintf(errbuf, "TRUST %s%d", (deg >= 0) ? "+" : "", deg);
+  sprintf(errbuf, "(%s) TRUST %s%d", 
+			iface->name, (deg >= 0) ? "+" : "", deg);
   if (*msgbuf)
     sprintf(errbuf + strlen(errbuf), " (%s)", msgbuf);
+	if (originPeer)
+    sprintf(errbuf + strlen(errbuf), " (%s)", 
+				originPeer->addr.ToString().c_str());
+	Debug("%s", errbuf);
 
   if (deg > 0) {
     if (originPeer) {
-//      unet_log(ifaceIndex, errbuf); 
       if (originPeer->nMisbehavior > deg)
         originPeer->nMisbehavior -= deg;
     }
@@ -1784,8 +1788,6 @@ bool CBlock::trust(int deg, const char *msg, ...)
   if (originPeer) {
 		if (deg < 0)
 			originPeer->Misbehaving(-deg);
-		Debug("TRUST[%s]: %s",
-				originPeer->addr.ToString().c_str(), ToString().c_str());
 	}
 
   return (false);

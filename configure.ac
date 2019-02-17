@@ -20,9 +20,9 @@ AM_CONDITIONAL([KMOD_DIR], [test -f /lib/modules/`uname -r`/build])
 
 LT_INIT
 
-version_patch=2
+version_patch=3
 AC_SUBST(version_patch)
-version_info=3:2:0
+version_info=3:2:1
 AC_SUBST(version_info)
 
 AC_CONFIG_FILES([doc/NEWS])

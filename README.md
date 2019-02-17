@@ -41,7 +41,7 @@ Additional examples including commiting address alias names onto the block-chain
  
 The shcoind SHC coin server recalcultes the block difficulty rate every block using the Kimoto Gravity Well algorythm. The target duration for blocks is one minute.
 
-A maximum of 1 Billion SHC coins will be generated. The reward life-time is expected to continue for around 40 years (~ 2055).  
+A maximum of half a billion (500,000,000) SHC coins will be generated. The reward life-time is expected to continue for around 40 years (~ 2055).  
 
 The SHC network requires 1 confirmation per transaction.
 
@@ -53,30 +53,23 @@ The SHC network block matures after 60 confirmations.
 
 64-bit Cent-OS: Add '--libdir=/usr/local/lib64' as configure command-line option
 
-Building the share library:
+Building the share-coin programs:
 <i><small><pre>
-  git clone https://github.com/neonatura/share libshare
-  cd libshare
+  git clone https://github.com/neonatura/share-coin
+  cd share-coin
+	autoreconf -fvi
   ./configure
   make
   make install
 </pre></small></i>
 
-Building the share-coin programs:
-<i><small><pre>
-  git clone https://github.com/neonatura/share-coin
-  cd share-coin
-  ./configure --with-libshare=../libshare
-  make
-  make install
-</pre></small></i>
-
 The binaries can be found under src/share-coin as "shc" and "shcoind". Performing a 'make install' will install these programs into the bin and sbin directories respectively. The "shc" client program must be ran on the same machine as the "shcoind" daemon. 
-
 When installed on a unix-like systems that supports the traditional /etc/init.d/rc.d/ hierarchy a 'shcoind' daemon will be registered with the system to load upon startup as the root user. 
 Note: The client utility programs "shc" must be ran as the same user as the 'shcoind' daemon.
 
 The shcoind daemon and client programs store data in the "/var/lib/share/blockchain/" directory on linux and the "%APPDATA%\share\blockchain\" directory on windows. These programs will not [automatically] attempt to read the contents of the traditional currency hierarchy (i.e. "~/.shc/") used by many other coins. Commands are provided in order to import or export in either a legacy and/or optimized manner for the entire block-chain, wallet transactions, and network peer addresses. No RPC access is permitted except via the local machine and only with the automatically generated rpc credentials (see "rpc.dat" file). 
+
+Run the "shc --prompt" for a textual UI interactive environment.
 
 <h3>Features</h3>
 
@@ -92,7 +85,7 @@ The stratum status web-page will display a "verification fractal" which can be c
 <h4>Fast and affordable transaction fees.</h4>
 Share Coin has a 60-second block difficulty and has a smaller transaction fee than typical coin services in order to ensure sending transactions is possible for small and large fund transfers alike. 
 
-A 4mb allowance size for each blocks ensures that thousands of transactions can be stored in each block. The Share Coin has been developed with Channel Transaction frame-work, similar to the lightning network, that allows for a series of transaction to be performed "off chain".
+A 4mb allowance size for each blocks ensures that thousands of transactions can be stored in each block. 
 
 <h4>Coin Address Alias</h4>
 Create aliases for coin addresses and store them on the global block-chain. This provides the ability for other users to directly reference your own established name without the need to remember a lengthy coin address.
@@ -202,13 +195,8 @@ function init(farg)
 end
 ```
 
-<h4>Off-chain Channel</h4>
-Frame-work has been provided to allow for off-chain channel transactions. Off-chain transactions are a series of transactions which are established between two peers.
-
-The channel mechanism utilizes a HDKey set in order to generate a multi-sig transactions without having to exchange the end-result public keys destinations.
-
 <h4>Coin Exchange Offers</h4>
-Frame-work has been provided to allow for a set of transaction to be performed which exchange a set of coins from one virtual currency to another.
+A de-centralized exchange is provided in order to swap "color alt-chain coins" with SHC coins.
 
 
 
@@ -293,39 +281,3 @@ You can optionally install the shcoind.exe program as a service:
 Note: The "shcoind.exe" must run as the same user when running the "shc.exe" utility program in order to communicate.
 
 
-<h3>Stratum Protocol Template</h3>
-
-<br>Command: mining.ping
-<br>Description: Verify or measure server response time.
-<br>Example Request: {"method":"mining.ping","id":1,"params":[]}
-<br>Example Response: {"id":1,"error":null,"result":null}
-<br>
-<br>Command: mining.shares
-<br>
-<br>Command: mining.get_transactions
-<br>
-<br>Command: mining.info
-<br>
-<br>Command: mining.authorize
-<br>
-<br>Command: mining.submit
-<br>
-<br>Command: mining.subscribe
-<br>
-<br>Command: block.info[mode,hash]
-<br>Description: Obtain block and transaction info from a block hash.
-<br>
-<br>Command: account.info[account,pkey]
-<br>Description: Obtain account credentials by name and account key.
-<br>
-<br>Command: account.create[label]
-<br>
-<br>Command: account.transactions[amount,pkey,duration]
-<br>
-<br>Command: account.address[hash]
-<br>
-<br>Command: account.secret[addr,pkey]
-<br>
-<br>Command: account.import[account,priv addr]
-<br>
-<br>Command: account.transfer[account,pkey,addr,amount]

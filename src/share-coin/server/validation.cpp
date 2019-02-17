@@ -163,8 +163,12 @@ bool ContextualCheckBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		}
 		if (tx.GetVersion() >= 2) {
 			/* tx v2 lock/sequence test */
-			if (!CheckSequenceLocks(iface, tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
-				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [seq].", nHeight));
+			if (!CheckSequenceLocks(iface, tx, STANDARD_LOCKTIME_VERIFY_FLAGS)) {
+				if (pblock->ifaceIndex != EMC2_COIN_IFACE) {
+					return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [seq].", nHeight));
+				} 
+				Debug("(emc2) AcceptBlock: block contains a non-final transaction at height %u [seq].", nHeight);
+			}
 		}
   }
 

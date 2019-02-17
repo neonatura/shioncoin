@@ -735,7 +735,6 @@ int stratum_request_message(user_t *user, shjson_t *json)
   timing_init(method, &ts);
 
   if (!(user->flags & USER_RPC)) {
-
     if (0 == strcmp(method, "mining.ping")) {
       reply = shjson_init(NULL);
       shjson_null_add(reply, "error");
@@ -1174,8 +1173,18 @@ int stratum_request_message(user_t *user, shjson_t *json)
     }
   #endif
 
-  } /* !USER_RPC */
 
+		if (0 == strncmp(method, "api.", 4)) {
+			shjson_t *reply = stratum_request_api(ifaceIndex, user, method,
+					shjson_obj(json, "params"), shjson_obj(json, "auth"));
+			if (!reply)
+				return (ERR_INVAL);
+			stratum_send_message(user, reply);
+      shjson_free(&reply);
+			return (0);
+		}
+
+  } /* !USER_RPC */
 
   {
     static shbuf_t *buff;
