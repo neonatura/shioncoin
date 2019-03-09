@@ -115,7 +115,13 @@ class LimitedString
 
 // These functions dispatch to one or all registered wallets
 
-extern CBlockIndex *testnet_GetLastCheckpoint();
+CBlockIndex *testnet_GetLastCheckpoint()
+{
+	CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
+		return (NULL);
+	return (wallet->checkpoints->GetLastCheckpoint());
+}
 
 
 // get the wallet transaction with the given hash (if it exists)
@@ -651,21 +657,17 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     if (pindex)
       pindex = pindex->pnext;
     int nLimit = 500;
-//fprintf(stderr, "DEBUG: getblocks %d to %s limit %d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(0,20).c_str(), nLimit);
     for (; pindex; pindex = pindex->pnext)
     {
       if (pindex->GetBlockHash() == hashStop)
       {
-//fprintf(stderr, "DEBUG:  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(0,20).c_str());
         break;
       }
       pfrom->PushInventory(CInv(ifaceIndex, MSG_BLOCK, pindex->GetBlockHash()));
-//fprintf(stderr, "DEBUG: testnet_ProcessMessage: PushBlock height %d\n", pindex->nHeight);
       if (--nLimit <= 0)
       {
         // When this block is requested, we'll send an inv that'll make them
         // getblocks the next batch of inventory.
-//fprintf(stderr, "DEBUG:  getblocks stopping at limit %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(0,20).c_str());
         pfrom->hashContinue = pindex->GetBlockHash();
         break;
       }

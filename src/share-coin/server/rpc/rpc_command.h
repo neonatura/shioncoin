@@ -131,6 +131,7 @@ Value rpc_wallet_info(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_keyremove(CIface *iface, const Array& params, bool fStratum);
+Value rpc_wallet_fee(CIface *iface, const Array& params, bool fStratum);
 
 
 

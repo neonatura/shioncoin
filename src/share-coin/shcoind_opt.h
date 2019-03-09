@@ -60,6 +60,7 @@ extern "C" {
 #define OPT_LTC_BACKUP_RESTORE "ltc-backup-restore"
 #define OPT_BLOCK_SIZE "block-size"
 #define OPT_MIN_FEE "min-fee"
+#define OPT_BECH32 "bech32"
 
 /* not used */
 #define OPT_FMAP_IDLE "fmap-idle"

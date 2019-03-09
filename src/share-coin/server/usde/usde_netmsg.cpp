@@ -69,8 +69,13 @@ extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
 
 // These functions dispatch to one or all registered wallets
 
-extern CBlockIndex *usde_GetLastCheckpoint();
-
+CBlockIndex *usde_GetLastCheckpoint()
+{
+	CWallet *wallet = GetWallet(USDE_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
+		return (NULL);
+	return (wallet->checkpoints->GetLastCheckpoint());
+}
 
 // get the wallet transaction with the given hash (if it exists)
 bool static GetTransaction(const uint256& hashTx, CWalletTx& wtx)

@@ -33,6 +33,7 @@
 #include "txmempool.h"
 #include "coin.h"
 #include "wallet.h"
+#include "bolo/bolo_validation03.h"
 
 using namespace std;
 
@@ -1836,9 +1837,9 @@ std::string CBlockHeader::ToString()
   return (write_string(Value(ToValue()), false));
 }
 
-std::string CBlock::ToString()
+std::string CBlock::ToString(bool fVerbose)
 {
-  return (write_string(Value(ToValue()), false));
+  return (write_string(Value(ToValue(fVerbose)), false));
 }
 
 static inline string ToValue_date_format(time_t t)
@@ -1876,6 +1877,7 @@ Object CTransactionCore::ToValue(int ifaceIndex)
 
 Object CTransaction::ToValue(int ifaceIndex)
 {
+  CIface *iface = GetCoinByIndex(ifaceIndex);
   Object obj = CTransactionCore::ToValue(ifaceIndex);
 	int flags = GetFlags();
 
@@ -1896,7 +1898,11 @@ Object CTransaction::ToValue(int ifaceIndex)
     } else {
       in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
       in.push_back(Pair("vout", (boost::int64_t)txin.prevout.n));
-      in.push_back(Pair("scriptSig", txin.scriptSig.ToString()));
+
+			Object sig;
+			sig.push_back(Pair("asm", txin.scriptSig.ToString()));
+			sig.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()))); 
+      in.push_back(Pair("scriptSig", sig));
     }   
 
     /* segwit */
@@ -1923,9 +1929,15 @@ Object CTransaction::ToValue(int ifaceIndex)
     Object out;
     out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
     out.push_back(Pair("n", (boost::int64_t)i));
-    out.push_back(Pair("scriptpubkey", txout.scriptPubKey.ToString().c_str()));
+
+		Object scriptSig;
+		scriptSig.push_back(Pair("asm", txout.scriptPubKey.ToString()));
+		scriptSig.push_back(Pair("hex", HexStr(txout.scriptPubKey.begin(), txout.scriptPubKey.end()))); 
+		out.push_back(Pair("scriptSig", scriptSig));
+
     if (i < vOuts.size() && !vOuts[i].IsNull())
       out.push_back(Pair("spent-tx", vOuts[i].GetHex()));
+
     ScriptPubKeyToJSON(ifaceIndex, txout.scriptPubKey, out);
 
     obj_vout.push_back(out);
@@ -1986,6 +1998,10 @@ Object CTransaction::ToValue(int ifaceIndex)
 		}
 	}
 
+	CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION(iface));
+	ssTx << *this;
+	obj.push_back(Pair("hex", HexStr(ssTx.begin(), ssTx.end())));
+
   return (obj);
 }
 
@@ -2031,12 +2047,13 @@ Object CBlockHeader::ToValue()
 
     if (pindex->pnext)
       obj.push_back(Pair("nextblockhash", pindex->pnext->GetBlockHash().GetHex()));
+		obj.push_back(Pair("mediantime", (boost::int64_t)pindex->GetMedianTimePast()));
   }
 
   return obj;
 } 
 
-Object CBlock::ToValue()
+Object CBlock::ToValue(bool fVerbose)
 {
   Object obj = CBlockHeader::ToValue();
 
@@ -2044,9 +2061,15 @@ Object CBlock::ToValue()
   obj.push_back(Pair("weight", (int)GetBlockWeight()));
 
   Array txs;
-  BOOST_FOREACH(const CTransaction&tx, vtx)
-    txs.push_back(tx.GetHash().GetHex());
-  obj.push_back(Pair("tx", txs));
+	if (!fVerbose) {
+		BOOST_FOREACH(const CTransaction&tx, vtx)
+			txs.push_back(tx.GetHash().GetHex());
+		obj.push_back(Pair("tx", txs));
+	} else {
+		BOOST_FOREACH(CTransaction&tx, vtx)
+			txs.push_back(tx.ToValue(ifaceIndex));
+		obj.push_back(Pair("tx", txs));
+	}
 
   return (obj);
 }
@@ -2985,6 +3008,10 @@ bool core_DisconnectBlock(CBlockIndex* pindex, CBlock *pblock)
 
   if (!iface || !iface->enabled)
     return error(SHERR_INVAL, "coin interface not enabled.");
+
+	/* SIP31 (BOLO) */
+	bolo_disconnectblock_master(pindex, pblock);
+	bolo_disconnectblock_slave(pindex, pblock);
 
 	pindex->nStatus &= ~BLOCK_HAVE_DATA;
   Debug("DisconnectBlock[%s]: disconnect block '%s' (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), (int)pindex->nHeight);

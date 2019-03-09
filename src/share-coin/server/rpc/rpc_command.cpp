@@ -47,6 +47,7 @@ using namespace std;
 #include "rpc_command.h"
 #include "rpccert_proto.h"
 #include "stratum/stratum.h"
+#include "bolo/bolo_validation03.h"
 
 #include <boost/assign/list_of.hpp>
 
@@ -397,11 +398,35 @@ Value rpc_block_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("blockversion",  (int)iface->block_ver));
 
   obj.push_back(Pair("blocks",        (int)GetBestHeight(iface)));
+
+	if (wallet->checkpoints) {
+		const uint256& hash = wallet->checkpoints->GetNotorizedBlockHash();
+		const int height = wallet->checkpoints->GetNotorizedBlockHeight();
+		if (hash != 0)
+			obj.push_back(Pair("checkpointhash", hash.GetHex()));
+		if (height != 0)
+			obj.push_back(Pair("checkpoint", height));
+	}
+
 	if (wallet->pindexBestHeader) {
 		obj.push_back(Pair("headers", wallet->pindexBestHeader->nHeight));
 	}
 
   obj.push_back(Pair("difficulty",    (double)GetDifficulty(ifaceIndex)));
+
+	if (bolo_IsSlaveIface(iface)) {
+		const uint256& hash = bolo_CHECKPOINT_HASH;
+		const uint256& tx_hash = bolo_CHECKPOINT_TXID;
+		const int height = bolo_CHECKPOINT_HEIGHT;
+
+		if (height != 0) {
+			obj.push_back(Pair("notarized", height));
+			if (hash != 0)
+				obj.push_back(Pair("notarizedhash", hash.GetHex()));
+			if (tx_hash != 0)
+				obj.push_back(Pair("notarizedtxid", tx_hash.GetHex()));
+		}
+	} 
 
   CTxMemPool *pool = GetTxMemPool(iface);
   obj.push_back(Pair("pooledtx",      (uint64_t)pool->size()));
@@ -416,12 +441,6 @@ Value rpc_block_info(CIface *iface, const Array& params, bool fStratum)
 
   obj.push_back(Pair("errors",        GetWarnings(ifaceIndex, "statusbar")));
 
-	if (pindexBest) {
-		CBlock *block = GetBlockByHash(iface, pindexBest->GetBlockHash());
-		int nTotal = block->GetTotalBlocksEstimate();
-		delete block;
-		obj.push_back(Pair("checkpoint", nTotal));
-	}
 
   return obj;
 }
@@ -551,10 +570,15 @@ Value rpc_block_get(CIface *iface, const Array& params, bool fStratum)
 {
   blkidx_t *blockIndex;
   int ifaceIndex = GetCoinIndex(iface);
+	int verb;
 
-  if (fHelp || params.size() != 1) {
+  if (fHelp || params.size() == 0) {
     throw runtime_error("block.get <hash>\nReturns details of a block with the given block-hash.");
   }
+
+	verb = 1;
+	if (params.size() > 1)
+		verb = params[1].get_int();
 
   blockIndex = GetBlockTable(ifaceIndex);
   if (!blockIndex)
@@ -575,7 +599,18 @@ Value rpc_block_get(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(SHERR_NOENT, "block-chain");
   }
 
-  Object ret = block->ToValue();
+	if (verb == 0) {
+		/* serialize */
+		CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION(iface));
+		ssBlock << *block;
+		string strHex = HexStr(ssBlock.begin(), ssBlock.end());
+
+		delete block;
+		return (strHex);
+	}
+
+	bool fVerb = (verb == 2);
+  Object ret = block->ToValue(fVerb);
 
   ret.push_back(Pair("confirmations", 
         GetBlockDepthInMainChain(iface, block->GetHash())));
@@ -859,9 +894,12 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
 {
+  CWallet *pwalletMain = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+
   if (fStratum)
     throw runtime_error("unsupported operation");
-  CWallet *pwalletMain = GetWallet(iface);
+
   if (fHelp || params.size() != 2)
     throw runtime_error(
         "msg.sign <coin-addr> <message>\n"
@@ -872,7 +910,7 @@ Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
   string strAddress = params[0].get_str();
   string strMessage = params[1].get_str();
 
-  CCoinAddr addr(strAddress);
+  CCoinAddr addr(ifaceIndex, strAddress);
   if (!addr.IsValid())
     throw JSONRPCError(-3, "Invalid address");
 
@@ -906,8 +944,11 @@ Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_msg_verify(CIface *iface, const Array& params, bool fStratum)
 {
+  int ifaceIndex = GetCoinIndex(iface);
+
   if (fStratum)
     throw runtime_error("unsupported operation");
+
   if (fHelp || params.size() != 3)
     throw runtime_error(
         "msg.verify <coin-address> <signature> <message>\n"
@@ -917,7 +958,7 @@ Value rpc_msg_verify(CIface *iface, const Array& params, bool fStratum)
   string strSign     = params[1].get_str();
   string strMessage  = params[2].get_str();
 
-  CCoinAddr addr(strAddress);
+  CCoinAddr addr(ifaceIndex, strAddress);
   if (!addr.IsValid())
     throw JSONRPCError(-3, "Invalid address");
 
@@ -1854,7 +1895,7 @@ Value rpc_addmultisigaddress(CIface *iface, const Array& params, bool fStratum)
         const std::string& ks = keys[i].get_str();
 
         // Case 1: coin address and we have full public key:
-        CCoinAddr address(ks);
+        CCoinAddr address(ifaceIndex, ks);
         if (address.IsValid())
         {
             CKeyID keyID;

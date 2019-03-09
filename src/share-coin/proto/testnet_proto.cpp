@@ -60,24 +60,24 @@ static int testnet_init(CIface *iface, void *_unused_)
 	/* strict DER signature */
 	iface->BIP66Height = 1;
 
-  iface->nRuleChangeActivationThreshold = 9072;
-  iface->nMinerConfirmationWindow = 12096;
+	/* 75% of 1209 blocks. */ 
+	iface->nRuleChangeActivationThreshold = 907;
+	iface->nMinerConfirmationWindow = 1209;
 
+	/* ACTIVE: BIP9 */
 	iface->vDeployments[DEPLOYMENT_TESTDUMMY].bit = 28;
-	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nStartTime = 1524960000; /* 04/29/18 */
-	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nTimeout = 1530230400; /* 06/29/18 */ 
+	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nStartTime = 1546300800; /* 01/01/19 */
+	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nTimeout = 1577836800; /* 01/01/20 */
 
-	/* BIP68, BIP112, and BIP113 */
+	/* ACTIVE: BIP68, BIP112, and BIP113 */
 	iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
-	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1543622400; /* 12/01/2018 UTC */
-	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1544745600; /* 12/14/2018 UTC */
+	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1546300800; /* 01/01/19 */
+	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1577836800; /* 01/01/20 */
 
-	/* BIP141, BIP143, and BIP147 */
+	/* ACTIVE: BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
 	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1546300800; /* 01/01/19 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1577836800; /* 01/01/20 */
-
-
 
   shc_RegisterRPCOp(TESTNET_COIN_IFACE);
 
@@ -85,6 +85,7 @@ static int testnet_init(CIface *iface, void *_unused_)
   color_RegisterRPCOp(TESTNET_COIN_IFACE);
 
   testnetWallet = new TESTNETWallet();
+	testnetWallet->checkpoints = new CCheckpoints(TESTNET_COIN_IFACE);
   SetWallet(TESTNET_COIN_IFACE, testnetWallet);
 
 
@@ -192,17 +193,15 @@ static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
 	string strAccount("");
 
   if (!ret_key.IsValid()) {
-    GetAccountAddress(wallet, strAccount, false);
-
-		ret_key = wallet->GenerateNewKey(true);
-    if (!ret_key.IsValid()) {
-	    ret_key = GetAccountPubKey(wallet, strAccount);
-    } else {
+		ret_key = GetAccountPubKey(wallet, strAccount, false);
+    if (!ret_key.IsValid()) { /* fallback. */
+			ret_key = wallet->GenerateNewKey(true);
 			wallet->SetAddressBookName(ret_key.GetID(), strAccount);
-
     }
+
+		/* debug */
 		CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
-		Debug("(testnet) GetMainAccountPubKey: using '%s' for mining address.",
+		Debug("(testnet) getmainaccountpubkey: using '%s' for mining address.",
 				addr.ToString().c_str()); 
 
     /* mining pool fees */
@@ -211,24 +210,6 @@ static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
     /* cpu miner */
     string strSystemAccount("system");
     GetAccountAddress(wallet, strSystemAccount, false);
-	}
-
-	/* check if this pubkey has been used in coinbase. */
-	CScript scriptPubKey;
-	bool bKeyUsed = false;
-	scriptPubKey << ret_key << OP_CHECKSIG;
-	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
-			it != wallet->mapWallet.end(); ++it) {
-		const CWalletTx& wtx = (*it).second;
-		if (!wtx.IsCoinBase())
-			continue;
-		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-			if (txout.scriptPubKey == scriptPubKey)
-				bKeyUsed = true;
-	}
-	if (bKeyUsed) {
-		/* create new pubkey */
-		ret_key = GetAccountPubKey(wallet, strAccount, true);
 	}
 
   return (ret_key);

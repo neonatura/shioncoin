@@ -80,7 +80,7 @@ class CAlias : public CIdent
 
     void FillReference(SHAlias *ref);
 
-    bool GetCoinAddr(CCoinAddr& addrRet);
+    bool GetCoinAddr(int ifaceIndex, CCoinAddr& addrRet);
 
     void SetCoinAddr(CCoinAddr& addr);
 

@@ -563,9 +563,14 @@ const RPCOp BLOCK_FREE = {
   "Deallocate cached resources used to map the block-chain."
 };
 const RPCOp BLOCK_GET = {
-  &rpc_block_get, 1, {RPC_STRING},
-  "Syntax: <block-hash>\n"
+  &rpc_block_get, 1, {RPC_STRING, RPC_INT},
+  "Syntax: <block-hash> [<verbosity>]\n"
   "Returns details of a block for the specified block hash."
+	"\n"
+	"The verbosity is a level of 0 to 2.\n"
+	"      0  Hex of serialized block.\n"
+	"      1  JSON block with txid hashes. (default)\n"
+	"      2  JSON block with full transactions."
 };
 const RPCOp BLOCK_HASH = {
   &rpc_block_hash, 1, {RPC_INT64},
@@ -683,6 +688,11 @@ const RPCOp TX_GETRAW = {
   "If verbose is non-zero, returns an Object\n"
   "with information about <txid>."
 };
+const RPCOp TX_SENDRAW = {
+  &rpc_sendrawtransaction, 1, {RPC_STRING, RPC_BOOL},
+  "Syntax: <hex> [<highfee>=false]\n"
+	"Commit a hex-encoded transaction to the network."
+};
 const RPCOp TX_LIST = {
   &rpc_tx_list, 1, {RPC_ACCOUNT, RPC_INT64, RPC_INT64},
   "Syntax: <account> [<count>=10] [<from>=0]\n"
@@ -706,9 +716,10 @@ const RPCOp WALLET_ADDR = {
   "Returns the current hash address for receiving payments to this account."
 }; 
 const RPCOp WALLET_WITADDR = {
-  &rpc_wallet_witaddr, 1, {RPC_STRING},
-  "Syntax: <coin address>\n"
-  "Returns a witness program which references the coin address specified."
+  &rpc_wallet_witaddr, 1, {RPC_STRING, RPC_STRING},
+  "Syntax: <coin address> [<address type>]\n"
+  "Returns a witness program which references the coin address specified.\n"
+	"The optional type is either \"p2sh-segwit\" or \"bech32\"."
 }; 
 const RPCOp WALLET_LISTADDR = {
   &rpc_wallet_addrlist, 1, {RPC_ACCOUNT},
@@ -726,11 +737,20 @@ const RPCOp WALLET_EXPORT = {
   "Syntax: <path>\n"
   "Export the coin wallet to the specified path in JSON format."
 }; 
+#if 0 
 const RPCOp WALLET_EXPORTDAT = {
   &rpc_wallet_exportdat, 1, {RPC_STRING},
   "Syntax: <path>\n"
   "Export the coin wallet to the specified path (dir or file)."
 }; 
+#endif
+
+const RPCOp WALLET_FEE = {
+  &rpc_wallet_fee, 0, {RPC_INT, RPC_STRING},
+  "wallet.fee [<depth>=2] [\"CONSERVATIVE\"|\"ECONOMICAL\"]\n"
+  "Returns an estimated fee for the given depth and fee mode."
+}; 
+
 const RPCOp WALLET_GET = {
   &rpc_wallet_get, 1, {RPC_STRING},
   "wallet.get <coin address>\n"
@@ -805,9 +825,10 @@ const RPCOp WALLET_MULTISEND = {
   "Note: Coin amounts are double-precision floating point numbers."
 };
 const RPCOp WALLET_NEW = {
-  &rpc_wallet_new, 1, {RPC_ACCOUNT},
-  "Syntax: <account>\n"
-  "Returns a new address for receiving payments to the specified account."
+  &rpc_wallet_new, 1, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> [type]\n"
+  "Returns a new address for receiving payments to the specified account.\n"
+	"The type is either \"legacy\", \"p2sh-segwit\", or \"bech32\"."
 };
 const RPCOp WALLET_DERIVE = {
   &rpc_wallet_derive, 2, {RPC_ACCOUNT, RPC_STRING},
@@ -1025,6 +1046,9 @@ void RegisterRPCOpDefaults(int ifaceIndex)
     RegisterRPCOp(ifaceIndex, "tx.purge", TX_PURGE);
   }
 
+  RegisterRPCOp(ifaceIndex, "tx.sendraw", TX_SENDRAW);
+  RegisterRPCAlias(ifaceIndex, "sendrawtransaction", TX_SENDRAW);
+
   RegisterRPCOp(ifaceIndex, "tx.validate", TX_VALIDATE);
 
   RegisterRPCOp(ifaceIndex, "wallet.addr", WALLET_ADDR);
@@ -1032,7 +1056,11 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "wallet.listaddr", WALLET_LISTADDR);
   RegisterRPCOp(ifaceIndex, "wallet.balance", WALLET_BALANCE);
   RegisterRPCOp(ifaceIndex, "wallet.export", WALLET_EXPORT);
-  RegisterRPCOp(ifaceIndex, "wallet.exportdat", WALLET_EXPORTDAT);
+//  RegisterRPCOp(ifaceIndex, "wallet.exportdat", WALLET_EXPORTDAT);
+
+	RegisterRPCOp(ifaceIndex, "wallet.fee", WALLET_FEE);
+  RegisterRPCAlias(ifaceIndex, "estimatesmartfee", WALLET_FEE);
+
   RegisterRPCOp(ifaceIndex, "wallet.get", WALLET_GET);
 
 //  RegisterRPCOp(ifaceIndex, "wallet.info", WALLET_INFO);
@@ -1188,7 +1216,12 @@ static void RPCConvertParam(CIface *iface, RPCOp *op, int arg_idx, Array& param)
 
   switch (op->arg[arg_idx]) {
     case RPC_INT:
-      RPCConvertTo<int>(str, param[arg_idx]);
+			if (str.substr(0, 1) == "t")
+				param[arg_idx] = 1;
+			else if (str.substr(0, 1) == "f")
+				param[arg_idx] = 0;
+			else
+				RPCConvertTo<int>(str, param[arg_idx]);
       break;
     case RPC_INT64:
       RPCConvertTo<boost::int64_t>(str, param[arg_idx]);
@@ -1460,8 +1493,7 @@ int ExecuteRPC(int ifaceIndex, shjson_t *json, shbuf_t *buff)
     shbuf_catstr(buff, (char *)json.c_str());
     return (0);
   } catch (std::exception& e) {
-    /* .. */
-//fprintf(stderr, "DEBUG: ExecuteRPC: EXCEPTION: %s\n", e.what()); 
+		Debug("ExecuteRpc: exception: %s", e.what());
   }
   
   return (SHERR_INVAL);

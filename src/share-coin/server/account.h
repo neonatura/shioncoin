@@ -35,71 +35,15 @@
 #include "account.h"
 
 
+/* use segwit program, if available. */
+#define ACCADDRF_WITNESS (1 << 0)
+/* derived via hdkey, if available. */
+#define ACCADDRF_DERIVE (1 << 1)
+/* always the same address returned */
+#define ACCADDRF_STATIC (1 << 2)
+/* use extended account */
+#define ACCADDRF_STATIC (1 << 2)
 
-
-/* address has been previously used. */
-#define ACCADDRF_USED (1 << 0)
-/* new address rotates in based on whether it has been used. */
-#define ACCADDRF_DYNAMIC (1 << 1)
-
-
-class CAccountAddr
-{
-	public:
-		cbuff vchPubKey;
-		unsigned int nIndex;
-		unsigned int nFlag;
-		int64_t nCreateTime;
-		int64_t nAccessTime;
-
-		CAccountAddr() { SetNull(); }
-
-		CAccountAddr(CPubKey vchPubKeyIn, int nTypeIn)
-		{ 
-			SetNull(); 
-			vchPubKey = vchPubKeyIn.Raw();
-		}
-
-		IMPLEMENT_SERIALIZE(
-			READWRITE(vchPubKey);
-			READWRITE(nIndex);
-			READWRITE(nFlag);
-			READWRITE(nCreateTime);
-		)
-
-		void SetNull() 
-		{ 
-			vchPubKey.clear();
-			nIndex = 0;
-			nFlag = 0;
-			nCreateTime = 0;
-			nAccessTime = 0;
-		}
-
-		bool IsNull() const { 
-			return (vchPubKey.size() == 0);
-		}
-
-		friend bool operator==(const CAccountAddr& a, const CAccountAddr& b)
-		{
-			return (
-					a.vchPubKey == b.vchPubKey
-					);
-		}
-
-		time_t GetAccessTime()
-		{
-			if (nAccessTime == 0)
-				return (GetCreateTime());
-			return ((time_t)nAccessTime);
-		}
-
-		time_t GetCreateTime()
-		{
-			return ((time_t)nCreateTime);
-		}
-
-};
 
 class CAccountCache
 {
@@ -107,11 +51,9 @@ class CAccountCache
 		CAccount account;
 		uint256 hChain;
 		string strAccount;
-		CAccountAddr vAddr[MAX_ACCADDR];
+		CCoinAddr vAddr[MAX_ACCADDR];
 
 		mutable CWallet *wallet;
-
-		vector<uint256> vInvalidTx;
 
 		CAccountCache(CWallet *walletIn) { 
 			SetNull(); 
@@ -138,8 +80,10 @@ class CAccountCache
 				READWRITE(account);
 				READWRITE(hChain);
 				READWRITE(strAccount);
+#if 0
 				for (unsigned int i = 0; i < MAX_ACCADDR; i++)
 					READWRITE(vAddr[i]);
+#endif
 		)
 
 		void SetNull() 
@@ -164,6 +108,7 @@ class CAccountCache
 		}
 
 
+#if 0
 		bool GetFlags(int type)
 		{
 			return (vAddr[type].nFlag);
@@ -178,22 +123,26 @@ class CAccountCache
 		{
 			vAddr[type].nFlag &= ~flag;
 		}
+#endif
+
+
+		bool IsAddrUsed(const CCoinAddr& vchPubKey);
 
 		bool IsAddrUsed(const CPubKey& vchPubKey);
 
-		CPubKey GetStaticAddr(int type);
+		CCoinAddr GetStaticAddr(int type);
 
-		CPubKey GetDynamicAddr(int type);
+		CCoinAddr GetDynamicAddr(int type);
 
-		CPubKey GetDefaultAddr();
+		CCoinAddr GetDefaultAddr();
 
-		CPubKey GetAddr(int type);
+		CCoinAddr GetAddr(int type);
 
-		void AddAddr(CPubKey pubkey, int type);
+		void AddAddr(CCoinAddr pubkey, int type);
 
-		CPubKey CreateNewAddr(int type);
+		CCoinAddr CreateNewAddr(int type);
 
-		CPubKey CreateAddr(int type);
+		CCoinAddr CreateAddr(int type);
 
 };
 

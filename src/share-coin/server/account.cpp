@@ -37,15 +37,27 @@
 #include "account.h"
 
 
-static const char *_pubkey_tag_table[] = {
+static const char *_pubkey_tag_table[MAX_ACCADDR] = {
 	"recieve",
 	"change",
 	"exec",
 	"hdkey",
 	"segwit",
 	"ext",
-	"mine"
+	"notary"
 };
+
+static int _account_address_flags[MAX_ACCADDR] = {
+	ACCADDRF_WITNESS | ACCADDRF_DERIVE, /* Recv */
+	ACCADDRF_WITNESS | ACCADDRF_DERIVE, /* Change */
+	ACCADDRF_STATIC | ACCADDRF_DERIVE, /* Exec */
+	ACCADDRF_STATIC, /* HDKey (master) */
+	ACCADDRF_WITNESS, /* SegWit (Recv) */
+	ACCADDRF_DERIVE, /* Ext */
+	ACCADDRF_STATIC, /* Notary */
+};
+#define IS_ACCOUNT(type, flag) \
+	(_account_address_flags[(type)] & (flag))
 
 
 static const char *GetPubKeyTag(int type)
@@ -57,83 +69,141 @@ static const char *GetPubKeyTag(int type)
 	return (_pubkey_tag_table[type]);
 }
 
-CPubKey CAccountCache::CreateAddr(int type)
+CCoinAddr CAccountCache::CreateAddr(int type)
 {
+	CCoinAddr addr(wallet->ifaceIndex, CNoDestination());
+
+	if (!wallet)
+		return (addr);
+
 	CPubKey pubkey;
-
-	if (!wallet)
-		return (CPubKey());
-
 	wallet->GetMergedPubKey(strAccount, GetPubKeyTag(type), pubkey);
-	AddAddr(pubkey, type);
-	return (pubkey);
+
+	addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
+	AddAddr(addr, type);
+
+	return (addr);
 }
 
-CPubKey CAccountCache::CreateNewAddr(int type)
+CCoinAddr CAccountCache::CreateNewAddr(int type)
 {
+	CCoinAddr addr(wallet->ifaceIndex, CNoDestination());
+
 	if (!wallet)
-		return (CPubKey());
+		return (addr);
+
 	CPubKey pubkey = GetAccountPubKey(wallet, strAccount, true);
-	AddAddr(pubkey, type);
-	return (pubkey);
+	addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
+	AddAddr(addr, type);
+
+	return (addr);
 }
 
-void CAccountCache::AddAddr(CPubKey pubkey, int type)
+void CAccountCache::AddAddr(CCoinAddr addr, int type)
 {
-	CAccountAddr addr;
 
 	if (type < 0 || type >= MAX_ACCADDR)
 		return;
 
-	if (!pubkey.IsValid())
+	if (!addr.IsValid())
 		return;
 
-	vAddr[type].nCreateTime = time(NULL);
-	vAddr[type].vchPubKey = pubkey.Raw();
+	vAddr[type] = addr;
 }
 
-CPubKey CAccountCache::GetAddr(int type)
+CCoinAddr CAccountCache::GetAddr(int type)
 {
 	static CPubKey null_key;
+	CCoinAddr addr(wallet->ifaceIndex);
 
-	if (type < 0 || type >= MAX_ACCADDR)
-		return (null_key);
+	if (type >= 0 && type < MAX_ACCADDR)
+		addr = vAddr[type];
 	
+	if (addr.IsValid()) {
+		vAddr[type].nAccessTime = time(NULL);
+		if (IS_ACCOUNT(type, ACCADDRF_STATIC))
+			return (addr);
+		if (!IsAddrUsed(addr))
+			return (addr);
+	}
+
+	/* create new address. */
+	CPubKey pubkey =
+		GetAccountPubKey(wallet, strAccount, !IS_ACCOUNT(type, ACCADDRF_STATIC));
+	addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
+	if (!addr.IsValid())
+		return (addr);
+
+	/* retain */
+	vAddr[type] = addr;
 	vAddr[type].nAccessTime = time(NULL);
-	return (CPubKey(vAddr[type].vchPubKey));
+	return (addr);
 }
 
-CPubKey CAccountCache::GetDefaultAddr()
+CCoinAddr CAccountCache::GetDefaultAddr()
 {
-	return (account.vchPubKey);
+	return (CCoinAddr(wallet->ifaceIndex, account.vchPubKey.GetID()));
 }
 
-CPubKey CAccountCache::GetDynamicAddr(int type)
+CCoinAddr CAccountCache::GetDynamicAddr(int type)
 {
-	CPubKey pubkey;
+	CCoinAddr addr;
 
-	pubkey = GetAddr(type);
-	if (!pubkey.IsValid()) {
-		pubkey = CreateAddr(ACCADDR_CHANGE);
-	} else if (IsAddrUsed(pubkey)) {
-		pubkey = CreateNewAddr(type);
+	if (type >= 0 && type < MAX_ACCADDR)
+		addr = vAddr[type];
+
+	if (!addr.IsValid()) {
+		addr = CreateAddr(ACCADDR_CHANGE);
+	} else if (IsAddrUsed(addr)) {
+		addr = CreateNewAddr(type);
+	}
+	
+	return (addr);
+}
+
+CCoinAddr CAccountCache::GetStaticAddr(int type)
+{
+	CCoinAddr addr;
+
+	if (type >= 0 && type < MAX_ACCADDR)
+		addr = vAddr[type];
+
+	if (!addr.IsValid()) {
+		addr = GetDefaultAddr();
 	}
 
-	SetFlag(type, ACCADDRF_DYNAMIC);
-	return (pubkey);
+	return (addr);
 }
 
-CPubKey CAccountCache::GetStaticAddr(int type)
+bool CAccountCache::IsAddrUsed(const CCoinAddr& addr)
 {
-	CPubKey pubkey;
+	bool bKeyUsed = false;
 
-	pubkey = GetAddr(type);
-	if (!pubkey.IsValid()) {
-		pubkey = GetDefaultAddr();
+	if (!wallet)
+		return (false);
+
+	/* check if the current key has been used */
+	CKeyID keyID;
+	if (!addr.GetKeyID(keyID))
+		return (false);
+
+	CScript scriptPubKey;
+	scriptPubKey.SetDestination(keyID);
+
+	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
+			it != wallet->mapWallet.end();
+			++it)
+	{
+		const CWalletTx& wtx = (*it).second;
+		BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
+			if (txout.scriptPubKey == scriptPubKey) {
+				bKeyUsed = true;
+				break;
+			}
+		}
 	}
 
-	UnsetFlag(type, ACCADDRF_DYNAMIC);
-	return (pubkey);
+	return (bKeyUsed);
 }
 
 bool CAccountCache::IsAddrUsed(const CPubKey& vchPubKey)
@@ -165,3 +235,5 @@ bool CAccountCache::IsAddrUsed(const CPubKey& vchPubKey)
 
 	return (bKeyUsed);
 }
+
+//bool CAccountCache::CreateHDKey(const CPubKey& vchPubKey)

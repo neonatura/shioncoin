@@ -628,7 +628,7 @@ bool GetCertAccount(CIface *iface, const CTransaction& tx, string& strAccount)
   if (!IsCertTx(tx))
     return (false); /* not a cert */
 
-  CCoinAddr addr(stringFromVch(tx.certificate.vAddr));
+  CCoinAddr addr(GetCoinIndex(iface), stringFromVch(tx.certificate.vAddr));
   return (GetCoinAddr(wallet, addr, strAccount));
 }
 
@@ -806,11 +806,11 @@ bool VerifyLicenseChain(CIface *iface, CTransaction& tx)
   if (!cert->VerifySignature(ifaceIndex))
     return error(SHERR_INVAL, "VerifyLicenseChain: signature integrity error with chained certificated.");
 
-  if (!lic.VerifySignature(cert))
+  if (!lic.VerifySignature(ifaceIndex, cert))
     return error(SHERR_INVAL, "VerifyLicenseChain: signature integrity error with license.");
 
   if (cert->nFee > (int64)iface->min_tx_fee) {
-    const CCoinAddr addr(stringFromVch(cert->vAddr));
+    const CCoinAddr addr(ifaceIndex, stringFromVch(cert->vAddr));
     int nOut;
 
     if (!GetOutDestination(ifaceIndex, tx, addr, nOut)) {
@@ -1021,7 +1021,7 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
   if ((chain->nFlag & SHCERT_CERT_NONREPUDIATION)) {
     string strValAccount;
 
-    extAddr = CCoinAddr(stringFromVch(chain->vAddr));
+    extAddr = CCoinAddr(ifaceIndex, stringFromVch(chain->vAddr));
     if (!GetCoinAddr(wallet, extAddr, strValAccount)) {
       return error(SHERR_ACCESS, "derive_cert_tx: private entity warning: invalid chain certificate coin address.");
     }
@@ -1110,7 +1110,7 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
   }
 
   /* destination (certificate owner) */
-  CCoinAddr certAddr(stringFromVch(tx.certificate.vAddr));
+  CCoinAddr certAddr(ifaceIndex, stringFromVch(tx.certificate.vAddr));
   if (!certAddr.IsValid())
     return (error(SHERR_INVAL, "init_license_tx: certAddr '%s' is invalid: %s\n", certAddr.ToString().c_str(), tx.certificate.ToString().c_str()));
   
@@ -1766,11 +1766,11 @@ bool CCert::Sign(int ifaceIndex, CCoinAddr& addr)
  * Verify an identity's signature.
  * @param vchSecret The external context that the signature was generated from.
  */
-bool CCert::VerifySignature(cbuff vchContext)
+bool CCert::VerifySignature(int ifaceIndex, cbuff vchContext)
 {
   unsigned char *raw = (unsigned char *)vchContext.data();
   size_t raw_len = vchContext.size();
-  CCoinAddr addr(stringFromVch(vAddr));
+  CCoinAddr addr(ifaceIndex, stringFromVch(vAddr));
 
   if (GetVersion() == 1 && hashIssuer.IsNull())
     return (true);
@@ -1792,7 +1792,7 @@ bool CCert::VerifySignature(int ifaceIndex)
     vchContext = ParseHex(hexContext);
   }
 
-  return (VerifySignature(vchContext));
+  return (VerifySignature(ifaceIndex, vchContext));
 }
 
 
@@ -1912,7 +1912,7 @@ bool CLicense::Sign(int ifaceIndex)
   return (Sign(&cert_tx.certificate));
 }
 
-bool CLicense::VerifySignature(CCert *cert)
+bool CLicense::VerifySignature(int ifaceIndex, CCert *cert)
 {
   string hexContext = stringFromVch(cert->signature.vPubKey);
   cbuff vchContext = ParseHex(hexContext);
@@ -1927,7 +1927,7 @@ bool CLicense::VerifySignature(int ifaceIndex)
   if (!GetTxOfCert(iface, hashIssuer, cert_tx))
     return error(SHERR_INVAL, "VerifySIgnature");
 
-  return (VerifySignature(&cert_tx.certificate));
+  return (VerifySignature(ifaceIndex, &cert_tx.certificate));
 }
 
 bool DisconnectCertificate(CIface *iface, CTransaction& tx)

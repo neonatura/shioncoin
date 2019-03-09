@@ -84,6 +84,7 @@ static int color_init(CIface *iface, void *_unused_)
 #endif
 
   colorWallet = new COLORWallet();
+	colorWallet->checkpoints = new CCheckpoints(COLOR_COIN_IFACE);
   SetWallet(COLOR_COIN_IFACE, colorWallet);
 
 	if (!color_InitBlockIndex()) {

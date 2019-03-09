@@ -1,21 +1,65 @@
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2011-2012 Litecoin Developers
-// Copyright (c) 2013 usde Developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef BITCOIN_CHECKPOINT_H
-#define  BITCOIN_CHECKPOINT_H
 
+/*
+ * @copyright
+ *
+ *  Copyright 2014 Neo Natura
+ *
+ *  This file is part of the Share Library.
+ *  (https://github.com/neonatura/share)
+ *        
+ *  The Share Library is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version. 
+ *
+ *  The Share Library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with The Share Library.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  @endcopyright
+ */  
+
+#ifndef __SERVER__CHECKPOINTS_H__
+#define __SERVER__CHECKPOINTS_H__
+
+#include <string>
+#include <vector>
 #include <map>
 
-class uint256;
-class CBlockIndex;
+#include <boost/foreach.hpp>
+#include <boost/variant.hpp>
+
+
+typedef std::map<int, uint256> MapCheckpoints;
 
 /** 
- * Block-chain checkpoints is a hard-coded validation check against already established blocks.
+ * Block-chain checkpoints is a hard-coded validation check against already established blocks. Additional checkpoints may be added dynamically.
  */
-namespace Checkpoints
+class CCheckpoints
 {
+	protected:
+		MapCheckpoints mapCheckpoints;
+		uint32_t hNotaryHeight;
+		uint256 hNotaryBlock;
+		int ifaceIndex;
+
+	public:
+		CCheckpoints(int ifaceIndexIn)
+		{
+			ifaceIndex = ifaceIndexIn;
+			mapCheckpoints.clear();
+		}
+
+		CCheckpoints(int ifaceIndexIn, MapCheckpoints mapIn)
+		{
+			ifaceIndex = ifaceIndexIn;
+			mapCheckpoints = mapIn;
+		}
+
     // Returns true if block passes checkpoint checks
     bool CheckBlock(int nHeight, const uint256& hash);
 
@@ -23,7 +67,31 @@ namespace Checkpoints
     int GetTotalBlocksEstimate();
 
     // Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
-    CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex);
-}
+    CBlockIndex* GetLastCheckpoint();
 
-#endif
+		/* Add a dynamic block-chain checkpoint. */
+		bool AddCheckpoint(CBlockIndex *pindex);
+		bool AddCheckpoint(int height, uint256 hash);
+
+		/* Remove all checkpoints at height and above. */
+		bool RemoveCheckpoint(int nHeight);
+
+		/* The last notorized block height. */
+		const unsigned int GetNotorizedBlockHeight()
+		{
+			return (hNotaryHeight);
+		}
+
+		/* The last notorized block hash. */
+		const uint256 GetNotorizedBlockHash()
+		{
+			return (hNotaryBlock);
+		}
+
+		void ResetNotorizedBlock();
+
+};
+
+
+#endif /* ndef __SERVER__CHECKPOINTS_H__ */
+

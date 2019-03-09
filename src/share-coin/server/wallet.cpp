@@ -34,6 +34,7 @@
 #include "txmempool.h"
 #include "txfeerate.h"
 #include "txcreator.h"
+#include "coinaddr.h"
 #include "account.h"
 
 using namespace std;
@@ -364,7 +365,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 			CWalletTx wtx(this,tx);
 			// Get merkle branch if transaction was found in a block
 			if (pblock) {
-				// DEBUG: wtx.fCommit = true;
+				// TODO: wtx.fCommit = true;
 				wtx.SetMerkleBranch(pblock);
 			}
 			return AddToWallet(wtx);
@@ -910,8 +911,9 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
 
 				/* filter via account */
 				CTxDestination dest;
-				if (!ExtractDestination(pcoin->vout[i].scriptPubKey, dest))
+				if (!ExtractDestination(pcoin->vout[i].scriptPubKey, dest)) {
 					continue;
+				}
 
 				if ( std::find(vDest.begin(), vDest.end(), dest) != vDest.end() ) {
 					vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain(ifaceIndex)));
@@ -1563,6 +1565,7 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 {
 	bool bKeyUsed = false;
 	bool bValid = false;
+	bool bNew = false;
 	CAccount account;
 	CPubKey pubkey;
 
@@ -1576,7 +1579,7 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 		walletdb.Close();
 	}
 
-	if (!bForceNew && bValid) {
+	if (bForceNew && bValid) {
 		/* check if the current key has been used */
 		CScript scriptPubKey;
 		scriptPubKey.SetDestination(account.vchPubKey.GetID());
@@ -1585,16 +1588,19 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 				++it)
 		{
 			const CWalletTx& wtx = (*it).second;
-			BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-				if (txout.scriptPubKey == scriptPubKey)
+			BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
+				if (txout.scriptPubKey == scriptPubKey) {
 					bKeyUsed = true;
+					break;
+				}
+			}
 		}
 	}
 
 	if (!bValid) {
 		/* first time -- generate primary key for account */
+		bNew = true;
 		account.vchPubKey = wallet->GenerateNewKey(true);
-		wallet->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
 
 		{
 			LOCK(wallet->cs_wallet);
@@ -1607,10 +1613,30 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 		pubkey = account.vchPubKey;
 	} else if (bForceNew && bKeyUsed) {
 		/* generate a new key */
+		bNew = true;
 		pubkey = wallet->GenerateNewKey(true);
-		wallet->SetAddressBookName(pubkey.GetID(), strAccount);
 	} else {
 		pubkey = account.vchPubKey;
+	}
+
+	if (bNew) {
+		/* retain in addressbook in order to identify */
+		CKeyID keyID = pubkey.GetID();
+		wallet->SetAddressBookName(keyID, strAccount);
+
+		CIface *iface = GetCoinByIndex(wallet->ifaceIndex); 
+		if (iface && IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+			CCoinAddr addr(wallet->ifaceIndex, pubkey.GetID());
+
+			/* p2sh-segwit address */
+			CTxDestination sh_dest = addr.GetWitness(OUTPUT_TYPE_P2SH_SEGWIT);
+			wallet->SetAddressBookName(sh_dest, strAccount);
+
+			if (opt_bool(OPT_BECH32)) {
+				CTxDestination be_dest = addr.GetWitness(OUTPUT_TYPE_BECH32);
+				wallet->SetAddressBookName(be_dest, strAccount);
+			}
+		}
 	}
 
 	return (pubkey);
@@ -1926,7 +1952,7 @@ bool GetCoinAddrAlias(CWallet *wallet, string strAlias, CCoinAddr& addrAccount)
 	if (!alias)
 		return (false);
 
-	return (alias->GetCoinAddr(addrAccount));
+	return (alias->GetCoinAddr(wallet->ifaceIndex, addrAccount));
 }
 
 bool GetCoinAddr(CWallet *wallet, string strAddress, CCoinAddr& addrAccount)
@@ -1939,7 +1965,7 @@ bool GetCoinAddr(CWallet *wallet, string strAddress, CCoinAddr& addrAccount)
 		return (GetCoinAddrAlias(wallet, strAddress.substr(1), addrAccount));
 	}
 
-	addrAccount = CCoinAddr(strAddress);
+	addrAccount = CCoinAddr(wallet->ifaceIndex, strAddress);
 	if (!addrAccount.IsValid())
 		return (false);
 
@@ -2698,6 +2724,7 @@ std::vector<unsigned char> ToByteVector(const T& in)
 	return std::vector<unsigned char>(in.begin(), in.end());
 }   
 
+#if 0
 CScript GetScriptForWitness(const CScript& redeemscript)
 {
 	CScript ret;
@@ -2729,7 +2756,9 @@ CScript GetScriptForWitness(const CScript& redeemscript)
 
 	return ret;
 }
+#endif
 
+#if 0
 bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -2748,12 +2777,18 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 		if (!GetCoinAddr((CWallet *)this, addr, strAccount))
 			return error(SHERR_ACCESS, "GetWitnessAddress: cannot generate witness address from a non-local coin address.");
 
+		bool fBech = false;
+		if (GetCoinIndex(iface) != EMC2_COIN_IFACE &&
+				opt_bool(OPT_BECH32))
+			fBech = true;
+
 		CKeyID keyID;
 		CScriptID scriptID;
 		if (addr.GetKeyID(keyID)) {
 			CKey key;
-			if (!GetKey(keyID, key))
+			if (!GetKey(keyID, key)) {
 				return (error(SHERR_ACCESS, "GetWitnessAddress: cannot generate witness address from a non-local coin address."));
+			}
 
 			// Signing with uncompressed keys is disabled in witness scripts
 			if (!key.IsCompressed()) {
@@ -2769,10 +2804,16 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 #endif
 	//  CSHA256().Write(&redeemscript[0], redeemscript.size()).Finalize(hash.begin());
 
+			/* witness program for p2wsh */
 			CScript witscript = GetScriptForWitness(basescript);
-
-			result = CScriptID(witscript);
 			this->AddCScript(witscript);
+
+			if (!fBech) {
+				result = CScriptID(witscript);
+			} else {
+				WitnessV0KeyHash hash(keyID);
+				result = hash;
+			}
 		} else if (addr.GetScriptID(scriptID)) {
 			CScript subscript;
 			if (this->GetCScript(scriptID, subscript)) {
@@ -2792,7 +2833,14 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 
 					CScript witscript = GetScriptForWitness(subscript);
 					this->AddCScript(witscript);
-					result = CScriptID(witscript);
+					
+					if (!fBech) {
+						result = CScriptID(witscript);
+					} else {
+						WitnessV0ScriptHash hash;
+						SHA256((unsigned char *)&subscript[0], subscript.size(), (unsigned char *)&hash);
+						result = hash;
+					}
 				}
 			}
 		} else {
@@ -2805,6 +2853,43 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 		/* fill in return variable */
 		witAddr = CCoinAddr(ifaceIndex, result);
 	}
+
+	return (true);
+}
+#endif
+
+bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
+{
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	CTxDestination dest;
+	string strAccount;
+
+	if (!iface || !iface->enabled)
+		return (false);
+
+	if (!addr.IsValid())
+		return error(SHERR_INVAL, "GetWitnessAddress: invalid address specified.");
+
+	if (!IsWitnessEnabled(iface, GetBestBlockIndex(iface)))
+		return error(SHERR_INVAL, "GetWitnessAddress: seg-wit not enabled.");
+
+	if (!GetCoinAddr((CWallet *)this, addr, strAccount))
+		return error(SHERR_ACCESS, "GetWitnessAddress: cannot generate witness address from a non-local coin address.");
+
+	/* convert to segwit addr. */
+	dest = addr.GetWitness();
+	if (dest == CTxDestination(CNoDestination())) {
+		return error(SHERR_ACCESS, "GetWitnessAddress: error converting address into a segwit program.");
+		return (false);
+	}
+
+	{ /* retain in addressbook in order to identify */
+		LOCK(cs_wallet);
+		this->SetAddressBookName(dest, strAccount);
+	}
+
+	/* fill in return variable */
+	witAddr = CCoinAddr(ifaceIndex, dest);
 
 	return (true);
 }
@@ -3181,69 +3266,34 @@ CAccountCache *CWallet::GetAccount(string strAccount)
 	return (mapAddrCache[strAccount]);
 }
 
-CPubKey CWallet::GetChangePubKey(string strAccount)
-{
-	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_CHANGE));
-}
-
-CPubKey CWallet::GetExecPubKey(string strAccount)
-{
-	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_EXEC));
-}
-
-CPubKey CWallet::GetMinerPubKey(string strAccount)
-{
-	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_MINER));
-}
-
-CPubKey CWallet::GetExtPubKey(string strAccount)
-{
-	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_EXT));
-}
-
-CPubKey CWallet::GetRecvPubKey(string strAccount)
-{
-	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_RECV));
-}
-
-CPubKey CWallet::GetPrimaryPubKey(string strAccount)
-{
-	return (GetAccount(strAccount)->account.vchPubKey);
-}
-
 CCoinAddr CWallet::GetChangeAddr(string strAccount)
 {
-	const CPubKey& pubkey = GetChangePubKey(strAccount);
-	return CCoinAddr(ifaceIndex, pubkey.GetID());
+	return (GetAccount(strAccount)->GetAddr(ACCADDR_CHANGE));
 }
 
 CCoinAddr CWallet::GetExecAddr(string strAccount)
 {
-	const CPubKey& pubkey = GetExecPubKey(strAccount);
-	return CCoinAddr(ifaceIndex, pubkey.GetID());
+	return (GetAccount(strAccount)->GetAddr(ACCADDR_EXEC));
 }
 
 CCoinAddr CWallet::GetExtAddr(string strAccount)
 {
-	const CPubKey& pubkey = GetExtPubKey(strAccount);
-	return CCoinAddr(ifaceIndex, pubkey.GetID());
+	return (GetAccount("@"+strAccount)->GetAddr(ACCADDR_EXT));
 }
 
-CCoinAddr CWallet::GetMinerAddr(string strAccount)
+CCoinAddr CWallet::GetNotaryAddr(string strAccount)
 {
-	const CPubKey& pubkey = GetMinerPubKey(strAccount);
-	return CCoinAddr(ifaceIndex, pubkey.GetID());
+	return (GetAccount(strAccount)->GetAddr(ACCADDR_NOTARY));
 }
 
 CCoinAddr CWallet::GetRecvAddr(string strAccount)
 {
-	const CPubKey& pubkey = GetRecvPubKey(strAccount);
-	return CCoinAddr(ifaceIndex, pubkey.GetID());
+	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_RECV));
 }
 
 CCoinAddr CWallet::GetPrimaryAddr(string strAccount)
 {
-	const CPubKey& pubkey = GetPrimaryPubKey(strAccount);
+	const CPubKey& pubkey = GetAccount(strAccount)->account.vchPubKey;
 	return CCoinAddr(ifaceIndex, pubkey.GetID());
 }
 
@@ -3393,5 +3443,4 @@ CBlockIndex *CWallet::GetLocatorIndex(const CBlockLocator& loc)
 
   return (GetGenesisBlockIndex(iface));
 }
-
 

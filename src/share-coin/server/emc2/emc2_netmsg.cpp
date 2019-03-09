@@ -245,6 +245,14 @@ static void emc2_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *l
 	Debug("emc2_ProcessGetHeaders: sent %d headers", vHeaders.size());
 }
 
+CBlockIndex *emc2_GetLastCheckpoint()
+{
+	CWallet *wallet = GetWallet(EMC2_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
+		return (NULL);
+	return (wallet->checkpoints->GetLastCheckpoint());
+}
+
 // The message start string is designed to be unlikely to occur in normal data.
 // The characters are rarely used upper ascii, not valid as UTF-8, and produce
 // a large 4-byte int at any alignment.

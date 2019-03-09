@@ -126,7 +126,6 @@ bool GetValidateNotaries(CWallet *wallet, vector<CPubKey>& kSend, uint256 hMatri
 		if (tot == nMinConsensus)
 			break;
 	}
-
 	if (tot != nMinConsensus)
 		return (false);
 
@@ -282,7 +281,8 @@ bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward
 	CWallet *wallet = GetWallet(iface);
 
   int64 nFee = MAX(0, MIN(COIN, nReward - (int64)iface->min_tx_fee));
-  if (nFee < iface->min_tx_fee)
+  if (!MoneyRange(iface, nFee) ||
+			nFee < iface->min_tx_fee)
     return (false); /* reward too small */
 
   CTxMatrix *m = tx.GenerateValidateMatrix(ifaceIndex);
@@ -547,16 +547,19 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 
 	CTransaction txMatrix;
 	uint256 hMatrixBlock;
-	if (!GetTransaction(iface, txin.prevout.hash, txMatrix, &hMatrixBlock))
+	if (!GetTransaction(iface, txin.prevout.hash, txMatrix, &hMatrixBlock)) {
 		return (false);
+	}
 
 	int mode;
 	int nTxOut;
 	CScript script;
-	if (!GetExtOutput(txMatrix, OP_MATRIX, mode, nTxOut, script))
+	if (!GetExtOutput(txMatrix, OP_MATRIX, mode, nTxOut, script)) {
 		return (false);
-	if (txin.prevout.n != nTxOut)
+	}
+	if (txin.prevout.n != nTxOut) {
 		return (false);
+	}
 
 	/* output must be OP_RETURN script with MIN_INPUT nValue */
 	const CTxOut& txout = tx.vout[0];
@@ -569,12 +572,14 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 
 	/* is block old enough to match required notary-tx locktime? */
 	pindex = GetBlockIndexByHash(ifaceIndex, hMatrixBlock);
-	if (!pindex)
+	if (!pindex) {
 		return (false);
+	}
 
 	int nBestHeight = GetBestHeight(iface);
-	if ((pindex->nHeight + iface->coinbase_maturity) > nBestHeight)
+	if ((pindex->nHeight + iface->coinbase_maturity) > nBestHeight) {
 		return (false); /* immmature */
+	}
 
 	/* verify validate-tx script. */
 	if (!txMatrix.IsCoinBase()) {
@@ -586,9 +591,7 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 
 	/* verify notary-tx script. */
 	CBlockIndex *pindexBest = GetBestBlockIndex(iface);
-	if (!pindexBest)
-		return false;
-	{
+	if (pindexBest) { /* will be null on startup */
 		int nIn = 0;
 		int fVerify = GetBlockScriptFlags(iface, pindexBest);
 		if (!VerifySignature(ifaceIndex, txMatrix, tx, nIn, 0, fVerify)) {
@@ -598,11 +601,14 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 
 	/* establish a new dynamic checkpoint at matrix. */
 	pblock = GetBlockByHash(iface, hMatrixBlock);
-	if (!pblock)
+	if (!pblock) {
 		return (false);
+	}
 	int nCheck = pblock->GetTotalBlocksEstimate();
 	if ((nCheck + iface->coinbase_maturity) < nBestHeight) {
 		pblock->CreateCheckpoint();
+	} else {
+		Debug("(%s) ProcessValidateMatrixNotaryTx: received immature notary tx \"%s\" (min-height %d >= best-height %d)\n", iface->name, tx.GetHash().GetHex().c_str(), (pindex->nHeight + iface->coinbase_maturity), nBestHeight);
 	}
 	delete pblock;
 
@@ -667,14 +673,16 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 			nUnsolved++;
 		vsig.push_back(vch);
 	}
-	if (nUnsolved == 0)
+	if (nUnsolved == 0) {
 		return; /* multi-sig for tx is already signed. */
+	}
 
 	CScript scriptRedeem;
 	bool fConsensus;
 	GenerateValidateScript(wallet, fConsensus, scriptRedeem, kSend);
-	if (!fConsensus)
+	if (!fConsensus) {
 		return; /* invalid state -- no consensus was formed. */
+	}
 
 	/* increment sequence index. */
 	uint32_t nSeq = (tx.vin[0].nSequence & 0xFFFF) + 1;
@@ -730,13 +738,12 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 		if (tx.vin[0].nSequence == CTxIn::SEQUENCE_FINAL)
 			return; /* invalid state */
 
-
 		/* input signature */
 		CScript scriptSuffix(pc, script.end());
 		scriptSig += scriptSuffix;
 		tx.vin[0].scriptSig = scriptSig; 
 
-		Debug("(%s) UpdateValidateNotaryTx: updated tx \"%s\" with %d unsolved signatures.\n", iface->name, tx.ToString(ifaceIndex).c_str(), nUnsolved);
+		Debug("(%s) UpdateValidateNotaryTx: updated tx \"%s\" with %d unsolved signatures.\n", iface->name, tx.GetHash().GetHex().c_str(), nUnsolved);
 	}
 
 }
@@ -789,7 +796,7 @@ bool BlockGenerateSpringMatrix(CIface *iface, CTransaction& tx, int64& nReward)
   int64 min_tx = (int64)iface->min_tx_fee;
 
   CScript scriptPubKeyOrig;
-  CCoinAddr addr(stringFromVch(ident.vAddr));
+  CCoinAddr addr(ifaceIndex, stringFromVch(ident.vAddr));
   scriptPubKeyOrig.SetDestination(addr.Get());
 
   CScript scriptMatrix;

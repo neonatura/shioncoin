@@ -1472,7 +1472,7 @@ static int AliasCreateEvent(lua_State *L)
 	}
 
 	string strAccount("");
-	CCoinAddr addr(shjson_str(arg, "addr", ""));
+	CCoinAddr addr(ifaceIndex, shjson_str(arg, "addr", ""));
 	AccountFromAddress(ifaceIndex, addr, strAccount);
 
 	int64 nValue = (int64)(shjson_num(arg, "value", 0) * COIN);

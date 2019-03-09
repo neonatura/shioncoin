@@ -52,15 +52,26 @@ extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex);
 extern double print_rpc_difficulty(CBigNum val);
 
 
-static bool IsOutputForAccount(CWallet *wallet, string strAccount, CTxDestination address)
+static bool GetOutputsForAccount(CWallet *wallet, string strAccount, vector<CTxDestination>& addr_list)
 {
+
 	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook) {
 		const string& account = item.second;
 		if (account != strAccount)
 			continue;
 
-		if (address == item.first)
-			return (TRUE);
+		addr_list.push_back(item.first);
+	}
+
+	return (FALSE);
+}
+static bool IsOutputForAccount(CWallet *wallet, vector<CTxDestination> addr_list, CTxDestination address)
+{
+	int i;
+	
+	for (i = 0; i < addr_list.size(); i++) {
+		if (address == addr_list[i])
+			return (true);
 	}
 
 	return (FALSE);
@@ -230,6 +241,9 @@ static const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAcco
 
 	items.clear();
 
+	vector<CTxDestination> addr_list;
+	GetOutputsForAccount(wallet, strAccount, addr_list);
+
 	inputs.clear();
 	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it) {
 		CWalletTx* wtx = &((*it).second);
@@ -254,7 +268,7 @@ static const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAcco
 				if (!ExtractDestination(pk, address))
 					continue;
 
-				if (!IsOutputForAccount(wallet, strAccount, address))
+				if (!IsOutputForAccount(wallet, addr_list, address))
 					continue;
 
 				CCoinAddr c_addr(ifaceIndex, address);
@@ -279,7 +293,7 @@ static const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAcco
 			if (!ExtractDestination(pk, address))
 				continue;
 
-			if (!IsOutputForAccount(wallet, strAccount, address))
+			if (!IsOutputForAccount(wallet, addr_list, address))
 				continue;
 
 			CCoinAddr c_addr(ifaceIndex, address);
@@ -368,7 +382,7 @@ static const ApiItems& stratum_api_account_send(int ifaceIndex, string strAccoun
 	items.clear();
 
 	string strDestAddress(shjson_astr(params, "address", ""));
-	CCoinAddr address(strDestAddress);
+	CCoinAddr address(ifaceIndex, strDestAddress);
 	if (!address.IsValid()) {
 		strError = string("invalid coin address");
 		return (items);
@@ -428,9 +442,8 @@ static const ApiItems& stratum_api_account_bsend(int ifaceIndex, string strAccou
   }
 
 	string strDestAddress(shjson_astr(params, "address", ""));
-	CCoinAddr address(strDestAddress);
-	if (!address.IsValid() ||
-			address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex)) {
+	CCoinAddr address(ifaceIndex, strDestAddress);
+	if (!address.IsValid()) {
 		strError = string("invalid coin address");
 		return (items);
 	}
@@ -478,9 +491,8 @@ static const ApiItems& stratum_api_account_tsend(int ifaceIndex, string strAccou
   }
 
 	string strDestAddress(shjson_astr(params, "address", ""));
-	CCoinAddr address(strDestAddress);
-	if (!address.IsValid() ||
-			address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex)) {
+	CCoinAddr address(ifaceIndex, strDestAddress);
+	if (!address.IsValid()) {
 		strError = string("invalid coin address");
 		return (items);
 	}
@@ -718,6 +730,10 @@ static const ApiItems& stratum_api_alias_list(int ifaceIndex, string strAccount,
 		return (items);
 
 	string strExtAccount = "@" + strAccount;
+
+	vector<CTxDestination> addr_list;
+	GetOutputsForAccount(wallet, strExtAccount, addr_list);
+
   BOOST_FOREACH(PAIRTYPE(const string, uint256)& r, *list) {
     const string& label = r.first;
     uint256& hTx = r.second;
@@ -744,7 +760,7 @@ static const ApiItems& stratum_api_alias_list(int ifaceIndex, string strAccount,
 				continue;
 			if (!ExtractDestination(script, dest))
 				continue;
-			if (!IsOutputForAccount(wallet, strExtAccount, dest))
+			if (!IsOutputForAccount(wallet, addr_list, dest))
 				continue;
 		}
 
@@ -771,7 +787,12 @@ static const ApiItems& stratum_api_alias_set(int ifaceIndex, string strAccount, 
 	items.clear();
 
 	const string alias_addr_str(shjson_astr(params, "address", ""));
-	addr = CCoinAddr(alias_addr_str);
+	addr = CCoinAddr(ifaceIndex, alias_addr_str);
+
+	string strExtAccount = "@" + strAccount;
+
+	vector<CTxDestination> addr_list;
+	GetOutputsForAccount(wallet, strExtAccount, addr_list);
 
 	string alias_name(shjson_astr(params, "label", ""));
 	CAlias *alias = GetAliasByName(iface, alias_name, in_tx);
@@ -789,7 +810,7 @@ static const ApiItems& stratum_api_alias_set(int ifaceIndex, string strAccount, 
 
 		if (!GetExtOutput(in_tx, OP_ALIAS, mode, nOut, script) ||
 				!ExtractDestination(script, dest) ||
-				!IsOutputForAccount(wallet, "@" + strAccount, dest)) {
+				!IsOutputForAccount(wallet, addr_list, dest)) {
 			/* wrong account specified. */
 			strError = string(error_str(ERR_ACCESS));
 			return (items);
@@ -912,6 +933,10 @@ static const ApiItems& stratum_api_context_list(int ifaceIndex, string strAccoun
 	if (!list) return (items);
 
 	string strExtAccount = "@" + strAccount;
+
+	vector<CTxDestination> addr_list;
+	GetOutputsForAccount(wallet, strExtAccount, addr_list);
+
 	BOOST_FOREACH(PAIRTYPE(const uint160, uint256)& r, *list) {
 		const uint160& hContext = r.first;
 		const uint256& hTx = r.second;
@@ -938,7 +963,7 @@ static const ApiItems& stratum_api_context_list(int ifaceIndex, string strAccoun
 				continue;
 			if (!ExtractDestination(script, dest))
 				continue;
-			if (!IsOutputForAccount(wallet, strExtAccount, dest))
+			if (!IsOutputForAccount(wallet, addr_list, dest))
 				continue;
 		}
 
@@ -966,6 +991,11 @@ static const ApiItems& stratum_api_context_set(int ifaceIndex, string strAccount
 	strError = "";
 	items.clear();
 
+	string strExtAccount = "@" + strAccount;
+
+	vector<CTxDestination> addr_list;
+	GetOutputsForAccount(wallet, strExtAccount, addr_list);
+
 	cbuff vchValue(strValue.begin(), strValue.end());
 	if (!IsContextName(iface, strName)) {
 		err = init_ctx_tx(iface, wtx, strAccount, strName, vchValue);
@@ -984,7 +1014,7 @@ static const ApiItems& stratum_api_context_set(int ifaceIndex, string strAccount
 		if (!GetContextByName(iface, strName, in_tx) ||
 				!GetExtOutput(in_tx, OP_CONTEXT, mode, nOut, script) ||
 				!ExtractDestination(script, dest) ||
-				!IsOutputForAccount(wallet, "@" + strAccount, dest)) {
+				!IsOutputForAccount(wallet, addr_list, dest)) {
 			/* wrong account specified. */
 			strError = string(error_str(ERR_ACCESS));
 			return (items);
@@ -1479,7 +1509,7 @@ static const ApiItems& stratum_api_alt_send(int ifaceIndex, string strAccount, s
 	/* TODO: .. still quandry when next-block-diff is high */
 
 	CWalletTx wtx;
-	CCoinAddr address(string(shjson_astr(params, "address", "")));
+	CCoinAddr address(ifaceIndex, string(shjson_astr(params, "address", "")));
 	err = update_altchain_tx(iface, strAccount, hColor, address, nAmount, wtx);
 	if (err) {
 		strError = string(error_str(err));
@@ -1498,6 +1528,9 @@ static const ApiItems& stratum_api_alt_balance(int ifaceIndex, string strAccount
 
 	items.clear();
 	vCoins.clear();
+
+	vector<CTxDestination> addr_list;
+	GetOutputsForAccount(alt_wallet, strAccount, addr_list);
 
 	for (map<uint256, CWalletTx>::const_iterator it = alt_wallet->mapWallet.begin(); it != alt_wallet->mapWallet.end(); ++it) {
 		const CWalletTx* pcoin = &(*it).second;
@@ -1520,7 +1553,7 @@ static const ApiItems& stratum_api_alt_balance(int ifaceIndex, string strAccount
 			if (!ExtractDestination(pcoin->vout[i].scriptPubKey, dest))
 				continue;
 
-			if (!IsOutputForAccount(alt_wallet, strAccount, dest))
+			if (!IsOutputForAccount(alt_wallet, addr_list, dest))
 				continue;
 
 			uint160 hColor = pcoin->GetColor();
@@ -1719,6 +1752,9 @@ static const ApiItems& stratum_api_faucet_info(int ifaceIndex, string strAccount
 
 	nBalance = GetAccountBalance(ifaceIndex, strFaucet, 0);
 
+	vector<CTxDestination> addr_list;
+	GetOutputsForAccount(wallet, strAccount, addr_list);
+
 	nTime = 0;
 	nTotal = 0;
 	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it) {
@@ -1736,7 +1772,7 @@ static const ApiItems& stratum_api_faucet_info(int ifaceIndex, string strAccount
 			if (!ExtractDestination(pk, address))
 				continue;
 
-			if (!IsOutputForAccount(wallet, strFaucet, address))
+			if (!IsOutputForAccount(wallet, addr_list, address))
 				continue;
 
 			nTime = MAX(wtx->GetTxTime(), nTime);

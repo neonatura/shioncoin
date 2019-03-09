@@ -1459,12 +1459,12 @@ class CBlock : public CBlockHeader
     /**
      * Obtain a JSON representation of the block's content.
      */
-    Object ToValue();
+    Object ToValue(bool fVerbose = false);
 
     /**
      * Obtain a textual JSON representation of the block's content.
      */
-    std::string ToString();
+    std::string ToString(bool fVerbose = false);
 
     /**
      * Log a textual JSON representation of the block's content.

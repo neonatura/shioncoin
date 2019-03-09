@@ -40,6 +40,7 @@
 #include "context.h"
 #include "script.h"
 #include "txsignature.h"
+#include "bolo/bolo_validation03.h"
 
 
 
@@ -404,7 +405,7 @@ _TEST(signtx)
   cert.SetNull();
   cbuff vchSecret(vchFromString(strSecret));
   _TRUE(cert.Sign(TEST_COIN_IFACE, extAddr, vchSecret) == true);
-  _TRUE(cert.VerifySignature(vchSecret) == true);
+  _TRUE(cert.VerifySignature(TEST_COIN_IFACE, vchSecret) == true);
  
 #if 0
   CAsset asset;
@@ -1885,10 +1886,6 @@ _TEST(segwit)
   /* return coins back to main account. */
   CTxCreator wtx3(wallet, strWitAccount);
   wtx3.AddOutput(addr.Get(), nValue - (MIN_TX_FEE(iface) * 2));
-	{
-		CTransaction *t = (CTransaction *)&wtx3;
-//fprintf(stderr, "DEBUG: TEST: SEGWIT: wtx3.ToString: %s\n", t->ToString(TEST_COIN_IFACE).c_str());
-	}
   _TRUE(wtx3.Send());
   strError = wtx3.GetError();
 if (strError != "") fprintf(stderr, "DEBUG: wtx3.strerror = \"%s\"\n", strError.c_str());
@@ -1898,15 +1895,7 @@ if (strError != "") fprintf(stderr, "DEBUG: wtx3.strerror = \"%s\"\n", strError.
   {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
-//fprintf(stderr, "DEBUG: TEST: SEGWIT: wtx3 BLOCK: %s\n", block->ToString().c_str());
     _TRUE(ProcessBlock(NULL, block) == true);
-#if 0
-    int nIndex = 0;
-    BOOST_FOREACH(CTransaction& tx, block->vtx) {
-      fprintf(stderr, "DEBUG: TEST: wtx3: block.tx[%d] = \"%s\"\n", nIndex, tx.ToString(TEST_COIN_IFACE).c_str());
-      nIndex++;
-    }
-#endif
     delete block;
   }
 
@@ -2257,6 +2246,181 @@ _TEST(seqlocktx)
 
 }
 
+_TEST(bech32)
+{
+  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+  CWallet *wallet = GetWallet(iface);
+	string strWitAccount = "bech32";
+
+	CCoinAddr addr = GetAccountAddress(wallet, strWitAccount, true);
+	CCoinAddr witAddr(TEST_COIN_IFACE);
+	_TRUE(wallet->GetWitnessAddress(addr, witAddr) == true);
+
+	string str_bech32;
+	string str_wit;
+	string str_leg;
+
+	str_wit = witAddr.ToString();
+
+	CTxDestination be_dest = addr.GetWitness(OUTPUT_TYPE_BECH32);
+	wallet->SetAddressBookName(be_dest, strWitAccount);
+
+	CCoinAddr be_addr(TEST_COIN_IFACE, be_dest);
+	str_wit = be_addr.ToString();
+	_TRUE(0 == strncmp("test1", str_wit.c_str(), 5));
+	CCoinAddr be_addr2(TEST_COIN_IFACE, be_addr.ToString());
+	_TRUE(str_wit == be_addr2.ToString());
+
+	
+
+	CTxCreator wit_wtx(wallet, "");
+	_TRUE(wit_wtx.AddOutput(be_addr.Get(), COIN));
+	_TRUE(wit_wtx.Send() == true);
+  {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+  {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+  _TRUE(wit_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+  int64 nValue = GetAccountBalance(TEST_COIN_IFACE, strWitAccount, 1);
+	_TRUE(nValue == (int64)COIN);
+
+	{
+		CTxDestination address;
+		CScript s;
+		CPubKey pubkey;
+		CScript redeemScript;
+
+		pubkey = GetAccountPubKey(wallet, "", true);
+		redeemScript << OP_DUP << OP_HASH160 << pubkey.GetID() << OP_EQUALVERIFY << OP_CHECKSIG;
+
+    // TX_WITNESS_V0_KEYHASH
+    s.clear();
+    s << OP_0 << pubkey.GetID();
+		_TRUE(ExtractDestination(s, address) == true);
+    WitnessV0KeyHash keyhash = pubkey.GetID();
+    _TRUE(address == CTxDestination(keyhash));
+
+    // TX_WITNESS_V0_SCRIPTHASH
+    s.clear();
+    WitnessV0ScriptHash scripthash = Hash(redeemScript.begin(), redeemScript.end());
+    s << OP_0 << scripthash;
+		_TRUE(ExtractDestination(s, address) == true);
+    _TRUE(address == CTxDestination(scripthash));
+
+#if 0
+    // TX_WITNESS with unknown version
+    s.clear();
+    s << OP_1 << pubkey;
+    _TRUE(ExtractDestination(s, address) == true);
+    WitnessUnknown unk;
+    unk.length = 33;
+    unk.version = 1;
+    std::copy(pubkey.begin(), pubkey.end(), unk.program);
+    _TRUE(address == CTxDestination(unk));
+#endif
+	}
+
+}
+
+
+extern int64 bolo_CHECKPOINT_HEIGHT;
+extern uint256 bolo_CHECKPOINT_HASH;
+extern uint256 bolo_CHECKPOINT_TXID;
+extern int bolo_PROPOSED_HEIGHT;
+extern uint256 bolo_PROPOSED_BLOCK;
+extern bool bolo_PROPOSED_NOTARY;
+
+
+_TEST(bolo)
+{
+  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+  CWallet *wallet = GetWallet(iface);
+	int i;
+
+	/* fund "bank" account for bolo TXs. */
+	CCoinAddr bank_addr = GetAccountAddress(wallet, "bank", true);
+	CTxCreator wit_wtx(wallet, "");
+	_TRUE(wit_wtx.AddOutput(bank_addr.Get(), COIN));
+	_TRUE(wit_wtx.Send() == true);
+
+	bolo_init(TEST_COIN_IFACE, TEST_COIN_IFACE);
+
+	/* emulate a 'slave' notary tx */
+	CTxCreator s_wtx(wallet, "");
+	CScript script;
+	script << OP_RETURN << OP_0;
+	s_wtx.AddOutput(script, 1000);
+	_TRUE(s_wtx.Send());
+	int height;
+	uint256 hBlock;
+  {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+//		bolo_connectblock_slave(GetBestBlockIndex(iface), *block);
+		hBlock = block->GetHash();
+		height = GetBestHeight(iface);
+    delete block;
+  }
+
+	/* sync to a bolo proposal starting offset. */
+	while (0 != (GetBestHeight(TEST_COIN_IFACE) % 20)) {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+	}
+
+	/* emulate 10x proposals. */
+	for (i = 0; i < 10; i++) {
+		CCoinAddr bank_addr = GetAccountAddress(wallet, "bank", true);
+		bolo_PROPOSED_NOTARY = false;
+		bolo_ProposeMasterTx(bolo_PROPOSED_BLOCK, bolo_PROPOSED_HEIGHT, &bank_addr);
+		{
+			CBlock *block = test_GenerateBlock();
+			_TRUEPTR(block);
+			_TRUE(ProcessBlock(NULL, block) == true);
+			delete block;
+		}
+	}
+
+	/* seek through locktime. */
+	for (i = 0; i < 32; i++) {
+		{
+			CBlock *block = test_GenerateBlock();
+			_TRUEPTR(block);
+			_TRUE(ProcessBlock(NULL, block) == true);
+			delete block;
+		}
+	}
+
+	CBlockIndex *pindex = wallet->checkpoints->GetLastCheckpoint();
+	_TRUEPTR(pindex);
+	_TRUE(pindex->nHeight >= height); 
+
+#if 0
+fprintf(stderr, "DEBUG: _PROPOSED_HEIGHT %lld\n", bolo_PROPOSED_HEIGHT);
+fprintf(stderr, "DEBUG: _PROPOSED_BLOCK %s\n", bolo_PROPOSED_BLOCK.GetHex().c_str());
+fprintf(stderr, "DEBUG: _CHECKPOINT_HEIGHT %lld\n", bolo_CHECKPOINT_HEIGHT);
+fprintf(stderr, "DEBUG: _CHECKPOINT_HASH %s\n", bolo_CHECKPOINT_HASH.GetHex().c_str());
+#endif
+
+	/* flush any pending tx's. */
+  {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+}
 
 #ifdef __cplusplus
 }

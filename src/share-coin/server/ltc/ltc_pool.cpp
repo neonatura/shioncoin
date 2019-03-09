@@ -36,6 +36,7 @@
 #include "ltc_txidx.h"
 #include "chain.h"
 #include "txsignature.h"
+#include "bolo/bolo_validation03.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -200,4 +201,9 @@ double LTC_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
 
 void LTC_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
 {
+
+	/* SIP31 */
+	bolo_updatetx_master(tx);
+
 }
+

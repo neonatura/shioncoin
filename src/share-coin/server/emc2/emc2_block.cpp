@@ -401,6 +401,7 @@ int64 emc2_GetBlockValue(int nHeight, int64 nFees)
   return (nSubsidy + nFees);
 }
 
+#if 0
 namespace EMC2_Checkpoints
 {
   typedef std::map<int, uint256> MapCheckpoints;
@@ -480,6 +481,7 @@ namespace EMC2_Checkpoints
   }
 
 }
+#endif
 
 
 
@@ -1411,11 +1413,18 @@ bool EMC2Block::Truncate()
 
 bool EMC2Block::VerifyCheckpoint(int nHeight)
 {
-  return (EMC2_Checkpoints::CheckBlock(nHeight, GetHash()));
+	CWallet *wallet = GetWallet(EMC2_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
+		return (true);
+  return (wallet->checkpoints->CheckBlock(nHeight, GetHash()));
 }
+
 uint64_t EMC2Block::GetTotalBlocksEstimate()
 {
-  return ((uint64_t)EMC2_Checkpoints::GetTotalBlocksEstimate());
+	CWallet *wallet = GetWallet(EMC2_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
+		return (0);
+  return ((uint64_t)wallet->checkpoints->GetTotalBlocksEstimate());
 }
 
 bool EMC2Block::AddToBlockIndex()
@@ -1654,12 +1663,6 @@ void EMC2_CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
         vtxid.push_back((*mi).first);
 }
 #endif
-
-CBlockIndex *emc2_GetLastCheckpoint()
-{
-  blkidx_t *blockIndex = GetBlockTable(EMC2_COIN_IFACE);
-  return (EMC2_Checkpoints::GetLastCheckpoint(*blockIndex));
-}
 
 
 
@@ -1904,8 +1907,10 @@ bool emc2_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxInde
     // Skip ECDSA signature verification when connecting blocks (fBlock=true)
     // before the last blockchain checkpoint. This is safe because block merkle hashes are
     // still computed and checked, and any change will be caught at the next checkpoint.
-    if (!(fBlock && (GetBestHeight(EMC2_COIN_IFACE < EMC2_Checkpoints::GetTotalBlocksEstimate()))))
-    {
+		CWallet *wallet = GetWallet(EMC2_COIN_IFACE);
+		int nTotal = 0;
+		if (wallet && wallet->checkpoints) nTotal = wallet->checkpoints->GetTotalBlocksEstimate();
+    if (!(fBlock && (GetBestHeight(EMC2_COIN_IFACE) < nTotal))) {
       // Verify signature
       if (!VerifySignature(EMC2_COIN_IFACE, txPrev, *tx, i, fStrictPayToScriptHash, 0))
       {

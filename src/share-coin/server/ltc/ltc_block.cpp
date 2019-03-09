@@ -352,6 +352,7 @@ int64 ltc_GetBlockValue(int nHeight, int64 nFees)
   return (nSubsidy + nFees);
 }
 
+#if 0
 namespace LTC_Checkpoints
 {
   typedef std::map<int, uint256> MapCheckpoints;
@@ -363,30 +364,7 @@ namespace LTC_Checkpoints
   //    timestamp before)
   // + Contains no strange transactions
   //
-  static MapCheckpoints mapCheckpoints =
-    boost::assign::map_list_of
-    (       0, uint256("0x4e56204bb7b8ac06f860ff1c845f03f984303b5b97eb7b42868f714611aed94b"))
-    (   14871, uint256("0x5dedc3dd860f008c717d69b8b00f0476de8bc6bdac8d543fb58c946f32f982fa"))
-    (   36032, uint256("0xff37468190b2801f2e72eb1762ca4e53cda6c075af48343f28a32b649512e9a8"))
-    (   51365, uint256("0x702b407c68091f3c97a587a8d92684666bb622f6821944424b850964b366e42c"))
-    (  621000, uint256("0xe2bf6d219cff9d6d7661b7964a05bfea3128265275c3673616ae71fed7072981"))
-
-    /* Feb '17 */
-    ( 1290011, uint256("0xb71db4ec1e17678c3f9bd18b04b1fada4134ee0fc84ac21d1fbab02f2ffc181a") )
-    ( 1290012, uint256("0xa19aba9e1adb9e9aefff386ec32416394bfc38fc7ff98cc5d7c2f1ab4e001775") )
-    ( 1290013, uint256("0x273e013035bf614996f97cf173b0ea5b581a731cb6872fd1f8eda0b2035bf905") )
-    ( 1290014, uint256("0x72aa3d5e2cee606343b9c80b89c2fcb3384131236a0aba8e2c22a9118f4f2beb") )
-
-    /* May '17 */
-    ( 1315701, uint256("0xd4e1fc80f5d483c12ed9b7358ef3e8b38ad4c89407469108670a3590db2417b1") )
-    ( 1315702, uint256("0x1c69f83bcf2e113b7477c4e6f7b2545731db1c43d4d2790d37004348e7dc095a") )
-    ( 1315703, uint256("0x8dc088b551c042a92c6b52e14ff83bbe8a39f2a15a66108fc66a5aac12e5721b") )
-    ( 1315704, uint256("0x4ffe997b4ab52d56c04a015b0f5f81f7cb0e1aadff63c6d83a5331e06b90804d") )
-
-    /* Dec '17 */
-    ( 1410100, uint256("0xf6736ff2a7743014ab1902e442328f5c9928ce7f4edb2b4fd0130010cb4cebc4") )
-
-    ;
+  static MapCheckpoints mapCheckpoints; 
 
 
   bool CheckBlock(int nHeight, const uint256& hash)
@@ -419,6 +397,7 @@ namespace LTC_Checkpoints
   }
 
 }
+#endif
 
 
 
@@ -1289,11 +1268,16 @@ bool LTCBlock::Truncate()
 
 bool LTCBlock::VerifyCheckpoint(int nHeight)
 {
-  return (LTC_Checkpoints::CheckBlock(nHeight, GetHash()));
+	CWallet *wallet = GetWallet(LTC_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (true);
+  return (wallet->checkpoints->CheckBlock(nHeight, GetHash()));
 }
+
 uint64_t LTCBlock::GetTotalBlocksEstimate()
 {
-  return ((uint64_t)LTC_Checkpoints::GetTotalBlocksEstimate());
+	CWallet *wallet = GetWallet(LTC_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (true);
+  return ((uint64_t)wallet->checkpoints->GetTotalBlocksEstimate());
 }
 
 bool LTCBlock::AddToBlockIndex()
@@ -1544,8 +1528,9 @@ void LTC_CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
 
 CBlockIndex *ltc_GetLastCheckpoint()
 {
-  blkidx_t *blockIndex = GetBlockTable(LTC_COIN_IFACE);
-  return (LTC_Checkpoints::GetLastCheckpoint(*blockIndex));
+	CWallet *wallet = GetWallet(LTC_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (NULL);
+  return (wallet->checkpoints->GetLastCheckpoint());
 }
 
 
@@ -1791,8 +1776,10 @@ bool ltc_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxIndex
     // Skip ECDSA signature verification when connecting blocks (fBlock=true)
     // before the last blockchain checkpoint. This is safe because block merkle hashes are
     // still computed and checked, and any change will be caught at the next checkpoint.
-    if (!(fBlock && (GetBestHeight(LTC_COIN_IFACE < LTC_Checkpoints::GetTotalBlocksEstimate()))))
-    {
+		CWallet *wallet = GetWallet(LTC_COIN_IFACE);
+		int nTotal = 0;
+		if (wallet && wallet->checkpoints) nTotal = wallet->checkpoints->GetTotalBlocksEstimate();
+    if (!(fBlock && (GetBestHeight(LTC_COIN_IFACE) < nTotal))) {
       // Verify signature
       if (!VerifySignature(LTC_COIN_IFACE, txPrev, *tx, i, fStrictPayToScriptHash, 0))
       {

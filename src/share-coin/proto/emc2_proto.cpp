@@ -28,6 +28,7 @@
 #include "main.h"
 #include "wallet.h"
 #include "coin_proto.h"
+#include "checkpoints.h"
 #include "emc2/emc2_netmsg.h"
 #include "emc2/emc2_pool.h"
 #include "emc2/emc2_block.h"
@@ -79,7 +80,45 @@ static int emc2_init(CIface *iface, void *_unused_)
 
   RegisterRPCOpDefaults(EMC2_COIN_IFACE);
 
+
+	MapCheckpoints emc2_mapCheckpoints =
+		boost::assign::map_list_of
+		(       0, uint256("0x4e56204bb7b8ac06f860ff1c845f03f984303b5b97eb7b42868f714611aed94b"))
+		(   14871, uint256("0x5dedc3dd860f008c717d69b8b00f0476de8bc6bdac8d543fb58c946f32f982fa"))
+		(   36032, uint256("0xff37468190b2801f2e72eb1762ca4e53cda6c075af48343f28a32b649512e9a8"))
+		(   51365, uint256("0x702b407c68091f3c97a587a8d92684666bb622f6821944424b850964b366e42c"))
+		(  621000, uint256("0xe2bf6d219cff9d6d7661b7964a05bfea3128265275c3673616ae71fed7072981"))
+
+		/* Feb '17 */
+		( 1290011, uint256("0xb71db4ec1e17678c3f9bd18b04b1fada4134ee0fc84ac21d1fbab02f2ffc181a") )
+		( 1290012, uint256("0xa19aba9e1adb9e9aefff386ec32416394bfc38fc7ff98cc5d7c2f1ab4e001775") )
+		( 1290013, uint256("0x273e013035bf614996f97cf173b0ea5b581a731cb6872fd1f8eda0b2035bf905") )
+		( 1290014, uint256("0x72aa3d5e2cee606343b9c80b89c2fcb3384131236a0aba8e2c22a9118f4f2beb") )
+
+		/* May '17 */
+		( 1315701, uint256("0xd4e1fc80f5d483c12ed9b7358ef3e8b38ad4c89407469108670a3590db2417b1") )
+		( 1315702, uint256("0x1c69f83bcf2e113b7477c4e6f7b2545731db1c43d4d2790d37004348e7dc095a") )
+		( 1315703, uint256("0x8dc088b551c042a92c6b52e14ff83bbe8a39f2a15a66108fc66a5aac12e5721b") )
+		( 1315704, uint256("0x4ffe997b4ab52d56c04a015b0f5f81f7cb0e1aadff63c6d83a5331e06b90804d") )
+
+		/* Dec '17 */
+		( 1410100, uint256("0xf6736ff2a7743014ab1902e442328f5c9928ce7f4edb2b4fd0130010cb4cebc4") )
+
+		/* Nov '18 */
+		( 2137077, uint256("0xc1365bd700afde707f0f173b402b5206eea04a4cc4ea54b2660288fcb55b6292") )
+		( 2137078, uint256("0xc82d89245fb2fe6edeb96f6187a3058e058f71eb6b996a3b4f69cc981f3c74e3") )
+		( 2137079, uint256("0x90af60a1937bfa200eee99710f6c94319ab7c621dc72803c22edd2fb98544045") )
+		( 2137080, uint256("0xa1eefc654694774d00b39e7d15f3b9211e3069e616cdb8df790028d6e8ba3a71") )
+		( 2139040, uint256("0x2e4ce04696259f90e5943ef3e0ce9224c47780e466b4d45521ca6d7b21fcb0dc") )
+		( 2152000, uint256("0xa31cadf1a118d78e07df6b337c4d31369033da41098e981a4773841ec2344a69") )
+		( 2152015, uint256("0x3590d55a21bf5ca183ab924938abc742eaeb3cbda6f8c1d4f1e25f2f975240ce") )
+		( 2152016, uint256("0x7420f5567a41bc15fd2d1946e81687541178655edd9b10ef2538f4af20c2e579") )
+		( 2152656, uint256("0xfe6e9d6fbdf12a2a79f68d395521366295e9410f83afb1a7923aaef61529c436") )
+		( 2152657, uint256("0x0f60bc1dc69f3d814f9eb65d20bd101ff54631a379761433b9d53a8567bc5d18") )
+		;
+
   emc2Wallet = new EMC2Wallet();
+	emc2Wallet->checkpoints = new CCheckpoints(EMC2_COIN_IFACE, emc2_mapCheckpoints);
   SetWallet(EMC2_COIN_IFACE, emc2Wallet);
 
 

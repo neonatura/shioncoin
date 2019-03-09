@@ -1611,7 +1611,6 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
   }
 
 
-
 	vector<vector<unsigned char> > vSolutions;
 
 	/* handle OP_CHECKALTPROOF prefix x*/
@@ -1742,7 +1741,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
   /* The case below handles auxiliary no-op information where OP_RETURN is followed by 1 or more bytes of information containing "push-only" info.
    * It is currently used via BIP 9 to relay consensis commitment for proposed features. The nValue is nominally 0 in this case.
    */
-  if (scriptPubKeyCopy.size() > 1 && 
+  if (scriptPubKeyCopy.size() >= 1 && 
       scriptPubKeyCopy[0] == OP_RETURN && 
       core_CScript_IsPushOnly(scriptPubKeyCopy, 1)) {
     // Provably prunable, data-carrying output..
@@ -1888,6 +1887,21 @@ public:
     bool operator()(const CNoDestination &dest) const { return false; }
     bool operator()(const CKeyID &keyID) const { return keystore->HaveKey(keyID); }
     bool operator()(const CScriptID &scriptID) const { return keystore->HaveCScript(scriptID); }
+    bool operator()(const WitnessV0KeyHash& keyId) const 
+		{ 
+			CKeyID id(keyId);
+			return (keystore->HaveKey(id));
+		}
+    bool operator()(const WitnessV0ScriptHash& scriptID) const 
+		{ 
+			CScriptID id;
+
+			const cbuff vch(scriptID.begin(), scriptID.end());
+			//CRIPEMD160().Write(scriptID.begin(), 32).Finalize(id.begin());
+			RIPEMD160(&vch[0], vch.size(), (unsigned char *)&id);
+			return (keystore->HaveCScript(id));
+		}
+    bool operator()(const WitnessUnknown& id) const { return false; }
 };
 
 bool IsMine(const CKeyStore &keystore, const CTxDestination &dest)
@@ -1901,8 +1915,10 @@ bool IsMine(const CKeyStore &keystore, const CScript& scriptPubKey, bool fWitnes
 {
   vector<valtype> vSolutions;
   txnouttype whichType;
-  if (!Solver(scriptPubKey, whichType, vSolutions))
+
+  if (!Solver(scriptPubKey, whichType, vSolutions)) {
     return false;
+	}
 
   CKeyID keyID;
   switch (whichType)
@@ -1983,64 +1999,6 @@ bool IsMine(const CKeyStore &keystore, const CScript& scriptPubKey, bool fWitnes
   }
 
   return false;
-}
-
-bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
-{
-    vector<valtype> vSolutions;
-    txnouttype whichType;
-    if (!Solver(scriptPubKey, whichType, vSolutions))
-        return false;
-
-    if (whichType == TX_PUBKEY)
-    {
-        addressRet = CPubKey(vSolutions[0]).GetID();
-        return true;
-    }
-    else if (whichType == TX_PUBKEYHASH)
-    {
-        addressRet = CKeyID(uint160(vSolutions[0]));
-        return true;
-    }
-    else if (whichType == TX_SCRIPTHASH)
-    {
-        addressRet = CScriptID(uint160(vSolutions[0]));
-        return true;
-    } else if (whichType == TX_RETURN) {
-        addressRet = CKeyID(); /* blank */
-        return true;
-    }
-    // Multisig txns have more than one address...
-    return false;
-}
-
-bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vector<CTxDestination>& addressRet, int& nRequiredRet)
-{
-    addressRet.clear();
-    typeRet = TX_NONSTANDARD;
-    vector<valtype> vSolutions;
-    if (!Solver(scriptPubKey, typeRet, vSolutions))
-        return false;
-
-    if (typeRet == TX_MULTISIG)
-    {
-        nRequiredRet = vSolutions.front()[0];
-        for (unsigned int i = 1; i < vSolutions.size()-1; i++)
-        {
-            CTxDestination address = CPubKey(vSolutions[i]).GetID();
-            addressRet.push_back(address);
-        }
-    }
-    else
-    {
-        nRequiredRet = 1;
-        CTxDestination address;
-        if (!ExtractDestination(scriptPubKey, address))
-           return false;
-        addressRet.push_back(address);
-    }
-
-    return true;
 }
 
 template <typename T>
@@ -2464,21 +2422,42 @@ private:
 public:
     CScriptVisitor(CScript *scriptin) { script = scriptin; }
 
-    bool operator()(const CNoDestination &dest) const {
+    bool operator()(const CNoDestination& dest) const 
+		{
         script->clear();
         return false;
     }
 
-    bool operator()(const CKeyID &keyID) const {
+    bool operator()(const CKeyID& keyID) const 
+		{
         script->clear();
         *script << OP_DUP << OP_HASH160 << keyID << OP_EQUALVERIFY << OP_CHECKSIG;
         return true;
     }
 
-    bool operator()(const CScriptID &scriptID) const {
+    bool operator()(const CScriptID& scriptID) const 
+		{
         script->clear();
         *script << OP_HASH160 << scriptID << OP_EQUAL;
         return true;
+    }
+
+    bool operator()(const WitnessV0KeyHash& id) const 
+		{
+			script->clear();
+			*script << OP_0 << ToByteVector(id);
+			return true;
+    }
+
+    bool operator()(const WitnessV0ScriptHash& id) const {
+			script->clear();
+			*script << OP_0 << ToByteVector(id);
+			return true;
+    }
+
+    bool operator()(const WitnessUnknown& id) const {
+			script->clear();
+			*script << CScript::EncodeOP_N(id.version) << std::vector<unsigned char>(id.program, id.program + id.length);
     }
 };
 

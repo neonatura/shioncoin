@@ -79,6 +79,7 @@ static int ltc_init(CIface *iface, void *_unused_)
   RegisterRPCOpDefaults(LTC_COIN_IFACE);
 
   ltcWallet = new LTCWallet();
+	ltcWallet->checkpoints = new CCheckpoints(LTC_COIN_IFACE);
   SetWallet(LTC_COIN_IFACE, ltcWallet);
 
 

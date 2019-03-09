@@ -57,6 +57,13 @@ bool CTxCreator::AddInput(CWalletTx *tx, unsigned int n, unsigned int seq)
     return (false);
   }
 
+	CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
+	if (iface && iface->min_input &&
+			tx->vout[n].nValue < iface->min_input) {
+    strError = "Input value is less than minimum allowed.";
+    return (false);
+  }
+
   if (HaveInput(tx, n)) {
     return (false); /* dup */
   }
@@ -194,7 +201,7 @@ bool CTxCreator::AddOutput(CScript scriptPubKey, int64 nValue, bool fInsert)
     strError = "An invalid coin output value was specified.";
     return (false);
   }
-  if (nValue < MIN_INPUT_VALUE(iface)) {
+  if (nValue < 0) { //MIN_INPUT_VALUE(iface)) {
     strError = "Output value is less than minimum allowed.";
     return (false);
   }

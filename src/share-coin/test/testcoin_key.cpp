@@ -48,10 +48,10 @@ static const string strSecret3C    ("RgdMRJkurzmHRhEyN38ugoMKU5q8qhmht7uRWezHiTD
 static const string strSecret4     ("6bRCArv9Htu4oLMdTsHhyE4jKHUYo46HKSbHiBRT8itJWQuyN34");
 static const string strSecret4C    ("RgunJXKZba4omWS3waxjqAfTmhibLGeK2PxLkkzvM5sSGYZA3piX");
 
-static const CCoinAddr addr3 ("GLduwFUxWvKSotSgqhNwKFcU58wQjPwtfV");
-static const CCoinAddr addr4 ("GSFFyXXYHNTtDk8W8M4LcZMcyG4fJuqjoo");
-static const CCoinAddr addr3C ("GczsCEv6UXUByQTmsSnFoLWG3KWD7yV9zp");
-static const CCoinAddr addr4C ("GJgcXeqegX3BW2AihD6q1gbetgYqpAkrxD");
+static const CCoinAddr addr3 (TEST_COIN_IFACE, "GLduwFUxWvKSotSgqhNwKFcU58wQjPwtfV");
+static const CCoinAddr addr4 (TEST_COIN_IFACE, "GSFFyXXYHNTtDk8W8M4LcZMcyG4fJuqjoo");
+static const CCoinAddr addr3C (TEST_COIN_IFACE, "GczsCEv6UXUByQTmsSnFoLWG3KWD7yV9zp");
+static const CCoinAddr addr4C (TEST_COIN_IFACE, "GJgcXeqegX3BW2AihD6q1gbetgYqpAkrxD");
 
 
 static const string strAddressBad("1HV9Lc3sNHZxwj4Zk6fB38tEmBryq2cBiF");

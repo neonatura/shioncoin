@@ -33,6 +33,7 @@
 #include "script.h"
 #include "ui_interface.h"
 #include "coin.h"
+#include "checkpoints.h"
 
 class CWalletTx;
 //class CReserveKey;
@@ -50,6 +51,7 @@ enum WalletFeature
 
 	FEATURE_LATEST = 60000
 };
+
 
 typedef std::map<std::string, std::string> mapval_t;
 
@@ -69,10 +71,10 @@ class CAccountCache;
 #define ACCADDR_SEGWIT 4 
 /* ext transactions (@account) */
 #define ACCADDR_EXT 5 
-/* mining address */
-#define ACCADDR_MINER 5 
+/* notary address */
+#define ACCADDR_NOTARY 6 
 
-#define MAX_ACCADDR 6
+#define MAX_ACCADDR 7
 
 
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
@@ -84,6 +86,7 @@ class CWallet : public CCryptoKeyStore
 		CWalletDB *pwalletdbEncryption;
 
 	public:
+		CCheckpoints *checkpoints;
 		mutable CCriticalSection cs_wallet;
 		int ifaceIndex;
 		unsigned int nScanHeight;
@@ -171,6 +174,7 @@ class CWallet : public CCryptoKeyStore
 		{
 			nMasterKeyMaxID = 0;
 			pwalletdbEncryption = NULL;
+			checkpoints = NULL;
 			ifaceIndex = index;
 			nScanHeight = 0;
 			nValidateHeight = 0;
@@ -183,6 +187,7 @@ class CWallet : public CCryptoKeyStore
 			strWalletFile = strWalletFileIn;
 			nMasterKeyMaxID = 0;
 			pwalletdbEncryption = NULL;
+			checkpoints = NULL;
 			ifaceIndex = index;
 			nScanHeight = 0;
 			nValidateHeight = 0;
@@ -450,8 +455,6 @@ class CWallet : public CCryptoKeyStore
 
 		CPubKey GetExtPubKey(string strAccount);
 
-		CPubKey GetMinerPubKey(string strAccount);
-
 		CPubKey GetRecvPubKey(string strAccount);
 
 		CPubKey GetPrimaryPubKey(string strAccount);
@@ -462,7 +465,7 @@ class CWallet : public CCryptoKeyStore
 
 		CCoinAddr GetExtAddr(string strAccount);
 
-		CCoinAddr GetMinerAddr(string strAccount);
+		CCoinAddr GetNotaryAddr(string strAccount);
 
 		CCoinAddr GetRecvAddr(string strAccount);
 
@@ -1016,8 +1019,6 @@ bool core_UnacceptWalletTransaction(CIface *iface, const CTransaction& tx);
 
 bool core_CreateWalletAccountTransaction(CWallet *wallet, string strFromAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, string& strError, int64& nFeeRet);
 
-CScript GetScriptForWitness(const CScript& redeemscript);
-
 bool SelectCoins_Avg(int64 nTargetValue, vector<COutput>& vCoins, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet);
 
 
@@ -1030,6 +1031,7 @@ bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWal
 
 bool IsAccountValid(CIface *iface, std::string strAccount);
 
+int GetDefaultOutputType(CIface *iface);
 
 #endif
 

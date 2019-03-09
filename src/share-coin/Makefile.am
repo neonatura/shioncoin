@@ -13,7 +13,8 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/server \
 	-I$(srcdir)/server/ext \
 	-I$(srcdir)/server/blockchain \
-	-I$(srcdir)/server/rpc
+	-I$(srcdir)/server/rpc \
+	-std=c++11
 
 blockchain_sources = \
 	$(srcdir)/blockchain/bc_arch.c \
@@ -119,6 +120,7 @@ common_includes = \
 	$(top_srcdir)/src/share-lib/delta/xdelta3.h \
 	$(top_srcdir)/src/share-lib/net/shnet.h \
 	unet/unet.h \
+	server/bech32.h \
 	server/coin.h \
 	server/validation.h \
 	server/chain.h \
@@ -195,6 +197,8 @@ server_sources = \
 	server/txfeerate.cpp \
 	fractal/fractal.c \
 	fractal/fractal_bmp.c \
+	server/bolo/bolo_validation03.cpp \
+	server/bolo/bolo_validation03.h \
 	server/test/test_wallet.cpp \
 	server/test/test_wallet.h \
 	server/test/test_block.cpp \
@@ -299,8 +303,11 @@ server_sources = \
 	server/protocol.cpp \
 	server/block.cpp \
 	server/block.h \
+	server/checkpoints.cpp \
+	server/checkpoints.h \
 	server/txmempool.cpp \
 	server/txmempool.h \
+	server/bech32.cpp \
 	server/coin.cpp \
 	server/validation.cpp \
 	server/chain.cpp \
@@ -327,6 +334,8 @@ server_sources = \
 	server/addrman.cpp \
 	server/base58.h \
 	server/base58.cpp \
+	server/coinaddr.h \
+	server/coinaddr.cpp \
 	wallet_iface.cpp \
 	block_iface.cpp \
 	server_iface.cpp
@@ -397,19 +406,25 @@ test_shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx 
 
 
 if HAVE_SYSTEMCTL
-SYSD_FILE = /etc/systemd/system/shcoind.service
+SYSD_FILE = /lib/systemd/system/shcoind.service
 
 install-exec-hook:
+	mkdir -p /lib/systemd/system/
+	rm -f /etc/systemd/system/shcoind.service
 	echo "[Unit]" > $(SYSD_FILE) 
 	echo "Description=ShareCoin" >> $(SYSD_FILE) 
+	echo "Wants=network.target" >> $(SYSD_FILE) 
 	echo "After=network.target" >> $(SYSD_FILE) 
 	echo "[Service]" >> $(SYSD_FILE) 
 	echo "ExecStart=$(sbindir)/shcoind -nf" >> $(SYSD_FILE)
+	echo "[Install]" >> $(SYSD_FILE) 
+	echo "WantedBy=sysinit.target" >> $(SYSD_FILE) 
+	echo "Alias=shcoind.service" >> $(SYSD_FILE) 
 	systemctl daemon-reload 
-	@echo "Run 'systemctl enable shcoind' to enable on startup."
+	systemctl enable shcoind
 
 uninstall-hook:
-	rm -f $(SYSD_FILE)
+	rm -f $(SYSD_FILE) /etc/systemd/system/shcoind.service
 	systemctl daemon-reload 
 endif
 

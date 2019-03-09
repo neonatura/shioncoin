@@ -33,10 +33,21 @@
 #include "txsignature.h"
 #include "txmempool.h"
 #include "chain.h"
+#include "bolo/bolo_validation03.h"
 
 using namespace std;
 
 static const uint256 _blank_hash = 0;
+
+/* TODO: Move to a header file. */
+/** Flags for nSequence and nLockTime locks */
+/** Interpret sequence numbers as relative lock-time constraints. */
+static const unsigned int LOCKTIME_VERIFY_SEQUENCE = (1 << 0);
+/** Use GetMedianTimePast() instead of nTime for end point timestamp. */
+static const unsigned int LOCKTIME_MEDIAN_TIME_PAST = (1 << 1);
+static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS =
+	LOCKTIME_VERIFY_SEQUENCE |
+	LOCKTIME_MEDIAN_TIME_PAST;
 
 extern unsigned int color_GetTotalBlocks();
 
@@ -672,6 +683,16 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 		}
 	}
 
+	unsigned int flags = GetBlockScriptFlags(iface, pindex);
+	if (flags & LOCKTIME_VERIFY_SEQUENCE) {
+		BOOST_FOREACH(const CTransaction& tx, block->vtx) {
+			if (tx.GetVersion() >= 2) { /* tx v2 lock/sequence test */
+				if (!CheckSequenceLocks(iface, tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
+					return (block->trust(-10, "(%s) ConnectBlock: block contains a non-final transaction at height %u [seq].", iface->name, nHeight));
+			}
+		}
+	}
+
   int64 nFees = 0;
   int nSigOps = 0;
   tx_map mapOutputs;
@@ -734,6 +755,9 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
   timing_init("ConnectBlock/ConnectExtTx", &ts);
 	core_ConnectExtTx(iface, block, nHeight);
   timing_term(block->ifaceIndex, "ConnectBlock/ConnectExtTx", &ts);
+
+	bolo_connectblock_slave(pindex, *block);
+	bolo_connectblock_master(pindex, *block);
 
   return true;
 }

@@ -43,6 +43,7 @@ using namespace std;
 #include "chain.h"
 #include "mnemonic.h"
 #include "txmempool.h"
+#include "txfeerate.h"
 #include "rpc_proto.h"
 #include "rpc_command.h"
 #include "rpccert_proto.h"
@@ -257,7 +258,7 @@ Value rpc_wallet_export(CIface *iface, const Array& params, bool fStratum)
 
 			/* todo: try again w/ txdb removed */
 #if 0
-			/* DEBUG: commented out; takes too long with large wallet */
+			/* TODO: commented out; takes too long with large wallet */
 			/* was this key ever used. */
 			int nTxInput = 0;
 			int nTxSpent = 0;
@@ -409,6 +410,7 @@ Value rpc_wallet_prune(CIface *iface, const Array& params, bool fStratum)
 	return Value::null;
 }
 
+#if 0
 bool BackupWallet(const CWallet& wallet, const string& strDest)
 {
 	while (!fShutdown)
@@ -449,7 +451,9 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
 	}
 	return false;
 }
+#endif
 
+#if 0
 Value rpc_wallet_exportdat(CIface *iface, const Array& params, bool fStratum)
 {
 
@@ -469,9 +473,11 @@ Value rpc_wallet_exportdat(CIface *iface, const Array& params, bool fStratum)
 
 	return Value::null;
 }
+#endif
 
 Value rpc_wallet_get(CIface *iface, const Array& params, bool fStratum)
 {
+	int ifaceIndex = GetCoinIndex(iface);
 
 	if (fStratum)
 		throw runtime_error("unsupported operation");
@@ -480,7 +486,7 @@ Value rpc_wallet_get(CIface *iface, const Array& params, bool fStratum)
 	if (params.size() != 1)
 		throw runtime_error("wallet.get");
 
-	CCoinAddr address(params[0].get_str());
+	CCoinAddr address(ifaceIndex, params[0].get_str());
 	if (!address.IsValid())
 		throw JSONRPCError(-5, "Invalid coin address");
 
@@ -518,7 +524,7 @@ Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum)
 	int ifaceIndex = GetCoinIndex(iface);
 
 	string strAddress = params[0].get_str();
-	CCoinAddr address(strAddress);
+	CCoinAddr address(ifaceIndex, strAddress);
 	if (!address.IsValid())
 		throw JSONRPCError(-5, "Invalid address");
 	CKeyID keyID;
@@ -783,18 +789,33 @@ Value rpc_wallet_witaddr(CIface *iface, const Array& params, bool fStratum)
 {
 	int ifaceIndex = GetCoinIndex(iface);
 
-	if (params.size() != 1)
+	if (params.size() == 0 || params.size() > 2) {
 		throw runtime_error(
-				"wallet.witaddr <addr>\n"
+				"wallet.witaddr <addr> [<type>]\n"
 				"Returns a witness program which references the coin address specified.");
+	}
 
 	CWallet *wallet = GetWallet(iface);
 	string strAccount;
 
 	// Parse the account first so we don't generate a key if there's an error
-	CCoinAddr address(params[0].get_str());
+	CCoinAddr address(ifaceIndex, params[0].get_str());
 	if (!address.IsValid())
 		throw JSONRPCError(-5, "Invalid coin address specified.");
+
+	int output_mode = OUTPUT_TYPE_NONE;
+	if (params.size() > 1) {
+		string strMode = params[1].get_str();
+		if (strMode == "bech32")
+			output_mode = OUTPUT_TYPE_BECH32;
+		else if (strMode == "p2sh" ||
+				strMode == "p2sh-segwit")
+			output_mode = OUTPUT_TYPE_P2SH_SEGWIT;
+		else if (strMode == "default")
+			output_mode = OUTPUT_TYPE_NONE;
+		else
+			throw JSONRPCError(ERR_INVAL, "invalid type parameter");
+	}
 
 	if (!IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
 		throw JSONRPCError(-4, "Segregated witness is not enabled on the network.");
@@ -804,45 +825,9 @@ Value rpc_wallet_witaddr(CIface *iface, const Array& params, bool fStratum)
 		throw JSONRPCError(-5, "No account associated with coin address.");
 	}
 
-	CKeyID keyID;
-	CScriptID scriptID;
-	CScriptID result;
-	if (address.GetKeyID(keyID)) {
-		CScript basescript = GetScriptForDestination(keyID);
-
-		if (!IsMine(*wallet, basescript))
-			throw JSONRPCError(-5, "No local account associated with coin address.");
-
-		CScript witscript = GetScriptForWitness(basescript);
-		wallet->AddCScript(witscript);
-		result = CScriptID(witscript);
-	} else if (address.GetScriptID(scriptID)) {
-		CScript subscript;
-		if (wallet->GetCScript(scriptID, subscript)) {
-			int witnessversion;
-			std::vector<unsigned char> witprog;
-			if (subscript.IsWitnessProgram(witnessversion, witprog)) {
-				/* ID is already for a witness program script */
-				result = scriptID;
-			} else {
-				//isminetype typ;
-				//typ = IsMine(*pwalletMain, subscript, SIGVERSION_WITNESS_V0);
-				//if (typ != ISMINE_SPENDABLE && typ != ISMINE_WATCH_SOLVABLE)
-				if (!IsMine(*wallet, subscript))
-					throw JSONRPCError(-5, "No local account associated with coin address.");
-
-				CScript witscript = GetScriptForWitness(subscript);
-				wallet->AddCScript(witscript);
-				result = CScriptID(witscript);
-			}
-		}
-	} else /* ?? */ {
-		throw JSONRPCError(-5, "Coin address could not be parsed.");
-	}
-
-	/* persist */
+	/* convert into witness program. */
+	CTxDestination result = address.GetWitness(output_mode); 
 	wallet->SetAddressBookName(result, strAccount);
-
 	return (CCoinAddr(ifaceIndex, result).ToString());
 }
 
@@ -901,7 +886,7 @@ Value rpc_wallet_recvbyaddr(CIface *iface, const Array& params, bool fStratum)
 				"wallet.recvbyaddr <coin-address> [minconf=1]\n"
 				"Returns the total amount received by <coin-address> in transactions with at least [minconf] confirmations.");
 
-	CCoinAddr address = CCoinAddr(params[0].get_str());
+	CCoinAddr address = CCoinAddr(ifaceIndex, params[0].get_str());
 	if (!address.IsValid())
 		throw JSONRPCError(-5, "Invalid coin address");
 
@@ -1093,13 +1078,13 @@ Value rpc_wallet_send(CIface *iface, const Array& params, bool fStratum)
 	string strAccount = AccountFromValue(params[0]);
 
 	/* destination coin address */
-	CCoinAddr address(params[1].get_str());
-#if 0
+	CCoinAddr address(ifaceIndex, params[1].get_str());
 	if (!address.IsValid())
 		throw JSONRPCError(-5, "Invalid coin address");
-#endif
+#if 0
 	if (address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex))
 		throw JSONRPCError(-5, "Invalid address for coin service.");
+#endif
 
 	int64 nAmount = AmountFromValue(params[2]);
 	int nMinDepth = 1;
@@ -1146,9 +1131,13 @@ Value rpc_wallet_tsend(CIface *iface, const Array& params, bool fStratum)
 	string strAccount = AccountFromValue(params[0]);
 
 	/* destination coin address */
-	CCoinAddr address(params[1].get_str());
+	CCoinAddr address(ifaceIndex, params[1].get_str());
+	if (!address.IsValid())
+		throw JSONRPCError(-5, "Invalid coin address");
+#if 0
 	if (address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex))
 		throw JSONRPCError(-5, "Invalid address for coin service.");
+#endif
 
 	int64 nAmount = AmountFromValue(params[2]);
 	int nMinDepth = 1;
@@ -1211,9 +1200,13 @@ Value rpc_wallet_bsend(CIface *iface, const Array& params, bool fStratum)
 	string strAccount = AccountFromValue(params[0]);
 
 	/* destination coin address */
-	CCoinAddr address(params[1].get_str());
+	CCoinAddr address(ifaceIndex, params[1].get_str());
+	if (!address.IsValid())
+		throw JSONRPCError(-5, "Invalid coin address");
+#if 0
 	if (address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex))
 		throw JSONRPCError(-5, "Invalid address for coin service.");
+#endif
 
 	int64 nAmount = AmountFromValue(params[2]);
 
@@ -1310,6 +1303,7 @@ Value rpc_wallet_bsend(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_wallet_set(CIface *iface, const Array& params, bool fStratum)
 {
+	int ifaceIndex = GetCoinIndex(iface);
 
 	if (fStratum)
 		throw runtime_error("unsupported operation");
@@ -1320,7 +1314,7 @@ Value rpc_wallet_set(CIface *iface, const Array& params, bool fStratum)
 				"wallet.set <coin-address> <account>\n"
 				"Sets the account associated with the given address.");
 
-	CCoinAddr address(params[0].get_str());
+	CCoinAddr address(ifaceIndex, params[0].get_str());
 	if (!address.IsValid())
 		throw JSONRPCError(-5, "Invalid coin address");
 
@@ -1598,7 +1592,7 @@ Value rpc_wallet_validate(CIface *iface, const Array& params, bool fStratum)
 				"wallet.validate <coin-address>\n"
 				"Return information about <coin-address>.");
 
-	CCoinAddr address(params[0].get_str());
+	CCoinAddr address(ifaceIndex, params[0].get_str());
 	bool isValid = true;//address.IsValid();
 
 	Object ret;
@@ -1779,7 +1773,7 @@ Value rpc_wallet_multisend(CIface *iface, const Array& params, bool fStratum)
 	int64 totalAmount = 0;
 	BOOST_FOREACH(const Pair& s, sendTo)
 	{
-		CCoinAddr address(s.name_);
+		CCoinAddr address(ifaceIndex, s.name_);
 		if (!address.IsValid())
 			throw JSONRPCError(-5, string("Invalid coin address:")+s.name_);
 
@@ -1819,15 +1813,43 @@ Value rpc_wallet_multisend(CIface *iface, const Array& params, bool fStratum)
 /** create a new coin address for the account specified. */
 Value rpc_wallet_new(CIface *iface, const Array& params, bool fStratum)
 {
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	int output_mode = OUTPUT_TYPE_NONE;
 
-	if (params.size() != 1)
+	if (params.size() == 0)
 		throw runtime_error("invalid parameters");
 
 	Value ret;
 	string strAccount = params[0].get_str();
-	ret = GetAccountAddress(GetWallet(iface), strAccount, true).ToString();
+	
+	if (params.size() > 1) {
+		string strMode = params[1].get_str();
+		if (strMode == "bech32")
+			output_mode = OUTPUT_TYPE_BECH32;
+		else if (strMode == "p2sh-segwit" ||
+				strMode == "segwit")
+			output_mode = OUTPUT_TYPE_P2SH_SEGWIT;
+		else if (strMode == "legacy")
+			output_mode = OUTPUT_TYPE_LEGACY;
+		else
+			throw JSONRPCError(ERR_INVAL, "invalid type parameter");
+	}
 
-	return ret;
+	/* obtain legacy pubkey address. */
+	CCoinAddr addr = GetAccountAddress(GetWallet(iface), strAccount, true);
+
+	if (output_mode == OUTPUT_TYPE_P2SH_SEGWIT ||
+			output_mode == OUTPUT_TYPE_BECH32) {
+		if (IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+			/* convert to wit-addr program. */
+			CTxDestination dest = addr.GetWitness(output_mode); 
+			wallet->SetAddressBookName(dest, strAccount);
+			addr = CCoinAddr(ifaceIndex, dest);
+		}
+	}
+
+	return (addr.ToString());
 }
 
 Value rpc_wallet_derive(CIface *iface, const Array& params, bool fStratum)
@@ -1927,5 +1949,34 @@ Value rpc_wallet_keyphrase(CIface *iface, const Array& params, bool fStratum)
 	string phrase = EncodeMnemonicSecret(secret);
 
 	return (phrase);
+}
+
+Value rpc_wallet_fee(CIface *iface, const Array& params, bool fStratum)
+{
+	int64 nFeeRate;
+	int nDepth;
+	bool fEco;
+
+	nDepth = 2; /* minimum */
+	if (params.size() >= 1)
+		nDepth = MAX(1, params[0].get_int());
+
+	fEco = false; /* default */
+	if (params.size() >= 2 && params[1].get_str() == "ECONOMICAL")
+		fEco = true;
+
+	CBlockPolicyEstimator *est = GetFeeEstimator(iface);
+	nFeeRate = est->estimateSmartFee(nDepth, NULL).GetFeePerK();
+	if (!fEco) {
+		/* TODO: not standard, but similar.. */
+		nFeeRate = MAX(nFeeRate, 
+			(est->estimateSmartFee(nDepth * 2, NULL).GetFeePerK() + nFeeRate) / 2);
+	}
+	nFeeRate = MAX(nFeeRate, MIN_TX_FEE(iface));
+
+	Object obj;
+	obj.push_back(Pair("feerate", (double)nFeeRate / COIN));
+	obj.push_back(Pair("blocks", nDepth));
+	return (obj);
 }
 

@@ -186,6 +186,7 @@ int64 test_GetBlockValue(int nHeight, int64 nFees)
   return nSubsidy + nFees;
 }
 
+#if 0
 namespace TEST_Checkpoints
 {
   typedef std::map<int, uint256> MapCheckpoints;
@@ -240,6 +241,7 @@ namespace TEST_Checkpoints
 
 
 }
+#endif
 
 static int64_t test_GetTxWeight(const CTransaction& tx)
 {
@@ -1122,11 +1124,16 @@ bool TESTBlock::Truncate()
 
 bool TESTBlock::VerifyCheckpoint(int nHeight)
 {
-  return (TEST_Checkpoints::CheckBlock(nHeight, GetHash()));
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (true);
+  return (wallet->checkpoints->CheckBlock(nHeight, GetHash()));
 }   
+
 uint64_t TESTBlock::GetTotalBlocksEstimate()
 {   
-  return ((uint64_t)TEST_Checkpoints::GetTotalBlocksEstimate());
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (0);
+  return ((uint64_t)wallet->checkpoints->GetTotalBlocksEstimate());
 }
 
 #if 0
@@ -1611,8 +1618,10 @@ bool test_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxInde
     // Skip ECDSA signature verification when connecting blocks (fBlock=true)
     // before the last blockchain checkpoint. This is safe because block merkle hashes are
     // still computed and checked, and any change will be caught at the next checkpoint.
-    if (!(fBlock && (GetBestHeight(TEST_COIN_IFACE < TEST_Checkpoints::GetTotalBlocksEstimate()))))
-    {
+		CWallet *wallet = GetWallet(TEST_COIN_IFACE);
+		int nTotal = 0;
+		if (wallet && wallet->checkpoints) nTotal = wallet->checkpoints->GetTotalBlocksEstimate();
+    if (!(fBlock && (GetBestHeight(TEST_COIN_IFACE) < nTotal))) {
       // Verify signature
       if (!VerifySignature(TEST_COIN_IFACE, txPrev, *tx, i, fStrictPayToScriptHash, 0))
       {
@@ -1713,7 +1722,6 @@ bool TESTBlock::DisconnectBlock(CBlockIndex* pindex)
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
 	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
 
-
   if (pindex->pprev) {
     BOOST_FOREACH(CTransaction& tx, vtx) {
       if (tx.IsCoinBase()) {
@@ -1751,15 +1759,15 @@ bool TESTBlock::CreateCheckpoint()
 	CBlockIndex *prevIndex;
 	CBlockIndex *pindex;
 
-	if (blockIndex->count(hBlock) == 0)
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
 		return (false);
+
+	if (blockIndex->count(hBlock) == 0) {
+		return (false);
+	}
 	pindex = (*blockIndex)[hBlock];
 
-	prevIndex = TEST_Checkpoints::GetLastCheckpoint(*blockIndex);
-	if (prevIndex && pindex->nHeight <= prevIndex->nHeight)
-		return (false); /* stale */
-
-	TEST_Checkpoints::AddCheckpoint(pindex->nHeight, hBlock);
-	return (true);
+	return (wallet->checkpoints->AddCheckpoint(pindex));
 }
 

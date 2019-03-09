@@ -759,7 +759,6 @@ bool ServiceBlockEvent(int ifaceIndex)
 		ServiceBlockGetDataEvent(wallet, pindexBest, pfrom);
 	} else {
 		ServiceBlockHeadersEvent(wallet, pindexBest, pfrom);
-fprintf(stderr, "DEBUG: [%s] ServiceBlockGetDataEvent: downloading %d blocks..\n", iface->name, vBlocks.size()); 
 	}
 #endif
 

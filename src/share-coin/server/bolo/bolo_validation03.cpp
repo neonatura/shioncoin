@@ -63,22 +63,70 @@
     obj.pushKV("notarized_MoM",         NOTARIZED_MOM.GetHex());
 }*/
 
+#include "shcoind.h"
 #include "wallet.h"
 #include "base58.h"
+#include "txsignature.h"
+#include "coinaddr.h"
+#include "txcreator.h"
+#include "bolo_validation03.h"
 
-#define SATOSHIDEN ((uint64_t)100000000L)
-#define dstr(x) ((double)(x) / SATOSHIDEN)
-#define portable_mutex_t pthread_mutex_t
-#define portable_mutex_init(ptr) pthread_mutex_init(ptr,NULL)
-#define portable_mutex_lock pthread_mutex_lock
-#define portable_mutex_unlock pthread_mutex_unlock
+/* the coin value of each input for the final notary tx on the master chain. */
+#define BOLO_NOTARY_COIN_VALUE 1000
 
-#define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
-#define BOLO_MINRATIFY 11
-#define BOLO_ELECTION_GAP 2000
-#define BOLO_ASSETCHAIN_MAXLEN 65
-#define BOLO_NOTARIES_TIMESTAMP1 1525132800 // May 1st 2018 1530921600 // 7/7/2017
-#define BOLO_NOTARIES_HEIGHT1 ((814000 / BOLO_ELECTION_GAP) * BOLO_ELECTION_GAP)
+/* the wallet account which is debited for notary tx creation. */
+#define BOLO_ORIGIN_ACCOUNT "bank"
+#define BOLO_NOTARY_ACCOUNT "bolo"
+
+cbuff IntToByteVector(int val)
+{
+	unsigned char *raw = (unsigned char *)&val;
+	return (cbuff(raw, raw + 4));
+}
+
+template <typename T>
+std::vector<unsigned char> ToByteVector(const T& in)
+{
+	    return std::vector<unsigned char>(in.begin(), in.end());
+}
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
+/* slave chain - block to notorize. */
+int64 bolo_CHECKPOINT_HEIGHT;
+uint256 bolo_CHECKPOINT_HASH;
+uint256 bolo_CHECKPOINT_TXID;
+
+/* slave chain - proposed block to notorize. */
+int bolo_PROPOSED_HEIGHT;
+uint256 bolo_PROPOSED_BLOCK;
+uint256 bolo_PROPOSED_TXID;
+int bolo_HWM_HEIGHT;
+
+/* master chain - notary tx working variables. */
+vector<CTxIn> bolo_mapNotary;
+vector<CScript> bolo_mapNotaryScript;
+int64 bolo_PROPOSED_LOCKTIME;
+bool bolo_PROPOSED_NOTARY;
+
+static CIface *bolo_master_iface;
+static CIface *bolo_slave_iface;
+
+struct less_than_key
+{
+	inline bool operator() (const CTxIn& struct1, const CTxIn& struct2)
+	{
+		if (struct1.prevout.hash == struct2.prevout.hash)
+			return (struct1.prevout.n < struct2.prevout.n); 
+		return (struct1.prevout.hash < struct2.prevout.hash);
+	}
+};
+
 
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
@@ -86,113 +134,6 @@ typedef union _bits256 bits256;
 struct sha256_vstate { uint64_t length; uint32_t state[8],curlen; uint8_t buf[64]; };
 struct rmd160_vstate { uint64_t length; uint8_t buf[64]; uint32_t curlen, state[5]; };
 int32_t BOLO_TXINDEX = 1;
-
-int32_t gettxout_scriptPubKey(int32_t height,uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n)
-{
-	static uint256 zero; int32_t i,m; uint8_t *ptr; CTransaction tx; uint256 hashBlock;
-
-	LOCK(cs_main);
-
-	if ( BOLO_TXINDEX != 0 )
-	{
-		if ( GetTransaction(txid,tx,Params().GetConsensus(),hashBlock,false) == 0 )
-		{
-			//fprintf(stderr,"ht.%d couldnt get txid.%s\n",height,txid.GetHex().c_str());
-			return(-1);
-		}
-	}
-	else
-	{
-		CWallet * const pwallet = pwalletMain;
-		if ( pwallet != 0 )
-		{
-			//fprintf(stderr,"Size of tx in wallet: %d\n", pwallet->mapWallet.size());
-			auto it = pwallet->mapWallet.find(txid);
-			if ( it != pwallet->mapWallet.end() )
-			{
-				//fprintf(stderr,"try to found tx in wallet\n");
-				const CWalletTx& wtx = it->second;
-				tx = wtx;
-				//fprintf(stderr,"found tx in wallet\n");
-			}
-		}
-	}
-
-	if ( !tx.IsNull() && n >= 0 && n <= (int32_t)tx.vout.size() ) // vout.size() seems off by 1
-	{
-		ptr = (uint8_t *)&tx.vout[n].scriptPubKey[0];
-		m = tx.vout[n].scriptPubKey.size();
-		for (i=0; i<maxsize&&i<m; i++)
-			scriptPubKey[i] = ptr[i];
-		//fprintf(stderr,"got scriptPubKey[%d] via rawtransaction ht.%d %s\n",m,height,txid.GetHex().c_str());
-		return(i);
-	}
-	else if ( !tx.IsNull() )
-		fprintf(stderr,"gettxout_scriptPubKey ht.%d n.%d > voutsize.%d\n",height,n,(int32_t)tx.vout.size());
-	return(-1);
-}
-
-#if 0
-#ifdef have_keyio_h
-void ImportAddress(CWallet*, const CTxDestination& dest, const std::string& strLabel);
-
-int32_t bolo_importaddress(std::string addr)
-{
-	CTxDestination address; CWallet * const pwallet = pwalletMain;
-	if ( pwallet != 0 )
-	{
-		LOCK2(cs_main, pwallet->cs_wallet);
-		address = DecodeDestination(addr);
-		if ( IsValidDestination(address) != 0 )
-		{
-			isminetype mine = IsMine(*pwallet, address);
-			if ( (mine & ISMINE_SPENDABLE) != 0 || (mine & ISMINE_WATCH_ONLY) != 0 )
-			{
-				//printf("bolo_importaddress %s already there\n",EncodeDestination(address).c_str());
-				return(0);
-			}
-			else
-			{
-				printf("bolo_importaddress %s\n",EncodeDestination(address).c_str());
-				ImportAddress(pwallet, address, addr);
-				return(1);
-			}
-		}
-		printf("%s -> bolo_importaddress.(%s) failed valid.%d\n",addr.c_str(),EncodeDestination(address).c_str(),IsValidDestination(address));
-	}
-	return(-1);
-}
-#else
-void ImportAddress(const CBitcoinAddress& address, const std::string& strLabel);
-
-int32_t bolo_importaddress(std::string addr)
-{
-	CBitcoinAddress address(addr); CWallet * const pwallet = pwalletMain;
-	if ( pwallet != 0 )
-	{
-		LOCK2(cs_main, pwallet->cs_wallet);
-		if ( address.IsValid() != 0 )
-		{
-			isminetype mine = IsMine(*pwallet, address.Get());
-			if ( (mine & ISMINE_SPENDABLE) != 0 || (mine & ISMINE_WATCH_ONLY) != 0 )
-			{
-				//printf("bolo_importaddress %s already there\n",EncodeDestination(address).c_str());
-				return(0);
-			}
-			else
-			{
-				printf("bolo_importaddress %s\n",addr.c_str());
-				ImportAddress(address, addr);
-				return(1);
-			}
-		}
-		printf("%s -> bolo_importaddress failed valid.%d\n",addr.c_str(),address.IsValid());
-	}
-	return(-1);
-}
-#endif
-#endif
-
 
 // following is ported from libtom
 /* LibTomCrypt, modular cryptographic library -- Tom St Denis
@@ -260,7 +201,7 @@ int32_t bolo_importaddress(std::string addr)
 #define Sigma1(x)       (S(x, 6) ^ S(x, 11) ^ S(x, 25))
 #define Gamma0(x)       (S(x, 7) ^ S(x, 18) ^ R(x, 3))
 #define Gamma1(x)       (S(x, 17) ^ S(x, 19) ^ R(x, 10))
-#define MIN(x, y) ( ((x)<(y))?(x):(y) )
+//#define MIN(x, y) ( ((x)<(y))?(x):(y) )
 
 static inline int32_t sha256_vcompress(struct sha256_vstate * md,uint8_t *buf)
 {
@@ -496,198 +437,7 @@ int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *
 	return(len);
 }
 
-int32_t bitweight(uint64_t x)
-{
-	int i,wt = 0;
-	for (i=0; i<64; i++)
-		if ( (1LL << i) & x )
-			wt++;
-	return(wt);
-}
-
-int32_t _unhex(char c)
-{
-	if ( c >= '0' && c <= '9' )
-		return(c - '0');
-	else if ( c >= 'a' && c <= 'f' )
-		return(c - 'a' + 10);
-	else if ( c >= 'A' && c <= 'F' )
-		return(c - 'A' + 10);
-	return(-1);
-}
-
-int32_t is_hexstr(char *str,int32_t n)
-{
-	int32_t i;
-	if ( str == 0 || str[0] == 0 )
-		return(0);
-	for (i=0; str[i]!=0; i++)
-	{
-		if ( n > 0 && i >= n )
-			break;
-		if ( _unhex(str[i]) < 0 )
-			break;
-	}
-	if ( n == 0 )
-		return(i);
-	return(i == n);
-}
-
-int32_t unhex(char c)
-{
-	int32_t hex;
-	if ( (hex= _unhex(c)) < 0 )
-	{
-		//printf("unhex: illegal hexchar.(%c)\n",c);
-	}
-	return(hex);
-}
-
-unsigned char _decode_hex(char *hex) { return((unhex(hex[0])<<4) | unhex(hex[1])); }
-
-int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
-{
-	int32_t adjust,i = 0;
-	//printf("decode.(%s)\n",hex);
-	if ( is_hexstr(hex,n) <= 0 )
-	{
-		memset(bytes,0,n);
-		return(n);
-	}
-	if ( hex[n-1] == '\n' || hex[n-1] == '\r' )
-		hex[--n] = 0;
-	if ( n == 0 || (hex[n*2+1] == 0 && hex[n*2] != 0) ) {
-		if ( n > 0 ) {
-			bytes[0] = unhex(hex[0]);
-		}
-		bytes++;
-		hex++;
-		adjust = 1;
-	} else adjust = 0;
-	if ( n > 0 )
-	{
-		for (i=0; i<n; i++)
-			bytes[i] = _decode_hex(&hex[i*2]);
-	}
-	//bytes[i] = 0;
-	return(n + adjust);
-}
-
-char hexbyte(int32_t c)
-{
-	c &= 0xf;
-	if ( c < 10 )
-		return('0'+c);
-	else if ( c < 16 )
-		return('a'+c-10);
-	else return(0);
-}
-
-int32_t init_hexbytes_noT(char *hexbytes,unsigned char *message,long len)
-{
-	int32_t i;
-	if ( len <= 0 )
-	{
-		hexbytes[0] = 0;
-		return(1);
-	}
-	for (i=0; i<len; i++)
-	{
-		hexbytes[i*2] = hexbyte((message[i]>>4) & 0xf);
-		hexbytes[i*2 + 1] = hexbyte(message[i] & 0xf);
-		//printf("i.%d (%02x) [%c%c]\n",i,message[i],hexbytes[i*2],hexbytes[i*2+1]);
-	}
-	hexbytes[len*2] = 0;
-	//printf("len.%ld\n",len*2+1);
-	return((int32_t)len*2+1);
-}
-
-uint32_t bolo_chainactive_timestamp()
-{
-	if ( chainActive.Tip() != 0 )
-		return((uint32_t)chainActive.Tip()->GetBlockTime());
-	else return(0);
-}
-
-CBlockIndex *bolo_chainactive(int32_t height)
-{
-	CBlockIndex *tipindex;
-	if ( (tipindex= chainActive.Tip()) != 0 )
-	{
-		if ( height <= tipindex->nHeight )
-			return(chainActive[height]);
-		// else fprintf(stderr,"bolo_chainactive height %d > active.%d\n",height,chainActive.Tip()->nHeight);
-	}
-	//fprintf(stderr,"bolo_chainactive null chainActive.Tip() height %d\n",height);
-	return(0);
-}
-
-uint32_t bolo_heightstamp(int32_t height)
-{
-	CBlockIndex *ptr;
-	if ( height > 0 && (ptr= bolo_chainactive(height)) != 0 )
-		return(ptr->nTime);
-	//else fprintf(stderr,"bolo_heightstamp null ptr for block.%d\n",height);
-	return(0);
-}
-
-struct notarized_checkpoint
-{
-	uint256 notarized_hash,notarized_desttxid,MoM,MoMoM;
-	int32_t nHeight,notarized_height,MoMdepth,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
-} *NPOINTS;
-
-std::string NOTARY_PUBKEY;
-uint8_t NOTARY_PUBKEY33[33];
-uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID,NOTARIZED_MOM;
-int32_t NUM_NPOINTS,last_NPOINTSi,NOTARIZED_HEIGHT,NOTARIZED_MOMDEPTH,BOLO_NEEDPUBKEYS;
-portable_mutex_t bolo_mutex;
-
-#if 0
-void bolo_importpubkeys()
-{
-	int32_t i,n,m,offset=1,val,dispflag = 0; std::string addr; char *pubkey;
-
-	n = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
-	for (i=0; i<n; i++) // each year add new notaries too
-	{
-		if ( Notaries_elected1[i][offset] == 0 )
-			continue;
-		if ( (m= (int32_t)strlen((char *)Notaries_elected1[i][offset])) > 0 )
-		{
-			pubkey = (char*) Notaries_elected1[i][offset];
-			const std::vector<unsigned char> vPubkey(pubkey, pubkey + m);
-			std::string addr = CBitcoinAddress(CPubKey(ParseHex(pubkey)).GetID()).ToString();
-			// fprintf(stderr,"pubkey:%s,addr:%s\n", pubkey, addr.c_str() );
-			if ( (val= bolo_importaddress(addr)) < 0 )
-				fprintf(stderr,"error importing (%s)\n",addr.c_str());
-			else if ( val == 0 )
-				dispflag++;
-		}
-	}
-	if ( dispflag != 0 )
-		fprintf(stderr,"%d Notary pubkeys imported\n",dispflag);
-}
-#endif
-
-int32_t bolo_init()
-{
-#if 0
-	NOTARY_PUBKEY = GetArg("-pubkey", "");
-	decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-	if ( GetBoolArg("-txindex", DEFAULT_TXINDEX) == 0 )
-	{
-		fprintf(stderr,"txindex is off, import notary pubkeys\n");
-		BOLO_NEEDPUBKEYS = 1;
-		BOLO_TXINDEX = 0;
-	}
-#endif
-		BOLO_NEEDPUBKEYS = 1;
-		BOLO_TXINDEX = 0;
-	return(0);
-}
-
-bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
+static bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
 {
 	int32_t i,n=0,prev; uint8_t serialized[sizeof(bits256) * 2];
 	if ( txn_count == 1 )
@@ -710,503 +460,695 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
 	return(tree[n]);
 }
 
-uint256 bolo_calcMoM(int32_t height,int32_t MoMdepth)
+int32_t bolo_init(int slaveIface, int masterIface)
 {
-	static uint256 zero; bits256 MoM,*tree; CBlockIndex *pindex; int32_t i;
-	if ( MoMdepth >= height )
-		return(zero);
-	tree = (bits256 *)calloc(MoMdepth * 3,sizeof(*tree));
-	for (i=0; i<MoMdepth; i++)
-	{
-		if ( (pindex= bolo_chainactive(height - i)) != 0 )
-			memcpy(&tree[i],&pindex->hashMerkleRoot,sizeof(bits256));
+
+	BOLO_TXINDEX = 0;
+
+	bolo_master_iface = GetCoinByIndex(masterIface);
+	if (!bolo_master_iface || !bolo_master_iface->enabled)
+		return (-1);
+
+	bolo_slave_iface = GetCoinByIndex(slaveIface);
+	if (!bolo_slave_iface || !bolo_slave_iface->enabled)
+		return (-1);
+
+	return(0);
+}
+
+/* calculate a merkle tree hash from a chain of blocks. */
+uint256 bolo_GetSlaveMerkle(int32_t height,int32_t MoMdepth)
+{
+	int ifaceIndex = GetCoinIndex(bolo_slave_iface);
+	static uint256 zero;
+	bits256 MoM, *tree; 
+	int i;
+
+	MoMdepth = MAX(0, MIN(MoMdepth, height - 1));
+	//if ( MoMdepth >= height ) return(zero);
+
+	tree = (bits256 *)calloc(MoMdepth * 3, sizeof(*tree));
+	for (i=0; i < MoMdepth; i++) {
+		CBlockIndex *pindex = GetBlockIndexByHeight(ifaceIndex, height - i);
+		if (pindex)
+			memcpy(&tree[i], &pindex->hashMerkleRoot, sizeof(bits256));
 		else
 		{
 			free(tree);
 			return(zero);
 		}
 	}
-	MoM = iguana_merkle(tree,MoMdepth);
+
+	memset(&MoM, 0, sizeof(MoM));
+	if (MoMdepth != 0)
+		MoM = iguana_merkle(tree, MoMdepth);
+
 	free(tree);
+
 	return(*(uint256 *)&MoM);
 }
 
-#if 0
-int32_t bolo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
+static bool bolo_checkpoint_create(int nHeight)
 {
-	static uint8_t elected_pubkeys0[64][33],elected_pubkeys1[64][33],did0,did1; static int32_t n0,n1;
-	int32_t i;
-	if ( timestamp == 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-		timestamp = bolo_heightstamp(height);
-	else if ( ASSETCHAINS_SYMBOL[0] == 0 )
-		timestamp = 0;
-	if ( ASSETCHAINS_SYMBOL[0] != 0 )
-	{
-		if ( (timestamp != 0 && timestamp <= BOLO_NOTARIES_TIMESTAMP1) || (ASSETCHAINS_SYMBOL[0] == 0 && height <= BOLO_NOTARIES_HEIGHT1) )
-		{
-			if ( did0 == 0 )
-			{
-				n0 = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
-				for (i=0; i<n0; i++)
-					decode_hex(elected_pubkeys0[i],33,(char *)Notaries_elected0[i][1]);
-				did0 = 1;
-			}
-			memcpy(pubkeys,elected_pubkeys0,n0 * 33);
-			//if ( ASSETCHAINS_SYMBOL[0] != 0 )
-			//fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n0);
-			return(n0);
-		}
-		else //if ( (timestamp != 0 && timestamp <= BOLO_NOTARIES_TIMESTAMP2) || height <= BOLO_NOTARIES_HEIGHT2 )
-		{
-			if ( did1 == 0 )
-			{
-				n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
-				for (i=0; i<n1; i++)
-					decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
-				if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-					fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n1);
-				did1 = 1;
-			}
-			memcpy(pubkeys,elected_pubkeys1,n1 * 33);
-			return(n1);
-		}
+	CBlock *block;
+	bool ok;
+
+	if (nHeight <= 1)
+		return (false);
+
+	block = GetBlockByHeight(bolo_slave_iface, nHeight);
+	if (!block)
+		return (false);
+	ok = block->CreateCheckpoint();
+
+	if (ok) {
+		/* retain */
+		bolo_CHECKPOINT_HEIGHT = nHeight;
+		bolo_CHECKPOINT_HASH = block->GetHash();
+		bolo_CHECKPOINT_TXID = bolo_PROPOSED_TXID;
 	}
-	return(-1);
-}
-#endif
+	delete block;
 
-void bolo_clearstate()
-{
-	portable_mutex_lock(&bolo_mutex);
-	memset(&NOTARIZED_HEIGHT,0,sizeof(NOTARIZED_HEIGHT));
-	memset(&NOTARIZED_HASH,0,sizeof(NOTARIZED_HASH));
-	memset(&NOTARIZED_DESTTXID,0,sizeof(NOTARIZED_DESTTXID));
-	memset(&NOTARIZED_MOM,0,sizeof(NOTARIZED_MOM));
-	memset(&NOTARIZED_MOMDEPTH,0,sizeof(NOTARIZED_MOMDEPTH));
-	memset(&last_NPOINTSi,0,sizeof(last_NPOINTSi));
-	portable_mutex_unlock(&bolo_mutex);
+	return (ok);
 }
 
-void bolo_disconnect(CBlockIndex *pindex, CBlock *block)
+bool bolo_GetMasterFinalTx(const CTxOut& out, int& nHeight)
 {
-	if ( (int32_t)pindex->nHeight <= NOTARIZED_HEIGHT ) {
-		Debug("BOLO: bolo_disconnect unexpected reorg pindex->nHeight.%d vs %d\n",(int32_t)pindex->nHeight,NOTARIZED_HEIGHT);
-		bolo_clearstate(); // bruteforce shortcut. on any reorg, no active notarization until next one is seen
+	uint256 hMerkle;
+	uint256 hBlock;
+	uint160 hIface;
+	opcodetype opcode;
+	cbuff vch;
+
+	if (out.nValue != 0)
+		return (false);
+
+	if (out.scriptPubKey.size() < BOLO_ASSETCHAIN_MINLEN || 
+			out.scriptPubKey.size() > BOLO_ASSETCHAIN_MAXLEN)
+		return (false);
+
+	const CScript& script = out.scriptPubKey;
+	CScript::const_iterator pc = script.begin();
+	if (!script.GetOp(pc, opcode) || opcode != OP_RETURN ||
+			!script.GetOp(pc, opcode) || opcode != OP_11 ||
+			!script.GetOp(pc, opcode) || opcode != OP_1 ||
+			!script.GetOp(pc, opcode) || opcode != OP_11) {
+		return (false);
 	}
-}
 
-struct notarized_checkpoint *bolo_npptr(int32_t height)
-{
-	int32_t i; struct notarized_checkpoint *np = 0;
-	for (i=NUM_NPOINTS-1; i>=0; i--)
-	{
-		np = &NPOINTS[i];
-		if ( np->MoMdepth > 0 && height > np->notarized_height-np->MoMdepth && height <= np->notarized_height )
-			return(np);
+	vch.clear();
+	if (!script.GetOp(pc, opcode, vch) || vch.size() != 20) {
+		return (false);
 	}
-	return(0);
-}
+	hIface = uint160(vch);
 
-int32_t bolo_prevMoMheight()
-{
-	static uint256 zero;
-	int32_t i; struct notarized_checkpoint *np = 0;
-	for (i=NUM_NPOINTS-1; i>=0; i--)
-	{
-		np = &NPOINTS[i];
-		if ( np->MoM != zero )
-			return(np->notarized_height);
+	vch.clear();
+	if (!script.GetOp(pc, opcode, vch) || vch.size() != 32) {
+		return (false);
 	}
-	return(0);
-}
+	hBlock = uint256(vch);
 
-//struct bolo_state *bolo_stateptr(char *symbol,char *dest);
-int32_t bolo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
-{
-	*hashp = NOTARIZED_HASH;
-	*txidp = NOTARIZED_DESTTXID;
-	*prevMoMheightp = bolo_prevMoMheight();
-	return(NOTARIZED_HEIGHT);
-}
-
-int32_t bolo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t height,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip)
-{
-	struct notarized_checkpoint *np = 0;
-	if ( (np= bolo_npptr(height)) != 0 )
-	{
-		*notarized_htp = np->notarized_height;
-		*MoMp = np->MoM;
-		*kmdtxidp = np->notarized_desttxid;
-		*MoMoMp = np->MoMoM;
-		*MoMoMoffsetp = np->MoMoMoffset;
-		*MoMoMdepthp = np->MoMoMdepth;
-		*kmdstartip = np->kmdstarti;
-		*kmdendip = np->kmdendi;
-		return(np->MoMdepth);
+	vch.clear();
+	if (!script.GetOp(pc, opcode, vch) || vch.size() != 32) {
+		return (false);
 	}
-	*notarized_htp = *MoMoMoffsetp = *MoMoMdepthp = *kmdstartip = *kmdendip = 0;
-	memset(MoMp,0,sizeof(*MoMp));
-	memset(MoMoMp,0,sizeof(*MoMoMp));
-	memset(kmdtxidp,0,sizeof(*kmdtxidp));
-	return(0);
+	hMerkle = uint256(vch);
+
+	vch.clear();
+	if (!script.GetOp(pc, opcode, vch) || vch.size() != 4) {
+		return (false);
+	}
+	memcpy(&nHeight, &vch[0], sizeof(nHeight));
+
+	if (hIface == 0 || hBlock == 0 || nHeight == 0) /* hMerkle == 0 */
+		return (false); /* sanity */
+
+	if (nHeight <= bolo_CHECKPOINT_HEIGHT)
+		return (false); /* stale */
+
+	if (GetCoinHash(bolo_slave_iface->name) != hIface) {
+		return (false); /* wrong service */
+	}
+
+	CBlockIndex *pindex = GetBlockIndexByHash(GetCoinIndex(bolo_slave_iface), hBlock);
+	if (!pindex || pindex->nHeight != nHeight)
+		return (false); /* unknown */
+
+	if (nHeight != bolo_PROPOSED_HEIGHT) {
+		/* wrong proposal. */
+		Debug("(%s) bolo_GetMasterFinalTx: disregarding notary tx (height %d) with non-proposed height %d.", bolo_slave_iface->name, (int)nHeight, (int)bolo_PROPOSED_HEIGHT);
+		return (false);
+	}
+
+	if (bolo_GetSlaveMerkle(nHeight, BOLO_BLOCK_MERKLE_DEPTH) != hMerkle) {
+		Debug("(%s) bolo_GetMasterFinalTx: disregarding notary tx (height %d) with invalid merkle %s.", bolo_slave_iface->name, (int)nHeight, hMerkle.GetHex().c_str());
+		return (false); /* chain merkle mismatch. */
+	}
+
+	return (true);
 }
 
-int32_t bolo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
+
+CScript bolo_MasterRedeemScript()
 {
-	struct notarized_checkpoint *np = 0; int32_t i=0,flag = 0;
-	if ( NUM_NPOINTS > 0 ) {
-		flag = 0;
-		if ( last_NPOINTSi < NUM_NPOINTS && last_NPOINTSi > 0 ) {
-			np = &NPOINTS[last_NPOINTSi-1];
-			if ( np->nHeight < nHeight ) {
-				for (i=last_NPOINTSi; i<NUM_NPOINTS; i++) {
-					if ( NPOINTS[i].nHeight >= nHeight ) {
-						//printf("flag.1 i.%d np->ht %d [%d].ht %d >= nHeight.%d, last.%d num.%d\n",i,np->nHeight,i,NPOINTS[i].nHeight,nHeight,last_NPOINTSi,NUM_NPOINTS);
-						flag = 1;
-						break;
-					}
-					np = &NPOINTS[i];
-					last_NPOINTSi = i;
+	const uint256& hBlock = bolo_PROPOSED_BLOCK;
+	const int nHeight = bolo_PROPOSED_HEIGHT;
+	CScript script;
+	uint160 hIface;
+	uint256 merk;
+
+	merk = bolo_GetSlaveMerkle(nHeight, BOLO_BLOCK_MERKLE_DEPTH);
+	hIface = GetCoinHash(bolo_slave_iface->name);
+	script << OP_RETURN << OP_11 << OP_1 << OP_11 << ToByteVector(hIface) << ToByteVector(hBlock) << ToByteVector(merk) << IntToByteVector(nHeight) << OP_0;
+
+	return (script);
+}
+
+bool bolo_GetMasterProposeTx(const CTransaction& tx, CTxIn& inOut, CScript& scriptOut)
+{
+	bool fBlock = false;
+	bool fFund = false;
+	CScript retScript;
+	CTxIn retIn;
+	int i;
+
+	for (i = 0; i < tx.vout.size(); i++) {
+		const CTxOut& out = tx.vout[i];
+		CTxDestination dest;
+		if (out.nValue == BOLO_NOTARY_COIN_VALUE &&
+				ExtractDestination(out.scriptPubKey, dest)) {
+			retIn.prevout.n = i;
+			retIn.prevout.hash = tx.GetHash();
+			retScript = out.scriptPubKey;
+			fFund = true;
+		} else if (out.nValue == 0 &&
+				ExtractDestination(out.scriptPubKey, dest)) {
+			CCoinAddr addr(GetCoinIndex(bolo_master_iface), dest);
+			CScriptID scriptID;
+			if (addr.GetScriptID(scriptID)) {
+				const CScript& script = bolo_MasterRedeemScript();
+				cbuff script_buf(script.begin(), script.end());
+				if (Hash160(script_buf) == scriptID) {
+					fBlock = true;
 				}
 			}
 		}
-		if ( flag == 0 )
-		{
-			np = 0;
-			for (i=0; i<NUM_NPOINTS; i++)
-			{
-				if ( NPOINTS[i].nHeight >= nHeight )
-				{
-					//printf("i.%d np->ht %d [%d].ht %d >= nHeight.%d\n",i,np->nHeight,i,NPOINTS[i].nHeight,nHeight);
-					break;
-				}
-				np = &NPOINTS[i];
-				last_NPOINTSi = i;
-			}
-		}
-	}
-	if ( np != 0 )
-	{
-		if ( np->nHeight >= nHeight || (i < NUM_NPOINTS && np[1].nHeight < nHeight) ) {
-			Debug("BOLO: warning: flag.%d i.%d np->ht %d [1].ht %d >= nHeight.%d\n",flag,i,np->nHeight,np[1].nHeight,nHeight);
-		}
-
-		*notarized_hashp = np->notarized_hash;
-		*notarized_desttxidp = np->notarized_desttxid;
-		return(np->notarized_height);
 	}
 
-	memset(notarized_hashp,0,sizeof(*notarized_hashp));
-	memset(notarized_desttxidp,0,sizeof(*notarized_desttxidp));
-	return(0);
+	if (fFund && fBlock) {
+		Debug("(%s) bolo_GetMasterProposalTx: detected proposal tx \"%s\"\n", bolo_master_iface->name, tx.GetHash().GetHex().c_str()); 
+		inOut = retIn;
+		scriptOut = retScript;
+		return (true);
+	}
+
+	return (false);
 }
 
-void bolo_notarized_update(int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth)
-{
-	static int didinit; static uint256 zero; static FILE *fp; 
-	CBlockIndex *pindex; 
-	struct notarized_checkpoint *np,N; long fpos;
 
-	if ( didinit == 0 )
-	{
-		char fname[512];int32_t latestht = 0;
-		//decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-		pthread_mutex_init(&bolo_mutex,NULL);
-#ifdef _WIN32
-		sprintf(fname,"%s\\notarizations",GetDefaultDataDir().string().c_str());
-#else
-		sprintf(fname,"%s/notarizations",GetDefaultDataDir().string().c_str());
-#endif
-		printf("fname.(%s)\n",fname);
-		if ( (fp= fopen(fname,"rb+")) == 0 )
-			fp = fopen(fname,"wb+");
-		else
-		{
-			fpos = 0;
-			while ( fread(&N,1,sizeof(N),fp) == sizeof(N) )
-			{
-				//pindex = bolo_chainactive(N.notarized_height);
-				//if ( pindex != 0 && pindex->GetBlockHash() == N.notarized_hash && N.notarized_height > latestht )
-				if ( N.notarized_height > latestht )
-				{
-					NPOINTS = (struct notarized_checkpoint *)realloc(NPOINTS,(NUM_NPOINTS+1) * sizeof(*NPOINTS));
-					np = &NPOINTS[NUM_NPOINTS++];
-					*np = N;
-					latestht = np->notarized_height;
-					NOTARIZED_HEIGHT = np->notarized_height;
-					NOTARIZED_HASH = np->notarized_hash;
-					NOTARIZED_DESTTXID = np->notarized_desttxid;
-					NOTARIZED_MOM = np->MoM;
-					NOTARIZED_MOMDEPTH = np->MoMdepth;
-					fprintf(stderr,"%d ",np->notarized_height);
-					fpos = ftell(fp);
-				} //else fprintf(stderr,"%s error with notarization ht.%d %s\n",ASSETCHAINS_SYMBOL,N.notarized_height,pindex->GetBlockHash().ToString().c_str());
-			}
-			if ( ftell(fp) !=  fpos )
-				fseek(fp,fpos,SEEK_SET);
-		}
-		fprintf(stderr,"finished loading %s [%s]\n",fname,NOTARY_PUBKEY.c_str());
-		didinit = 1;
-	}
-	if ( notarized_height == 0 )
-		return;
-	if ( notarized_height >= nHeight )
-	{
-		fprintf(stderr,"bolo_notarized_update REJECT notarized_height %d > %d nHeight\n",notarized_height,nHeight);
-		return;
-	}
-	pindex = bolo_chainactive(notarized_height);
-	if ( pindex == 0 || pindex->GetBlockHash() != notarized_hash || notarized_height != pindex->nHeight )
-	{
-		fprintf(stderr,"bolo_notarized_update reject nHeight.%d notarized_height.%d:%d\n",nHeight,notarized_height,(int32_t)pindex->nHeight);
-		return;
-	}
-	//fprintf(stderr,"bolo_notarized_update nHeight.%d notarized_height.%d prev.%d\n",nHeight,notarized_height,NPOINTS!=0?NPOINTS[NUM_NPOINTS-1].notarized_height:-1);
-	portable_mutex_lock(&bolo_mutex);
-	NPOINTS = (struct notarized_checkpoint *)realloc(NPOINTS,(NUM_NPOINTS+1) * sizeof(*NPOINTS));
-	np = &NPOINTS[NUM_NPOINTS++];
-	memset(np,0,sizeof(*np));
-	np->nHeight = nHeight;
-	NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
-	NOTARIZED_HASH = np->notarized_hash = notarized_hash;
-	NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
-	if ( MoM != zero && MoMdepth > 0 )
-	{
-		NOTARIZED_MOM = np->MoM = MoM;
-		NOTARIZED_MOMDEPTH = np->MoMdepth = MoMdepth;
-	}
-	if ( fp != 0 )
-	{
-		if ( fwrite(np,1,sizeof(*np),fp) == sizeof(*np) )
-			fflush(fp);
-		else printf("error writing notarization to %d\n",(int32_t)ftell(fp));
-	}
-	// add to stored notarizations
-	portable_mutex_unlock(&bolo_mutex);
+bool bolo_GetSlaveNotaryTx(const CTxOut& out)
+{
+
+	/* script: OP_RETURN OP_0 */
+	if (out.scriptPubKey.size() != 2 ||
+			out.scriptPubKey[0] != OP_RETURN ||
+			out.scriptPubKey[1] != OP_0)
+		return (false);
+
+	if (out.nValue < bolo_slave_iface->min_input ||
+			out.nValue > (int64)COIN)
+		return (false);
+
+	return (true);
 }
 
-int32_t bolo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
+void bolo_ResetMasterTx()
 {
-	int32_t notarized_height; uint256 zero,notarized_hash,notarized_desttxid; CBlockIndex *notary; 
-	CBlockIndex *pindex;
+	bolo_mapNotary.clear();
+	bolo_mapNotaryScript.clear();
+	bolo_PROPOSED_BLOCK = 0;
+	bolo_PROPOSED_HEIGHT = 0;
+	bolo_PROPOSED_NOTARY = false;
+}
 
-	memset(&zero,0,sizeof(zero));
-	//bolo_notarized_update(0,0,zero,zero,zero,0);
-	if ( (pindex= chainActive.Tip()) == 0 )
-		return(-1);
+/* propose a notary tx on the master chain referencing the specified block and height on the slave chain. */
+bool bolo_ProposeMasterTx(const uint256& hBlock, int nHeight, CCoinAddr *addr)
+{
+	CWallet *wallet = GetWallet(bolo_master_iface);
+	CTxCreator s_wtx(wallet, BOLO_ORIGIN_ACCOUNT);
 
-	notarized_height = bolo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
-	*notarized_heightp = notarized_height;
+	CCoinAddr p_addr(wallet->ifaceIndex);
+	if (!addr) {
+		p_addr = wallet->GetNotaryAddr(BOLO_NOTARY_ACCOUNT);
+		addr = &p_addr;
+	}
 
-	if ( notarized_height >= 0 && notarized_height <= pindex->nHeight && (notary= mapBlockIndex[notarized_hash]) != 0 )
-	{
-		Debug("BOLO: nHeight.%d -> (%d %s)\n",pindex->nHeight,notarized_height,notarized_hash.ToString().c_str());
-		if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
-		{
-			if ( nHeight < notarized_height )
-			{
-				Debug("BOLO: nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
-				return(-1);
-			}
-			if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
-			{
-				Debug("BOLO: nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,notarized_height);
-				return(-1);
+	/*
+	 * Here we are sending from the "bank" acount to a new address which 
+	 * will also be listed under the "bolo" account.
+	 *
+	 * Notary proposals transaction which do not get ratified or encounter
+	 * an error will be credited to the "bolo" account sans transaction fees.
+	 */
+
+	/* minimum value output to be used as an input for final notary tx. */
+	if (!s_wtx.AddOutput(addr->Get(), BOLO_NOTARY_COIN_VALUE))
+		return (error(ERR_INVAL, "bolo_ProposeMasterTx: error adding output #1: %s", s_wtx.GetError().c_str()));
+
+	/* zero value output to scriptid referencing final notary tx output. */
+	const CScript& script = bolo_MasterRedeemScript();
+	CScriptID scriptID = Hash160(cbuff(script.begin(), script.end()));
+	if (!s_wtx.AddOutput(scriptID, 0))
+		return (error(ERR_INVAL, "bolo_ProposeMasterTx: error adding output #2: %s", s_wtx.GetError().c_str()));
+
+	/* commit transaction to master chain. */
+	bolo_PROPOSED_NOTARY = s_wtx.Send();
+
+	return (true);
+}
+
+/* sign the final notary tx on the master chain. */
+bool bolo_SignMasterNotarySignature(CTransaction& tx, int nIn)
+{
+	int ifaceIndex = GetCoinIndex(bolo_master_iface);
+
+	/* apply final sequence value. */
+	tx.vin[nIn].nSequence = CTxIn::SEQUENCE_FINAL - 1;
+
+	/* obtain script to sign. */
+	CTransaction txFrom;
+	if (!GetTransaction(bolo_master_iface,
+				tx.vin[nIn].prevout.hash, txFrom, NULL))
+		return (false); /* unknown tx */
+	if (tx.vin[nIn].prevout.n >= txFrom.vout.size())
+		return (false); /* sanity */
+
+	const CScript& scriptIn = txFrom.vout[tx.vin[nIn].prevout.n].scriptPubKey;
+	CSignature sig(ifaceIndex, &tx, nIn, SIGHASH_ANYONECANPAY); 
+	return (sig.SignSignature(scriptIn));
+}
+
+bool bolo_VerifyMasterNotarySignature(CTransaction& tx, int nIn)
+{
+	int ifaceIndex = GetCoinIndex(bolo_master_iface);
+
+	/* apply final sequence value. */
+	tx.vin[nIn].nSequence = CTxIn::SEQUENCE_FINAL - 1;
+
+	CTransaction txFrom;
+	if (!GetTransaction(bolo_master_iface,
+				tx.vin[nIn].prevout.hash, txFrom, NULL))
+		return (false); /* unknown tx */
+	if (tx.vin[nIn].prevout.n >= txFrom.vout.size())
+		return (false); /* sanity */
+
+	cstack_t witness;
+	int nOut = tx.vin[nIn].prevout.n;
+	CSignature sig(ifaceIndex, &tx, nIn, SIGHASH_ANYONECANPAY);
+	return (VerifyScript(sig, tx.vin[nIn].scriptSig, witness,
+				txFrom.vout[nOut].scriptPubKey, 0));
+}
+
+bool bolo_CreateMasterNotaryTx(CTransaction& tx)
+{
+	CWallet *wallet = GetWallet(bolo_master_iface);
+	int i;
+
+	/* allow 20 blocks for notary tx to be signed by at least 11 participants. */
+	tx.nLockTime = GetBestHeight(bolo_master_iface) + BOLO_LOCKTIME_DEPTH;
+
+	/* single output referencing block to notorize. */
+	tx.vout.resize(1);
+	tx.vout[0].scriptPubKey = bolo_MasterRedeemScript();
+	tx.vout[0].nValue = 0;
+
+	/* all proposals submitted for this height. */
+	int nTotal = 0;
+	tx.vin.resize(bolo_mapNotary.size());
+	for (i = 0; i < bolo_mapNotary.size(); i++) {
+		tx.vin[i] = bolo_mapNotary[i];
+		if (wallet->IsMine(tx.vin[i])) {
+			if (!bolo_SignMasterNotarySignature(tx, i)) {
+				return (false); /* give up */
 			}
 		} else {
-			Debug("BOLO: unexpected error notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
+			/* initialize */
+			tx.vin[i].nSequence = MAX(1, tx.vin[i].nSequence);
+			if (tx.GetVersion() >= 2)
+				tx.vin[i].nSequence |= CTxIn::SEQUENCE_LOCKTIME_DISABLE_FLAG;
 		}
-	} else if ( notarized_height > 0 ) {
-		Debug("BOLO: %s couldnt find notarized.(%s %d) ht.%d\n",ASSETCHAINS_SYMBOL,notarized_hash.ToString().c_str(),notarized_height,pindex->nHeight);
 	}
-	return(0);
+
+	/* sort by prevout hash */
+	std::sort(tx.vin.begin(), tx.vin.end(), less_than_key());
+
+	return (true);
 }
 
-void bolo_voutupdate(int32_t txi,int32_t vout,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask)
+/* verify that all inputs reference a known notary poposal tx commited on master chain. */
+bool bolo_IsNotaryTx(const CTransaction& tx)
 {
-	static uint256 zero; static uint8_t crypto777[33];
-	int32_t MoMdepth,opretlen,len = 0; uint256 hash,desttxid,MoM;
-	if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
-	{
-		if ( crypto777[0] != 0x02 )// && crypto777[0] != 0x03 )
-			decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
-		if ( memcmp(crypto777,scriptbuf+1,33) == 0 )
-			*specialtxp = 1;
-	}
-	if ( scriptbuf[len++] == 0x6a )
-	{
-		if ( (opretlen= scriptbuf[len++]) == 0x4c )
-			opretlen = scriptbuf[len++]; // len is 3 here
-		else if ( opretlen == 0x4d )
-		{
-			opretlen = scriptbuf[len++];
-			opretlen += (scriptbuf[len++] << 8);
-		}
-		//printf("opretlen.%d vout.%d [%s].(%s)\n",opretlen,vout,(char *)&scriptbuf[len+32*2+4],ASSETCHAINS_SYMBOL);
-		if ( vout == 1 && opretlen-3 >= 32*2+4 && strcmp(ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
-		{
-			len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&hash);
-			len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
-			len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-			if ( notarized != 0 && *notarizedheightp > NOTARIZED_HEIGHT && *notarizedheightp < height )
-			{
-				int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
-				//NOTARIZED_HEIGHT = *notarizedheightp;
-				//NOTARIZED_HASH = hash;
-				//NOTARIZED_DESTTXID = desttxid;
-				memset(&MoM,0,sizeof(MoM));
-				MoMdepth = 0;
-				len += nameoffset;
-				if ( len+36-3 <= opretlen )
-				{
-					len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
-					len += iguana_rwnum(0,&scriptbuf[len],sizeof(MoMdepth),(uint8_t *)&MoMdepth);
-					if ( MoM == zero || MoMdepth > *notarizedheightp || MoMdepth < 0 )
-					{
-						memset(&MoM,0,sizeof(MoM));
-						MoMdepth = 0;
-					}
-					else
-					{
-						//fprintf(stderr,"VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,MoM.ToString().c_str(),MoMdepth);
-					}
-				}
-				bolo_notarized_update(height,*notarizedheightp,hash,desttxid,MoM,MoMdepth);
-				Debug("BOLO: %s ht.%d NOTARIZED.%d %s %sTXID.%s lens.(%d %d)\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,hash.ToString().c_str(),"KMD",desttxid.ToString().c_str(),opretlen,len);
-			} else {
-				Debug("BOLO: notarized.%d ht %d vs prev %d vs height.%d\n",notarized,*notarizedheightp,NOTARIZED_HEIGHT,height);
+	int i, j;
+
+	for (j = 0; j < tx.vin.size(); j++) {
+		bool bFound = false;
+		for (i = 0; i < bolo_mapNotary.size(); i++) {
+			CTxIn& in = bolo_mapNotary[i];
+			if (in.prevout.hash == tx.vin[j].prevout.hash &&
+					in.prevout.n == tx.vin[j].prevout.n) {
+				bFound = true;
+				break;
 			}
 		}
+		if (!bFound)
+			return (false);
 	}
+
+	return (true);
 }
 
-void bolo_connectblock(CBlockIndex *pindex, CBlock& block)
+bool bolo_ApplyNotarySignature(CWallet *wallet, CTransaction& tx, int nIn)
 {
-	static int32_t hwmheight;
-	uint64_t signedmask; uint8_t scriptbuf[4096],pubkeys[64][33],scriptPubKey[35]; uint256 zero; int32_t i,j,k,numnotaries,notarized,scriptlen,numvalid,specialtx,notarizedheight,len,numvouts,numvins,height,txn_count;
+	CTxIn& in = tx.vin[nIn];
+	bool fUpdated = false;
+	int i;
 
-	if (!pindex)
+	if (wallet->IsMine(in)) {
+		if (in.scriptSig.size() != 0)
+			return (false);
+
+		return (bolo_SignMasterNotarySignature(tx, nIn));
+	}
+
+	if (in.scriptSig.size() == 0) {
+		/* attempt to fill signature based on previous non-comitted tx's */
+		for (i = 0; i < bolo_mapNotary.size(); i++) {
+			if (bolo_mapNotary[i].scriptSig.size() != 0 &&
+					bolo_mapNotary[i].prevout.hash == in.prevout.hash &&
+					bolo_mapNotary[i].prevout.n == nIn)
+				break;
+		}
+		if (i != bolo_mapNotary.size()) {
+			in.nSequence = CTxIn::SEQUENCE_FINAL - 1;
+			in.scriptSig = bolo_mapNotary[i].scriptSig;
+			fUpdated = true;
+		}
+	}
+
+	return (fUpdated);
+}
+
+void bolo_SaveNotarySignature(CTransaction& tx, int nIn)
+{
+	CWallet *wallet = GetWallet(bolo_master_iface);
+	const CTxIn& in = tx.vin[nIn];
+	int i;
+
+	if (in.nSequence != (CTxIn::SEQUENCE_FINAL - 1))
 		return;
 
-	if ( BOLO_NEEDPUBKEYS != 0 )
-	{
-		bolo_importpubkeys();
-		BOLO_NEEDPUBKEYS = 0;
-	}
-	memset(&zero,0,sizeof(zero));
-	bolo_notarized_update(0,0,zero,zero,zero,0);
-	numnotaries = bolo_notaries(pubkeys,pindex->nHeight,pindex->GetBlockTime());
-	if ( pindex->nHeight > hwmheight ) {
-		hwmheight = pindex->nHeight;
-	} else {
-		if ( pindex->nHeight != hwmheight )
-			Debug("BOLO: %s hwmheight.%d vs pindex->nHeight.%d t.%u reorg.%d\n",ASSETCHAINS_SYMBOL,hwmheight,pindex->nHeight,(uint32_t)pindex->nTime,hwmheight-pindex->nHeight);
+	for (i = 0; i < bolo_mapNotary.size(); i++) {
+		if (bolo_mapNotary[i].scriptSig.size() != 0)
+			continue; /* already filled. */
+
+		if (bolo_mapNotary[i].prevout.hash != in.prevout.hash ||
+				bolo_mapNotary[i].prevout.n != in.prevout.n)
+			continue; /* wrong notary ref */
+
+		if (!bolo_VerifyMasterNotarySignature(tx, nIn)) {
+			Debug("bolo_SaveNotarySignature: signature verification failure: %s\n", tx.vin[nIn].scriptSig.ToString().c_str());
+			continue; /* junk */
+		}
+
+		bolo_mapNotary[i].scriptSig = in.scriptSig;
 	}
 
-	{
-		height = pindex->nHeight;
-		txn_count = block.vtx.size();
-		for (i=0; i<txn_count; i++)
-		{
-			//txhash = block.vtx[i].GetHash();
-			numvouts = block.vtx[i].vout.size();
-			specialtx = notarizedheight = notarized = 0;
-			signedmask = 0;
-			numvins = block.vtx[i].vin.size();
-			for (j=0; j<numvins; j++)
-			{
-				if ( i == 0 && j == 0 )
-					continue;
-				if ( block.vtx[i].vin[j].prevout.hash != zero && (scriptlen= gettxout_scriptPubKey(height,scriptPubKey,sizeof(scriptPubKey),block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) == 35 )
-				{
-					for (k=0; k<numnotaries; k++)
-						if ( memcmp(&scriptPubKey[1],pubkeys[k],33) == 0 )
-						{
-							signedmask |= (1LL << k);
-							break;
-						}
-				}  /*else if ( block.vtx[i].vin[j].prevout.hash != zero ) {
-						 printf("%s cant get scriptPubKey for ht.%d txi.%d vin.%d\n",ASSETCHAINS_SYMBOL,height,i,j);
-						 }*/
-			}
-			numvalid = bitweight(signedmask);
-			if ( numvalid >= BOLO_MINRATIFY )
-				notarized = 1;
-			//if ( NOTARY_PUBKEY33[0] != 0 )
-			//    printf("(tx.%d: ",i);
-			for (j=0; j<numvouts; j++)
-			{
-				//if ( NOTARY_PUBKEY33[0] != 0 )
-				//    printf("%.8f ",dstr(block.vtx[i]->vout[j].nValue));
-				len = block.vtx[i].vout[j].scriptPubKey.size();
-				if ( len >= (int32_t)sizeof(uint32_t) && len <= (int32_t)sizeof(scriptbuf) )
-				{
-					memcpy(scriptbuf,&block.vtx[i].vout[j].scriptPubKey[0],len);
-					bolo_voutupdate(i,j,scriptbuf,len,height,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].nValue,notarized,signedmask);
-				}
-			}
-			//if ( NOTARY_PUBKEY33[0] != 0 )
-			//    printf(") ");
-			//if ( NOTARY_PUBKEY33[0] != 0 )
-			//    printf("%s ht.%d\n",ASSETCHAINS_SYMBOL,height);
-			//printf("[%s] ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d notarized.%d special.%d\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts,notarized,specialtx);
+}
+
+bool bolo_UpdateMasterNotaryTx(CTransaction& tx)
+{
+	CWallet *wallet = GetWallet(bolo_master_iface);
+	bool fUpdated = false;
+	int i;
+
+	if (!bolo_IsNotaryTx(tx))
+		return (false);
+
+	/* redundant lock-time check */
+	if (tx.nLockTime != bolo_PROPOSED_LOCKTIME)
+		return (false);
+
+	/* single output referencing block to notorize (redundant check). */
+	if (tx.vout.size() != 0 ||
+			tx.vout[0].nValue != 0 ||
+			tx.vout[0].scriptPubKey != bolo_MasterRedeemScript())
+		return (false);
+
+	/* sign local inputs. */
+	for (i = 0; i < tx.vin.size(); i++) {
+		if (tx.vin[i].scriptSig.size() == 0) {
+			/* attempt to generate signature. */
+			fUpdated = bolo_ApplyNotarySignature(wallet, tx, i);
+		} else {
+			/* retain signature. */
+			bolo_SaveNotarySignature(tx, i);
 		}
 	}
+
+	return (fUpdated);
 }
 
-/**
- * A notorized validation matrix tx will have a single coinbase input (the validation matrix) and a single output of OP_RETURN (0x6A) OP_0 (0x0).
- */
-void bolo_connectblock_slave(CBlockIndex *pindex, CBlock& block)
+void bolo_disconnectblock_master(CBlockIndex *pindex, CBlock *block)
 {
 
-	for (unsigned int i = 0; i < block.vtx(); i++) {
-		const CTransaction& tx = block.vtx[i];
-		if (tx.vout.size() != 1)
-			continue;
+	if ((int32_t)pindex->nHeight <= bolo_PROPOSED_LOCKTIME) {
+		/* bruteforce shortcut. on any reorg, no active notarization until next one is seen. */
+		bolo_ResetMasterTx();
+	}
 
-		/* script: OP_RETURN OP_0 */
-		if (tx.vout[0].scriptPubKey.size() != 2)
-			continue;
-		if (tx.vout[0].scriptPubKey[0] != 0x6A ||
-				tx.vout[0].scriptPubKey[1] != 0x00)
-			continue;
-		if (tx.vout[0].nValue > 100) /* 0.000001 */
-			continue;
+}
 
-		/* publish a tx onto master chain. */
-		bolo_propose_master(block->GetHash(), pindex->nHeight);
+void bolo_disconnectblock_slave(CBlockIndex *pindex, CBlock *block)
+{
+
+	if ( (int32_t)pindex->nHeight <= bolo_CHECKPOINT_HEIGHT ) {
+		/* bruteforce shortcut. on any reorg, no active notarization until next one is seen. */
+		bolo_ResetMasterTx();
 	}
 
 }
 
 /**
- * A notorized master transaction will have a eleven or more inputs of 0.00001 coins and a single output of "OP_RETURN << OP_11 << OP_1 << OP_HASH160 << <block hash: 32 bytes> << <height: 4 bytes> << OP_0" where OP_HASH160 is a uint160 hash of the coin interface's symbol.
+ * A notarized master transaction will have a eleven or more inputs of 0.00001 coins and a single zero-value output of "OP_RETURN << OP_11 << OP_1 << OP_11 << OP_HASH160 << <block hash: 32 bytes> << <block merkle: 32 bytes> << <height: 4 bytes> << OP_0" where OP_HASH160 is a uint160 hash of the coin interface's symbol.
  */
 void bolo_connectblock_master(CBlockIndex *pindex, CBlock& block)
 {
-	CBlockIndex *pindex;
+	CWallet *wallet = GetWallet(bolo_master_iface);
+	int ifaceIndex = block.ifaceIndex;
 	uint256 hBlock;
+	int nHeight;
 
-	for (unsigned int i = 0; i < block.vtx(); i++) {
-		const CTransaction& tx = block.vtx[i];
-		if (tx.vout.size() != 1)
+	if (GetCoinByIndex(ifaceIndex) != bolo_master_iface)
+		return; /* wrong coin service. */
+
+	if (bolo_PROPOSED_HEIGHT == 0)
+		return; /* nothing has been proposed. */
+
+	for (unsigned int i = 0; i < block.vtx.size(); i++) {
+		CTransaction& tx = block.vtx[i];
+
+		CTxIn in;
+		CScript script;
+		if (bolo_GetMasterProposeTx(tx, in, script)) {
+			if (std::find(bolo_mapNotaryScript.begin(), bolo_mapNotaryScript.end(), script) != bolo_mapNotaryScript.end()) {
+				/* a proposal for this destination already exists. */
+				Debug("(%s) bolo_GetMasterFinalTx: ignoring duplicate proposal destination (%s).", bolo_master_iface->name, script.ToString().c_str());
+				continue;
+			}
+
+			/* map notary proposals. */
+			bolo_mapNotary.push_back(in);
+			bolo_mapNotaryScript.push_back(script);
+
+//fprintf(stderr, "DEBUG: bolo_connectblock_master: bolo_mapNotary.size() = %d\n", bolo_mapNotary.size());
+
+			if (bolo_PROPOSED_NOTARY &&
+					bolo_mapNotary.size() >= BOLO_MINRATIFY) {
+				CWalletTx wtx(wallet);
+				if (!bolo_CreateMasterNotaryTx(wtx))
+					continue;
+				if (wallet->CommitTransaction(wtx)) {
+					bolo_PROPOSED_LOCKTIME = wtx.nLockTime;
+					Debug("(%s) bolo_connectblock_master/bolo_CreateMasterNotaryTx: created notary tx \"%s\" (%d inputs) (lock-height %d).\n", bolo_master_iface->name, tx.GetHash().GetHex().c_str(), tx.vin.size(), bolo_PROPOSED_LOCKTIME);
+				} else { 
+					Debug("(%s) bolo_connectblock_master/bolo_CreateMasterNotaryTx: error committing notary tx \"%s\" (%d inputs).", bolo_master_iface->name, tx.GetHash().GetHex().c_str(), tx.vin.size());
+				}
+			}
 			continue;
+		}
 
-		if (tx.vout[0].scriptPubKey.size() != 81)
-			continue;
-		if (tx.vout[0].scriptPubKey[0] != 0x6A ||
-				tx.vout[0].scriptPubKey[1] != 0x0b ||
-				tx.vout[0].scriptPubKey[2] != 0x01)
-			continue; /* not "special" */
+		/* check for a final notarized/signed tx on master chain */
+		if (tx.vout.size() == 1 &&
+				bolo_GetMasterFinalTx(tx.vout[0], nHeight)) {
 
-		block = GetBlockByHash(slaveIfaceIndex, hBlock);
-		if (!block)
-			return; /* unknown block, on forked chain? ignore.. */
-		bolo_checkpoint_create(block, nHeight);
-		//block->CreateCheckpoint();
-		delete block;
+			/* at least notaries as inputs. */
+			if (tx.vin.size() < BOLO_MINRATIFY) {
+				continue;
+			}
+
+			Debug("bolo_GetMasterFinalTx: found [%s] notary tx on [%s] height %d.", bolo_master_iface->name, bolo_slave_iface->name, nHeight);
+
+			tx_cache inputs;
+			if (!wallet->FillInputs(tx, inputs)) {
+				/* unable to aquire unspent inputs. */
+				continue;
+			}
+
+			/* redundant signature check. */
+			bool fValid = true;
+			for (unsigned int j = 0; j < tx.vin.size(); j++) {
+				const CTransaction &in_tx = inputs[tx.vin[j].prevout.hash];
+				const int in_n = tx.vin[j].prevout.n;
+
+				if (in_n >= in_tx.vout.size() ||
+						in_tx.vout[in_n].nValue < BOLO_NOTARY_COIN_VALUE)
+					fValid = false; /* insufficient funding of input. */
+				else if (!bolo_VerifyMasterNotarySignature(tx, j))
+					fValid = false; /* unable to verify input signature. */
+			}
+			if (!fValid) {
+				Debug("(%s) bolo_connectblock_master: warning: discarding invalid notary tx \"%s\".", bolo_master_iface->name, tx.GetHash().GetHex().c_str());
+				continue;
+			}
+
+			/* establish a new dynamic checkpoint on slave chain. */
+			if (!bolo_checkpoint_create(nHeight)) {
+				/* stale/fork checkpoint. */
+
+				/* .. */
+			}
+
+			/* a bolo notary tx has been successfully generated. */
+			bolo_PROPOSED_NOTARY = false;
+		}
+
 	}
 
 }
+
+/**
+ * A notarized validation matrix tx will have a single coinbase input (the validation matrix) and a single output of OP_RETURN (0x6A) OP_0 (0x0).
+ */
+void bolo_connectblock_slave(CBlockIndex *pindex, CBlock& block)
+{
+	int ifaceIndex = block.ifaceIndex;
+
+	if (GetCoinByIndex(ifaceIndex) != bolo_slave_iface)
+		return; /* wrong coin service. */
+
+	if (pindex->nHeight > bolo_HWM_HEIGHT) {
+		bolo_HWM_HEIGHT = pindex->nHeight;
+	} else if (pindex->nHeight != bolo_HWM_HEIGHT) {
+		/* reorg */
+		bolo_ResetMasterTx();
+		return;
+	}
+
+	if (0 == (pindex->nHeight % BOLO_LOCKTIME_DEPTH)) {
+		int nMinHeight = (int)((pindex->nHeight / BOLO_LOCKTIME_DEPTH) - 1) * BOLO_LOCKTIME_DEPTH;
+		if (bolo_PROPOSED_HEIGHT >= nMinHeight &&
+				bolo_PROPOSED_HEIGHT < pindex->nHeight) {
+			/* commit a proposal tx onto master chain. */
+			bolo_PROPOSED_NOTARY = false;
+			bolo_ProposeMasterTx(bolo_PROPOSED_BLOCK, bolo_PROPOSED_HEIGHT);
+			return;
+		}
+	}
+
+	int nMinHeight = (int)(pindex->nHeight / BOLO_BLOCK_MERKLE_DEPTH) * BOLO_BLOCK_MERKLE_DEPTH;
+	if (bolo_PROPOSED_HEIGHT <= nMinHeight) {
+		/* track ongoing blank OP_RETURN's with a minimal value. */
+		for (unsigned int i = 0; i < block.vtx.size(); i++) {
+			const CTransaction& tx = block.vtx[i];
+
+			for (unsigned int j = 0; j < tx.vout.size(); j++) {
+				if (bolo_GetSlaveNotaryTx(tx.vout[j])) {
+					/* retain oldest block in this 20-block range. */
+					bolo_ResetMasterTx();
+					bolo_PROPOSED_HEIGHT = pindex->nHeight; 
+					bolo_PROPOSED_BLOCK = pindex->GetBlockHash();
+					bolo_PROPOSED_TXID = tx.GetHash();
+					break;
+				}
+			}
+
+		}
+	}
+
+}
+
+/* handles management of ongoing final notary tx on master chain. mutates tx (adds signature if notary) when it is added to local mem pool. */
+bool bolo_updatetx_master(CTransaction& tx)
+{
+	const int ifaceIndex = GetCoinIndex(bolo_master_iface);
+	CWallet *wallet = GetWallet(bolo_master_iface);
+	int nHeight;
+	int i;
+
+	if (GetCoinByIndex(ifaceIndex) != bolo_master_iface)
+		return (false); /* wrong coin service. */
+
+	/* disregard if we have not submitted a proposal. */
+	if (bolo_PROPOSED_NOTARY)
+		return (false); /* no proposal submitted. */
+
+	/* ensure all notaries are referencing the same notary tx. */
+	if (tx.nLockTime != bolo_PROPOSED_LOCKTIME)
+		return (false); /* incorrect sequence. */
+
+	/* notary tx will always have a single output. */
+	if (tx.vout.size() != 1)
+		return (false);
+
+	/* ensure tx is a bolo notary tx. */
+	if (!bolo_GetMasterFinalTx(tx.vout[0], nHeight))
+		return (false);
+
+	/* notary tx is not for the height we are proposing. */
+	if (nHeight != bolo_PROPOSED_HEIGHT)
+		return (false);
+
+	/* check whether we need to update the tx. */
+	if (!bolo_UpdateMasterNotaryTx(tx))
+		return (false);
+
+	int nTotal = 0;
+	vector<CTxIn> vin;
+	for (i = 0; i < tx.vin.size(); i++) {
+		if (tx.vin[i].nSequence != (CTxIn::SEQUENCE_FINAL - 1) &&
+				tx.vin[i].scriptSig.size() != 0)
+			continue;
+		vin.push_back(tx.vin[i]);
+		nTotal++;
+	}
+	if (vin.size() >= BOLO_MINRATIFY) {
+		/* at least eleven signatures have been gathered. */
+		tx.vin = vin;
+	}
+
+	/* sort by prevout hash */
+	std::sort(tx.vin.begin(), tx.vin.end(), less_than_key());
+
+	return (true);
+}
+
+bool bolo_IsSlaveIface(CIface *iface)
+{
+	return (bolo_slave_iface == iface);
+}
+
+
+#ifdef __cplusplus
+}
+#endif
 

@@ -175,7 +175,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
       {
         string strAddress;
         ssKey >> strAddress;
-        ssValue >> pwallet->mapAddressBook[CCoinAddr(strAddress).Get()];
+        ssValue >> pwallet->mapAddressBook[CCoinAddr(pwallet->ifaceIndex, strAddress).Get()];
       }
       else if (strType == "tx")
       {

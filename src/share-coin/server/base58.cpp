@@ -27,27 +27,136 @@
 #include "block.h"
 #include "db.h"
 #include <vector>
+#include "bech32.h"
 #include "base58.h"
 
 using namespace std;
 
 static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
+std::string EncodeBase58(const unsigned char* pbegin, const unsigned char* pend)
+{
+	CAutoBN_CTX pctx;
+	CBigNum bn58 = 58;
+	CBigNum bn0 = 0;
+
+	// Convert big endian data to little endian
+	// Extra zero at the end make sure bignum will interpret as a positive number
+	std::vector<unsigned char> vchTmp(pend-pbegin+1, 0);
+	reverse_copy(pbegin, pend, vchTmp.begin());
+
+	// Convert little endian data to bignum
+	CBigNum bn;
+	bn.setvch(vchTmp);
+
+	// Convert bignum to std::string
+	std::string str;
+	// Expected size increase from base58 conversion is approximately 137%
+	// use 138% to be safe
+	str.reserve((pend - pbegin) * 138 / 100 + 1);
+	CBigNum dv;
+	CBigNum rem;
+	while (bn > bn0)
+	{
+		if (!BN_div(&dv, &rem, &bn, &bn58, pctx))
+			throw bignum_error("EncodeBase58 : BN_div failed");
+		bn = dv;
+		unsigned int c = rem.getulong();
+		str += pszBase58[c];
+	}
+
+	// Leading zeroes encoded as base58 zeros
+	for (const unsigned char* p = pbegin; p < pend && *p == 0; p++)
+		str += pszBase58[0];
+
+	// Convert little endian std::string to big endian
+	reverse(str.begin(), str.end());
+	return str;
+}
+
+bool DecodeBase58(const char* psz, std::vector<unsigned char>& vchRet)
+{
+	CAutoBN_CTX pctx;
+	vchRet.clear();
+	CBigNum bn58 = 58;
+	CBigNum bn = 0;
+	CBigNum bnChar;
+
+	while (isspace(*psz))
+		psz++;
+
+	// Convert big endian string to bignum
+	for (const char* p = psz; *p; p++)
+	{
+		const char* p1 = strchr(pszBase58, *p);
+		if (p1 == NULL)
+		{
+			while (isspace(*p))
+				p++;
+			if (*p != '\0')
+				return false;
+			break;
+		}
+		bnChar.setulong(p1 - pszBase58);
+		if (!BN_mul(&bn, &bn, &bn58, pctx))
+			throw bignum_error("DecodeBase58 : BN_mul failed");
+		bn += bnChar;
+	}
+
+	// Get bignum as little endian data
+	std::vector<unsigned char> vchTmp = bn.getvch();
+
+	// Trim off sign byte if present
+	if (vchTmp.size() >= 2 && vchTmp.end()[-1] == 0 && vchTmp.end()[-2] >= 0x80)
+		vchTmp.erase(vchTmp.end()-1);
+
+	// Restore leading zeros
+	int nLeadingZeros = 0;
+	for (const char* p = psz; *p == pszBase58[0]; p++)
+		nLeadingZeros++;
+	vchRet.assign(nLeadingZeros + vchTmp.size(), 0);
+
+	// Convert little endian data to big endian
+	reverse_copy(vchTmp.begin(), vchTmp.end(), vchRet.end() - vchTmp.size());
+	return true;
+}
+
+bool CBase58Data::SetString(const char *psz)
+{
+	std::vector<unsigned char> vchTemp;
+
+	if (DecodeBase58Check(psz, vchTemp) && !vchTemp.empty()) {
+		nVersion = vchTemp[0];
+		vchData.resize(vchTemp.size() - 1);
+		if (!vchData.empty())
+			memcpy(&vchData[0], &vchTemp[1], vchData.size());
+		return (true);
+	}
+
+	return (false);
+}
+
+std::string CBase58Data::ToString(int output_type) const
+{
+	std::vector<unsigned char> vch(1, nVersion);
+	vch.insert(vch.end(), vchData.begin(), vchData.end());
+	return EncodeBase58Check(vch);
+}
 
 bool CCoinSecret::SetString(const char* pszSecret)
 {
-  bool ret;
+	bool ret;
 
-  ret = CBase58Data::SetString(pszSecret);
-  if (!ret) {
-    return error(SHERR_INVAL, "error setting base58 data '%s'.", pszSecret);
-  }
+	ret = CBase58Data::SetString(pszSecret);
+	if (!ret) {
+		return error(SHERR_INVAL, "error setting base58 data '%s'.", pszSecret);
+	}
 
-  ret = IsValid();
-  if (!ret)
-    return (false);
+	ret = IsValid();
+	if (!ret)
+		return (false);
 
-  return (true);
+	return (true);
 }
 
 bool CCoinSecret::SetString(const std::string& strSecret)
@@ -55,237 +164,3 @@ bool CCoinSecret::SetString(const std::string& strSecret)
   return SetString(strSecret.c_str());
 }
 
-
-
-
-bool CCoinAddr::IsValid() const
-{
-  unsigned int nExpectedSize = 20;
-  switch(nVersion) {
-    case PUBKEY_G_ADDRESS:
-    case PUBKEY_C_ADDRESS:
-    case PUBKEY_E_ADDRESS:
-    case PUBKEY_L_ADDRESS:
-    case PUBKEY_S_ADDRESS:
-    case PUBKEY_T_ADDRESS:
-      nExpectedSize = 20; // Hash of public key
-      break;
-    case SCRIPT_ADDRESS:
-    case SCRIPT_ADDRESS_2:
-    case SCRIPT_ADDRESS_2S:
-    case SCRIPT_ADDRESS_2G:
-      nExpectedSize = 20; // Hash of CScript
-      break;
-    default:
-      return false;
-  }
-  if (vchData.size() != nExpectedSize) {
-    Debug("CCoinSecret: vchData.size() %d, nExpectedSize %d\n", vchData.size(), nExpectedSize);
-  }
-  return vchData.size() == nExpectedSize;
-}
-
-CTxDestination CCoinAddr::Get() const 
-{
-
-  if (!IsValid())
-    return CNoDestination();
-
-#if 0
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	if (nVersion == BASE58_PUBKEY_ADDRESS(iface)) {
-		uint160 id;
-		memcpy(&id, &vchData[0], 20);
-		return CKeyID(id);
-	}
-	if (nVersion == BASE58_SCRIPT_ADDRESS(iface)) {
-		uint160 id;
-		memcpy(&id, &vchData[0], 20);
-		return CScriptID(id);
-	}
-#endif
-  switch (nVersion) {
-		case PUBKEY_G_ADDRESS:
-    case PUBKEY_C_ADDRESS:
-    case PUBKEY_E_ADDRESS:
-    case PUBKEY_L_ADDRESS:
-    case PUBKEY_S_ADDRESS:
-    case PUBKEY_T_ADDRESS:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        return CKeyID(id);
-      }
-    case SCRIPT_ADDRESS:
-    case SCRIPT_ADDRESS_2:
-    case SCRIPT_ADDRESS_2S:
-    case SCRIPT_ADDRESS_2G:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        return CScriptID(id);
-      }
-  }
-  return CNoDestination();
-}
-
-bool CCoinAddr::GetKeyID(CKeyID &keyID) const
-{
-  if (!IsValid())
-    return false;
-  switch (nVersion) {
-    case PUBKEY_G_ADDRESS:
-    case PUBKEY_C_ADDRESS:
-    case PUBKEY_E_ADDRESS:
-    case PUBKEY_S_ADDRESS:
-    case PUBKEY_L_ADDRESS:
-    case PUBKEY_T_ADDRESS:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        keyID = CKeyID(id);
-        return true;
-      }
-  }
-  return (false);
-}
-
-bool CCoinAddr::GetScriptID(CScriptID& scriptID) const 
-{
-
-  if (!IsValid())
-    return false;
-
-#if 0
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	if (iface && (nVersion != BASE58_SCRIPT_ADDRESS(iface)))
-		return (false);
-#endif
-#if 0
-  if (nVersion != SCRIPT_ADDRESS &&
-      nVersion != SCRIPT_ADDRESS_TEST)
-    return false;
-#endif
-	switch (nVersion) {
-		case SCRIPT_ADDRESS:
-    case SCRIPT_ADDRESS_2:
-    case SCRIPT_ADDRESS_2S:
-    case SCRIPT_ADDRESS_2G:
-			{
-				uint160 id;
-				memcpy(&id, &vchData[0], 20);
-				scriptID = CScriptID(id);
-			}
-			break;
-		default:
-			return (false);
-	}
-
-	return (true);
-}
-
-
-std::string EncodeBase58(const unsigned char* pbegin, const unsigned char* pend)
-{
-    CAutoBN_CTX pctx;
-    CBigNum bn58 = 58;
-    CBigNum bn0 = 0;
-
-    // Convert big endian data to little endian
-    // Extra zero at the end make sure bignum will interpret as a positive number
-    std::vector<unsigned char> vchTmp(pend-pbegin+1, 0);
-    reverse_copy(pbegin, pend, vchTmp.begin());
-
-    // Convert little endian data to bignum
-    CBigNum bn;
-    bn.setvch(vchTmp);
-
-    // Convert bignum to std::string
-    std::string str;
-    // Expected size increase from base58 conversion is approximately 137%
-    // use 138% to be safe
-    str.reserve((pend - pbegin) * 138 / 100 + 1);
-    CBigNum dv;
-    CBigNum rem;
-    while (bn > bn0)
-    {
-        if (!BN_div(&dv, &rem, &bn, &bn58, pctx))
-            throw bignum_error("EncodeBase58 : BN_div failed");
-        bn = dv;
-        unsigned int c = rem.getulong();
-        str += pszBase58[c];
-    }
-
-    // Leading zeroes encoded as base58 zeros
-    for (const unsigned char* p = pbegin; p < pend && *p == 0; p++)
-        str += pszBase58[0];
-
-    // Convert little endian std::string to big endian
-    reverse(str.begin(), str.end());
-    return str;
-}
-
-bool DecodeBase58(const char* psz, std::vector<unsigned char>& vchRet)
-{
-    CAutoBN_CTX pctx;
-    vchRet.clear();
-    CBigNum bn58 = 58;
-    CBigNum bn = 0;
-    CBigNum bnChar;
-    while (isspace(*psz))
-        psz++;
-
-    // Convert big endian string to bignum
-    for (const char* p = psz; *p; p++)
-    {
-        const char* p1 = strchr(pszBase58, *p);
-        if (p1 == NULL)
-        {
-            while (isspace(*p))
-                p++;
-            if (*p != '\0')
-                return false;
-            break;
-        }
-        bnChar.setulong(p1 - pszBase58);
-        if (!BN_mul(&bn, &bn, &bn58, pctx))
-            throw bignum_error("DecodeBase58 : BN_mul failed");
-        bn += bnChar;
-    }
-
-    // Get bignum as little endian data
-    std::vector<unsigned char> vchTmp = bn.getvch();
-
-    // Trim off sign byte if present
-    if (vchTmp.size() >= 2 && vchTmp.end()[-1] == 0 && vchTmp.end()[-2] >= 0x80)
-        vchTmp.erase(vchTmp.end()-1);
-
-    // Restore leading zeros
-    int nLeadingZeros = 0;
-    for (const char* p = psz; *p == pszBase58[0]; p++)
-        nLeadingZeros++;
-    vchRet.assign(nLeadingZeros + vchTmp.size(), 0);
-
-    // Convert little endian data to big endian
-    reverse_copy(vchTmp.begin(), vchTmp.end(), vchRet.end() - vchTmp.size());
-    return true;
-}
-
-int CCoinAddr::GetPubKeyVersion() const 
-{
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	return (BASE58_PUBKEY_ADDRESS(iface));
-}
-
-int CCoinAddr::GetScriptVersion() const
-{
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	int ver;
-
-	ver = BASE58_SCRIPT_ADDRESS_2(iface);
-	if (ver == 0)
-		ver = BASE58_SCRIPT_ADDRESS(iface);
-	if (ver == 0)
-		ver = BASE58_DEFAULT_SCRIPT_ADDRESS;
-	return (ver);
-}

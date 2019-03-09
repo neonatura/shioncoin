@@ -34,6 +34,7 @@
 #include "test_txidx.h"
 #include "chain.h"
 #include "txsignature.h"
+#include "bolo/bolo_validation03.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -143,6 +144,9 @@ void TEST_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
 		if (tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) 
 			UpdateValidateNotaryTx(iface, tx, out.scriptPubKey);
 	}
+
+	/* SIP31 */
+	bolo_updatetx_master(tx);
 
 }
 

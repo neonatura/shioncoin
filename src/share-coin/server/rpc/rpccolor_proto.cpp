@@ -555,7 +555,7 @@ Value rpc_alt_send(CIface *iface, const Array& params, bool fStratum)
 		strAccount = AccountFromValue(params[3]);
 
 	CWalletTx wtx;
-	CCoinAddr addr(params[1].get_str());
+	CCoinAddr addr(ifaceIndex, params[1].get_str());
 	err = update_altchain_tx(iface, strAccount, hColor, addr, nValue, wtx); 
 	if (err)
     throw JSONRPCError(err, "update_altchain_tx");
@@ -686,7 +686,7 @@ Value rpc_alt_key(CIface *iface, const Array& params, bool fStratum)
     throw runtime_error("rpc_alt_key");
 
   string strAddress = params[0].get_str();
-  CCoinAddr address(strAddress);
+  CCoinAddr address(COLOR_COIN_IFACE, strAddress);
   if (!address.IsValid())
     throw JSONRPCError(-5, "Invalid address");
   CKeyID keyID;

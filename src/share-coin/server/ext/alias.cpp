@@ -366,12 +366,12 @@ CAlias *GetAliasByName(CIface *iface, string label, CTransaction& tx)
   return (alias);
 }
 
-bool CAlias::GetCoinAddr(CCoinAddr& addrRet)
+bool CAlias::GetCoinAddr(int ifaceIndex, CCoinAddr& addrRet)
 {
 
   if (vAddr.size() == 0)
     return (false);
-  addrRet = CCoinAddr(stringFromVch(vAddr));
+  addrRet = CCoinAddr(ifaceIndex, stringFromVch(vAddr));
   if (!addrRet.IsValid())
     return (false);
 
@@ -705,7 +705,7 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
 
   string strAccountIn;
   CCoinAddr addrIn(ifaceIndex);
-  if (!tx.alias.GetCoinAddr(addrIn))
+  if (!tx.alias.GetCoinAddr(ifaceIndex, addrIn))
     return (SHERR_INVAL);
   if (!GetCoinAddr(wallet, addrIn, strAccountIn))
     return (SHERR_REMOTE);

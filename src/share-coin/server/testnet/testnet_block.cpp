@@ -175,6 +175,7 @@ int64 testnet_GetBlockValue(int nHeight, int64 nFees)
 }
 
 
+#if 0
 namespace TESTNET_Checkpoints
 {
   typedef std::map<int, uint256> MapCheckpoints;
@@ -223,6 +224,7 @@ namespace TESTNET_Checkpoints
   }
 
 }
+#endif
 
 static int64_t testnet_GetTxWeight(const CTransaction& tx)
 {
@@ -270,8 +272,9 @@ CBlock* testnet_CreateNewBlock(const CPubKey& rkey)
   /* calculate reward */
   bool ret = false;
   int64 reward = testnet_GetBlockValue(pindexPrev->nHeight+1, nFees);
-  if (pblock->vtx.size() == 1)
+  if (pblock->vtx.size() == 1) {
     ret = BlockGenerateValidateMatrix(iface, pblock->vtx[0], reward, pindexPrev->nHeight + 1, pblock->GetTotalBlocksEstimate());
+	}
   if (!ret)
     ret = BlockGenerateSpringMatrix(iface, pblock->vtx[0], reward);
   pblock->vtx[0].vout[0].nValue = reward; 
@@ -323,7 +326,6 @@ bool testnet_CreateGenesisBlock()
 
 
   if (block.GetHash() != testnet_hashGenesisBlock) {
-fprintf(stderr, "DEBUG: Genesis fail: %s\n", block.ToString().c_str());
     return (error(ERR_INVAL, "testnet_CreateGenesisBlock: !hash"));
 	}
   if (block.hashMerkleRoot != testnet_hashGenesisMerkle)
@@ -447,11 +449,6 @@ bool testnet_ProcessBlock(CNode* pfrom, CBlock* pblock)
   return true;
 }
 
-CBlockIndex *testnet_GetLastCheckpoint()
-{
-  blkidx_t *blockIndex = GetBlockTable(TESTNET_COIN_IFACE);
-  return (TESTNET_Checkpoints::GetLastCheckpoint(*blockIndex));
-}
 
 bool testnet_CheckProofOfWork(uint256 hash, unsigned int nBits)
 {
@@ -745,11 +742,15 @@ bool TESTNETBlock::Truncate()
 
 bool TESTNETBlock::VerifyCheckpoint(int nHeight)
 {
-  return (TESTNET_Checkpoints::CheckBlock(nHeight, GetHash()));
+	CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (true);
+  return (wallet->checkpoints->CheckBlock(nHeight, GetHash()));
 }
 uint64_t TESTNETBlock::GetTotalBlocksEstimate()
 {
-  return ((uint64_t)TESTNET_Checkpoints::GetTotalBlocksEstimate());
+	CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (0);
+  return ((uint64_t)wallet->checkpoints->GetTotalBlocksEstimate());
 }
 
 bool TESTNETBlock::AddToBlockIndex()
@@ -881,18 +882,14 @@ bool TESTNETBlock::CreateCheckpoint()
   CBlockIndex *prevIndex;
   CBlockIndex *pindex;
 
+	CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (false);
+
   if (blockIndex->count(hBlock) == 0)
     return (false);
   pindex = (*blockIndex)[hBlock];
 
-  prevIndex = TESTNET_Checkpoints::GetLastCheckpoint(*blockIndex);
-  if (prevIndex && pindex->nHeight <= prevIndex->nHeight)
-    return (false); /* stale */
-
-  TESTNET_Checkpoints::AddCheckpoint(pindex->nHeight, hBlock);
-	return (true);
+  return (wallet->checkpoints->AddCheckpoint(pindex));
 }
-
-
 
 

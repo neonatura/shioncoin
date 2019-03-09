@@ -374,7 +374,7 @@ static Value account_alias_set(int ifaceIndex, char *alias_name, char *alias_add
   int err;
 
   const string alias_addr_str(alias_addr);
-  addr = CCoinAddr(alias_addr_str);
+  addr = CCoinAddr(ifaceIndex, alias_addr_str);
 
   CAlias *alias = GetAliasByName(iface, alias_name, in_tx);
   if (!alias) {
@@ -1006,7 +1006,7 @@ const char *json_getaddressinfo(int ifaceIndex, const char *addr_hash, const cha
 	}
 
   try {
-    CCoinAddr address(strAddr);
+    CCoinAddr address(ifaceIndex, strAddr);
     CKeyID keyID;
 
     if (!address.IsValid()) {
@@ -1066,10 +1066,11 @@ const char *json_getaddressinfo(int ifaceIndex, const char *addr_hash, const cha
     return (NULL);
   }
 
+	CCoinAddr addr(ifaceIndex, addr_hash);
   if (pkey_str && strlen(pkey_str) > 1) {
-    result = JSONAddressInfo(ifaceIndex, addr_hash, true);
+    result = JSONAddressInfo(ifaceIndex, addr, true);
   } else {
-    result = JSONAddressInfo(ifaceIndex, addr_hash, false);
+    result = JSONAddressInfo(ifaceIndex, addr, false);
   }
 
   addressinfo_json = JSONRPCReply(result, Value::null, Value::null);
@@ -1185,13 +1186,15 @@ static const char *c_stratum_account_transfer(int ifaceIndex, char *account, cha
     return (NULL);//throw JSONRPCError(STERR_INVAL, "invalid coin address");
   }
 
-  CCoinAddr address(strDestAddress);
+  CCoinAddr address(ifaceIndex, strDestAddress);
   if (!address.IsValid()) {
     return (NULL);//throw JSONRPCError(STERR_INVAL, "invalid coin address");
   }
+#if 0
   if (address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex)) {
     return (NULL);//throw JSONRPCError(-5, "Invalid address for coin service.");
   }
+#endif
 
   uint256 in_pkey = 0;
   in_pkey.SetHex(pkey_str);
@@ -1320,13 +1323,15 @@ static const char *c_stratum_account_verify_transfer(int ifaceIndex, char *accou
     return (NULL);//throw JSONRPCError(STERR_INVAL, "invalid coin address");
   }
 
-  CCoinAddr address(strDestAddress);
+  CCoinAddr address(ifaceIndex, strDestAddress);
   if (!address.IsValid()) {
     return (NULL);//throw JSONRPCError(STERR_INVAL, "invalid coin address");
   }
+#if 0
   if (address.GetVersion() != CCoinAddr::GetCoinAddrVersion(ifaceIndex)) {
     return (NULL);//throw JSONRPCError(-5, "Invalid address for coin service.");
   }
+#endif
 
   uint256 in_pkey = 0;
   in_pkey.SetHex(pkey_str);
@@ -1835,7 +1840,7 @@ int stratum_setdefaultkey(int ifaceIndex, char *account, char *pub_key)
   if (!wallet)
     return (SHERR_INVAL);
 
-  CCoinAddr address(pub_key);
+  CCoinAddr address(ifaceIndex, pub_key);
   if (!address.IsValid())
     return (SHERR_INVAL);
 

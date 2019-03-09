@@ -58,6 +58,8 @@ static int test_init(CIface *iface, void *_unused_)
   iface->nRuleChangeActivationThreshold = 4;
   iface->nMinerConfirmationWindow = 5;
 
+	testWallet->checkpoints = new CCheckpoints(TEST_COIN_IFACE);
+
   SetWallet(TEST_COIN_IFACE, testWallet);
   return (0);
 }

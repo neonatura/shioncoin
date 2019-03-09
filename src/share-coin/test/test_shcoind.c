@@ -37,6 +37,8 @@ extern TEST_scriptid(CuTest*);
 extern TEST_segwit(CuTest*);
 extern TEST_segwit_serializetx(CuTest*);
 extern TEST_seqlocktx(CuTest*);
+extern TEST_bech32(CuTest*);
+extern TEST_bolo(CuTest*);
 extern TEST_txmempool_pending(CuTest*);
 extern TEST_txmempool_inval(CuTest*);
 extern TEST_respend(CuTest*);
@@ -114,13 +116,17 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_respend);
   SUITE_ADD_TEST(suite, TEST_orphan_block);
 
+
   /* pre-finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall);
+
+  SUITE_ADD_TEST(suite, TEST_bolo); /* SIP31 */
 
   /* segwit tests */
   SUITE_ADD_TEST(suite, TEST_segwit);
   SUITE_ADD_TEST(suite, TEST_segwit_serializetx);
   SUITE_ADD_TEST(suite, TEST_seqlocktx); /* BIP68+ */
+  SUITE_ADD_TEST(suite, TEST_bech32); /* BIP173 */
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);

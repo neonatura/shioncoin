@@ -816,7 +816,6 @@ int stratum_http_call(const char *url, shbuf_t *buff)
 	int i;
 
 	args = stratum_http_args(url, base_url);
-fprintf(stderr, "DEBUG: stratum_http_call: '%s' (%s)_\n", base_url, url);
 
 	if (0 == strcmp(base_url, "/")) {
 		struct http_t h;

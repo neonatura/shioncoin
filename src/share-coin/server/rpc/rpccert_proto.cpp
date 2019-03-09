@@ -381,7 +381,7 @@ Value rpc_wallet_csend(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(SHERR_INVAL, "Invalid account name specified.");
 
   string strAddress = params[1].get_str();
-  CCoinAddr addr(strAddress);
+  CCoinAddr addr(ifaceIndex, strAddress);
   if (!addr.IsValid())
     throw JSONRPCError(err, "Invalid coin address specified.");
 
@@ -476,7 +476,7 @@ Value rpc_cert_export(CIface *iface, const Array& params, bool fStratum)
   const CIdent& ident = (CIdent&)tx.certificate;
   Object obj;
 
-  CCoinAddr cert_addr(stringFromVch(ident.vAddr));
+  CCoinAddr cert_addr(ifaceIndex, stringFromVch(ident.vAddr));
   if (!cert_addr.IsValid())
     throw JSONRPCError(err, "Certificate coin address is invalid.");
 

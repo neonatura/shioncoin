@@ -31,6 +31,7 @@
 #include "init.h"
 #include "net.h"
 #include "wallet.h"
+#include "txmempool.h"
 #include "usde/usde_netmsg.h"
 
 using namespace std;
@@ -729,5 +730,61 @@ Value rpc_sendrawtransaction(CIface *iface, const Array& params, bool fStratum)
   return hashTx.GetHex();
 }
 #endif
+
+Value rpc_sendrawtransaction(CIface *iface, const Array& params, bool fStratum)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+	bool fHighFee;
+
+	if (fStratum)
+		throw runtime_error("unsupported operation");
+
+  if (fHelp || params.size() < 1 || params.size() > 2)
+    throw runtime_error(
+        "tx.sendraw <hex string> [highfee]\n"
+        "Submits raw transaction (serialized, hex-encoded) to local node and network.");
+
+	/* TODO: not implemented. */
+	fHighFee = false;
+	if (params.size() > 1 && 
+			params[1].get_bool() == true)
+		fHighFee = true;
+
+  // parse hex string from parameter
+  vector<unsigned char> txData(ParseHex(params[0].get_str()));
+  CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION(iface));
+  CTransaction tx;
+
+  // deserialize binary data stream
+  try {
+    ssData >> tx;
+  }
+  catch (std::exception &e) {
+    throw JSONRPCError(ERR_ILSEQ, "TX decode failed");
+  }
+  uint256 hashTx = tx.GetHash();
+
+  // See if the transaction is already in a block
+  // or in the memory pool:
+  CTransaction existingTx;
+  uint256 hashBlock = 0;
+  if (GetTransaction(iface, hashTx, existingTx, &hashBlock))
+  {
+    if (hashBlock != 0)
+      throw JSONRPCError(-5, string("transaction already in block ")+hashBlock.GetHex());
+    // Not in block, but already in the memory pool; will drop
+    // through to re-relay it.
+  } else {
+		/* add to local memory pool */
+		CTxMemPool *pool = GetTxMemPool(iface);
+		if (pool) {
+			if (!pool->AddTx(tx))
+				throw JSONRPCError(ERR_INVAL, "TX rejected");
+		}
+  }
+	RelayTransaction(ifaceIndex, tx, hashTx);
+
+  return hashTx.GetHex();
+}
 
 

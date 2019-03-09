@@ -142,35 +142,25 @@ bool ContextualCheckBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 {
   CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
 	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
+	VersionBitsCache *cache;
 	int64_t nWeight;
 
 	if (!pblock)
 		return (false);
 
+	unsigned int flags = GetBlockScriptFlags(iface, pindexPrev);
+	int64_t nLockTimeCutoff = (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) ?
+		pindexPrev->GetMedianTimePast() : pblock->GetBlockTime();
+
+	/* check that all transactions are finalized. */ 
+  BOOST_FOREACH(const CTransaction& tx, pblock->vtx) {
+		if (!tx.IsFinal(pblock->ifaceIndex, nHeight, nLockTimeCutoff))
+			return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u.", nHeight));
+  }
+
 	/* verify block's minimum difficulty. */
 	if (pblock->nBits != pblock->GetNextWorkRequired(pindexPrev))
     return (pblock->trust(-100, "(%s) ContextualCheckBlock: invalid difficulty (%x) specified (next work required is %x) for block height %d [prev '%s']\n", pblock->nBits, pblock->GetNextWorkRequired(pindexPrev), nHeight, pindexPrev->GetBlockHash().GetHex().c_str()));
-
-  BOOST_FOREACH(const CTransaction& tx, pblock->vtx) {
-    /* check that all transactions are finalized. */ 
-		unsigned int flags = GetBlockScriptFlags(iface, pindexPrev);
-		if (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY) {
-			if (!tx.IsFinal(pblock->ifaceIndex, nHeight, pindexPrev->GetMedianTimePast()))
-				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [bip113].", nHeight));
-		} else {
-			if (!tx.IsFinal(pblock->ifaceIndex, nHeight, pblock->GetBlockTime()))
-				return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [lock].", nHeight));
-		}
-		if (tx.GetVersion() >= 2) {
-			/* tx v2 lock/sequence test */
-			if (!CheckSequenceLocks(iface, tx, STANDARD_LOCKTIME_VERIFY_FLAGS)) {
-				if (pblock->ifaceIndex != EMC2_COIN_IFACE) {
-					return (pblock->trust(-10, "(core) AcceptBlock: block contains a non-final transaction at height %u [seq].", nHeight));
-				} 
-				Debug("(emc2) AcceptBlock: block contains a non-final transaction at height %u [seq].", nHeight);
-			}
-		}
-  }
 
   /* check that the block matches the known block hash for last checkpoint. */
   if (!pblock->VerifyCheckpoint(nHeight)) {

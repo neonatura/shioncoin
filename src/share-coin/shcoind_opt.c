@@ -72,6 +72,8 @@ static opt_t _option_table[] = {
 	{ OPT_SHC_PORT, OPT_TYPE_NUM, 24104, NULL,
 		"The port to accept incoming SHC service connections." },
 
+	{ OPT_BECH32, OPT_TYPE_BOOL, 0, NULL,
+		"Generate bech32 style coin addresses when supported." },
 
 	/* the stratum service provides a service for mining hardware to connect to in order to generate new blocks. */
 #ifdef STRATUM_SERVICE

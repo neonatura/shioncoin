@@ -105,7 +105,7 @@ Value rpc_alias_pubaddr_update(CIface *iface, const Array& params, bool fStratum
 	if (vchName.size() > 135)
 		throw runtime_error("alias name > 135 bytes!\n");
 
-  CCoinAddr addr = CCoinAddr(params[1].get_str());
+  CCoinAddr addr = CCoinAddr(ifaceIndex, params[1].get_str());
   if (!addr.IsValid())
     throw JSONRPCError(-5, "Invalid coin address");
 
@@ -170,7 +170,7 @@ Value rpc_alias_pubaddr(CIface *iface, const Array& params, bool fStratum)
       throw JSONRPCError(-5, "Invalid alias name");
 
     CCoinAddr addr(ifaceIndex);
-    if (!alias->GetCoinAddr(addr))
+    if (!alias->GetCoinAddr(ifaceIndex, addr))
       throw JSONRPCError(-5, "Invalid coin address.");
 
     return (addr.ToString());
@@ -182,7 +182,7 @@ Value rpc_alias_pubaddr(CIface *iface, const Array& params, bool fStratum)
   if (strAddress.size() >= MAX_SHARE_HASH_LENGTH)
     throw runtime_error("The coin address exceeds 135 characters.");
 
-  CCoinAddr addr = CCoinAddr(strAddress);
+  CCoinAddr addr = CCoinAddr(ifaceIndex, strAddress);
   if (!addr.IsValid())
     throw JSONRPCError(-5, "Invalid coin address");
 
@@ -299,7 +299,7 @@ Value rpc_alias_listaddr(CIface *iface, const Array& params, bool fStratum)
     obj.push_back(Pair("alias", alias->GetHash().GetHex()));
     if (alias->GetType() == CAlias::ALIAS_COINADDR) {
       CCoinAddr addr(ifaceIndex);
-      if (alias->GetCoinAddr(addr))
+      if (alias->GetCoinAddr(ifaceIndex, addr))
         obj.push_back(Pair("addr", addr.ToString().c_str()));
     }
 
@@ -345,7 +345,7 @@ Value rpc_alias_remove(CIface *iface, const Array& params, bool fStratum)
 
   string strAliasAccount;
   CCoinAddr addr(ifaceIndex);
-  if (!alias->GetCoinAddr(addr))
+  if (!alias->GetCoinAddr(ifaceIndex, addr))
     throw JSONRPCError(-5, "Invalid coind address reference.");
 
   bool ret = GetCoinAddr(wallet, addr, strAliasAccount);

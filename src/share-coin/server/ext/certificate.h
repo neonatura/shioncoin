@@ -311,14 +311,14 @@ class CCert : public CIdent
     /**
      * Verify the integrity of a signature against some context.
      */
-    bool VerifySignature(cbuff vchContext);
+    bool VerifySignature(int ifaceIndex, cbuff vchContext);
 
     /**
      * Verify the integrity of a signature against the pubkey of specific cert.
      */
-    bool VerifySignature(CCert *cert)
+    bool VerifySignature(int ifaceIndex, CCert *cert)
     {
-      return (VerifySignature(cert->signature.vPubKey));
+      return (VerifySignature(ifaceIndex, cert->signature.vPubKey));
     }
 
     /**
@@ -412,7 +412,7 @@ class CLicense : public CCert
 
     bool Sign(int ifaceIndex);
 
-    bool VerifySignature(CCert *cert);
+    bool VerifySignature(int ifaceIndex, CCert *cert);
 
     bool VerifySignature(int ifaceIndex);
 

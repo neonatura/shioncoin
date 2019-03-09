@@ -327,13 +327,13 @@ _TEST(coinaddr)
   int i;
 
   {
-    CCoinAddr e_addr("EKnqTC9XEuucZEhD3miDGnbJxBptcxhByA");
+    CCoinAddr e_addr(EMC2_COIN_IFACE, "EKnqTC9XEuucZEhD3miDGnbJxBptcxhByA");
     _TRUE(e_addr.IsValid());
 //fprintf(stderr, "DEBUG: TEST: coinaddr: '%s' has nVersion '%d'\n", "EKnqTC9XEuucZEhD3miDGnbJxBptcxhByA", e_addr.GetVersion());
   }
 
   {
-    CCoinAddr s_addr("GSje1VrcG7uT55sL41sze9aL5qM7GaN5Bf");
+    CCoinAddr s_addr(TEST_COIN_IFACE, "GSje1VrcG7uT55sL41sze9aL5qM7GaN5Bf");
     _TRUE(s_addr.IsValid());
 //fprintf(stderr, "DEBUG: TEST: coinaddr: '%s' has nVersion '%d'\n", "GSje1VrcG7uT55sL41sze9aL5qM7GaN5Bf", s_addr.GetVersion());
   }

@@ -262,6 +262,7 @@ unsigned int SHCBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
   return KimotoGravityWell(pindexLast, this, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
 }
 
+#if 0
 namespace SHC_Checkpoints
 {
   typedef std::map<int, uint256> MapCheckpoints;
@@ -342,6 +343,8 @@ namespace SHC_Checkpoints
 	}
 
 }
+#endif
+
 
 int64 shc_GetBlockValue(int nHeight, int64 nFees)
 {
@@ -599,8 +602,10 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
 
 CBlockIndex *shc_GetLastCheckpoint()
 {
-  blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
-  return (SHC_Checkpoints::GetLastCheckpoint(*blockIndex));
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
+		return (NULL);
+	return (wallet->checkpoints->GetLastCheckpoint());
 }
 
 bool shc_CheckProofOfWork(uint256 hash, unsigned int nBits)
@@ -1035,17 +1040,23 @@ bool SHCBlock::VerifyCheckpoint(int nHeight)
 		}
 	}
 
-  return (SHC_Checkpoints::CheckBlock(nHeight, GetHash()));
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (true);
+  return (wallet->checkpoints->CheckBlock(nHeight, GetHash()));
 }
 
 bool shc_VerifyCheckpointHeight(int nHeight, uint256 hash)
 {
-  return (SHC_Checkpoints::CheckBlock(nHeight, hash));
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (true);
+  return (wallet->checkpoints->CheckBlock(nHeight, hash));
 }
 
 uint64_t SHCBlock::GetTotalBlocksEstimate()
 {
-  return ((uint64_t)SHC_Checkpoints::GetTotalBlocksEstimate());
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints) return (true);
+  return ((uint64_t)wallet->checkpoints->GetTotalBlocksEstimate());
 }
 
 bool SHCBlock::AddToBlockIndex()
@@ -1105,6 +1116,7 @@ int64_t SHCBlock::GetBlockWeight()
 
 bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
 {
+	static char *timing_tag = "SHC.SetBestChain/CommitBlock";
 	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   uint256 hash = GetHash();
@@ -1117,9 +1129,9 @@ bool SHCBlock::SetBestChain(CBlockIndex* pindexNew)
 		WriteHashBestChain(iface, pindexNew->GetBlockHash());
 		SetBestBlockIndex(ifaceIndex, pindexNew);
   } else {
-    timing_init("SetBestChain/commit", &ts);
+    timing_init(timing_tag, &ts);
     ret = core_CommitBlock(this, pindexNew); 
-    timing_term(SHC_COIN_IFACE, "SetBestChain/commit", &ts);
+    timing_term(SHC_COIN_IFACE, timing_tag, &ts);
     if (!ret)
       return (false);
   }
@@ -1169,25 +1181,17 @@ bool SHCBlock::DisconnectBlock(CBlockIndex* pindex)
 
 bool SHCBlock::CreateCheckpoint()
 {
-  blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
-	const uint256& hBlock = GetHash();
-  CBlockIndex *prevIndex;
-  CBlockIndex *pindex;
-	
-	/* ensure is valid in main chain. */
-	if (blockIndex->count(hBlock) == 0)
+	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
+	CBlockIndex *pindex;
+
+	if (!wallet || !wallet->checkpoints)
 		return (false);
-	pindex = (*blockIndex)[hBlock];
 
-	/* compare height against last checkpoint. */
-	prevIndex = SHC_Checkpoints::GetLastCheckpoint(*blockIndex);
-	if (prevIndex && pindex->nHeight <= prevIndex->nHeight)
-		return (false); /* stale */
+	pindex = GetBlockIndexByHash(SHC_COIN_IFACE, GetHash());
+	if (!pindex)
+		return (false);
 
-	SHC_Checkpoints::AddCheckpoint(pindex->nHeight, hBlock);
-	return (true);
+	return (wallet->checkpoints->AddCheckpoint(pindex));
 }
-
-
 
 

@@ -57,7 +57,7 @@ Building the share-coin programs:
 <i><small><pre>
   git clone https://github.com/neonatura/share-coin
   cd share-coin
-	autoreconf -fvi
+	./autogen.sh
   ./configure
   make
   make install

@@ -28,6 +28,7 @@
 
 #include "shcoind.h"
 #include "base58.h"
+#include "coinaddr.h"
 #include <vector>
 #include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_writer_template.h"

@@ -430,6 +430,8 @@ int64 usde_GetBlockValue(int nHeight, int64 nFees)
   return nSubsidy + nFees;
 }
 
+
+#if 0
 namespace USDE_Checkpoints
 {
   typedef std::map<int, uint256> MapCheckpoints;
@@ -512,6 +514,8 @@ namespace USDE_Checkpoints
   }
 
 }
+#endif
+
 
 #if 0
 bool usde_FetchInputs(CTransaction *tx, CTxDB& txdb, const map<uint256, CTxIndex>& mapTestPool, bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid)
@@ -1033,11 +1037,6 @@ pblock->print();
   return true;
 }
 
-CBlockIndex *usde_GetLastCheckpoint()
-{
-  blkidx_t *blockIndex = GetBlockTable(USDE_COIN_IFACE);
-  return (USDE_Checkpoints::GetLastCheckpoint(*blockIndex));
-}
 
 bool usde_CheckProofOfWork(uint256 hash, unsigned int nBits)
 {
@@ -1819,11 +1818,18 @@ bool USDEBlock::Truncate()
 
 bool USDEBlock::VerifyCheckpoint(int nHeight)
 {
-  return (USDE_Checkpoints::CheckBlock(nHeight, GetHash()));
+	CWallet *wallet = GetWallet(USDE_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
+		return (true);
+  return (wallet->checkpoints->CheckBlock(nHeight, GetHash()));
 }
+
 uint64_t USDEBlock::GetTotalBlocksEstimate()
 {
-  return ((uint64_t)USDE_Checkpoints::GetTotalBlocksEstimate());
+	CWallet *wallet = GetWallet(USDE_COIN_IFACE);
+	if (!wallet || !wallet->checkpoints)
+		return (0);
+  return ((uint64_t)wallet->checkpoints->GetTotalBlocksEstimate());
 }
 
 bool USDEBlock::AddToBlockIndex()
@@ -2301,8 +2307,10 @@ bool usde_ConnectInputs(CTransaction *tx, MapPrevTx inputs, map<uint256, CTxInde
     // Skip ECDSA signature verification when connecting blocks (fBlock=true)
     // before the last blockchain checkpoint. This is safe because block merkle hashes are
     // still computed and checked, and any change will be caught at the next checkpoint.
-    if (!(fBlock && (GetBestHeight(USDE_COIN_IFACE < USDE_Checkpoints::GetTotalBlocksEstimate()))))
-    {
+		CWallet *wallet = GetWallet(USDE_COIN_IFACE);
+		int nTotal = 0;
+		if (wallet && wallet->checkpoints) nTotal = wallet->checkpoints->GetTotalBlocksEstimate();
+    if (!(fBlock && (GetBestHeight(USDE_COIN_IFACE) < nTotal))) {
       // Verify signature
       if (!VerifySignature(USDE_COIN_IFACE, txPrev, *tx, i, fStrictPayToScriptHash, 0))
       {
