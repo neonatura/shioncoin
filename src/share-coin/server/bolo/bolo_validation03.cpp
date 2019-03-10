@@ -675,7 +675,7 @@ bool bolo_GetSlaveNotaryTx(const CTxOut& out)
 			out.scriptPubKey[1] != OP_0)
 		return (false);
 
-	if (out.nValue < bolo_slave_iface->min_input ||
+	if (out.nValue < 0 ||
 			out.nValue > (int64)COIN)
 		return (false);
 
@@ -1067,7 +1067,7 @@ void bolo_connectblock_slave(CBlockIndex *pindex, CBlock& block)
 
 	int nMinHeight = (int)(pindex->nHeight / BOLO_BLOCK_MERKLE_DEPTH) * BOLO_BLOCK_MERKLE_DEPTH;
 	if (bolo_PROPOSED_HEIGHT <= nMinHeight) {
-		/* track ongoing blank OP_RETURN's with a minimal value. */
+		/* track ongoing blank OP_RETURN's with a minimal coin value. */
 		for (unsigned int i = 0; i < block.vtx.size(); i++) {
 			const CTransaction& tx = block.vtx[i];
 
