@@ -2025,9 +2025,13 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
       uint256 hashScriptPubKey;
 
       //CSHA256().Write(&scriptPubKey[0], scriptPubKey.size()).Finalize(hashScriptPubKey.begin());
-      hashScriptPubKey = Hash(scriptPubKey.begin(), scriptPubKey.end());
 
-      if (0 != memcmp(hashScriptPubKey.begin(), &program[0], 32)) {
+			unsigned char *raw = (unsigned char *)&hashScriptPubKey;
+			SHA256(&scriptPubKey[0], scriptPubKey.size(), raw);
+
+//      hashScriptPubKey = Hash(scriptPubKey.begin(), scriptPubKey.end());
+
+      if (0 != memcmp(raw, &program[0], 32)) {
         return error(ERR_INVAL, "VerifyWitnessProgram: invalid program");
       }
     } else if (program.size() == 20) {

@@ -503,7 +503,8 @@ CScript GetScriptForWitness(const CScript& redeemscript)
 
 	uint256 hash;
 	//  CSHA256().Write(&redeemscript[0], redeemscript.size()).Finalize(hash.begin());
-	hash = Hash(redeemscript.begin(), redeemscript.end());
+//	hash = Hash(redeemscript.begin(), redeemscript.end());
+	SHA256(&redeemscript[0], redeemscript.size(), (unsigned char *)&hash);
 	ret << OP_0 << ToByteVector(hash);
 
 	return ret;
