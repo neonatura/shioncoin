@@ -400,12 +400,13 @@ Value rpc_block_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("blocks",        (int)GetBestHeight(iface)));
 
 	if (wallet->checkpoints) {
-		const uint256& hash = wallet->checkpoints->GetNotorizedBlockHash();
-		const int height = wallet->checkpoints->GetNotorizedBlockHeight();
-		if (hash != 0)
+		CBlockIndex *pindex = wallet->checkpoints->GetLastCheckpoint();
+		if (pindex) {
+			const uint256& hash = pindex->GetBlockHash();
+			const int height = pindex->nHeight;
 			obj.push_back(Pair("checkpointhash", hash.GetHex()));
-		if (height != 0)
 			obj.push_back(Pair("checkpoint", height));
+		}
 	}
 
 	if (wallet->pindexBestHeader) {

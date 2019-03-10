@@ -117,6 +117,12 @@ static int shc_init(CIface *iface, void *_unused_)
     ( 78006, uint256("0x780128527b837c3456a111341d9e0b135c7afe335f0cfcfd8664efccfa1d577e") )
     ( 78007, uint256("0xcbb3bc5241bf4d528214b5bad95bc17e92d047db85a1d68587d505de60e76189") )
 
+		/* Feb '19 */
+		( 200000, uint256("0xb4bb61f7cbe02b48ced1c5af6c8f95df3768d021f595d26e7e2d4d0a59f930b3") )
+		( 200001, uint256("0x82954d9ed5ce7326df6b94f874c0ae0d3fefbec3627f4883b759b8bd6f15fb20") )
+		( 200002, uint256("0xb507dd690d87a3fbec5acb18e5866a406177eaf23ef16ae50c8ecd6b3faa3a3b") )
+		( 200003, uint256("0x233baac43596d3b71fd02c2910abe128b3cf89c058ca675272394833dbb7ca4e") )
+		( 200004, uint256("0x0df2e80407cf97f48f3311758c8e36f6b7dec4b9846875b8af898aec9a32cbd7") )
     ;
 
   shcWallet = new SHCWallet();

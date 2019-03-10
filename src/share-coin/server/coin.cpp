@@ -51,6 +51,8 @@ static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS =
 
 extern unsigned int color_GetTotalBlocks();
 
+extern bool SequenceLocks(const CTransaction &tx, int flags, std::vector<int>* prevHeights, const CBlockIndex& block);
+
 
 /**
  * Write specific amount of available coins per transaction output.
@@ -684,11 +686,23 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 	}
 
 	unsigned int flags = GetBlockScriptFlags(iface, pindex);
-	if (flags & LOCKTIME_VERIFY_SEQUENCE) {
-		BOOST_FOREACH(const CTransaction& tx, block->vtx) {
-			if (tx.GetVersion() >= 2) { /* tx v2 lock/sequence test */
-				if (!CheckSequenceLocks(iface, tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
-					return (block->trust(-10, "(%s) ConnectBlock: block contains a non-final transaction at height %u [seq].", iface->name, nHeight));
+	BOOST_FOREACH(const CTransaction& tx, block->vtx) {
+		if (!tx.IsCoinBase()) {
+			vector<int> prevheights;
+
+			/* Check that transaction is BIP68 final
+			 * BIP68 lock checks (as opposed to nLockTime checks) must
+			 * be in ConnectBlock because they require the UTXO set
+			 */
+			prevheights.resize(tx.vin.size());
+			for (size_t j = 0; j < tx.vin.size(); j++) {
+				CBlockIndex *t_pindex = GetBlockIndexByHash(block->ifaceIndex, tx.vin[j].prevout.hash);
+				if (t_pindex)
+					prevheights[j] = t_pindex->nHeight;
+			}
+
+			if (!SequenceLocks(tx, flags, &prevheights, *pindex)) {
+				return (block->trust(-10, "(%s) ConnectBlock: block contains a non-final transaction at height %u [seq].", iface->name, nHeight));
 			}
 		}
 	}

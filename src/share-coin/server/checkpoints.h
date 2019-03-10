@@ -52,12 +52,16 @@ class CCheckpoints
 		{
 			ifaceIndex = ifaceIndexIn;
 			mapCheckpoints.clear();
+			hNotaryHeight = 0;
+			hNotaryBlock = 0;
 		}
 
 		CCheckpoints(int ifaceIndexIn, MapCheckpoints mapIn)
 		{
 			ifaceIndex = ifaceIndexIn;
 			mapCheckpoints = mapIn;
+			hNotaryHeight = 0;
+			hNotaryBlock = 0;
 		}
 
     // Returns true if block passes checkpoint checks
