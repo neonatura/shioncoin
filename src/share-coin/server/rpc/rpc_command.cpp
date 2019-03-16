@@ -284,6 +284,19 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   return obj;
 }
 
+Value rpc_sys_echo(CIface *iface, const Array& params, bool fStratum)
+{
+
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+
+  if (fHelp || params.size() != 1)
+    throw runtime_error("sys.echo\n");
+
+	string text = params[0].get_str();
+  return Value(text);
+}
+
 static void add_sys_config_opt_num(Object& obj, const char *opt_name)
 {
   int val = opt_num((char *)opt_name);
@@ -1736,18 +1749,38 @@ Value rpc_tx_list(CIface *iface, const Array& params, bool fStratum)
 Value rpc_tx_pool(CIface *iface, const Array& params, bool fStratum)
 {
 
-  if (fHelp || params.size() != 0)
-    throw runtime_error(
-        "tx.pool\n"
-        "Returns all transaction awaiting confirmation.");
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+
+  if (fHelp || params.size() > 1)
+    throw runtime_error("invalid parameters");
 
   CTxMemPool *pool = GetTxMemPool(iface);
+	bool fVerbose = (params.size() == 1) ? params[0].get_bool() : false;
 
   Array a;
   if (pool) {
     vector<CTransaction> mapTx = pool->GetActiveTx();
     BOOST_FOREACH(CTransaction& tx, mapTx) {
-      a.push_back(tx.ToValue(GetCoinIndex(iface)));
+			if (fVerbose) {
+				Object obj = tx.ToValue(GetCoinIndex(iface));
+				obj.push_back(Pair("queue", "active"));
+				a.push_back(obj);
+			} else {
+				a.push_back(tx.GetHash().GetHex());
+			}
+    }
+	}
+  if (pool) {
+    vector<CTransaction> mapTx = pool->GetOverflowTx();
+    BOOST_FOREACH(CTransaction& tx, mapTx) {
+			if (fVerbose) {
+				Object obj = tx.ToValue(GetCoinIndex(iface));
+				obj.push_back(Pair("queue", "overflow"));
+				a.push_back(obj);
+			} else {
+				a.push_back(tx.GetHash().GetHex());
+			}
     }
   }
 

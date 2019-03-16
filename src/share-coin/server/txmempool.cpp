@@ -915,6 +915,27 @@ vector<CTransaction> CPool::GetActiveTx()
   return (vTx);
 }
 
+vector<CTransaction> CPool::GetOverflowTx()
+{
+  vector<CPoolTx> vPoolTx;
+  vector<CTransaction> vTx;
+  int64_t nMaxWeight = GetMaxWeight();
+  int64_t nWeight = 0;
+
+  for (pool_map::iterator it = overflow.begin(); it != overflow.end(); ++it) {
+    CPoolTx& ptx = it->second;
+    vPoolTx.push_back(ptx);
+  }
+  sort(vPoolTx.begin(), vPoolTx.end()); 
+
+  BOOST_FOREACH(CPoolTx& ptx, vPoolTx) {
+    CTransaction& tx = ptx.GetTx();
+    vTx.insert(vTx.end(), tx);
+  }
+
+  return (vTx);
+}
+
 vector<CTransaction> CPool::GetActiveColorTx(const uint160& hColor)
 {
   vector<CPoolTx> vPoolTx;

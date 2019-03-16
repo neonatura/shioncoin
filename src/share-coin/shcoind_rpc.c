@@ -33,9 +33,12 @@ extern "C" {
 
 #define CRED_SECRET_LEN 28
 
-extern void stratum_close(int fd, struct sockaddr *net_addr);
-extern user_t *stratum_register_client(int fd);
+#define MAX_RPC_MESSAGE_SIZE 16000000 /* 16m */
 
+user_t *rpc_client_list;
+
+extern user_t *stratum_user_init(int fd);
+extern int stratum_register_client_task(user_t *user, char *json_text);
 
 static const char *rpc_dat_path(void)
 {
@@ -288,6 +291,17 @@ const char *get_rpc_service_host(void)
 	return (val);
 }
 
+user_t *rpc_register_client(int fd)
+{
+  user_t *user;
+  int err;
+
+  user = stratum_user_init(fd);
+  user->next = rpc_client_list;
+  rpc_client_list = user;
+
+  return (user);
+}
 
 static void rpc_accept(int fd, struct sockaddr *net_addr)
 {
@@ -312,12 +326,118 @@ static void rpc_accept(int fd, struct sockaddr *net_addr)
     shcoind_log(buf);  
 }
 
-  user = stratum_register_client(fd);
+  user = rpc_register_client(fd);
   if (user)
     user->flags |= USER_RPC;
  
 }
 
+static void rpc_close_free(void)
+{
+  user_t *peer_next;
+  user_t *peer_last;
+  user_t *peer;
+  time_t now;
+
+  peer_last = NULL;
+  now = time(NULL);
+  for (peer = rpc_client_list; peer; peer = peer_next) {
+    peer_next = peer->next;
+
+    if (!(peer->flags & USER_RPC))
+      continue;
+
+    if (peer->fd == -1) {
+      if (peer_last)
+        peer_last->next = peer_next;
+      else
+        rpc_client_list = peer_next;
+      free(peer);
+      continue;
+    }
+
+    peer_last = peer;
+  }
+   
+}
+
+static void rpc_timer(void)
+{
+  static task_attr_t attr;
+  unet_table_t *t;
+  user_t *peer;
+  shbuf_t *buff;
+  char errbuf[256];
+  char *data;
+  time_t tnow;
+  size_t len;
+  int is_new;
+  int blk_iface;
+  int err;
+
+  for (peer = rpc_client_list; peer; peer = peer->next) {
+    if (peer->fd == -1)
+      continue;
+		if (!(peer->flags & USER_RPC))
+			continue;
+
+    t = get_unet_table(peer->fd);
+    if (!t)
+      continue;
+
+    buff = t->rbuff;
+    if (!buff) continue;
+
+    /* process incoming requests */
+    len = shbuf_idx(buff, '\n');
+    if (len == -1) {
+			if (shbuf_size(buff) > MAX_RPC_MESSAGE_SIZE) {
+				/* junk */
+				shbuf_clear(buff);
+			}
+      continue;
+		}
+		if (len > MAX_RPC_MESSAGE_SIZE) {
+			/* error.. */
+			shbuf_trim(buff, len + 1);
+			continue;
+		}
+
+		shbuf_lock(buff);
+    data = shbuf_data(buff);
+    len = stridx(data, '\n'); /* redundant */
+    if (len == -1) { shbuf_unlock(buff); continue; }
+    data[len] = '\0';
+		data = strdup(data);
+    shbuf_trim(buff, len + 1);
+		shbuf_unlock(buff);
+
+		if (*data == '{') {
+			/* normal user request (miner / api) */
+			stratum_register_client_task(peer, data);
+    }
+
+		free(data);
+  }
+
+  rpc_close_free();
+}
+
+void rpc_close(int fd, struct sockaddr *net_addr)
+{
+  user_t *peer;
+
+  if (fd < 0)
+    return; /* invalid */
+
+  for (peer = rpc_client_list; peer; peer = peer->next) {
+    if (peer->fd == fd) {
+      peer->fd = -1;
+      break;
+    }
+  }
+   
+}
 
 int rpc_init(void)
 {
@@ -330,10 +450,8 @@ int rpc_init(void)
     return (err);
 
   unet_connop_set(UNET_RPC, rpc_accept);
-  unet_disconnop_set(UNET_RPC, stratum_close);
-#if 0
+  unet_disconnop_set(UNET_RPC, rpc_close);
   unet_timer_set(UNET_RPC, rpc_timer);
-#endif
 
   return (0);
 }

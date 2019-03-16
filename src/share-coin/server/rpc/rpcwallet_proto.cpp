@@ -47,6 +47,7 @@ using namespace std;
 #include "rpc_proto.h"
 #include "rpc_command.h"
 #include "rpccert_proto.h"
+#include "account.h"
 #include "stratum/stratum.h"
 
 #include <boost/assign/list_of.hpp>
@@ -58,6 +59,7 @@ using namespace boost::assign;
 extern json_spirit::Value ValueFromAmount(int64 amount);
 extern bool IsAccountValid(CIface *iface, std::string strAccount);
 extern string AccountFromValue(const Value& value);
+extern int GetPubKeyMode(const char *tag);
 
 
 struct tallyitem
@@ -566,6 +568,41 @@ Value rpc_wallet_info(CIface *iface, const Array& params, bool fStratum)
 
 }
 
+Value rpc_wallet_cscript(CIface *iface, const Array& params, bool fStratum)
+{
+
+	if (fStratum)
+		throw runtime_error("unsupported operation");
+
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	string strAccount;
+	CScript script;
+	CScriptID cid;
+
+	if (params.size() > 1)
+		throw runtime_error("invalid parameters specified");
+
+	CCoinAddr address(ifaceIndex, params[0].get_str());
+	if (!address.IsValid())
+		throw JSONRPCError(-5, "Invalid coin address specified.");
+	if (!GetCoinAddr(wallet, address, strAccount))
+		throw JSONRPCError(-5, "No account associated with coin address.");
+
+	script = address.GetScript();
+	if (script.empty())
+		throw JSONRPCError(-5, "Unable to generate script from coin address.");
+
+	/* generate a Script ID referencing the output destination script. */
+	cid = script.GetID();
+	CCoinAddr script_addr(ifaceIndex, cid);
+	/* retain */
+	wallet->AddCScript(script);
+	wallet->SetAddressBookName(cid, strAccount);
+
+	return (Value(script_addr.ToString()));
+}
+
 Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 {
 	if (fStratum)
@@ -768,19 +805,31 @@ Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum)
 	return ret;
 }
 
+
 Value rpc_wallet_addr(CIface *iface, const Array& params, bool fStratum)
 {
-	if (params.size() != 1)
-		throw runtime_error(
-				"wallet.addr <account>\n"
-				"Returns the current hash address for receiving payments to this account.");
+
+	if (fStratum)
+		throw runtime_error("unsupported operation");
+
+	if (params.size() > 2)
+		throw runtime_error("invalid parameters");
+
+	CWallet *wallet = GetWallet(iface);
 
 	// Parse the account first so we don't generate a key if there's an error
 	string strAccount = AccountFromValue(params[0]);
+	int mode = 0;
+	if (params.size() > 1) {
+		string strMode = params[1].get_str();
+		mode = GetPubKeyMode(strMode.c_str());
+		if (mode == -1)
+			throw JSONRPCError(ERR_INVAL, "Invalid coin address mode specified.");
+	}
 
 	Value ret;
-
-	ret = GetAccountAddress(GetWallet(iface), strAccount).ToString();
+	ret = wallet->GetAccount(strAccount)->GetAddr(mode).ToString();
+fprintf(stderr, "DEBUG: rpc_wallet_addr: \"%s\" = GetAccount(\"%s\").GetAddr(%d)\n", ret.get_str().c_str(), strAccount.c_str(), mode);
 
 	return ret;
 }

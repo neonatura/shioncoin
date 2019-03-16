@@ -382,12 +382,13 @@ static uint32_t txcreator_RecentBlockHeight(CIface *iface)
 
 bool CTxCreator::Generate()
 {
+	const cbuff sigDummy(72, '\000');
+	const cbuff sigPub(64, '\000');
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
   CWallet *wallet = GetWallet(iface);
+	CCoinAddr changeAddr(wallet->ifaceIndex);
   int64 nFee;
   bool ok;
-    cbuff sigDummy(72, '\000');
-    cbuff sigPub(64, '\000');
 
   if (vout.size() == 0) {
     strError = "No outputs have been specified.";
@@ -397,13 +398,22 @@ bool CTxCreator::Generate()
   /* establish "coin change" destination address */
   int ext_idx = IndexOfExtOutput(*this);
   if (fAccount && (ext_idx == -1) && !changePubKey.IsValid()) {
+		changeAddr = wallet->GetChangeAddr(strFromAccount);
+#if 0
     CPubKey changePubKey;
 
     ok = pwallet->GetMergedPubKey(strFromAccount, "change", changePubKey);
     if (ok && !HaveInput(changePubKey) && !HaveOutput(changePubKey)) {
       SetChange(changePubKey);
     }
+#endif
   }
+	if (!changeAddr.IsValid()) {
+		if (!changePubKey.IsValid())
+			CreateChangeAddr();
+		changeAddr = CCoinAddr(wallet->ifaceIndex, changePubKey.GetID());
+	}
+#if 0
   if (!changePubKey.IsValid()) {
     /* pull a reserved key from the pool. */
     CreateChangeAddr();
@@ -413,6 +423,7 @@ bool CTxCreator::Generate()
       pwallet->SetAddressBookName(changePubKey.GetID(), strFromAccount);
 #endif
   }
+#endif
 
 	if (isAutoLock() &&
 			pwallet->ifaceIndex != COLOR_COIN_IFACE && 
@@ -523,7 +534,8 @@ bool CTxCreator::Generate()
     if (nChange >= MIN_INPUT_VALUE(iface)) {
       CScript script;
 
-      script.SetDestination(changePubKey.GetID());
+      script.SetDestination(changeAddr.Get());
+      //script.SetDestination(changePubKey.GetID());
       t_wtx.vout.insert(t_wtx.vout.end(), CTxOut(nChange, script));
     }
 
@@ -551,9 +563,9 @@ bool CTxCreator::Generate()
   /* handle coin change */
   int64 nChange = (nCredit - nDebit - nFee);
   if (nChange >= MIN_INPUT_VALUE(iface) &&
-      nChange >= MIN_TX_FEE(iface) &&
-      nChange >= CENT) {
-    AddOutput(changePubKey, nChange); 
+      nChange >= MIN_RELAY_TX_FEE(iface)) {
+    AddOutput(changeAddr.Get(), nChange); 
+    //AddOutput(changePubKey, nChange); 
   }
 
   /* add inputs to transaction */
@@ -632,6 +644,11 @@ bool CTxCreator::Send()
   }
 
 #if 0
+  if (fAccount) {
+    pwallet->SetAddressBookName(changePubKey.GetID(), strFromAccount);
+  }
+#endif
+#if 0
   if (nReserveIndex != -1) {
     /* a reserved key was created in the making of this transaction. */
     pwallet->KeepKey(nReserveIndex);
@@ -640,9 +657,6 @@ bool CTxCreator::Send()
     }
   }
 #endif
-  if (fAccount) {
-    pwallet->SetAddressBookName(changePubKey.GetID(), strFromAccount);
-  }
 
   /* fill vtxPrev by copying from previous transactions vtxPrev */
   pwallet->AddSupportingTransactions(*this);
@@ -867,9 +881,11 @@ bool CTxBatchCreator::Send()
       return (false);
   }
 
+#if 0
   if (fAccount) {
     pwallet->SetAddressBookName(changePubKey.GetID(), strFromAccount);
   }
+#endif
 
   vector<CWalletTx> vCommitList;
   vector<CWalletTx>& tx_list = vTxList;

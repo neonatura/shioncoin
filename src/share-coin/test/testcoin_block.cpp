@@ -29,6 +29,7 @@
 #include <vector>
 #include "wallet.h"
 #include "txcreator.h"
+#include "bech32.h"
 #include "test/test_pool.h"
 #include "test/test_block.h"
 #include "test/test_txidx.h"
@@ -1720,8 +1721,7 @@ _TEST(scriptid)
 //int64 nValue = GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1);
 //fprintf(stderr, "DEBUG: TEST: SCRIPTID: bal/after %f\n", (double)nValue/COIN);
 
-
-  _TRUE(0 == GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1));
+  _TRUE(GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1) < CENT);
 }
 
 _TEST(segwit)
@@ -1907,7 +1907,7 @@ if (strError != "") fprintf(stderr, "DEBUG: wtx3.strerror = \"%s\"\n", strError.
   }
 
   nValue = GetAccountBalance(TEST_COIN_IFACE, strWitAccount, 1);
-  _TRUE(0 == nValue); 
+  _TRUE(nValue < CENT);
 
 }
 
@@ -2246,8 +2246,31 @@ _TEST(seqlocktx)
 
 }
 
+#define CaseInsensitiveEqual(_str1, _str2) \
+	(0 == strcasecmp((_str1).c_str(), (_str2).c_str()))
+
 _TEST(bech32)
 {
+
+	{ /* test encode -> decode sanity. */
+		static const string CASES[] = {
+			"A12UEL5L",
+			"a12uel5l",
+			"an83characterlonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1tt5tgs",
+			"abcdef1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqqxw",
+			"11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqc8247j",
+			"split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w",
+			"?1ezyfcl",
+		};
+		for (const std::string& str : CASES) {
+			auto ret = bech32::Decode(str);
+			_TRUE(ret.first.empty() == false);
+			std::string recode = bech32::Encode(ret.first, ret.second);
+			_TRUE(recode.empty() == false);
+			_TRUE(CaseInsensitiveEqual(str, recode) == true);
+		}
+	}
+
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   CWallet *wallet = GetWallet(iface);
 	string strWitAccount = "bech32";

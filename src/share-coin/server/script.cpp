@@ -1586,8 +1586,6 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
   // Shortcut for pay-to-script-hash, which are more constrained than the other types:
   // it is always OP_HASH160 20 [20 byte hash] OP_EQUAL
   if (scriptPubKeyCopy.IsPayToScriptHash()) {
-
-
     typeRet = TX_SCRIPTHASH;
     vector<unsigned char> hashBytes(scriptPubKeyCopy.begin()+2, scriptPubKeyCopy.begin()+22);
     vSolutionsRet.push_back(hashBytes);

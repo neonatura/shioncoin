@@ -533,6 +533,10 @@ const RPCOp SYS_INFO = {
   &rpc_sys_info, 0, {},
   "The system attributes that control how the coin-service operates."
 };
+const RPCOp SYS_ECHO = {
+  &rpc_sys_echo, 1, {RPC_STRING},
+  "Echo back the string specified."
+};
 const RPCOp SYS_CONFIG = {
   &rpc_sys_config, 0, {},
   "The system configuration settings that control how the coin-service operates."
@@ -699,8 +703,10 @@ const RPCOp TX_LIST = {
   "Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]."
 };
 const RPCOp TX_POOL = {
-  &rpc_tx_pool, 0, {},
-  "Returns all transaction awaiting confirmation."
+  &rpc_tx_pool, 0, {RPC_BOOL},
+  "Syntax: [<verbose>=false]\n"
+  "All transaction(s) in the memory pool awaiting confirmation.\n"
+	"Note: When verbose is set to \"true\" then the contents of all transaction(s) in JSON format is returned."
 };
 const RPCOp TX_PRUNE = {
   &rpc_tx_prune, 0, {},
@@ -711,9 +717,10 @@ const RPCOp TX_PURGE = {
   "Reverts all transaction awaiting confirmation."
 };
 const RPCOp WALLET_ADDR = {
-  &rpc_wallet_addr, 1, {RPC_ACCOUNT},
-  "Syntax: <account>\n"
-  "Returns the current hash address for receiving payments to this account."
+  &rpc_wallet_addr, 1, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> [mode]\n"
+  "Returns the current coin address for receiving payments to this account.\n"
+	"The mode is either \"receive\" (default), \"change\", \"exec\", or \"notary\"."
 }; 
 const RPCOp WALLET_WITADDR = {
   &rpc_wallet_witaddr, 1, {RPC_STRING, RPC_STRING},
@@ -760,6 +767,10 @@ const RPCOp WALLET_GET = {
 const RPCOp WALLET_INFO = {
   &rpc_wallet_info, 0, {}, 
   "Statistical and runtime information on wallet operations."
+};
+const RPCOp WALLET_CSCRIPT = {
+  &rpc_wallet_cscript, 1, {RPC_STRING}, 
+  "Create a Script ID destination from a pubkey address."
 };
 const RPCOp TX_VALIDATE = {
   &rpc_tx_validate, 1, {RPC_STRING}, 
@@ -989,6 +1000,9 @@ void RegisterRPCOpDefaults(int ifaceIndex)
 
   RegisterRPCOp(ifaceIndex, "sys.config", SYS_CONFIG);
 
+  RegisterRPCOp(ifaceIndex, "sys.echo", SYS_ECHO);
+  RegisterRPCAlias(ifaceIndex, "echo", SYS_ECHO);
+
   RegisterRPCOp(ifaceIndex, "sys.info", SYS_INFO);
 
   RegisterRPCOp(ifaceIndex, "sys.shutdown", SYS_SHUTDOWN);
@@ -1038,7 +1052,6 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCAlias(ifaceIndex, "listtransactions", TX_LIST);
 
   RegisterRPCOp(ifaceIndex, "tx.pool", TX_POOL);
-  RegisterRPCAlias(ifaceIndex, "getrawmempool", TX_POOL);
 
   RegisterRPCOp(ifaceIndex, "tx.prune", TX_PRUNE);
 
@@ -1055,6 +1068,9 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "wallet.witaddr", WALLET_WITADDR);
   RegisterRPCOp(ifaceIndex, "wallet.listaddr", WALLET_LISTADDR);
   RegisterRPCOp(ifaceIndex, "wallet.balance", WALLET_BALANCE);
+
+  RegisterRPCOp(ifaceIndex, "wallet.cscript", WALLET_CSCRIPT);
+
   RegisterRPCOp(ifaceIndex, "wallet.export", WALLET_EXPORT);
 //  RegisterRPCOp(ifaceIndex, "wallet.exportdat", WALLET_EXPORTDAT);
 

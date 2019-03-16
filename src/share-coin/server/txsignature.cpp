@@ -277,21 +277,19 @@ bool CSignature::SignSignature(const CScript& fromPubKey)
   fSolved = SignAddress(script, result, whichType, SIGVERSION_BASE);
 
   CScript subscript;
-  if (whichType == TX_SCRIPTHASH) {
+  if (fSolved && whichType == TX_SCRIPTHASH) {
     // Solver returns the subscript that need to be evaluated;
     // the final scriptSig is the signatures from that
     // and then the serialized subscript:
     //script = subscript = txin.scriptSig;
     script = subscript = CScript(result[0].begin(), result[0].end());
 
-
     fSolved = fSolved && SignAddress(script, result, whichType, SIGVERSION_BASE) && whichType != TX_SCRIPTHASH;
 
     P2SH = true;
-
   }
 
-  if (whichType == TX_WITNESS_V0_KEYHASH) {
+  if (fSolved && whichType == TX_WITNESS_V0_KEYHASH) {
     cbuff vchSig = ToByteVector(result[0]);
     CScript witnessscript;
     witnessscript << OP_DUP << OP_HASH160 << ToByteVector(result[0]) << OP_EQUALVERIFY << OP_CHECKSIG;
@@ -306,7 +304,7 @@ bool CSignature::SignSignature(const CScript& fromPubKey)
 
     txin.scriptSig = CScript();
     result.clear();
-  } else if (whichType == TX_WITNESS_V0_SCRIPTHASH) {
+  } else if (fSolved && whichType == TX_WITNESS_V0_SCRIPTHASH) {
     CScript witnessscript(result[0].begin(), result[0].end());
 
     txnouttype subType;

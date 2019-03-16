@@ -350,6 +350,8 @@ class CTxMemPool
 
     virtual vector<CTransaction> GetActiveTx() = 0;
 
+    virtual vector<CTransaction> GetOverflowTx() = 0;
+
 		virtual vector<CTransaction> GetActiveColorTx(const uint160& hColor) = 0;
 
     virtual bool FetchInputs(uint256 hash, tx_cache& cacheRet) = 0;
@@ -578,6 +580,8 @@ class CPool : public CTxMemPool
     void CalculateFee(CPoolTx& ptx);
 
     vector<CTransaction> GetActiveTx();
+
+    vector<CTransaction> GetOverflowTx();
 
 		vector<CTransaction> GetActiveColorTx(const uint160& hColor);
 

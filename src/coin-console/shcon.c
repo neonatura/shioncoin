@@ -48,6 +48,9 @@ void shcon_tool_usage(char *prog_name)
       "\n"
       "Options:\n"
       "\t--prompt\tInteractively run commands from a console.\n"
+      "\t--host\tThe shcoind RPC host to connect to.\n"
+      "\t--port\tThe shcoind RPC port to connect to.\n"
+      "\t--pass\tThe shcoind RPC access password.\n"
       "\n"
       "Commands:\n"
       "\tUse the \"help\" command in order to list all available RPC operations.\n"
@@ -120,6 +123,26 @@ int main(int argc, char *argv[])
         opt_bool_set(OPT_PROMPT, TRUE);
         continue;
       }
+			if (i < (argc-1)) {
+				if (0 == strcmp(argv[i], "--host") ||
+						0 == strcmp(argv[i], "-rpcconnect")) {
+					opt_str_set(OPT_HOSTNAME, argv[i+1]);
+					i++;
+					continue;
+				}
+				if (0 == strcmp(argv[i], "--port") ||
+						0 == strcmp(argv[i], "-rpcport")) {
+					opt_num_set(OPT_PORT, atoi(argv[i+1]));
+					i++;
+					continue;
+				}
+				if (0 == strcmp(argv[i], "--pass") ||
+						0 == strcmp(argv[i], "-rpcpassword")) {
+					opt_str_set(OPT_PASS, argv[i+1]);
+					i++;
+					continue;
+				}
+			}
 
 /* DEBUG: TODO: "--output", "--input", "--host", "--port" */
       continue;

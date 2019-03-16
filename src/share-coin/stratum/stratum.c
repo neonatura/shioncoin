@@ -143,6 +143,9 @@ static void stratum_timer(void)
     if (peer->fd == -1)
       continue;
 
+		if (peer->flags & USER_RPC)
+			continue; /* wrong service */
+
     t = get_unet_table(peer->fd);
     if (!t) {
       continue;

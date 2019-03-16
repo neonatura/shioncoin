@@ -2153,11 +2153,14 @@ int init_exec_tx(CIface *iface, string strAccount, string strPath, CWalletTx& wt
   }
 
   /* establish 'sender' coin addr */
+  CCoinAddr sendAddr = wallet->GetExecAddr(strAccount);
+#if 0
   CCoinAddr sendAddr(ifaceIndex);
   if (!wallet->GetMergedAddress(strAccount, "exec", sendAddr)) {
     error(SHERR_INVAL, "init_exec_tx: error generating merged address.");
     return (false);
   }
+#endif
 
   wtx.SetNull();
   wtx.strFromAccount = strAccount; /* originating account for payment */
@@ -2235,11 +2238,14 @@ int update_exec_tx(CIface *iface, string strAccount, const uint160& hExec, CWall
 	exec = tx.GetExec();
 
   /* define "sender" address. */
+  const CCoinAddr& sendAddr = wallet->GetExecAddr(strAccount);
+#if 0
   CCoinAddr sendAddr(ifaceIndex);
   if (!wallet->GetMergedAddress(strAccount, "exec", sendAddr)) {
     error(SHERR_INVAL, "generate_exec_tx: invalid sender exec coin addr."); 
     return (SHERR_INVAL);
   }
+#endif
 
 	if (!exec->GetStackData(ifaceIndex, &udata))
 		return (0); /* no data avail */
@@ -2319,11 +2325,14 @@ int generate_exec_tx(CIface *iface, string strAccount, string strClass, int64 nF
   }
 
   /* define "sender" address. */
+  CCoinAddr sendAddr = wallet->GetExecAddr(strAccount);
+#if 0
   CCoinAddr sendAddr(ifaceIndex);
   if (!wallet->GetMergedAddress(strAccount, "exec", sendAddr)) {
     error(SHERR_INVAL, "generate_exec_tx: invalid sender exec coin addr."); 
     return (SHERR_INVAL);
   }
+#endif
 
   /* define "execution" address. */
   CCoinAddr recvAddr = execIn.GetSenderAddr(ifaceIndex);
@@ -2564,11 +2573,14 @@ int remove_exec_tx(CIface *iface, const uint160& hashExec, CWalletTx& wtx)
   }
 
   /* establish user address. */
+  const CCoinAddr& recvAddr = wallet->GetExecAddr(strAccount);
+#if 0
   CCoinAddr recvAddr(ifaceIndex);
   if (!wallet->GetMergedAddress(strAccount, "exec", recvAddr)) {
     error(SHERR_NOENT, "remove_exec_tx: error obtaining user coin address.");
     return (SHERR_NOENT);
   }
+#endif
 
   /* generate tx */
   CExec *exec;

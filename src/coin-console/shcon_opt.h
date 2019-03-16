@@ -36,11 +36,13 @@
 
 #define OPT_OUTPUT "shcon.output"
 
-#define OPT_PORT "shcoind.stratum.port"
+#define OPT_PORT "shcoind.rpc-port"
 
-#define OPT_HOSTNAME "shcon.hostname"
+#define OPT_HOSTNAME "shcoind.rpc-host"
 
 #define OPT_PROMPT "shcon.prompt"
+
+#define OPT_PASS "shcon.password"
 
 
 int shcon_opt_init(void);

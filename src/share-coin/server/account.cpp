@@ -38,7 +38,7 @@
 
 
 static const char *_pubkey_tag_table[MAX_ACCADDR] = {
-	"recieve",
+	"receive",
 	"change",
 	"exec",
 	"hdkey",
@@ -59,6 +59,31 @@ static int _account_address_flags[MAX_ACCADDR] = {
 #define IS_ACCOUNT(type, flag) \
 	(_account_address_flags[(type)] & (flag))
 
+static bool CAccountCache_GenerateAddress(CWallet *wallet, const string& strAccount, CPubKey& pubkey, const char *tag)
+{
+	CKey pkey;
+
+	if (!wallet->GetKey(pubkey.GetID(), pkey))
+		return (false);
+
+	cbuff tagbuff(tag, tag + strlen(tag));
+	CKey key = pkey.MergeKey(tagbuff);
+
+	CPubKey mrg_pubkey = key.GetPubKey();
+	if (!mrg_pubkey.IsValid())
+		return (false);
+
+	if (!wallet->HaveKey(mrg_pubkey.GetID())) {
+		/* add key to address book */
+		if (!wallet->AddKey(key))
+			return (false);
+
+		wallet->SetAddressBookName(mrg_pubkey.GetID(), strAccount);
+	}
+
+	pubkey = mrg_pubkey; 
+	return (true);
+}
 
 static const char *GetPubKeyTag(int type)
 {
@@ -67,6 +92,18 @@ static const char *GetPubKeyTag(int type)
 		return (_pubkey_tag_table[ACCADDR_RECV]);
 
 	return (_pubkey_tag_table[type]);
+}
+
+int GetPubKeyMode(const char *tag)
+{
+	int i;
+
+	for (i = 0; i < MAX_ACCADDR; i++) {
+		if (0 == strcasecmp(tag, _pubkey_tag_table[i]))
+			return (i);
+	}
+
+	return (-1);
 }
 
 CCoinAddr CAccountCache::CreateAddr(int type)
@@ -113,26 +150,52 @@ void CAccountCache::AddAddr(CCoinAddr addr, int type)
 
 CCoinAddr CAccountCache::GetAddr(int type)
 {
+	CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
 	static CPubKey null_key;
 	CCoinAddr addr(wallet->ifaceIndex);
 
-	if (type >= 0 && type < MAX_ACCADDR)
-		addr = vAddr[type];
-	
+	if (type < 0 || type >= MAX_ACCADDR)
+		return (addr); /* invalid */
+
+	bool fOk = false;
+	bool fWitness = true;
+	addr = vAddr[type];
 	if (addr.IsValid()) {
 		vAddr[type].nAccessTime = time(NULL);
 		if (IS_ACCOUNT(type, ACCADDRF_STATIC))
 			return (addr);
-		if (!IsAddrUsed(addr))
-			return (addr);
+		fOk = true;
+		fWitness = false;
+	} else {
+		CPubKey pubkey = account.vchPubKey;
+		fOk = CAccountCache_GenerateAddress(wallet, strAccount, pubkey, _pubkey_tag_table[type]);
+		if (fOk) {
+			/* an address unique for mode has been generated. */
+			addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
+		}
 	}
 
-	/* create new address. */
-	CPubKey pubkey =
-		GetAccountPubKey(wallet, strAccount, !IS_ACCOUNT(type, ACCADDRF_STATIC));
-	addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
-	if (!addr.IsValid())
+	if (!fOk || (!IS_ACCOUNT(type, ACCADDRF_STATIC) && IsAddrUsed(addr))) {
+		/* create new address. */
+		CPubKey pubkey = GetAccountPubKey(wallet, strAccount, true);
+		if (pubkey.IsValid()) {
+			addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
+			fOk = true;
+		}
+	}
+
+	if (!addr.IsValid()) {
+		error(ERR_INVAL, "CAccountCache.GetAddr: error generating coin address.");
 		return (addr);
+	}
+
+	if (fWitness &&
+			IS_ACCOUNT(type, ACCADDRF_WITNESS) &&
+			IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+		CTxDestination result = addr.GetWitness();
+		wallet->SetAddressBookName(result, strAccount);
+		addr = CCoinAddr(wallet->ifaceIndex, result); 
+	}
 
 	/* retain */
 	vAddr[type] = addr;

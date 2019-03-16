@@ -48,6 +48,7 @@ int64 AmountFromValue(const Value& value);
 
 Value rpc_sys_shutdown(CIface *iface, const Array& params, bool fStratum);
 Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum);
+Value rpc_sys_echo(CIface *iface, const Array& params, bool fStratum);
 Value rpc_sys_config(CIface *iface, const Array& params, bool fStratum);
 Value rpc_sys_url(CIface *iface, const Array& params, bool fStratum);
 
@@ -102,6 +103,7 @@ Value rpc_wallet_export(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_exportdat(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_get(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_info(CIface *iface, const Array& params, bool fStratum);
+Value rpc_wallet_cscript(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum);

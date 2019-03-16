@@ -39,7 +39,7 @@ int net_conn(void)
 
   memset(hostname, 0, sizeof(hostname));
   strncpy(hostname, opt_str(OPT_HOSTNAME), sizeof(hostname)-1);
-  if (!*hostname)
+  if (!*hostname || 0 == strcmp(hostname, "*"))
     strcpy(hostname, "127.0.0.1");
 
   port = opt_num(OPT_PORT);

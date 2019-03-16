@@ -2924,7 +2924,7 @@ int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee)
 		nEstFee = est->estimateSmartFee(confTarget, NULL).GetFee(nBytes);
 		if (nEstFee > nFee) {
 			nFee = nEstFee;
-			Debug("CWallet.CalculateFee: using estimated fee %f.", (double)nFee/COIN);
+//			Debug("CWallet.CalculateFee: using estimated fee %f.", (double)nFee/COIN);
 		}
 	}
 

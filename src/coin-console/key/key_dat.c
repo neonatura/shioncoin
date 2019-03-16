@@ -36,8 +36,16 @@ shkey_t *key_dat_pass(char *host)
   char *tok;
   int err;
 
-  if (!host)
-    host = "127.0.0.1";
+	/* may be over-written by command-line argument. */
+	key_str = opt_str(OPT_PASS);
+	if (key_str && *key_str)
+		return (shkey_gen(key_str));
+
+  if (!host) {
+		host = opt_str(OPT_HOSTNAME);
+		if (!host || !*host || 0 == strcmp(host, "*"))
+			host = "127.0.0.1";
+	}
 
   sprintf(path, "%s/blockchain/rpc.dat", get_libshare_path());
   chmod(path, 00400);

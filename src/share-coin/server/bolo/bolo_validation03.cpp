@@ -670,9 +670,9 @@ bool bolo_GetSlaveNotaryTx(const CTxOut& out)
 {
 
 	/* script: OP_RETURN OP_0 */
-	if (out.scriptPubKey.size() != 2 ||
-			out.scriptPubKey[0] != OP_RETURN ||
-			out.scriptPubKey[1] != OP_0)
+	if (out.scriptPubKey.size() >= 2 ||
+			out.scriptPubKey[out.scriptPubKey.size()-2] != OP_RETURN ||
+			out.scriptPubKey[out.scriptPubKey.size()-1] != OP_0)
 		return (false);
 
 	if (out.nValue < 0 ||

@@ -297,7 +297,7 @@ static int shc_block_templ(CIface *iface, CBlock **block_p)
     
   if (!wallet) {
     unet_log(ifaceIndex, "GetBlocKTemplate: Wallet not initialized.");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
@@ -306,12 +306,12 @@ static int shc_block_templ(CIface *iface, CBlock **block_p)
   const CPubKey& pubkey = shc_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
 error(SHERR_INVAL, "shc_block_templ: error obtaining main pubkey.\n");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   pblock = shc_CreateNewBlock(pubkey);
   if (!pblock)
-    return (NULL);
+    return (ERR_INVAL);
 
   pblock->nTime = MAX(median, GetAdjustedTime());
   pblock->nNonce = 0;

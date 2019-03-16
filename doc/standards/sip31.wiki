@@ -31,7 +31,7 @@ The transactions created on the external blockchain are associated with the foll
 
 The notorization script references the coin interface (literally Hash160("shc")) as the OP_HASH160. The first OP_HASH256 is the hash of the SHC block that is being notarized. The second OP_HASH256 is a merkle hash of the last 1000 blocks prior to the notarized block. The height is a 4-byte "integer" of the block's height.
 
-The ShareCoin bolo interface will attempt to notorize any blocks that have a OP_RETURN OP_0" output script and have a coin value equal to or less than 1 coin. This includes both no-output matrix validation coinbase txs, notarized dynamic checkpoints txs, or other arbitrary transactions. 
+The ShareCoin bolo interface will attempt to notorize any blocks that have a OP_RETURN OP_0" output script suffix and have a coin value equal to or less than 1 coin. This includes both no-output matrix validation coinbase txs, notarized dynamic checkpoints txs, or other arbitrary transactions. 
 
 Validation matrix dynamic checkpoints are created on the ShareCoin blockchain by several nodes providing a multi-sig transaction verifying a validation matrix. When a bolo notary tx references a validation matrix notary tx, it will in effect provides three layers of security in order to establish blockchain integrity. Refer to SIP30 for more information on dynamic checkpoints generated from validation matrix transactions.
 
