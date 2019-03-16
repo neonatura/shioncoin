@@ -1,12 +1,12 @@
 Name:           share-coin
-Version:        3.02
+Version:        3.2.2
 Release:        1%{?dist}
 Summary:        The share-coin virtual currency server.
 
 Group:          System Environment/Libraries
 License:        GPLv3+
 URL:            http://www.shcoins.com/
-Source0:        ftp://ftp.shcoins.com/release/share-coin/share-coin-3.02.tar.gz
+Source0:        ftp://ftp.shcoins.com/release/share-coin/share-coin-3.2.2.tar.gz
 
 #Requires:       libshare
 Requires:       info 
@@ -53,5 +53,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_docdir}/share-coin/shcoin_html.tar.gz
 
 %changelog
-* Tue Dec 11 2018 Neo Natura <support@neo-natura.com> - 3.02
+* Sat Mar 16 2018 Neo Natura <support@neo-natura.com> - 3.2.2
 - The RPM release version of this package.
