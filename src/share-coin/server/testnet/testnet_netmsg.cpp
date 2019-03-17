@@ -333,6 +333,10 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 
     pfrom->fClient = !(pfrom->nServices & NODE_NETWORK);
 
+		if (pfrom->nServices & NODE_WITNESS) {
+			pfrom->fHaveWitness = true;
+		}
+
     AddTimeData(pfrom->addr, nTime);
 
     // Change version
@@ -580,7 +584,10 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
         return true;
 
       inv.ifaceIndex = TESTNET_COIN_IFACE;
-      if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK) {
+      if (inv.type == MSG_BLOCK || 
+					inv.type == MSG_WITNESS_BLOCK ||
+					inv.type == MSG_CMPCT_BLOCK ||
+					inv.type == MSG_FILTERED_BLOCK) {
         CBlockIndex *pindex = GetBlockIndexByHash(ifaceIndex, inv.hash);
         if (pindex) {
 					TESTNETBlock block;
