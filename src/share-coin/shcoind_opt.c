@@ -302,6 +302,49 @@ static void opt_set_defaults_system(void)
 
 }
 
+
+static const char *opt_set_environment_name(opt_t *opt)
+{
+	static char env_buf[1024];
+	int len;
+	int i;
+
+	sprintf(env_buf, "SHCOIND_%s", opt->opt_name);
+
+	len = strlen(env_buf);
+	for (i = 0; i < len; i++) {
+		if (ispunct(env_buf[i]))
+			env_buf[i] = '_';
+		else 
+			env_buf[i] = toupper(env_buf[i]);
+	}
+
+	return (env_buf);
+}
+
+static void opt_set_environment_settings(void)
+{
+	char *env;
+	int idx;
+
+	for (idx = 0; _option_table[idx].opt_type != OPT_TYPE_NULL; idx++) {
+		env = getenv(opt_set_environment_name(&_option_table[idx]));
+		if (!env) continue;
+		switch (_option_table[idx].opt_type) {
+			case OPT_TYPE_BOOL:
+				opt_bool_set(_option_table[idx].opt_name, !!atoi(env));
+				break;
+			case OPT_TYPE_NUM:
+				opt_num_set(_option_table[idx].opt_name, atoi(env));
+				break;
+			case OPT_TYPE_STR:
+				opt_str_set(_option_table[idx].opt_name, env);
+				break;
+		}
+	}
+
+}
+
 static void opt_set_defaults(void)
 {
 	int idx;
@@ -326,6 +369,9 @@ static void opt_set_defaults(void)
 
 	/* "~/.shc/shc.conf" datafile */
 	opt_set_defaults_datfile();
+
+	/* environment settings */
+	opt_set_environment_settings();
 
 }
 

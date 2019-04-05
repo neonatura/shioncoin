@@ -1888,7 +1888,8 @@ Value rpc_wallet_new(CIface *iface, const Array& params, bool fStratum)
 	/* obtain legacy pubkey address. */
 	CCoinAddr addr = GetAccountAddress(GetWallet(iface), strAccount, true);
 
-	if (output_mode == OUTPUT_TYPE_P2SH_SEGWIT ||
+	if (output_mode == OUTPUT_TYPE_NONE ||
+			output_mode == OUTPUT_TYPE_P2SH_SEGWIT ||
 			output_mode == OUTPUT_TYPE_BECH32) {
 		if (IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
 			/* convert to wit-addr program. */
