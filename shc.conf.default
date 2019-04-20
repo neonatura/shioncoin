@@ -1,4 +1,4 @@
-# The shcoind (ShareCoin) service configuration file.
+# The shcoind (ShionCoin) service configuration file.
 # Required Path: ~/shc/shc.conf
 
 # String		name=<string>
@@ -41,7 +41,7 @@ rpc-port=9447
 # The IP Address of the ethernet device to bind the RPC service to or a literal star "*" to allow any incoming network connection.
 rpc-host=127.0.0.1
 
-# The ShareCoin Testnet service.
+# The ShionCoin Testnet service.
 testnet=0
 
 # The socket port to listen for testnet connections.

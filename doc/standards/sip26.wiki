@@ -4,7 +4,7 @@
   Title: Executable SEXE Class (ref SIP7)
   Author: Brian Burrell <bburrell@neo-natura.com>
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip26.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip26.wiki
   Status: Extensionable
   Type: Standards Track
   Created: 2018-12-15

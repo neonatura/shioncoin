@@ -1,3 +1,5 @@
+Name: ShionCoin
+Symbol: SHC
 Algorithm: Scrypt PoW
 Total Coins: 500,000,794 
 Initial Block Value: 800 SHC

@@ -1,6 +1,6 @@
 --
 -- The "Base Object" class used to derive compatible SEXE classes on
--- the ShareCoin (SHC) virtual currency block-chain.
+-- the ShionCoin (SHC) virtual currency block-chain.
 --
 
 require 'math'

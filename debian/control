@@ -1,9 +1,9 @@
-Source: share-coin
+Source: shioncoin
 Section: web
 Maintainer: Neo Natura <support@neo-natura.com>
 Priority: standard
-Homepage: http://www.sharelib.net/
+Homepage: http://www.shcoins.com/
 
-Package: share-coin
+Package: shioncoin
 Architecture: amd64
 Description: SHC Virtual Currency Server compatible with libshare suite.

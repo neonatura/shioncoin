@@ -34,7 +34,7 @@ The following instructions are revert an existing block-chain into a single gene
 > shc sys.shutdown
 
 2. Remove all files which start with the service's name from the "blockchain" directory except for "XXX_peer.*" and "XXX_wallet.dat". Examples of service names are "testnet" and "shc". 
-Note: Retaining the file with a "_wallet.dat" suffix will result in all saved coin addresses (i.e. your wallet balance) being preserved. For the main ShareCoin (SHC) block-chain; the file is "shc_wallet.dat". 
+Note: Retaining the file with a "_wallet.dat" suffix will result in all saved coin addresses (i.e. your wallet balance) being preserved. For the main ShionCoin (SHC) block-chain; the file is "shc_wallet.dat". 
 Note: You can alternately restore the wallet or peer-list via the "wallet.import" and "peer.import" RPC commands.
 > cd /var/lib/share/blockchain
 > cp shc_wallet.dat backup
@@ -53,7 +53,7 @@ Note: You can remove the "shc_peer.*" or "shc_wallet.dat", while the shcoind ser
 
 INSTALL BLOCK CHAIN FROM SNAPSHOT
 
-A snapshot of a recent ShareCoin (SHC) block-chain is available at "ftp://ftp.neo-natura.com/snapshot/shc/shc_chain.bin". This snapshot is updated each time a new programmatic block-chain check-point is added to the software. Installing a snapshot is not required to in order for the shcoind service to download the block-chain. 
+A snapshot of a recent ShionCoin (SHC) block-chain is available at "ftp://ftp.neo-natura.com/snapshot/shc/shc_chain.bin". This snapshot is updated each time a new programmatic block-chain check-point is added to the software. Installing a snapshot is not required to in order for the shcoind service to download the block-chain. 
 
 You can install the snapshot via the following RPC commands:
 > cd /tmp

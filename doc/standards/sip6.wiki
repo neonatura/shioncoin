@@ -4,7 +4,7 @@
   Title: Coin Address Alias (Extended Transaction)
   Author: Brian Burrell <bburrell@neo-natura.com>
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip6.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip6.wiki
   Status: Final
   Type: Informational
   Created: 2018-12-29
@@ -12,10 +12,10 @@
 </pre>
 
 == Abstract ==
-This document introduces the ability to associate a string based label which references a ShareCoin coin address.
+This document introduces the ability to associate a string based label which references a ShionCoin coin address.
 
 == Motivation ==
-Having a string based alias for a ShareCoin coin address provides a means to supply a human-digestable label to what is otherwise an arbitrary code. 
+Having a string based alias for a ShionCoin coin address provides a means to supply a human-digestable label to what is otherwise an arbitrary code. 
 
 Public entities, such as a store-front, can assign a label to an address in order to broadcast a receiving address and/or provide other facilities that can be associated with a coin address.
 
@@ -23,7 +23,7 @@ Public entities, such as a store-front, can assign a label to an address in orde
 The coin alias functionality is utilized by a sharecoin node by providing a means to replace references to a coin address with a alias name prepended by an ampersand (@).
 
 == Specification ==
-The alias extended transaction structure is an extension of the "Ident" certificate structure. The alias transaction provides a label of up to 135 characters which references a ShareCoin coin address. 
+The alias extended transaction structure is an extension of the "Ident" certificate structure. The alias transaction provides a label of up to 135 characters which references a ShionCoin coin address. 
 
 The alias is defined as having a "type" which indicates what type of coin address is being referenced. 
 

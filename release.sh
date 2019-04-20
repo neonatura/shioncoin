@@ -1,8 +1,8 @@
 #!/bin/bash
-mkdir -p release/share-coin
+mkdir -p release/shioncoin
 cd release
-../configure --libdir=/src/share-coin/release/share-coin --bindir=/src/share-coin/release/share-coin --sbindir=/src/share-coin/release/share-coin --docdir=/src/share-coin/release/share-coin --with-libshare=/src/sharelib/release
+../configure --libdir=/src/shioncoin/release/shioncoin --bindir=/src/shioncoin/release/shioncoin --sbindir=/src/shioncoin/release/shioncoin --docdir=/src/shioncoin/release/shioncoin --with-libshare=/src/sharelib/release
 make
 make install
-tar -cpf sharecoin-`arch`.tar share-coin
+tar -cpf sharecoin-`arch`.tar shioncoin
 gzip -f sharecoin-`arch`.tar

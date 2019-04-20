@@ -24,7 +24,7 @@ ld_flags += $(CDK_LIBS)
 ld_flags += -lncurses
 endif
 
-# main source code for share-coin console client utility program.
+# main source code for shioncoin console client utility program.
 console_sources = \
 	shcon.c \
 	shcon.h \

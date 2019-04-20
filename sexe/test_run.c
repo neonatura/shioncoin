@@ -1,7 +1,7 @@
 /*
  * syntax: gcc -Wall -g -o test_run -lshare -lshare_sexe test_run.c
  *
- * A program to perform a test call against a SEXE share-coin class.
+ * A program to perform a test call against a SEXE shioncoin class.
  *
  * example: test_run BaseObject.sx verify
  */

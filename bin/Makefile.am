@@ -26,7 +26,7 @@ noinst_SCRIPTS += .emc2$(EXEEXT)
 endif
 
 shcoind$(EXEEXT): docs
-	ln -sf $(top_builddir)/src/share-coin/shcoind$(EXEEXT)
+	ln -sf $(top_builddir)/src/shioncoin/shcoind$(EXEEXT)
 
 shc$(EXEEXT):
 	ln -sf $(top_builddir)/src/coin-console/shc$(EXEEXT)

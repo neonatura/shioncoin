@@ -1,5 +1,5 @@
 -- token contract base (SRT3)
--- see 'ShareToken.lua' for example inheritance.
+-- see 'ShionToken.lua' for example inheritance.
 
 --require 'BaseObject'
 require 'string'

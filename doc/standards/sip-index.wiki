@@ -1,4 +1,4 @@
-SIP0 ShareCoin Whitepaper
+SIP0 ShionCoin Whitepaper
 SIP1 Extended Transactions 
 SIP2 Matrix (Extended Transaction)
 SIP3 Transaction Certification

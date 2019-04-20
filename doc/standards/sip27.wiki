@@ -4,7 +4,7 @@
   Title: Trust Extended Transaction
   Author: Brian Burrell (bburrell@neo-natura.com)
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip27.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip27.wiki
   Status: Proposed
   Type: Standards Track
   Created: 2018-09-28
@@ -13,7 +13,7 @@
 
 ==Abstract==
 
-This document specifies proposed changes to the ShareCoin Virtual Currency servic's transaction capabilities in order to provide temporary transfer of SHC coins, a SHC asset, or a SHC license. 
+This document specifies proposed changes to the ShionCoin Virtual Currency servic's transaction capabilities in order to provide temporary transfer of SHC coins, a SHC asset, or a SHC license. 
 
 ==Copyright==
 

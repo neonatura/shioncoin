@@ -1,7 +1,5 @@
-share-coin
+shioncoin
 ==========
-
-<h4>Part of the Share Library Suite.</h4>
 
 <h3>Programs Provided</h3>
 
@@ -9,14 +7,14 @@ The "shcoind" daemon provides RPC, Stratum, and Currency services.
 
 The "shc" console utility program provides access to the daemon. 
 
-<h3>Share Coin Service</h3>
-The Share Coin service "shcoind" provides the core SHC virtual currency server operations.
+<h3>ShionCoin Service</h3>
+The ShionCoin service "shcoind" provides the core SHC virtual currency server operations.
 
 
 SHC Port: 24104
 
 <h3>RPC Service</h3>
-The Share Coin package includes a command-line console program in order to run RPC commands against the server.
+The ShionCoin package includes a command-line console program in order to run RPC commands against the server.
 
 The RPC service is provided for the "shc" utility program to manage service or wallet operations.
 
@@ -35,7 +33,7 @@ Run "apt-get install libgmp-dev" on Ubuntu.
 Run "pacman -S libgmp-devel" from MSYS2 64-bit.
 
 <h2>SHC Specifications</h2>
-The share-coin is unique in that it allows for additional types of transactions just regular coin transfers. Examples of these capabilities include exchanging coins between currencies, providing certified licenses for custom use, and assigning names to otherwise hard to remember hash tags. Compatibilty with the 'share library' file-system and network providing methods to utilize SHC block-chain transactions via external programs.
+The shioncoin is unique in that it allows for additional types of transactions just regular coin transfers. Examples of these capabilities include exchanging coins between currencies, providing certified licenses for custom use, and assigning names to otherwise hard to remember hash tags. Compatibilty with the 'share library' file-system and network providing methods to utilize SHC block-chain transactions via external programs.
 
 Additional examples including commiting address alias names onto the block-chain, multi-level certification operations that are compatible with x509, geodetic context operations such as commiting a name to a location, and much more. 
  
@@ -53,17 +51,17 @@ The SHC network block matures after 60 confirmations.
 
 64-bit Cent-OS: Add '--libdir=/usr/local/lib64' as configure command-line option
 
-Building the share-coin programs:
+Building the shioncoin programs:
 <i><small><pre>
-  git clone https://github.com/neonatura/share-coin
-  cd share-coin
+  git clone https://github.com/neonatura/shioncoin
+  cd shioncoin
 	./autogen.sh
   ./configure
   make
   make install
 </pre></small></i>
 
-The binaries can be found under src/share-coin as "shc" and "shcoind". Performing a 'make install' will install these programs into the bin and sbin directories respectively. The "shc" client program must be ran on the same machine as the "shcoind" daemon. 
+The binaries can be found under src/shioncoin as "shc" and "shcoind". Performing a 'make install' will install these programs into the bin and sbin directories respectively. The "shc" client program must be ran on the same machine as the "shcoind" daemon. 
 When installed on a unix-like systems that supports the traditional /etc/init.d/rc.d/ hierarchy a 'shcoind' daemon will be registered with the system to load upon startup as the root user. 
 Note: The client utility programs "shc" must be ran as the same user as the 'shcoind' daemon.
 
@@ -83,7 +81,7 @@ Stratum Port: 9448
 The stratum status web-page will display a "verification fractal" which can be compared to other sites in order to verify the integrity of their block-chain.
 
 <h4>Fast and affordable transaction fees.</h4>
-Share Coin has a 60-second block difficulty and has a smaller transaction fee than typical coin services in order to ensure sending transactions is possible for small and large fund transfers alike. 
+ShionCoin has a 60-second block difficulty and has a smaller transaction fee than typical coin services in order to ensure sending transactions is possible for small and large fund transfers alike. 
 
 A 4mb allowance size for each blocks ensures that thousands of transactions can be stored in each block. 
 
@@ -227,8 +225,8 @@ shc wallet.balance test2
 Windows Build Instructions
 ====
 
-In order to build the Share Coin service download the MSYS2 64-bit build environment from "http://msys2.org/".
-Note: The Share Coin service is a 64-bit program, and therefore requires the "64-bit" version of MSYS2.
+In order to build the ShionCoin service download the MSYS2 64-bit build environment from "http://msys2.org/".
+Note: The ShionCoin service is a 64-bit program, and therefore requires the "64-bit" version of MSYS2.
 
 Open a MSYS2 command consolie window and run the following to install some basic development packages:
 	pacman -S autoconf automake gcc openssl openssl-devel git doxygen
@@ -251,6 +249,7 @@ Download and install the libshare library:
 	make
 	make install
 
+Note: The library will automatically be downloaded and built under the default build ruleset for shioncoin.
 
 ** Boost C++ Runtime Library **
 
@@ -266,9 +265,9 @@ find libs | grep "/include/boost$" | while read a; do cp -fr $a/* /usr/include/b
 
 
 
-** Share Coin Installation **
+** ShionCoin Installation **
 
-From the share-coin build directory, copy the service and executables to the temporary release directory:
+From the shioncoin build directory, copy the service and executables to the temporary release directory:
 	cp ~/bin/shcoind.exe ~/shc_bin
 	cp ~/bin/shc.exe ~/shc_bin
 

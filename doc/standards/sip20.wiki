@@ -14,7 +14,7 @@
 
 ==Abstract==
 
-This SIP describes the specific usage of the Matrix extended transaction type for the purposes of blockchain validation with the ShareCoin scripting system.
+This SIP describes the specific usage of the Matrix extended transaction type for the purposes of blockchain validation with the ShionCoin scripting system.
 
 ==Motivation==
 

@@ -17,7 +17,7 @@ This SIP describes a new Offer Extended transaction, and how it is used in order
 ==Motivation==
 The purpose of the offer extended transaction is to provide a method perform a decentralized exchange of coins from one block-chain to another.
 
-This functionality is currently only compatible with the exchange of SHC coins with the ShareCoin Alternate Colored Block-Chain coins.  
+This functionality is currently only compatible with the exchange of SHC coins with the ShionCoin Alternate Colored Block-Chain coins.  
 
 ==Specification==
 
@@ -29,13 +29,13 @@ A new offer is published on the block-chain using a OP_EXT_NEW operative. The ne
 
 A secondary party may then perform a OP_EXT_ACTIVATE operative in order to accept the offer. The OP_EXT_ACTIVATE extended transaction is sent to a null address (OP_RETURN), and a seperate transaction is created on the colored alternate block-chain whereby the value of the color coins in sent to one-self for holding. 
 
-The original party can perform a OP_EXT_GENERATE against an accept offer in order to complete the exchange. When this occurs, a transaction is sent on the ShareCoin blockchain with a IF-ELSE script. This conditional script will send coins to the acceptee if a pre-determined transaction hash exists on the colored block-chain, and otherwise will return the coins once the generate offer transaction has expired.
+The original party can perform a OP_EXT_GENERATE against an accept offer in order to complete the exchange. When this occurs, a transaction is sent on the ShionCoin blockchain with a IF-ELSE script. This conditional script will send coins to the acceptee if a pre-determined transaction hash exists on the colored block-chain, and otherwise will return the coins once the generate offer transaction has expired.
 
 
 The OP_EXT_GENERATE script is composed of the following;
 ; OP_EXT_GENERATE OP_OFFER OP_HASH160 offer_hash OP_2_DROP alt_hash color_hash OP_CHECKALTPROOF OP_IF dest_addr OP_CHECKSIG OP_ELSE wait_time OP_CHECKLOCKTIMEVERIFY OP_DROP return_addr OP_CHECKSIG OP_ENDIF
 
-The "offer_hash" is the hash of the OP_EXT_GENERATE's offer structure, the "alt_hash" is the tx hash on the colored alt-chain which sends coins from the acceptee to the originator, the "color_hash" is the hash representing the color of the alt-chain, the "dest_addr" is the acceptee's coin address on the ShareCoin block-chain, the "wait_time" is the time before the generate transaction expires, and the "return_addr" is the originator's own address. 
+The "offer_hash" is the hash of the OP_EXT_GENERATE's offer structure, the "alt_hash" is the tx hash on the colored alt-chain which sends coins from the acceptee to the originator, the "color_hash" is the hash representing the color of the alt-chain, the "dest_addr" is the acceptee's coin address on the ShionCoin block-chain, the "wait_time" is the time before the generate transaction expires, and the "return_addr" is the originator's own address. 
 
 The node which originated the acceptee's OP_EXT_ACTIVATE offer transaction will automatically send the colored alt-coin funds to the originator, once a OP_EXT_GENERATE is processed, using pre-determined TX contents. The hash for this TX is included as part of the activate offer transaction. 
 

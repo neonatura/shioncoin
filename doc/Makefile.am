@@ -11,7 +11,7 @@ man/man1/shcoind.1: helpfile.stamp
 
 helpfile.stamp:
 	mkdir -p man/man1
-	$(HELP2MAN) --output=man/man1/shcoind.1 --name='share-coin daemon' $(top_builddir)/src/share-coin/shcoind
+	$(HELP2MAN) --output=man/man1/shcoind.1 --name='shioncoin daemon' $(top_builddir)/src/shioncoin/shcoind
 	echo Timestamp > helpfile.stamp
 endif
 

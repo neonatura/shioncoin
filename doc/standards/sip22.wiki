@@ -4,7 +4,7 @@
   Title: Alternate Blockchain (Extended Transaction)
   Author: Brian Burrell <bburrell@neo-natura.com>
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip22.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip22.wiki
   Status: Final
   Type: Standards Track
   Created: 2018-10-07
@@ -12,7 +12,7 @@
 </pre>
 ==Abstract==
 
-The Colored Alternate Blockchain provides a method of providing supplemental block-chains embedded into the main ShareCoin blockchain which can have their own custom parameters.
+The Colored Alternate Blockchain provides a method of providing supplemental block-chains embedded into the main ShionCoin blockchain which can have their own custom parameters.
 
 Each alternate blockchain is assigned a unique 128-bit RGBA color code dervied from the label of the chain.
 
@@ -20,7 +20,7 @@ Sending funds and generating new blocks are mined in a similar fashion to regula
 
 == Motivation ==
 
-The colored alternate block-chain is intended to provide a sub-set of individual chained blocks which can be used for an alternate purpose or capability then the primary ShareCoin Blockchain. 
+The colored alternate block-chain is intended to provide a sub-set of individual chained blocks which can be used for an alternate purpose or capability then the primary ShionCoin Blockchain. 
 
 == Implementation ==
 
@@ -32,7 +32,7 @@ The "alternate block" structure is composed of the typical "version", "previous 
 
 The "alternate transaction structure is composed of the typical "version", "inputs", "outputs", and "lock time". In addition, the alternate transaction structure will serialize an additional unsigned character vector when the transaction version is higher than one (1). 
 
-The AltChain Extended Transaction, use to encapsulate color alt-chains on the ShareCoin blockchain, is composed of a flag bitvector, the hash of the colored chain, a alternate block structure, and a set of alternate transactions. 
+The AltChain Extended Transaction, use to encapsulate color alt-chains on the ShionCoin blockchain, is composed of a flag bitvector, the hash of the colored chain, a alternate block structure, and a set of alternate transactions. 
 
 A OP_EXT_NEW operative is performed in order to establish a new colored alt-chain. The alternate block will include a single coinbase which has optional blockchain parameters and a single output to null (OP_RETURN) with the initial reward value. The genesis block will always have a difficulty of (~uint256 >> 12).
 

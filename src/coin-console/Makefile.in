@@ -425,7 +425,7 @@ tool_flags = -I$(CDK_INCLUDES) $(am__append_1) $(am__append_2) \
 @STATIC_LIBSHARE_TRUE@ld_flags = $(LIBSHARE)/src/share-lib/libshare.a \
 @STATIC_LIBSHARE_TRUE@	$(am__append_4)
 
-# main source code for share-coin console client utility program.
+# main source code for shioncoin console client utility program.
 console_sources = \
 	shcon.c \
 	shcon.h \

@@ -630,7 +630,7 @@ uninstall-am:
 @EMC2_SERVICE_TRUE@	@echo > .emc2$(EXEEXT)
 
 shcoind$(EXEEXT): docs
-	ln -sf $(top_builddir)/src/share-coin/shcoind$(EXEEXT)
+	ln -sf $(top_builddir)/src/shioncoin/shcoind$(EXEEXT)
 
 shc$(EXEEXT):
 	ln -sf $(top_builddir)/src/coin-console/shc$(EXEEXT)

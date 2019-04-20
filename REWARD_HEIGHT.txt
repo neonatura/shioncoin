@@ -1,4 +1,4 @@
-ShareCoin (SHC) virtual currency reward by height.
+ShionCoin (SHC) virtual currency reward by height.
 --
 height 0 : 800.000000 SHC
 height 1 : 333.400000 SHC

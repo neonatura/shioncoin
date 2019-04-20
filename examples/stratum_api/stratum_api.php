@@ -1,7 +1,7 @@
 <?php
 # php api.php
 #
-# Example php client for the ShareCoin stratum API service. 
+# Example php client for the ShionCoin stratum API service. 
 #
 
 class stratum_api

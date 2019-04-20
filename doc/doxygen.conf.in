@@ -569,15 +569,15 @@ WARN_LOGFILE           = doxy_warn.log
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT = @top_srcdir@/src/share-coin \
-  @top_srcdir@/src/share-coin/proto \
-  @top_srcdir@/src/share-coin/server \
-  @top_srcdir@/src/share-coin/server/rpc \
-  @top_srcdir@/src/share-coin/server/shc \
-  @top_srcdir@/src/share-coin/server/usde \
-  @top_srcdir@/src/share-coin/server/ext \
-  @top_srcdir@/src/share-coin/fractal \
-  @top_srcdir@/src/share-coin/stratum
+INPUT = @top_srcdir@/src/shioncoin \
+  @top_srcdir@/src/shioncoin/proto \
+  @top_srcdir@/src/shioncoin/server \
+  @top_srcdir@/src/shioncoin/server/rpc \
+  @top_srcdir@/src/shioncoin/server/shc \
+  @top_srcdir@/src/shioncoin/server/usde \
+  @top_srcdir@/src/shioncoin/server/ext \
+  @top_srcdir@/src/shioncoin/fractal \
+  @top_srcdir@/src/shioncoin/stratum
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

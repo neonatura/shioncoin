@@ -12,9 +12,9 @@
 </pre>
 
 == Abstract ==
-This document introduces the ability to create executable calls based on applications published to the ShareCoin block-chain.
+This document introduces the ability to create executable calls based on applications published to the ShionCoin block-chain.
 
-See SIP26 for a more comprehensive guide on the how a ShareCoin node processes application calls. 
+See SIP26 for a more comprehensive guide on the how a ShionCoin node processes application calls. 
 
 == Motivation ==
 The Executable Extended Transaction provides the base structure for publishing and executing calls.
@@ -54,7 +54,7 @@ The executable extended transaction is composed of the following structure;
 
 An executable transaction is composed of either a OP_EXT_NEW or a OP_EXT_GENERATE operation.
 
-A OP_EXT_NEW operation publishes a new set of executable code to the ShareCoin block-chain. The executable code may be in text or binary format. Published executable code will expire after 48 years. 
+A OP_EXT_NEW operation publishes a new set of executable code to the ShionCoin block-chain. The executable code may be in text or binary format. Published executable code will expire after 48 years. 
 
 An OP_EXT_GENERATE operation registers that a call was performed into a particular application.  
 

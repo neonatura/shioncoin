@@ -12,7 +12,7 @@
 
 ==Abstract==
 
-This SIP describes a new "extended" transaction type for the ShareCoin scripting system, and defines additional validation rules that apply only to the new transactions.
+This SIP describes a new "extended" transaction type for the ShionCoin scripting system, and defines additional validation rules that apply only to the new transactions.
 
 ==Motivation==
 

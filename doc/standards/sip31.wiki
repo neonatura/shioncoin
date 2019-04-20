@@ -4,7 +4,7 @@
   Title: BOLO Checkpoint on external blockchain
   Author: Brian Burrell <bburrell@neo-natura.com>
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip31.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip31.wiki
   Status: Proposed
   Type: Standards Track
   Created: 2018-11-26
@@ -12,13 +12,13 @@
 
 ==Abstract==
 
-This SIP describes a method to establish a new dynamic checkpoint on the ShareCoin blockchain by creating a "notorized transaction" on an external blockchain. The external blockchain intended for use is litecoin.
+This SIP describes a method to establish a new dynamic checkpoint on the ShionCoin blockchain by creating a "notorized transaction" on an external blockchain. The external blockchain intended for use is litecoin.
 
-In other words, the "BOLO" system notorizes blocks on the ShareCoin blockchain by creating a special transaction on the Litecoin blockchain.
+In other words, the "BOLO" system notorizes blocks on the ShionCoin blockchain by creating a special transaction on the Litecoin blockchain.
 
 ==Motivation==
 
-A notorized transaction, or a transaction signed by independant users who participate in the ShareCoin ecosystem, provides a method to create a concensus about a particular blockchain and a means to declare it as the official branch. This is only possible if at least 11 participants are in agreement about the current blockchain hierarchy.
+A notorized transaction, or a transaction signed by independant users who participate in the ShionCoin ecosystem, provides a method to create a concensus about a particular blockchain and a means to declare it as the official branch. This is only possible if at least 11 participants are in agreement about the current blockchain hierarchy.
 
 The block utilized for a potential checkpoint concensus is the block associated with notorized transaction created by SIP30, and in turn adds an additional layer of security.
 
@@ -31,9 +31,9 @@ The transactions created on the external blockchain are associated with the foll
 
 The notorization script references the coin interface (literally Hash160("shc")) as the OP_HASH160. The first OP_HASH256 is the hash of the SHC block that is being notarized. The second OP_HASH256 is a merkle hash of the last 1000 blocks prior to the notarized block. The height is a 4-byte "integer" of the block's height.
 
-The ShareCoin bolo interface will attempt to notorize any blocks that have a OP_RETURN OP_0" output script suffix and have a coin value equal to or less than 1 coin. This includes both no-output matrix validation coinbase txs, notarized dynamic checkpoints txs, or other arbitrary transactions. 
+The ShionCoin bolo interface will attempt to notorize any blocks that have a OP_RETURN OP_0" output script suffix and have a coin value equal to or less than 1 coin. This includes both no-output matrix validation coinbase txs, notarized dynamic checkpoints txs, or other arbitrary transactions. 
 
-Validation matrix dynamic checkpoints are created on the ShareCoin blockchain by several nodes providing a multi-sig transaction verifying a validation matrix. When a bolo notary tx references a validation matrix notary tx, it will in effect provides three layers of security in order to establish blockchain integrity. Refer to SIP30 for more information on dynamic checkpoints generated from validation matrix transactions.
+Validation matrix dynamic checkpoints are created on the ShionCoin blockchain by several nodes providing a multi-sig transaction verifying a validation matrix. When a bolo notary tx references a validation matrix notary tx, it will in effect provides three layers of security in order to establish blockchain integrity. Refer to SIP30 for more information on dynamic checkpoints generated from validation matrix transactions.
 
 After every 1000 blocks the block-chain is scanned for the first null-output transaction as described above. Once the block height has reached an offset of 20 blocks each participating node will submit a transaction on the LTC blockchain that can be considered a proposal to generate a notary transaction using the combined outputs.
 

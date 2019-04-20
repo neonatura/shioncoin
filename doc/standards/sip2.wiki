@@ -4,7 +4,7 @@
   Title: Matrix (Extended Transaction)
   Author: Brian Burrell <bburrell@neo-natura.com>
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip2.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip2.wiki
   Status: Final
   Type: Standards Track
   Created: 2018-12-29

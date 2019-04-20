@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(share-coin, 3.3)
+AC_INIT(shioncoin, 3.2.3)
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -22,7 +22,7 @@ LT_INIT
 
 version_patch=3
 AC_SUBST(version_patch)
-version_info=3:3:0
+version_info=3:2:3
 AC_SUBST(version_info)
 
 AC_CONFIG_FILES([doc/NEWS])
@@ -411,7 +411,7 @@ AC_ARG_ENABLE([testnet],
   AS_HELP_STRING([--disable-testnet], [Disable testnet service.]))
 AM_CONDITIONAL(TESTNET_SERVICE, [test "x$enable_testnet" != "xno"])
 if test "x$enable_testnet" != "xno" ; then
-  AC_DEFINE_UNQUOTED([TESTNET_SERVICE], 1, [Define to enable ShareCoin (SHC) Test Network.])
+  AC_DEFINE_UNQUOTED([TESTNET_SERVICE], 1, [Define to enable ShionCoin (SHC) Test Network.])
 fi
 
 AC_ARG_ENABLE([stratum],
@@ -432,5 +432,5 @@ fi
 #AM_CONDITIONAL(ENABLE_WALLET, [test "x$enable_wallet" != "xno"])
 #AM_CONDITIONAL([ENABLE_WALLET], 1, [Define to share-wallet functionality.])
 
-AC_OUTPUT(Makefile depend/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/share-coin/Makefile doc/Makefile bin/Makefile)
+AC_OUTPUT(Makefile depend/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile)
 

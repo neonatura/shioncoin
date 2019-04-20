@@ -567,7 +567,7 @@
    Solaris 2.x or Irix 5.x. */
 #undef SVR4
 
-/* Define to enable ShareCoin (SHC) Test Network. */
+/* Define to enable ShionCoin (SHC) Test Network. */
 #undef TESTNET_SERVICE
 
 /* Define for the Tile architecture */
