@@ -54,11 +54,11 @@ static int shc_init(CIface *iface, void *_unused_)
 	iface->BIP16Height = 1; /* always enabled */
 	/* v2.0 block (height in coinbase) */
 	iface->BIP30Height = 1; /* super-ceded by BIP30 */
-	iface->BIP34Height = 50001;
+	iface->BIP34Height = 1;
 	/* OP_CHECLOCKTIMEVERIFY */
-	iface->BIP65Height = 78001;
+	iface->BIP65Height = 1;
 	/* strict DER signature */
-	iface->BIP66Height = 50001;
+	iface->BIP66Height = 1;
 
 	/* 75% of 12096 blocks */
   iface->nRuleChangeActivationThreshold = 9072;
