@@ -312,7 +312,7 @@ coin_iface_t testnet_coin_iface = {
   4, /* block version */
   TESTNET_PROTOCOL_VERSION, /* network proto ver */
   TESTNET_COIN_DAEMON_PORT,
-  { 0x09, 0xa9, 0xf9, 0xba },
+	{ 0x09, 0xd9, 0xf9, 0xbd },
 	65, /* T */
 	5, /* 3 */
 	25, /* A */

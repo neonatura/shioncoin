@@ -690,7 +690,7 @@ const char *bc_path_base(void)
       mkdir(base_path, 0777);
 
     /* block-chain module */
-    sprintf(ret_path, "%s/blockchain", base_path);
+    sprintf(ret_path, "%sblockchain", base_path);
     if (0 != stat(ret_path, &st))
       mkdir(ret_path, 0700);
   }

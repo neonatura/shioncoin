@@ -593,8 +593,6 @@ const char *get_shioncoin_path(void)
 
 		sprintf(ret_path, "%s\\shioncoin\\", str);
 		mkdir(ret_path, 0777);
-		strcat(ret_path, "blockchain\\");
-		mkdir(ret_path, 0777);
 #else
 		strcpy(ret_path, "/var/lib/shioncoin/");
 		mkdir(ret_path, 0777);

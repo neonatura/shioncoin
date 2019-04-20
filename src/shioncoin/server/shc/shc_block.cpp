@@ -52,8 +52,8 @@ using namespace std;
 using namespace boost;
 
 
-uint256 shc_hashGenesisBlock("0xf4319e4e89b35b5f26ec0363a09d29703402f120cf1bf8e6f535548d5ec3c5cc");
-static uint256 shc_hashGenesisMerkle("0xd3f4bbe7fe61bda819369b4cd3a828f3ad98d971dda0c20a466a9ce64846c321");
+uint256 shc_hashGenesisBlock("0xa2128a434c48ff41bfb911857639fa24b69012aebf690b12e6dfa799cd5d914e");
+static uint256 shc_hashGenesisMerkle("0xd395f73903efc28ce99ade1778666e404be2ee018f4022205a5d871c533548c8");
 static CBigNum SHC_bnGenesisProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum SHC_bnProofOfWorkLimit(~uint256(0) >> 21);
 static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) 
@@ -426,11 +426,42 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
   return pblock.release();
 }
 
+static void create_nonce(SHCBlock *block)
+{
+	static unsigned int nNonceIndex = 0xE2222222;
+
+	if (!block)
+		return;
+
+	block->nNonce   = ++nNonceIndex;
+	{
+		uint256 hashTarget = CBigNum().SetCompact(block->nBits).getuint256();
+		uint256 thash;
+		char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
+
+		loop
+		{
+			scrypt_1024_1_1_256_sp(BEGIN(block->nVersion), BEGIN(thash), scratchpad);
+			if (thash <= hashTarget)
+				break;
+
+			++block->nNonce;
+			if (block->nNonce == 0)
+			{
+				++block->nTime;
+			}
+		}
+	}
+	nNonceIndex = block->nNonce;
+
+fprintf(stderr, "DEBUG: NONCE: %x\n", block->nNonce);
+}
+
 bool shc_CreateGenesisBlock()
 {
-  CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-  blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
-  bool ret;
+	CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+	blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
+	bool ret;
 
   if (blockIndex->count(shc_hashGenesisBlock) != 0)
     return (true); /* already created */
@@ -448,10 +479,9 @@ bool shc_CreateGenesisBlock()
   block.hashPrevBlock = 0;
   block.hashMerkleRoot = block.BuildMerkleTree();
   block.nVersion = 2;
-  block.nTime    = 1461974400; /* 04/30/16 12:00am */
-  block.nBits    = 0x1e0ffff0;
-  block.nNonce   = 3293840;
-
+  block.nTime = 1555780563;
+  block.nBits = 0x1e0ffff0;
+	block.nNonce = 0xe2280fad;
 
   block.print();
   if (block.GetHash() != shc_hashGenesisBlock)

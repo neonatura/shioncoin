@@ -71,8 +71,8 @@ static int shc_init(CIface *iface, void *_unused_)
 
 	/* ACTIVE: BIP68, BIP112, and BIP113 */
 	iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
-	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1543622400; /* 12/01/2018 UTC */
-	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1544745600; /* 12/14/2018 UTC */
+	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1555781815;
+	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1577836800;
 
 	/* DEFINED: BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
