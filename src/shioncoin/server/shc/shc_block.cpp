@@ -436,7 +436,7 @@ bool shc_CreateGenesisBlock()
     return (true); /* already created */
 
   // Genesis block
-  const char* pszTimestamp = "Neo Natura (share-coin) 2016";
+  const char* pszTimestamp = "Neo Natura (shioncoin) 2019";
   CTransaction txNew;
   txNew.vin.resize(1);
   txNew.vout.resize(1);
