@@ -49,8 +49,8 @@ static const char *rpc_dat_path(void)
 
 	path = (const char *)opt_str(OPT_RPC_MAP);
 	if (!path || !*path) {
-		path = get_libshare_path();
-		snprintf(ret_path, sizeof(ret_path)-1, "%s/blockchain/rpc.dat", path);
+		path = get_shioncoin_path();
+		snprintf(ret_path, sizeof(ret_path)-1, "%sblockchain/rpc.dat", path);
 	} else {
 		strncpy(ret_path, path, sizeof(ret_path)-1);
 	}

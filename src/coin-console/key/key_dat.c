@@ -25,6 +25,29 @@
 
 #include "shcon.h"
 
+const char *get_shioncoin_path(void)
+{
+	static char ret_path[PATH_MAX+1];
+
+	if (!*ret_path) {
+#ifdef WINDOWS
+		char *str;
+
+		str = getenv("ProgramData");
+		if (!str)
+			str = "C:\\ProgramData";
+
+		sprintf(ret_path, "%s\\shioncoin\\", str);
+		mkdir(ret_path, 0777);
+#else
+		strcpy(ret_path, "/var/lib/shioncoin/");
+		mkdir(ret_path, 0777);
+#endif
+	}
+
+	return (ret_path);
+}
+
 shkey_t *key_dat_pass(char *host)
 {
   shkey_t *key;
@@ -47,7 +70,7 @@ shkey_t *key_dat_pass(char *host)
 			host = "127.0.0.1";
 	}
 
-  sprintf(path, "%s/blockchain/rpc.dat", get_libshare_path());
+  sprintf(path, "%sblockchain/rpc.dat", get_shioncoin_path());
   chmod(path, 00400);
 
   buff = shbuf_init();
@@ -84,5 +107,4 @@ shkey_t *key_dat_pass(char *host)
   shbuf_free(&buff);
   return (NULL);
 }
-
 
