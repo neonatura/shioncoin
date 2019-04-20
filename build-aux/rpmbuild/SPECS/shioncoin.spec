@@ -1,5 +1,5 @@
 Name:           shioncoin
-Version:        3.2.2
+Version:        3.2.3
 Release:        1%{?dist}
 Summary:        The shioncoin virtual currency server.
 
