@@ -4,7 +4,7 @@
   Title: Coin Exchange Offer
   Author: Brian Burrell <bburrell@neo-natura.com>
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/sharecoin/doc/standards/Comments:sip11.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip11.wiki
   Status: Final
   Type: Standards Track
   Created: 2019-01-27

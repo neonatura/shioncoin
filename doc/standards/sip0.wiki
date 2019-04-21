@@ -3,13 +3,11 @@
 
 The official coin ticker symbol of this software is "SHC". The ShionCoin (SHC) Virtual Currency is Scrypt based (LTC compatible). The public source code of the software is written in a combination of the C and C++ programming language. A command-line utility is provided in order to access the ShionCoin (SHC) currency service.
 
-Disclaimer: This software is NOT associated with the virtual currency with any similar name that has a coin ticker symbol of "SHARE" or "SHAREX". The official symbol token of this software is "SHC".
-
-The ShionCoin virtual currency is compatible with the generic "scrypt coin service" capabilities. All BIP protocol specifications implemented by the litecoin virtual currency are candidates as standards for use by the ShionCoin virtual currency service. Several newer BIP standards, including BIP34, BIP65, BIP66, BIP68, and BIP141, have been implemented. While protocol specification compatibility is emphasized, the contents of sharecoin extended transaction structures are not compatible with other scrypt-based currency blockchains. 
+The ShionCoin virtual currency is compatible with the generic "scrypt coin service" capabilities. All BIP protocol specifications implemented by the litecoin virtual currency are candidates as standards for use by the ShionCoin virtual currency service. Several newer BIP standards, including BIP34, BIP65, BIP66, BIP68, and BIP141, have been implemented. While protocol specification compatibility is emphasized, the contents of shioncoin extended transaction structures are not compatible with other scrypt-based currency blockchains. 
 
 The majority of the disk databases utilitized by the ShionCoin (SHC) virtual currency are in form of a "mapped file". A mapped file is buffered in the operating system's own disk buffer for expediency.
 
-As of 2019, the block-chain has around 100,000 blocks generated. The memory foot-print of the virtual currency serivce is currently around one-hundred megabytes (100M) of memory, and grows to around one gigabyte (1G) at about 2 million blocks. The developmental version of the software https://github.com/briburrell/share-coin_3.x_devel has been available since 2013, and the software was publically released at the beginning of 2018. A maximum of half a billion coins will be generated. The reward mechanism is designed to provide a block generation incentive over a prolonged period of time.
+As of 2019, the block-chain has around 100,000 blocks generated. The memory foot-print of the virtual currency serivce is currently around one-hundred megabytes (100M) of memory, and grows to around one gigabyte (1G) at about 2 million blocks. The developmental version of the software https://github.com/briburrell/shioncoin_3.x_devel has been available since 2013, and the software was publically released at the beginning of 2018. A maximum of half a billion coins will be generated. The reward mechanism is designed to provide a block generation incentive over a prolonged period of time.
 
 == Extended Transactions ==
 
@@ -37,5 +35,5 @@ An "Exec Transaction" is used in order to publish and run methods against SEXE c
 
 The "Offer Transaction" is used in order to transfer coins between one virtual currency block-chain and another. For example, an individual offers to exchange two colored alt-coins for one SHC coin. Another individual can then accept the offer with an exchange between block-chains ultimately occuring. The offer transaction utilizes a OP_CHECKALTPROOF opcode as part of the transaction signature in order to ensure that the exchange occurs safely.
 
-Lightning network facilities for ShionCoin are provide by a Lightning Node service available at https://github.com/neonatura/sharecoin-lnd.
+Lightning network facilities for ShionCoin are provide by a Lightning Node service available at https://github.com/neonatura/shioncoin-lnd.
 

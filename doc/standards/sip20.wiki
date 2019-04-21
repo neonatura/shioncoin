@@ -1,11 +1,10 @@
-
 <pre>
   SIP: 20
   Layer: Core
   Title: The Validation Matrix 
   Author: Brian Burrell <bburrell@neo-natura.com>
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/sharecoin/doc/standards/Comments:sip20.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip20.wiki
   Status: Final
   Type: Standards Track
   Created: 2018-10-13

@@ -21,7 +21,7 @@ The Context Extended Transaction provides the ability to create a definition for
 The context name typically includes a colon-ized prefix (i.e. "url: http://domain.com") and the data content is typically in JSON format.
 
 ==Specification==
-A context extended transaction is based on top of a standard sharecoin extended transaction structure.
+A context extended transaction is based on top of a standard shioncoin extended transaction structure.
 
 The context name is stored as a 160-bit hash digest of a label defined for it. In addition, a small summary title is stored. It is expected to know the name before-hand in order to retrieve the value associated with it.
 

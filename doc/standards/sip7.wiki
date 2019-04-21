@@ -4,7 +4,7 @@
   Title: Executable (Extended Transaction)
   Author: Brian Burrell <bburrell@neo-natura.com>
   Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/share-coin/doc/standards/Comments:sip7.wiki
+  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip7.wiki
   Status: Final
   Type: Standards Track
   Created: 2018-12-29
@@ -58,7 +58,7 @@ A OP_EXT_NEW operation publishes a new set of executable code to the ShionCoin b
 
 An OP_EXT_GENERATE operation registers that a call was performed into a particular application.  
 
-The maximum size of the executable code payload is 78000 bytes. 
+The maximum size of the executable code payload is 780,000 bytes. 
 
 ==Copyright==
 This document is placed in the public domain.

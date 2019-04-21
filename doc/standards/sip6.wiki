@@ -20,7 +20,7 @@ Having a string based alias for a ShionCoin coin address provides a means to sup
 Public entities, such as a store-front, can assign a label to an address in order to broadcast a receiving address and/or provide other facilities that can be associated with a coin address.
 
 == Usage ==
-The coin alias functionality is utilized by a sharecoin node by providing a means to replace references to a coin address with a alias name prepended by an ampersand (@).
+The coin alias functionality is utilized by a shioncoin node by providing a means to replace references to a coin address with a alias name prepended by an ampersand (@).
 
 == Specification ==
 The alias extended transaction structure is an extension of the "Ident" certificate structure. The alias transaction provides a label of up to 135 characters which references a ShionCoin coin address. 
