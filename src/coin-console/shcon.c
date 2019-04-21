@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     }  
   } else {
     /* interactive prompt */
-#ifdef HAVE_LIBCURSES
+#if !defined(WINDOWS) && defined(HAVE_LIBCURSES)
     shcon_gui_cycle();
 #else
     shcon_stream_cycle(stdin);
