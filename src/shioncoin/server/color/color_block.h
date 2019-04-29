@@ -45,7 +45,13 @@
 #define CLROPT_REWARDBASE 4
 #define CLROPT_REWARDHALF 5
 #define CLROPT_TXFEE 6
-#define MAX_CLROPT 7
+#define CLROPT_ALGO 7
+#define MAX_CLROPT 8
+
+#define CLROPT_ALGO_SHA256D BLOCK_ALGO_SHA256D
+#define CLROPT_ALGO_KECCAK BLOCK_ALGO_KECCAK
+#define CLROPT_ALGO_X11 BLOCK_ALGO_X11
+#define CLROPT_ALGO_BLAKE2S BLOCK_ALGO_BLAKE2S
 
 
 class COLORBlock : public CBlock
@@ -120,6 +126,7 @@ public:
 
 		bool CreateCheckpoint();
 
+		int GetAlgo() const;
 
 };
 
@@ -213,6 +220,9 @@ int64 color_GetBlockTarget(uint160 hColor);
 int64 color_GetBlockValueBase(uint160 hColor);
 
 int64 color_GetBlockValueRate(uint160 hColor);
+
+/* Determine whether the alt-chain specified has any options defined that are not known in this node version. */
+bool color_IsSupported(uint160 hColor);
 
 
 /**

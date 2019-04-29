@@ -20,3 +20,4 @@ SIP25 Licensed Asset (ref SIP3, SIP14)
 SIP26 Executable SEXE Class (ref SIP7)
 SIP27 Trust Channel (ref SIP9)
 SIP31 BOLO Checkpoint on external blockchain
+SIP32 Multiple PoW Algorythm

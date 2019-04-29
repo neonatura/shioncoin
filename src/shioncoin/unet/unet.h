@@ -58,8 +58,17 @@ extern "C" {
 /* ssl-rpc via localhost connection */
 #define UNET_RPC 15
 
+/* specific algorythm mining */
+#define UNET_STRATUM_SHA256D 16
+#define UNET_STRATUM_KECCAK 17
+#define UNET_STRATUM_X11 18
+#define UNET_STRATUM_BLAKE2S 19
+#define UNET_STRATUM_QUBIT 20
+#define UNET_STRATUM_GROESTL 21
+#define UNET_STRATUM_SKEIN 22
+
 /* maximum number of unet services */
-#define MAX_UNET_MODES 16
+#define MAX_UNET_MODES 32
 
 
 #define UNETF_SHUTDOWN DF_SHUTDOWN

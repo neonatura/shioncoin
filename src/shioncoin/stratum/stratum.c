@@ -25,22 +25,37 @@
 
 #include "shcoind.h"
 #include "stratum.h"
-#include <math.h>
-
-#define MAX_STRATUM_MESSAGE_SIZE 16000000 /* 16m */
+#include "algobits.h"
 
 static volatile time_t stratum_work_cycle;
 
-
-int get_stratum_daemon_port(void)
+int get_stratum_port(int alg)
 {
+
+	switch (alg) {
+		case ALGO_SHA256D:
+			return (opt_num(OPT_STRATUM_SHA256D_PORT));
+		case ALGO_KECCAK:
+			return (opt_num(OPT_STRATUM_KECCAK_PORT));
+		case ALGO_X11:
+			return (opt_num(OPT_STRATUM_X11_PORT));
+		case ALGO_BLAKE2S:
+			return (opt_num(OPT_STRATUM_BLAKE2S_PORT));
+		case ALGO_QUBIT:
+			return (opt_num(OPT_STRATUM_QUBIT_PORT));
+		case ALGO_GROESTL:
+			return (opt_num(OPT_STRATUM_GROESTL_PORT));
+		case ALGO_SKEIN:
+			return (opt_num(OPT_STRATUM_SKEIN_PORT));
+	}
+
   return (opt_num(OPT_STRATUM_PORT));
 }
 
 /**
  * Called when a new socket is accepted on the shcoind stratum port (default 9448).
  */
-static void stratum_accept(int fd, struct sockaddr *net_addr)
+void stratum_accept(int fd, struct sockaddr *net_addr)
 {
   sa_family_t in_fam;
   char buf[256];
@@ -55,7 +70,7 @@ static void stratum_accept(int fd, struct sockaddr *net_addr)
   if (in_fam == AF_INET) {
     struct sockaddr_in *addr = (struct sockaddr_in *)net_addr;
 
-    sprintf(buf, "stratum_accept: received connection (%s port %d).", inet_ntoa(addr->sin_addr), get_stratum_daemon_port());
+    sprintf(buf, "stratum_accept: received connection (%s port %d).", inet_ntoa(addr->sin_addr), get_stratum_port(ALGO_SCRYPT));
     shcoind_log(buf);  
   } else {
     sprintf(buf, "stratum_accept: received connection (family %d)", in_fam);
@@ -367,7 +382,7 @@ int stratum_init(void)
 	stratum_work_cycle = (time_t)fabs(opt_num(OPT_STRATUM_WORK_CYCLE));
 	if (stratum_work_cycle < 2) stratum_work_cycle = 2;
 
-  err = unet_bind(UNET_STRATUM, get_stratum_daemon_port(), NULL);
+  err = unet_bind(UNET_STRATUM, get_stratum_port(ALGO_SCRYPT), NULL);
   if (err)
     return (err);
 

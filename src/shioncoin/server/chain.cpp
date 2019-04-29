@@ -28,6 +28,8 @@
 #include "chain.h"
 #include "coin.h"
 #include "validation.h"
+#include "algobits.h"
+#include "versionbits.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -43,6 +45,7 @@ ChainOp chain;
 
 extern CCriticalSection cs_main;
 
+extern VersionBitsCache *GetVersionBitsCache(CIface *iface);
 
 #ifdef __cplusplus
 extern "C" {
@@ -1094,9 +1097,10 @@ int InitServiceBlockEvent(int ifaceIndex, uint64_t nHeight)
   return (0);
 }
 
-static double GetDifficulty(unsigned int nBits)
+double GetDifficulty(unsigned int nBits, unsigned int nVersion)
 {
 	int nShift = (nBits >> 24) & 0xff;
+	int nAlg = GetVersionAlgo(nVersion); 
 
 	double dDiff =
 		(double)0x0000ffff / (double)(nBits & 0x00ffffff);
@@ -1112,6 +1116,7 @@ static double GetDifficulty(unsigned int nBits)
 		nShift--;
 	}
 
+	dDiff /= (double)GetAlgoWorkFactor(nAlg); 
 	return dDiff;
 }
 
@@ -1255,6 +1260,17 @@ void UpdateBlockAvailability(int ifaceIndex, CNode *pfrom, const uint256& hash)
 
 }
 
+bool HasAlgoConsensus(CIface *iface, CBlockIndex *pindexLast)
+{
+	VersionBitsCache *cache = GetVersionBitsCache(iface);
+
+	if (!cache)
+		return (false);
+	if (VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO, *cache) != THRESHOLD_ACTIVE)
+		return (false);
+
+	return (true);
+}
 
 
 #ifdef __cplusplus

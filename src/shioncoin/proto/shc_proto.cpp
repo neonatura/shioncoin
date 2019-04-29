@@ -79,6 +79,11 @@ static int shc_init(CIface *iface, void *_unused_)
 	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1577836800; /* 01/01/20 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1609459200; /* 01/01/21 */ 
 
+	/* ACTIVE: SIP32 */
+	iface->vDeployments[DEPLOYMENT_ALGO].bit = 5;
+	iface->vDeployments[DEPLOYMENT_ALGO].nStartTime = 1577836800; /* 01/01/20 */
+	iface->vDeployments[DEPLOYMENT_ALGO].nTimeout = 1609459200; /* 01/01/21 */
+
   shc_RegisterRPCOp(SHC_COIN_IFACE);
 
 	/* alternate block-chain rpc operations. */

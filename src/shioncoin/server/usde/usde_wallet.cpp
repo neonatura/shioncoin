@@ -28,6 +28,7 @@
 #include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
+#include "algobits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -828,3 +829,11 @@ int USDEWallet::GetCoinbaseMaturity(uint160 hColor)
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
 	return (iface ? iface->coinbase_maturity : 0);
 }
+
+bool USDEWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hColor)
+{
+	if (alg == ALGO_SCRYPT)
+		return (true);
+	return (false);
+}
+

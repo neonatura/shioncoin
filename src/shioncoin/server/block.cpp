@@ -33,6 +33,13 @@
 #include "txmempool.h"
 #include "coin.h"
 #include "wallet.h"
+#include "algobits.h"
+#include "algo/keccak.h"
+#include "algo/x11.h"
+#include "algo/blake2.h"
+#include "algo/qubit.h"
+#include "algo/groestl.h"
+#include "algo/skein.h"
 #include "bolo/bolo_validation03.h"
 
 using namespace std;
@@ -2023,10 +2030,13 @@ Object CBlockHeader::ToValue()
   CBlockIndex *pindex;
   Object obj;
   uint256 hash = GetHash();
+	char buf[32];
+
+	sprintf(buf, "%x", nVersion);
 
   obj.push_back(Pair("blockhash", hash.GetHex()));
 //  obj.push_back(Pair("size", (int)::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION(iface))));
-  obj.push_back(Pair("version", nVersion));
+  obj.push_back(Pair("version", string(buf)));
   obj.push_back(Pair("merkleroot", hashMerkleRoot.GetHex()));
   obj.push_back(Pair("time", (boost::int64_t)GetBlockTime()));
   obj.push_back(Pair("stamp", ToValue_date_format((time_t)GetBlockTime())));
@@ -2056,6 +2066,8 @@ Object CBlockHeader::ToValue()
 Object CBlock::ToValue(bool fVerbose)
 {
   Object obj = CBlockHeader::ToValue();
+
+	obj.push_back(Pair("pow", GetAlgoNameStr(GetAlgo()))); 
 
 //  obj.push_back(Pair("size", (int)::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)));
   obj.push_back(Pair("weight", (int)GetBlockWeight()));
@@ -3460,4 +3472,80 @@ CBlockIndex* LastCommonAncestor(CBlockIndex* pa, CBlockIndex* pb)
 	//	assert(pa == pb);
 	return pa;
 } 
+
+uint256 CBlockHeader::GetPoWHash() const
+{
+	uint256 thash;
+
+	thash = ~0;
+
+	if (ifaceIndex == TEST_COIN_IFACE ||
+			ifaceIndex == TESTNET_COIN_IFACE ||
+			ifaceIndex == SHC_COIN_IFACE ||
+			ifaceIndex == COLOR_COIN_IFACE) {
+		switch (GetVersionAlgo(nVersion)) {
+			case ALGO_SHA256D:
+				{
+					return GetHash();
+				}
+			case ALGO_KECCAK:
+				{
+					keccakhash(UBEGIN(thash), UBEGIN(nVersion));
+					return (thash);
+				}
+			case ALGO_X11:
+				{
+					x11hash(UBEGIN(thash), UBEGIN(nVersion));
+					return (thash);
+				}
+			case ALGO_BLAKE2S:
+				{
+					blake2s_hash(UBEGIN(thash), UBEGIN(nVersion));
+					return (thash);
+				}
+			case ALGO_QUBIT:
+				{
+					qubithash(UBEGIN(thash), UBEGIN(nVersion));
+					return (thash);
+				}
+			case ALGO_GROESTL:
+				{
+					groestlhash(UBEGIN(thash), UBEGIN(nVersion));
+					return (thash);
+				}
+			case ALGO_SKEIN:
+				{
+					skeinhash(UBEGIN(thash), UBEGIN(nVersion));
+					return (thash);
+				}
+		}
+	}
+
+	/* default: case ALGO_SCRYPT: */
+	scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
+	return thash;
+}
+
+const CBlockIndex* GetLastBlockIndexForAlgo(const CBlockIndex* pindex, int algo)
+{
+
+	for (; pindex; pindex = pindex->pprev) {
+		if (GetVersionAlgo(pindex->nVersion) != algo)
+			continue;
+
+		return pindex;
+	}
+
+	return nullptr;
+}
+
+CBigNum CBlockIndex::GetBlockWork(bool fUseAlgo) const
+{
+	CBigNum bnTarget;
+	bnTarget.SetCompact(nBits);
+	bnTarget *= GetAlgoWorkFactor(GetVersionAlgo(nVersion));
+	if (bnTarget <= 0)
+		return 0;
+	return (CBigNum(1)<<256) / (bnTarget+1);
+}
 

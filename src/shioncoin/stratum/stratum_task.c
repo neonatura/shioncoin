@@ -25,10 +25,12 @@
 
 #define __STRATUM__TASK_C__
 
+#include <math.h>
+
 #include "shcoind.h"
 #include "stratum/stratum.h"
-#include <math.h>
 #include "coin_proto.h"
+#include "algobits.h"
 
 #define BLOCK_VERSION 1
 //#define MAX_SERVER_NONCE 128
@@ -130,12 +132,7 @@ static void check_payout(int ifaceIndex)
   double reward;
   int i;
 
-  templ_json = (char *)getblocktransactions(ifaceIndex);
-  if (!templ_json) {
-    return;
-  }
-
-  tree = shjson_init(templ_json);
+  tree = stratum_miner_getblocktemplate(ifaceIndex, ALGO_SCRYPT);
   if (!tree) {
     shcoind_log("task_init: cannot parse json");
     return;
@@ -405,8 +402,11 @@ task_t *task_init(task_attr_t *attr)
     /* determine weightiest iface */
     stratum_task_weight(attr);
     for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
-			if (ifaceIndex == COLOR_COIN_IFACE) continue;
+			if (!is_stratum_miner_algo(ifaceIndex, attr->alg))
+				continue;
+
+//			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
+//			if (ifaceIndex == COLOR_COIN_IFACE) continue;
       iface = GetCoinByIndex(ifaceIndex);
       if (!iface || !iface->enabled) continue;
       if (max_weight == 0.00 || attr->weight[ifaceIndex] > max_weight) {
@@ -432,15 +432,20 @@ task_t *task_init(task_attr_t *attr)
 
     reset_idx = 0;
     for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
-			if (ifaceIndex == COLOR_COIN_IFACE) continue;
-      if (!iface || !iface->enabled) continue;
+			if (!is_stratum_miner_algo(ifaceIndex, attr->alg))
+				continue;
+
+//			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
+//			if (ifaceIndex == COLOR_COIN_IFACE) continue;
+//     if (!iface || !iface->enabled) continue;
 
       if (attr->commit_stamp[ifaceIndex] != attr->blk_stamp[ifaceIndex]) {
-        /* reward miners */
-        check_payout(ifaceIndex);
-        commit_payout(ifaceIndex,
-            getblockheight(ifaceIndex) - 1);
+				if (attr->alg == ALGO_SCRYPT) { 
+					/* reward miners */
+					check_payout(ifaceIndex);
+					commit_payout(ifaceIndex,
+							getblockheight(ifaceIndex) - 1);
+				}
 
         /* assign */
         attr->commit_stamp[ifaceIndex] = attr->blk_stamp[ifaceIndex];
@@ -448,54 +453,6 @@ task_t *task_init(task_attr_t *attr)
       }
     }
   }
-
-#if 0
-  reset_idx = 0;
-  if (DefaultWorkIndex == 0)
-    DefaultWorkIndex = stratum_default_iface(); 
-  for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-    iface = GetCoinByIndex(ifaceIndex);
-    if (!iface || !iface->enabled)
-      continue;
-
-    err = task_verify(ifaceIndex, &work_reset[ifaceIndex]);
-    if (!err)
-      reset_idx = ifaceIndex;
-  }
-
-  int orig_idx = DefaultWorkIndex;
-  if (reset_idx) {
-    int diff_idx = stratum_default_iface();
-    if (diff_idx &&
-        diff_idx != DefaultWorkIndex &&
-        diff_idx != reset_idx) {
-      DefaultWorkIndex = diff_idx;
-    } else {
-      int idx = (shrand() % (MAX_COIN_IFACE-1)) + 1;
-      iface = GetCoinByIndex(idx);
-      if (iface && iface->enabled)
-        DefaultWorkIndex = idx;
-    }
-
-    if (orig_idx && (orig_idx != DefaultWorkIndex)) {
-      sprintf(errbuf, "task_init: switching mining pool from coin interface #%d to #%d\n", orig_idx, DefaultWorkIndex); 
-      shcoind_log(errbuf);
-    }
-  }
-
-  if (DefaultWorkIndex == 0)
-    return (NULL);
-
-  /* concentrate on single coin at a time */
-  if (reset_idx != orig_idx) {
-    /* if no block confirmed then delay new work */
-    work_idx++;
-    if (0 != (work_idx % 6))
-      return (NULL);
-  }
-
-  ifaceIndex = DefaultWorkIndex;
-#endif
 
   /* current assigned mining coin interface. */
   ifaceIndex = attr->ifaceIndex;
@@ -507,20 +464,12 @@ task_t *task_init(task_attr_t *attr)
   if (!iface->enabled)
     return (NULL);
 
-  {
-    const char *json_text = getblocktemplate(ifaceIndex);
-
-    if (!json_text) {
-        return (NULL);
-}
-
-    tree = stratum_json(json_text);
-    if (!tree) {
-      sprintf(errbuf, "(%s) task_init: error decoding JSON: %s\n", iface->name, json_text); 
-      shcoind_log(errbuf);
-      return (NULL);
-    }
-  }
+	tree = stratum_miner_getblocktemplate(ifaceIndex, attr->alg);
+	if (!tree) {
+		sprintf(errbuf, "(%s) task_init: error decoding JSON.", iface->name);
+		shcoind_log(errbuf);
+		return (NULL);
+	}
 
   block = shjson_obj(tree, "result");
   if (!block) {
@@ -626,7 +575,7 @@ task_t *task_init(task_attr_t *attr)
   task_list = task;
 #endif
 
-  sprintf(errbuf, "(%s) task_init: created new mining task. (height: %d) (prev-hash: %s) (reset: %s)\n", iface->name, (int)task->height, task->prev_hash, (task->work_reset ? "true" : "false"));
+  sprintf(errbuf, "(%s) task_init: created new mining task. (alg: %d) (height: %d) (prev-hash: %s) (reset: %s)\n", iface->name, attr->alg, (int)task->height, task->prev_hash, (task->work_reset ? "true" : "false"));
   shcoind_log(errbuf);
 
   return (task);
@@ -712,6 +661,9 @@ void stratum_task_work(task_t *task, task_attr_t *attr)
   char ntime[16];
   int err;
 
+	if (attr->alg != ALGO_SCRYPT)
+		return;
+
   idx++;
   if (0 != (idx % luck)) {
     return;
@@ -764,7 +716,7 @@ sprintf(ntime, "%-8.8x", (unsigned int)task->curtime);
 
         //sprintf(xn_hex, "%s%s", sys_user->peer.nonce1, task->work.xnonce2);
         sprintf(xn_hex, "%s", task->work.xnonce2);
-        submitblock(task->task_id, task->curtime, task->work.nonce, xn_hex, NULL, NULL);
+        stratum_miner_submitblock(task->task_id, task->curtime, task->work.nonce, xn_hex, NULL, NULL);
       }
     }
   } else {
@@ -789,8 +741,10 @@ int is_stratum_task_pending(int *ret_iface)
 	}
 
   for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-		if (ifaceIndex == TESTNET_COIN_IFACE) continue;
-		if (ifaceIndex == COLOR_COIN_IFACE) continue;
+		if (!is_stratum_miner_algo(ifaceIndex, ALGO_SCRYPT))
+			continue;
+		//if (ifaceIndex == TESTNET_COIN_IFACE) continue;
+		//if (ifaceIndex == COLOR_COIN_IFACE) continue;
     CIface *iface = GetCoinByIndex(ifaceIndex);
     if (!iface || !iface->enabled) 
       continue; /* iface not enabled */
@@ -834,8 +788,10 @@ void stratum_task_gen(task_attr_t *attr)
   /* notify subscribed clients of new task. */
   stratum_user_broadcast_task(task, attr);
 
-	/* cpuminer (8 cycles) */
-  stratum_task_work(task, attr);
+	if (attr->alg == ALGO_SCRYPT) {
+		/* cpuminer (8 cycles) */
+		stratum_task_work(task, attr);
+	}
 
   task_free(&task);
 }
@@ -868,8 +824,10 @@ void stratum_task_weight(task_attr_t *attr)
 
   now = time(NULL);
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
-		if (idx == TESTNET_COIN_IFACE) continue;
-		if (idx == COLOR_COIN_IFACE) continue;
+		if (!is_stratum_miner_algo(idx, attr->alg))
+			continue;
+//		if (idx == TESTNET_COIN_IFACE) continue;
+//		if (idx == COLOR_COIN_IFACE) continue;
     iface = GetCoinByIndex(idx);
     if (!iface || !iface->enabled) continue;
 

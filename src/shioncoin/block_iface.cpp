@@ -59,7 +59,6 @@ string transactioninfo_json;
 typedef map<unsigned int, CBlock*> work_map;
 work_map mapWork;
 
-extern std::string HexBits(unsigned int nBits);
 extern string JSONRPCReply(const Value& result, const Value& error, const Value& id);
 extern void ScriptPubKeyToJSON(int ifaceIndex, const CScript& scriptPubKey, Object& out);
 extern Value ValueFromAmount(int64 amount);
@@ -67,31 +66,10 @@ extern void WalletTxToJSON(int ifaceIndex, const CWalletTx& wtx, Object& entry);
 
 //extern void ListTransactions(int ifaceIndex, const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret);
 extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex = NULL);
+extern std::string HexBits(unsigned int nBits);
 
+#if 0
 static double nextDifficulty;
-double GetBitsDifficulty(unsigned int nBits)
-{
-  // Floating point number that is a multiple of the minimum difficulty,
-  // minimum difficulty = 1.0.
-
-  int nShift = (nBits >> 24) & 0xff;
-
-  double dDiff =
-    (double)0x0000ffff / (double)(nBits & 0x00ffffff);
-
-  while (nShift < 29)
-  {
-    dDiff *= 256.0;
-    nShift++;
-  }
-  while (nShift > 29)
-  {
-    dDiff /= 256.0;
-    nShift--;
-  }
-
-  return (dDiff);
-}
 
 static CBlock *altBlock[MAX_COIN_IFACE];
 static unsigned int altHeight[MAX_COIN_IFACE];
@@ -452,6 +430,7 @@ int c_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, 
 
   return (0);
 }
+#endif
 
 Object c_AcentryToJSON(const CAccountingEntry& acentry, const string& strAccount, Object entry)
 {
@@ -641,9 +620,11 @@ const char *c_getmininginfo(int ifaceIndex)
   int height = (int)GetBestHeight(ifaceIndex);
   result.push_back((int)height);
 
+#if 0
   if (nextDifficulty > 0.00000000)
     result.push_back((double)nextDifficulty);
   else
+#endif
     result.push_back((double)GetDifficulty(ifaceIndex));
 
   if (height > 0)
@@ -1206,15 +1187,16 @@ int cpp_stratum_isinitialdownload(int ifaceIndex)
 extern "C" {
 #endif
 
+#if 0
 const char *getblocktemplate(int ifaceIndex)
 {
   return (c_getblocktemplate(ifaceIndex));
 }
-
 int submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, char *xn_hex, char *ret_hash, double *ret_diff)
 {
   return (c_submitblock(workId, nTime, nNonce, xn_hex, ret_hash, ret_diff));
 }
+#endif
 
 const char *getblocktransactions(int ifaceIndex)
 {
@@ -1278,6 +1260,7 @@ const int reloadblockfile(const char *path)
 }
 #endif
 
+#if 0
 /** Set by stratum server when block changes via getblocktemplate(). */
 void SetNextDifficulty(int ifaceIndex, unsigned int nBits)
 {
@@ -1285,6 +1268,8 @@ void SetNextDifficulty(int ifaceIndex, unsigned int nBits)
   if (iface != NULL)
     iface->blk_diff = GetBitsDifficulty(nBits);
 }
+#endif
+
 double GetNextDifficulty(int ifaceIndex)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);

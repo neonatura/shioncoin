@@ -579,6 +579,27 @@
 /* Define to enable the USDE coin service. */
 #undef USDE_SERVICE
 
+/* Define to enable the BLAKE2S pow algorythm. */
+#undef USE_ALGO_BLAKE2S
+
+/* Define to enable the GROESTL pow algorythm. */
+#undef USE_ALGO_GROESTL
+
+/* Define to enable the KECCAK pow algorythm. */
+#undef USE_ALGO_KECCAK
+
+/* Define to enable the QUBIT pow algorythm. */
+#undef USE_ALGO_QUBIT
+
+/* Define to enable the SHA256D pow algorythm. */
+#undef USE_ALGO_SHA256D
+
+/* Define to enable the SKEIN pow algorythm. */
+#undef USE_ALGO_SKEIN
+
+/* Define to enable the X11 pow algorythm. */
+#undef USE_ALGO_X11
+
 /* Define to enable pthread library. */
 #undef USE_LIBPTHREAD
 

@@ -62,6 +62,26 @@ extern "C" {
 #define OPT_MIN_FEE "min-fee"
 #define OPT_BECH32 "bech32"
 
+/* Stratum mining interfaces. */
+#define OPT_STRATUM_TESTNET "stratum-testnet"
+#define OPT_STRATUM_COLOR "stratum-color"
+
+/* PoW Algorthm. */
+#define OPT_STRATUM_SHA256D "stratum-sha256d"
+#define OPT_STRATUM_SHA256D_PORT "stratum-sha256d-port"
+#define OPT_STRATUM_KECCAK "stratum-keccak"
+#define OPT_STRATUM_KECCAK_PORT "stratum-keccak-port"
+#define OPT_STRATUM_X11 "stratum-x11"
+#define OPT_STRATUM_X11_PORT "stratum-x11-port"
+#define OPT_STRATUM_BLAKE2S "stratum-blake2s"
+#define OPT_STRATUM_BLAKE2S_PORT "stratum-blake2s-port"
+#define OPT_STRATUM_QUBIT "stratum-qubit"
+#define OPT_STRATUM_QUBIT_PORT "stratum-qubit-port"
+#define OPT_STRATUM_GROESTL "stratum-groestl"
+#define OPT_STRATUM_GROESTL_PORT "stratum-groestl-port"
+#define OPT_STRATUM_SKEIN "stratum-skein"
+#define OPT_STRATUM_SKEIN_PORT "stratum-skein-port"
+
 
 /* not used */
 #define OPT_FMAP_IDLE "fmap-idle"

@@ -35,6 +35,7 @@
 #include "chain.h"
 #include "coin.h"
 #include "versionbits.h"
+#include "algobits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -176,8 +177,11 @@ uint256 test_GetOrphanRoot(uint256 hash)
 /** TestNet : difficulty level is always lowest possible per protocol. */
 unsigned int TESTBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
-  unsigned int nProofOfWorkLimit = TEST_bnProofOfWorkLimit.GetCompact();
-  return nProofOfWorkLimit;
+	CBigNum bnDiff = TEST_bnProofOfWorkLimit;
+
+	bnDiff /= GetAlgoWorkFactor(GetAlgo());
+
+  return bnDiff.GetCompact();
 }
 
 int64 test_GetBlockValue(int nHeight, int64 nFees)
@@ -566,18 +570,23 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
   return true;
 }
 
-bool test_CheckProofOfWork(uint256 hash, unsigned int nBits)
+bool test_CheckProofOfWork(uint256 hash, unsigned int nBits, int alg)
 {
   CBigNum TEST_bnTarget;
+
   TEST_bnTarget.SetCompact(nBits);
 
-  // Check range
+  // Check proof of work matches claimed amount
+	uint256 hTarget = TEST_bnTarget.getuint256();
+  if (hash > hTarget) {
+    return error(SHERR_INVAL, "CheckProofOfWork() : hash (%s) doesn't match nBits (%s).", hash.GetHex().c_str(), hTarget.GetHex().c_str());
+	}
+
+	/* reduce to scrypt factor. */
+	TEST_bnTarget *= GetAlgoWorkFactor(alg);
+  /* check range */
   if (TEST_bnTarget <= 0 || TEST_bnTarget > TEST_bnProofOfWorkLimit)
     return error(SHERR_INVAL, "CheckProofOfWork() : nBits below minimum work");
-
-  // Check proof of work matches claimed amount
-  if (hash > TEST_bnTarget.getuint256())
-    return error(SHERR_INVAL, "CheckProofOfWork() : hash doesn't match nBits");
 
   return true;
 }
@@ -606,7 +615,7 @@ bool TESTBlock::CheckBlock()
     return error(SHERR_INVAL, "(test) CheckBlock: first tx is not coinbase.");
 
   // Check proof of work matches claimed amount
-  if (!test_CheckProofOfWork(GetPoWHash(), nBits)) {
+  if (!test_CheckProofOfWork(GetPoWHash(), nBits, GetAlgo())) {
     return error(SHERR_INVAL, "(test) CheckBlock : proof of work failed");
   }
 
@@ -1769,5 +1778,10 @@ bool TESTBlock::CreateCheckpoint()
 	pindex = (*blockIndex)[hBlock];
 
 	return (wallet->checkpoints->AddCheckpoint(pindex));
+}
+
+int TESTBlock::GetAlgo() const
+{
+	return (GetVersionAlgo(nVersion));
 }
 

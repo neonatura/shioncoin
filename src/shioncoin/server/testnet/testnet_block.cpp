@@ -35,9 +35,14 @@
 #include "chain.h"
 #include "coin.h"
 #include "versionbits.h"
+#include "algobits.h"
 
 #ifdef WIN32
 #include <string.h>
+#endif
+
+#ifdef HAVE_TIME_H
+#include <time.h>
 #endif
 
 #ifdef HAVE_FCNTL_H
@@ -51,12 +56,88 @@
 using namespace std;
 using namespace boost;
 
+#define TESTNET_DIFFICULTY_EXPIRE_TIME 1200 /* 20min */
 
 uint256 testnet_hashGenesisBlock("0xf4319e4e89b35b5f26ec0363a09d29703402f120cf1bf8e6f535548d5ec3c5cc");
 static uint256 testnet_hashGenesisMerkle("0xd3f4bbe7fe61bda819369b4cd3a828f3ad98d971dda0c20a466a9ce64846c321");
 static CBigNum TESTNET_bnGenesisProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum TESTNET_bnProofOfWorkLimit(~uint256(0) >> 12);
 
+extern VersionBitsCache *GetVersionBitsCache(CIface *iface);
+
+static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax, int nAlg = ALGO_SCRYPT)
+{
+	const CBlockIndex *BlockLastSolved	= pindexLast;
+	const CBlockIndex *BlockReading	= pindexLast;
+	uint64	PastBlocksMass	= 0;
+	int64	PastRateActualSeconds	= 0;
+	int64	PastRateTargetSeconds	= 0;
+	double	PastRateAdjustmentRatio	= double(1);
+	CBigNum	PastDifficultyAverage;
+	CBigNum	PastDifficultyAveragePrev;
+	double	EventHorizonDeviation;
+	double	EventHorizonDeviationFast;
+	double	EventHorizonDeviationSlow;
+
+	if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 || (uint64)BlockLastSolved->nHeight < PastBlocksMin) { return TESTNET_bnProofOfWorkLimit.GetCompact(); }
+
+	int64 LatestBlockTime = BlockLastSolved->GetBlockTime();
+
+	for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
+		if (PastBlocksMax > 0 && i > PastBlocksMax) { break; }
+		PastBlocksMass++;
+
+		CBigNum bnDiff;
+		bnDiff.SetCompact(BlockReading->nBits);
+		/* reduce to scrypt factor. */
+		bnDiff *= GetAlgoWorkFactor(GetVersionAlgo(BlockReading->nVersion));
+
+		if (i == 1)	{
+			//PastDifficultyAverage.SetCompact(BlockReading->nBits);
+			PastDifficultyAverage = bnDiff;
+		} else	{ 
+			//PastDifficultyAverage = ((CBigNum().SetCompact(BlockReading->nBits) - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev;
+			PastDifficultyAverage = ((bnDiff - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev;
+		}
+		PastDifficultyAveragePrev = PastDifficultyAverage;
+
+		if (LatestBlockTime < BlockReading->GetBlockTime())
+			LatestBlockTime = BlockReading->GetBlockTime();
+
+		PastRateActualSeconds = LatestBlockTime - BlockReading->GetBlockTime();
+		PastRateTargetSeconds	= TargetBlocksSpacingSeconds * PastBlocksMass;
+		PastRateAdjustmentRatio	= double(1);
+
+		if (PastRateActualSeconds < 1)
+			PastRateActualSeconds = 1;
+
+		if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
+			PastRateAdjustmentRatio	= double(PastRateTargetSeconds) / double(PastRateActualSeconds);
+		}
+		EventHorizonDeviation	= 1 + (0.7084 * pow((double(PastBlocksMass)/double(144)), -1.228));
+		EventHorizonDeviationFast	= EventHorizonDeviation;
+		EventHorizonDeviationSlow	= 1 / EventHorizonDeviation;
+
+		if (PastBlocksMass >= PastBlocksMin) {
+			if ((PastRateAdjustmentRatio <= EventHorizonDeviationSlow) || (PastRateAdjustmentRatio >= EventHorizonDeviationFast)) { assert(BlockReading); break; }
+		}
+		if (BlockReading->pprev == NULL) { assert(BlockReading); break; }
+		BlockReading = BlockReading->pprev;
+	}
+
+	CBigNum bnNew(PastDifficultyAverage);
+	if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
+		bnNew *= PastRateActualSeconds;
+		bnNew /= PastRateTargetSeconds;
+	}
+	if (bnNew > TESTNET_bnProofOfWorkLimit) {
+		bnNew = TESTNET_bnProofOfWorkLimit;
+	}
+
+	bnNew /= GetAlgoWorkFactor(nAlg);
+
+	return bnNew.GetCompact();
+}
 
 /* ** BLOCK ORPHANS ** */
 
@@ -159,12 +240,52 @@ uint256 testnet_GetOrphanRoot(uint256 hash)
 /** TestNet : difficulty level is always lowest possible per protocol. */
 unsigned int TESTNETBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
+	static const int64	BlocksTargetSpacing	= 1.0 * 60; // 1.0 minutes
+	static const unsigned int	TimeDaySeconds	= 60 * 60 * 24;
+	CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
+	VersionBitsCache *cache = GetVersionBitsCache(iface);
+	int64	PastSecondsMin	= TimeDaySeconds * 0.10;
+	int64	PastSecondsMax	= TimeDaySeconds * 2.8;
+	uint64	PastBlocksMin	= PastSecondsMin / BlocksTargetSpacing;
+	uint64	PastBlocksMax	= PastSecondsMax / BlocksTargetSpacing;	
+	bool fKimoto = false;
+	uint32_t nBits;
+
 	if (pindexLast == NULL)
-		    return (TESTNET_bnGenesisProofOfWorkLimit.GetCompact());
+		return (TESTNET_bnGenesisProofOfWorkLimit.GetCompact());
 
-	return ((unsigned int)TESTNET_bnProofOfWorkLimit.GetCompact());
+	/* enable KGW if ALGO concensus has been deployed. */
+	int nAlg = ALGO_SCRYPT;
+	if (cache &&
+			(VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO, *cache) == THRESHOLD_ACTIVE)) {
+		nAlg = GetVersionAlgo(nVersion);
+		fKimoto = true;
+	}
+
+	/* reduce to minimum difficulty if twenty minutes have passed since last block commit. */
+	if ((time_t)pindexLast->nTime < 
+			((time_t)time(NULL) - TESTNET_DIFFICULTY_EXPIRE_TIME))
+		fKimoto = false;
+
+	pindexLast = GetLastBlockIndexForAlgo(pindexLast, nAlg);
+	if (!pindexLast)
+		fKimoto = false;
+
+	if (fKimoto) {
+		nBits = KimotoGravityWell(pindexLast, this,
+				BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
+	} else {
+		nBits = TESTNET_bnProofOfWorkLimit.GetCompact();
+	}
+	if (nAlg == ALGO_SCRYPT)
+		return (nBits);
+
+	/* base work factor off "compacted" number. */
+	CBigNum bnDiff;
+	bnDiff.SetCompact(nBits);
+	bnDiff /= GetAlgoWorkFactor(nAlg);
+	return bnDiff.GetCompact();
 }
-
 
 int64 testnet_GetBlockValue(int nHeight, int64 nFees)
 {
@@ -891,5 +1012,11 @@ bool TESTNETBlock::CreateCheckpoint()
 
   return (wallet->checkpoints->AddCheckpoint(pindex));
 }
+
+int TESTNETBlock::GetAlgo() const
+{
+	return (GetVersionAlgo(nVersion));
+}
+
 
 

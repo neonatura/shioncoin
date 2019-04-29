@@ -71,6 +71,9 @@ class COLORWallet : public CWallet
     int64 GetFeeRate(uint160 hColor);
 
 		int GetCoinbaseMaturity(uint160 hColor = 0);
+
+		bool IsAlgoSupported(int alg, CBlockIndex *pindexPrev = NULL, uint160 hColor = 0);
+
 };
 
 

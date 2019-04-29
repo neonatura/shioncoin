@@ -29,6 +29,8 @@
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
+#include "versionbits.h"
+#include "algobits.h"
 #include "testnet_pool.h"
 #include "testnet_block.h"
 
@@ -58,11 +60,9 @@ using namespace boost;
 TESTNETWallet *testnetWallet;
 CScript TESTNET_COINBASE_FLAGS;
 
-
-//extern void testnet_RelayTransaction(const CTransaction& tx, const uint256& hash);
-
 static unsigned int testnet_nBytesPerSigOp = TESTNET_DEFAULT_BYTES_PER_SIGOP;
 
+extern VersionBitsCache *GetVersionBitsCache(CIface *iface);
 
 bool testnet_LoadWallet(void)
 {
@@ -689,4 +689,22 @@ int TESTNETWallet::GetCoinbaseMaturity(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
 	return (iface ? iface->coinbase_maturity : 0);
+}
+
+bool TESTNETWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hColor)
+{
+  CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
+	VersionBitsCache *cache;
+
+	if (alg == ALGO_SCRYPT)
+		return (true);
+
+	if (!pindexPrev)
+		pindexPrev = GetBestBlockIndex(TESTNET_COIN_IFACE);
+
+	cache = GetVersionBitsCache(iface);
+	if (!cache)
+		return (false);
+
+	return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_ALGO, *cache) == THRESHOLD_ACTIVE);
 }

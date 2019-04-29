@@ -95,6 +95,8 @@ public:
 
 		bool CreateCheckpoint(); 
 
+		int GetAlgo() const;
+
 };
 
 

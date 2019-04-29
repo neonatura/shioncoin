@@ -30,13 +30,11 @@
 extern "C" {
 #endif
 
+shjson_t *stratum_miner_getblocktemplate(int ifaceIndex, int nAlg);
 
+int stratum_miner_submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, char *xn_hex, char *ret_hash, double *ret_diff);
 
-
-
-
-
-
+int is_stratum_miner_algo(int ifaceIndex, int nAlg);
 
 #ifdef __cplusplus
 }

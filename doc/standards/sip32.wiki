@@ -1,0 +1,52 @@
+
+<pre>
+  SIP: 32
+  Layer: Consensus (soft fork)
+  Title: SIP32 Multiple PoW Algorythm
+  Author: Brian Burrell <bburrell@neo-natura.com>
+  Comments-Summary: No comments yet.
+  Status: Proposed
+  Type: Standards Track
+  Created: 2019-04-20
+</pre>
+
+==Abstract==
+
+The SIP introduces a method to allow for additional PoW algorithms to be performed on the ShionCoin blockchain. 
+
+==Motivation==
+
+Currently, only scrypt based mining hardware may be used in order to commit blocks to the ShionCoin blockchain. By allowing for multiple PoW algorithms to be used on the same blockchain, the burden of having to purchase specific mining equipment is lessened in favor of a more flexible software design.
+
+In addition, optional support for particular PoW algorithms on the ShionCoin colored alt-chains provides a means to further personalize their attributes.
+
+The algorithms that have been initially selected are based on either simplicity of design (for asic compatibility), sha-3 competitiveness (for proven reliability), or broadness of usability (for popularity).
+
+==Specification==
+
+Additional PoW algorithm validation is provided by specifying a custom block version and by computing the difficulty in a predefined per algorithm ratio against the native scrypt difficulty. 
+
+A 16-bit bitvector is added to the constant 0xE0000000UL in order to establish a block version to indicate which algorithm is being used. As such, consensus or versionbits cannot be specified when submitting a block with a PoW algorithm besides scrypt. 
+
+The initial algorithms to be provided on the mainnet blockchain, as part of a deployment consensus, are as follows:
+* SHA256D
+* KECCAK
+* X11
+* BLAKE2S
+* QUBIT
+* GROESTL
+* SKEIN
+
+Each colored alt-chain can be configured (upon it's genesis) to support, in addition to scrypt, the SHA256D, KECCAK, X11, and/or BLAKE2S PoW algorithms. Colored alt-chains do not require a consensus to use this functionality, but nodes cannot access an alt-chain which has options that are unsupported.
+
+Each algorithm is defined a hardcoded hashspeed ratio in comparison to scrypt. Only algorithms that have a faster hashing speed than scrypt are supported by this implementation.
+
+Note that the merkleroot for all PoW algorithms listed is generated using a traditional double-sha256 hash instead of the more complicated scrypt method. Segregated witness merkle root hashes are computed the same for all algorithms.
+
+All difficulties displayed through stratum or rpc are still shown in comparison to scrypt. The block's "nBits" (compacted minimum difficulty) will reference the underlying PoW algorithm used. 
+
+ShionCoin uses the Kimoto Gravity Well to determine the difficulty rate of newly generated blocks. When the difficulty of the next block is computed, the first block processed will be the last block in the chain that has been commited for the particular PoW algorithm desired to be submitted. As such, the time since the last block with the same PoW algorythm commited to the blockchain is used in order to determine the difficulty.
+
+The minimum difficulty is used if a block with that PoW algorithm has never been comitted. Only the first block, though, is filtered in this manner, and the remainder of the previous chain blocks will be processed regardless of their underlying associated PoW algorithm.
+
+

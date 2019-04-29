@@ -60,6 +60,13 @@ stratum_sources = \
 	stratum/stratum_sync.h \
 	stratum/stratum_api.h \
 	stratum/stratum_miner.h \
+	stratum/stratum_sha256d.h \
+	stratum/stratum_keccak.h \
+	stratum/stratum_x11.h \
+	stratum/stratum_blake2s.h \
+	stratum/stratum_qubit.h \
+	stratum/stratum_groestl.h \
+	stratum/stratum_skein.h \
 	stratum/http/http.h \
 	stratum/stratum.c \
 	stratum/stratum_http.c \
@@ -70,6 +77,13 @@ stratum_sources = \
 	stratum/stratum_sync.c \
 	stratum/stratum_api.cpp \
 	stratum/stratum_miner.cpp \
+	stratum/stratum_sha256d.c \
+	stratum/stratum_keccak.c \
+	stratum/stratum_x11.c \
+	stratum/stratum_blake2s.c \
+	stratum/stratum_qubit.c \
+	stratum/stratum_groestl.c \
+	stratum/stratum_skein.c \
 	stratum/http/http.c \
 	stratum/http/http_alias.c \
 	stratum/http/http_coin.c \
@@ -145,9 +159,27 @@ common_includes = \
 	server/net.h \
 	server/txsignature.h \
 	server/versionbits.h \
+	server/algobits.h \
 	server/protocol.h \
 	server/script.h \
-	server/scrypt.h \
+	server/algo/blake2.h \
+	server/algo/blake2s.h \
+	server/algo/keccak.h \
+	server/algo/qubit.h \
+	server/algo/scrypt.h \
+	server/algo/sph_blake.h \
+	server/algo/sph_bmw.h \
+	server/algo/sph_cubehash.h \
+	server/algo/sph_echo.h \
+	server/algo/sph_groestl.h \
+	server/algo/sph_jh.h \
+	server/algo/sph_keccak.h \
+	server/algo/sph_luffa.h \
+	server/algo/sph_shavite.h \
+	server/algo/sph_simd.h \
+	server/algo/sph_skein.h \
+	server/algo/sph_types.h \
+	server/algo/x11.h \
 	server/serialize.h \
 	server/strlcpy.h \
 	server/sync.h \
@@ -207,6 +239,7 @@ server_sources = \
 	server/test/test_block.cpp \
 	server/test/test_block.h \
 	server/test/test_pool.cpp \
+	server/test/test_pool.h \
 	server/test/test_pool.h \
 	server/shc/shc_netmsg.cpp \
 	server/shc/shc_netmsg.h \
@@ -302,6 +335,7 @@ server_sources = \
 	server/rpc/rpcwallet_proto.cpp \
 	server/rpc/rpcrawtransaction.cpp \
 	server/versionbits.cpp \
+	server/algobits.cpp \
 	server/txsignature.cpp \
 	server/protocol.cpp \
 	server/block.cpp \
@@ -320,6 +354,7 @@ server_sources = \
 	server/global.cpp \
 	server/block_merkle.cpp \
 	server/wit_merkle.cpp \
+	server/sha256d_merkle.cpp \
 	server/txidx.cpp \
 	server/init.cpp \
 	server/derkey.cpp \
@@ -332,7 +367,25 @@ server_sources = \
 	server/wallet.cpp \
 	server/account.cpp \
 	server/txcreator.cpp \
-	server/scrypt.c \
+	server/algo/blake2.c \
+	server/algo/blake2s.c \
+	server/algo/groestl.c \
+	server/algo/keccak.c \
+	server/algo/qubit.c \
+	server/algo/scrypt.c \
+	server/algo/skein.c \
+	server/algo/sph_blake.c \
+	server/algo/sph_bmw.c \
+	server/algo/sph_cubehash.c \
+	server/algo/sph_echo.c \
+	server/algo/sph_groestl.c \
+	server/algo/sph_jh.c \
+	server/algo/sph_keccak.c \
+	server/algo/sph_luffa.c \
+	server/algo/sph_shavite.c \
+	server/algo/sph_simd.c \
+	server/algo/sph_skein.c \
+	server/algo/x11.c \
 	server/addrman.h \
 	server/addrman.cpp \
 	server/base58.h \
@@ -388,7 +441,8 @@ test_shcoind_SOURCES = \
 	test/testcoin_hash.cpp \
 	test/testcoin_block.cpp \
 	test/testcoin_json.cpp \
-	test/testcoin_bloom.cpp
+	test/testcoin_bloom.cpp \
+	test/testcoin_algo.cpp
 
 test_shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \

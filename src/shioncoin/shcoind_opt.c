@@ -81,7 +81,7 @@ static opt_t _option_table[] = {
 		"The built-in stratum miner service." },
 	{ OPT_STRATUM_PORT, OPT_TYPE_NUM, 9448, NULL, 
 		"The socket port to listen for stratum connections." },
-	{ OPT_STRATUM_WORK_CYCLE, OPT_TYPE_NUM, 15, NULL,
+	{ OPT_STRATUM_WORK_CYCLE, OPT_TYPE_NUM, 16, NULL,
 		"The maximum number of seconds between \"getwork\" notifications." },
 #endif
 
@@ -116,6 +116,59 @@ static opt_t _option_table[] = {
 		"The USDE currency service." },
 	{ OPT_USDE_PORT, OPT_TYPE_NUM, 54449, NULL, 
 		"The socket port to listen for USDE connections." },
+#endif
+
+#ifdef USE_ALGO_SHA256D
+	{ OPT_STRATUM_SHA256D, OPT_TYPE_BOOL, 0, NULL,
+		"Provide a stratum mining service for the SHA256D PoW algorthm." },
+	{ OPT_STRATUM_SHA256D_PORT, OPT_TYPE_NUM, 9450, NULL, 
+		"The socket port to listen for stratum SHA256D connections." },
+#endif
+#ifdef USE_ALGO_KECCAK
+	{ OPT_STRATUM_KECCAK, OPT_TYPE_BOOL, 0, NULL,
+		"Provide a stratum mining service for the KECCAK PoW algorthm." },
+	{ OPT_STRATUM_KECCAK_PORT, OPT_TYPE_NUM, 9452, NULL, 
+		"The socket port to listen for stratum KECCAK connections." },
+#endif
+#ifdef USE_ALGO_X11
+	{ OPT_STRATUM_X11, OPT_TYPE_BOOL, 0, NULL,
+		"Provide a stratum mining service for the X11 PoW algorthm." },
+	{ OPT_STRATUM_X11_PORT, OPT_TYPE_NUM, 9454, NULL, 
+		"The socket port to listen for stratum X11 connections." },
+#endif
+#ifdef USE_ALGO_BLAKE2S
+	{ OPT_STRATUM_BLAKE2S, OPT_TYPE_BOOL, 0, NULL,
+		"Provide a stratum mining service for the BLAKE2S PoW algorthm." },
+	{ OPT_STRATUM_BLAKE2S_PORT, OPT_TYPE_NUM, 9456, NULL, 
+		"The socket port to listen for stratum BLAKE2S connections." },
+#endif
+#ifdef USE_ALGO_QUBIT
+	{ OPT_STRATUM_QUBIT, OPT_TYPE_BOOL, 0, NULL,
+		"Provide a stratum mining service for the QUBIT PoW algorthm." },
+	{ OPT_STRATUM_QUBIT_PORT, OPT_TYPE_NUM, 9458, NULL, 
+		"The socket port to listen for stratum QUBIT connections." },
+#endif
+#ifdef USE_ALGO_GROESTL
+	{ OPT_STRATUM_GROESTL, OPT_TYPE_BOOL, 0, NULL,
+		"Provide a stratum mining service for the GROESTL PoW algorthm." },
+	{ OPT_STRATUM_GROESTL_PORT, OPT_TYPE_NUM, 9460, NULL, 
+		"The socket port to listen for stratum GROESTL connections." },
+#endif
+#ifdef USE_ALGO_SKEIN
+	{ OPT_STRATUM_SKEIN, OPT_TYPE_BOOL, 0, NULL,
+		"Provide a stratum mining service for the SKEIN PoW algorthm." },
+	{ OPT_STRATUM_SKEIN_PORT, OPT_TYPE_NUM, 9462, NULL, 
+		"The socket port to listen for stratum SKEIN connections." },
+#endif
+
+#ifdef TESTNET_SERVICE
+	{ OPT_STRATUM_TESTNET, OPT_TYPE_BOOL, 0, NULL,
+		"Provide a stratum mining service for the TESTNET coin interface." },
+#endif
+
+#if 0 /* TODO: */
+	{ OPT_STRATUM_COLOR, OPT_TYPE_STR, 0, "",
+		"A hexadecimal color code to enable stratum mining for the COLOR coin interface." },
 #endif
 
 	/* end of the line */

@@ -68,7 +68,7 @@ extern TEST_respend(CuTest*);
 extern TEST_txmempool_depend(CuTest*);
 extern TEST_chainwork(CuTest*);
 extern TEST_orphan_block(CuTest*);
-
+extern TEST_algo_sha256d(CuTest*);
 
 
 
@@ -114,8 +114,10 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_matrix);
   SUITE_ADD_TEST(suite, TEST_serializetx);
 
+
   /* block-chain transaction tests */
   SUITE_ADD_TEST(suite, TEST_reorganize);
+	SUITE_ADD_TEST(suite, TEST_algo_sha256d);
   SUITE_ADD_TEST(suite, TEST_identtx);
   SUITE_ADD_TEST(suite, TEST_matrixtx);
   SUITE_ADD_TEST(suite, TEST_signtx);

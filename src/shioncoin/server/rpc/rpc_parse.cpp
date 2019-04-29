@@ -200,33 +200,16 @@ void GetAccountAddresses(CWallet *wallet, string strAccount, set<CTxDestination>
 
 double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex)
 {
-    // Floating point number that is a multiple of the minimum difficulty,
-    // minimum difficulty = 1.0.
-    if (blockindex == NULL)
-    {
-        if (GetBestBlockIndex(ifaceIndex) == NULL)
-            return 1.0;
-        else
-            blockindex = GetBestBlockIndex(ifaceIndex);
-    }
 
-    int nShift = (blockindex->nBits >> 24) & 0xff;
+	// Floating point number that is a multiple of the minimum difficulty,
+	// minimum difficulty = 1.0.
+	if (blockindex == NULL) {
+		blockindex = GetBestBlockIndex(ifaceIndex);
+		if (!blockindex)
+			return 1.0;
+	}
 
-    double dDiff =
-        (double)0x0000ffff / (double)(blockindex->nBits & 0x00ffffff);
-
-    while (nShift < 29)
-    {
-        dDiff *= 256.0;
-        nShift++;
-    }
-    while (nShift > 29)
-    {
-        dDiff /= 256.0;
-        nShift--;
-    }
-
-    return dDiff;
+	return (GetDifficulty(blockindex->nBits, blockindex->nVersion));
 }
 
 Value GetNetworkHashPS(int ifaceIndex, int lookup) 

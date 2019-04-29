@@ -33,6 +33,7 @@
 #include "txmempool.h"
 #include "coin.h"
 #include "wallet.h"
+#include "algobits.h"
 
 using namespace std;
 
@@ -49,6 +50,7 @@ static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS =
 bool CheckBlockHeader(CBlockHeader *pblock)
 {
 	CBigNum bnTarget;
+
 	bnTarget.SetCompact(pblock->nBits);
 
   /* check proof of work exceeds block expectations. */
@@ -66,21 +68,24 @@ bool ContextualCheckBlockHeader(CIface *iface, const CBlockHeader& block, CBlock
 	if (ifaceIndex != EMC2_COIN_IFACE &&
 			ifaceIndex != USDE_COIN_IFACE) {
 		/* verify block version. */
-		if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
+		if (iface->BIP34Height != -1 && 
+				(uint32_t)nHeight >= iface->BIP34Height) {
 			/* check for obsolete blocks. */
-			if (block.nVersion < 2)
+			if ((uint32_t)block.nVersion < 2)
 				return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP34].", iface->name, (unsigned int)block.nVersion, block.GetHash().GetHex().c_str()));
 		}
-		if (iface->BIP66Height != -1 && block.nVersion < 3 &&
-				nHeight >= iface->BIP66Height) {
+		if (iface->BIP66Height != -1 && 
+				(uint32_t)block.nVersion < 3 &&
+				(uint32_t)nHeight >= iface->BIP66Height) {
 			return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP66].", iface->name, (unsigned int)block.nVersion, block.GetHash().GetHex().c_str()));
 		}
-		if (iface->BIP65Height != -1 && block.nVersion < 4 &&
-				nHeight >= iface->BIP65Height) {
+		if (iface->BIP65Height != -1 && 
+				(uint32_t)block.nVersion < 4 &&
+				(uint32_t)nHeight >= iface->BIP65Height) {
 			return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP65].", iface->name, (unsigned int)block.nVersion, block.GetHash().GetHex().c_str()));
 		}
 	}
-	if (block.nVersion < VERSIONBITS_TOP_BITS &&
+	if ((uint32_t)block.nVersion < VERSIONBITS_TOP_BITS &&
 			IsWitnessEnabled(iface, pindexPrev))
 		return (error(ERR_INVAL, "(%s) ContextualCheckBlockHeader: invalid block version for witness enabled chain.", iface->name));
 
@@ -160,7 +165,7 @@ bool ContextualCheckBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 
 	/* verify block's minimum difficulty. */
 	if (pblock->nBits != pblock->GetNextWorkRequired(pindexPrev))
-    return (pblock->trust(-100, "(%s) ContextualCheckBlock: invalid difficulty (%x) specified (next work required is %x) for block height %d [prev '%s']\n", pblock->nBits, pblock->GetNextWorkRequired(pindexPrev), nHeight, pindexPrev->GetBlockHash().GetHex().c_str()));
+    return (pblock->trust(-100, "(%s) ContextualCheckBlock: invalid difficulty (%x) specified (next work required is %x) for block height %d [prev '%s']\n", iface->name, pblock->nBits, pblock->GetNextWorkRequired(pindexPrev), nHeight, pindexPrev->GetBlockHash().GetHex().c_str()));
 
   /* check that the block matches the known block hash for last checkpoint. */
   if (!pblock->VerifyCheckpoint(nHeight)) {
@@ -189,6 +194,15 @@ bool ContextualCheckBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		if (pblock->originPeer)
 			pblock->originPeer->PushReject("block", pblock->GetHash(), REJECT_INVALID, "bad-blk-weight");
 		return (pblock->trust(-80, "(%s) CheckBlock: block weight (%d) > max (%d) [hash %s]", iface->name, nWeight, MAX_BLOCK_WEIGHT(iface), pblock->GetHash().GetHex().c_str()));
+	}
+
+	/* check PoW algorythm restrictions. */
+	int alg = pblock->GetAlgo();
+	if (alg != ALGO_SCRYPT) {
+		CWallet *wallet = GetWallet(iface);
+		if (!wallet->IsAlgoSupported(alg, pindexPrev, pblock->hColor)) {
+			return (error(ERR_INVAL, "(%s) CheckBlock: invalid PoW algorthm %d (%s).", iface->name, alg, GetAlgoName(alg)));
+		}
 	}
 
 	return (true);
@@ -223,7 +237,13 @@ CBlockIndex *CreateBlockIndex(CIface *iface, CBlockHeader& block)
     pindexNew->BuildSkip();
   }
 
-  pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
+	bool fAlgo = false;
+	if (ifaceIndex == TEST_COIN_IFACE ||
+			ifaceIndex == TESTNET_COIN_IFACE ||
+			ifaceIndex == SHC_COIN_IFACE ||
+			ifaceIndex == COLOR_COIN_IFACE)
+		fAlgo = true;
+  pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork(fAlgo);
 
 #if 0
   if (IsWitnessEnabled(iface, pindexNew->pprev)) {

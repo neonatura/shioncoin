@@ -34,6 +34,8 @@
 #include "color_txidx.h"
 #include "chain.h"
 #include "coin.h"
+#include "versionbits.h"
+#include "algobits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -59,6 +61,7 @@ static int clropt_default_table[MAX_CLROPT] =
 	1, /* REWARD: 1 */
 	1, /* HALF: 1000 */
 	1, /* FEE: 0.0000001 */
+	0, /* ALGO: 4-bit bitvector */
 };
 
 /* there is no pre-defined single genesis block for an alt-chain. */
@@ -69,7 +72,9 @@ static const CBigNum COLOR_bnProofOfWorkLimit(~uint256(0) >> 11);
 
 static std::map<uint160, color_opt> mapColorOpt;
 
-static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax, CBigNum bnProofOfWorkLimit) 
+extern VersionBitsCache *GetVersionBitsCache(CIface *iface);
+
+static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax, CBigNum bnProofOfWorkLimit, int nAlg)
 {
   const CBlockIndex *BlockLastSolved	= pindexLast;
   const CBlockIndex *BlockReading	= pindexLast;
@@ -91,8 +96,16 @@ static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const
     if (PastBlocksMax > 0 && i > PastBlocksMax) { break; }
     PastBlocksMass++;
 
-    if (i == 1)	{ PastDifficultyAverage.SetCompact(BlockReading->nBits); }
-    else	{ PastDifficultyAverage = ((CBigNum().SetCompact(BlockReading->nBits) - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev; }
+		CBigNum bnDiff;
+		bnDiff.SetCompact(BlockReading->nBits);
+		/* reduce to scrypt factor. */
+		bnDiff *= GetAlgoWorkFactor(GetVersionAlgo(BlockReading->nVersion));
+
+    if (i == 1)	{ 
+			PastDifficultyAverage = bnDiff;
+		} else { 
+			PastDifficultyAverage = ((bnDiff - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev;
+		}
     PastDifficultyAveragePrev = PastDifficultyAverage;
 
     if (LatestBlockTime < BlockReading->GetBlockTime())
@@ -126,10 +139,12 @@ static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const
   }
   if (bnNew > bnProofOfWorkLimit) { bnNew = bnProofOfWorkLimit; }
 
+	bnNew /= GetAlgoWorkFactor(nAlg);
+
   return bnNew.GetCompact();
 }
 
-static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint160 hColor)
+static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint160 hColor, int nAlg)
 {
   static unsigned int	TimeDaySeconds	= 60 * 60 * 24;
 	int64 BlocksTargetSpacing;
@@ -146,7 +161,7 @@ static unsigned int color_KimotoGravityWell(const CBlockIndex* pindexLast, const
 	else
 		bnProofOfWorkLimit = color_GetMinDifficulty(hColor);
 
-	return (color_KimotoGravityWell(pindexLast, pblock, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax, bnProofOfWorkLimit));
+	return (color_KimotoGravityWell(pindexLast, pblock, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax, bnProofOfWorkLimit, nAlg));
 }
 
 
@@ -260,9 +275,13 @@ uint256 color_GetOrphanRoot(uint256 hash)
 
 unsigned int COLORBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
+
   if (pindexLast == NULL)
     return (COLOR_bnGenesisProofOfWorkLimit.GetCompact());
-  return color_KimotoGravityWell(pindexLast, this, hColor);
+
+	int nAlg = GetVersionAlgo(nVersion);
+	pindexLast = GetLastBlockIndexForAlgo(pindexLast, nAlg);
+  return color_KimotoGravityWell(pindexLast, this, hColor, nAlg);
 }
 
 static int64_t color_GetTxWeight(const CTransaction& tx)
@@ -1360,3 +1379,23 @@ bool COLORBlock::CreateCheckpoint()
 {
 	return (false);
 }
+
+int COLORBlock::GetAlgo() const
+{
+	return (GetVersionAlgo(nVersion));
+}
+
+bool color_IsSupported(uint160 hColor)
+{
+	color_opt opt;
+
+	GetChainColorOpt(hColor, opt);
+	BOOST_FOREACH(const PAIRTYPE(int, int)& tok, opt) {
+		const int mode = tok.first;
+		if (mode < 0 || mode >= MAX_CLROPT)
+			return (false);
+	}
+
+	return (true);
+}
+

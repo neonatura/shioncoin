@@ -43,8 +43,25 @@ static const char *_unet_label[MAX_UNET_MODES] =
   "!RESERVED!",
   "stratum",
   "stratum-esl",
-  "rpc"
+  "rpc", /* 15 */
+	"stratum-sha256d", /* 16 */
+	"stratum-keccak",
+	"stratum-x11",
+	"stratum-blake2s",
+  "stratum-qubit",
+  "stratum-groestl",
+  "stratum-skein",
+  "!RESERVED!",
+  "!RESERVED!", /* 24*/
+  "!RESERVED!",
+  "!RESERVED!",
+  "!RESERVED!",
+  "!RESERVED!",
+  "!RESERVED!",
+  "!RESERVED!",
+  "!RESERVED!"
 };
+
 const char *unet_mode_label(int mode)
 {
   if (mode < 0 || mode >= MAX_UNET_MODES)

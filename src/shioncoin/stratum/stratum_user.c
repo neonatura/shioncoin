@@ -34,7 +34,7 @@
 #define MIN_SHARE_DIFFICULTY 0.03125 /* diff 1 */
 
 /* minimum miner work difficulty permitted. */
-#define MIN_USER_WORK_DIFFICULTY 256
+#define MIN_USER_WORK_DIFFICULTY 32
 
 /* maximum miner work difficulty permitted. */
 #define MAX_USER_WORK_DIFFICULTY 1024000
@@ -257,6 +257,7 @@ void stratum_user_block(user_t *user, double share_diff)
   int step;
   
   if (share_diff != INFINITY) {
+		share_diff /= (double)GetAlgoWorkFactor(user->alg); 
     user->block_tot += share_diff;
     user->block_cnt++;
   }
@@ -275,10 +276,12 @@ void stratum_user_block(user_t *user, double share_diff)
     user->block_freq = (span + user->block_freq) / 2;
     if (user->block_freq < 1) { 
       if (user->work_diff < MAX_USER_WORK_DIFFICULTY)
-        stratum_set_difficulty(user, user->work_diff + 256);
+				stratum_set_difficulty(user, 
+						MIN(MAX_USER_WORK_DIFFICULTY, user->work_diff + 256));
     } else if (user->block_freq > 30) {
       if (user->work_diff > MIN_USER_WORK_DIFFICULTY)
-        stratum_set_difficulty(user, user->work_diff - 256);
+        stratum_set_difficulty(user, 
+						MAX(MIN_USER_WORK_DIFFICULTY, user->work_diff - 256));
     }
   }
   user->block_tm = cur_t;
@@ -309,6 +312,9 @@ int stratum_user_broadcast_task(task_t *task, task_attr_t *attr)
 #endif
 
     if (user->flags & USER_SUBSCRIBE) {
+			if (user->alg != attr->alg)
+				continue;
+
       clear = (user->height != task->height);
       err = stratum_send_task(user, task, clear);
       if (!err) {

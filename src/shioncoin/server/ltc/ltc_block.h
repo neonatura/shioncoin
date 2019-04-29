@@ -108,6 +108,8 @@ public:
 
 		bool CreateCheckpoint(); 
 
+		int GetAlgo() const { return (0); }
+
 
 #ifdef USE_LEVELDB_COINDB
     bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);

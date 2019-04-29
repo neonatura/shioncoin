@@ -95,6 +95,8 @@ public:
 
 		bool CreateCheckpoint(); 
 
+		int GetAlgo() const { return (0); }
+
 //  protected: bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
 
 

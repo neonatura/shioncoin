@@ -29,6 +29,7 @@
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
+#include "algobits.h"
 #include "color_pool.h"
 #include "color_block.h"
 
@@ -557,5 +558,34 @@ int64 COLORWallet::GetFeeRate(uint160 hColor)
 int COLORWallet::GetCoinbaseMaturity(uint160 hColor)
 {
 	return (color_GetCoinbaseMaturity(hColor));
+}
+
+int color_GetAlgoFlags(color_opt& opt)
+{
+	static const int mode = CLROPT_ALGO;
+	int val = 0;
+
+	if (opt.count(mode) != 0) {
+		val = opt[mode];
+	}
+
+	return (val);
+}
+
+int color_GetAlgoFlags(uint160 hColor)
+{
+	color_opt opt;
+	GetChainColorOpt(hColor, opt);
+	return (color_GetAlgoFlags(opt));
+}
+
+bool COLORWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hColor)
+{
+
+	if (alg == ALGO_SCRYPT)
+		return (true);
+
+	int flag = color_GetAlgoFlags(hColor);
+	return (flag & (1 << (alg-1)));
 }
 

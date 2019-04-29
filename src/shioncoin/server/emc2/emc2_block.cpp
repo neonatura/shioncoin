@@ -1456,7 +1456,7 @@ bool EMC2Block::AddToBlockIndex()
     pindexNew->BuildSkip();
   }
 
-  pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork();
+  pindexNew->bnChainWork = (pindexNew->pprev ? pindexNew->pprev->bnChainWork : 0) + pindexNew->GetBlockWork(false);
 
   if (IsWitnessEnabled(iface, pindexNew->pprev)) {
     pindexNew->nStatus |= BLOCK_OPT_WITNESS;

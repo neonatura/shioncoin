@@ -24,7 +24,8 @@
  */  
 
 #include "shcoind.h"
-
+#include "algobits.h"
+#include "sha256d_merkle.h"
 
 /** 
  * Traditional scrypt-based merkle standard. The 'merkle root' is a hash which uniquely represents the underlying transactions associated with the block.
@@ -32,6 +33,29 @@
 uint256 CBlock::BuildMerkleTree() const
 {
   uint256 merkleHash = 0;
+
+	if (ifaceIndex == TEST_COIN_IFACE ||
+			ifaceIndex == TESTNET_COIN_IFACE ||
+			ifaceIndex == SHC_COIN_IFACE ||
+			ifaceIndex == COLOR_COIN_IFACE) {
+		/* DEPLOYMENT_ALGO */
+		switch (GetAlgo()) {
+			case ALGO_SHA256D:
+			case ALGO_KECCAK:
+			case ALGO_X11:
+			case ALGO_BLAKE2S:
+			case ALGO_QUBIT:
+			case ALGO_SKEIN:
+				{
+					return (sha256d_BlockMerkleRoot(*this));
+				}
+			case ALGO_GROESTL:
+				{
+					return (sha256_BlockMerkleRoot(*this));
+				}
+				break;
+		}
+	}
 
   vMerkleTree.clear();
   BOOST_FOREACH(const CTransaction& tx, vtx)
@@ -74,6 +98,7 @@ std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
   return vMerkleBranch;
 }
 
+#if 0
 uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
 {
   if (nIndex == -1)
@@ -89,4 +114,4 @@ uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMer
   return hash;
 }
 
-
+#endif

@@ -41,6 +41,8 @@
 #define RPC_AUTH_FREQ 300
 #endif
 
+#define MAX_STRATUM_MESSAGE_SIZE 16000000 /* 16m */
+
 
 #define TASKF_RESET (1 << 0)
 
@@ -138,6 +140,8 @@ double speed[MAX_SPEED_STEP];
   /* a unique reference to the originating IP/port */
   shkey_t netid;
 
+	int alg;
+
   struct user_t *next;
 } user_t;
 
@@ -187,6 +191,7 @@ typedef struct task_attr_t
   time_t tnow;
   int ifaceIndex;
   int flags;
+	int alg;
 } task_attr_t;
 
 #include "stratum_user.h"
@@ -195,12 +200,20 @@ typedef struct task_attr_t
 #include "stratum_task.h"
 #include "stratum_http.h"
 #include "stratum_api.h"
+#include "stratum_miner.h"
+#include "stratum_sha256d.h"
+#include "stratum_keccak.h"
+#include "stratum_x11.h"
+#include "stratum_blake2s.h"
+#include "stratum_qubit.h"
+#include "stratum_groestl.h"
+#include "stratum_skein.h"
 #include "http/http.h"
 
 
 int stratum_register_client_task(user_t *user, char *json_text);
 
-int get_stratum_daemon_port(void);
+int get_stratum_port(int alg);
 
 shjson_t *stratum_json(const char *json_text);
 
@@ -214,6 +227,8 @@ extern user_t *client_list;
 user_t *stratum_register_client(int fd);
 
 void stratum_close(int fd, struct sockaddr *net_addr);
+
+void stratum_accept(int fd, struct sockaddr *net_addr);
 
 #ifdef __cplusplus
 }

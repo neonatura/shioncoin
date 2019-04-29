@@ -30,7 +30,7 @@
 #include "coin_proto.h"
 #include "rpc/rpc_proto.h"
 
-#define DEFAULT_WORK_DIFFICULTY 4096
+#define DEFAULT_WORK_DIFFICULTY 1024
 
 #define WORK_ROUND_OFFSET 400000 
 
@@ -209,7 +209,7 @@ int stratum_validate_submit(user_t *user, shjson_t *json)
   //sprintf(xn_hex, "%s%s", user->peer.nonce1, extranonce2);
   sprintf(xn_hex, "%s", extranonce2);
   timing_init("submitblock", &ts);
-  ret_err = submitblock(task_id, le_ntime, le_nonce, xn_hex,
+  ret_err = stratum_miner_submitblock(task_id, le_ntime, le_nonce, xn_hex,
       submit_hash, &share_diff);
   timing_term(0, "submitblock", &ts);
   if (ret_err)
@@ -268,8 +268,8 @@ int stratum_set_difficulty(user_t *user, int diff)
 {
   int err;
 
-  diff = MAX(128, diff);
-  diff = MIN(16384, diff);
+  diff = MAX(32, diff);
+  diff = MIN(1024000, diff);
 
   user->work_diff = diff;
   err = stratum_send_difficulty(user);
@@ -585,6 +585,7 @@ int stratum_get_iface(char *iface_str)
   return (-1); /* invalid */
 }
 
+#if 0
 /**
  * @returns The coin interface with the hardest mining difficulty.
  */
@@ -617,6 +618,7 @@ int stratum_default_iface(void)
   
   return (ifaceIndex);
 }
+#endif
 
 shjson_t *getminingroundsinfo(void)
 {

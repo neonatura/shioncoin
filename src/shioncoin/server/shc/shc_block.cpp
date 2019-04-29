@@ -35,6 +35,7 @@
 #include "chain.h"
 #include "coin.h"
 #include "versionbits.h"
+#include "algobits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -52,11 +53,14 @@ using namespace std;
 using namespace boost;
 
 
+extern VersionBitsCache *GetVersionBitsCache(CIface *iface);
+
+
 uint256 shc_hashGenesisBlock("0xa2128a434c48ff41bfb911857639fa24b69012aebf690b12e6dfa799cd5d914e");
 static uint256 shc_hashGenesisMerkle("0xd395f73903efc28ce99ade1778666e404be2ee018f4022205a5d871c533548c8");
 static CBigNum SHC_bnGenesisProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum SHC_bnProofOfWorkLimit(~uint256(0) >> 21);
-static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) 
+static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBlock *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax)
 {
   const CBlockIndex *BlockLastSolved	= pindexLast;
   const CBlockIndex *BlockReading	= pindexLast;
@@ -78,14 +82,24 @@ static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBloc
     if (PastBlocksMax > 0 && i > PastBlocksMax) { break; }
     PastBlocksMass++;
 
-    if (i == 1)	{ PastDifficultyAverage.SetCompact(BlockReading->nBits); }
-    else	{ PastDifficultyAverage = ((CBigNum().SetCompact(BlockReading->nBits) - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev; }
-    PastDifficultyAveragePrev = PastDifficultyAverage;
+		CBigNum bnDiff;
+		bnDiff.SetCompact(BlockReading->nBits);
+		/* reduce to scrypt factor. */
+		bnDiff *= GetAlgoWorkFactor(GetVersionAlgo(BlockReading->nVersion));
+
+		if (i == 1)	{
+			//PastDifficultyAverage.SetCompact(BlockReading->nBits);
+			PastDifficultyAverage = bnDiff;
+		} else	{ 
+			//PastDifficultyAverage = ((CBigNum().SetCompact(BlockReading->nBits) - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev;
+			PastDifficultyAverage = ((bnDiff - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev;
+		}
+		PastDifficultyAveragePrev = PastDifficultyAverage;
 
     if (LatestBlockTime < BlockReading->GetBlockTime())
       LatestBlockTime = BlockReading->GetBlockTime();
 
-    PastRateActualSeconds                   = LatestBlockTime - BlockReading->GetBlockTime();
+    PastRateActualSeconds = LatestBlockTime - BlockReading->GetBlockTime();
     PastRateTargetSeconds	= TargetBlocksSpacingSeconds * PastBlocksMass;
     PastRateAdjustmentRatio	= double(1);
 
@@ -112,15 +126,6 @@ static unsigned int KimotoGravityWell(const CBlockIndex* pindexLast, const CBloc
     bnNew /= PastRateTargetSeconds;
   }
   if (bnNew > SHC_bnProofOfWorkLimit) { bnNew = SHC_bnProofOfWorkLimit; }
-
-
-#if 0
-  /// debug print
-  printf("Difficulty Retarget - Kimoto Gravity Well\n");
-  printf("PastRateAdjustmentRatio = %g\n", PastRateAdjustmentRatio);
-  printf("Before: %08x %s\n", BlockLastSolved->nBits, CBigNum().SetCompact(BlockLastSolved->nBits).getuint256().ToString().c_str());
-  printf("After: %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
-#endif
 
   return bnNew.GetCompact();
 }
@@ -234,117 +239,44 @@ uint256 shc_GetOrphanRoot(uint256 hash)
   return (hash);
 }
 
-
-
-
-
 unsigned int SHCBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
-  int nHeight = pindexLast->nHeight + 1;
+	static const int64	BlocksTargetSpacing	= 1.0 * 60; // 1.0 minutes
+	static const unsigned int	TimeDaySeconds	= 60 * 60 * 24;
+	CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+	VersionBitsCache *cache = GetVersionBitsCache(iface);
+	int64	PastSecondsMin	= TimeDaySeconds * 0.10;
+	int64	PastSecondsMax	= TimeDaySeconds * 2.8;
+	uint64	PastBlocksMin	= PastSecondsMin / BlocksTargetSpacing;
+	uint64	PastBlocksMax	= PastSecondsMax / BlocksTargetSpacing;	
+	int nHeight = pindexLast->nHeight + 1;
+	int nAlg = ALGO_SCRYPT;
+	uint32_t nBits;
 
-  int64 nInterval;
-  int64 nActualTimespanMax;
-  int64 nActualTimespanMin;
-  int64 nTargetTimespanCurrent;
+	if (pindexLast == NULL) /* Genesis block */
+		return (SHC_bnGenesisProofOfWorkLimit.GetCompact());
 
-  // Genesis block
-  if (pindexLast == NULL)
-    return (SHC_bnGenesisProofOfWorkLimit.GetCompact());
-    //return (SHC_bnProofOfWorkLimit.GetCompact());
-
-  static const int64	BlocksTargetSpacing	= 1.0 * 60; // 1.0 minutes
-  unsigned int	TimeDaySeconds	= 60 * 60 * 24;
-  int64	PastSecondsMin	= TimeDaySeconds * 0.10;
-  int64	PastSecondsMax	= TimeDaySeconds * 2.8;
-  uint64	PastBlocksMin	= PastSecondsMin / BlocksTargetSpacing;
-  uint64	PastBlocksMax	= PastSecondsMax / BlocksTargetSpacing;	
-
-  return KimotoGravityWell(pindexLast, this, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
-}
-
-#if 0
-namespace SHC_Checkpoints
-{
-  typedef std::map<int, uint256> MapCheckpoints;
-
-  //
-  // What makes a good checkpoint block?
-  // + Is surrounded by blocks with reasonable timestamps
-  //   (no blocks before with a timestamp after, none after with
-  //    timestamp before)
-  // + Contains no strange transactions
-  //
-  static MapCheckpoints mapCheckpoints =
-    boost::assign::map_list_of
-    ( 0, uint256("0xf4319e4e89b35b5f26ec0363a09d29703402f120cf1bf8e6f535548d5ec3c5cc") )
-
-    /* Feb '17 */
-    ( 29011, uint256("0x860e1b1ed3ebb78822d9e1c99dfa34ac1066c6eee17753f95b4ae0d354e61e5d") )
-    ( 29012, uint256("0x82fe60a87c9f3a71e3edd897871a03d2f7ffb8d3eb8f2526a79f5630a50f9411") )
-    ( 29013, uint256("0x7e2a6b592d7316bf137d7591298ae597057b16616d7df3ca4407d0ace6d8855e") )
-    ( 29014, uint256("0x9c9e871541ced1c418e1ec483e0827bf812274e55596d5585f525410fee74b42") )
-
-    /* May '17 */
-    ( 49123, uint256("0x685651fb79d40cb8f53378e424bd4b3bc865de1554590c930d04801b8a7ecdfe") )
-    ( 49124, uint256("0xda1e2aefb75b5c218e1e86abc89a913347cdf1e1dd81dd210a5fd33f09808009") )
-    ( 49125, uint256("0x5e4a101dae9f04d9a28d54d0bfc742ac8c2c6887c53fd7063a3c3b73087a9c53") ) 
-    ( 49126, uint256("0xe1e089319ca2bbdb036a462361560e130009f17bb7fdb030d5056069e96b92f1") )
-    ( 49127, uint256("0x31cd03e68bc0ff6cc0ab98eef2574dfcc30f8815501f9ccdf02accc41598352c") )
-    ( 49128, uint256("0x20ef53261360002ad1eddd2c5bf7c2166aecedad236be0efd636085cd8111440") )
-
-		/* Feb '18 */
-    ( 59123, uint256("0x47c8bce54da6e3412e8b27092cd9ece71dc942b47c4a9c133df0058f0a111488") )
-    ( 59124, uint256("0xf68049663a540964b730fe7cbc2200ecefedf94fab7adcdfb60b6f31af9e737a") )
-    ( 59125, uint256("0x84750f65256d837e6742372a4257a0ce65f721248ae4adcb185173b113589f75") )
-    ( 59126, uint256("0x587a174683903a3f255a1784508a15b4bcfbaaae9b371fae4c9f1a18c060f54c") )
-    ( 59127, uint256("0x7ddbb72740b40ff434717d5938fc1fedd1e9173d25d30e5554eef3b10743515d") )
-    ( 59128, uint256("0xf19bc1a7e3416751daf8ea6ca116aded43b0f541ac4576ccd99a7c494fb50f20") )
-
-		/* Nov '18 */ 
-		( 78003, uint256("0x8759db8220ea122999cfdfcb8a2a3a332cf9189947955bd12bc9ed2c2ac71403") )
-		( 78004, uint256("0x9194d30c93aebd46d538a65f3962aced87c18a530ee947ca0200524c48fa67c6") )
-		( 78005, uint256("0x191d1b362ec5c04d80731a2f782bccefebdb4b976c19dfcc400e8eb1fd6b172a") )
-		( 78006, uint256("0x780128527b837c3456a111341d9e0b135c7afe335f0cfcfd8664efccfa1d577e") )
-		( 78007, uint256("0xcbb3bc5241bf4d528214b5bad95bc17e92d047db85a1d68587d505de60e76189") )
-
-    ;
-
-  bool CheckBlock(int nHeight, const uint256& hash)
-  {
-    MapCheckpoints::const_iterator i = mapCheckpoints.find(nHeight);
-    if (i == mapCheckpoints.end()) return true;
-    return hash == i->second;
-  }
-
-  int GetTotalBlocksEstimate()
-  {
-    if (fTestNet) return 0;
-    return mapCheckpoints.rbegin()->first;
-  }
-
-  CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex)
-  {
-    if (fTestNet) return NULL;
-
-    BOOST_REVERSE_FOREACH(const MapCheckpoints::value_type& i, mapCheckpoints)
-    {
-      const uint256& hash = i.second;
-      std::map<uint256, CBlockIndex*>::const_iterator t = mapBlockIndex.find(hash);
-      if (t != mapBlockIndex.end())
-        return t->second;
-    }
-    return NULL;
-  }
-
-	void AddCheckpoint(int height, uint256 hash)
-	{
-		mapCheckpoints.insert(mapCheckpoints.end(), make_pair(height, hash));
-		Debug("(shc) AddCheckpoint: new dynamic checkpoint (height %d): %s",height, hash.GetHex().c_str());
+	if (cache && 
+			(VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO, *cache) == THRESHOLD_ACTIVE)) {
+		nAlg = GetVersionAlgo(nVersion);
 	}
 
-}
-#endif
+	pindexLast = GetLastBlockIndexForAlgo(pindexLast, nAlg);
+	if (!pindexLast) {
+		nBits = SHC_bnProofOfWorkLimit.GetCompact(); 
+	} else {
+		nBits = KimotoGravityWell(pindexLast, this, 
+				BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
+	}
+	if (nAlg == ALGO_SCRYPT)
+		return (nBits);
 
+	/* base work factor off "compacted" difficulty. */
+	CBigNum bnNew;
+	bnNew.SetCompact(nBits);
+	bnNew /= GetAlgoWorkFactor(nAlg);
+	return (bnNew.GetCompact());
+}
 
 int64 shc_GetBlockValue(int nHeight, int64 nFees)
 {
@@ -1224,4 +1156,8 @@ bool SHCBlock::CreateCheckpoint()
 	return (wallet->checkpoints->AddCheckpoint(pindex));
 }
 
+int SHCBlock::GetAlgo() const
+{
+	return (GetVersionAlgo(nVersion));
+}
 

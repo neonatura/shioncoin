@@ -33,6 +33,7 @@ using namespace json_spirit;
 
 #include "block.h"
 #include "wallet.h"
+#include "chain.h"
 #include "txcreator.h"
 #include "certificate.h"
 #include "versionbits.h"
@@ -1000,27 +1001,6 @@ static inline string ToValue_date_format(time_t t)
   return (string(buf));
 }
 
-static double GetDifficulty(unsigned int nBits)
-{
-	int nShift = (nBits >> 24) & 0xff;
-
-	double dDiff =
-		(double)0x0000ffff / (double)(nBits & 0x00ffffff);
-
-	while (nShift < 29)
-	{
-		dDiff *= 256.0;
-		nShift++;
-	}
-	while (nShift > 29)
-	{
-		dDiff /= 256.0;
-		nShift--;
-	}
-
-	return dDiff;
-}
-
 Object CAltChain::ToValue()
 {
 	Object block_obj;
@@ -1084,8 +1064,7 @@ Object CAltBlock::ToValue()
 		unsigned int nHeight;
 		if (GetColorBlockHeight(hash, nHeight))
 			obj.push_back(Pair("height", (boost::uint64_t)nHeight));
-		if (iface)
-			obj.push_back(Pair("difficulty", GetDifficulty(nBits)));
+		obj.push_back(Pair("difficulty", GetDifficulty(nBits, nFlag)));
     obj.push_back(Pair("chainwork", pindex->bnChainWork.ToString()));
 		if (pindex->pnext)
 			obj.push_back(Pair("nextblockhash",
@@ -1233,6 +1212,9 @@ int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<
 		return (ERR_INVAL);
 	if (wallet->mapColor.count(hColor) == 0)
 		return (ERR_NOENT);
+
+	if (!color_IsSupported(hColor))
+		return (ERR_OPNOTSUPP);
 
   int64 nFee = GetAltChainOpFee(iface);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);

@@ -471,6 +471,8 @@ class CWallet : public CCryptoKeyStore
 
 		CCoinAddr GetPrimaryAddr(string strAccount);
 
+		virtual bool IsAlgoSupported(int alg, CBlockIndex *pindexPrev = NULL, uint160 hColor = 0) = 0;
+
 };
 
 #if 0

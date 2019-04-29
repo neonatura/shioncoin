@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(shioncoin, 3.2.3)
+AC_INIT(shioncoin, 3.3)
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -22,7 +22,7 @@ LT_INIT
 
 version_patch=3
 AC_SUBST(version_patch)
-version_info=3:2:3
+version_info=3:3:0
 AC_SUBST(version_info)
 
 AC_CONFIG_FILES([doc/NEWS])
@@ -392,6 +392,52 @@ AM_CONDITIONAL(USE_SEXE, [test "x$enable_sexe" != "xno"])
 if test "x$enable_sexe" != "xno" ; then
   AC_DEFINE_UNQUOTED([USE_SEXE], 1, [Define to enable execution of SEXE programs.])
 fi
+
+
+# PoW Algorythm
+AC_ARG_ENABLE([sha256d],
+  AS_HELP_STRING([--disable-sha256d], [Disable execution of SHA256D programs.]))
+AM_CONDITIONAL(USE_SHA256D, [test "x$enable_sha256d" != "xno"])
+if test "x$enable_sha256d" != "xno" ; then
+  AC_DEFINE_UNQUOTED([USE_ALGO_SHA256D], 1, [Define to enable the SHA256D pow algorythm.])
+fi
+AC_ARG_ENABLE([keccak],
+  AS_HELP_STRING([--disable-keccak], [Disable execution of KECCAK programs.]))
+AM_CONDITIONAL(USE_KECCAK, [test "x$enable_keccak" != "xno"])
+if test "x$enable_keccak" != "xno" ; then
+  AC_DEFINE_UNQUOTED([USE_ALGO_KECCAK], 1, [Define to enable the KECCAK pow algorythm.])
+fi
+AC_ARG_ENABLE([x11],
+  AS_HELP_STRING([--disable-x11], [Disable execution of X11 programs.]))
+AM_CONDITIONAL(USE_X11, [test "x$enable_x11" != "xno"])
+if test "x$enable_x11" != "xno" ; then
+  AC_DEFINE_UNQUOTED([USE_ALGO_X11], 1, [Define to enable the X11 pow algorythm.])
+fi
+AC_ARG_ENABLE([blake2s],
+  AS_HELP_STRING([--disable-blake2s], [Disable execution of BLAKE2S programs.]))
+AM_CONDITIONAL(USE_BLAKE2S, [test "x$enable_blake2s" != "xno"])
+if test "x$enable_blake2s" != "xno" ; then
+  AC_DEFINE_UNQUOTED([USE_ALGO_BLAKE2S], 1, [Define to enable the BLAKE2S pow algorythm.])
+fi
+AC_ARG_ENABLE([qubit],
+  AS_HELP_STRING([--disable-qubit], [Disable execution of QUBIT programs.]))
+AM_CONDITIONAL(USE_QUBIT, [test "x$enable_qubit" != "xno"])
+if test "x$enable_qubit" != "xno" ; then
+  AC_DEFINE_UNQUOTED([USE_ALGO_QUBIT], 1, [Define to enable the QUBIT pow algorythm.])
+fi
+AC_ARG_ENABLE([groestl],
+  AS_HELP_STRING([--disable-groestl], [Disable execution of GROESTL programs.]))
+AM_CONDITIONAL(USE_GROESTL, [test "x$enable_groestl" != "xno"])
+if test "x$enable_groestl" != "xno" ; then
+  AC_DEFINE_UNQUOTED([USE_ALGO_GROESTL], 1, [Define to enable the GROESTL pow algorythm.])
+fi
+AC_ARG_ENABLE([skein],
+  AS_HELP_STRING([--disable-skein], [Disable execution of SKEIN programs.]))
+AM_CONDITIONAL(USE_SKEIN, [test "x$enable_skein" != "xno"])
+if test "x$enable_skein" != "xno" ; then
+  AC_DEFINE_UNQUOTED([USE_ALGO_SKEIN], 1, [Define to enable the SKEIN pow algorythm.])
+fi
+
 
 AC_ARG_ENABLE([usde],
   AS_HELP_STRING([--enable-usde], [Enable USDE coin service.]))

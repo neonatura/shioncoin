@@ -2118,6 +2118,7 @@ int CMerkleTx::GetDepthInMainChain(int ifaceIndex, CBlockIndex* &pindexRet) cons
 	if (!pindex || !pindex->IsInMainChain(ifaceIndex))
 		return 0;
 
+#if 0
 	// Make sure the merkle branch connects to this block
 	if (!fMerkleVerified)
 	{
@@ -2136,6 +2137,7 @@ int CMerkleTx::GetDepthInMainChain(int ifaceIndex, CBlockIndex* &pindexRet) cons
 		fMerkleVerified = true;
 		delete block;
 	}
+#endif
 
 	pindexRet = pindex;
 

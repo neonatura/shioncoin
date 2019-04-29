@@ -2,6 +2,7 @@
 #include "shcoind.h"
 #include "block.h"
 #include "versionbits.h"
+#include "algobits.h"
 
 const struct BIP9DeploymentInfo VersionBitsDeploymentInfo[MAX_VERSION_BITS_DEPLOYMENTS] = {
     {
@@ -15,7 +16,23 @@ const struct BIP9DeploymentInfo VersionBitsDeploymentInfo[MAX_VERSION_BITS_DEPLO
     {
         /*.name =*/ "segwit",
         /*.gbt_force =*/ false,
-    }
+    },
+		{
+			/* .name = */ "reserved_0",
+			/* .gbt_force = */ false
+		},
+		{
+			/* .name = */ "reserved_1",
+			/* .gbt_force = */ false
+		},
+		{
+			/* .name = */ "reserved_2",
+			/* .gbt_force = */ false
+		},
+		{
+			/* .name = */ "algo",
+			/* .gbt_force = */ false
+		}
 };
 
 ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex* pindexPrev, CIface * params, ThresholdConditionCache& cache) const
@@ -73,15 +90,34 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
             stateNext = THRESHOLD_FAILED;
             break;
           }
+					int ifaceIndex = GetCoinIndex(params);
+					bool fAlgo = false;
+					if (ifaceIndex == TEST_COIN_IFACE ||
+							ifaceIndex == TESTNET_COIN_IFACE ||
+							ifaceIndex == SHC_COIN_IFACE ||
+							ifaceIndex == COLOR_COIN_IFACE)
+						fAlgo = true;
           // We need to count
           const CBlockIndex* pindexCount = pindexPrev;
           int count = 0;
+					int idx = 0;
+					while (idx < nPeriod) {
+						if (!fAlgo || GetVersionAlgo(pindexCount->nVersion) == ALGO_SCRYPT) {
+							if (Condition(pindexCount, params)) {
+								count++;
+							}
+							idx++;
+						}
+            pindexCount = pindexCount->pprev;
+					}
+#if 0
           for (int i = 0; i < nPeriod; i++) {
             if (Condition(pindexCount, params)) {
               count++;
             }
             pindexCount = pindexCount->pprev;
           }
+#endif
           if (count >= nThreshold) {
             stateNext = THRESHOLD_LOCKED_IN;
           }

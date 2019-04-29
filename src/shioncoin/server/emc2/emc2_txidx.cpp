@@ -135,7 +135,7 @@ bool emc2_FillBlockIndex()
 
 		pindexNew->bnChainWork =
 			(lastIndex ? lastIndex->bnChainWork : 0) + 
-			pindexNew->GetBlockWork();
+			pindexNew->GetBlockWork(false);
 
     lastIndex = pindexNew;
 

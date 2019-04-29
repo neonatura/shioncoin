@@ -25,7 +25,7 @@
 
 #include "shcoind.h"
 #include <signal.h>
-#include <stratum/stratum.h>
+#include "stratum/stratum.h"
 
 shpeer_t *server_peer;
 int server_msgq;
@@ -302,9 +302,59 @@ int shcoind_main(int argc, char *argv[])
     /* initialize stratum server */
     err = stratum_init();
     if (err) {
-			unet_log(UNET_STRATUM, "critical: error binding RPC port.");
+			unet_log(UNET_STRATUM, "critical: error binding STRATUM port.");
       raise(SIGTERM);
     }
+
+		if (opt_bool(OPT_STRATUM_SHA256D)) {
+			err = stratum_sha256d_init();
+			if (err) {
+				unet_log(UNET_STRATUM, "critical: error binding STRATUM-SHA256D port.");
+				raise(SIGTERM);
+			}
+		}
+		if (opt_bool(OPT_STRATUM_KECCAK)) {
+			err = stratum_keccak_init();
+			if (err) {
+				unet_log(UNET_STRATUM, "critical: error binding STRATUM-KECCAK port.");
+				raise(SIGTERM);
+			}
+		}
+		if (opt_bool(OPT_STRATUM_X11)) {
+			err = stratum_x11_init();
+			if (err) {
+				unet_log(UNET_STRATUM, "critical: error binding STRATUM-X11 port.");
+				raise(SIGTERM);
+			}
+		}
+		if (opt_bool(OPT_STRATUM_BLAKE2S)) {
+			err = stratum_blake2s_init();
+			if (err) {
+				unet_log(UNET_STRATUM, "critical: error binding STRATUM-BLAKE2S port.");
+				raise(SIGTERM);
+			}
+		}
+		if (opt_bool(OPT_STRATUM_QUBIT)) {
+			err = stratum_qubit_init();
+			if (err) {
+				unet_log(UNET_STRATUM, "critical: error binding STRATUM-QUBIT port.");
+				raise(SIGTERM);
+			}
+		}
+		if (opt_bool(OPT_STRATUM_GROESTL)) {
+			err = stratum_groestl_init();
+			if (err) {
+				unet_log(UNET_STRATUM, "critical: error binding STRATUM-GROESTL port.");
+				raise(SIGTERM);
+			}
+		}
+		if (opt_bool(OPT_STRATUM_SKEIN)) {
+			err = stratum_skein_init();
+			if (err) {
+				unet_log(UNET_STRATUM, "critical: error binding STRATUM-SKEIN port.");
+				raise(SIGTERM);
+			}
+		}
   }
 #endif
 

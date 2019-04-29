@@ -79,6 +79,10 @@ void ProcessBlockAvailability(int ifaceIndex, CNode *pfrom);
 
 void UpdateBlockAvailability(int ifaceIndex, CNode *pfrom, const uint256& hash);
 
+double GetDifficulty(unsigned int nBits, unsigned int nVersion);
+
+bool HasAlgoConsensus(CIface *iface, CBlockIndex *pindexLast);
+
 
 #ifdef __cplusplus
 }

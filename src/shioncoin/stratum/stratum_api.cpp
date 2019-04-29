@@ -31,6 +31,7 @@
 #include "wallet.h"
 #include "mnemonic.h"
 #include "txcreator.h"
+#include "chain.h"
 //#include "txmempool.h"
 #include "rpc/rpc_proto.h"
 #include "color/color_pool.h"
@@ -48,9 +49,7 @@ extern exec_list *GetExecTable(int ifaceIndex);
 extern altchain_list *GetAltChainTable(int ifaceIndex);
 extern offer_list *GetOfferTable(int ifaceIndex);
 extern bool IsContextName(CIface *iface, string strName);
-extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex);
 extern double print_rpc_difficulty(CBigNum val);
-
 
 static bool GetOutputsForAccount(CWallet *wallet, string strAccount, vector<CTxDestination>& addr_list)
 {
@@ -1298,27 +1297,6 @@ static const ApiItems& stratum_api_offer_list(int ifaceIndex, user_t *user, shjs
 	return (items);
 }
 
-static double _GetDifficulty(unsigned int nBits)
-{
-	int nShift = (nBits >> 24) & 0xff;
-
-	double dDiff =
-		(double)0x0000ffff / (double)(nBits & 0x00ffffff);
-
-	while (nShift < 29)
-	{
-		dDiff *= 256.0;
-		nShift++;
-	}
-	while (nShift > 29)
-	{
-		dDiff /= 256.0;
-		nShift--;
-	}
-
-	return dDiff;
-}
-
 static const ApiItems& stratum_api_alt_list(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
 {
 	static ApiItems items;
@@ -1347,7 +1325,7 @@ static const ApiItems& stratum_api_alt_list(int ifaceIndex, user_t *user, shjson
 		obj.push_back(Pair("chainwork", pindex->bnChainWork.ToString()));
 		obj.push_back(Pair("colorhash", hColor.GetHex()));
 		obj.push_back(Pair("currentblockhash", hBlock.GetHex()));
-		obj.push_back(Pair("difficulty", _GetDifficulty(pindex->nBits)));
+		obj.push_back(Pair("difficulty", GetDifficulty(pindex->nBits, pindex->nVersion)));
 		obj.push_back(Pair("symbol", GetAltColorHashAbrev(hColor)));
 		obj.push_back(Pair("time", (uint64_t)pindex->GetBlockTime()));
 		items.push_back(obj);
@@ -1409,7 +1387,7 @@ static const ApiItems& stratum_api_alt_get(int ifaceIndex, user_t *user, shjson_
 	obj.push_back(Pair("currentblockhash", pindex->GetBlockHash().GetHex()));
 	if (strDesc != "")
 		obj.push_back(Pair("description", strDesc));
-	obj.push_back(Pair("difficulty", _GetDifficulty(pindex->nBits)));
+	obj.push_back(Pair("difficulty", GetDifficulty(pindex->nBits, pindex->nVersion)));
 	obj.push_back(Pair("min-difficulty",
 				print_rpc_difficulty(bnMinDifficulty)));
 	obj.push_back(Pair("min-txfee", ((double)nMinTxFee/COIN)));

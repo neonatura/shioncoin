@@ -33,7 +33,7 @@
 #include "uint256.h"
 #include "serialize.h"
 #include "util.h"
-#include "scrypt.h"
+#include "algo/scrypt.h"
 #include "protocol.h"
 #include "net.h"
 #include "json/json_spirit_reader_template.h"
@@ -1303,12 +1303,7 @@ public:
      * Obtain the block hash used to identify it's "difficulty".
      * @see CBlockHeader.nBits
      */
-    uint256 GetPoWHash() const
-    {
-      uint256 thash;
-      scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
-      return thash;
-    }
+    uint256 GetPoWHash() const;
 
 		void reject(CValidateState *state, int err_code, string err_text);
 
@@ -1391,10 +1386,12 @@ class CBlock : public CBlockHeader
 
     std::vector<uint256> GetMerkleBranch(int nIndex) const;
 
+#if 0
     /**
      * Verify a block's merkle root hash.
      */
     uint256 CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
+#endif
 
     void UpdateTime(const CBlockIndex* pindexPrev);
 
@@ -1516,6 +1513,9 @@ class CBlock : public CBlockHeader
 
 		/* add a new dynamic checkpoint to the block-chain. */
 		virtual bool CreateCheckpoint() = 0;
+
+		/* mining algorythm (DEPLOYMENT_ALGO). */
+		virtual int GetAlgo() const = 0;
 
 #ifdef USE_LEVELDB_COINDB
     /* leveldb */
@@ -1695,14 +1695,7 @@ class CBlockIndex
       return (int64)nTime;
     }
 
-    CBigNum GetBlockWork() const
-    {
-      CBigNum bnTarget;
-      bnTarget.SetCompact(nBits);
-      if (bnTarget <= 0)
-        return 0;
-      return (CBigNum(1)<<256) / (bnTarget+1);
-    }
+    CBigNum GetBlockWork(bool fUseAlgo = true) const;
 
     //bool IsInMainChain() const;
     bool IsInMainChain(int ifaceIndex) const;
@@ -2003,6 +1996,7 @@ bool CheckSequenceLocks(CIface *iface, const CTransaction &tx, int flags);
 
 CBlockIndex* LastCommonAncestor(CBlockIndex* pa, CBlockIndex* pb); 
 
+const CBlockIndex* GetLastBlockIndexForAlgo(const CBlockIndex* pindex, int algo);
 
 
 #endif /* ndef __SERVER_BLOCK_H__ */

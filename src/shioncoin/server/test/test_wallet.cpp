@@ -793,3 +793,8 @@ int TESTWallet::GetCoinbaseMaturity(uint160 hColor)
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
 	return (iface ? iface->coinbase_maturity : 0);
 }
+
+bool TESTWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hColor)
+{
+	return (true);
+}

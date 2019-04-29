@@ -250,12 +250,13 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("wallettx", (int)pwalletMain->mapWallet.size()));
   obj.push_back(Pair("walletaddr", (int)pwalletMain->mapAddressBook.size()));
 
+#if 0
   /* witseg */
   obj.push_back(Pair("segwit",
         IsWitnessEnabled(iface, GetBestBlockIndex(iface))));
   obj.push_back(Pair("segwit-commit", 
         (iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout != 0) ? "true" : "false"));
-
+#endif
 
 	CBlockIndex *pindexBest = GetBestBlockIndex(iface);
 	if (pindexBest) {
@@ -275,6 +276,10 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
 			flag_str += "BIP66 ";
 		if (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)
 			flag_str += "BIP68 ";
+		if (IsWitnessEnabled(iface, pindexBest))
+			flag_str += "BIP141 ";
+		if (HasAlgoConsensus(iface, pindexBest))
+			flag_str += "SIP32 ";
 
 		if (flag_str != "") {
 			obj.push_back(Pair("scriptflags", flag_str));

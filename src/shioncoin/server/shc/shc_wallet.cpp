@@ -24,6 +24,7 @@
  */
 
 #include "shcoind.h"
+#include "block.h"
 #include "net.h"
 #include "init.h"
 #include "strlcpy.h"
@@ -31,6 +32,8 @@
 #include "chain.h"
 #include "shc_pool.h"
 #include "shc_block.h"
+#include "versionbits.h"
+#include "algobits.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -62,6 +65,8 @@ CScript SHC_COINBASE_FLAGS;
 //extern void shc_RelayTransaction(const CTransaction& tx, const uint256& hash);
 
 static unsigned int shc_nBytesPerSigOp = SHC_DEFAULT_BYTES_PER_SIGOP;
+
+extern VersionBitsCache *GetVersionBitsCache(CIface *iface);
 
 
 bool shc_LoadWallet(void)
@@ -759,4 +764,22 @@ int SHCWallet::GetCoinbaseMaturity(uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
 	return (iface ? iface->coinbase_maturity : 0);
+}
+
+bool SHCWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hColor)
+{
+  CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+	VersionBitsCache *cache;
+
+	if (alg == ALGO_SCRYPT)
+		return (true);
+
+	if (!pindexPrev)
+		pindexPrev = GetBestBlockIndex(SHC_COIN_IFACE);
+
+	cache = GetVersionBitsCache(iface);
+	if (!cache)
+		return (false);
+
+	return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_ALGO, *cache) == THRESHOLD_ACTIVE);
 }
