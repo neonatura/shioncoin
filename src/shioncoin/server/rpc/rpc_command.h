@@ -86,6 +86,7 @@ Value rpc_stratum_info(CIface *iface, const Array& params, bool fStratum);
 Value rpc_stratum_list(CIface *iface, const Array& params, bool fStratum);
 Value rpc_stratum_key(CIface *iface, const Array& params, bool fStratum);
 Value rpc_stratum_keyremove(CIface *iface, const Array& params, bool fStratum);
+Value rpc_stratum_blocks(CIface *iface, const Array& params, bool fStratum);
 
 Value rpc_tx_decode(CIface *iface, const Array& params, bool fStratum);
 Value rpc_tx_get(CIface *iface, const Array& params, bool fStratum);

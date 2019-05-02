@@ -150,6 +150,7 @@ extern "C" {
 #define STAT_TX_ACCEPTS(_iface) (_iface)->stat.tot_tx_accept
 #define STAT_TX_SUBMITS(_iface) (_iface)->stat.tot_tx_submit
 #define STAT_TX_RETURNS(_iface) (_iface)->stat.tot_tx_return
+#define STAT_TX_MINT(_iface) (_iface)->stat.tot_tx_mint
 
 struct coin_iface_t;
 typedef int (*coin_f)(struct coin_iface_t * /*iface*/, void * /* arg */);
@@ -303,6 +304,7 @@ typedef struct coin_iface_t
     uint64_t tot_tx_submit;
     uint64_t tot_tx_accept;
 		uint64_t tot_tx_return;
+		uint64_t tot_tx_mint;
     uint64_t tot_spring_submit;
     uint64_t tot_spring_accept;
   } stat;

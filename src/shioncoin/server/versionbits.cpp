@@ -37,6 +37,7 @@ const struct BIP9DeploymentInfo VersionBitsDeploymentInfo[MAX_VERSION_BITS_DEPLO
 
 ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex* pindexPrev, CIface * params, ThresholdConditionCache& cache) const
 {
+	int ifaceIndex = GetCoinIndex(params);
   int nPeriod = Period(params);
   int nThreshold = Threshold(params);
   int64_t nTimeStart = BeginTime(params);
@@ -90,7 +91,6 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
             stateNext = THRESHOLD_FAILED;
             break;
           }
-					int ifaceIndex = GetCoinIndex(params);
 					bool fAlgo = false;
 					if (ifaceIndex == TEST_COIN_IFACE ||
 							ifaceIndex == TESTNET_COIN_IFACE ||
@@ -101,14 +101,14 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
           const CBlockIndex* pindexCount = pindexPrev;
           int count = 0;
 					int idx = 0;
-					while (idx < nPeriod) {
+					while (pindexCount && idx < nPeriod) {
 						if (!fAlgo || GetVersionAlgo(pindexCount->nVersion) == ALGO_SCRYPT) {
 							if (Condition(pindexCount, params)) {
 								count++;
 							}
 							idx++;
 						}
-            pindexCount = pindexCount->pprev;
+						pindexCount = pindexCount->pprev;
 					}
 #if 0
           for (int i = 0; i < nPeriod; i++) {

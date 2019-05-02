@@ -164,6 +164,9 @@ static void check_payout(int ifaceIndex)
     return;
   }
 
+	/* winner winner chicken dinner */
+	add_stratum_miner_block(ifaceIndex, block_hash);
+
   if (0 == strcmp(last_payout_hash[ifaceIndex], block_hash)) {
     shjson_free(&tree);
     return;

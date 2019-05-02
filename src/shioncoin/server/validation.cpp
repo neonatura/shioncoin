@@ -481,6 +481,10 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 
   STAT_BLOCK_ACCEPTS(iface)++;
 	iface->net_valid = time(NULL);
+	if (pblock->vtx.size() != 0) {
+		BOOST_FOREACH(const CTxOut& txout, pblock->vtx[0].vout)
+			STAT_TX_MINT(iface) += txout.nValue;
+	}
 
   return true;
 }

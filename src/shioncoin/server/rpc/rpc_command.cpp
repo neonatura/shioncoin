@@ -46,6 +46,7 @@ using namespace std;
 #include "rpc_proto.h"
 #include "rpc_command.h"
 #include "rpccert_proto.h"
+#include "algobits.h"
 #include "stratum/stratum.h"
 #include "bolo/bolo_validation03.h"
 
@@ -183,6 +184,69 @@ Value rpc_peer_info(CIface *iface, const Array& params, bool fStratum)
   return obj;
 }
 
+static double GetAverageBlockSpan(CIface *iface)
+{
+  CBlockIndex *pindex = GetBestBlockIndex(iface);
+  CBlockIndex *l_pindex;
+	time_t span = time(NULL) - 86400; 
+	unsigned int total;
+	double avg;
+
+	avg = 0;
+	total = 0;
+	l_pindex = NULL;
+	while (pindex) {
+		if (pindex->nTime < span)
+			break;
+
+		if (l_pindex) { 
+			avg += (l_pindex->nTime - pindex->nTime);
+			total++;
+		}
+
+		l_pindex = pindex;
+		pindex = pindex->pprev;
+	}
+
+	if (total != 0)
+		avg /= (double)total;
+
+	return (avg);
+}
+
+static unsigned int GetDailyTxRate(CIface *iface)
+{
+  CBlockIndex *pindex = GetBestBlockIndex(iface);
+	time_t span = time(NULL) - 86400; 
+	unsigned int total;
+
+	total = 0;
+	while (pindex) {
+		if (pindex->nTime < span)
+			break;
+
+		total++;
+		pindex = pindex->pprev;
+	}
+
+	return (total);
+}
+
+static string GetSupportedPow(CIface *iface)
+{
+  CWallet *wallet = GetWallet(iface);
+	string str = "";
+
+	for (int i = 0; i < MAX_ALGOBITS; i++) {
+		if (wallet->IsAlgoSupported(i)) {
+			str += GetAlgoNameStr(i); 
+			str += " ";
+		}
+	}
+
+	return (str);
+}
+
 extern unsigned int GetBlockScriptFlags(CIface *iface, const CBlockIndex* pindex);
 Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
 {
@@ -202,6 +266,9 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("version",       (int)iface->proto_ver));
   obj.push_back(Pair("blockversion",  (int)iface->block_ver));
 
+  obj.push_back(Pair("burnt-coins",  (double)iface->stat.tot_tx_return/COIN));
+  obj.push_back(Pair("mint-coins",  (double)iface->stat.tot_tx_mint/COIN));
+
   /* attributes */
   obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
   obj.push_back(Pair("mininput",      ValueFromAmount(MIN_INPUT_VALUE(iface))));
@@ -216,9 +283,10 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("blocksubmit",  (int)iface->stat.tot_block_submit));
   obj.push_back(Pair("blockaccept",  (int)iface->stat.tot_block_accept));
   obj.push_back(Pair("blockorphan",  (int)iface->stat.tot_block_orphan));
+  obj.push_back(Pair("blockspan", GetAverageBlockSpan(iface)));
   obj.push_back(Pair("txsubmit",     (int)iface->stat.tot_tx_submit));
   obj.push_back(Pair("txaccept",     (int)iface->stat.tot_tx_accept));
-  obj.push_back(Pair("burnt-coins",  (double)iface->stat.tot_tx_return/COIN));
+  obj.push_back(Pair("txdaily", (int)GetDailyTxRate(iface)));
 
   {
     bc = GetBlockChain(iface);
@@ -257,6 +325,9 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
   obj.push_back(Pair("segwit-commit", 
         (iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout != 0) ? "true" : "false"));
 #endif
+
+	obj.push_back(Pair("pow", GetSupportedPow(iface)));
+
 
 	CBlockIndex *pindexBest = GetBestBlockIndex(iface);
 	if (pindexBest) {
@@ -1168,6 +1239,34 @@ Value rpc_stratum_keyremove(CIface *iface, const Array& params, bool fStratum)
     throw runtime_error("unsupported operation");
 
   return (Value::null);
+}
+Value rpc_stratum_blocks(CIface *iface, const Array& params, bool fStratum)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+
+	bool fVerbose = false;
+	if (params.size() == 1)
+		fVerbose = params[0].get_bool();
+
+	Array ar;
+	vector<CBlockIndex *> vBlock = get_stratum_miner_blocks(ifaceIndex);
+  BOOST_FOREACH(CBlockIndex *pindex, vBlock) {
+		if (fVerbose) {
+			CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+			if (!block)
+				continue;
+
+			ar.push_back(block->ToValue());
+			delete block;
+		} else {
+			ar.push_back(pindex->GetBlockHash().GetHex());
+		}
+	}
+
+  return (ar);
 }
 
 
