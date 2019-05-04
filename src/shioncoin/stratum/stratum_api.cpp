@@ -109,6 +109,10 @@ static bool valid_pkey_hash(const string strAccount, uint256 in_pkey)
 	if (in_pkey == 0)
 		return (false); /* sanity */
 
+fprintf(stderr, "DEBUG: valid_pkey_hash: account(%s) in_pkey(%s)\n", strAccount.c_str(), in_pkey.GetHex().c_str());
+
+
+
 	for (idx = 0; idx < MAX_COIN_IFACE; idx++) {
 		CWallet *alt_wallet = GetWallet(idx);
 		if (!alt_wallet) continue;
@@ -127,6 +131,7 @@ static bool valid_pkey_hash(const string strAccount, uint256 in_pkey)
 			acc_pkey = get_private_key_hash(alt_wallet, keyID);
 			if (acc_pkey == in_pkey)
 				return (true);
+fprintf(stderr, "DEBUG: acc_pkey '%s'\n", acc_pkey.GetHex().c_str()); 
 		}
 	}
 
@@ -1760,12 +1765,23 @@ static const ApiItems& stratum_api_faucet_info(int ifaceIndex, string strAccount
 
 	CCoinAddr address = GetAccountAddress(wallet, "faucet", false);
 
+	int64 nAmount = 0;
+	{
+		string strFaucet("faucet");
+	  int64 nBalance  = GetAccountBalance(ifaceIndex, strFaucet, 1);
+		nAmount = MIN(MIN_TX_FEE(iface) * 10, roundint64(nBalance / 1000));
+	}
+
+
 	Object entry;
 	entry.push_back(Pair("address", address.ToString())); 
 	entry.push_back(Pair("available", ValueFromAmount(nBalance)));
 	entry.push_back(Pair("spent", ValueFromAmount(nTotal)));
+	entry.push_back(Pair("amount", ValueFromAmount(nAmount)));
 	entry.push_back(Pair("time", (uint64_t)nTime));
 	items.push_back(entry);
+
+fprintf(stderr, "DEBUG: stratum_api_faucet_info: iface(%s) avail(%f)\n", iface->name, (double)nBalance/COIN);
 
 	return (items);
 }
@@ -1808,6 +1824,8 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 	uint160 hColor;
 	int offset;
 	int err;
+
+fprintf(stderr, "DEBUG: stratum_request_api_list: '%s'\n", method);
 
 	hColor = uint160(string(shjson_astr(params, "color", "0x0")));
 
@@ -1965,6 +1983,8 @@ shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson
 	int64 api_t;
 	int err;
 
+fprintf(stderr, "DEBUG: stratum_request_api(): ifaceIndex %d\n", ifaceIndex); 
+
 	if (!iface || !iface->enabled) {
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_OPNOTSUPP, "coin interface");
@@ -2001,6 +2021,7 @@ shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson
 			(unsigned char *)shbuf_data(buff), shbuf_size(buff));
 	shbuf_free(&buff);
 	if (0 != strcasecmp(psig_str, sha_result)) {
+fprintf(stderr, "DEBUG: stratum_request_api(): !api credential (sha)\n");
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_ACCESS, "api credential");
 		shjson_null_add(reply, "result");
@@ -2009,6 +2030,7 @@ shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson
 
 	if (0 != strcmp(method, "api.account.create") &&
 			!valid_pkey_hash(strAccount, in_pkey)) {
+fprintf(stderr, "DEBUG: stratum_request_api(): !api credential (pkey)\n");
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_ACCESS, "api credential");
 		shjson_null_add(reply, "result");

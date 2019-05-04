@@ -769,7 +769,6 @@ int SHCWallet::GetCoinbaseMaturity(uint160 hColor)
 bool SHCWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-	VersionBitsCache *cache;
 
 	if (alg == ALGO_SCRYPT)
 		return (true);
@@ -777,9 +776,5 @@ bool SHCWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hColor
 	if (!pindexPrev)
 		pindexPrev = GetBestBlockIndex(SHC_COIN_IFACE);
 
-	cache = GetVersionBitsCache(iface);
-	if (!cache)
-		return (false);
-
-	return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_ALGO, *cache) == THRESHOLD_ACTIVE);
+	return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_ALGO) == THRESHOLD_ACTIVE);
 }

@@ -48,7 +48,7 @@ protected:
 
 public:
     // Note that the function below takes a pindexPrev as input: they compute information for block B based on its parent.
-    ThresholdState GetStateFor(const CBlockIndex* pindexPrev, CIface *params, ThresholdConditionCache& cache) const;
+    ThresholdState GetStateFor(const CBlockIndex* pindexPrev, CIface *params, DeploymentPos pos) const;
 };
 
 struct VersionBitsCache
@@ -58,7 +58,7 @@ struct VersionBitsCache
     void Clear();
 };
 
-ThresholdState VersionBitsState(const CBlockIndex* pindexPrev, CIface *params, DeploymentPos pos, VersionBitsCache& cache);
+ThresholdState VersionBitsState(const CBlockIndex* pindexPrev, CIface *params, DeploymentPos pos);
 uint32_t VersionBitsMask(CIface *params, DeploymentPos pos);
 
 #endif

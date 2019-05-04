@@ -243,7 +243,6 @@ unsigned int TESTNETBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 	static const int64	BlocksTargetSpacing	= 1.0 * 60; // 1.0 minutes
 	static const unsigned int	TimeDaySeconds	= 60 * 60 * 24;
 	CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
-	VersionBitsCache *cache = GetVersionBitsCache(iface);
 	int64	PastSecondsMin	= TimeDaySeconds * 0.10;
 	int64	PastSecondsMax	= TimeDaySeconds * 2.8;
 	uint64	PastBlocksMin	= PastSecondsMin / BlocksTargetSpacing;
@@ -256,8 +255,7 @@ unsigned int TESTNETBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 
 	/* enable KGW if ALGO concensus has been deployed. */
 	int nAlg = ALGO_SCRYPT;
-	if (cache &&
-			(VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO, *cache) == THRESHOLD_ACTIVE)) {
+	if (VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO) == THRESHOLD_ACTIVE) {
 		nAlg = GetVersionAlgo(nVersion);
 		fKimoto = true;
 	}

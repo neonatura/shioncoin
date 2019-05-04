@@ -198,6 +198,8 @@ enum DeploymentPos
     DEPLOYMENT_RESERVED_1,
     DEPLOYMENT_RESERVED_2,
     DEPLOYMENT_ALGO,
+    DEPLOYMENT_PARAM,
+    DEPLOYMENT_BOLO,
     // NOTE: Also add new deployments to VersionBitsDeploymentInfo in versionbits.cpp
     MAX_VERSION_BITS_DEPLOYMENTS
 };

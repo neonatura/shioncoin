@@ -167,50 +167,33 @@ void static ResendWalletTransactions()
 //
 
 
-static bool AlreadyHave(CIface *iface, const CInv& inv)
+static bool shc_AlreadyHave(CIface *iface, const CInv& inv)
 {
-  int ifaceIndex = GetCoinIndex(iface);
+	int ifaceIndex = GetCoinIndex(iface);
 
-  switch (inv.type)
-  {
-    case MSG_TX:
-      {
-        bool fHave;
+	switch (inv.type) {
+		case MSG_TX:
+		case MSG_WITNESS_TX:
+			{
+				CTxMemPool *pool = GetTxMemPool(iface);
+				if (pool && pool->HaveTx(inv.hash))
+					return (true); /* commited to mempool */
 
-        /* pending in mem pool */
-        fHave = false;
-        {
-          LOCK(SHCBlock::mempool.cs);
-          fHave  = (SHCBlock::mempool.exists(inv.hash));
-        }
-        if (fHave)
-          return (true);
+				if (VerifyTxHash(iface, inv.hash))
+					return (true); /* committed to database */
 
-        /* committed to database */
-        fHave = false;
-        {
-#if 0
-          SHCTxDB txdb;
-          fHave = txdb.ContainsTx(inv.hash);
-          txdb.Close();
-#endif
-          fHave = VerifyTxHash(iface, inv.hash);
-        }
-        if (fHave)
-          return (true);
+				return (false);
+			}
+			break;
 
-        CTxMemPool *pool = GetTxMemPool(iface);
-        return (pool->IsPendingTx(inv.hash));
-      }
-      break;
+		case MSG_BLOCK:
+		case MSG_WITNESS_BLOCK:
+			blkidx_t *blockIndex = GetBlockTable(ifaceIndex);
+			return blockIndex->count(inv.hash);// || shc_IsOrphanBlock(inv.hash);
+	}
 
-    case MSG_BLOCK:
-      blkidx_t *blockIndex = GetBlockTable(ifaceIndex);
-      return blockIndex->count(inv.hash);// || shc_IsOrphanBlock(inv.hash);
-  }
-
-  // Don't know what it is, just say we already got one
-  return true;
+	// Don't know what it is, just say we already got one
+	return true;
 }
 
 
@@ -545,7 +528,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
         if (fShutdown)
           return true;
 
-        bool fAlreadyHave = AlreadyHave(iface, inv);
+        bool fAlreadyHave = shc_AlreadyHave(iface, inv);
 				bool fSent = false;
 
         Debug("(shc) INVENTORY: %s(%s) [%s]", 
@@ -1524,7 +1507,7 @@ bool shc_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
       while (!pto->mapAskFor.empty() && (*pto->mapAskFor.begin()).first <= nNow)
       {
         const CInv& inv = (*pto->mapAskFor.begin()).second;
-        if (!AlreadyHave(iface, inv))
+        if (!shc_AlreadyHave(iface, inv))
         {
           vGetData.push_back(inv);
           if (vGetData.size() >= 1000)

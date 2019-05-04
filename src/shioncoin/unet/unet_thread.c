@@ -128,8 +128,9 @@ void unet_thread_free(int mode)
 	(void)pthread_join(bind->th_timer, &ret_code);
 
 	/* debug: */
-	sprintf(buf, "unet_thread_init: terminated thread #%x (port %d).", (unsigned int)pthread_self(), bind->port);
+	sprintf(buf, "unet_thread_init: terminated thread #%s (port %d).",
+			unet_mode_label(mode), bind->port);
 	unet_log(mode, buf);
-#endif USE_LIBPTHREAD
+#endif /* USE_LIBPTHREAD */
 }
 

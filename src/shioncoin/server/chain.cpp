@@ -1262,11 +1262,8 @@ void UpdateBlockAvailability(int ifaceIndex, CNode *pfrom, const uint256& hash)
 
 bool HasAlgoConsensus(CIface *iface, CBlockIndex *pindexLast)
 {
-	VersionBitsCache *cache = GetVersionBitsCache(iface);
 
-	if (!cache)
-		return (false);
-	if (VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO, *cache) != THRESHOLD_ACTIVE)
+	if (VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO) != THRESHOLD_ACTIVE)
 		return (false);
 
 	return (true);

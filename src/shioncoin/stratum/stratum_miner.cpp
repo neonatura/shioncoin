@@ -62,6 +62,8 @@ map<const uint256, CBlockIndex *> vGenBlocks[MAX_COIN_IFACE];
 
 //static string blocktemplate_json; 
 static work_map mapWork;
+static CCriticalSection cs_mapWork;
+
 
 extern string JSONRPCReply(const Value& result, const Value& error, const Value& id);
 
@@ -134,9 +136,8 @@ shjson_t *stratum_miner_getblocktemplate(int ifaceIndex, int nAlg)
     return (NULL); /* downloading blocks */
 #endif
 
-	CWallet *wallet = GetWallet(iface);
-	if (wallet) {
-		LOCK(wallet->cs_wallet);
+	{
+		LOCK(cs_mapWork);
 
 		/* prune stale worker blocks (see SHC_MAX_DRIFT_TIME) */
 		vector<unsigned int> vDelete;
@@ -161,11 +162,17 @@ shjson_t *stratum_miner_getblocktemplate(int ifaceIndex, int nAlg)
   nHeight = pindexPrev->nHeight + 1;
 
   pblock = NULL;
-  try {
-    pblock = CreateBlockTemplate(iface);
-  } catch (std::exception& e) {
-    error(SHERR_INVAL, "c_getblocktemplate: CreateBlockTemplate: %s", e.what()); 
- }
+	{
+		CWallet *wallet = GetWallet(ifaceIndex); 
+		if (wallet) {
+			LOCK(wallet->cs_wallet);
+			try {
+				pblock = CreateBlockTemplate(iface);
+			} catch (std::exception& e) {
+				error(SHERR_INVAL, "c_getblocktemplate: CreateBlockTemplate: %s", e.what()); 
+		 }
+		}
+	}
   if (!pblock) {
     error(SHERR_INVAL, "c_getblocktemplate: error creating block template."); 
     return (NULL);
@@ -207,9 +214,10 @@ shjson_t *stratum_miner_getblocktemplate(int ifaceIndex, int nAlg)
   work_id++;
 	if (work_id >= 0xFFFFFF)
 		work_id = 1;
-  mapWork[work_id] = pblock; 
-
-
+	{
+		LOCK(cs_mapWork);
+		mapWork[work_id] = pblock; 
+	}
 
   Array transactions;
   //map<uint256, int64_t> setTxIndex;
@@ -337,11 +345,15 @@ int stratum_miner_submitblock(unsigned int workId, unsigned int nTime, unsigned 
   if (ret_diff)
     *ret_diff = 0.0;
 
-  if (mapWork.count(workId) == 0) {
-    return (SHERR_TIME); /* task is stale */
-  }
+	{
+		LOCK(cs_mapWork);
 
-  pblock = mapWork[workId];
+		if (mapWork.count(workId) == 0) {
+			return (SHERR_TIME); /* task is stale */
+		}
+
+		pblock = mapWork[workId];
+	}
 
   if (pblock->nNonce == nNonce) {
     /* same as last nonce submitted */
@@ -362,9 +374,6 @@ int stratum_miner_submitblock(unsigned int workId, unsigned int nTime, unsigned 
   for (idx = 0; idx < MAX_NONCE_SEQUENCE; idx++) {
     pblock->nNonce = nNonce + idx;
     hash = pblock->GetPoWHash();
-		if (idx == 0) {
-fprintf(stderr, "DEBUG: miner PoW Hash: \"%s\"\n", hash.GetHex().c_str());
-		}
     if (hash <= hashTarget) {
       if (ret_diff) {
         const char *hash_str = hash.ToString().c_str();

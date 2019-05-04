@@ -84,6 +84,10 @@ static int testnet_init(CIface *iface, void *_unused_)
 	iface->vDeployments[DEPLOYMENT_ALGO].nStartTime = 1556409600; /* 04/27/19 */
 	iface->vDeployments[DEPLOYMENT_ALGO].nTimeout = 1577836800; /* 01/01/20 */
 
+	iface->vDeployments[DEPLOYMENT_PARAM].bit = 6;
+	iface->vDeployments[DEPLOYMENT_PARAM].nStartTime = 1577836800; /* 01/01/20 */
+	iface->vDeployments[DEPLOYMENT_PARAM].nTimeout = 1609459200; /* 01/01/21 */ 
+
   shc_RegisterRPCOp(TESTNET_COIN_IFACE);
 
 	/* alternate block-chain rpc operations. */

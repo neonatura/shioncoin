@@ -137,7 +137,7 @@ void usage_version(void)
       "\n"
       "Copyright 2013 Neo Natura\n" 
       "Licensed under the GNU GENERAL PUBLIC LICENSE Version 3\n",
-      get_libshare_version());
+			PACKAGE_VERSION);
 }
 
 extern void RegisterRPCOpDefaults(int ifaceIndex);

@@ -171,39 +171,28 @@ void static ResendWalletTransactions()
 //
 
 
-static bool AlreadyHave(CIface *iface, const CInv& inv)
+static bool testnet_AlreadyHave(CIface *iface, const CInv& inv)
 {
   int ifaceIndex = GetCoinIndex(iface);
 
   switch (inv.type)
   {
     case MSG_TX:
+		case MSG_WITNESS_TX:
       {
-        bool fHave;
+				CTxMemPool *pool = GetTxMemPool(iface);
+				if (pool && pool->HaveTx(inv.hash))
+					return (true); /* commited to mempool */
 
-        /* pending in mem pool */
-        fHave = false;
-        {
-          LOCK(TESTNETBlock::mempool.cs);
-          fHave  = (TESTNETBlock::mempool.exists(inv.hash));
-        }
-        if (fHave)
-          return (true);
+				if (VerifyTxHash(iface, inv.hash))
+					return (true); /* committed to database */
 
-        /* committed to database */
-        fHave = false;
-        {
-          fHave = VerifyTxHash(iface, inv.hash);
-        }
-        if (fHave)
-          return (true);
-
-        CTxMemPool *pool = GetTxMemPool(iface);
-        return (pool->IsPendingTx(inv.hash));
+				return (false);
       }
       break;
 
     case MSG_BLOCK:
+		case MSG_WITNESS_BLOCK:
       blkidx_t *blockIndex = GetBlockTable(ifaceIndex);
       return blockIndex->count(inv.hash);// || testnet_IsOrphanBlock(inv.hash);
   }
@@ -504,7 +493,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
         if (fShutdown)
           return true;
 
-        bool fAlreadyHave = AlreadyHave(iface, inv);
+        bool fAlreadyHave = testnet_AlreadyHave(iface, inv);
 				bool fSent = false;
 
         Debug("(testnet) INVENTORY: %s(%s) [%s]", 
@@ -1410,7 +1399,7 @@ bool testnet_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
       while (!pto->mapAskFor.empty() && (*pto->mapAskFor.begin()).first <= nNow)
       {
         const CInv& inv = (*pto->mapAskFor.begin()).second;
-        if (!AlreadyHave(iface, inv))
+        if (!testnet_AlreadyHave(iface, inv))
         {
           vGetData.push_back(inv);
           if (vGetData.size() >= 1000)

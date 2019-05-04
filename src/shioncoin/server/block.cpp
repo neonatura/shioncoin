@@ -2667,33 +2667,9 @@ void CBlockIndex::BuildSkip()
     pskip = pprev->GetAncestor(GetSkipHeight(nHeight));
 }
 
-
-static VersionBitsCache _version_bits_cache[MAX_COIN_IFACE];
-
-VersionBitsCache *GetVersionBitsCache(CIface *iface)
-{
-  int ifaceIndex = GetCoinIndex(iface);
-  
-  if (ifaceIndex < 0 || ifaceIndex >= MAX_COIN_IFACE) {
-    return (NULL);
-  }
-
-  /* special case */
-  if (ifaceIndex == USDE_COIN_IFACE)
-    return (NULL);
-
-  return (&_version_bits_cache[ifaceIndex]);
-}
-
 bool IsWitnessEnabled(CIface *iface, const CBlockIndex* pindexPrev)
 {
-  VersionBitsCache *cache;
-
-  cache = GetVersionBitsCache(iface);
-  if (!cache)
-    return (false);
-
-  return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_SEGWIT, *cache) == THRESHOLD_ACTIVE);
+  return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_SEGWIT) == THRESHOLD_ACTIVE);
 }
 
 int GetWitnessCommitmentIndex(const CBlock& block)
@@ -2761,14 +2737,9 @@ bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock *block, CBlockIndex *
 int core_ComputeBlockVersion(CIface *params, CBlockIndex *pindexPrev)
 {
   int32_t nVersion = VERSIONBITS_TOP_BITS;
-  VersionBitsCache *cache;
-
-  cache = GetVersionBitsCache(params);
-  if (!cache)
-    return (1);
 
   for (int i = 0; i < (int)MAX_VERSION_BITS_DEPLOYMENTS; i++) {
-    ThresholdState state = VersionBitsState(pindexPrev, params, (DeploymentPos)i, *cache);
+    ThresholdState state = VersionBitsState(pindexPrev, params, (DeploymentPos)i);
     if (state == THRESHOLD_LOCKED_IN || state == THRESHOLD_STARTED) {
       nVersion |= VersionBitsMask(params, (DeploymentPos)i);
     }
@@ -3278,8 +3249,6 @@ void CTransaction::Init(const CTransaction& tx)
 unsigned int GetBlockScriptFlags(CIface *iface, const CBlockIndex* pindex)
 {
 	unsigned int flags = SCRIPT_VERIFY_NONE;
-  VersionBitsCache *cache;
-
 
 	// Start enforcing P2SH (BIP16)
 	if (iface->BIP16Height != -1 &&
@@ -3299,12 +3268,9 @@ unsigned int GetBlockScriptFlags(CIface *iface, const CBlockIndex* pindex)
 		flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
 	}
 
-	cache = GetVersionBitsCache(iface);
-	if (cache) {
-		/* enforce BIP68 (sequence locks) and BIP112 (CHECKSEQUENCEVERIFY) using versionbits logic. */
-		if (VersionBitsState(pindex->pprev, iface, DEPLOYMENT_CSV, *cache) == THRESHOLD_ACTIVE) {
-			flags |= SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
-		}
+	/* enforce BIP68 (sequence locks) and BIP112 (CHECKSEQUENCEVERIFY) using versionbits logic. */
+	if (VersionBitsState(pindex->pprev, iface, DEPLOYMENT_CSV) == THRESHOLD_ACTIVE) {
+		flags |= SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
 	}
 
 	// Start enforcing WITNESS rules using versionbits logic.

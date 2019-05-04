@@ -694,7 +694,6 @@ int TESTNETWallet::GetCoinbaseMaturity(uint160 hColor)
 bool TESTNETWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hColor)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
-	VersionBitsCache *cache;
 
 	if (alg == ALGO_SCRYPT)
 		return (true);
@@ -702,9 +701,5 @@ bool TESTNETWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hC
 	if (!pindexPrev)
 		pindexPrev = GetBestBlockIndex(TESTNET_COIN_IFACE);
 
-	cache = GetVersionBitsCache(iface);
-	if (!cache)
-		return (false);
-
-	return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_ALGO, *cache) == THRESHOLD_ACTIVE);
+	return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_ALGO) == THRESHOLD_ACTIVE);
 }

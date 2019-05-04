@@ -244,7 +244,6 @@ unsigned int SHCBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 	static const int64	BlocksTargetSpacing	= 1.0 * 60; // 1.0 minutes
 	static const unsigned int	TimeDaySeconds	= 60 * 60 * 24;
 	CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-	VersionBitsCache *cache = GetVersionBitsCache(iface);
 	int64	PastSecondsMin	= TimeDaySeconds * 0.10;
 	int64	PastSecondsMax	= TimeDaySeconds * 2.8;
 	uint64	PastBlocksMin	= PastSecondsMin / BlocksTargetSpacing;
@@ -256,8 +255,7 @@ unsigned int SHCBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 	if (pindexLast == NULL) /* Genesis block */
 		return (SHC_bnGenesisProofOfWorkLimit.GetCompact());
 
-	if (cache && 
-			(VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO, *cache) == THRESHOLD_ACTIVE)) {
+	if (VersionBitsState(pindexLast, iface, DEPLOYMENT_ALGO) == THRESHOLD_ACTIVE) {
 		nAlg = GetVersionAlgo(nVersion);
 	}
 

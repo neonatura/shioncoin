@@ -79,10 +79,18 @@ static int shc_init(CIface *iface, void *_unused_)
 	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1577836800; /* 01/01/20 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1609459200; /* 01/01/21 */ 
 
-	/* ACTIVE: SIP32 */
+	/* DEFINED: SIP32 */
 	iface->vDeployments[DEPLOYMENT_ALGO].bit = 5;
-	iface->vDeployments[DEPLOYMENT_ALGO].nStartTime = 1577836800; /* 01/01/20 */
-	iface->vDeployments[DEPLOYMENT_ALGO].nTimeout = 1609459200; /* 01/01/21 */
+	iface->vDeployments[DEPLOYMENT_ALGO].nStartTime = 1559347200; /* 06/01/19 */
+	iface->vDeployments[DEPLOYMENT_ALGO].nTimeout = 1590969600; /* 06/01/20 */
+
+	iface->vDeployments[DEPLOYMENT_PARAM].bit = 6;
+	iface->vDeployments[DEPLOYMENT_PARAM].nStartTime =  1609459200; /* 01/01/21 */
+	iface->vDeployments[DEPLOYMENT_PARAM].nTimeout = 1640995200; /* 01/01/22 */ 
+
+	iface->vDeployments[DEPLOYMENT_BOLO].bit = 7;
+	iface->vDeployments[DEPLOYMENT_BOLO].nStartTime =  1609459200; /* 01/01/21 */
+	iface->vDeployments[DEPLOYMENT_BOLO].nTimeout = 1640995200; /* 01/01/22 */ 
 
   shc_RegisterRPCOp(SHC_COIN_IFACE);
 
@@ -92,6 +100,9 @@ static int shc_init(CIface *iface, void *_unused_)
   MapCheckpoints shc_mapCheckpoints =
     boost::assign::map_list_of
 		( 0, uint256("a2128a434c48ff41bfb911857639fa24b69012aebf690b12e6dfa799cd5d914e") )
+		( 19900, uint256("9acf29e637ceaeefc820b47b87acde5ea57380d59f36ddd3a05692196691be91") )
+		( 19901, uint256("949f60599254173425aa2d25c7bd39783aee5fba13016eb8dc15e079ab928888") )
+		( 19902, uint256("341b2416086cdf9c9e4ba9c843c31a646a96141614ec702f65255bfbd76d6ec8") )
     ;
 
   shcWallet = new SHCWallet();
