@@ -392,7 +392,7 @@ bool SaveExternalBlockchainFile()
   return (false);
 }
 
-#define NODE_TIMEOUT 60
+#define NODE_TIMEOUT 15
 static bool chain_IsNodesBusy(int ifaceIndex)
 {
 	static time_t to_t;
@@ -406,7 +406,7 @@ static bool chain_IsNodesBusy(int ifaceIndex)
 
 	NodeList &vNodes = GetNodeList(ifaceIndex);
 	BOOST_FOREACH(CNode* pnode, vNodes) {
-		shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
+		shbuf_t *pchBuf = descriptor_wbuff(pnode->hSocket);
 		if (pchBuf) {
 			shbuf_lock(pchBuf);
 			if (shbuf_size(pchBuf) != 0)
