@@ -990,6 +990,7 @@ bool SHCBlock::VerifyCheckpoint(int nHeight)
 			if (deltaTime < 0)
 				return (ERR_INVAL, "(shc) VerifyCheckpoint: unknown chain (time) [hash %s].", GetHash().GetHex().c_str());
 
+#if 0
 			CBigNum bnNewBlock;
 			bnNewBlock.SetCompact(nBits);
 			CBigNum bnRequired;
@@ -997,6 +998,7 @@ bool SHCBlock::VerifyCheckpoint(int nHeight)
 			if (bnNewBlock > bnRequired) {
 				return error(SHERR_INVAL, "(shc) VerifyCheckpoint: unknown chain (pow) [hash %s].", GetHash().GetHex().c_str());
 			}
+#endif
 		}
 	}
 
