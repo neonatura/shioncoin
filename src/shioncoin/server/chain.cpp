@@ -428,8 +428,10 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 	CNode *pfrom;
 	int idx;
 
+#if 0
 	if (chain_IsNodesBusy(ifaceIndex))
 		return (NULL);
+#endif
 
 	{
 		NodeList &vNodes = GetNodeList(ifaceIndex);

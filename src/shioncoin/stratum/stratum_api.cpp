@@ -1706,9 +1706,14 @@ static const ApiItems& stratum_api_faucet_recv(int ifaceIndex, string strAccount
 		return (items);
 	}
 
+	int nTxSize = (int)wallet->GetVirtualTransactionSize(wtx);
+
 	tx_cache inputs;
 	Object obj = GetSendTxObj(wallet, wtx, scriptPub, inputs);
+	obj.push_back(Pair("account", strAccount));
 	obj.push_back(Pair("txid", wtx.GetHash().GetHex()));
+	obj.push_back(Pair("txsize", nTxSize));
+	obj.push_back(Pair("value", (double)nAmount / COIN));
 	items.push_back(obj);
 
 	return (items);
