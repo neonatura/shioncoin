@@ -80,7 +80,7 @@ static int _bc_map_open(bc_t *bc, bc_map_t *map)
   fd = open(path, O_RDWR | O_CREAT, 00700);
 #endif
   if (fd == -1) {
-    perror("bc_map_open [open]");
+//    perror("bc_map_open [open]");
     return (errno2sherr());
   }
 

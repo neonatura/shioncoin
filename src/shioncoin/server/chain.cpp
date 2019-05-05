@@ -392,52 +392,56 @@ bool SaveExternalBlockchainFile()
   return (false);
 }
 
-#define NODE_TIMEOUT 15
-static bool chain_IsNodesBusy(int ifaceIndex)
+static bool chain_IsNodeBusy(CNode *pnode)
 {
-	static time_t to_t;
-	bool fBusy = false;
+	static time_t last_t;
+	shbuf_t *pchBuf;
 	time_t now;
 
 	now = time(NULL);
-	if ((to_t + NODE_TIMEOUT) < now)
+	if (last_t < (now - 15)) {
+		last_t = now;
 		return (false);
-	to_t = now;
-
-	NodeList &vNodes = GetNodeList(ifaceIndex);
-	BOOST_FOREACH(CNode* pnode, vNodes) {
-		shbuf_t *pchBuf = descriptor_wbuff(pnode->hSocket);
-		if (pchBuf) {
-			shbuf_lock(pchBuf);
-			if (shbuf_size(pchBuf) != 0)
-				fBusy = true;
-			shbuf_unlock(pchBuf);
-
-			if (fBusy)
-				return (true);
-		}
 	}
 
+	if (pchBuf) {
+		bool fBusy = false;
+
+		pchBuf = descriptor_wbuff(pnode->hSocket);
+		shbuf_lock(pchBuf);
+		if (shbuf_size(pchBuf) != 0)
+			fBusy = true;
+		shbuf_unlock(pchBuf);
+
+		pchBuf = descriptor_rbuff(pnode->hSocket);
+		shbuf_lock(pchBuf);
+		if (shbuf_size(pchBuf) != 0)
+			fBusy = true;
+		shbuf_unlock(pchBuf);
+
+		if (fBusy)
+			return (true);
+	}
+
+	last_t = now;
 	return (false);
 }
 
 static CNode *chain_GetNextNode(int ifaceIndex)
 {
-  static int nNodeIndex;
+  static int nNodeIndex[MAX_COIN_IFACE];
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 	CNode *pfrom;
+	int nIndex;
 	int idx;
 
-#if 0
-	if (chain_IsNodesBusy(ifaceIndex))
-		return (NULL);
-#endif
+	nIndex = nNodeIndex[ifaceIndex];
+	nNodeIndex[ifaceIndex]++;
 
 	{
 		NodeList &vNodes = GetNodeList(ifaceIndex);
-		idx = (nNodeIndex % vNodes.size());
+		idx = (nNodeIndex[ifaceIndex] % vNodes.size());
 		pfrom = vNodes[idx];
-		nNodeIndex++;
 	}
 
 	if (pfrom->nVersion == 0) {
@@ -448,6 +452,9 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 		/* still connecting */
 		return (NULL);
 	}
+
+	if (chain_IsNodeBusy(pfrom))
+		return (NULL);
 
 	if (ifaceIndex != USDE_COIN_IFACE) { 
 		if (!pfrom->fPreferHeaders) {
@@ -613,11 +620,26 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 		return (false);
 
 	CBlockIndex *pindexFirst = vBlocks.front();
+	CBlockIndex *pindexLast = vBlocks.back();
 
+#if 0
 	/* suppress duplicate requests. */
-	if (pfrom->pindexLastBlock == pindexFirst)
+	if (pfrom->pindexLastBlock == pindexLast)
 		return (false);
-	pfrom->pindexLastBlock = pindexFirst;
+	pfrom->pindexLastBlock = pindexLast;
+#endif
+
+	/* check redundancy. */
+	if (pfrom->pindexLastBlock) {
+		unsigned int idx = 0;
+		for (; idx < vBlocks.size(); idx++) {
+			if (vBlocks[idx] == pfrom->pindexLastBlock)
+				break;
+		}
+		if (idx != vBlocks.size())
+			return (false); /* already asked for block */ 
+	}
+	pfrom->pindexLastBlock = pindexLast;
 
 	unsigned int nIndex = 0;
 	if (pindexBest && pindexFirst->pprev &&
@@ -662,7 +684,7 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 	pfrom->PushMessage("getdata", vInv);
 
 	/* debug */
-	Debug("(%s) ServiceBlockEvent: requesting %d blocks (%s) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pfrom->addr.ToString().c_str());
+	Debug("(%s) ServiceBlockEvent: requesting %d blocks (%s) (height %d) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pindexFirst->nHeight, pfrom->addr.ToString().c_str());
 
 	return (true);
 }
