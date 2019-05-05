@@ -459,11 +459,16 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	if (!IsInitialBlockDownload(ifaceIndex)) {
 		LOCK(cs_vNodes);
 
+		int nTot = 0;
 		NodeList &vNodes = GetNodeList(pblock->ifaceIndex); 
 		BOOST_FOREACH(CNode* pnode, vNodes) {
+			if (pnode == pblock->originPeer)
+				continue; /* skip peer that sent us block. */
+
 			pnode->PushBlockHash(hash);
+			nTot++;
 		}
-		Debug("(%s) AcceptBlock: informed %d nodes of block \"%s\".", iface->name, vNodes.size(), hash.GetHex().c_str()); 
+		if (nTot) Debug("(%s) AcceptBlock: informed %d nodes of block \"%s\".", iface->name, nTot, hash.GetHex().c_str()); 
 	}
 
   if (ifaceIndex == TEST_COIN_IFACE ||

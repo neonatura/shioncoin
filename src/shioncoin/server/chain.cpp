@@ -407,17 +407,21 @@ static bool chain_IsNodeBusy(CNode *pnode)
 	if (pchBuf) {
 		bool fBusy = false;
 
-		pchBuf = descriptor_wbuff(pnode->hSocket);
-		shbuf_lock(pchBuf);
-		if (shbuf_size(pchBuf) != 0)
-			fBusy = true;
-		shbuf_unlock(pchBuf);
+		{
+			pchBuf = descriptor_wbuff(pnode->hSocket);
+			shbuf_lock(pchBuf);
+			if (shbuf_size(pchBuf) != 0)
+				fBusy = true;
+			shbuf_unlock(pchBuf);
+		}
 
-		pchBuf = descriptor_rbuff(pnode->hSocket);
-		shbuf_lock(pchBuf);
-		if (shbuf_size(pchBuf) != 0)
-			fBusy = true;
-		shbuf_unlock(pchBuf);
+		{
+			pchBuf = descriptor_rbuff(pnode->hSocket);
+			shbuf_lock(pchBuf);
+			if (shbuf_size(pchBuf) != 0)
+				fBusy = true;
+			shbuf_unlock(pchBuf);
+		}
 
 		if (fBusy)
 			return (true);

@@ -39,6 +39,8 @@ using namespace std;
 
 static const uint256 _blank_hash = 0;
 
+static CCriticalSection cs_chain;
+
 /* TODO: Move to a header file. */
 /** Flags for nSequence and nLockTime locks */
 /** Interpret sequence numbers as relative lock-time constraints. */
@@ -915,36 +917,42 @@ bool CTransaction::DisconnectInputs(int ifaceIndex)
   return (core_DisconnectInputs(ifaceIndex, this));
 }
 
-
-
-
 void WriteHashBestChain(CIface *iface, uint256 hash)
 {
+  CWallet *wallet = GetWallet(iface);
   char opt_name[256];
   char buf[256];
 
-  if (!iface || !iface->enabled)
+  if (!iface || !iface->enabled || !wallet)
     return;
 
-  memset(buf, 0, sizeof(buf));
-  sprintf(buf, "%s", hash.GetHex().c_str());
-  sprintf(opt_name, "shcoind.%s.chain", iface->name);
-  shpref_set(opt_name, buf);
+	{
+		LOCK(cs_chain);
 
-  Debug("(%s) WriteHashBestChain: stored hash \"%s\".", iface->name, hash.GetHex().c_str());
+		memset(buf, 0, sizeof(buf));
+		sprintf(buf, "%s", hash.GetHex().c_str());
+		sprintf(opt_name, "shcoind.%s.chain", iface->name);
+		shpref_set(opt_name, buf);
+	}
+
 }
 
 bool ReadHashBestChain(CIface *iface, uint256& ret_hash)
 {
+  CWallet *wallet = GetWallet(iface);
   char opt_name[256];
   char buf[256];
 
-  if (!iface || !iface->enabled)
+  if (!iface || !iface->enabled || !wallet)
     return (false);
 
-  memset(buf, 0, sizeof(buf));
-  sprintf(opt_name, "shcoind.%s.chain", iface->name);
-  strncpy(buf, shpref_get(opt_name, ""), sizeof(buf)-1);
+	{
+		LOCK(cs_chain);
+
+		memset(buf, 0, sizeof(buf));
+		sprintf(opt_name, "shcoind.%s.chain", iface->name);
+		strncpy(buf, shpref_get(opt_name, ""), sizeof(buf)-1);
+	}
 
   ret_hash = uint256(buf);
   return (!ret_hash.IsNull());

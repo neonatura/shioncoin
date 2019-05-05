@@ -44,6 +44,8 @@
 
 using namespace std;
 
+#define MAX_BLOCK_DOWNLOAD_TIME 1296000 /* 15d */
+
 #define DEFAULT_PARAM_LIFESPAN 2592000 /* 30d */ 
 
 #define MAX_OPCODE(_iface) \
@@ -867,23 +869,17 @@ int GetBestHeight(int ifaceIndex)
   return (GetBestHeight(GetCoinByIndex(ifaceIndex)));
 }
 
-#define MAX_BLOCK_DOWNLOAD_TIME 2592000
 bool IsInitialBlockDownload(int ifaceIndex)
 {
-  CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
 
+	if (ifaceIndex == COLOR_COIN_IFACE)
+		return (false);
+
+  CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
   if (pindexBest == NULL)
     return true;
 
-  static int64 nLastUpdate;
-  static CBlockIndex* pindexLastBest;
-  if (pindexBest != pindexLastBest)
-  {
-    pindexLastBest = pindexBest;
-    nLastUpdate = GetTime();
-  }
-  return (GetTime() - nLastUpdate < 15 &&
-      pindexBest->GetBlockTime() < (GetTime() - MAX_BLOCK_DOWNLOAD_TIME));
+	return ( pindexBest->GetBlockTime() < (GetTime() - MAX_BLOCK_DOWNLOAD_TIME) );
 }
 
 uint256 GetBestBlockChain(CIface *iface)
