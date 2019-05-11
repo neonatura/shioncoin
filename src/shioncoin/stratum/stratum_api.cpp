@@ -26,14 +26,13 @@
 #define __PROTO__PROTOCOL_C__
 
 #include "shcoind.h"
-#include "stratum.h"
 #include "coin_proto.h"
+#include "rpc/rpc_proto.h"
+#include "stratum.h"
 #include "wallet.h"
 #include "mnemonic.h"
 #include "txcreator.h"
 #include "chain.h"
-//#include "txmempool.h"
-#include "rpc/rpc_proto.h"
 #include "color/color_pool.h"
 #include "color/color_block.h"
 
@@ -42,8 +41,6 @@
 #define DEFAULT_OFFER_LIFESPAN 1440
 #endif
 
-typedef vector<Object> ApiItems;
-
 extern json_spirit::Value ValueFromAmount(int64 amount);
 extern exec_list *GetExecTable(int ifaceIndex);
 extern altchain_list *GetAltChainTable(int ifaceIndex);
@@ -51,7 +48,7 @@ extern offer_list *GetOfferTable(int ifaceIndex);
 extern bool IsContextName(CIface *iface, string strName);
 extern double print_rpc_difficulty(CBigNum val);
 
-static bool GetOutputsForAccount(CWallet *wallet, string strAccount, vector<CTxDestination>& addr_list)
+bool GetOutputsForAccount(CWallet *wallet, string strAccount, vector<CTxDestination>& addr_list)
 {
 
 	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook) {
@@ -64,7 +61,8 @@ static bool GetOutputsForAccount(CWallet *wallet, string strAccount, vector<CTxD
 
 	return (FALSE);
 }
-static bool IsOutputForAccount(CWallet *wallet, vector<CTxDestination> addr_list, CTxDestination address)
+
+bool IsOutputForAccount(CWallet *wallet, vector<CTxDestination> addr_list, CTxDestination address)
 {
 	int i;
 	
@@ -109,10 +107,6 @@ static bool valid_pkey_hash(const string strAccount, uint256 in_pkey)
 	if (in_pkey == 0)
 		return (false); /* sanity */
 
-fprintf(stderr, "DEBUG: valid_pkey_hash: account(%s) in_pkey(%s)\n", strAccount.c_str(), in_pkey.GetHex().c_str());
-
-
-
 	for (idx = 0; idx < MAX_COIN_IFACE; idx++) {
 		CWallet *alt_wallet = GetWallet(idx);
 		if (!alt_wallet) continue;
@@ -131,7 +125,6 @@ fprintf(stderr, "DEBUG: valid_pkey_hash: account(%s) in_pkey(%s)\n", strAccount.
 			acc_pkey = get_private_key_hash(alt_wallet, keyID);
 			if (acc_pkey == in_pkey)
 				return (true);
-fprintf(stderr, "DEBUG: acc_pkey '%s'\n", acc_pkey.GetHex().c_str()); 
 		}
 	}
 
@@ -235,7 +228,7 @@ static const ApiItems& stratum_api_account_list(int ifaceIndex, string strAccoun
 	return (items);
 }
 
-static const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAccount, shjson_t *params)
+const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAccount, shjson_t *params)
 {
 	static ApiItems items;
 	CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -317,7 +310,7 @@ static const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAcco
 	return (items);
 }
 
-static Object GetSendTxObj(CWallet *wallet, CWalletTx& wtx, CScript& scriptPub, tx_cache& inputs)
+Object GetSendTxObj(CWallet *wallet, CWalletTx& wtx, CScript& scriptPub, tx_cache& inputs)
 {
   int64 nValueOut = 0;
   int64 nChangeOut = 0;
@@ -1598,200 +1591,6 @@ static const ApiItems& stratum_api_validate_list(int ifaceIndex, user_t *user, s
 	return (items);
 }
 
-static const ApiItems& stratum_api_faucet_send(int ifaceIndex, string strAccount, shjson_t *params, string& strError, uint160 hColor = 0)
-{
-	static ApiItems items;
-  CWallet *wallet = GetWallet(ifaceIndex);
-  Array ret;
-	double dAmount;
-  int64 nAmount;
-  int64 nBalance;
-  int nMinDepth = 1; /* single confirmation requirement */
-  int nMinConfirmDepth = 1; /* single confirmation requirement */
-	bool found = false;
-
-	items.clear();
-
-	CCoinAddr address = GetAccountAddress(wallet, "faucet", false);
-	if (!address.IsValid()) {
-		strError = string("invalid 'faucet' account.");
-		return (items);
-	}
-
-	dAmount = atof(shjson_str(params, "amount", 0));
-  nAmount = roundint64(dAmount * COIN);
-  if (!MoneyRange(ifaceIndex, nAmount)) {
-		strError = string("coin denomination");
-		return (items);
-  }
-
-  nBalance  = GetAccountBalance(ifaceIndex, strAccount, nMinConfirmDepth);
-  if (nAmount > nBalance) {
-		strError = string("insufficient funds");
-		return (items);
-  }
-
-	CTxCreator wtx(wallet, strAccount);
-  CScript scriptPub;
-  scriptPub.SetDestination(address.Get());
-	wtx.AddOutput(scriptPub, nAmount);
-	if (!wtx.Send()) {
-		strError = wtx.GetError();
-		return (items);
-	}
-
-	tx_cache inputs;
-	Object obj = GetSendTxObj(wallet, wtx, scriptPub, inputs);
-	obj.push_back(Pair("txid", wtx.GetHash().GetHex()));
-	items.push_back(obj);
-
-  return (items);
-}
-
-static const ApiItems& stratum_api_faucet_recv(int ifaceIndex, string strAccount, shjson_t *params, string& strError, uint160 hColor = 0)
-{
-	static ApiItems items;
-	static const int nMinConfirmDepth = 1; /* single confirmation requirement */
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	CWallet *wallet = GetWallet(ifaceIndex);
-	string strFaucet("faucet");
-	int64 nBalance;
-	int64 nAmount;
-	bool found = false;
-
-	items.clear();
-
-	CCoinAddr address = GetAccountAddress(wallet, strAccount, false);
-	if (!address.IsValid()) {
-		strError = string("invalid account coin address.");
-		return (items);
-	}
-
-	nBalance  = GetAccountBalance(ifaceIndex, strFaucet, nMinConfirmDepth);
-	nAmount = MIN(MIN_TX_FEE(iface) * 10, roundint64(nBalance / 1000));
-	if (!MoneyRange(ifaceIndex, nAmount) ||
-			nAmount < MIN_INPUT_VALUE(iface)) {
-		strError = string("insufficient funds");
-		return (items);
-	}
-
-	CScript scriptPub;
-	scriptPub.SetDestination(address.Get());
-
-	/* check last time 'faucet' account has been used. */
-	bool bKeyUsed = false;
-	time_t expire_t = time(NULL) - 3600;
-	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
-			it != wallet->mapWallet.end();
-			++it)
-	{
-		const CWalletTx& wtx = (*it).second;
-		if (wtx.GetTxTime() > expire_t) {
-			BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
-				if (txout.scriptPubKey == scriptPub) {
-					bKeyUsed = true;
-				}
-			}
-		}
-	}
-	if (bKeyUsed) {
-		strError = string("receive time limit reached.");
-		return (items);
-	}
-
-	CTxCreator wtx(wallet, strFaucet);
-	wtx.AddOutput(scriptPub, nAmount);
-	if (!wtx.Send()) {
-		strError = wtx.GetError();
-		return (items);
-	}
-
-	int nTxSize = (int)wallet->GetVirtualTransactionSize(wtx);
-
-	tx_cache inputs;
-	Object obj = GetSendTxObj(wallet, wtx, scriptPub, inputs);
-	obj.push_back(Pair("account", strAccount));
-	obj.push_back(Pair("txid", wtx.GetHash().GetHex()));
-	obj.push_back(Pair("txsize", nTxSize));
-	obj.push_back(Pair("value", (double)nAmount / COIN));
-	items.push_back(obj);
-
-	return (items);
-}
-
-static const ApiItems& stratum_api_faucet_list(int ifaceIndex, string strAccount, shjson_t *params)
-{
-	string strFaucet("faucet");
-	return (stratum_api_account_txlist(ifaceIndex, strFaucet, params));
-}
-
-static const ApiItems& stratum_api_faucet_info(int ifaceIndex, string strAccount, shjson_t *params)
-{
-	static ApiItems items;
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	CWallet *wallet = GetWallet(ifaceIndex);
-	int64 begin_t = shjson_num(params, "timelimit", 0);
-	int64 nBalance;
-	int64 nTotal;
-	int64 nTime;
-	string strFaucet("faucet");
-
-	items.clear();
-
-	nBalance = GetAccountBalance(ifaceIndex, strFaucet, 0);
-
-	vector<CTxDestination> addr_list;
-	GetOutputsForAccount(wallet, strAccount, addr_list);
-
-	nTime = 0;
-	nTotal = 0;
-	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it) {
-		CWalletTx* wtx = &((*it).second);
-		int64 tx_time = wtx->GetTxTime();
-
-		if (tx_time < begin_t)
-			continue;
-
-		for (int i = 0; i < wtx->vout.size(); i++) { 
-			CTxOut& out = wtx->vout[i];
-			const CScript& pk = out.scriptPubKey;
-
-			CTxDestination address;
-			if (!ExtractDestination(pk, address))
-				continue;
-
-			if (!IsOutputForAccount(wallet, addr_list, address))
-				continue;
-
-			nTime = MAX(wtx->GetTxTime(), nTime);
-			nTotal += out.nValue;
-		}
-	}
-
-	CCoinAddr address = GetAccountAddress(wallet, "faucet", false);
-
-	int64 nAmount = 0;
-	{
-		string strFaucet("faucet");
-	  int64 nBalance  = GetAccountBalance(ifaceIndex, strFaucet, 1);
-		nAmount = MIN(MIN_TX_FEE(iface) * 10, roundint64(nBalance / 1000));
-	}
-
-
-	Object entry;
-	entry.push_back(Pair("address", address.ToString())); 
-	entry.push_back(Pair("available", ValueFromAmount(nBalance)));
-	entry.push_back(Pair("spent", ValueFromAmount(nTotal)));
-	entry.push_back(Pair("amount", ValueFromAmount(nAmount)));
-	entry.push_back(Pair("time", (uint64_t)nTime));
-	items.push_back(entry);
-
-fprintf(stderr, "DEBUG: stratum_api_faucet_info: iface(%s) avail(%f)\n", iface->name, (double)nBalance/COIN);
-
-	return (items);
-}
-
-
 static unsigned int GetObjectInt(Object obj, string cmp_name)
 {
 	for( Object::size_type i = 0; i != obj.size(); ++i )
@@ -1829,8 +1628,6 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 	uint160 hColor;
 	int offset;
 	int err;
-
-fprintf(stderr, "DEBUG: stratum_request_api_list: '%s'\n", method);
 
 	hColor = uint160(string(shjson_astr(params, "color", "0x0")));
 
@@ -1988,8 +1785,6 @@ shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson
 	int64 api_t;
 	int err;
 
-fprintf(stderr, "DEBUG: stratum_request_api(): ifaceIndex %d\n", ifaceIndex); 
-
 	if (!iface || !iface->enabled) {
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_OPNOTSUPP, "coin interface");
@@ -2026,7 +1821,6 @@ fprintf(stderr, "DEBUG: stratum_request_api(): ifaceIndex %d\n", ifaceIndex);
 			(unsigned char *)shbuf_data(buff), shbuf_size(buff));
 	shbuf_free(&buff);
 	if (0 != strcasecmp(psig_str, sha_result)) {
-fprintf(stderr, "DEBUG: stratum_request_api(): !api credential (sha)\n");
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_ACCESS, "api credential");
 		shjson_null_add(reply, "result");
@@ -2035,7 +1829,6 @@ fprintf(stderr, "DEBUG: stratum_request_api(): !api credential (sha)\n");
 
 	if (0 != strcmp(method, "api.account.create") &&
 			!valid_pkey_hash(strAccount, in_pkey)) {
-fprintf(stderr, "DEBUG: stratum_request_api(): !api credential (pkey)\n");
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_ACCESS, "api credential");
 		shjson_null_add(reply, "result");

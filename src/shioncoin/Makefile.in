@@ -199,15 +199,16 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	stratum/stratum_http.c stratum/stratum_message.c \
 	stratum/stratum_protocol.c stratum/stratum_user.c \
 	stratum/stratum_task.c stratum/stratum_sync.c \
-	stratum/stratum_api.cpp stratum/stratum_miner.cpp \
-	stratum/stratum_sha256d.c stratum/stratum_keccak.c \
-	stratum/stratum_x11.c stratum/stratum_blake2s.c \
-	stratum/stratum_qubit.c stratum/stratum_groestl.c \
-	stratum/stratum_skein.c stratum/http/http.c \
-	stratum/http/http_alias.c stratum/http/http_coin.c \
-	stratum/http/http_context.c stratum/http/http_fractal.c \
-	stratum/http/http_matrix.c stratum/http/http_pool.c \
-	server/txfeerate.cpp fractal/fractal.c fractal/fractal_bmp.c \
+	stratum/stratum_api.cpp stratum/stratum_api_faucet.cpp \
+	stratum/stratum_miner.cpp stratum/stratum_sha256d.c \
+	stratum/stratum_keccak.c stratum/stratum_x11.c \
+	stratum/stratum_blake2s.c stratum/stratum_qubit.c \
+	stratum/stratum_groestl.c stratum/stratum_skein.c \
+	stratum/http/http.c stratum/http/http_alias.c \
+	stratum/http/http_coin.c stratum/http/http_context.c \
+	stratum/http/http_fractal.c stratum/http/http_matrix.c \
+	stratum/http/http_pool.c server/txfeerate.cpp \
+	fractal/fractal.c fractal/fractal_bmp.c \
 	server/bolo/bolo_validation03.cpp \
 	server/bolo/bolo_validation03.h server/test/test_wallet.cpp \
 	server/test/test_wallet.h server/test/test_block.cpp \
@@ -313,6 +314,7 @@ am__objects_5 = shcoind-stratum.$(OBJEXT) \
 	shcoind-stratum_protocol.$(OBJEXT) \
 	shcoind-stratum_user.$(OBJEXT) shcoind-stratum_task.$(OBJEXT) \
 	shcoind-stratum_sync.$(OBJEXT) shcoind-stratum_api.$(OBJEXT) \
+	shcoind-stratum_api_faucet.$(OBJEXT) \
 	shcoind-stratum_miner.$(OBJEXT) \
 	shcoind-stratum_sha256d.$(OBJEXT) \
 	shcoind-stratum_keccak.$(OBJEXT) shcoind-stratum_x11.$(OBJEXT) \
@@ -443,6 +445,7 @@ am__objects_11 = test_shcoind-stratum.$(OBJEXT) \
 	test_shcoind-stratum_task.$(OBJEXT) \
 	test_shcoind-stratum_sync.$(OBJEXT) \
 	test_shcoind-stratum_api.$(OBJEXT) \
+	test_shcoind-stratum_api_faucet.$(OBJEXT) \
 	test_shcoind-stratum_miner.$(OBJEXT) \
 	test_shcoind-stratum_sha256d.$(OBJEXT) \
 	test_shcoind-stratum_keccak.$(OBJEXT) \
@@ -1075,6 +1078,7 @@ stratum_sources = \
 	stratum/stratum_task.c \
 	stratum/stratum_sync.c \
 	stratum/stratum_api.cpp \
+	stratum/stratum_api_faucet.cpp \
 	stratum/stratum_miner.cpp \
 	stratum/stratum_sha256d.c \
 	stratum/stratum_keccak.c \
@@ -1652,6 +1656,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-spring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_api_faucet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_blake2s.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_groestl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_http.Po@am__quote@
@@ -1826,6 +1831,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-spring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_api_faucet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_blake2s.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_groestl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_http.Po@am__quote@
@@ -4078,6 +4084,20 @@ shcoind-stratum_api.obj: stratum/stratum_api.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-stratum_api.obj `if test -f 'stratum/stratum_api.cpp'; then $(CYGPATH_W) 'stratum/stratum_api.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api.cpp'; fi`
 
+shcoind-stratum_api_faucet.o: stratum/stratum_api_faucet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-stratum_api_faucet.o -MD -MP -MF $(DEPDIR)/shcoind-stratum_api_faucet.Tpo -c -o shcoind-stratum_api_faucet.o `test -f 'stratum/stratum_api_faucet.cpp' || echo '$(srcdir)/'`stratum/stratum_api_faucet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-stratum_api_faucet.Tpo $(DEPDIR)/shcoind-stratum_api_faucet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api_faucet.cpp' object='shcoind-stratum_api_faucet.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-stratum_api_faucet.o `test -f 'stratum/stratum_api_faucet.cpp' || echo '$(srcdir)/'`stratum/stratum_api_faucet.cpp
+
+shcoind-stratum_api_faucet.obj: stratum/stratum_api_faucet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-stratum_api_faucet.obj -MD -MP -MF $(DEPDIR)/shcoind-stratum_api_faucet.Tpo -c -o shcoind-stratum_api_faucet.obj `if test -f 'stratum/stratum_api_faucet.cpp'; then $(CYGPATH_W) 'stratum/stratum_api_faucet.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api_faucet.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-stratum_api_faucet.Tpo $(DEPDIR)/shcoind-stratum_api_faucet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api_faucet.cpp' object='shcoind-stratum_api_faucet.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-stratum_api_faucet.obj `if test -f 'stratum/stratum_api_faucet.cpp'; then $(CYGPATH_W) 'stratum/stratum_api_faucet.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api_faucet.cpp'; fi`
+
 shcoind-stratum_miner.o: stratum/stratum_miner.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-stratum_miner.o -MD -MP -MF $(DEPDIR)/shcoind-stratum_miner.Tpo -c -o shcoind-stratum_miner.o `test -f 'stratum/stratum_miner.cpp' || echo '$(srcdir)/'`stratum/stratum_miner.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-stratum_miner.Tpo $(DEPDIR)/shcoind-stratum_miner.Po
@@ -5547,6 +5567,20 @@ test_shcoind-stratum_api.obj: stratum/stratum_api.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api.cpp' object='test_shcoind-stratum_api.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-stratum_api.obj `if test -f 'stratum/stratum_api.cpp'; then $(CYGPATH_W) 'stratum/stratum_api.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api.cpp'; fi`
+
+test_shcoind-stratum_api_faucet.o: stratum/stratum_api_faucet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-stratum_api_faucet.o -MD -MP -MF $(DEPDIR)/test_shcoind-stratum_api_faucet.Tpo -c -o test_shcoind-stratum_api_faucet.o `test -f 'stratum/stratum_api_faucet.cpp' || echo '$(srcdir)/'`stratum/stratum_api_faucet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-stratum_api_faucet.Tpo $(DEPDIR)/test_shcoind-stratum_api_faucet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api_faucet.cpp' object='test_shcoind-stratum_api_faucet.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-stratum_api_faucet.o `test -f 'stratum/stratum_api_faucet.cpp' || echo '$(srcdir)/'`stratum/stratum_api_faucet.cpp
+
+test_shcoind-stratum_api_faucet.obj: stratum/stratum_api_faucet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-stratum_api_faucet.obj -MD -MP -MF $(DEPDIR)/test_shcoind-stratum_api_faucet.Tpo -c -o test_shcoind-stratum_api_faucet.obj `if test -f 'stratum/stratum_api_faucet.cpp'; then $(CYGPATH_W) 'stratum/stratum_api_faucet.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api_faucet.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-stratum_api_faucet.Tpo $(DEPDIR)/test_shcoind-stratum_api_faucet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stratum/stratum_api_faucet.cpp' object='test_shcoind-stratum_api_faucet.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-stratum_api_faucet.obj `if test -f 'stratum/stratum_api_faucet.cpp'; then $(CYGPATH_W) 'stratum/stratum_api_faucet.cpp'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_api_faucet.cpp'; fi`
 
 test_shcoind-stratum_miner.o: stratum/stratum_miner.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-stratum_miner.o -MD -MP -MF $(DEPDIR)/test_shcoind-stratum_miner.Tpo -c -o test_shcoind-stratum_miner.o `test -f 'stratum/stratum_miner.cpp' || echo '$(srcdir)/'`stratum/stratum_miner.cpp

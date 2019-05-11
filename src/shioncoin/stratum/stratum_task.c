@@ -494,6 +494,12 @@ task_t *task_init(task_attr_t *attr)
       attr->blk_stamp[ifaceIndex] != last_reset_t) {
     task->work_reset = (reset_idx ? TRUE : FALSE);
     last_reset_t = attr->blk_stamp[ifaceIndex];
+
+#if 0
+		/* spammy */
+		sprintf(errbuf, "(%s) task_init: created new mining task. (alg: %d) (height: %d) (prev-hash: %s) (reset: %s)\n", iface->name, attr->alg, (int)task->height, task->prev_hash, (task->work_reset ? "true" : "false"));
+		shcoind_log(errbuf);
+#endif
   } else {
     task->work_reset = FALSE;
   }
@@ -577,9 +583,6 @@ task_t *task_init(task_attr_t *attr)
   task->next = task_list;
   task_list = task;
 #endif
-
-  sprintf(errbuf, "(%s) task_init: created new mining task. (alg: %d) (height: %d) (prev-hash: %s) (reset: %s)\n", iface->name, attr->alg, (int)task->height, task->prev_hash, (task->work_reset ? "true" : "false"));
-  shcoind_log(errbuf);
 
   return (task);
 }

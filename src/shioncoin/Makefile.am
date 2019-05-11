@@ -76,6 +76,7 @@ stratum_sources = \
 	stratum/stratum_task.c \
 	stratum/stratum_sync.c \
 	stratum/stratum_api.cpp \
+	stratum/stratum_api_faucet.cpp \
 	stratum/stratum_miner.cpp \
 	stratum/stratum_sha256d.c \
 	stratum/stratum_keccak.c \

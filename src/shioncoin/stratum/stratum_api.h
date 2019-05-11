@@ -34,6 +34,20 @@ extern void shjson_AddItemToArray(shjson_t *array, shjson_t *item);
 
 shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson_t *params, shjson_t *auth);
 
+#ifdef __cplusplus
+typedef vector<Object> ApiItems;
+
+Object GetSendTxObj(CWallet *wallet, CWalletTx& wtx, CScript& scriptPub, tx_cache& inputs);
+const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAccount, shjson_t *params);
+bool GetOutputsForAccount(CWallet *wallet, string strAccount, vector<CTxDestination>& addr_list);
+bool IsOutputForAccount(CWallet *wallet, vector<CTxDestination> addr_list, CTxDestination address);
+
+/* api_faucet */
+const ApiItems& stratum_api_faucet_send(int ifaceIndex, string strAccount, shjson_t *params, string& strError, uint160 hColor = 0);
+const ApiItems& stratum_api_faucet_recv(int ifaceIndex, string strAccount, shjson_t *params, string& strError, uint160 hColor = 0);
+const ApiItems& stratum_api_faucet_list(int ifaceIndex, string strAccount, shjson_t *params);
+const ApiItems& stratum_api_faucet_info(int ifaceIndex, string strAccount, shjson_t *params);
+#endif
 
 #ifdef __cplusplus
 }
