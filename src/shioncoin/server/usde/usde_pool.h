@@ -40,7 +40,7 @@
 #include "txmempool.h"
 
 
-
+#ifdef USDE_SERVICE
 class USDE_CTxMemPool : public CPool
 {
 
@@ -61,6 +61,7 @@ class USDE_CTxMemPool : public CPool
 
     USDE_CTxMemPool() : CPool(USDE_COIN_IFACE) { };
 };
+#endif
 
 
 

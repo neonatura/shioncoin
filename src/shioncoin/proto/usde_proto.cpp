@@ -34,17 +34,20 @@
 #include "usde/usde_wallet.h"
 #include "usde/usde_txidx.h"
 
+#ifdef USDE_SERVICE
 USDE_CTxMemPool USDEBlock::mempool;
 CBlockIndex *USDEBlock::pindexGenesisBlock = NULL;
 int64 USDEBlock::nTimeBestReceived;
 
 int64 USDEBlock::nTargetTimespan = 7200; /* two hours */
 int64 USDEBlock::nTargetSpacing = 60; /* one minute */
+#endif
 
 extern void RegisterRPCOpDefaults(int ifaceIndex);
 
 static int usde_init(CIface *iface, void *_unused_)
 {
+#ifdef USDE_SERVICE
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
@@ -128,6 +131,7 @@ error(SHERR_INVAL, "usde_proto: unable to load wallet.\n");
   }
 
   Debug("initialized USDE block-chain.");
+#endif
 
   return (0);
 }
@@ -168,26 +172,26 @@ static int usde_term(CIface *iface, void *_unused_)
 
 static int usde_msg_recv(CIface *iface, CNode *pnode)
 {
-
+#ifdef USDE_SERVICE
   if (!pnode)
     return (0);
 
   if (!usde_ProcessMessages(iface, pnode)) {
     /* log */
   }
-
+#endif
 return (0);
 }
 static int usde_msg_send(CIface *iface, CNode *pnode)
 {
-
+#ifdef USDE_SERVICE
   if (!pnode)
     return (0);
 
   if (!usde_SendMessages(iface, pnode, false)) {
     /* log */
   }
-
+#endif
 return (0);
 }
 static int usde_peer_add(CIface *iface, void *arg)
@@ -200,17 +204,24 @@ return (0);
 }
 static int usde_block_new(CIface *iface, CBlock **block_p)
 {
-  *block_p = new USDEBlock();
-return (0);
+#ifdef USDE_SERVICE
+	*block_p = new USDEBlock();
+	return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 static int usde_block_process(CIface *iface, CBlock *block)
 {
-
+#ifdef USDE_SERVICE
   if (!usde_ProcessBlock(block->originPeer, block))
     return (SHERR_INVAL);
 
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 static CPubKey usde_GetMainAccountPubKey(CWallet *wallet)
@@ -267,6 +278,7 @@ static CPubKey usde_GetMainAccountPubKey(CWallet *wallet)
 
 static int usde_block_templ(CIface *iface, CBlock **block_p)
 {
+#ifdef USDE_SERVICE
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   CBlock* pblock;
@@ -276,7 +288,7 @@ static int usde_block_templ(CIface *iface, CBlock **block_p)
     
   if (!wallet) {
     unet_log(ifaceIndex, "GetBlocKTemplate: Wallet not initialized.");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   CBlockIndex *pindexBest = GetBestBlockIndex(USDE_COIN_IFACE);
@@ -285,12 +297,12 @@ static int usde_block_templ(CIface *iface, CBlock **block_p)
   const CPubKey& pubkey = usde_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
 error(SHERR_INVAL, "usde_block_templ: error obtaining main pubkey.\n");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   pblock = usde_CreateNewBlock(pubkey);
   if (!pblock)
-    return (NULL);
+    return (ERR_INVAL);
 
   pblock->nTime = MAX(median, GetAdjustedTime());
   pblock->nNonce = 0;
@@ -298,6 +310,9 @@ error(SHERR_INVAL, "usde_block_templ: error obtaining main pubkey.\n");
   *block_p = pblock;
 
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 static int usde_tx_new(CIface *iface, void *arg)
@@ -307,8 +322,12 @@ return (0);
 
 static int usde_tx_pool(CIface *iface, CTxMemPool **pool_p)
 {
+#ifdef USDE_SERVICE
   *pool_p = &USDEBlock::mempool;
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 #ifdef __cplusplus

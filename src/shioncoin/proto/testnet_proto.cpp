@@ -34,19 +34,21 @@
 #include "testnet/testnet_wallet.h"
 #include "testnet/testnet_txidx.h"
 
+#ifdef TESTNET_SERVICE
 TESTNET_CTxMemPool TESTNETBlock::mempool;
+
 CBlockIndex *TESTNETBlock::pindexGenesisBlock = NULL;
+
 int64 TESTNETBlock::nTimeBestReceived;
 
-
-
-
 extern void shc_RegisterRPCOp(int ifaceIndex);
-extern void color_RegisterRPCOp(int ifaceIndex);
 
+extern void color_RegisterRPCOp(int ifaceIndex);
+#endif
 
 static int testnet_init(CIface *iface, void *_unused_)
 {
+#ifdef TESTNET_SERVICE
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
@@ -110,6 +112,7 @@ static int testnet_init(CIface *iface, void *_unused_)
   }
 
   Debug("initialized TESTNET block-chain.");
+#endif
 
   return (0);
 }
@@ -150,32 +153,36 @@ static int testnet_term(CIface *iface, void *_unused_)
 }
 static int testnet_msg_recv(CIface *iface, CNode *pnode)
 {
-
+#ifdef TESTNET_SERVICE
   if (!pnode)
     return (0);
 
   if (!testnet_ProcessMessages(iface, pnode)) {
     /* log */
   }
+#endif
 
-return (0);
+	return (0);
 }
+
 static int testnet_msg_send(CIface *iface, CNode *pnode)
 {
-
+#ifdef TESTNET_SERVICE
   if (!pnode)
     return (0);
 
   if (!testnet_SendMessages(iface, pnode, false)) {
     /* log */
   }
-
-return (0);
+#endif
+	return (0);
 }
+
 static int testnet_peer_add(CIface *iface, void *arg)
 {
-return (0);
+	return (0);
 }
+
 static int testnet_peer_recv(CIface *iface, void *arg)
 {
 return (0);
@@ -183,17 +190,23 @@ return (0);
 
 static int testnet_block_new(CIface *iface, CBlock **block_p)
 {
+#ifdef TESTNET_SERVICE
   *block_p = new TESTNETBlock();
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 static int testnet_block_process(CIface *iface, CBlock *block)
 {
-
+#ifdef TESTNET_SERVICE
   if (!testnet_ProcessBlock(block->originPeer, block))
     return (SHERR_INVAL);
-
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
@@ -226,6 +239,7 @@ static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
 
 static int testnet_block_templ(CIface *iface, CBlock **block_p)
 {
+#ifdef TESTNET_SERVICE
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   CBlock* pblock;
@@ -257,6 +271,9 @@ error(SHERR_INVAL, "testnet_block_templ: error obtaining main pubkey.\n");
   *block_p = pblock;
 
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 #if 0
@@ -298,8 +315,12 @@ return (0);
 
 static int testnet_tx_pool(CIface *iface, CTxMemPool **pool_p)
 {
+#ifdef TESTNET_SERVICE
   *pool_p = &TESTNETBlock::mempool;
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 

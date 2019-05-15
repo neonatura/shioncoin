@@ -40,7 +40,7 @@
 #include "txmempool.h"
 
 
-
+#ifdef TESTNET_SERVICE
 class TESTNET_CTxMemPool : public CPool
 {
 
@@ -60,6 +60,7 @@ class TESTNET_CTxMemPool : public CPool
 
     TESTNET_CTxMemPool() : CPool(TESTNET_COIN_IFACE) { };
 };
+#endif
 
 
 /**

@@ -1,21 +1,483 @@
-** share-coin v3.02
- * Added BITCOIN-RPC inbound and outbound connection for external program use. (./configure --enable-bitrpc).
- * Public release of compiling, deploying, and calling SEXE script programs on the block-chain.
- * Added "shcoind --port" option to control ShareCoin interface's listen port.
- * Added "ShareCoin TestNet" via "shcoind --testnet".
- * Removed requirement that peer "proto label" start with "/SHC"
- * Optimized the "block.verify" and "wallet.verify" rpc command. 
-** share-coin v3.01
- * Public release (topic url: https://bitcointalk.org/index.php?topic=3180570.0)
-** share-coin v2.25
- * Compiler support for ubuntu linux distribution. 
- * USDe transaction error states are now returned to stratum client.
- * Added or optimized the following stratum commands:
- - block.info[<mode>,<hash>]
- - account.create[<label>]
- - account.transactions[<amount>,<pkey>,<duration>]
- - account.address[<hash>]
- - account.secret[<addr>,<pkey>]
- - account.import[<account>,<priv addr>]
- - account.transfer[<account>,<pkey>,<addr>,<amount>]
- - account.info[<account>,<pkey>]
+2019-05-11  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2019-05-05  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2.4
+
+	v3.2.4
+
+	v3.2.4
+
+	v3.2.4
+
+2019-05-04  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2.4
+
+	v3.2.4
+
+	v3.2.4
+
+	v3.2.4
+
+	v3.2.4
+
+2019-05-01  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP32
+
+2019-04-28  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP32 Multiple PoW Algorythm
+
+2019-04-21  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2.3
+
+2019-04-20  Brian Burrell  <bburrell.brian@gmail.com>
+
+	shioncoin
+
+	shioncoin
+
+	shioncoin
+
+	shioncoin
+
+	shioncoin
+
+	shioncoin
+
+	shioncoin
+
+	shioncoin
+
+	shioncoin
+
+2019-04-05  Brian Burrell  <bburrell.brian@gmail.com>
+
+	opt_set_environment_settings()
+
+2019-03-16  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2.2
+
+	v3.2.2
+
+	v3.2.2
+
+	rpc
+
+2019-03-10  Brian Burrell  <bburrell.brian@gmail.com>
+
+	BIP68
+
+2019-03-09  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP31
+
+	BIP141
+
+	bech32 bolo_validation03
+
+2019-02-19  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2.1
+
+2019-02-17  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2.1
+
+2019-01-30  Brian Burrell  <bburrell.brian@gmail.com>
+
+	document standards:   sharecoin improvement protocol   bitcoin improvement protocol
+
+2019-01-01  Brian Burrell  <bburrell.brian@gmail.com>
+
+	libcrypto
+
+2018-12-31  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2
+
+2018-12-18  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2
+
+2018-12-15  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2018-12-05  Brian Burrell  <bburrell.brian@gmail.com>
+
+	"headers" network request
+
+2018-12-03  Brian Burrell  <bburrell.brian@gmail.com>
+
+	"headers"
+
+2018-12-02  Brian Burrell  <bburrell.brian@gmail.com>
+
+	"headers"
+
+	"headers"
+
+	"headers"
+
+	"headers"
+
+2018-12-01  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.2
+
+2018-11-29  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CNode
+
+2018-11-27  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CommitBlock
+
+	CBlockLocator
+
+	CWalletDB
+
+2018-11-26  Brian Burrell  <bburrell.brian@gmail.com>
+
+	blockchain
+
+2018-11-25  Brian Burrell  <bburrell.brian@gmail.com>
+
+	ncurses
+
+	CommitBlock
+
+	rpc
+
+	unet
+
+	rpc
+
+2018-11-24  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CommitBlock
+
+	CommitBlock
+
+2018-11-21  Brian Burrell  <bburrell.brian@gmail.com>
+
+	"headers" network request
+
+	"headers" network request
+
+2018-11-20  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CTxMatrix
+
+2018-11-19  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CTxMatrix
+
+	"headers" network request
+
+2018-11-18  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CParam
+
+	core_Truncate UnacceptWalletTransaction
+
+2018-11-17  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CAccountCache "headers" network message
+
+	"headers" network command
+
+2018-11-14  Brian Burrell  <bburrell.brian@gmail.com>
+
+	"headers" net message handling
+
+2018-11-11  Brian Burrell  <bburrell.brian@gmail.com>
+
+	shcon_gui
+
+2018-11-04  Brian Burrell  <bburrell.brian@gmail.com>
+
+	BIP30
+
+2018-11-03  Brian Burrell  <bburrell.brian@gmail.com>
+
+	GetMainAccountPubKey
+
+	Checkpoints
+
+	stratum
+
+2018-11-02  Brian Burrell  <bburrell.brian@gmail.com>
+
+	blockchain
+
+	blockchain
+
+	blockchain
+
+	blockchain
+
+2018-11-01  Brian Burrell  <bburrell.brian@gmail.com>
+
+	COffer
+
+2018-10-29  Brian Burrell  <bburrell.brian@gmail.com>
+
+	COffer
+
+2018-10-27  Brian Burrell  <bburrell.brian@gmail.com>
+
+	mine 'least difficult' instead of 'most difficult' for stratum
+
+	MIN_RELAY_TX_FEE
+
+2018-10-26  Brian Burrell  <bburrell.brian@gmail.com>
+
+	COffer
+
+2018-10-24  Brian Burrell  <bburrell.brian@gmail.com>
+
+	BIP65 BIP68 BIP112 BIP113
+
+2018-10-21  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CTxMatrix
+
+2018-10-20  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CAltChain
+
+	CMatrix
+
+2018-10-18  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CMatrix SIP20
+
+2018-10-13  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CAsset
+
+2018-10-12  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CAltChain
+
+2018-10-09  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CAsset
+
+2018-10-06  Brian Burrell  <bburrell.brian@gmail.com>
+
+	COffer
+
+2018-09-17  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CAltChain
+
+2018-08-20  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CExec
+
+2018-04-24  Brian Burrell  <bburrell.brian@gmail.com>
+
+	systemd
+
+2018-04-23  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2018-04-14  Brian Burrell  <bburrell.brian@gmail.com>
+
+	ServiceWalletEvent
+
+	ServiceWalletEvent
+
+	ServiceWalletEvent
+
+	ServiceWalletEvent
+
+2018-02-24  root  <root@srue.neo-natura.int>
+
+	v3.02 branch
+
+2018-02-03  Brian Burrell  <bburrell.brian@gmail.com>
+
+	README.md
+
+2018-01-31  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum mining.rounds
+
+	unet
+
+	unet
+
+	block
+
+2018-01-30  Brian Burrell  <bburrell.brian@gmail.com>
+
+	block
+
+2018-01-29  Brian Burrell  <bburrell.brian@gmail.com>
+
+	chain
+
+	chain
+
+2018-01-27  Brian Burrell  <bburrell.brian@gmail.com>
+
+	rpc_command
+
+	BlockOrphan
+
+	InitServiceBlockEvent
+
+2018-01-26  Brian Burrell  <bburrell.brian@gmail.com>
+
+	txmempool
+
+	core_CommitBlock
+
+	stratum_protocol
+
+2018-01-25  Brian Burrell  <bburrell.brian@gmail.com>
+
+	README.md
+
+	README.md
+
+	README.md
+
+	txext
+
+	README.md
+
+	txext
+
+2018-01-24  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CTxContext
+
+	libsecp256k1
+
+	shcon_log
+
+2018-01-22  Brian Burrell  <bburrell.brian@gmail.com>
+
+	txmempool
+
+2018-01-21  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2018-01-19  Brian Burrell  <bburrell.brian@gmail.com>
+
+	ServicePeerEvent
+
+	unet_peerdb
+
+	unet_peerdb
+
+	unet_peerdb
+
+	CScriptNum
+
+2018-01-18  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum_http
+
+2018-01-16  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2018-01-15  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2018-01-14  Brian Burrell  <bburrell.brian@gmail.com>
+
+	unet_peerdb
+
+	unet_peerdb
+
+	unet_peerdb
+
+	unet_peerdb
+
+	unet_peerdb
+
+	unet_peerdb
+
+	unet_peerdb
+
+2018-01-12  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+	stratum
+
+2018-01-11  Brian Burrell  <bburrell.brian@gmail.com>
+
+	BIP34
+
+	BIP34
+
+2018-01-10  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2018-01-07  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+	seckp256k1 compatibility
+
+2018-01-05  Brian Burrell  <bburrell.brian@gmail.com>
+
+	RestoreBlockIndex
+
+	depend
+
+2018-01-04  Brian Burrell  <bburrell.brian@gmail.com>
+
+	win64
+
+2017-12-31  Brian Burrell  <bburrell.brian@gmail.com>
+
+	win64
+
+	coin-console --prompt
+
+	win64
+
+2017-12-19  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.1
+
+2017-12-17  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v3.1
+
+	CBlock::trust
+
+	win64
+
+	v3.1
+
+	win64
+
+	SHC_VERSION 3.1
+
+	README.md
+
+	v3.1
+
+	v3.1
+
+	v3.1

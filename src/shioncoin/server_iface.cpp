@@ -740,47 +740,6 @@ void usde_server_accept(int hSocket, struct sockaddr *net_addr)
 #endif
 }
 
-void usde_MessageHandler(CIface *iface)
-{
-  NodeList &vNodes = GetNodeList(iface);
-  shtime_t ts;
-
-  vector<CNode*> vNodesCopy;
-  {
-    LOCK(cs_vNodes);
-    vNodesCopy = vNodes;
-    BOOST_FOREACH(CNode* pnode, vNodesCopy)
-      pnode->AddRef();
-  }
-
-  // Poll the connected nodes for messages
-  CNode* pnodeTrickle = NULL;
-  if (!vNodesCopy.empty())
-    pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
-  BOOST_FOREACH(CNode* pnode, vNodesCopy)
-  {
-
-    // Send messages
-    timing_init("SendMessages", &ts);
-    {
-      TRY_LOCK(pnode->cs_vSend, lockSend);
-      if (lockSend)
-        usde_SendMessages(iface, pnode, pnode == pnodeTrickle);
-    }
-    timing_term(USDE_COIN_IFACE, "SendMessages", &ts);
-    if (fShutdown)
-      return;
-  }
-
-  {
-    LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodesCopy)
-      pnode->Release();
-  }
-
-
-}
-
 void shc_MessageHandler(CIface *iface)
 {
   NodeList &vNodes = GetNodeList(iface);
@@ -824,6 +783,7 @@ void shc_MessageHandler(CIface *iface)
 
 }
 
+#ifdef USDE_SERVICE
 extern bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStream& vRecv);
 bool usde_coin_server_recv_msg(CIface *iface, CNode* pfrom)
 {
@@ -883,7 +843,6 @@ bool usde_coin_server_recv_msg(CIface *iface, CNode* pfrom)
 
   return (fRet);
 }
-
 int usde_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
 {
   coinhdr_t hdr;
@@ -935,9 +894,51 @@ int usde_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   pnode->nLastRecv = GetTime();
   return (0);
 }
+void usde_MessageHandler(CIface *iface)
+{
+  NodeList &vNodes = GetNodeList(iface);
+  shtime_t ts;
+
+  vector<CNode*> vNodesCopy;
+  {
+    LOCK(cs_vNodes);
+    vNodesCopy = vNodes;
+    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+      pnode->AddRef();
+  }
+
+  // Poll the connected nodes for messages
+  CNode* pnodeTrickle = NULL;
+  if (!vNodesCopy.empty())
+    pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
+  BOOST_FOREACH(CNode* pnode, vNodesCopy)
+  {
+
+    // Send messages
+    timing_init("SendMessages", &ts);
+    {
+      TRY_LOCK(pnode->cs_vSend, lockSend);
+      if (lockSend)
+        usde_SendMessages(iface, pnode, pnode == pnodeTrickle);
+    }
+    timing_term(USDE_COIN_IFACE, "SendMessages", &ts);
+    if (fShutdown)
+      return;
+  }
+
+  {
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+      pnode->Release();
+  }
+
+
+}
+#endif /* USDE_SERVICE */
 
 void usde_server_timer(void)
 {
+#ifdef USDE_SERVICE
   static int verify_idx;
   CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
   NodeList &vNodes = GetNodeList(USDE_COIN_IFACE);
@@ -1020,9 +1021,8 @@ void usde_server_timer(void)
   timing_term(USDE_COIN_IFACE, "MessageHandler", &ts);
 
   event_cycle_chain(USDE_COIN_IFACE);
-
+#endif /* USDE_SERVICE */
 }
-
 
 
 
@@ -1386,6 +1386,7 @@ vector<CNode*> testnet_vNodesDisconnected;
   }
 }
 
+#ifdef TESTNET_SERVICE
 extern bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStream& vRecv);
 bool testnet_coin_server_recv_msg(CIface *iface, CNode* pfrom)
 {
@@ -1448,7 +1449,6 @@ bool testnet_coin_server_recv_msg(CIface *iface, CNode* pfrom)
 
   return (fRet);
 }
-
 int testnet_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
 {
   coinhdr_t hdr;
@@ -1500,7 +1500,6 @@ int testnet_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   pnode->nLastRecv = GetTime();
   return (0);
 }
-
 void testnet_MessageHandler(CIface *iface)
 {
   NodeList &vNodes = GetNodeList(iface);
@@ -1543,10 +1542,11 @@ void testnet_MessageHandler(CIface *iface)
 
 
 }
-
+#endif /* TESTNET_SERVICE */
 
 void testnet_server_timer(void)
 {
+#ifdef TESTNET_SERVICE
   static int verify_idx;
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
   NodeList &vNodes = GetNodeList(TESTNET_COIN_IFACE);
@@ -1629,7 +1629,7 @@ void testnet_server_timer(void)
   timing_term(TESTNET_COIN_IFACE, "MessageHandler", &ts);
 
   event_cycle_chain(TESTNET_COIN_IFACE); 
-
+#endif /* TEST_SERVICE */
 }
 
 void testnet_server_accept(int hSocket, struct sockaddr *net_addr)
@@ -2161,6 +2161,7 @@ void emc2_server_close(int fd, struct sockaddr *addr)
 
 }
 
+#ifdef EMC2_SERVICE
 extern bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStream& vRecv);
 bool emc2_coin_server_recv_msg(CIface *iface, CNode* pfrom)
 {
@@ -2221,7 +2222,6 @@ bool emc2_coin_server_recv_msg(CIface *iface, CNode* pfrom)
 
   return (fRet);
 }
-
 int emc2_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
 {
   coinhdr_t hdr;
@@ -2272,7 +2272,6 @@ int emc2_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   pnode->nLastRecv = GetTime();
   return (0);
 }
-
 void emc2_MessageHandler(CIface *iface)
 {
   NodeList &vNodes = GetNodeList(iface);
@@ -2311,11 +2310,12 @@ void emc2_MessageHandler(CIface *iface)
       pnode->Release();
   }
 
-
 }
+#endif /* EMC2_SERVICE */
 
 void emc2_server_timer(void)
 {
+#ifdef EMC2_SERVICE
   static int verify_idx;
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
   NodeList &vNodes = GetNodeList(EMC2_COIN_IFACE);
@@ -2398,7 +2398,7 @@ void emc2_server_timer(void)
   timing_term(EMC2_COIN_IFACE, "MessageHandler", &ts);
 
   event_cycle_chain(EMC2_COIN_IFACE);
-
+#endif /* EMC2_SERVICE */
 }
 
 

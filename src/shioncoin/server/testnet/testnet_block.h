@@ -36,69 +36,70 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <share.h>
 
+#ifdef TESTNET_SERVICE
 
 class TESTNETBlock : public CBlock
 {
-public:
-    // header
-    static const int CURRENT_VERSION=4;
-    static TESTNET_CTxMemPool mempool; 
-    static CBlockIndex *pindexBest;
-    static CBlockIndex *pindexGenesisBlock;
-    static int64 nTimeBestReceived;
+	public:
+		static const int CURRENT_VERSION=4;
+		static TESTNET_CTxMemPool mempool; 
+		static CBlockIndex *pindexBest;
+		static CBlockIndex *pindexGenesisBlock;
+		static int64 nTimeBestReceived;
 
-    TESTNETBlock()
-    {
-        ifaceIndex = TESTNET_COIN_IFACE;
-        SetNull();
-    }
+		TESTNETBlock()
+		{
+			ifaceIndex = TESTNET_COIN_IFACE;
+			SetNull();
+		}
 
-    TESTNETBlock(const CBlock &block)
-    {
-        ifaceIndex = TESTNET_COIN_IFACE;
-        SetNull();
-        *((CBlock*)this) = block;
-    }
+		TESTNETBlock(const CBlock &block)
+		{
+			ifaceIndex = TESTNET_COIN_IFACE;
+			SetNull();
+			*((CBlock*)this) = block;
+		}
 
-    TESTNETBlock(const CBlockHeader &block)
-    {
-        ifaceIndex = TESTNET_COIN_IFACE;
-        SetNull();
-        *((CBlockHeader*)this) = block;
-    }
+		TESTNETBlock(const CBlockHeader &block)
+		{
+			ifaceIndex = TESTNET_COIN_IFACE;
+			SetNull();
+			*((CBlockHeader*)this) = block;
+		}
 
-    void SetNull()
-    {
-      nVersion = TESTNETBlock::CURRENT_VERSION;
-      CBlock::SetNull();
-    }
+		void SetNull()
+		{
+			nVersion = TESTNETBlock::CURRENT_VERSION;
+			CBlock::SetNull();
+		}
 
-    void InvalidChainFound(CBlockIndex* pindexNew);
-    unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast);
-    bool AcceptBlock();
-    bool IsBestChain();
-    CScript GetCoinbaseFlags();
-    bool AddToBlockIndex();
-    bool CheckBlock();
-    bool ReadBlock(uint64_t nHeight);
-    bool ReadArchBlock(uint256 hash);
-    bool IsOrphan();
-    bool Truncate();
-    bool VerifyCheckpoint(int nHeight);
-    uint64_t GetTotalBlocksEstimate();
+		void InvalidChainFound(CBlockIndex* pindexNew);
+		unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast);
+		bool AcceptBlock();
+		bool IsBestChain();
+		CScript GetCoinbaseFlags();
+		bool AddToBlockIndex();
+		bool CheckBlock();
+		bool ReadBlock(uint64_t nHeight);
+		bool ReadArchBlock(uint256 hash);
+		bool IsOrphan();
+		bool Truncate();
+		bool VerifyCheckpoint(int nHeight);
+		uint64_t GetTotalBlocksEstimate();
 
-    int64_t GetBlockWeight();
+		int64_t GetBlockWeight();
 
-    bool SetBestChain(CBlockIndex* pindexNew);
-    bool ConnectBlock(CBlockIndex* pindex);
-    bool DisconnectBlock(CBlockIndex* pindex);
+		bool SetBestChain(CBlockIndex* pindexNew);
+
+		bool ConnectBlock(CBlockIndex* pindex);
+
+		bool DisconnectBlock(CBlockIndex* pindex);
 
 		bool CreateCheckpoint(); 
 
 		int GetAlgo() const;
 
 };
-
 
 
 /**
@@ -156,6 +157,7 @@ bool testnet_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash);
 CBlock *testnet_GetOrphanBlock(const uint256& hash);
 uint256 testnet_GetOrphanRoot(uint256 hash);
 
+#endif /* def TESTNET_SERVICE */
 
 /**
  * @}

@@ -28,8 +28,8 @@
 
 
 #define TESTNET_VERSION_MAJOR 3
-#define TESTNET_VERSION_MINOR 2 
-#define TESTNET_VERSION_REVISION 4 
+#define TESTNET_VERSION_MINOR 3 
+#define TESTNET_VERSION_REVISION 1 
 #define TESTNET_VERSION_BUILD 0
 
 /** The default socket port for the TESTNET coin service. */

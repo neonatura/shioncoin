@@ -25,3 +25,5 @@ aclocal -I m4 --install
 #autoheader
 autoreconf -fvi
 
+build-aux/changelog > CHANGES
+

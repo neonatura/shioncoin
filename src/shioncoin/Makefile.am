@@ -226,10 +226,47 @@ common_sources = \
 	server/version.cpp \
 	server/util.cpp
 
+testnet_sources = \
+	server/testnet/testnet_netmsg.cpp \
+	server/testnet/testnet_netmsg.h \
+	server/testnet/testnet_block.cpp \
+	server/testnet/testnet_block.h \
+	server/testnet/testnet_wallet.cpp \
+	server/testnet/testnet_wallet.h \
+	server/testnet/testnet_txidx.cpp \
+	server/testnet/testnet_txidx.h \
+	server/testnet/testnet_pool.cpp \
+	server/testnet/testnet_pool.h
+
+# usde emulation interface
+usde_sources = \
+	server/usde/usde_netmsg.cpp \
+	server/usde/usde_netmsg.h \
+	server/usde/usde_block.cpp \
+	server/usde/usde_block.h \
+	server/usde/usde_wallet.cpp \
+	server/usde/usde_wallet.h \
+	server/usde/usde_txidx.cpp \
+	server/usde/usde_txidx.h \
+	server/usde/usde_pool.cpp \
+	server/usde/usde_pool.h
+
+# emc2 emulation service
+emc2_sources = \
+	server/emc2/emc2_txidx.cpp \
+	server/emc2/emc2_txidx.h \
+	server/emc2/emc2_block.cpp \
+	server/emc2/emc2_block.h \
+	server/emc2/emc2_wallet.cpp \
+	server/emc2/emc2_wallet.h \
+	server/emc2/emc2_netmsg.cpp \
+	server/emc2/emc2_netmsg.h \
+	server/emc2/emc2_pool.cpp \
+	server/emc2/emc2_pool.h
+
 server_sources = \
 	$(blockchain_sources) \
 	$(proto_sources) \
-	$(stratum_sources) \
 	server/txfeerate.cpp \
 	fractal/fractal.c \
 	fractal/fractal_bmp.c \
@@ -253,26 +290,6 @@ server_sources = \
 	server/shc/shc_rpc.cpp \
 	server/shc/shc_pool.cpp \
 	server/shc/shc_pool.h \
-	server/usde/usde_netmsg.cpp \
-	server/usde/usde_netmsg.h \
-	server/usde/usde_block.cpp \
-	server/usde/usde_block.h \
-	server/usde/usde_wallet.cpp \
-	server/usde/usde_wallet.h \
-	server/usde/usde_txidx.cpp \
-	server/usde/usde_txidx.h \
-	server/usde/usde_pool.cpp \
-	server/usde/usde_pool.h \
-	server/emc2/emc2_txidx.cpp \
-	server/emc2/emc2_txidx.h \
-	server/emc2/emc2_block.cpp \
-	server/emc2/emc2_block.h \
-	server/emc2/emc2_wallet.cpp \
-	server/emc2/emc2_wallet.h \
-	server/emc2/emc2_netmsg.cpp \
-	server/emc2/emc2_netmsg.h \
-	server/emc2/emc2_pool.cpp \
-	server/emc2/emc2_pool.h \
 	server/ltc/ltc_netmsg.cpp \
 	server/ltc/ltc_netmsg.h \
 	server/ltc/ltc_block.cpp \
@@ -283,16 +300,6 @@ server_sources = \
 	server/ltc/ltc_txidx.h \
 	server/ltc/ltc_pool.cpp \
 	server/ltc/ltc_pool.h \
-	server/testnet/testnet_netmsg.cpp \
-	server/testnet/testnet_netmsg.h \
-	server/testnet/testnet_block.cpp \
-	server/testnet/testnet_block.h \
-	server/testnet/testnet_wallet.cpp \
-	server/testnet/testnet_wallet.h \
-	server/testnet/testnet_txidx.cpp \
-	server/testnet/testnet_txidx.h \
-	server/testnet/testnet_pool.cpp \
-	server/testnet/testnet_pool.h \
 	server/color/color_block.cpp \
 	server/color/color_block.h \
 	server/color/color_wallet.cpp \
@@ -397,7 +404,21 @@ server_sources = \
 	block_iface.cpp \
 	server_iface.cpp
 
+if STRATUM_SERVICE
+server_sources += $(stratum_sources)
+endif
 
+if USDE_SERVICE
+server_sources += $(usde_sources)
+endif
+
+if EMC2_SERVICE
+server_sources += $(emc2_sources)
+endif
+
+if TESTNET_SERVICE
+server_sources += $(testnet_sources)
+endif
 
 shcoind_SOURCES = \
 	$(common_includes) $(common_sources) \

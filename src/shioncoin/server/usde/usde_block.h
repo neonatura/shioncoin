@@ -31,18 +31,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <share.h>
 
-#if 0
-class USDE_CTxMemPool : public CTxMemPool
-{
-
-  public:
-    bool accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs, bool* pfMissingInputs);
-    bool addUnchecked(const uint256& hash, CTransaction &tx);
-    bool remove(CTransaction &tx);
-    void queryHashes(std::vector<uint256>& vtxid);
-
-};
-#endif
+#ifdef USDE_SERVICE
 
 class USDEBlock : public CBlock
 {
@@ -146,5 +135,6 @@ bool usde_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash);
 CBlock *usde_GetOrphanBlock(const uint256& hash); 
 uint256 usde_GetOrphanRoot(uint256 hash); 
 
+#endif /* def USDE_SERVICE */
 
 #endif /* ndef __USDE_BLOCK_H__ */

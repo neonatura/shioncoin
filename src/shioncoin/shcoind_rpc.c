@@ -291,12 +291,37 @@ const char *get_rpc_service_host(void)
 	return (val);
 }
 
+user_t *rpc_user_init(int fd)
+{
+  struct sockaddr_in *addr;
+  user_t *user;
+  char nonce1[32];
+  uint32_t seed;
+
+  user = (user_t *)calloc(1, sizeof(user_t));
+  user->fd = fd;
+
+  if (user->fd > 0) {
+    shkey_t *key;
+    struct sockaddr *addr;
+
+    user->flags |= USER_CLIENT;
+
+    addr = shaddr(user->fd);
+    key = shkey_bin(addr, sizeof(struct sockaddr));
+    memcpy(&user->netid, key, sizeof(user->netid));
+    shkey_free(&key);
+  }
+
+  return (user);
+}
+
 user_t *rpc_register_client(int fd)
 {
   user_t *user;
   int err;
 
-  user = stratum_user_init(fd);
+  user = rpc_user_init(fd);
   user->next = rpc_client_list;
   rpc_client_list = user;
 
@@ -361,6 +386,112 @@ static void rpc_close_free(void)
    
 }
 
+void set_rpc_error(shjson_t *reply, int code, char *str)
+{
+  shjson_t *error;
+
+  error = shjson_array_add(reply, "error");
+  shjson_num_add(error, NULL, code);
+  shjson_str_add(error, NULL, str);
+  shjson_null_add(error, NULL);
+
+}
+
+static int rpc_send_message(user_t *user, shjson_t *msg)
+{
+  uint32_t val;
+  char *text;
+  int err;
+
+  if (!user) {
+    shcoind_log("rpc_send_message: rpc_send_message: null user");
+    return (0);
+  }
+
+  if (user->flags & USER_SYSTEM)
+    return (0); /* dummy user */
+
+  if (user->fd == -1) {
+    /* no network connection */
+    return (0);
+  }
+
+  if (!*user->cur_id) {
+    shjson_null_add(msg, "id");
+  } else if ((val = (uint32_t)atoi(user->cur_id)) != 0) {
+    shjson_num_add(msg, "id", val);
+  } else {
+    shjson_str_add(msg, "id", user->cur_id);
+  }
+
+  text = shjson_print(msg);
+  if (text) {
+    unet_write(user->fd, text, strlen(text));
+    unet_write(user->fd, "\n", 1);
+    free(text);
+  }
+
+  return (0);
+}
+
+int rpc_register_client_task(int ifaceIndex, user_t *user, shjson_t *json)
+{
+	static shbuf_t *buff;
+	shjson_t *reply;
+	const char *ret_json;
+	char account[256];
+	int err;
+
+	if (!buff)
+		buff = shbuf_init();
+	shbuf_clear(buff);
+
+	memset(account, 0, sizeof(account));
+	strncpy(account, user->worker, sizeof(account)-1);
+	strtok(account, ".");
+
+	err = ExecuteRPC(ifaceIndex, json, buff); 
+	if (err) {
+		reply = shjson_init(NULL);
+		set_rpc_error(reply, err, "invalid syntax");
+		shjson_null_add(reply, "result");
+		rpc_send_message(user, reply);
+		shjson_free(&reply);
+		return (err);
+	}
+
+	reply = shjson_init(shbuf_data(buff));
+	if (!reply)
+		return (SHERR_INVAL);
+
+	/* send RPC response */
+	err = rpc_send_message(user, reply);
+	shjson_free(&reply);
+	return (0);
+}
+
+static int rpc_get_iface(char *iface_str)
+{
+  CIface *iface;
+  double t_diff;
+  int ifaceIndex;
+  int idx;
+
+  if (!*iface_str)
+    return (0); /* not specified */
+
+  ifaceIndex = 0;
+  for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
+    iface = GetCoinByIndex(idx); 
+    if (!iface) continue;
+
+    if (0 == strcasecmp(iface->name, iface_str))
+      return (idx);
+  }
+  
+  return (-1); /* invalid */
+}
+
 static void rpc_timer(void)
 {
   static task_attr_t attr;
@@ -413,8 +544,29 @@ static void rpc_timer(void)
 		shbuf_unlock(buff);
 
 		if (*data == '{') {
+			shjson_t *json;
+			char iface_str[256];
+			char *text;
+			int ifaceIndex;
+
+			json = shjson_init(data);
+			if (!json)
+				return (ERR_INVAL);
+
+			memset(iface_str, 0, sizeof(iface_str));
+			text = shjson_astr(json, "iface", NULL);
+			if (text)
+				strncpy(iface_str, text, sizeof(iface_str)-1); 
+			ifaceIndex = rpc_get_iface(iface_str);
+			if (ifaceIndex < 1)
+				ifaceIndex = peer->ifaceIndex;//stratum_default_iface();
+			if (ifaceIndex < 1)
+				ifaceIndex = SHC_COIN_IFACE; /* default */
+
 			/* normal user request (miner / api) */
-			stratum_register_client_task(peer, data);
+			rpc_register_client_task(ifaceIndex, peer, json);
+
+			shjson_free(&json);
     }
 
 		free(data);

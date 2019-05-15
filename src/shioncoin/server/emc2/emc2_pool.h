@@ -40,7 +40,7 @@
 #include "txmempool.h"
 
 
-
+#ifdef EMC2_SERVICE
 class EMC2_CTxMemPool : public CPool
 {
 
@@ -62,6 +62,7 @@ class EMC2_CTxMemPool : public CPool
     EMC2_CTxMemPool() : CPool(EMC2_COIN_IFACE) { };
 
 };
+#endif
 
 
 

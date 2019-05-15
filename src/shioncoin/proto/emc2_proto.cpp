@@ -35,21 +35,19 @@
 #include "emc2/emc2_wallet.h"
 #include "emc2/emc2_txidx.h"
 
+#ifdef EMC2_SERVICE
 EMC2_CTxMemPool EMC2Block::mempool;
+
 CBlockIndex *EMC2Block::pindexGenesisBlock = NULL;
+
 int64 EMC2Block::nTimeBestReceived;
 
 extern void RegisterRPCOpDefaults(int ifaceIndex);
-
-
-#if 0
-int64 EMC2Block::nTargetTimespan = 14400; /* four hours */
-int64 EMC2Block::nTargetSpacing = 180; /* three minutes */
 #endif
-
 
 static int emc2_init(CIface *iface, void *_unused_)
 {
+#ifdef EMC2_SERVICE
   int ifaceIndex = GetCoinIndex(iface);
   int err;
 
@@ -143,6 +141,7 @@ static int emc2_init(CIface *iface, void *_unused_)
   }
 
   Debug("initialized EMC2 block-chain.");
+#endif
 
   return (0);
 }
@@ -187,26 +186,26 @@ static int emc2_term(CIface *iface, void *_unused_)
 
 static int emc2_msg_recv(CIface *iface, CNode *pnode)
 {
-
+#ifdef EMC2_SERVICE
   if (!pnode)
     return (0);
 
   if (!emc2_ProcessMessages(iface, pnode)) {
     /* log */
   }
-
+#endif
 return (0);
 }
 static int emc2_msg_send(CIface *iface, CNode *pnode)
 {
-
+#ifdef EMC2_SERVICE
   if (!pnode)
     return (0);
 
   if (!emc2_SendMessages(iface, pnode, false)) {
     /* log */
   }
-
+#endif
 return (0);
 }
 static int emc2_peer_add(CIface *iface, void *arg)
@@ -219,17 +218,24 @@ return (0);
 }
 static int emc2_block_new(CIface *iface, CBlock **block_p)
 {
+#ifdef EMC2_SERVICE
   *block_p = new EMC2Block();
-return (0);
+	return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 static int emc2_block_process(CIface *iface, CBlock *block)
 {
-
+#ifdef EMC2_SERVICE
   if (!emc2_ProcessBlock(block->originPeer, block))
     return (SHERR_INVAL);
 
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 static CPubKey emc2_GetMainAccountPubKey(CWallet *wallet)
@@ -287,6 +293,7 @@ static CPubKey emc2_GetMainAccountPubKey(CWallet *wallet)
 
 static int emc2_block_templ(CIface *iface, CBlock **block_p)
 {
+#ifdef EMC2_SERVICE
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   CBlock* pblock;
@@ -295,7 +302,7 @@ static int emc2_block_templ(CIface *iface, CBlock **block_p)
     
   if (!wallet) {
     unet_log(ifaceIndex, "GetBlocKTemplate: Wallet not initialized.");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   CBlockIndex *pindexBest = GetBestBlockIndex(EMC2_COIN_IFACE);
@@ -304,12 +311,12 @@ static int emc2_block_templ(CIface *iface, CBlock **block_p)
   const CPubKey& pubkey = emc2_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
     error(SHERR_INVAL, "emc2_block_templ: error obtaining main pubkey.\n"); 
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   pblock = emc2_CreateNewBlock(pubkey);
   if (!pblock)
-    return (NULL);
+    return (ERR_INVAL);
 
   pblock->nTime = MAX(median, GetAdjustedTime());
   pblock->nNonce = 0;
@@ -317,6 +324,9 @@ static int emc2_block_templ(CIface *iface, CBlock **block_p)
   *block_p = pblock;
 
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 static int emc2_tx_new(CIface *iface, void *arg)
@@ -326,8 +336,12 @@ return (0);
 
 static int emc2_tx_pool(CIface *iface, CTxMemPool **pool_p)
 {
+#ifdef EMC2_SERVICE
   *pool_p = &EMC2Block::mempool;
   return (0);
+#else
+	return (ERR_OPNOTSUPP);
+#endif
 }
 
 #ifdef __cplusplus

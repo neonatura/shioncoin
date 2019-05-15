@@ -32,96 +32,75 @@
  * @{
  */
 
+#ifdef EMC2_SERVICE
+
 #include <boost/assign/list_of.hpp>
 #include <boost/array.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <share.h>
 
-
-
-
-#if 0
-class EMC2_CTxMemPool : public CTxMemPool
-{
-
-  public:
-    bool accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs, bool* pfMissingInputs);
-    bool addUnchecked(const uint256& hash, CTransaction &tx);
-    bool remove(CTransaction &tx);
-    void queryHashes(std::vector<uint256>& vtxid);
-
-};
-#endif
-
 class EMC2Block : public CBlock
 {
-public:
-    // header
-    static const int CURRENT_VERSION=2;
-    static EMC2_CTxMemPool mempool; 
-    static CBlockIndex *pindexBest;
-    static CBlockIndex *pindexGenesisBlock;
-    static int64 nTimeBestReceived;
+	public:
+		// header
+		static const int CURRENT_VERSION=2;
+		static EMC2_CTxMemPool mempool; 
+		static CBlockIndex *pindexBest;
+		static CBlockIndex *pindexGenesisBlock;
+		static int64 nTimeBestReceived;
 
-    EMC2Block()
-    {
-      ifaceIndex = EMC2_COIN_IFACE;
-      SetNull();
-    }
+		EMC2Block()
+		{
+			ifaceIndex = EMC2_COIN_IFACE;
+			SetNull();
+		}
 
-    EMC2Block(const CBlock &block)
-    {
-      ifaceIndex = EMC2_COIN_IFACE;
-      SetNull();
-      *((CBlock*)this) = block;
-    }
+		EMC2Block(const CBlock &block)
+		{
+			ifaceIndex = EMC2_COIN_IFACE;
+			SetNull();
+			*((CBlock*)this) = block;
+		}
 
-    EMC2Block(const CBlockHeader &header)
-    {
-      ifaceIndex = EMC2_COIN_IFACE;
-      SetNull();
-      *((CBlockHeader*)this) = header;
-    }
+		EMC2Block(const CBlockHeader &header)
+		{
+			ifaceIndex = EMC2_COIN_IFACE;
+			SetNull();
+			*((CBlockHeader*)this) = header;
+		}
 
-    void SetNull()
-    {
-      nVersion = EMC2Block::CURRENT_VERSION;
-      CBlock::SetNull();
-    }
+		void SetNull()
+		{
+			nVersion = EMC2Block::CURRENT_VERSION;
+			CBlock::SetNull();
+		}
 
-    void InvalidChainFound(CBlockIndex* pindexNew);
-    unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast);
-    bool AcceptBlock();
-    bool IsBestChain();
-    CScript GetCoinbaseFlags();
-    bool AddToBlockIndex();
-    bool CheckBlock();
-    bool ReadBlock(uint64_t nHeight);
-    bool ReadArchBlock(uint256 hash);
-    bool IsOrphan();
-    bool Truncate();
-    bool VerifyCheckpoint(int nHeight);
-    uint64_t GetTotalBlocksEstimate();
+		void InvalidChainFound(CBlockIndex* pindexNew);
+		unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast);
+		bool AcceptBlock();
+		bool IsBestChain();
+		CScript GetCoinbaseFlags();
+		bool AddToBlockIndex();
+		bool CheckBlock();
+		bool ReadBlock(uint64_t nHeight);
+		bool ReadArchBlock(uint256 hash);
+		bool IsOrphan();
+		bool Truncate();
+		bool VerifyCheckpoint(int nHeight);
+		uint64_t GetTotalBlocksEstimate();
 
-
-    int64_t GetBlockWeight();
+		int64_t GetBlockWeight();
 
 		bool CreateCheckpoint(); 
 
 		int GetAlgo() const { return (0); }
 
-#ifdef USE_LEVELDB_COINDB
-    bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);
-    bool ConnectBlock(CTxDB& txdb, CBlockIndex* pindex);
-    bool DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex);
-#else
-    bool SetBestChain(CBlockIndex* pindexNew);
-    bool ConnectBlock(CBlockIndex* pindex);
-    bool DisconnectBlock(CBlockIndex* pindex);
-#endif
+		bool SetBestChain(CBlockIndex* pindexNew);
 
+		bool ConnectBlock(CBlockIndex* pindex);
 
-//  protected: bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
+		bool DisconnectBlock(CBlockIndex* pindex);
+
 };
 
 
@@ -182,7 +161,7 @@ bool emc2_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash);
 CBlock *emc2_GetOrphanBlock(const uint256& hash); 
 uint256 emc2_GetOrphanRoot(uint256 hash); 
 
-
+#endif /* def EMC2_SERVICE */
 
 /**
  * @}

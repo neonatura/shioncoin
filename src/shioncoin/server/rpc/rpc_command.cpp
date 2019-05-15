@@ -1179,6 +1179,7 @@ Value rpc_stratum_list(CIface *iface, const Array& params, bool fStratum)
     throw runtime_error("unsupported operation");
 
   Array ret;
+#ifdef STRATUM_SERVICE
   for (user = client_list; user; user = user->next) {
     if (user->flags & USER_RPC)
       continue;
@@ -1221,6 +1222,7 @@ Value rpc_stratum_list(CIface *iface, const Array& params, bool fStratum)
 
     ret.push_back(obj);
   }
+#endif
 
   return (ret);
 }
@@ -1252,6 +1254,7 @@ Value rpc_stratum_blocks(CIface *iface, const Array& params, bool fStratum)
 		fVerbose = params[0].get_bool();
 
 	Array ar;
+#ifdef STRATUM_SERVICE 
 	vector<CBlockIndex *> vBlock = get_stratum_miner_blocks(ifaceIndex);
   BOOST_FOREACH(CBlockIndex *pindex, vBlock) {
 		if (fVerbose) {
@@ -1265,6 +1268,7 @@ Value rpc_stratum_blocks(CIface *iface, const Array& params, bool fStratum)
 			ar.push_back(pindex->GetBlockHash().GetHex());
 		}
 	}
+#endif
 
   return (ar);
 }

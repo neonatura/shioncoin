@@ -28,8 +28,8 @@
 
 
 #define SHC_VERSION_MAJOR 3
-#define SHC_VERSION_MINOR 2 
-#define SHC_VERSION_REVISION 4 
+#define SHC_VERSION_MINOR 3 
+#define SHC_VERSION_REVISION 1 
 #define SHC_VERSION_BUILD 0
 
 /** The default socket port for the SHC coin service. */

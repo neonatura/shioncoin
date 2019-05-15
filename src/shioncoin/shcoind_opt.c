@@ -66,7 +66,7 @@ static opt_t _option_table[] = {
 	{ OPT_BLOCK_SIZE, OPT_TYPE_NUM, 4096000, NULL,
 		"The preferred maximum block size." },
 	{ OPT_MIN_FEE, OPT_TYPE_NUM, 1000, NULL,
-		"The preferred minimum relay tx fee in sharetoshis." },
+		"The preferred minimum relay tx fee in shionoshis." },
 
 	/* network options */
 	{ OPT_SHC_PORT, OPT_TYPE_NUM, 24104, NULL,
@@ -95,6 +95,7 @@ static opt_t _option_table[] = {
 		"The IP Address of the ethernet device to bind the RPC service to or a literal star \"*\" to allow any incoming network connection." },
 #endif
 
+	/* The shioncoin testnet service. */
 #ifdef TESTNET_SERVICE
 	{ OPT_SERV_TESTNET, OPT_TYPE_BOOL, 0, NULL,
 		"The ShionCoin Testnet service." },
@@ -118,6 +119,7 @@ static opt_t _option_table[] = {
 		"The socket port to listen for USDE connections." },
 #endif
 
+#ifdef STRATUM_SERVICE
 #ifdef USE_ALGO_SHA256D
 	{ OPT_STRATUM_SHA256D, OPT_TYPE_BOOL, 0, NULL,
 		"Provide a stratum mining service for the SHA256D PoW algorthm." },
@@ -160,11 +162,11 @@ static opt_t _option_table[] = {
 	{ OPT_STRATUM_SKEIN_PORT, OPT_TYPE_NUM, 9462, NULL, 
 		"The socket port to listen for stratum SKEIN connections." },
 #endif
-
 #ifdef TESTNET_SERVICE
 	{ OPT_STRATUM_TESTNET, OPT_TYPE_BOOL, 0, NULL,
 		"Provide a stratum mining service for the TESTNET coin interface." },
 #endif
+#endif /* STRATUM_SERVICE */
 
 #if 0 /* TODO: */
 	{ OPT_STRATUM_COLOR, OPT_TYPE_STR, 0, "",
