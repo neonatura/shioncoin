@@ -124,19 +124,6 @@ CBlockIndex *testnet_GetLastCheckpoint()
 }
 
 
-// get the wallet transaction with the given hash (if it exists)
-bool static GetTransaction(const uint256& hashTx, CWalletTx& wtx)
-{
-  CWallet *pwallet = GetWallet(TESTNET_COIN_IFACE);
-
-  if (pwallet) {
-    if (pwallet->GetTransaction(hashTx,wtx))
-      return true;
-  }
-
-  return false;
-}
-
 void testnet_RelayTransaction(const CTransaction& tx, const uint256& hash)
 {
   RelayMessage(CInv(TESTNET_COIN_IFACE, MSG_TX, hash), (CTransaction)tx);

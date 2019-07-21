@@ -1,0 +1,6 @@
+With ShionCoin the mining software is built in. Simply point your stratum miner to port 9448 and start mining. Point your web browser to http://127.0.0.1:9448/ in order to see the service's status.
+
+Run "shcoind -h" to see whether additional PoW mining algorythms are available and what port to connect to.
+
+You can also mine with cpuminer by running the following:
+cpuminer -a scrypt -o stratum+tcp://127.0.0.1:9448/ -u bank -p x

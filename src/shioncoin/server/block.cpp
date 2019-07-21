@@ -872,7 +872,8 @@ int GetBestHeight(int ifaceIndex)
 bool IsInitialBlockDownload(int ifaceIndex)
 {
 
-	if (ifaceIndex == COLOR_COIN_IFACE)
+	if (ifaceIndex == COLOR_COIN_IFACE ||
+			ifaceIndex == TESTNET_COIN_IFACE)
 		return (false);
 
   CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
@@ -1772,14 +1773,16 @@ bool CBlock::trust(int deg, const char *msg, ...)
     va_end(arg_ptr);
   }
 
-  sprintf(errbuf, "(%s) TRUST %s%d", 
-			iface->name, (deg >= 0) ? "+" : "", deg);
-  if (*msgbuf)
-    sprintf(errbuf + strlen(errbuf), " (%s)", msgbuf);
-	if (originPeer)
-    sprintf(errbuf + strlen(errbuf), " (%s)", 
-				originPeer->addr.ToString().c_str());
-	Debug("%s", errbuf);
+	if (originPeer || deg < 0) {
+		sprintf(errbuf, "(%s) TRUST %s%d", 
+				iface->name, (deg >= 0) ? "+" : "", deg);
+		if (*msgbuf)
+			sprintf(errbuf + strlen(errbuf), " (%s)", msgbuf);
+		if (originPeer)
+			sprintf(errbuf + strlen(errbuf), " (%s)", 
+					originPeer->addr.ToString().c_str());
+		Debug("%s", errbuf);
+	}
 
   if (deg > 0) {
     if (originPeer) {

@@ -469,6 +469,29 @@ _TEST(cointx)
 
     _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
   }
+
+	/* erase all arch wallet-tx's to simulate a startup scenerio. */
+	vector<uint256> vErase;
+	BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, wallet->mapWallet) {
+		CWalletTx& wtx = item.second;
+		uint256 hash = item.first;
+		bool fArch = true;
+		unsigned int idx;
+
+		for (idx = 0; idx < wtx.vout.size(); idx++) {
+			if (!wtx.IsSpent(idx)) {
+				fArch = false;
+				break;
+			}
+		}
+
+		if (fArch)
+			vErase.push_back(hash);
+	}
+	for (int i = 0; i < vErase.size(); i++) {
+		wallet->mapWallet.erase(vErase[i]);
+	}
+//fprintf(stderr, "DEBUG: TEST: COINTX: erased x%d arch tx's.\n", vErase.size()); 
 }
 
 _TEST(aliastx)

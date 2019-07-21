@@ -243,6 +243,7 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 				addr.ToString().c_str()); 
 	}
 
+#if 0
 	_index++;
 	if (0 == (_index % 1000)) {
 		/* check if this pubkey has been used in coinbase. */
@@ -263,6 +264,7 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 			ret_key = GetAccountPubKey(wallet, strAccount, true);
 		}
 	}
+#endif
 
   return (ret_key);
 }

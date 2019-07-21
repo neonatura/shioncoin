@@ -892,8 +892,8 @@ const RPCOp WALLET_UNSPENT = {
   "Returns array of unspent transaction outputs with minimum specified confirmations."
 };
 const RPCOp WALLET_SPENT = {
-  &rpc_wallet_spent, 1, {RPC_ACCOUNT},
-  "Syntax: <account>\n"
+  &rpc_wallet_spent, 1, {RPC_ACCOUNT, RPC_BOOL},
+  "Syntax: <account> [<verbose>=false]\n"
   "Returns array of spent transaction outputs for the account."
 };
 const RPCOp WALLET_SELECT = {

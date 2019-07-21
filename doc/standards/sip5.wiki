@@ -2,15 +2,11 @@
   SIP: 5 
   Layer: Core
   Title: Certificate (Extended Transaction)
-  Author: Brian Burrell <bburrell@neo-natura.com>
-  Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip5.wiki
+	Author: Neo Natura < support@neo-natura.com >
   Status: Final
   Type: Standards Track
   Created: 2019-01-26
-  License: PD
 </pre>
-
 ==Abstract==
 
 This SIP defines a new transaction called the "Certificate Extended Transaction". This extended transaction is used in order to generate certification certificates which contain digital signatures referencing their previous chain (parent) transaction. A root-level certificate will have no previous certificate in the chain.

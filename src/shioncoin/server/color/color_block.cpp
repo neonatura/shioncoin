@@ -898,6 +898,7 @@ bool COLORBlock::AcceptBlock()
 			wtx.BindWallet(alt_wallet);
 			alt_wallet->AddToWallet(wtx);
 
+#if 0
 			/* color_wallet.dat -- market spent */
 			BOOST_FOREACH(const CTxIn& txin, wtx.vin)
 			{
@@ -909,6 +910,7 @@ bool COLORBlock::AcceptBlock()
 				coin.MarkSpent(txin.prevout.n);
 				coin.WriteToDisk();
 			}
+#endif
 
 			Debug("(color) AcceptBlock: new wallet transaction \"%s\".", 
 					hTx.GetHex().c_str());

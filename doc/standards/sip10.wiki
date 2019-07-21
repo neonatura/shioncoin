@@ -2,13 +2,10 @@
   SIP: 10
   Layer: Core
   Title: Coin Address Alias (Extended Transaction)
-  Author: Brian Burrell < bburrell@neo-natura.com >
-  Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip10.wiki
+  Author: Neo Natura < support@neo-natura.com >
   Status: Final
   Type: Standard Track
   Created: 2018-12-29
-  License: PD
 </pre>
 
 ==Abstract==

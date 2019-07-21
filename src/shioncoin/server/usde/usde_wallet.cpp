@@ -392,12 +392,13 @@ bool USDEWallet::CommitTransaction(CWalletTx& wtxNew)
       // This is only to keep the database open to defeat the auto-flush for the
       // duration of this scope.  This is the only place where this optimization
       // maybe makes sense; please don't do it anywhere else.
-      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
+//      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
 
       // Add tx to wallet, because if it has change it's also ours,
       // otherwise just for transaction history.
       AddToWallet(wtxNew);
 
+#if 0
       // Mark old coins as spent
       set<CWalletTx*> setCoins;
       BOOST_FOREACH(const CTxIn& txin, wtxNew.vin)
@@ -408,8 +409,9 @@ bool USDEWallet::CommitTransaction(CWalletTx& wtxNew)
         coin.WriteToDisk();
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
+#endif
 
-			delete pwalletdb;
+//			delete pwalletdb;
     }
 
     // Track how many getdata requests our transaction gets

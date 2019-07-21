@@ -333,6 +333,7 @@ bool TESTWallet::CommitTransaction(CWalletTx& wtxNew)
       // otherwise just for transaction history.
       AddToWallet(wtxNew);
 
+#if 0
       // Mark old coins as spent
       set<CWalletTx*> setCoins;
       BOOST_FOREACH(const CTxIn& txin, wtxNew.vin)
@@ -343,6 +344,7 @@ bool TESTWallet::CommitTransaction(CWalletTx& wtxNew)
         coin.WriteToDisk();
         //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
       }
+#endif
 
 //			delete pwalletdb;
     }

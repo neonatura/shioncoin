@@ -1303,13 +1303,13 @@ int generate_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWall
 
 	/* establish original tx */
 	uint256 wtxInHash = tx.GetHash();
-	if (wallet->mapWallet.count(wtxInHash) == 0)
+	if (!wallet->HasTx(wtxInHash))
 		return (false);
 
 	int64 nFeeValue;
 	string strAccountPrev;
 	unsigned int nTxOut;
-	CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
+	CWalletTx& wtxIn = wallet->GetTx(wtxInHash);//wallet->mapWallet[wtxInHash];
 	if (!GetExtTxOut(ifaceIndex, wtxIn, nFeeValue, strAccountPrev, nTxOut))
 		return (SHERR_REMOTE);
 
@@ -1390,13 +1390,13 @@ int cancel_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWallet
 
 	/* establish original tx */
 	uint256 wtxInHash = tx.GetHash();
-	if (wallet->mapWallet.count(wtxInHash) == 0)
+	if (!wallet->HasTx(wtxInHash))// wallet->mapWallet.count(wtxInHash) == 0)
 		return (ERR_NOENT);
 
 	int64 nFeeValue;
 	string strAccountPrev;
 	unsigned int nTxOut;
-	CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
+	CWalletTx& wtxIn = wallet->GetTx(wtxInHash);//wallet->mapWallet[wtxInHash];
 	if (!GetExtTxOut(ifaceIndex, wtxIn, nFeeValue, strAccountPrev, nTxOut))
 		return (SHERR_REMOTE);
 
@@ -1439,10 +1439,11 @@ int cancel_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWallet
 
 		/* the final tx already resolves to user after gen offer expires. */
 		const uint256& hGenTx = wallet->mapOfferGenerate[hashOffer];
-		if (wallet->mapWallet.count(hGenTx) == 0)
-			return (ERR_ACCESS);
 
-		CWalletTx& gen_wtx = wallet->mapWallet[hGenTx];
+		if (!wallet->HasTx(hGenTx) == 0)
+			return (ERR_ACCESS);
+		CWalletTx& gen_wtx = wallet->GetTx(hGenTx);//wallet->mapWallet[hGenTx];
+
 		COffer *gen = gen_wtx.GetOffer();
 		if (!gen)
 			return (ERR_INVAL);

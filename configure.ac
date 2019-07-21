@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(shioncoin, 3.3)
+AC_INIT(shioncoin, 4.0)
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -20,9 +20,9 @@ AM_CONDITIONAL([KMOD_DIR], [test -f /lib/modules/`uname -r`/build])
 
 LT_INIT
 
-version_patch=3
+version_patch=0
 AC_SUBST(version_patch)
-version_info=3:3:0
+version_info=4.0:0
 AC_SUBST(version_info)
 
 AC_CONFIG_FILES([doc/NEWS])

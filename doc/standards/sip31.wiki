@@ -2,9 +2,7 @@
   SIP: 31
   Layer: Consensus (soft fork)
   Title: BOLO Checkpoint on external blockchain
-  Author: Brian Burrell <bburrell@neo-natura.com>
-  Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip31.wiki
+	Author: Neo Natura < support@neo-natura.com >
   Status: Proposed
   Type: Standards Track
   Created: 2018-11-26

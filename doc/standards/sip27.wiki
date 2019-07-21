@@ -2,15 +2,11 @@
   SIP: 27
   Layer: Standard (soft fork)
   Title: Trust Extended Transaction
-  Author: Brian Burrell (bburrell@neo-natura.com)
-  Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip27.wiki
+	Author: Neo Natura < support@neo-natura.com >
   Status: Proposed
   Type: Standards Track
   Created: 2018-09-28
-  License: None
 </pre>
-
 ==Abstract==
 
 This document specifies proposed changes to the ShionCoin Virtual Currency servic's transaction capabilities in order to provide temporary transfer of SHC coins, a SHC asset, or a SHC license. 

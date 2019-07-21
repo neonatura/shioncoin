@@ -689,7 +689,7 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
 
   /* establish original tx */
   uint256 wtxInHash = tx.GetHash();
-  if (wallet->mapWallet.count(wtxInHash) == 0)
+  if (!wallet->HasTx(wtxInHash))// wallet->mapWallet.count(wtxInHash) == 0)
     return (SHERR_REMOTE);
 
   /* establish account */
@@ -731,7 +731,7 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
 
   uint160 aliasHash = alias->GetHash();
   vector<pair<CScript, int64> > vecSend;
-  CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
+  CWalletTx& wtxIn = wallet->GetTx(wtxInHash);// wallet->mapWallet[wtxInHash];
 
   /* generate output script */
 	CScript scriptPubKeyOrig;
@@ -779,7 +779,7 @@ int remove_alias_addr_tx(CIface *iface, string strAccount, string strTitle, CWal
 
   /* establish original tx */
   uint256 wtxInHash = in_tx.GetHash();
-  if (wallet->mapWallet.count(wtxInHash) == 0)
+  if (!wallet->HasTx(wtxInHash))
     return (SHERR_REMOTE);
 
   /* generate tx */
@@ -790,7 +790,7 @@ int remove_alias_addr_tx(CIface *iface, string strAccount, string strTitle, CWal
   alias = s_wtx.RemoveAlias(strTitle);
   uint160 aliasHash = alias->GetHash();
 
-  CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
+  CWalletTx& wtxIn = wallet->GetTx(wtxInHash);// wallet->mapWallet[wtxInHash];
 
   /* generate output script */
 	scriptPubKey << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_ALIAS) << OP_HASH160 << aliasHash << OP_2DROP << OP_RETURN;

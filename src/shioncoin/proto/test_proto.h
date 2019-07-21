@@ -26,10 +26,10 @@
 #ifndef __TEST_PROTO_H__
 #define __TEST_PROTO_H__
 
-#define TEST_VERSION_MAJOR       0 
-#define TEST_VERSION_MINOR       13
-#define TEST_VERSION_REVISION    4
-#define TEST_VERSION_BUILD       0
+#define TEST_VERSION_MAJOR 4
+#define TEST_VERSION_MINOR 0
+#define TEST_VERSION_REVISION 0
+#define TEST_VERSION_BUILD 0
 
 #define TEST_COIN_DAEMON_PORT 0
 

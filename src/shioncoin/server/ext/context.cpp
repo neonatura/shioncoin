@@ -946,9 +946,9 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
   if (bal < nFee)
     return (ERR_FEE);
 
-  if (wallet->mapWallet.count(wtxInHash) == 0)
+  if (!wallet->HasTx(wtxInHash))
     return (SHERR_REMOTE);
-  CWalletTx& wtxIn = wallet->mapWallet[wtxInHash];
+  CWalletTx& wtxIn = wallet->GetTx(wtxInHash); // wallet->mapWallet[wtxInHash];
 
   /* embed ctx content into transaction */
 	CTxCreator s_wtx(wallet, strAccount);

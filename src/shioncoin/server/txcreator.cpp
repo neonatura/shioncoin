@@ -531,11 +531,10 @@ bool CTxCreator::Generate()
     }
 
     int64 nChange = (nTotCredit - nDebit - nFee);
-    if (nChange >= MIN_INPUT_VALUE(iface)) {
+    if (nChange >= MIN_TX_FEE(iface)) {
       CScript script;
 
       script.SetDestination(changeAddr.Get());
-      //script.SetDestination(changePubKey.GetID());
       t_wtx.vout.insert(t_wtx.vout.end(), CTxOut(nChange, script));
     }
 

@@ -2,15 +2,11 @@
   SIP: 7 
   Layer: Core
   Title: Executable (Extended Transaction)
-  Author: Brian Burrell <bburrell@neo-natura.com>
-  Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip7.wiki
+	Author: Neo Natura < support@neo-natura.com >
   Status: Final
   Type: Standards Track
   Created: 2018-12-29
-  License: PD
 </pre>
-
 == Abstract ==
 This document introduces the ability to create executable calls based on applications published to the ShionCoin block-chain.
 

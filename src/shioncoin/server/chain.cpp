@@ -125,7 +125,10 @@ static void chain_UpdateWalletCoins(int ifaceIndex, const CTransaction& tx)
 			/* wallet db */
 			if (!wtx.IsSpent(nOut) && wallet->IsMine(wtx.vout[nOut])) {
 				wtx.MarkSpent(nOut);
+#if 0
 				wtx.WriteToDisk();
+#endif
+				wallet->AddTx(wtx);
 			}
     }
   }
@@ -175,9 +178,12 @@ static bool ServiceWalletEvent(int ifaceIndex)
 							!IsMine(*wallet, address))
 						continue;
 
+#if 0
 					CWalletTx wtx(wallet, tx);
 					wtx.SetMerkleBranch(block);
 					wallet->AddToWallet(wtx);
+#endif
+					wallet->AddTx(tx, block);
 					break;
 				}
       }

@@ -260,6 +260,13 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
         "sys.info\n"
         "The system attributes that control how the coin-service operates.");
 
+	/* counter number of 'spent' wallet transactions. */
+	bcpos_t nArch = 0;
+	{
+		bc_t *bc = GetWalletTxChain(iface);
+		bc_idx_next(bc, &nArch);
+	}
+
   Object obj;
 
   /* versioning */
@@ -316,6 +323,7 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
 
   /* wallet */
   obj.push_back(Pair("wallettx", (int)pwalletMain->mapWallet.size()));
+  obj.push_back(Pair("wallettxarch", (int)nArch));
   obj.push_back(Pair("walletaddr", (int)pwalletMain->mapAddressBook.size()));
 
 #if 0
@@ -1094,11 +1102,9 @@ Value rpc_tx_validate(CIface *iface, const Array& params, bool fStratum)
 
   uint256 hash(params[0].get_str());
 
-  if (0 == pwalletMain->mapWallet.count(hash)) {
+	if (!pwalletMain->HasTx(hash))
     throw JSONRPCError(-4, "Transaction is not contained in wallet.");
-  }
-
-  CWalletTx& wtx = pwalletMain->mapWallet[hash];
+  CWalletTx& wtx = pwalletMain->GetTx(hash);//pwalletMain->mapWallet[hash];
 
   Array ret;
 

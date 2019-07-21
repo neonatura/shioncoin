@@ -111,7 +111,7 @@ void usage_help(void)
 			"\t\trpc-host=127.0.0.1\n"
       "\n"
       "Persistent Preferences:\n"
-      "\tRun \"shpref shcoind.<name> <value>\" to permanently apply configuration options. The \"shpref\" utility program is installed with ShionCoin suite.\n"
+      "\tRun \"shpref shcoind.<name> <value>\" to permanently apply configuration options. The \"shpref\" utility program is installed with Share Library suite.\n"
 			"\n"
 			"\tFor example:\n"
 			"\t\tshpref shcoind.debug true\n"

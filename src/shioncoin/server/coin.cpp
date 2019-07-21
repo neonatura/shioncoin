@@ -821,10 +821,15 @@ static bool core_DisconnectWalletInputs(CWallet *wallet, const COutPoint& prevou
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
 	const uint256& prevhash = prevout.hash;
 
-	if (wallet->mapWallet.count(prevhash) == 0)
+	if (!wallet->HasTx(prevhash))
 		return (true); /* all done */
 
+	CWalletTx wtx = wallet->GetTx(prevhash);
+#if 0
+	if (wallet->mapWallet.count(prevhash) == 0)
+		return (true); /* all done */
 	CWalletTx& wtx = wallet->mapWallet[prevhash];
+#endif
 	vector<char> vfNewSpent = wtx.vfSpent;
 	vfNewSpent.resize(wtx.vout.size());
 	if (vfNewSpent[prevout.n] == false)
@@ -834,8 +839,14 @@ static bool core_DisconnectWalletInputs(CWallet *wallet, const COutPoint& prevou
 	vfNewSpent[prevout.n] = false;
 	wtx.vfSpent = vfNewSpent;
 	wtx.fAvailableCreditCached = false;
+#if 0
 	if (!wtx.WriteToDisk())
 		return (false);
+#endif
+	/* -> active */
+	wallet->WriteWalletTx(wtx);
+	wallet->mapWallet[prevhash] = wtx;
+	wallet->EraseArchTx(prevhash);
 
 	Debug("(%s) core_DisconnectCoinInputs: marked tx \"%s\" output #%d as unspent in wallet.\n", iface->name, prevhash.GetHex().c_str(), prevout.n); 
 	return (true);

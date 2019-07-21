@@ -154,10 +154,6 @@ class CWallet : public CCryptoKeyStore
 
 		std::string strWalletFile;
 
-#if 0
-		std::set<int64> setKeyPool;
-#endif
-
 		typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
 		MasterKeyMap mapMasterKeys;
 		unsigned int nMasterKeyMaxID;
@@ -182,6 +178,7 @@ class CWallet : public CCryptoKeyStore
 			bnBestChainWork = 0;
 			pindexBestHeader = NULL;
 		}
+
 		CWallet(int index, std::string strWalletFileIn)
 		{
 			strWalletFile = strWalletFileIn;
@@ -197,18 +194,19 @@ class CWallet : public CCryptoKeyStore
 		}
 
 		std::map<uint256, CWalletTx> mapWallet;
+		std::map<uint256, CWalletTx> mapWalletArch;
 		std::map<uint256, int> mapRequestCount;
 
 		std::map<CTxDestination, std::string> mapAddressBook;
 
 		CPubKey vchDefaultKey;
 
-		bool SelectCoins(int64 nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
+		bool SelectCoins(int64 nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet);
 
 		// check whether we are allowed to upgrade (or already support) to the named feature
 		bool CanSupportFeature(enum WalletFeature wf) { return true; }
 
-		void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed =true)  const;
+		void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed =true);
 		void AvailableAccountCoins(string strAccount, std::vector<COutput>& vCoins, bool fOnlyConfirmed =true, uint160 hColor = 0)  const;
 
 		void AvailableAddrCoins(vector<COutput>& vCoins, const CCoinAddr& filterAddr, int64& nTotalValue, bool fOnlyConfirmed) const;
@@ -249,7 +247,7 @@ class CWallet : public CCryptoKeyStore
 		int ScanForWalletTransaction(const uint256& hashTx);
 		int64 GetBalance() const;
 		int64 GetUnconfirmedBalance() const;
-		int64 GetImmatureBalance() const;
+		int64 GetImmatureBalance();
 #if 0
 		std::string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
 #endif
@@ -258,19 +256,24 @@ class CWallet : public CCryptoKeyStore
 		string SendMoney(string strFromAccount, CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee = false);
 		string SendMoney(string stringFromAccount, const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
 
-		bool IsMine(const CTxIn& txin) const;
-		int64 GetDebit(const CTxIn& txin) const;
-		bool IsMine(const CTxOut& txout) const
+		bool IsMine(const CTxIn& txin);
+
+		int64 GetDebit(const CTxIn& txin);
+
+		bool IsMine(const CTxOut& txout)
 		{
 			return ::IsMine(*this, txout.scriptPubKey);
 		}
-		int64 GetCredit(const CTxOut& txout) const
+
+		int64 GetCredit(const CTxOut& txout)
 		{
 			if (!MoneyRange(ifaceIndex, txout.nValue))
 				throw std::runtime_error("CWallet::GetCredit() : value out of range");
 			return (IsMine(txout) ? txout.nValue : 0);
 		}
+
 		bool IsChange(const CTxOut& txout) const;
+
 		int64 GetChange(const CTxOut& txout) const
 		{
 #if 0
@@ -279,7 +282,8 @@ class CWallet : public CCryptoKeyStore
 #endif
 			return (IsChange(txout) ? txout.nValue : 0);
 		}
-		bool IsMine(const CTransaction& tx) const
+
+		bool IsMine(const CTransaction& tx)
 		{
 			CIface *iface = GetCoinByIndex(ifaceIndex);
 			int64 nMinimumInputValue = MIN_INPUT_VALUE(iface);
@@ -291,11 +295,13 @@ class CWallet : public CCryptoKeyStore
 			}
 			return false;
 		}
-		bool IsFromMe(const CTransaction& tx) const
+
+		bool IsFromMe(const CTransaction& tx)
 		{
 			return (GetDebit(tx) > 0);
 		}
-		int64 GetDebit(const CTransaction& tx) const
+
+		int64 GetDebit(const CTransaction& tx)
 		{
 			int64 nDebit = 0;
 			BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -306,7 +312,8 @@ class CWallet : public CCryptoKeyStore
 			}
 			return nDebit;
 		}
-		int64 GetCredit(const CTransaction& tx) const
+
+		int64 GetCredit(const CTransaction& tx)
 		{
 			int64 nCredit = 0;
 			BOOST_FOREACH(const CTxOut& txout, tx.vout)
@@ -416,16 +423,6 @@ class CWallet : public CCryptoKeyStore
 		virtual int GetCoinbaseMaturity(uint160 hColor = 0) = 0;
 
 #if 0
-		/** Address book entry changed.
-		 * @note called with lock cs_wallet held.
-		 */
-		boost::signals2::signal<void (CWallet *wallet, const CTxDestination &address, const std::string &label, bool isMine, ChangeType status)> NotifyAddressBookChanged;
-		/** Wallet transaction added, removed or updated.
-		 * @note called with lock cs_wallet held.
-		 */
-		boost::signals2::signal<void (CWallet *wallet, const uint256 &hashTx, ChangeType status)> NotifyTransactionChanged;
-#endif
-
 		bool ReadTx(uint256 hash, CWalletTx& wtx);
 
 		bool WriteTx(uint256 hash, const CWalletTx& wtx);
@@ -442,6 +439,7 @@ class CWallet : public CCryptoKeyStore
 		 * Stop tracking a local wallet transaction.
 		 */
 		bool RemoveWalletTx(CWalletTx& wtx);
+#endif
 
 		CBlockLocator GetLocator(CBlockIndex *pindex = NULL);
 
@@ -470,6 +468,20 @@ class CWallet : public CCryptoKeyStore
 		CCoinAddr GetRecvAddr(string strAccount);
 
 		CCoinAddr GetPrimaryAddr(string strAccount);
+
+		/* wallettx.cpp */
+		bool HasTx(const uint256 hTx) const;
+		CWalletTx& GetTx(const uint256& hTx);
+		bool AddTx(const uint256& hTx, const CBlock *pblock = NULL);
+		bool AddTx(const CTransaction& tx, const CBlock* pblock = NULL);
+		bool AddTx(const CWalletTx& wtx);
+		void RemoveTx(uint256 hash);
+		void WriteWalletTx(const CWalletTx& wtx) const;
+		void EraseWalletTx(const uint256& hash) const;
+		bool ReadArchTx(uint256 hash, CWalletTx& wtx) const;
+		bool WriteArchTx(const CWalletTx& wtx) const;
+		bool EraseArchTx(uint256 hash) const;
+		bool HasArchTx(uint256 hash) const;
 
 		virtual bool IsAlgoSupported(int alg, CBlockIndex *pindexPrev = NULL, uint160 hColor = 0) = 0;
 
@@ -821,7 +833,9 @@ class CWalletTx : public CMerkleTx
 				 return true;
 			 }
 
+#if 0
 			 bool WriteToDisk();
+#endif
 
 			 int64 GetTxTime() const;
 

@@ -572,13 +572,15 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
   }
 
   if (AreInputsSpent(ptx)) {
+#if 0
 		if (wallet->mapWallet.count(ptx.GetHash()) != 0) {
 			/* remove unusable tx from wallet. */
 			CWalletTx& wtx = wallet->mapWallet[ptx.GetHash()]; 
 			wallet->RemoveWalletTx(wtx);
 			wallet->mapWallet.erase(ptx.GetHash());
 		}
-
+#endif
+		wallet->RemoveTx(ptx.GetHash());
     AddInvalTx(ptx);
     return (error(SHERR_INVAL, "(%s) CPool.AddActiveTx: rejecting tx \"%s\" with spent input(s).", iface->name, ptx.GetHash().GetHex().c_str()));
   }

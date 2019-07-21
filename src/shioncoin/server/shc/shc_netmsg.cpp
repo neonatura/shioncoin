@@ -120,19 +120,6 @@ class LimitedString
 extern CBlockIndex *shc_GetLastCheckpoint();
 
 
-// get the wallet transaction with the given hash (if it exists)
-bool static GetTransaction(const uint256& hashTx, CWalletTx& wtx)
-{
-  CWallet *pwallet = GetWallet(SHC_COIN_IFACE);
-
-  if (pwallet) {
-    if (pwallet->GetTransaction(hashTx,wtx))
-      return true;
-  }
-
-  return false;
-}
-
 void shc_RelayTransaction(const CTransaction& tx, const uint256& hash)
 {
   RelayMessage(CInv(SHC_COIN_IFACE, MSG_TX, hash), (CTransaction)tx);

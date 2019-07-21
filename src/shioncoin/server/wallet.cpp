@@ -25,6 +25,7 @@
 
 #include "shcoind.h"
 #include "wallet.h"
+#include "wallettx.h"
 #include "walletdb.h"
 #include "crypter.h"
 #include "ui_interface.h"
@@ -229,6 +230,7 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
 	walletdb.Close();
 }
 
+#if 0
 /**
  * Anytime a signature is successfully verified, it's proof the outpoint is spent.
  * Update the wallet spent flag if it doesn't know due to wallet.dat being
@@ -261,6 +263,7 @@ void CWallet::WalletUpdateSpent(const CTransaction &tx)
 		}
 	}
 }
+#endif
 
 void CWallet::MarkDirty()
 {
@@ -273,6 +276,7 @@ void CWallet::MarkDirty()
 
 bool CWallet::AddToWallet(const CWalletTx& wtxIn)
 {
+#if 0
 	uint256 hash = wtxIn.GetHash();
 	{
 		LOCK(cs_wallet);
@@ -319,29 +323,13 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
 
 		// Write to disk
 		if (fInsertedNew || fUpdated) {
+#if 0
 			if (!wtx.WriteToDisk())
 				return false;
+#endif
+			WriteWalletTx(wtx);
 		}
 
-#if 0
-#ifndef QT_GUI
-		// If default receiving address gets used, replace it with a new one
-		CScript scriptDefaultKey;
-		scriptDefaultKey.SetDestination(vchDefaultKey.GetID());
-		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-		{
-			if (txout.scriptPubKey == scriptDefaultKey)
-			{
-				CPubKey newDefaultKey;
-				if (GetKeyFromPool(newDefaultKey, false))
-				{
-					SetDefaultKey(newDefaultKey);
-					SetAddressBookName(vchDefaultKey.GetID(), "");
-				}
-			}
-		}
-#endif
-#endif
 		// since AddToWallet is called directly for self-originating transactions, check for consumption of own coins
 		WalletUpdateSpent(wtx);
 
@@ -349,6 +337,8 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
 		//NotifyTransactionChanged(this, hash, fInsertedNew ? CT_NEW : CT_UPDATED);
 	}
 	return true;
+#endif
+	return (AddTx(wtxIn));
 }
 
 // Add a transaction to the wallet, or update it.
@@ -359,7 +349,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 	uint256 hash = tx.GetHash();
 	{
 		LOCK(cs_wallet);
-		bool fExisted = mapWallet.count(hash);
+		bool fExisted = (mapWallet.count(hash) || HasArchTx(hash));
 		if (fExisted && !fUpdate) return false;
 		if (fExisted || IsFromMe(tx) || IsMine(tx)) {
 			CWalletTx wtx(this,tx);
@@ -375,10 +365,14 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 		}
 	}
 	return false;
+#if 0
+	return (AddTx(tx, pblock));
+#endif
 }
 
 bool CWallet::EraseFromWallet(uint256 hash)
 {
+#if 0
 	{
 		LOCK(cs_wallet);
 		if (mapWallet.erase(hash)) {
@@ -387,14 +381,25 @@ bool CWallet::EraseFromWallet(uint256 hash)
 			db.Close();
 		}
 	}
+#endif
+	RemoveTx(hash);
 	return true;
 }
 
 
-bool CWallet::IsMine(const CTxIn &txin) const
+bool CWallet::IsMine(const CTxIn &txin)
 {
 	{
 		LOCK(cs_wallet);
+
+		if (HasTx(txin.prevout.hash)) {
+			const CWalletTx& prev = GetTx(txin.prevout.hash);
+			if (txin.prevout.n < prev.vout.size()) {
+				if (IsMine(prev.vout[txin.prevout.n]))
+					return true;
+			}
+		}
+#if 0
 		map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txin.prevout.hash);
 		if (mi != mapWallet.end())
 		{
@@ -403,14 +408,24 @@ bool CWallet::IsMine(const CTxIn &txin) const
 				if (IsMine(prev.vout[txin.prevout.n]))
 					return true;
 		}
+#endif
 	}
 	return false;
 }
 
-int64 CWallet::GetDebit(const CTxIn &txin) const
+int64 CWallet::GetDebit(const CTxIn &txin)
 {
 	{
 		LOCK(cs_wallet);
+
+		if (HasTx(txin.prevout.hash)) {
+			const CWalletTx& prev = GetTx(txin.prevout.hash);
+			if (txin.prevout.n < prev.vout.size()) {
+				if (IsMine(prev.vout[txin.prevout.n]))
+					return prev.vout[txin.prevout.n].nValue;
+			}
+		}
+#if 0
 		map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txin.prevout.hash);
 		if (mi != mapWallet.end())
 		{
@@ -419,6 +434,7 @@ int64 CWallet::GetDebit(const CTxIn &txin) const
 				if (IsMine(prev.vout[txin.prevout.n]))
 					return prev.vout[txin.prevout.n].nValue;
 		}
+#endif
 	}
 	return 0;
 }
@@ -587,49 +603,8 @@ void CWalletTx::GetAmounts(int ifaceIndex, int64& nGeneratedImmature, int64& nGe
 	}
 
 }
-#if 0
-void CWalletTx::GetAccountAmounts(const string& strAccount, int64& nReceived, int64& nSent, int64& nFee) const
-{
-	//nGenerated = nReceived = nSent = nFee = 0;
-	nReceived = nSent = nFee = 0;
-
-	int64 allFee;
-	allFee = 0;
-	string strSentAccount;
-	list<pair<CTxDestination, int64> > listReceived;
-	list<pair<CTxDestination, int64> > listSent;
-	GetAmounts(listReceived, listSent, allFee, strSentAccount);
 
 #if 0
-	if (strAccount == "")
-		nGenerated = allGeneratedMature;
-#endif
-
-	if (strAccount == strSentAccount)
-	{
-		BOOST_FOREACH(const PAIRTYPE(CTxDestination,int64)& s, listSent)
-			nSent += s.second;
-		nFee = allFee;
-	}
-	{
-		LOCK(pwallet->cs_wallet);
-		BOOST_FOREACH(const PAIRTYPE(CTxDestination,int64)& r, listReceived)
-		{
-			if (pwallet->mapAddressBook.count(r.first))
-			{
-				map<CTxDestination, string>::const_iterator mi = pwallet->mapAddressBook.find(r.first);
-				if (mi != pwallet->mapAddressBook.end() && (*mi).second == strAccount)
-					nReceived += r.second;
-			}
-			else if (strAccount.empty())
-			{
-				nReceived += r.second;
-			}
-		}
-	}
-}
-#endif
-
 bool CWalletTx::WriteToDisk()
 {
 	{
@@ -642,6 +617,7 @@ bool CWalletTx::WriteToDisk()
 
 	return (true);
 }
+#endif
 
 #if 0
 // Scan the block chain (starting in pindexStart) for transactions
@@ -757,7 +733,7 @@ int64 CWallet::GetUnconfirmedBalance() const
 	return nTotal;
 }
 
-int64 CWallet::GetImmatureBalance() const
+int64 CWallet::GetImmatureBalance()
 {
 	int64 nTotal = 0;
 	{
@@ -773,7 +749,7 @@ int64 CWallet::GetImmatureBalance() const
 }
 
 // populate vCoins with vector of spendable COutputs
-void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed) const
+void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed)
 {
 	vCoins.clear();
 
@@ -1062,7 +1038,7 @@ bool CWallet::SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfThe
 	return true;
 }
 
-bool CWallet::SelectCoins(int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const
+bool CWallet::SelectCoins(int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet)
 {
 	vector<COutput> vCoins;
 	AvailableCoins(vCoins);
@@ -1404,6 +1380,7 @@ void CWallet::PrintWallet(const CBlock& block)
 
 bool CWallet::GetTransaction(const uint256 &hashTx, CWalletTx& wtx)
 {
+#if 0
 	{
 		LOCK(cs_wallet);
 		map<uint256, CWalletTx>::iterator mi = mapWallet.find(hashTx);
@@ -1414,6 +1391,13 @@ bool CWallet::GetTransaction(const uint256 &hashTx, CWalletTx& wtx)
 		}
 	}
 	return false;
+#endif
+
+	if (!HasTx(hashTx))
+		return (false);
+
+	wtx = GetTx(hashTx);
+	return (true);
 }
 
 bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
@@ -2527,8 +2511,12 @@ bool core_UnacceptWalletTransaction(CIface *iface, const CTransaction& tx)
 	BOOST_FOREACH(const CTxIn& in, vIn) {
 		const uint256& prevhash = in.prevout.hash;
 		
+		if (wallet->HasTx(prevhash)) {
+			CWalletTx& wtx = wallet->GetTx(prevhash);
+#if 0
 		if (wallet->mapWallet.count(prevhash) != 0) {
 			CWalletTx& wtx = wallet->mapWallet[prevhash];
+#endif
 
 			/* mark output as unspent */
 			vector<char> vfNewSpent = wtx.vfSpent;
@@ -2541,7 +2529,13 @@ bool core_UnacceptWalletTransaction(CIface *iface, const CTransaction& tx)
 			wtx.vfSpent = vfNewSpent;
 			wtx.fAvailableCreditCached = false;
 //			wtx.MarkDirty();
+#if 0
 			wtx.WriteToDisk();
+#endif
+			/* -> active */
+			wallet->WriteWalletTx(wtx);
+			wallet->mapWallet[prevhash] = wtx;
+			wallet->EraseArchTx(prevhash);
 
 			Debug("(%s) core_UnacceptWalletTransaction: marked tx \"%s\" output #%d as unspent in wallet.\n", iface->name, prevhash.GetHex().c_str(), in.prevout.n); 
 		}
@@ -3142,6 +3136,7 @@ void core_ReacceptWalletTransactions(CWallet *wallet)
 }
 
 
+#if 0
 bool CWallet::ReadTx(uint256 hash, CWalletTx& wtx)
 {
 	CIface *iface;
@@ -3174,7 +3169,6 @@ bool CWallet::ReadTx(uint256 hash, CWalletTx& wtx)
 
 	return (true);
 }
-
 bool CWallet::WriteTx(uint256 hash, const CWalletTx& wtx)
 {
 	CDataStream sBlock(SER_DISK, CLIENT_VERSION);
@@ -3202,7 +3196,6 @@ bool CWallet::WriteTx(uint256 hash, const CWalletTx& wtx)
 
 	return (true);
 }
-
 bool CWallet::EraseTx(uint256 hash)
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -3221,6 +3214,7 @@ bool CWallet::EraseTx(uint256 hash)
 
 	return (true);
 }
+#endif
 
 static void wallet_LoadAccount(CWallet *wallet, string strAccount, CAccount& account)
 {
@@ -3313,6 +3307,7 @@ static const char *wallet_wtx_filename(CWallet *wallet)
 	return (ret_buf);
 }
 
+#if 0
 static void wallet_UpdateSpent(CWallet *wallet, const CTransaction &tx)
 {
 
@@ -3332,7 +3327,6 @@ static void wallet_UpdateSpent(CWallet *wallet, const CTransaction &tx)
 	}
 
 }
-
 bool CWallet::AddWalletTx(CWalletTx& wtx)
 {
 	const uint256& hash = wtx.GetHash();
@@ -3378,7 +3372,6 @@ bool CWallet::AddWalletTx(CWalletTx& wtx)
 
 	return (ok);
 }
-
 bool CWallet::RemoveWalletTx(CWalletTx& wtx)
 {
 	const uint256& hash = wtx.GetHash();
@@ -3393,6 +3386,7 @@ bool CWallet::RemoveWalletTx(CWalletTx& wtx)
 
 	return (true);
 }
+#endif
 
 
 CBlockLocator CWallet::GetLocator(CBlockIndex *pindex)

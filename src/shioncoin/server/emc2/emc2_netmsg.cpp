@@ -80,17 +80,6 @@ static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
 
 
-// get the wallet transaction with the given hash (if it exists)
-bool static GetTransaction(const uint256& hashTx, CWalletTx& wtx)
-{
-  CWallet *pwallet = GetWallet(EMC2_COIN_IFACE);
-
-  if (pwallet->GetTransaction(hashTx,wtx))
-    return true;
-
-  return false;
-}
-
 // notify wallets about an incoming inventory (for request counts)
 void static Inventory(const uint256& hash)
 {

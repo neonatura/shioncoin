@@ -829,7 +829,6 @@ Value rpc_wallet_addr(CIface *iface, const Array& params, bool fStratum)
 
 	Value ret;
 	ret = wallet->GetAccount(strAccount)->GetAddr(mode).ToString();
-fprintf(stderr, "DEBUG: rpc_wallet_addr: \"%s\" = GetAccount(\"%s\").GetAddr(%d)\n", ret.get_str().c_str(), strAccount.c_str(), mode);
 
 	return ret;
 }
@@ -1527,33 +1526,48 @@ Value rpc_wallet_unspent(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_wallet_spent(CIface *iface, const Array& params, bool fStratum)
 {
-	string strSysAccount("*");
-
-	if (params.size() == 0)
-		throw runtime_error("unsupported operation");
-
 	CWallet *pwalletMain = GetWallet(iface);
 	int ifaceIndex = GetCoinIndex(iface);
 	string strAccount = params[0].get_str();
+	bc_t *bc = GetWalletTxChain(iface);
+	string strSysAccount("*");
+	bcpos_t nArch = 0;
+	bcpos_t posTx;
+	bool fVerbose = false;
 	int i;
 
+	if (params.size() > 2)
+		throw runtime_error("unsupported operation");
+
+	if (params.size() == 2)
+		fVerbose = params[1].get_bool();
+
+	bc_idx_next(bc, &nArch);
+
 	Array results;
-	for (map<uint256, CWalletTx>::const_iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-	{
-		const CWalletTx& pcoin = (*it).second;
+	for (posTx = 0; posTx < nArch; posTx++) {
+		CWalletTx pcoin;
+		unsigned char *data;
+		size_t data_len;
+		int err;
+
+		err = bc_get(bc, posTx, &data, &data_len);
+		if (err)
+			continue;
+
+		CDataStream sBlock(SER_DISK, CLIENT_VERSION);
+		sBlock.write((const char *)data, data_len);
+		sBlock >> pcoin;
+		free(data);
+
 		if (strAccount != strSysAccount &&
 				pcoin.strFromAccount != strAccount)
 			continue;
 
-		bool fIsSpent = false;
-		for (i = 0; i < pcoin.vout.size(); i++) {
-			if (pcoin.IsSpent(i)) {
-				fIsSpent = true;
-				break;
-			}
-		}
-		if (fIsSpent) {
+		if (!fVerbose) {
 			results.push_back(pcoin.GetHash().GetHex());
+		} else {
+			results.push_back(pcoin.ToValue(ifaceIndex));
 		}
 	}
 

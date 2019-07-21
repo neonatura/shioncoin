@@ -373,6 +373,7 @@ server_sources = \
 	server/sync.cpp \
 	server/walletdb.cpp \
 	server/wallet.cpp \
+	server/wallettx.cpp \
 	server/account.cpp \
 	server/txcreator.cpp \
 	server/algo/blake2.c \

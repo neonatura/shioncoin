@@ -1,15 +1,12 @@
-
 <pre>
   SIP: 32
   Layer: Consensus (soft fork)
   Title: SIP32 Multiple PoW Algorythm
-  Author: Brian Burrell <bburrell@neo-natura.com>
-  Comments-Summary: No comments yet.
+	Author: Neo Natura < support@neo-natura.com >
   Status: Proposed
   Type: Standards Track
   Created: 2019-04-20
 </pre>
-
 ==Abstract==
 
 The SIP introduces a method to allow for additional PoW algorithms to be performed on the ShionCoin blockchain. 

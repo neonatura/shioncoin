@@ -2,13 +2,10 @@
   SIP: 26
   Layer: Core
   Title: Executable SEXE Class (ref SIP7)
-  Author: Brian Burrell <bburrell@neo-natura.com>
-  Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip26.wiki
-  Status: Extensionable
+	Author: Neo Natura < support@neo-natura.com >
+  Status: Extendable
   Type: Standards Track
   Created: 2018-12-15
-  License: PD
 </pre>
 == Abstract ==
 This SIP defines a new Executable Extended Transaction that is used in order to provide smart-contract capabilities.

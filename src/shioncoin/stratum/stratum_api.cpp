@@ -1553,6 +1553,28 @@ static const ApiItems& stratum_api_alt_balance(int ifaceIndex, string strAccount
 	return (items);
 }
 
+static const ApiItems& stratum_api_block_mined(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
+{
+	static ApiItems items;
+
+	items.clear();
+
+	vector<CBlockIndex *> blocks = get_stratum_miner_blocks(ifaceIndex);
+	for (int i = 0; i < blocks.size(); i++) {
+		CBlockIndex *pindex = blocks[i];
+
+		if (pindex->GetBlockTime() < begin_t)
+			continue;
+
+		Object obj;
+		obj.push_back(Pair("blockhash", pindex->GetBlockHash().GetHex()));
+		obj.push_back(Pair("time", (uint64_t)pindex->GetBlockTime()));
+		items.push_back(obj);
+	}
+
+	return (items);
+}
+
 static const ApiItems& stratum_api_validate_list(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
 {
 	static ApiItems items;
@@ -1714,6 +1736,8 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 		result = stratum_api_faucet_list(ifaceIndex, strAccount, params);
 	} else if (0 == strcmp(method, "api.faucet.info")) {
 		result = stratum_api_faucet_info(ifaceIndex, strAccount, params);
+	} else if (0 == strcmp(method, "api.block.mined")) {
+		result = stratum_api_block_mined(ifaceIndex, user, params, begin_t);
 	}
 	if (result.size() == 0 && strError != "") {
 		shjson_t *reply = shjson_init(NULL);
@@ -1828,6 +1852,7 @@ shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson
 	}
 
 	if (0 != strcmp(method, "api.account.create") &&
+			0 != strcmp(method, "api.block.mined") &&
 			!valid_pkey_hash(strAccount, in_pkey)) {
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_ACCESS, "api credential");

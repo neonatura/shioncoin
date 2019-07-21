@@ -2,13 +2,10 @@
   SIP: 12
   Layer: Core
   Title: Dynamic Blockchain Parameters
-  Author: Brian Burrell <bburrell@neo-natura.com>
-  Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/sip12.wiki
+	Author: Neo Natura < support@neo-natura.com >
   Status: Extensionable
   Type: Standards Track
   Created: 2018-12-15
-  License: PD
 </pre>
 
 ==Abstract==

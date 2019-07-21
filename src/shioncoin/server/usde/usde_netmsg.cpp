@@ -77,16 +77,6 @@ CBlockIndex *usde_GetLastCheckpoint()
 	return (wallet->checkpoints->GetLastCheckpoint());
 }
 
-// get the wallet transaction with the given hash (if it exists)
-bool static GetTransaction(const uint256& hashTx, CWalletTx& wtx)
-{
-  CWallet *pwallet = GetWallet(USDE_COIN_IFACE);
-
-  if (pwallet->GetTransaction(hashTx,wtx))
-    return true;
-
-  return false;
-}
 
 // notify wallets about an incoming inventory (for request counts)
 void static Inventory(const uint256& hash)

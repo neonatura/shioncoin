@@ -2,9 +2,7 @@
   SIP: 1
   Layer: Core
   Title: Extended Transactions
-  Author: Brian Burrell <bburrell@neo-natura.com>
-  Comments-Summary: No comments yet.
-  Comments-URI: https://github.com/neonatura/shioncoin/doc/standards/Comments:sip1.wiki
+	Author: Neo Natura < support@neo-natura.com >
   Status: Final
   Type: Standards Track
   Created: 2018-10-10
