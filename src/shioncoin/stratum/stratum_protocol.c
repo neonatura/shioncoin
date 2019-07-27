@@ -310,8 +310,8 @@ static int stratum_request_account_create(int ifaceIndex, user_t *user, char *ac
   if (iface && iface->enabled && account) {
     const char *text;
 
-    /* creates a usde address for an account name */
-    /* providing account does not exist; returns usde address and sha of private key */
+    /* creates a address for an account name */
+    /* providing account does not exist; returns address and sha of private key */
     text = stratum_create_account(ifaceIndex, account);
     if (!text)
       text = stratum_error_get(atoi(user->cur_id));
