@@ -38,6 +38,8 @@ int is_stratum_miner_algo(int ifaceIndex, int nAlg);
 
 void add_stratum_miner_block(int ifaceIndex, char *block_hash);
 
+shjson_t *stratum_miner_lastminerblock(int ifaceIndex);
+
 #ifdef __cplusplus
 CBlockIndex *get_stratum_miner_block(int ifaceIndex, uint256 hBlock);
 vector<CBlockIndex *> get_stratum_miner_blocks(int ifaceIndex);

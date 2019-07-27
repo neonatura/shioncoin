@@ -275,6 +275,69 @@ shjson_t *stratum_miner_getblocktemplate(int ifaceIndex, int nAlg)
 	return (shjson_init((char *)JSONRPCReply(result, Value::null, Value::null).c_str()));
 }
 
+int64 stratum_miner_minerblockvalue(int ifaceIndex, const CWalletTx& wtx)
+{
+  int64 nGeneratedImmature, nGeneratedMature;
+
+	nGeneratedImmature = 0;
+	nGeneratedMature = 0;
+  wtx.GetAmounts(ifaceIndex, nGeneratedImmature, nGeneratedMature);
+
+  /* generated blocks assigned to account "". */
+	return (nGeneratedMature);
+}
+
+shjson_t *stratum_miner_lastminerblock(int ifaceIndex)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
+  uint256 retHash;
+  int64 retValue;
+  int64 nTime;
+
+	if (!iface || !iface->enabled)
+		return (NULL);
+
+  retHash = 0;
+  retValue = 0;
+
+  nTime = 0;
+  for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it)
+  {
+    const CWalletTx& wtx = (*it).second;
+
+    if (wtx.nTimeReceived < nTime)
+      continue;
+
+    if (!wtx.IsCoinBase())
+      continue;
+
+    int64 nValue = stratum_miner_minerblockvalue(ifaceIndex, wtx);
+    if (nValue == 0)
+      continue;
+
+    retHash = wtx.GetHash();
+    retValue = nValue;
+
+    nTime = wtx.nTimeReceived;
+  }
+  if (retValue == 0) 
+    return (NULL);
+
+	uint256 hTx = retHash;
+	CTransaction t_tx;
+	if (!GetTransaction(iface, hTx, t_tx, &retHash))
+		return (NULL);
+
+  shjson_t *tree = shjson_init(NULL);
+  shjson_str_add(tree, "txhash", (char *)hTx.GetHex().c_str());
+  shjson_str_add(tree, "blockhash", (char *)retHash.GetHex().c_str());
+  shjson_num_add(tree, "amount", (double)retValue / COIN);
+  shjson_str_add(tree, "category", "generate");
+  shjson_num_add(tree, "time", nTime);
+  return (tree);
+}
+
 /**
  * Called by miner [i.e., via stratum] to submit a new block.
  * @see ProcessBlock()
@@ -499,8 +562,10 @@ void add_stratum_miner_block(int ifaceIndex, char *block_hash)
 	CBlockIndex *pindex;
 	
 	pindex = GetBlockIndexByHash(ifaceIndex, hBlock);
-	if (!pindex)
+	if (!pindex) {
+    shcoind_log("add_stratum_miner_block: unknown block hash specified.");
 		return;
+	}
 
 	vGenBlocks[ifaceIndex][hBlock] = pindex;
 }
@@ -530,6 +595,7 @@ vector<CBlockIndex *> get_stratum_miner_blocks(int ifaceIndex)
 
 	return (vRet);
 }
+
 
 #ifdef __cplusplus
 }

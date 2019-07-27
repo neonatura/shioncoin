@@ -33,7 +33,6 @@
 #include "algobits.h"
 
 #define BLOCK_VERSION 1
-//#define MAX_SERVER_NONCE 128
 #define MAX_SERVER_NONCE 8
 #define MAX_ROUND_TIME 600
 #define MAX_REWARD_WAIT_TIME 3600
@@ -42,190 +41,123 @@
 
 #define CPUMINER_WORKER "system.anonymous"
 
-//static task_t *task_list;
 static user_t *sys_user;
 static int work_reset[MAX_COIN_IFACE];
 static uint64_t last_block_height[MAX_COIN_IFACE];
+static char last_payout_hash[MAX_COIN_IFACE][256];
 
 extern int stratum_isinitialdownload(int ifaceIndex);
 
 
-
-#if 0
-void free_tasks(void)
-{
-  task_t *task;
-  task_t *task_next;
-
-  for (task = task_list; task; task = task_next) {
-    task_next = task->next;
-    task_free(&task);
-  }
-  task_list = NULL;
-
-}
-#endif
-
-#if 0
-void free_task(task_t **task_p)
-{
-  task_t *task;
-  int i;
-
-  if (!task_p)
-    return;
-  task = *task_p;
-  *task_p = NULL;
-
-  if (task->merkle) {
-    for (i = 0; task->merkle[i]; i++) {
-      free(task->merkle[i]);
-    }
-    free(task->merkle);
-  }
-
-  free(task);
-
-}
-#endif
-
-
-#if 0
-int task_work_t = 2;
-
-void reset_task_work_time(void)
-{
-  task_work_t = 2;
-}
-
-void incr_task_work_time(void)
-{
-
-  if (task_work_t < 4)
-    task_work_t++;
-    
-}
-#endif
-
-#if 0
-static int work_idx = 0;
-int DefaultWorkIndex = 0;
-#endif
-static char last_payout_hash[MAX_COIN_IFACE][256];
-
 /**
  * Monitors when a new accepted block becomes confirmed.
- * @note format: ["height"=<block height>, "category"=<'generate'>, "amount"=<block reward>, "time":<block time>, "confirmations":<block confirmations>]
  */
 static void check_payout(int ifaceIndex)
 {
-  shjson_t *tree;
-  shjson_t *block;
-  user_t *user;
-  char block_hash[512];
-  char category[64];
-  char uname[256];
-  char buf[256];
-  char *templ_json;
-  double tot_shares;
-  double weight;
-  double reward;
-  int i;
+	shjson_t *tree;
+	shjson_t *block;
+	user_t *user;
+	char block_hash[512];
+	char category[64];
+	char uname[256];
+	char buf[256];
+	char *templ_json;
+	double tot_shares;
+	double weight;
+	double reward;
+	int i;
 
-  tree = stratum_miner_getblocktemplate(ifaceIndex, ALGO_SCRYPT);
-  if (!tree) {
-    shcoind_log("task_init: cannot parse json");
-    return;
-  }
+#if 0
+	tree = stratum_miner_getblocktemplate(ifaceIndex, ALGO_SCRYPT);
+	if (!tree) {
+		shcoind_log("task_init: cannot parse json");
+		return;
+	}
 
-  block = shjson_obj(tree, "result");
-  if (!block) {
-    shcoind_log("task_init: cannot parse json result");
-    shjson_free(&tree);
-    return;
-  }
+	block = shjson_obj(tree, "result");
+	if (!block) {
+		shcoind_log("task_init: cannot parse json result");
+		shjson_free(&tree);
+		return;
+	}
+#endif
 
-  memset(block_hash, 0, sizeof(block_hash));
-  strncpy(block_hash, shjson_astr(block, "blockhash", ""), sizeof(block_hash) - 1);
-  if (0 == strcmp(block_hash, "")) {
-    /* No block has been confirmed since process startup. */
-    shjson_free(&tree);
-    return;
-  }
+	tree = block = stratum_miner_lastminerblock(ifaceIndex);
+	if (!tree) {
+		shcoind_log("task_init: cannot parse json result");
+		return;
+	}
 
-  if (!*last_payout_hash[ifaceIndex]) {
-    strcpy(last_payout_hash[ifaceIndex], block_hash);
-  } 
+	memset(block_hash, 0, sizeof(block_hash));
+	strncpy(block_hash, shjson_astr(block, "blockhash", ""), sizeof(block_hash) - 1);
+	if (0 == strcmp(block_hash, "")) {
+		/* No block has been confirmed since process startup. */
+		shjson_free(&tree);
+		return;
+	}
 
-  memset(category, 0, sizeof(category));
-  strncpy(category, shjson_astr(block, "category", "none"), sizeof(category) - 1);
-  if (0 != strcmp(category, "generate")) {
-    shjson_free(&tree);
-    return;
-  }
+	if (!*last_payout_hash[ifaceIndex]) {
+		strcpy(last_payout_hash[ifaceIndex], block_hash);
+	} 
+
+#if 0
+	memset(category, 0, sizeof(category));
+	strncpy(category, shjson_astr(block, "category", "none"), sizeof(category) - 1);
+	if (0 != strcmp(category, "generate")) {
+		shjson_free(&tree);
+		return;
+	}
+#endif
+
+
+	if (0 == strcmp(last_payout_hash[ifaceIndex], block_hash)) {
+		shjson_free(&tree);
+		return;
+	}
+	strcpy(last_payout_hash[ifaceIndex], block_hash);
 
 	/* winner winner chicken dinner */
 	add_stratum_miner_block(ifaceIndex, block_hash);
 
-  if (0 == strcmp(last_payout_hash[ifaceIndex], block_hash)) {
-    shjson_free(&tree);
-    return;
-  }
-  strcpy(last_payout_hash[ifaceIndex], block_hash);
+	{
+		double amount = shjson_num(block, "amount", 0);
+		double fee;
 
+		if (amount < 0.1) {
+			shjson_free(&tree);
+			return;
+		}
+		if (!client_list)
+			return;
 
+		fee = amount * 0.001; /* 0.1% */
+		amount -= fee;
 
-  {
-    double amount = shjson_num(block, "amount", 0);
-    double fee;
+		tot_shares = 0;
+		for (user = client_list; user; user = user->next) {
+			for (i = 0; i < MAX_ROUNDS_PER_HOUR; i++)
+				tot_shares += user->block_avg[i];
+		}
+		tot_shares = MAX(1.0, tot_shares);
 
-    if (amount < 1) {
-      shjson_free(&tree);
-      return;
-    }
-    if (!client_list)
-      return;
+		/* divvy up profit */
+		weight = amount / tot_shares;
+		for (user = client_list; user; user = user->next) {
+			if (user->flags & USER_SYNC)
+				user->balance[ifaceIndex] += reward;
+				/* regulate tx # */
+				user->balance_avg[ifaceIndex] = 
+					(user->balance_avg[ifaceIndex] + reward) / 2;
 
-    fee = amount * 0.001; /* 0.1% */
-    amount -= fee;
+				CIface *iface = GetCoinByIndex(ifaceIndex);
+				sprintf(buf, "check_payout: worker '%s' has pending balance of %-8.8f %s coins (+%-8.8f, avg %-4.4f).", user->worker, user->balance[ifaceIndex], iface->name, reward, user->balance_avg[ifaceIndex]);
+				shcoind_log(buf);
+			}
+		}
 
-    tot_shares = 0;
-    for (user = client_list; user; user = user->next) {
-      for (i = 0; i < MAX_ROUNDS_PER_HOUR; i++)
-        tot_shares += user->block_avg[i];
-    }
-    tot_shares = MAX(1.0, tot_shares);
+	}
 
-    /* divvy up profit */
-    weight = amount / tot_shares;
-    for (user = client_list; user; user = user->next) {
-      if (user->flags & USER_SYNC)
-        continue; /* stratum server */
-      if (user->flags & USER_RPC)
-        continue; /* rpc user */
-      if (!*user->worker) 
-        continue; /* unknown */
-      if (0 == strncmp(user->worker, "system.", strlen("system.")))
-        continue; /* public */
-
-      reward = 0;
-      for (i = 0; i < MAX_ROUNDS_PER_HOUR; i++)
-        reward += (weight * user->block_avg[i]);
-      if (reward >= 0.0000001) { 
-        user->balance[ifaceIndex] += reward;
-        /* regulate tx # */
-        user->balance_avg[ifaceIndex] = 
-          (user->balance_avg[ifaceIndex] + reward) / 2;
-
-        CIface *iface = GetCoinByIndex(ifaceIndex);
-        sprintf(buf, "check_payout: worker '%s' has pending balance of %-8.8f %s coins (+%-8.8f, avg %-4.4f).", user->worker, user->balance[ifaceIndex], iface->name, reward, user->balance_avg);
-        shcoind_log(buf);
-      }
-    }
-
-  }
-
-  shjson_free(&tree);
+	shjson_free(&tree);
 
 }
 
@@ -746,6 +678,18 @@ int is_stratum_task_pending(int *ret_iface)
 		usec_trigger = 1;
 	}
 
+  for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+		if (!is_stratum_miner_algo(ifaceIndex, ALGO_SCRYPT))
+			continue;
+		//if (ifaceIndex == TESTNET_COIN_IFACE) continue;
+		//if (ifaceIndex == COLOR_COIN_IFACE) continue;
+    CIface *iface = GetCoinByIndex(ifaceIndex);
+    if (!iface || !iface->enabled) 
+      continue; /* iface not enabled */
+
+		if (stratum_isinitialdownload(ifaceIndex))
+			continue;
+    block_height = (uint64_t)getblockheight(ifaceIndex);
   for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
 		if (!is_stratum_miner_algo(ifaceIndex, ALGO_SCRYPT))
 			continue;
