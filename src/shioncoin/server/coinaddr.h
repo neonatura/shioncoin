@@ -225,24 +225,6 @@ class SHCCoinAddr : public CCoinAddr
 		}
 };
 
-class USDECoinAddr : public CCoinAddr
-{
-  public:
-    USDECoinAddr() : CCoinAddr(USDE_COIN_IFACE)
-    {
-    }
-
-    USDECoinAddr(const CTxDestination &dest) : CCoinAddr(USDE_COIN_IFACE)
-    {
-      Set(dest);
-    }
-
-    USDECoinAddr(const std::string& strAddress) : CCoinAddr(USDE_COIN_IFACE)
-		{
-			SetString(strAddress);
-		}
-};
-
 class COLORCoinAddr : public CCoinAddr
 {
   public:

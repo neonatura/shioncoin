@@ -498,6 +498,9 @@
 /* Define to use internal MIN and MAX functions. */
 #undef NOMINMAX
 
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
+
 /* Name of package */
 #undef PACKAGE
 
@@ -575,9 +578,6 @@
 
 /* Define for UnixWare systems. */
 #undef UNIXWARE
-
-/* Define to enable the USDE coin service. */
-#undef USDE_SERVICE
 
 /* Define to enable the BLAKE2S pow algorythm. */
 #undef USE_ALGO_BLAKE2S

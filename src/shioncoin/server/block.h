@@ -91,33 +91,6 @@ enum GetMinFee_mode
 
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 
-
-#if 0
-/* 1MEG Max Block Size */
-#define MAX_BLOCK_SIZE USDE_MAX_BLOCK_SIZE
-#define MAX_BLOCK_SIGOPS USDE_MAX_BLOCK_SIGOPS
-#define MIN_TX_FEE USDE_MIN_TX_FEE
-#define MIN_RELAY_TX_FEE USDE_MIN_RELAY_TX_FEE
-#define MAX_MONEY USDE_MAX_MONEY
-#define COINBASE_MATURITY USDE_COINBASE_MATURITY
-#endif
-
-#if 0
-static const unsigned int MAX_BLOCK_SIZE = 1000000;
-static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
-static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
-static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
-static const int64 MIN_TX_FEE = 10000000;
-static const int64 MIN_RELAY_TX_FEE = MIN_TX_FEE;
-#if CLIENT_VERSION_REVISION > 4
-static const int64 MAX_MONEY = 320000000000 * COIN; /* 320bil */
-#else
-static const int64 MAX_MONEY = 1600000000 * COIN; /* 1.6bil */
-#endif
-static const int COINBASE_MATURITY = 100;
-#endif
-
-
 inline bool MoneyRange(CIface *iface, int64 nValue) 
 { 
   if (!iface) return (false);

@@ -65,8 +65,7 @@ bool ContextualCheckBlockHeader(CIface *iface, const CBlockHeader& block, CBlock
 	const int ifaceIndex = GetCoinIndex(iface);
 	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
 
-	if (ifaceIndex != EMC2_COIN_IFACE &&
-			ifaceIndex != USDE_COIN_IFACE) {
+	if (ifaceIndex != EMC2_COIN_IFACE) {
 		/* verify block version. */
 		if (iface->BIP34Height != -1 && 
 				(uint32_t)nHeight >= iface->BIP34Height) {

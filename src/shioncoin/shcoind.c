@@ -90,11 +90,6 @@ void usage_help(void)
       "\n"
       "\t--shc-rebuild-chain\n"
 			"\t\tRestore the backup SHC block-chain.\n"
-#ifdef USDE_SERVICE
-      "\n"
-      "\t--usde-rebuild-chain\n"
-			"\t\tRestore the backup USDE block-chain.\n"
-#endif
 #ifdef EMC2_SERVICE
       "\n"
       "\t--emc2-rebuild-chain\n"
@@ -196,9 +191,6 @@ int shcoind_main(int argc, char *argv[])
     } else if (0 == strcmp(argv[i], "--shc-rebuild-chain")) {
       opt_bool_set(OPT_SHC_BACKUP_RESTORE, TRUE);
       opt_restore = TRUE;
-    } else if (0 == strcmp(argv[i], "--usde-rebuild-chain")) {
-      opt_bool_set(OPT_USDE_BACKUP_RESTORE, TRUE);
-      opt_restore = TRUE;
     } else if (0 == strcmp(argv[i], "--emc2-rebuild-chain")) {
       opt_bool_set(OPT_EMC2_BACKUP_RESTORE, TRUE);
       opt_restore = TRUE;
@@ -239,13 +231,6 @@ int shcoind_main(int argc, char *argv[])
     if (!iface || !iface->enabled)
       continue;
 
-    if (idx == USDE_COIN_IFACE) {
-#ifndef USDE_SERVICE
-      iface->enabled = FALSE;
-#endif
-      if (!opt_bool(OPT_SERV_USDE))
-        iface->enabled = FALSE;
-    }
     if (idx == EMC2_COIN_IFACE) {
 #ifndef EMC2_SERVICE
       iface->enabled = FALSE;

@@ -438,14 +438,6 @@ if test "x$enable_skein" != "xno" ; then
   AC_DEFINE_UNQUOTED([USE_ALGO_SKEIN], 1, [Define to enable the SKEIN pow algorythm.])
 fi
 
-
-AC_ARG_ENABLE([usde],
-  AS_HELP_STRING([--enable-usde], [Enable USDE coin service.]))
-AM_CONDITIONAL(USDE_SERVICE, [test "x$enable_usde" = "xyes"])
-if test "x$enable_usde" = "xyes" ; then
-  AC_DEFINE_UNQUOTED([USDE_SERVICE], 1, [Define to enable the USDE coin service.])
-fi
-
 AC_ARG_ENABLE([emc2],
   AS_HELP_STRING([--enable-emc2], [Enable EMC2 coin service.]))
 AM_CONDITIONAL(EMC2_SERVICE, [test "x$enable_emc2" = "xyes"])

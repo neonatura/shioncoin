@@ -449,15 +449,11 @@ public:
 
     CBloomFilter *GetBloomFilter()
     {
-      if (ifaceIndex == USDE_COIN_IFACE)
-        return (NULL); /* not supported */
-
       {
         LOCK(cs_filter);
         if (!pfilter)
           pfilter = new CBloomFilter(ifaceIndex);
       }
-
       return (pfilter);
     }
 

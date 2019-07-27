@@ -111,14 +111,6 @@ static opt_t _option_table[] = {
 		"The socket port to listen for EMC2 connections." },
 #endif
 
-	/* The USDE service is available when compiled with "--enable-usde". */
-#ifdef USDE_SERVICE
-	{ OPT_SERV_USDE, OPT_TYPE_BOOL, 1, NULL,
-		"The USDE currency service." },
-	{ OPT_USDE_PORT, OPT_TYPE_NUM, 54449, NULL, 
-		"The socket port to listen for USDE connections." },
-#endif
-
 #ifdef STRATUM_SERVICE
 #ifdef USE_ALGO_SHA256D
 	{ OPT_STRATUM_SHA256D, OPT_TYPE_BOOL, 0, NULL,

@@ -128,10 +128,6 @@ const int reloadblockfile(const char *path);
 
 void shared_addr_submit(const char *net_addr);
 
-int usde_server_init(void);
-
-void usde_server_term(void);
-
 void shc_server_term(void);
 
 void set_shutdown_timer(void);
@@ -142,17 +138,9 @@ int submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, ch
 
 double getdifficulty(int ifaceIndex);
 
-const char *getblocktemplate(int ifaceIndex);
-
 void SetNextDifficulty(int ifaceIndex, unsigned int nBits);
 
 double GetNextDifficulty(int ifaceIndex);
-
-void usde_server_timer(void);
-
-void usde_server_accept(int hSocket, struct sockaddr *net_addr);
-
-void usde_server_close(int fd, struct sockaddr *addr);
 
 void shc_server_timer(void);
 

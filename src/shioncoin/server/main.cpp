@@ -1,18 +1,29 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto.
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2011-2013 usde Developers.
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-// Listen port: 7999
-// RPC Port: 7998
-// Block Time: 20 seconds
-// Confirmations: 5
-// Difficulty: Retarget every 6 hours
-// Reward: 20 coins per block, halved every 3 years (4,730,400 blocks)
-// 200 million total coins
+
+/*
+ * @copyright
+ *
+ *  Copyright 2014 Neo Natura
+ *
+ *  This file is part of ShionCoin.
+ *  (https://github.com/neonatura/shioncoin)
+ *        
+ *  ShionCoin is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version. 
+ *
+ *  ShionCoin is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with ShionCoin.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  @endcopyright
+ */
 
 #include "shcoind.h"
-//#include "checkpoints.h"
 #include "db.h"
 #include "net.h"
 #include "init.h"
@@ -20,7 +31,6 @@
 #include "block.h"
 #include "script.h"
 #include "txsignature.h"
-#include "usde/usde_netmsg.h"
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -35,29 +45,14 @@ using namespace boost;
 
 CCriticalSection cs_main;
 
-//CTxMemPool mempool;
-//unsigned int nTransactionsUpdated = 0;
-
-//extern bool WriteToShareNet(CBlock* pBlock, int nHeight);
 
 
 
 // Settings
 int64 nTransactionFee = 0;
-//int64 nMinimumInputValue = CENT / 100;
 
 
 CMedianFilter<int> cPeerBlockCounts(5, 0); // Amount of blocks that other nodes claim to have
-
-
-
-
-
-
-
-
-
-
 
 
 

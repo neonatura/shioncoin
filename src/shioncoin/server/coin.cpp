@@ -672,7 +672,6 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 		}
 	}
 	if (block->ifaceIndex != EMC2_COIN_IFACE &&
-			block->ifaceIndex != USDE_COIN_IFACE &&
 			block->ifaceIndex != LTC_COIN_IFACE) {
 		/* non-standard */
 		if (fEnforceBIP34) {

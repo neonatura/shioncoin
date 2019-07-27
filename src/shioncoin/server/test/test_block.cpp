@@ -861,7 +861,7 @@ bool TESTBlock::AcceptBlock()
 
   map<uint256, CBlockIndex*>::iterator mi = blockIndex->find(hashPrevBlock);
   if (mi == blockIndex->end()) {
-    return error(SHERR_INVAL, "(usde) AcceptBlock: prev block '%s' not found", hashPrevBlock.GetHex().c_str());
+    return error(SHERR_INVAL, "(test) AcceptBlock: prev block '%s' not found", hashPrevBlock.GetHex().c_str());
   }
   CBlockIndex* pindexPrev = (*mi).second;
 

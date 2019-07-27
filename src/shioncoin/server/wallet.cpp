@@ -604,48 +604,6 @@ void CWalletTx::GetAmounts(int ifaceIndex, int64& nGeneratedImmature, int64& nGe
 
 }
 
-#if 0
-bool CWalletTx::WriteToDisk()
-{
-	{
-		LOCK(pwallet->cs_wallet);
-
-		CWalletDB db(pwallet->strWalletFile);
-		db.WriteTx(GetHash(), *this);
-		db.Close();
-	}
-
-	return (true);
-}
-#endif
-
-#if 0
-// Scan the block chain (starting in pindexStart) for transactions
-// from or to us. If fUpdate is true, found transactions that already
-// exist in the wallet will be updated.
-int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
-{
-	int ret = 0;
-
-	CBlockIndex* pindex = pindexStart;
-	{
-		LOCK(cs_wallet);
-		while (pindex)
-		{
-			USDEBlock block;
-			block.ReadFromDisk(pindex, true);
-			BOOST_FOREACH(CTransaction& tx, block.vtx)
-			{
-				if (AddToWalletIfInvolvingMe(tx, &block, fUpdate))
-					ret++;
-			}
-			pindex = pindex->pnext;
-		}
-	}
-	return ret;
-}
-#endif
-
 int CWallet::ScanForWalletTransaction(const uint256& hashTx)
 {
 	CTransaction tx;

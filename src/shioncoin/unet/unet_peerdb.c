@@ -464,15 +464,6 @@ void unet_peer_fill_seed(int mode)
       sprintf(buf, "unet_peer_fill_seed: seeding TESTNET peer '%s'.", shpeer_print(peer));
       unet_log(mode, buf);
     }
-  } else if (mode == UNET_USDE) {
-    for (i = 0; i < USDE_SEED_LIST_SIZE; i++) {
-      sprintf(hostname, "%s %d", usde_seed_list[i], bind->port);
-      peer = shpeer_init((char *)unet_mode_label(mode), hostname); 
-      create_uevent_verify_peer(mode, peer);
-
-      sprintf(buf, "unet_peer_fill_seed: seeding USDE peer '%s'.", shpeer_print(peer));
-      unet_log(mode, buf);
-    }
   } else if (mode == UNET_EMC2) {
     for (i = 0; i < EMC2_SEED_LIST_SIZE; i++) {
       sprintf(hostname, "%s %d", emc2_seed_list[i], bind->port);

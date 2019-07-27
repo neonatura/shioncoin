@@ -116,9 +116,6 @@ extern "C" {
 /** The "ShionCoin" virtual currency. */
 #define SHC_COIN_IFACE 1
 
-/** The "USDE" virtual currency. */
-#define USDE_COIN_IFACE 2
-
 /** The "EMC2" (Einstienium) virtual currency. */
 #define EMC2_COIN_IFACE 3
 
@@ -354,17 +351,6 @@ coin_iface_t *GetCoin(const char *name);
  * @{
  */
 #include "shc_proto.h"
-/**
- * @}
- */
-
-/**
- * The USDe currency coin service.
- * @ingroup sharecoin
- * @defgroup sharecoin_usde The USDE currency coin service.
- * @{
- */
-#include "usde_proto.h"
 /**
  * @}
  */

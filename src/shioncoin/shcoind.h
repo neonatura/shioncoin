@@ -81,7 +81,6 @@ extern shbuf_t *server_msg_buff;
 
 #include "proto/coin_proto.h"
 #include "proto/shc_proto.h"
-#include "proto/usde_proto.h"
 #include "proto/emc2_proto.h"
 #include "proto/test_proto.h"
 
@@ -141,7 +140,7 @@ typedef unsigned long long uint64;
  *
  * This project supplies the "shcoin" and "shcoind" programs.
  *
- * The "shcoind" program provides a fully-functional USDe currency service with a built-in stratum server.
+ * The "shcoind" program provides a fully-functional currency service with a built-in stratum server.
  *
  * The "shcoin" utility program uses a SSL RPC connection to "shcoind" in order to perform administrative tasks.
  * <small>Note: The "shcoin" program must be ran as the same user as the "shcoind" daemon.</small>

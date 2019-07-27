@@ -1,11 +1,30 @@
-// Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2012 The Bitcoin developers
-// Copyright (c) 2012 Litecoin Developers
-// Copyright (c) 2013 usde Developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef BITCOIN_UI_INTERFACE_H
-#define BITCOIN_UI_INTERFACE_H
+
+/*
+ * @copyright
+ *
+ *  Copyright 2014 Neo Natura
+ *
+ *  This file is part of ShionCoin.
+ *  (https://github.com/neonatura/shioncoin)
+ *        
+ *  ShionCoin is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version. 
+ *
+ *  ShionCoin is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with ShionCoin.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  @endcopyright
+ */
+
+#ifndef SERVER__UI_INTERFACE_H
+#define SERVER__UI_INTERFACE_H
 
 #include <string>
 #include "util.h" // for int64
@@ -60,38 +79,6 @@ public:
         // Force blocking, modal message box dialog (not just OS notification)
         MODAL                 = 0x00040000
     };
-
-#if 0
-    /** Show message box. */
-    boost::signals2::signal<void (const std::string& message, const std::string& caption, int style)> ThreadSafeMessageBox;
-
-    /** Ask the user whether they want to pay a fee or not. */
-    boost::signals2::signal<bool (int64 nFeeRequired, const std::string& strCaption), boost::signals2::last_value<bool> > ThreadSafeAskFee;
-
-    /** Handle a URL passed at the command line. */
-    boost::signals2::signal<void (const std::string& strURI)> ThreadSafeHandleURI;
-
-    /** Progress message during initialization. */
-    boost::signals2::signal<void (const std::string &message)> InitMessage;
-
-    /** Initiate client shutdown. */
-    boost::signals2::signal<void ()> QueueShutdown;
-
-    /** Translate a message to the native language of the user. */
-    boost::signals2::signal<std::string (const char* psz)> Translate;
-
-    /** Block chain changed. */
-    boost::signals2::signal<void ()> NotifyBlocksChanged;
-
-    /** Number of network connections changed. */
-    boost::signals2::signal<void (int newNumConnections)> NotifyNumConnectionsChanged;
-
-    /**
-     * New, updated or cancelled alert.
-     * @note called with lock cs_mapAlerts held.
-     */
-    boost::signals2::signal<void (const uint256 &hash, ChangeType status)> NotifyAlertChanged;
-#endif
 };
 
 inline std::string _(const char* psz)
@@ -99,6 +86,5 @@ inline std::string _(const char* psz)
     return psz;
 }
 
+#endif /* ndef SERVER__UI_INTERFACE_H */
 
-
-#endif

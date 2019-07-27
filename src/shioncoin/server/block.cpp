@@ -833,28 +833,9 @@ bool CTransaction::ClientConnectInputs(int ifaceIndex)
   return true;
 }
 
-static bool legacy_IsInMainChain(int ifaceIndex, const CBlockIndex *pindex)
-{
-	if (pindex->pnext)
-		return (true); /* has valid parent */
-
-	CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
-	if (pindexBest && pindex->GetBlockHash() == pindexBest->GetBlockHash());
-	return (true);
-
-	return (false);
-}
-
 bool CBlockIndex::IsInMainChain(int ifaceIndex) const
 {
-	bool ok;
-
-	if (ifaceIndex == USDE_COIN_IFACE) 
-		ok = legacy_IsInMainChain(ifaceIndex, this);
-	else
-		ok = (nStatus & BLOCK_HAVE_DATA);
-
-	return (ok);
+	return (nStatus & BLOCK_HAVE_DATA);
 }
 
 int GetBestHeight(CIface *iface)
@@ -998,25 +979,6 @@ CBlock *GetBlankBlock(CIface *iface)
 
   return (block);
 }
-#if 0
-CBlock *GetBlankBlock(CIface *iface)
-{
-  int ifaceIndex = GetCoinIndex(iface);
-  CBlock *block;
-
-  block = NULL;
-  switch (ifaceIndex) {
-    case SHC_COIN_IFACE:
-      block = new SHCBlock();
-      break;
-    case USDE_COIN_IFACE:
-      block = new USDEBlock();
-      break;
-  }
-
-  return (block);
-}
-#endif
 
 /* TODO: faster to read via nHeight */
 bool CBlock::ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions)
@@ -2934,13 +2896,6 @@ void core_IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev)
 	} else { /* BIP30 */
     qual = pblock->nTime;
 	}
-#if 0
-  if (pblock->ifaceIndex == USDE_COIN_IFACE) {
-    qual = pblock->nTime;
-  } else {
-    qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
-  }
-#endif
 
   sprintf(hex, "%sf0000000", GetSiteExtraNonceHex());
   string hexStr(hex, hex + strlen(hex));
@@ -2962,11 +2917,7 @@ void core_SetExtraNonce(CBlock* pblock, const char *xn_hex)
   unsigned int qual;
 
   /* qualifier */ 
-  if (pblock->ifaceIndex == USDE_COIN_IFACE) {
-    qual = pblock->nTime;
-  } else {
-    qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
-  }
+	qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
 
   sprintf(hex, "%s%s", GetSiteExtraNonceHex(), xn_hex);
   string hexStr = hex;

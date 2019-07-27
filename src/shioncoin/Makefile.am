@@ -34,7 +34,6 @@ blockchain_sources = \
 proto_sources = \
 	$(srcdir)/proto/coin_proto.c \
 	$(srcdir)/proto/shc_proto.cpp \
-	$(srcdir)/proto/usde_proto.cpp \
 	$(srcdir)/proto/emc2_proto.cpp \
 	$(srcdir)/proto/test_proto.cpp \
 	$(srcdir)/proto/ltc_proto.cpp \
@@ -42,7 +41,6 @@ proto_sources = \
 	$(srcdir)/proto/color_proto.cpp \
 	$(srcdir)/proto/coin_proto.h \
 	$(srcdir)/proto/shc_proto.h \
-	$(srcdir)/proto/usde_proto.h \
 	$(srcdir)/proto/emc2_proto.h \
 	$(srcdir)/proto/test_proto.h \
 	$(srcdir)/proto/ltc_proto.h \
@@ -238,19 +236,6 @@ testnet_sources = \
 	server/testnet/testnet_pool.cpp \
 	server/testnet/testnet_pool.h
 
-# usde emulation interface
-usde_sources = \
-	server/usde/usde_netmsg.cpp \
-	server/usde/usde_netmsg.h \
-	server/usde/usde_block.cpp \
-	server/usde/usde_block.h \
-	server/usde/usde_wallet.cpp \
-	server/usde/usde_wallet.h \
-	server/usde/usde_txidx.cpp \
-	server/usde/usde_txidx.h \
-	server/usde/usde_pool.cpp \
-	server/usde/usde_pool.h
-
 # emc2 emulation service
 emc2_sources = \
 	server/emc2/emc2_txidx.cpp \
@@ -407,10 +392,6 @@ server_sources = \
 
 if STRATUM_SERVICE
 server_sources += $(stratum_sources)
-endif
-
-if USDE_SERVICE
-server_sources += $(usde_sources)
 endif
 
 if EMC2_SERVICE

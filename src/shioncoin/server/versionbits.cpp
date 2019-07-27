@@ -56,10 +56,6 @@ VersionBitsCache *GetVersionBitsCache(CIface *iface)
     return (NULL);
   }
 
-  /* special case */
-  if (ifaceIndex == USDE_COIN_IFACE)
-    return (NULL);
-
   return (&_version_bits_cache[ifaceIndex]);
 }
 

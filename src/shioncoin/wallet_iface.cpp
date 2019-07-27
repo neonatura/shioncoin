@@ -616,7 +616,6 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
     char errbuf[1024];
     sprintf(errbuf, "setblockreward: account '%s' has invalid %s address.", accountName, iface->name);
     shcoind_log(errbuf);
-    //throw JSONRPCError(-5, "Invalid usde address");
     return (-5);
   }
 
@@ -842,7 +841,6 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
 
   //address = GetAddressByAccount(accountName);
   if (!address.IsValid()) {
-    //throw JSONRPCError(-5, "Invalid usde address");
     return (-5);
   }
 
@@ -1606,7 +1604,7 @@ int sendblockreward(int ifaceIndex)
 int wallet_account_transfer(int ifaceIndex, const char *sourceAccountName, const char *accountName, const char *comment, double amount)
 {
   if (!accountName || !*accountName)
-    return (-5); /* invalid usde address */
+    return (-5); /* invalid address */
   return (c_wallet_account_transfer(ifaceIndex, sourceAccountName, accountName, comment, amount));
 }
 

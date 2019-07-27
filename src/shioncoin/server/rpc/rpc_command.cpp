@@ -1026,8 +1026,6 @@ Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
   else
     strMessage.append(iface->name);
   strMessage.append(" Signed Message:\n");
-//const string strMessageMagic = "usde Signed Message:\n";
-
 
   CDataStream ss(SER_GETHASH, 0);
   ss << strMessageMagic;

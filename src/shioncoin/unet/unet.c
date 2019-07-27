@@ -30,7 +30,7 @@ static const char *_unet_label[MAX_UNET_MODES] =
 {
   "!NONE!",
   "shc",
-  "usde",
+  "!RESERVED!",
   "emc2",
   "ltc",
   "testnet",

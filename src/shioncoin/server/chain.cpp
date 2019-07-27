@@ -466,17 +466,15 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 	if (chain_IsNodeBusy(pfrom))
 		return (NULL);
 
-	if (ifaceIndex != USDE_COIN_IFACE) { 
-		if (!pfrom->fPreferHeaders) {
-			/* incompatible. */
-			return (NULL);
-		}
+	if (!pfrom->fPreferHeaders) {
+		/* incompatible. */
+		return (NULL);
+	}
 
-		if (!pfrom->fHaveWitness && 
-				IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
-			/* incompatible. */
-			return (NULL);
-		}
+	if (!pfrom->fHaveWitness && 
+			IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+		/* incompatible. */
+		return (NULL);
 	}
 
 	return (pfrom);
@@ -891,13 +889,7 @@ void ServiceEventState(int ifaceIndex)
   CIface *iface = GetCoinByIndex(ifaceIndex);
 
   if (serv_state(iface, COINF_DL_SCAN)) {
-		if (ifaceIndex == USDE_COIN_IFACE) {
-			if (!ServiceLegacyBlockEvent(iface)) {
-				unset_serv_state(iface, COINF_DL_SCAN);
-			}
-		} else {
-			unset_serv_state(iface, COINF_DL_SCAN);
-		}
+		unset_serv_state(iface, COINF_DL_SCAN);
     return;
   }
 
@@ -1104,9 +1096,7 @@ void event_cycle_chain(int ifaceIndex)
   ServiceEventState(ifaceIndex);
 
 	/* the "block event" continuously runs. */
-	if (ifaceIndex != USDE_COIN_IFACE) {
-		ServiceBlockEvent(ifaceIndex);
-	}
+	ServiceBlockEvent(ifaceIndex);
 
 }
 

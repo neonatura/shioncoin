@@ -60,13 +60,6 @@ shc_SOURCES = $(console_sources)
 shc_CFLAGS = $(tool_flags) -DSHC_COIN_CLIENT
 shc_LDADD = $(ld_flags)
 
-if USDE_SERVICE
-bin_PROGRAMS += usde
-usde_SOURCES = $(console_sources)
-usde_CFLAGS = $(tool_flags) -DUSDE_COIN_CLIENT
-usde_LDADD = $(ld_flags)
-endif
-
 if EMC2_SERVICE
 bin_PROGRAMS += emc2
 emc2_SOURCES = $(console_sources)
