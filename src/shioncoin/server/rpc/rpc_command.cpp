@@ -184,7 +184,7 @@ Value rpc_peer_info(CIface *iface, const Array& params, bool fStratum)
   return obj;
 }
 
-static double GetAverageBlockSpan(CIface *iface)
+double GetAverageBlockSpan(CIface *iface)
 {
   CBlockIndex *pindex = GetBestBlockIndex(iface);
   CBlockIndex *l_pindex;
@@ -214,7 +214,7 @@ static double GetAverageBlockSpan(CIface *iface)
 	return (avg);
 }
 
-static unsigned int GetDailyTxRate(CIface *iface)
+unsigned int GetDailyTxRate(CIface *iface)
 {
   CBlockIndex *pindex = GetBestBlockIndex(iface);
 	time_t span = time(NULL) - 86400; 
@@ -225,7 +225,12 @@ static unsigned int GetDailyTxRate(CIface *iface)
 		if (pindex->nTime < span)
 			break;
 
-		total++;
+		CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+		if (block) {
+			total += (block->vtx.size() - 1); 
+			delete block;
+		}
+
 		pindex = pindex->pprev;
 	}
 
@@ -1249,27 +1254,36 @@ Value rpc_stratum_keyremove(CIface *iface, const Array& params, bool fStratum)
 Value rpc_stratum_blocks(CIface *iface, const Array& params, bool fStratum)
 {
   int ifaceIndex = GetCoinIndex(iface);
+	time_t timeSpan;
+	time_t timeMin;
 
   if (fStratum)
     throw runtime_error("unsupported operation");
 
 	bool fVerbose = false;
-	if (params.size() == 1)
+	if (params.size() >= 1)
 		fVerbose = params[0].get_bool();
+
+	if (params.size() >= 2)
+		timeSpan = (time_t)params[1].get_int();
+	else
+		timeSpan = 86400;
+	timeMin = (time(NULL) - timeSpan);
 
 	Array ar;
 #ifdef STRATUM_SERVICE 
 	vector<CBlockIndex *> vBlock = get_stratum_miner_blocks(ifaceIndex);
   BOOST_FOREACH(CBlockIndex *pindex, vBlock) {
-		if (fVerbose) {
-			CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
-			if (!block)
-				continue;
-
-			ar.push_back(block->ToValue());
-			delete block;
-		} else {
-			ar.push_back(pindex->GetBlockHash().GetHex());
+		if (pindex->nTime >= timeMin) {
+			if (fVerbose) {
+				CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+				if (!block)
+					continue;
+				ar.push_back(block->ToValue());
+				delete block;
+			} else {
+				ar.push_back(pindex->GetBlockHash().GetHex());
+			}
 		}
 	}
 #endif

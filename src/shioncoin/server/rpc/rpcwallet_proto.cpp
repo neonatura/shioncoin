@@ -1341,9 +1341,9 @@ Value rpc_wallet_bsend(CIface *iface, const Array& params, bool fStratum)
 
 	Array ar;
 	BOOST_FOREACH(CWalletTx& wtx, tx_list) {
-		ar.push_back(wtx.ToValue(ifaceIndex));    
+		ar.push_back(wtx.GetHash().GetHex());
 	}
-	ret.push_back(Pair("tx", ar));
+	ret.push_back(Pair("txid", ar));
 
 	return (ret);
 }

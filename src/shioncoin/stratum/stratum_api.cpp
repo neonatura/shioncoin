@@ -1557,6 +1557,8 @@ static const ApiItems& stratum_api_block_mined(int ifaceIndex, user_t *user, shj
 {
 	static ApiItems items;
 
+	if (begin_t == 0)
+		begin_t = (time(NULL) - 86400);
 	items.clear();
 
 	vector<CBlockIndex *> blocks = get_stratum_miner_blocks(ifaceIndex);

@@ -145,20 +145,27 @@ fprintf(stderr, "DEBUG: SHC: LoadTxIndex: DUP TX: %s\n", tx_hash.GetHex().c_str(
 vTx.push_back(tx_hash);
 #endif
 
+			bool fCoinbase = tx.IsCoinBase();
+
 			/* stats */
 			BOOST_FOREACH(const CTxOut& out, tx.vout) {
+				bool fReturn = false;
 				const CScript& script = out.scriptPubKey;
 				CScript::const_iterator pc = script.begin();
 				while (script.GetOp(pc, opcode)) {
 					if (opcode == OP_RETURN) {
 						STAT_TX_RETURNS(iface) += out.nValue;
+						fReturn = true;
 						break;
 					}
+				}
+				if (fCoinbase && !fReturn) {
+					STAT_TX_MINT(iface) += out.nValue;
 				}
 			}
 
 			/* register extended transactions. */
-			if (tx.IsCoinBase()) {
+			if (fCoinbase) {
 				int nMode;
 				if (VerifyMatrixTx(tx, nMode)) {
 					if (nMode == OP_EXT_VALIDATE) {

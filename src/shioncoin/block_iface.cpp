@@ -208,6 +208,7 @@ double c_GetNetworkHashRate(int ifaceIndex)
 
 const char *c_getmininginfo(int ifaceIndex)
 {
+  CWallet *wallet = GetWallet(ifaceIndex);
   Array result;
 
   int height = (int)GetBestHeight(ifaceIndex);
@@ -218,6 +219,11 @@ const char *c_getmininginfo(int ifaceIndex)
   if (height > 0)
     result.push_back((double)c_GetNetworkHashRate(ifaceIndex));
   else
+    result.push_back((double)0.0);
+
+	if (wallet)
+		result.push_back((double)wallet->GetBlockValue(height, 0, 0) / COIN);
+	else
     result.push_back((double)0.0);
 
   mininginfo_json = JSONRPCReply(result, Value::null, Value::null);
@@ -270,6 +276,56 @@ const char *c_getblockindexinfo(int ifaceIndex, CBlockIndex *pblockindex)
   delete block;
 
   return (blockinfo_json.c_str());
+}
+
+extern double GetAverageBlockSpan(CIface *iface);
+extern unsigned int GetDailyTxRate(CIface *iface);
+extern Value GetNetworkHashPS(int ifaceIndex, int lookup);
+
+string chaininfo_json;
+const char *c_getchaininfo(int ifaceIndex)
+{
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
+	Array result;
+
+	if (!iface || !iface->enabled || !wallet)
+		return (NULL);
+
+	int nHeight = GetBestHeight(iface) + 1;
+	int nNextHeight = nHeight;
+	int64 nCurValue = wallet->GetBlockValue(nHeight, 0);
+	int64 nValue = nCurValue;
+	do {
+		nNextHeight++;
+		nValue = wallet->GetBlockValue(nNextHeight, 0, 0);
+	} while (nValue == nCurValue);
+
+	/* max shioncoins */
+	result.push_back(ValueFromAmount(iface->max_money));
+	/* minted shioncoins */
+	result.push_back((double)iface->stat.tot_tx_mint/COIN);
+	/* burnt shioncoins */
+	result.push_back((double)iface->stat.tot_tx_return/COIN);
+	/* next reward reduction block height. */
+	result.push_back(nNextHeight);
+	/* total blocks */
+	result.push_back(nHeight);
+	/* ~ blocks per day */
+	result.push_back(86400 / GetAverageBlockSpan(iface));
+	/* ~ tx per day */
+	result.push_back((int)GetDailyTxRate(iface));
+	/* difficulty */
+	result.push_back(GetDifficulty(ifaceIndex, NULL));
+	/* hash rate [H/s] */
+	result.push_back(GetNetworkHashPS(ifaceIndex, 120));
+	/* current reward */
+	result.push_back((double)nCurValue / COIN);
+	/* reward after next reduction */
+	result.push_back((double)nValue / COIN);
+
+  chaininfo_json = JSONRPCReply(result, Value::null, Value::null);
+  return (chaininfo_json.c_str());
 }
 
 const char *c_getblockinfo(int ifaceIndex, const char *hash_addr)
@@ -546,6 +602,11 @@ double getdifficulty(int ifaceIndex)
 const char *getblockinfo(int ifaceIndex, const char *hash)
 {
   return (c_getblockinfo(ifaceIndex, hash));
+}
+
+const char *getchaininfo(int ifaceIndex)
+{
+  return (c_getchaininfo(ifaceIndex));
 }
 
 const char *gettransactioninfo(int ifaceIndex, const char *hash)

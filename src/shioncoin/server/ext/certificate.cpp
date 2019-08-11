@@ -1570,10 +1570,10 @@ int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint
     return (error(SHERR_INVAL, "init_ident_donate_tx:: !SendMoneyWithExtTx"));
 #endif
   if (!s_wtx.AddExtTx(&t_wtx, feePubKey, nFee))
-    return (false);
+    return (SHERR_CANCELED);
 
   if (!s_wtx.Send())
-    return (false);
+    return (SHERR_CANCELED);
 
   wtx = s_wtx;
 

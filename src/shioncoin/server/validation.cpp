@@ -485,9 +485,25 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 
   STAT_BLOCK_ACCEPTS(iface)++;
 	iface->net_valid = time(NULL);
+
 	if (pblock->vtx.size() != 0) {
-		BOOST_FOREACH(const CTxOut& txout, pblock->vtx[0].vout)
-			STAT_TX_MINT(iface) += txout.nValue;
+	  opcodetype opcode;
+
+		BOOST_FOREACH(const CTxOut& txout, pblock->vtx[0].vout) {
+			bool fReturn = false;
+			const CScript& script = txout.scriptPubKey;
+			CScript::const_iterator pc = script.begin();
+			while (script.GetOp(pc, opcode)) { 
+				if (opcode == OP_RETURN) { 
+					STAT_TX_RETURNS(iface) += txout.nValue;
+					fReturn = true;
+					break;
+				} 
+			} 
+			if (!fReturn) {
+				STAT_TX_MINT(iface) += txout.nValue;
+			}
+		}
 	}
 
   return true;

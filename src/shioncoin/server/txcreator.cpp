@@ -779,13 +779,23 @@ bool CTxBatchCreator::CreateBatchTx()
     nIndex++;
     nTotCredit += wtx->vout[n].nValue;
 
+		unsigned int nWeight = pwallet->GetTransactionWeight(*this);
+		nWeight += (1024 * ret_tx.getInputCount()); /* large quasi signature */
+		if (nWeight >= MAX_TRANSACTION_WEIGHT(iface) ||
+				(nWeight/4) >= nMaxTxSize) {
+			break;
+		}
+
+		/*
     int64 nBytes = ::GetSerializeSize(ret_tx, SER_NETWORK, PROTOCOL_VERSION(iface) | SERIALIZE_TRANSACTION_NO_WITNESS);
     nBytes += (146 * ret_tx.vin.size());
     if (nBytes > nMaxTxSize) {
       break;
     }
+		*/
 
-    nFee = ((nBytes / 1000) + 4) * MIN_TX_FEE(iface);
+    nFee = ((nWeight / 4 / 1000) + 4) * MIN_TX_FEE(iface);
+    nFee += MIN_RELAY_TX_FEE(iface);
     if (nFee > nMaxFee) {
       break;
     }
@@ -908,10 +918,10 @@ void CTxBatchCreator::SetLimits()
 {
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
 
-  nMaxTxSize = MAX_BLOCK_SIZE(iface) / 50;
+  nMaxTxSize = MAX_BLOCK_SIZE(iface) / 10;
   nMaxSigOp = MAX_BLOCK_SIGOPS(iface) / 50;
   nMaxFee = MIN(MAX_TX_FEE(iface) - CENT, 
-      (nMaxTxSize / 1024) * MIN_TX_FEE(iface));
+      (nMaxTxSize / 1000) * MIN_TX_FEE(iface));
 
 }
 

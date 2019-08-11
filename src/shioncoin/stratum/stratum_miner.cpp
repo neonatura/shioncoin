@@ -567,7 +567,8 @@ void add_stratum_miner_block(int ifaceIndex, char *block_hash)
 		return;
 	}
 
-	vGenBlocks[ifaceIndex][hBlock] = pindex;
+	if (vGenBlocks[ifaceIndex].count(hBlock) == 0)
+		vGenBlocks[ifaceIndex][hBlock] = pindex;
 }
 
 CBlockIndex *get_stratum_miner_block(int ifaceIndex, uint256 hBlock)

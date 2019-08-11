@@ -84,7 +84,7 @@ static void check_payout(int ifaceIndex)
 
 	tree = block = stratum_miner_lastminerblock(ifaceIndex);
 	if (!tree) {
-		shcoind_log("task_init: cannot parse json result");
+//		shcoind_log("task_init: cannot parse json result");
 		return;
 	}
 
@@ -119,16 +119,17 @@ static void check_payout(int ifaceIndex)
 	/* winner winner chicken dinner */
 	add_stratum_miner_block(ifaceIndex, block_hash);
 
+	if (!client_list)
+		return;
+
 	{
 		double amount = shjson_num(block, "amount", 0);
 		double fee;
 
-		if (amount < 0.1) {
+		if (amount < 1) {
 			shjson_free(&tree);
 			return;
 		}
-		if (!client_list)
-			return;
 
 		fee = amount * 0.001; /* 0.1% */
 		amount -= fee;
@@ -144,9 +145,21 @@ static void check_payout(int ifaceIndex)
 		weight = amount / tot_shares;
 		for (user = client_list; user; user = user->next) {
 			if (user->flags & USER_SYNC)
+				continue; /* stratum server */
+			if (user->flags & USER_RPC)
+				continue; /* rpc user */
+			if (!*user->worker)
+				continue; /* unknown */
+			if (0 == strncmp(user->worker, "system.", strlen("system.")))
+				continue; /* public */
+
+			reward = 0;
+			for (i = 0; i < MAX_ROUNDS_PER_HOUR; i++)
+				reward += (weight * user->block_avg[i]);
+			if (reward >= 0.0000001) {
 				user->balance[ifaceIndex] += reward;
 				/* regulate tx # */
-				user->balance_avg[ifaceIndex] = 
+				user->balance_avg[ifaceIndex] =
 					(user->balance_avg[ifaceIndex] + reward) / 2;
 
 				CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -156,6 +169,7 @@ static void check_payout(int ifaceIndex)
 		}
 
 	}
+
 
 	shjson_free(&tree);
 
@@ -666,11 +680,11 @@ sprintf(ntime, "%-8.8x", (unsigned int)task->curtime);
 static uint64_t pend_block_height[MAX_COIN_IFACE];
 int is_stratum_task_pending(int *ret_iface)
 {
-  static uint32_t usec;
-  struct timeval now;
-  uint64_t block_height;
-  char errbuf[256];
-  int ifaceIndex;
+	static uint32_t usec;
+	struct timeval now;
+	uint64_t block_height;
+	char errbuf[256];
+	int ifaceIndex;
 	int usec_trigger = 0;
 
 	usec++;
@@ -678,48 +692,36 @@ int is_stratum_task_pending(int *ret_iface)
 		usec_trigger = 1;
 	}
 
-  for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
+	for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
 		if (!is_stratum_miner_algo(ifaceIndex, ALGO_SCRYPT))
 			continue;
 		//if (ifaceIndex == TESTNET_COIN_IFACE) continue;
 		//if (ifaceIndex == COLOR_COIN_IFACE) continue;
-    CIface *iface = GetCoinByIndex(ifaceIndex);
-    if (!iface || !iface->enabled) 
-      continue; /* iface not enabled */
+		CIface *iface = GetCoinByIndex(ifaceIndex);
+		if (!iface || !iface->enabled)
+			continue; /* iface not enabled */
 
 		if (stratum_isinitialdownload(ifaceIndex))
 			continue;
-    block_height = (uint64_t)getblockheight(ifaceIndex);
-  for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-		if (!is_stratum_miner_algo(ifaceIndex, ALGO_SCRYPT))
-			continue;
-		//if (ifaceIndex == TESTNET_COIN_IFACE) continue;
-		//if (ifaceIndex == COLOR_COIN_IFACE) continue;
-    CIface *iface = GetCoinByIndex(ifaceIndex);
-    if (!iface || !iface->enabled) 
-      continue; /* iface not enabled */
-
-		if (stratum_isinitialdownload(ifaceIndex))
-			continue;
-    block_height = (uint64_t)getblockheight(ifaceIndex);
+		block_height = (uint64_t)getblockheight(ifaceIndex);
 #if 0
-    if (iface->blockscan_max &&
-        block_height < (iface->blockscan_max - 1))
-      continue; /* downloading blocks.. */
+		if (iface->blockscan_max &&
+				block_height < (iface->blockscan_max - 1))
+			continue; /* downloading blocks.. */
 #endif
 
 		if (!usec_trigger && block_height == pend_block_height[ifaceIndex])
 			continue; /* no new block. */
 
-    pend_block_height[ifaceIndex] = block_height;
-    if (ret_iface)
-      *ret_iface = ifaceIndex;
+		pend_block_height[ifaceIndex] = block_height;
+		if (ret_iface)
+			*ret_iface = ifaceIndex;
 
 		usec = 1;
-    return (TRUE);
-  }
+		return (TRUE);
+	}
 
-  return (FALSE);
+	return (FALSE);
 }
 
 void stratum_task_gen(task_attr_t *attr)

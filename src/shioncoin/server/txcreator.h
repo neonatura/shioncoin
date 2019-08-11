@@ -184,6 +184,11 @@ class CTxCreator : public CWalletTx
       return (strError);
     }
 
+		int getInputCount()
+		{
+			return (setInput.size());
+		}
+
 };
 
 class CTxBatchCreator : public CTxCreator

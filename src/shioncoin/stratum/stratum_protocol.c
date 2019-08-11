@@ -680,6 +680,8 @@ shjson_t *getminingroundsinfo(void)
   return (reply);
 }
 
+extern const char *getchaininfo(int ifaceIndex);
+
 /**
  * @todo: leave stale worker users (without open fd) until next round reset. current behavior does not payout if connection is severed.
  */ 
@@ -1051,8 +1053,22 @@ int stratum_request_message(user_t *user, shjson_t *json)
       return (err);
     }
 
+    if (0 == strcmp(method, "chain.info")) {
+      shjson_t *json_data = getchaininfo(ifaceIndex);
+      if (!json_data) {
+        reply = shjson_init(NULL);
+        set_stratum_error(reply, -5, "invalid");
+        shjson_null_add(reply, "result");
+      } else {
+        reply = shjson_init(json_data);
+      }
+      err = stratum_send_message(user, reply);
+      shjson_free(&reply);
+      return (err);
+		}
+
     if (0 == strcmp(method, "block.info")) {
-      const char *json_data = "{\"result\":null,\"error\":null}";
+      char *json_data = "{\"result\":null,\"error\":null}";
       shtime_t ts2;
       char *hash;
       int mode;

@@ -30,6 +30,7 @@
 #include "validation.h"
 #include "algobits.h"
 #include "versionbits.h"
+#include "stratum/stratum_miner.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -157,10 +158,17 @@ static bool ServiceWalletEvent(int ifaceIndex)
       CBlock *block = GetBlockByHeight(iface, nHeight);
       if (!block) continue;
 
+			bool fCoinbase = false;
+
 			/* check for new wallet tx's */
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
-				if (wallet->mapWallet.count(tx.GetHash()) != 0)
+				const uint256& hTx = tx.GetHash();
+				if (wallet->mapWallet.count(hTx) != 0) {
+					const CWalletTx& wtx = wallet->mapWallet[hTx];
+					if (wtx.IsCoinBase() && wtx.GetBlocksToMaturity(ifaceIndex) > 0)
+						fCoinbase = true;
 					continue;
+				}
 /* opt_bool(OPT_WALLET_REACCEPT */
 
 #if 0
@@ -178,6 +186,10 @@ static bool ServiceWalletEvent(int ifaceIndex)
 							!IsMine(*wallet, address))
 						continue;
 
+					if (tx.IsCoinBase()) {
+						fCoinbase = true;
+					}
+
 #if 0
 					CWalletTx wtx(wallet, tx);
 					wtx.SetMerkleBranch(block);
@@ -193,6 +205,11 @@ static bool ServiceWalletEvent(int ifaceIndex)
 				if (!tx.IsCoinBase())
 					chain_UpdateWalletCoins(ifaceIndex, tx);
       }
+
+			if (fCoinbase) {
+				add_stratum_miner_block(ifaceIndex, 
+						(char *)block->GetHash().GetHex().c_str());
+			}
 
       delete block;
       wallet->nScanHeight = nHeight;
