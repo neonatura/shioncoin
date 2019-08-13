@@ -489,6 +489,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	if (pblock->vtx.size() != 0) {
 	  opcodetype opcode;
 
+		/* statistics */
 		BOOST_FOREACH(const CTxOut& txout, pblock->vtx[0].vout) {
 			bool fReturn = false;
 			const CScript& script = txout.scriptPubKey;
@@ -502,6 +503,19 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 			} 
 			if (!fReturn) {
 				STAT_TX_MINT(iface) += txout.nValue;
+			}
+		}
+
+		/* redundant removal of any mempool transactions with accepted block's inputs. */
+		CTxMemPool *pool = GetTxMemPool(iface);
+		if (pool) {
+			BOOST_FOREACH(const CTransaction& tx, pblock->vtx) {
+				if (tx.IsCoinBase())
+					continue;
+
+				BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+					pool->RemoveTxWithInput(txin);
+				}
 			}
 		}
 	}

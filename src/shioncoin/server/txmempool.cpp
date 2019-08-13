@@ -334,15 +334,16 @@ bool CPool::ResolveConflicts(CPoolTx& ptx)
       COutPoint out = ptx.GetTx().vin[i].prevout;
       if (a_ptx.mapNextTx.count(out) != 0) {
         /* found conflict */
+				Debug("CPool.ResolveConflicts: tx \"%s\" conflicts with active mempool tx \"%s\".", ptx.GetHash().GetHex().c_str(), a_ptx.GetHash().GetHex().c_str());
 
         if (a_ptx.GetTx().IsNewerThan(ptx.GetTx())) {
-          return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted transaction with older time-stamp (%s).", ptx.GetHash()));
+          return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted tx \"%s\" due to conflict.", ptx.GetHash().GetHex().c_str()));
         }
 
         if (ifaceIndex == TEST_COIN_IFACE || ifaceIndex == SHC_COIN_IFACE) {
           if (ptx.GetTx().isFlag(CTransaction::TXF_CHANNEL) ||
               a_ptx.GetTx().isFlag(CTransaction::TXF_CHANNEL)) {
-            return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted duplicate channel transaction.")); 
+            return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted duplicate channel tx \"%s\".", ptx.GetHash().GetHex().c_str())); 
           }
         }
 
@@ -359,12 +360,6 @@ bool CPool::ResolveConflicts(CPoolTx& ptx)
     if (!RemoveTx(tx)) {
       error(SHERR_INVAL, "CPool.ResolveConflicts: error removing conflicting transaction \"%s\".", tx_hash.GetHex().c_str()); 
     }
-
-    /* abandon invalidated wallet tx [redundant] . */
-    wallet->EraseFromWallet(tx_hash);
-
-    CIface *iface = GetCoinByIndex(ifaceIndex);
-    Debug("(%s) CPool.ResolveConflict: removed tx \"%s\" from pool due to conflicting input transaction.", iface->name, tx_hash.GetHex().c_str()); 
   }
 
   /* create mapping for sequential checks */
@@ -639,6 +634,15 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
   if (fee) {
     fee->processTransaction(ptx, true);
   }
+
+	{
+		LOCK(wallet->cs_wallet);
+		if (wallet->mapWallet.count(ptx.GetHash()) != 0) {
+			CWalletTx& wtx = wallet->mapWallet[ptx.GetHash()]; 
+			/* inform peers of active tx */
+			wallet->RelayWalletTransaction(wtx);
+		}
+	}
 
   return (true);
 }
@@ -1063,6 +1067,12 @@ static void cpool_RemoveTxWithInput(CPool *pool, const CTxIn& txin)
   }
 
 }
+
+void CPool::RemoveTxWithInput(const CTxIn& txin)
+{
+	cpool_RemoveTxWithInput(this, txin);
+}
+
 
 bool CPool::Commit(CBlock& block)
 {

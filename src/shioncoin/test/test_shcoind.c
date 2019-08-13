@@ -69,6 +69,7 @@ extern TEST_txmempool_depend(CuTest*);
 extern TEST_chainwork(CuTest*);
 extern TEST_orphan_block(CuTest*);
 extern TEST_algo_sha256d(CuTest*);
+extern TEST_txmempool_conflict(CuTest *);
 
 
 
@@ -137,6 +138,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_txmempool_pending);
   SUITE_ADD_TEST(suite, TEST_txmempool_inval);
   SUITE_ADD_TEST(suite, TEST_txmempool_depend);
+  SUITE_ADD_TEST(suite, TEST_txmempool_conflict);
 
   SUITE_ADD_TEST(suite, TEST_respend);
   SUITE_ADD_TEST(suite, TEST_orphan_block);

@@ -2097,6 +2097,53 @@ _TEST(txmempool_depend)
   _TRUE(pool->size() == 0);
 }
 
+_TEST(txmempool_conflict)
+{
+  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+  CTxMemPool *pool = GetTxMemPool(iface);
+  CWallet *wallet = GetWallet(iface);
+  uint256 reuseHash;
+  string strAccount("");
+
+  /* obtain test coin address */
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+
+  {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+  _TRUE(pool->size() == 0);
+
+  /* generate transaction and track input */
+  CTxCreator tx(wallet, strAccount);
+  _TRUE(true == tx.AddOutput(addr.Get(), (int64)COIN * 2));
+  _TRUE(true == tx.Send());
+
+	_TRUE(tx.vin.size() >= 1);
+
+	int prevOut = tx.vin[0].prevout.n;
+	const uint256& prevHash = tx.vin[0].prevout.hash;
+
+  /* attempt send of tx w/ spent input */
+  CTxCreator s_tx(wallet, strAccount);
+  _TRUE(true == s_tx.AddInput(prevHash, prevOut));
+  _TRUE(true == s_tx.AddOutput(addr.Get(), (int64)CENT));
+	_TRUE(s_tx.Send()); /* over-writes previous because it is newer. */
+
+  _TRUE(pool->size() == 1);
+
+  {
+    CBlock *block = test_GenerateBlock();
+    _TRUEPTR(block);
+    _TRUE(ProcessBlock(NULL, block) == true);
+    delete block;
+  }
+
+  _TRUE(pool->size() == 0);
+}
+
 /* simple test to ensure block index "bnChainWork" is larger for each new block committed to the block-chain. */
 _TEST(chainwork)
 {
