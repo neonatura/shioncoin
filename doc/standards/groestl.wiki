@@ -1,0 +1,37 @@
+'''Grøstl''' is a cryptographic hash function submitted to the NIST hash function competition by Praveen Gauravaram, Lars Knudsen, Krystian Matusiewicz, Florian Mendel, Christian Rechberger, Martin Schläffer, and Søren S. Thomsen. Grøstl was chosen as one of the five finalists of the competition. It uses the same S-box as AES in a custom construction.  The authors claim speeds of up to 21.4 (cycles per byte) on an Intel Core 2 Duo.
+
+According to the submission document, the name "Grøstl" is a multilingual play-on-words, referring to an Austrian dish that is very similar to hash (food).
+
+Like other hash functions in the MD5/SHA family, Grøstl divides the input into blocks and iteratively computes ''h<sub>i</sub>'' = ''f''(''h''<sub>''i''−1</sub>, ''m<sub>i</sub>'').  However, Grøstl maintains a hash state at least twice the size of the final output (512 or 1024 bits), which is only truncated at the end of hash computation.
+
+The compression function ''f'' is based on a pair of 256- or 512-bit permutation functions ''P'' and ''Q'', and is defined as:
+: ''f''(''h'', ''m'') = ''P''(''h'' ⊕ ''m'') ⊕ ''Q''(''m'') ⊕ ''h''
+
+The permutation functions ''P'' and ''Q'' are heavily based on the Rijndael (AES) block cipher, but operate on 8×8 or 8×16 arrays of bytes, rather than 4×4.  Like AES, each round consists of four operations:
+# AddRoundKey (the Grøstl round keys are fixed, but differ between P and Q)
+# SubBytes (this uses the Rijndael S-box, allowing sharing with AES implementations)
+# ShiftBytes (expanded compared to AES, this also differs between P and Q, and 512- and 1024-bit versions)
+# MixColumns (using an 8×8 matrix rather than Rijndael's 4×4)
+
+Unlike Rijndael, all rounds are identical and there is no final AddRoundKey operation.  10 rounds are recommended for the 512-bit permutation, and 14 rounds for the 1024-bit version.
+
+The final double-width hash receives a final output transformation of
+: Ω(''h'') = ''h'' ⊕ ''P''(''h'')
+and is then truncated to the desired width.  This is equivalent to applying a final iteration of the compression function using an all-zero message block ''m'', followed by a (cryptographically insignificant) exclusive-or with the fixed constant ''Q''(0).
+
+==Examples of Grøstl hashes==
+Hash values of empty string.
+ <span style="color: green;">Grøstl-224("")</span>
+ 0x f2e180fb5947be964cd584e22e496242c6a329c577fc4ce8c36d34c3
+ <span style="color: green;">Grøstl-256("")</span>
+ 0x 1a52d11d550039be16107f9c58db9ebcc417f16f736adb2502567119f0083467
+ <span style="color: green;">Grøstl-384("")</span>
+ 0x ac353c1095ace21439251007862d6c62f829ddbe6de4f78e68d310a9205a736d8b11d99bffe448f57a1cfa2934f044a5
+ <span style="color: green;">Grøstl-512("")</span>
+ 0x 6d3ad29d279110eef3adbd66de2a0345a77baede1557f5d099fce0c03d6dc2ba8e6d4a6633dfbd66053c20faa87d1a11f39a7fbe4a6c2f009801370308fc4ad8
+
+Even a small change in the message will (with overwhelming probability) result in a mostly different hash, due to the avalanche effect. For example, adding a period to the end of the sentence:
+ <span style="color: green;">Grøstl-256("[[The quick brown fox jumps over the lazy dog]]")</span>
+ 0x 8c7ad62eb26a21297bc39c2d7293b4bd4d3399fa8afab29e970471739e28b301
+ <span style="color: green;">Grøstl-256("[[The quick brown fox jumps over the lazy dog]].")</span>
+ 0x f48290b1bcacee406a0429b993adb8fb3d065f4b09cbcdb464a631d4a0080aaf
