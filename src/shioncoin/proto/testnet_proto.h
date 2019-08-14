@@ -30,7 +30,7 @@
 #define TESTNET_VERSION_MAJOR 4 
 #define TESTNET_VERSION_MINOR 0 
 #define TESTNET_VERSION_REVISION 0 
-#define TESTNET_VERSION_BUILD 0
+#define TESTNET_VERSION_BUILD 1
 
 /** The default socket port for the TESTNET coin service. */
 #define TESTNET_COIN_DAEMON_PORT 26104

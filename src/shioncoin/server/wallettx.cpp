@@ -446,7 +446,7 @@ bool CWallet::WriteArchTx(const CWalletTx& wtx) const
 bool CWallet::EraseArchTx(uint256 hash) const
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
-	bc_t *bc = GetBlockTxChain(iface);
+	bc_t *bc = GetWalletTxChain(iface);
 	bcpos_t posTx;
 	int err;
 
@@ -458,7 +458,10 @@ bool CWallet::EraseArchTx(uint256 hash) const
 	if (err)
 		return (error(err, "bc_idx_clear [CWallet.EraseArchTx]"));
 
+	/* clear ".tmp" b-tree lookup table. */
 	bc_table_reset(bc, hash.GetRaw());
+
+	Debug("EraseArchTx: removed tx \"%s\".", hash.GetHex().c_str());
 	return (true);
 }
 

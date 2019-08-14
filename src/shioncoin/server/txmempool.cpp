@@ -336,7 +336,7 @@ bool CPool::ResolveConflicts(CPoolTx& ptx)
         /* found conflict */
 
         if (a_ptx.GetTx().IsNewerThan(ptx.GetTx())) {
-          return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted transaction with older time-stamp (%s).", ptx.GetHash()));
+          return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted transaction with older time-stamp (%s).", ptx.GetHash().GetHex().c_str()));
         }
 
         if (ifaceIndex == TEST_COIN_IFACE || ifaceIndex == SHC_COIN_IFACE) {
