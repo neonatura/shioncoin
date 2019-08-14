@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
 	xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-    <Product Id="*" UpgradeCode="a6a01e81-7586-4fc3-ae5e-7e14a1a7c045" Version="3.2.0.0" Language="1033" Name="ShionCoin Virtual Currency" Manufacturer="Neo Natura">
+    <Product Id="*" UpgradeCode="11a01e81-7586-4fc3-ae5e-7e14a1a7c045" Version="3.2.3" Language="1033" Name="ShionCoin Virtual Currency" Manufacturer="Neo Natura">
         <Package InstallerVersion="300" Compressed="yes"/>
-        <Media Id="1" Cabinet="myapplication.cab" EmbedCab="yes" />
-	<Icon Id="shc.ico" SourceFile="shc.ico" />
-	<Property Id="ARPPRODUCTICON" Value="shc.ico" />
+				<WixVariable Id="Manufacturer" Value="Neo Natura"/>
+				<MajorUpgrade AllowDowngrades="no" AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." />
+				<Media Id="1" Cabinet="myapplication.cab" EmbedCab="yes" />
+				<Icon Id="shc.ico" SourceFile="shc.ico" />
+				<Property Id="ARPPRODUCTICON" Value="shc.ico" />
 
         <Directory Id="TARGETDIR" Name="SourceDir">
         	<Directory Id="ProgramFilesFolder">
@@ -19,19 +21,19 @@
 	        <Directory Id="DesktopFolder"/>
 
 		<Directory Id="CommonAppDataFolder">
-	        	<Directory Id="APPLICATIONDATADIRECTORY" Name="share"/>
+	        	<Directory Id="APPLICATIONDATADIRECTORY" Name="shioncoin"/>
 	      	</Directory>
         </Directory>
 
         <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
-            <Component Id="shcoind.exe" Guid="d3590c35-e6f7-40e3-a1d5-b9ba2273b189">
+            <Component Id="shcoind.exe" Guid="e3590c35-e6f7-40e3-a1d5-b9ba2273b189">
                 <File Id="shcoind.exe" Name="shcoind.exe" Source="C:\release\shioncoin\bin\shcoind.exe" DiskId="1" KeyPath="yes" Checksum="yes" />
-		<ServiceInstall Id="ServiceInstaller" Type="ownProcess" Name="shcoind" DisplayName="ShionCoin" Description="The share coin virtual currency service." Start="auto" Account="[SERVICEACCOUNT]" Password="[SERVICEPASSWORD]" ErrorControl="normal" >
+		<ServiceInstall Id="ServiceInstaller" Type="ownProcess" Name="shcoind" DisplayName="ShionCoin" Description="The ShionCoin virtual currency service." Start="auto" Account="[SERVICEACCOUNT]" Password="[SERVICEPASSWORD]" ErrorControl="normal" >
 			<ServiceDependency Id="Tcpip" />
 		</ServiceInstall>
 		<ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="shcoind" Wait="yes" />
             </Component>
-            <Component Id="shc.exe" Guid="892f4e24-3b2b-4809-a7e6-c4c836040f3c">
+            <Component Id="shc.exe" Guid="112f4e24-3b2b-4809-a7e6-c4c836040f3c">
                 <File Id="shc.exe" Source="C:\release\shioncoin\bin\shc.exe" Checksum="yes" KeyPath="yes">
 
 		<Shortcut 
