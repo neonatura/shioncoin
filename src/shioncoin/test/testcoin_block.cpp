@@ -2295,6 +2295,12 @@ _TEST(seqlocktx)
 		_TRUE(ProcessBlock(NULL, block) == true);
 		delete block;
 	}
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
   _TRUE(spend2_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 	pubkey = GetAccountPubKey(wallet, "", true);
 	CTxCreator lock2_wtx(wallet, strAccount);

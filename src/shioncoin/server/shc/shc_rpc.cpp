@@ -396,7 +396,7 @@ const RPCOp EXEC_NEW = {
 	"\n"
 	" Create a new executable class on the block-chain.\n"
 	"\n"
-	"	Note: See https://shcoins.com/sexe/ for more information on creating SEXE executable classes.\n"
+	"	Note: See https://sharelib.net/sexe/ for more information on creating SEXE executable classes.\n"
 };
 
 const RPCOp EXEC_RUN = {

@@ -33,6 +33,9 @@ void test_shcoind_init(void)
   //RegisterWallet(testWallet);
   //RandAddSeedPerfmon();
 
+	GetCoinByIndex(EMC2_COIN_IFACE)->enabled = FALSE;
+	GetCoinByIndex(TESTNET_COIN_IFACE)->enabled = FALSE;
+
   iface->op_init(iface, NULL);
 
 
