@@ -394,7 +394,8 @@ am_shcoind_OBJECTS = $(am__objects_1) $(am__objects_2) \
 shcoind_OBJECTS = $(am_shcoind_OBJECTS)
 am__DEPENDENCIES_1 =
 shcoind_DEPENDENCIES = $(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(top_builddir)/src/libcrypto/libcrypto.a $(am__append_5) \
+	$(top_builddir)/src/libcrypto/libcrypto.a \
+	$(top_builddir)/src/libdi3/libdi3.a $(am__append_5) \
 	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -1470,7 +1471,8 @@ shcoind_SOURCES = $(common_includes) $(common_sources) \
 	$(server_sources) shcoind.c shcoind_daemon.c shcoind_daemon.h \
 	$(am__append_4)
 shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(top_builddir)/src/libcrypto/libcrypto.a $(am__append_5) \
+	$(top_builddir)/src/libcrypto/libcrypto.a \
+	$(top_builddir)/src/libdi3/libdi3.a $(am__append_5) \
 	$(am__append_6) -lboost_system -lboost_filesystem \
 	-lboost_thread -ldb_cxx -lpthread -ldl
 @STATIC_LIBSHARE_TRUE@shcoind_CFLAGS = -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe

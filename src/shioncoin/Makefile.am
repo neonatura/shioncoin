@@ -416,7 +416,8 @@ endif
 
 shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(top_builddir)/src/libcrypto/libcrypto.a
+	$(top_builddir)/src/libcrypto/libcrypto.a \
+	$(top_builddir)/src/libdi3/libdi3.a
 if STATIC_LIBSHARE
 shcoind_LDADD += \
 	$(LIBSHARE)/src/share-lib/libshare.a \
