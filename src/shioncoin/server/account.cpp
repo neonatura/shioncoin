@@ -61,13 +61,14 @@ static int _account_address_flags[MAX_ACCADDR] = {
 
 static bool CAccountCache_GenerateAddress(CWallet *wallet, const string& strAccount, CPubKey& pubkey, const char *tag)
 {
-	CKey pkey;
+	ECKey pkey;
 
 	if (!wallet->GetKey(pubkey.GetID(), pkey))
 		return (false);
 
 	cbuff tagbuff(tag, tag + strlen(tag));
-	CKey key = pkey.MergeKey(tagbuff);
+	ECKey key;
+	pkey.MergeKey(key, tagbuff);
 
 	CPubKey mrg_pubkey = key.GetPubKey();
 	if (!mrg_pubkey.IsValid())

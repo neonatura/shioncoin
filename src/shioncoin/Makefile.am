@@ -152,6 +152,7 @@ common_includes = \
 	server/txidx.h \
 	server/init.h \
 	server/key.h \
+	server/eckey.h \
 	server/keystore.h \
 	server/mruset.h \
 	server/netbase.h \
@@ -166,6 +167,8 @@ common_includes = \
 	server/algo/keccak.h \
 	server/algo/qubit.h \
 	server/algo/scrypt.h \
+	server/algo/sha512.h \
+	server/algo/hmac_sha512.h \
 	server/algo/sph_blake.h \
 	server/algo/sph_bmw.h \
 	server/algo/sph_cubehash.h \
@@ -308,8 +311,6 @@ server_sources = \
 	server/ext/asset.h \
 	server/ext/exec.cpp \
 	server/ext/exec.h \
-	server/ext/channel.cpp \
-	server/ext/channel.h \
 	server/ext/context.cpp \
 	server/ext/context.h \
 	server/ext/altchain.cpp \
@@ -350,8 +351,7 @@ server_sources = \
 	server/sha256d_merkle.cpp \
 	server/txidx.cpp \
 	server/init.cpp \
-	server/derkey.cpp \
-	server/hdkey.cpp \
+	server/eckey.cpp \
 	server/keystore.cpp \
 	server/main.cpp \
 	server/script.cpp \
@@ -367,6 +367,8 @@ server_sources = \
 	server/algo/keccak.c \
 	server/algo/qubit.c \
 	server/algo/scrypt.c \
+	server/algo/sha512.cpp \
+	server/algo/hmac_sha512.cpp \
 	server/algo/skein.c \
 	server/algo/sph_blake.c \
 	server/algo/sph_bmw.c \

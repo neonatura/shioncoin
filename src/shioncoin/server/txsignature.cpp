@@ -222,6 +222,7 @@ bool CSignature::CheckSig(cbuff vchSig, cbuff vchPubKey, CScript scriptCode, int
     return (error(SHERR_ACCESS, "CSignature.CheckSig: failure generating signature hash: \"%s\".", scriptCode.ToString().c_str()));
   }
 
+#if 0
   if (nHashType & SIGHASH_HDKEY) {
     HDPubKey pubkey(vchPubKey);
     if (!pubkey.Verify(sighash, vch)) {
@@ -236,6 +237,14 @@ bool CSignature::CheckSig(cbuff vchSig, cbuff vchPubKey, CScript scriptCode, int
       return (error(SHERR_ACCESS, "CSignature.CheckSig: signature verification failure: \"%s\" [script: %s].", HexStr(vchSig.begin(), vchSig.end()).c_str(), scriptCode.ToString().c_str()));
     }
   }
+#endif
+	ECKey key;
+	if (!key.SetPubKey(vchPubKey))
+		return false;
+
+	if (!key.Verify(sighash, vch)) {
+		return (error(SHERR_ACCESS, "CSignature.CheckSig: signature verification failure: \"%s\" [script: %s].", HexStr(vchSig.begin(), vchSig.end()).c_str(), scriptCode.ToString().c_str()));
+	}
 
   return true;
 }
@@ -398,6 +407,7 @@ bool CSignature::CreateSignature(cbuff& vchSig, const CKeyID& address, const CSc
     return (error(SHERR_INVAL, "CreateSignature: error generating signature hash for script \"%s\" [sigver %d].", scriptCode.ToString().c_str(), sigversion));
   }
 
+#if 0
   if (!(nHashType & SIGHASH_HDKEY)) {
     CKey key;
     if (!keystore.GetKey(address, key))
@@ -421,6 +431,18 @@ bool CSignature::CreateSignature(cbuff& vchSig, const CKeyID& address, const CSc
     if (!key.Sign(hash, vchSig))
       return false;
   }
+#endif
+	ECKey key;
+	if (!keystore.GetKey(address, key))
+		return (error(SHERR_ACCESS, "CreateSignature: error obtaining private key for CKeyID \"%s\".", address.GetHex().c_str()));
+	// Signing with uncompressed keys is disabled in witness scripts
+	if (sigversion == SIGVERSION_WITNESS_V0 && !key.IsCompressed()) {
+		return (error(SHERR_INVAL, "CreateSignature: generating witness program signature unsupportd for non-compressed key: script \"%s\" [sigver %d].", scriptCode.ToString().c_str(), sigversion));
+		return false;
+	}
+
+	if (!key.Sign(hash, vchSig))
+		return (error(SHERR_ACCESS, "CreateSignature: error signing signature."));
 
   vchSig.push_back((unsigned char)nHashType);
 
@@ -468,11 +490,14 @@ bool CSignature::SignAddress(const CScript& scriptPubKey, cstack_t& ret, txnoutt
   CKeyID keyID;
   switch (whichTypeRet) {
     case TX_PUBKEY:
+#if 0
       if (!(nHashType & SIGHASH_HDKEY)) {
         keyID = CPubKey(vSolutions[0]).GetID();
       } else {
         keyID = HDPubKey(vSolutions[0]).GetID();
       }
+#endif
+			keyID = CPubKey(vSolutions[0]).GetID();
       return Sign1(this, keyID, scriptPubKey, ret, sigversion);
 
     case TX_PUBKEYHASH:
@@ -480,6 +505,7 @@ bool CSignature::SignAddress(const CScript& scriptPubKey, cstack_t& ret, txnoutt
       if (!Sign1(this, keyID, scriptPubKey, ret, sigversion))
         return false;
 
+#if 0
       if (!(nHashType & SIGHASH_HDKEY)) {
         CPubKey key;
         if (!keystore.GetPubKey(keyID, key)) {
@@ -493,6 +519,15 @@ bool CSignature::SignAddress(const CScript& scriptPubKey, cstack_t& ret, txnoutt
           return false;
         ret.push_back(key.GetPubKey().Raw());
       }
+#endif
+			{
+				CPubKey key;
+				if (!keystore.GetPubKey(keyID, key)) {
+					return (error(SHERR_INVAL, "SignAddress: unknown key-id \"%s\" coin address\n", HexStr(keyID.begin(), keyID.end()).c_str()));
+				}
+
+				ret.push_back(key.Raw());
+			}
       return true;
 
     case TX_SCRIPTHASH:

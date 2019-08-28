@@ -63,7 +63,6 @@ static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
 
 extern CMedianFilter<int> cPeerBlockCounts;
-extern map<uint256, CAlert> mapAlerts;
 extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
 
 #define MIN_SHC_PROTO_VERSION 2000000
@@ -372,13 +371,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     if (pindexBest) {
 			int nMaxHeight = MIN(pindexBest->nHeight + 2000, pfrom->nStartingHeight);
       InitServiceBlockEvent(SHC_COIN_IFACE, nMaxHeight);
-    }
-
-    // Relay alerts
-    {
-      LOCK(cs_mapAlerts);
-      BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
-        item.second.RelayTo(pfrom);
     }
 
     pfrom->fSuccessfullyConnected = true;
@@ -967,24 +959,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       // seconds to respond to each, the 5th ping the remote sends would appear to
       // return very quickly.
       pfrom->PushMessage("pong", nonce);
-    }
-  }
-
-
-  else if (strCommand == "alert")
-  {
-    CAlert alert;
-    vRecv >> alert;
-
-    if (alert.ProcessAlert(ifaceIndex))
-    {
-      // Relay
-      pfrom->setKnown.insert(alert.GetHash());
-      {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
-          alert.RelayTo(pnode);
-      }
     }
   }
 

@@ -547,7 +547,9 @@ class CTransactionCore
     static const int TXF_ASSET = (1 << 9);
     static const int TXF_IDENT = (1 << 10);
     static const int TXF_MATRIX = (1 << 11);
+#if 0
     static const int TXF_CHANNEL = (1 << 12);
+#endif
     static const int TXF_EXEC = (1 << 13);
     static const int TXF_CONTEXT = (1 << 14);
     static const int TXF_ALTCHAIN = (1 << 15);
@@ -694,7 +696,9 @@ class CTransaction : public CTransactionCore
     CAlias alias;
     COffer offer;
     CTxMatrix matrix;
+#if 0
     CChannel channel;
+#endif
 		CExecCore exec;
 		CAltChain altchain;
 		CParam param; 
@@ -751,8 +755,10 @@ class CTransaction : public CTransactionCore
         READWRITE(offer);
       if (this->nFlag & TXF_MATRIX)
         READWRITE(matrix);
+#if 0
       if (this->nFlag & TXF_CHANNEL)
         READWRITE(channel);
+#endif
 
       if (this->nFlag & TXF_ALTCHAIN)
         READWRITE(altchain);
@@ -771,7 +777,9 @@ class CTransaction : public CTransactionCore
 			alias.SetNull();
       offer.SetNull();
       matrix.SetNull();
+#if 0
       channel.SetNull();
+#endif
 			exec.SetNull();
 			altchain.SetNull();
 			param.SetNull();
@@ -1078,6 +1086,7 @@ class CTransaction : public CTransactionCore
     bool VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, shnum_t *lat_p, shnum_t *lon_p);
 
 
+#if 0
     /**
      * @param lcl_addr The local coin-addr to pay to.
      * @param rem_addr The remote coin-addr to pay to.
@@ -1099,7 +1108,7 @@ class CTransaction : public CTransactionCore
     CChannel *GenerateChannel(const CChannel& channelIn);
 
     CChannel *RemoveChannel(const CChannel& channelIn);
-
+#endif
 
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)

@@ -45,7 +45,7 @@ _TEST(bloom_create_insert_key)
   CCoinSecret vchSecret;
   _TRUE(vchSecret.SetString(strSecret) == true);
 
-  CKey key;
+  ECKey key;
   bool fCompress;
   key.SetSecret(vchSecret.GetSecret(fCompress));
   CPubKey pubkey = key.GetPubKey();

@@ -105,7 +105,7 @@ struct CompareValueOnly
 
 CPubKey CWallet::GenerateNewKey(bool fCompressed)
 {
-	CKey key;
+	ECKey key;
 
 	{
 		LOCK(cs_wallet);
@@ -126,7 +126,7 @@ CPubKey CWallet::GenerateNewKey(bool fCompressed)
 	return (pubkey);
 }
 
-bool CWallet::AddKey(const CKey& key)
+bool CWallet::AddKey(const ECKey& key)
 {
 
 	if (!CCryptoKeyStore::AddKey(key))
@@ -146,6 +146,7 @@ bool CWallet::AddKey(const CKey& key)
 	return true;
 }
 
+#if 0
 HDPubKey CWallet::GenerateNewHDKey(bool fCompressed)
 {
 	HDMasterPrivKey key;
@@ -168,7 +169,9 @@ HDPubKey CWallet::GenerateNewHDKey(bool fCompressed)
 	HDPubKey pubkey = key.GetMasterPubKey();
 	return pubkey;
 }
+#endif
 
+#if 0
 bool CWallet::AddKey(const HDPrivKey& key)
 {
 	if (!CCryptoKeyStore::AddKey(key))
@@ -182,6 +185,7 @@ bool CWallet::AddKey(const HDPrivKey& key)
 	}
 	return true;
 }
+#endif
 
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey, const vector<unsigned char> &vchCryptedSecret)
 {
@@ -1597,7 +1601,7 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
 		LOCK(cs_wallet);
 
 		CAccount account;
-		CKey pkey;
+		ECKey pkey;
 
 		CWalletDB walletdb(strWalletFile);
 		walletdb.ReadAccount(strAccount, account);
@@ -1619,7 +1623,8 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
 		}
 
 		cbuff tagbuff(tag, tag + strlen(tag)); 
-		CKey key = pkey.MergeKey(tagbuff);
+		ECKey key;
+		pkey.MergeKey(key, tagbuff);
 
 		pubkey = key.GetPubKey();
 		if (!pubkey.IsValid()) {

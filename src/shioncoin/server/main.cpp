@@ -300,13 +300,6 @@ FILE* AppendBlockFile(unsigned int& nFileRet)
 
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// CAlert
-//
-
-map<uint256, CAlert> mapAlerts;
-CCriticalSection cs_mapAlerts;
 
 string GetWarnings(int ifaceIndex, string strFor)
 {
@@ -324,20 +317,6 @@ string GetWarnings(int ifaceIndex, string strFor)
     strStatusBar = strMiscWarning;
   }
 
-  // Alerts
-  {
-    LOCK(cs_mapAlerts);
-    BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
-    {
-      const CAlert& alert = item.second;
-      if (alert.AppliesToMe(ifaceIndex) && alert.nPriority > nPriority)
-      {
-        nPriority = alert.nPriority;
-        strStatusBar = alert.strStatusBar;
-      }
-    }
-  }
-
   if (strFor == "statusbar")
     return strStatusBar;
   else if (strFor == "rpc")
@@ -345,73 +324,6 @@ string GetWarnings(int ifaceIndex, string strFor)
   //assert(!"GetWarnings() : invalid parameter");
   return "error";
 }
-
-CAlert CAlert::getAlertByHash(const uint256 &hash)
-{
-    CAlert retval;
-    {
-        LOCK(cs_mapAlerts);
-        map<uint256, CAlert>::iterator mi = mapAlerts.find(hash);
-        if(mi != mapAlerts.end())
-            retval = mi->second;
-    }
-    return retval;
-}
-
-bool CAlert::ProcessAlert(int ifaceIndex)
-{
-    if (!CheckSignature(ifaceIndex))
-        return false;
-    if (!IsInEffect())
-        return false;
-
-    {
-        LOCK(cs_mapAlerts);
-        // Cancel previous alerts
-        for (map<uint256, CAlert>::iterator mi = mapAlerts.begin(); mi != mapAlerts.end();)
-        {
-            const CAlert& alert = (*mi).second;
-            if (Cancels(alert))
-            {
-                printf("cancelling alert %d\n", alert.nID);
-                mapAlerts.erase(mi++);
-            }
-            else if (!alert.IsInEffect())
-            {
-                printf("expiring alert %d\n", alert.nID);
-                mapAlerts.erase(mi++);
-            }
-            else
-                mi++;
-        }
-
-        // Check if this alert has been cancelled
-        BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
-        {
-            const CAlert& alert = item.second;
-            if (alert.Cancels(*this))
-            {
-                printf("alert already cancelled by %d\n", alert.nID);
-                return false;
-            }
-        }
-
-        // Add to mapAlerts
-        mapAlerts.insert(make_pair(GetHash(), *this));
-        // Notify UI if it applies to me
-    }
-
-    printf("accepted alert %d, AppliesToMe()=%d\n", nID, AppliesToMe(ifaceIndex));
-    return true;
-}
-
-
-
-
-
-
-
-
 
 //////////////////////////////////////////////////////////////////////////////
 //

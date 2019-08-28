@@ -1021,7 +1021,7 @@ Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
   if (!addr.GetKeyID(keyID))
     throw JSONRPCError(-3, "Address does not refer to key");
 
-  CKey key;
+  ECKey key;
   if (!pwalletMain->GetKey(keyID, key))
     throw JSONRPCError(-4, "Private key not available");
 
@@ -1084,7 +1084,7 @@ Value rpc_msg_verify(CIface *iface, const Array& params, bool fStratum)
   ss << strMessageMagic;
   ss << strMessage;
 
-  CKey key;
+  ECKey key;
   if (!key.SetCompactSignature(Hash(ss.begin(), ss.end()), vchSig))
     return false;
 
@@ -2048,7 +2048,7 @@ Value rpc_addmultisigaddress(CIface *iface, const Array& params, bool fStratum)
         throw runtime_error(
             strprintf("not enough keys supplied "
                       "(got %d keys, but need at least %d to redeem)", keys.size(), nRequired));
-    std::vector<CKey> pubkeys;
+    std::vector<ECKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
     {

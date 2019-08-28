@@ -420,7 +420,7 @@ CTxDestination CCoinAddr::GetWitness(int output_type) const
 		CScript subscript;
 
 		if (GetKeyID(keyID)) {
-			CKey key;
+			ECKey key;
 			if (!wallet->GetKey(keyID, key)) {
 				return (result); /* non-local */
 			}

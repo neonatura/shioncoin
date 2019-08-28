@@ -592,8 +592,10 @@ void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight)
 			if (err) {
 				error(err, "CommitContextTx failure");
 			}
+#if 0
 		} else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
 			/* not implemented. */
+#endif
 		} else if (tx.isFlag(CTransaction::TXF_IDENT)) {
 			InsertIdentTable(iface, tx);
 		} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {

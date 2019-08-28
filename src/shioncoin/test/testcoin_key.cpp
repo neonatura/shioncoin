@@ -34,7 +34,7 @@
 using namespace std;
 
 
-extern CKey MergeKey(const CKey& pkey, cbuff tag);
+extern ECKey MergeKey(const ECKey& pkey, cbuff tag);
 
 
 #ifdef __cplusplus
@@ -167,10 +167,10 @@ _TEST(coin_key)
   _TRUE(secret3 == secret3C);
   _TRUE(secret4 == secret4C);
 
-  CKey key3, key4;
+  ECKey key3, key4;
   key3.SetSecret(secret3, false);
   key4.SetSecret(secret4, false);
-  CKey key3C, key4C;
+  ECKey key3C, key4C;
   _TRUE(true == key3C.SetSecret(secret3, true));
   _TRUE(true == key4C.SetSecret(secret4, true));
 
@@ -227,8 +227,8 @@ _TEST(coin_key)
     _TRUE(key4C.SignCompact(hashMsg, csign4C));
 
 
-    CKey rkey3, rkey4;
-    CKey rkey3C, rkey4C;
+    ECKey rkey3, rkey4;
+    ECKey rkey3C, rkey4C;
     _TRUE(rkey3.SetCompactSignature (hashMsg, csign3));
     _TRUE(rkey4.SetCompactSignature (hashMsg, csign4));
     _TRUE(rkey3C.SetCompactSignature(hashMsg, csign3C));
@@ -246,16 +246,18 @@ _TEST(coin_key)
   strcpy(teststr, "test");
   cbuff tag(teststr, teststr + strlen(teststr));
   bool fCompr = true;
-  CKey pkey;
+  ECKey pkey;
   pkey.MakeNewKey(fCompr);
-  CKey key1 = pkey.MergeKey(tag);
-  CKey key2 = pkey.MergeKey(tag);
+  ECKey key1;
+	pkey.MergeKey(key1, tag);
+  ECKey key2;
+	pkey.MergeKey(key2, tag);
   _TRUE(key1.GetPubKey().GetID() == key2.GetPubKey().GetID());
   _TRUE(pkey.GetPubKey().GetID() != key2.GetPubKey().GetID());
 
   strcpy(teststr, "test2");
   cbuff tag2(teststr, teststr + strlen(teststr));
-  key2 = pkey.MergeKey(tag2);
+	pkey.MergeKey(key2, tag2);
   _TRUE(key1.GetPubKey().GetID() != key2.GetPubKey().GetID());
 
 }
@@ -267,7 +269,7 @@ _TEST(coin_key_phrase)
   bool fCompressed = false;
 
   /* generate new coin address key */
-  CKey key;
+  ECKey key;
   key.MakeNewKey(false);
   CCoinSecret secret(TEST_COIN_IFACE, key.GetSecret(fCompressed), false); 
   _TRUE(secret.IsValid() == true);
@@ -304,6 +306,7 @@ extern CWallet *GetWallet(CIface *iface);
 extern "C" {
 #endif
 
+#if 0
 _TEST(coin_hdkey)
 {
 	CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
@@ -393,19 +396,20 @@ if (t_pubkey.Raw().size() != 33 || t_pubkey2.Raw().size() != 33) {
 		_TRUE(t_privkey.VerifyCompact(hash, csig) == true);
 
 		/* test pub-key hash verification */
-		CKey pk;
+		ECKey pk;
 		_TRUE(pk.SetCompactSignature(hash, csig) == true);
 		_TRUE(pk.VerifyCompact(hash, csig) == true);
 		_TRUE(pk.VerifyCompact(inval_hash, csig) == false);
 
 		/* this won't eval since pubkey is variant derivative */
-		CKey pk2;
+		ECKey pk2;
 		pk2.SetPubKey(t_privkey.GetPubKey());
 		_TRUE(pk2.Verify(hash, csig) == false);
 		_TRUE(pk2.VerifyCompact(hash, csig) == false);
 	}
 
 }
+#endif
 
 
 

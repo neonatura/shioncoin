@@ -340,12 +340,14 @@ bool CPool::ResolveConflicts(CPoolTx& ptx)
           return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted tx \"%s\" due to conflict.", ptx.GetHash().GetHex().c_str()));
         }
 
+#if 0
         if (ifaceIndex == TEST_COIN_IFACE || ifaceIndex == SHC_COIN_IFACE) {
           if (ptx.GetTx().isFlag(CTransaction::TXF_CHANNEL) ||
               a_ptx.GetTx().isFlag(CTransaction::TXF_CHANNEL)) {
             return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted duplicate channel tx \"%s\".", ptx.GetHash().GetHex().c_str())); 
           }
         }
+#endif
 
         /* replace */
         vRemove.push_back(a_ptx.GetTx());

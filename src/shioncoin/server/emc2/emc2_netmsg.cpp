@@ -57,7 +57,6 @@ static const unsigned int MAX_INV_SZ = 50000;
 static const unsigned int EMC2_MAX_HEADERS_RESULTS = 2000;
 
 extern CMedianFilter<int> cPeerBlockCounts;
-//extern map<uint256, CAlert> mapAlerts;
 extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
 
 #define MIN_EMC2_PROTO_VERSION 70002
@@ -373,16 +372,6 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
     if (pindexBest) {
       InitServiceBlockEvent(EMC2_COIN_IFACE, pfrom->nStartingHeight);
     }
-
-
-#if 0
-    // Relay alerts
-    {
-      LOCK(cs_mapAlerts);
-      BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
-        item.second.RelayTo(pfrom);
-    }
-#endif
 
     pfrom->fSuccessfullyConnected = true;
 
@@ -864,26 +853,6 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
       pfrom->PushMessage("pong", nonce);
     }
   }
-
-
-#if 0
-  else if (strCommand == "alert")
-  {
-    CAlert alert;
-    vRecv >> alert;
-
-    if (alert.ProcessAlert(ifaceIndex))
-    {
-      // Relay
-      pfrom->setKnown.insert(alert.GetHash());
-      {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
-          alert.RelayTo(pnode);
-      }
-    }
-  }
-#endif
 
   /* exclusively used by bloom filter */
   else if (strCommand == "filterload")

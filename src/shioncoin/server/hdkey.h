@@ -124,7 +124,7 @@ class HDPubKey : public CPubKey
 
 };
 
-class HDPrivKey : public CKey
+class HDPrivKey : public ECKey
 {
   public:
     unsigned int depth;
@@ -211,8 +211,7 @@ class HDPrivKey : public CKey
 
     void SetNull()
     {
-      //pkey = NULL;
-      CKey::Reset();
+      CKey::SetNull();
 
       depth = 0;
       index = 0;
@@ -339,7 +338,7 @@ class HDMasterPrivKey : public HDPrivKey
       bool ret;
 
       SetNull();
-      CKey::Reset();
+      ECKey::SetNull();
 
       CSecret secret(vchKeyIn.begin(), vchKeyIn.end());
       ret = SetSecret(secret, false);
@@ -354,7 +353,7 @@ class HDMasterPrivKey : public HDPrivKey
       bool ret;
 
       SetNull();
-      CKey::Reset();
+      ECKey::SetNull();
 
       ret = SetSecret(secretIn, false);
       if (!ret)
@@ -363,7 +362,7 @@ class HDMasterPrivKey : public HDPrivKey
       vchChain = vchChainIn;
     }
 
-    HDMasterPrivKey(CKey seed_key)
+    HDMasterPrivKey(ECKey seed_key)
     {
       SetNull();
 

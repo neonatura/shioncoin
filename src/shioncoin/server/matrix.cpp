@@ -696,7 +696,7 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 	nUnsolved = 0;
 	bool fUpdated = false;
 	for (int i = 0; i < nMinConsensus; i++) {
-		CKey key;
+		ECKey key;
 		bool fSolved;
 
 		if (i < vsig.size() && vsig[i].size() != 0) {

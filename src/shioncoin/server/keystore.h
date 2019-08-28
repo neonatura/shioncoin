@@ -28,8 +28,7 @@
 
 #include "crypter.h"
 #include "sync.h"
-#//include <boost/signals2/signal.hpp>
-#include "hdkey.h"
+#include "eckey.h"
 
 class CScript;
 
@@ -43,12 +42,14 @@ public:
     virtual ~CKeyStore() {}
 
     // Add a key to the store.
-    virtual bool AddKey(const CKey& key) =0;
+    virtual bool AddKey(const ECKey& key) =0;
 
     // Check whether a key corresponding to a given address is present in the store.
     virtual bool HaveKey(const CKeyID &address) const =0;
+#if 0
     virtual bool GetKey(const CKeyID &address, HDPrivKey& keyOut) const =0;
-    virtual bool GetKey(const CKeyID &address, CKey& keyOut) const =0;
+#endif
+    virtual bool GetKey(const CKeyID &address, ECKey& keyOut) const =0;
     virtual void GetKeys(std::set<CKeyID> &setAddress) const =0;
     virtual bool GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const;
 
@@ -59,7 +60,7 @@ public:
 
     virtual bool GetSecret(const CKeyID &address, CSecret& vchSecret, bool &fCompressed) const
     {
-        CKey key;
+        ECKey key;
         if (!GetKey(address, key))
             return false;
         vchSecret = key.GetSecret(fCompressed);
@@ -79,8 +80,8 @@ protected:
     ScriptMap mapScripts;
 
 public:
-    bool AddKey(const HDPrivKey& key);
-    bool AddKey(const CKey& key);
+//    bool AddKey(const HDPrivKey& key);
+    bool AddKey(const ECKey& key);
     bool HaveKey(const CKeyID &address) const
     {
         bool result;
@@ -103,6 +104,7 @@ public:
             }
         }
     }
+#if 0
     bool GetKey(const CKeyID &address, HDPrivKey &keyOut) const
     {
         {
@@ -120,15 +122,15 @@ public:
         }
         return false;
     }
-    bool GetKey(const CKeyID &address, CKey &keyOut) const
+#endif
+    bool GetKey(const CKeyID &address, ECKey &keyOut) const
     {
         {
             LOCK(cs_KeyStore);
             KeyMap::const_iterator mi = mapKeys.find(address);
             if (mi != mapKeys.end())
             {
-                keyOut.Reset();
-                keyOut.SetSecret((*mi).second.first, (*mi).second.second);
+                keyOut = ECKey((*mi).second.first, (*mi).second.second);
                 return true;
             }
         }
@@ -190,8 +192,10 @@ public:
     bool Lock();
 
     virtual bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
+#if 0
     bool AddKey(const HDPrivKey& key);
-    bool AddKey(const CKey& key);
+#endif
+    bool AddKey(const ECKey& key);
     bool HaveKey(const CKeyID &address) const
     {
         {
@@ -202,8 +206,10 @@ public:
         }
         return false;
     }
+#if 0
     bool GetKey(const CKeyID &address, HDPrivKey& keyOut) const;
-    bool GetKey(const CKeyID &address, CKey& keyOut) const;
+#endif
+    bool GetKey(const CKeyID &address, ECKey& keyOut) const;
     bool GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const;
     void GetKeys(std::set<CKeyID> &setAddress) const
     {

@@ -6,7 +6,7 @@
 #include "server/test/test_block.h"
 #include "server/test/test_wallet.h"
 #include "server/test/test_txidx.h"
-#include "server/derkey.h"
+#include "server/eckey.h"
 
 #ifdef __cplusplus
 extern "C" {

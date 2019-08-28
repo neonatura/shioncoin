@@ -1951,9 +1951,11 @@ Object CTransaction::ToValue(int ifaceIndex)
 		if (flags & TXF_MATRIX) {
 			obj.push_back(Pair("matrix", matrix.ToValue()));
 		}
+#if 0
 		if (flags & TXF_CHANNEL) {
 			obj.push_back(Pair("channel", channel.ToValue()));
 		}
+#endif
 		if (flags & TXF_CONTEXT) {
 			CContext ctx(certificate);
 			obj.push_back(Pair("context", ctx.ToValue()));
@@ -2096,6 +2098,7 @@ int CTransaction::GetDepthInMainChain(int ifaceIndex, CBlockIndex* &pindexRet) c
 }
 
 
+#if 0
 CChannel *CTransaction::CreateChannel(CCoinAddr& src_addr, CCoinAddr& dest_addr, int64 nValue)
 {
 
@@ -2122,7 +2125,6 @@ CChannel *CTransaction::CreateChannel(CCoinAddr& src_addr, CCoinAddr& dest_addr,
 
   return (&channel);
 }
-
 CChannel *CTransaction::ActivateChannel(const CChannel& channelIn, int64 nValue)
 {
 
@@ -2136,7 +2138,6 @@ CChannel *CTransaction::ActivateChannel(const CChannel& channelIn, int64 nValue)
 
   return (&channel);
 }
-
 CChannel *CTransaction::PayChannel(const CChannel& channelIn)
 {
   if (isFlag(CTransaction::TXF_CHANNEL))
@@ -2150,7 +2151,6 @@ CChannel *CTransaction::PayChannel(const CChannel& channelIn)
 
   return (&channel);
 }
-
 CChannel *CTransaction::GenerateChannel(const CChannel& channelIn)
 {
 
@@ -2163,12 +2163,12 @@ CChannel *CTransaction::GenerateChannel(const CChannel& channelIn)
 
   return (&channel);
 }
-
 CChannel *CTransaction::RemoveChannel(const CChannel& channelIn)
 {
 
   return (&channel);
 }
+#endif
 
 CExec *CTransaction::CreateExec()
 {
@@ -3173,8 +3173,10 @@ void CTransaction::Init(const CTransaction& tx)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_CERTIFICATE)
 		certificate = tx.certificate;
+#if 0
 	else if (this->nFlag & TXF_CHANNEL)
 		channel = tx.channel;
+#endif
 	else if (this->nFlag & TXF_CONTEXT)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_IDENT)

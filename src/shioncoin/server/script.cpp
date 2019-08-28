@@ -25,7 +25,7 @@
 
 #include "shcoind.h"
 #include "main.h"
-#include "hdkey.h"
+#include "eckey.h"
 
 using namespace std;
 using namespace boost;
@@ -34,8 +34,7 @@ using namespace boost;
 #include "txsignature.h"
 #include "keystore.h"
 #include "bignum.h"
-#include "key.h"
-#include "derkey.h"
+#include "eckey.h"
 #include "main.h"
 #include "sync.h"
 #include "util.h"
@@ -1759,6 +1758,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 bool Sign1(const CKeyID& address, const CKeyStore& keystore, uint256 hash, int nHashType, CScript& scriptSigRet)
 {
 
+#if 0
   if (!(nHashType & SIGHASH_HDKEY)) {
     CKey key;
     if (!keystore.GetKey(address, key))
@@ -1782,6 +1782,18 @@ bool Sign1(const CKeyID& address, const CKeyStore& keystore, uint256 hash, int n
     vchSig.push_back((unsigned char)nHashType);
     scriptSigRet << vchSig;
   }
+#endif
+	{
+    ECKey key;
+    if (!keystore.GetKey(address, key))
+      return false;
+
+    vector<unsigned char> vchSig;
+    if (!key.Sign(hash, vchSig))
+      return false;
+    vchSig.push_back((unsigned char)nHashType);
+    scriptSigRet << vchSig;
+	}
 
   return true;
 }
@@ -1791,6 +1803,7 @@ bool SignN(const vector<valtype>& multisigdata, const CKeyStore& keystore, uint2
     int nSigned = 0;
     int nRequired = multisigdata.front()[0];
 
+#if 0
     if (!(nHashType & SIGHASH_HDKEY)) {
       for (unsigned int i = 1; i < multisigdata.size()-1 && nSigned < nRequired; i++)
       {
@@ -1808,6 +1821,15 @@ bool SignN(const vector<valtype>& multisigdata, const CKeyStore& keystore, uint2
               ++nSigned;
       }
     }
+#endif
+		for (unsigned int i = 1; i < multisigdata.size()-1 && nSigned < nRequired; i++)
+		{
+				const valtype& pubkey = multisigdata[i];
+				CKeyID keyID = CPubKey(pubkey).GetID();
+				if (Sign1(keyID, keystore, hash, nHashType, scriptSigRet))
+						++nSigned;
+		}
+
     return nSigned==nRequired;
 }
 
@@ -2474,15 +2496,16 @@ void CScript::SetNoDestination()
 	*this << OP_RETURN << OP_0;
 }
 
-void CScript::SetMultisig(int nRequired, const std::vector<CKey>& keys)
+void CScript::SetMultisig(int nRequired, const std::vector<ECKey>& keys)
 {
     this->clear();
 
     *this << EncodeOP_N(nRequired);
-    BOOST_FOREACH(const CKey& key, keys)
+    BOOST_FOREACH(const ECKey& key, keys)
         *this << key.GetPubKey();
     *this << EncodeOP_N(keys.size()) << OP_CHECKMULTISIG;
 }
+#if 0
 void CScript::SetMultisig(const std::vector<HDPrivKey>& keys)
 {
   SetMultisig(keys.size(), keys);
@@ -2496,6 +2519,7 @@ void CScript::SetMultisig(int nRequired, const std::vector<HDPrivKey>& keys)
         *this << key.GetPubKey();
     *this << EncodeOP_N(keys.size()) << OP_CHECKMULTISIG;
 }
+#endif
 
 bool isExtOp(opcodetype opcode)
 {

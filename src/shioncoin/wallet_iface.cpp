@@ -262,7 +262,7 @@ static const char *cpp_stratum_walletkeylist(int ifaceIndex, const char *acc_nam
       bool fComp;
       CSecret secret;
       CKeyID keyID;
-      CKey key;
+      ECKey key;
 
       if (!address.IsValid())
         continue;
@@ -1516,7 +1516,7 @@ static const char *json_stratum_account_import(int ifaceIndex, const char *acc_n
       return (NULL);//throw JSONRPCError(STERR_INVAL, "Invalid private key specified.");
     }
 
-    CKey key;
+    ECKey key;
     bool fCompressed;
     CSecret secret = vchSecret.GetSecret(fCompressed);
     key.SetSecret(secret, fCompressed);
@@ -1756,7 +1756,7 @@ void stratum_listaddrkey(int ifaceIndex, char *account, shjson_t *obj)
   vector<string> vAcc;
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
     const string& strAccount = entry.second;
-    CKey pkey;
+    ECKey pkey;
 
     if (strAccount != strListAccount &&
         strAccount != strListExtAccount)
@@ -1793,7 +1793,7 @@ int stratum_getaddrkey(int ifaceIndex, char *account, char *pubkey, char *ret_pk
   vector<string> vAcc;
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
     const string& strAccount = entry.second;
-    CKey pkey;
+    ECKey pkey;
 
     if (strAccount != strListAccount &&
         strAccount != strListExtAccount)

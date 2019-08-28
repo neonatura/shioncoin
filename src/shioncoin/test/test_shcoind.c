@@ -104,10 +104,6 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_coin_key);
   SUITE_ADD_TEST(suite, TEST_coin_key_phrase);
 
-	/* currently (appears) creates pubkey's that cant be verified against. 
-  SUITE_ADD_TEST(suite, TEST_coin_hdkey);
-	*/
-
   SUITE_ADD_TEST(suite, TEST_wallet);
   SUITE_ADD_TEST(suite, TEST_bignum);
   SUITE_ADD_TEST(suite, TEST_sha256transform);

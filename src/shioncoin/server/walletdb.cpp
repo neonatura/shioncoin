@@ -222,7 +222,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
       {
         vector<unsigned char> vchPubKey;
         ssKey >> vchPubKey;
-        CKey key;
+        ECKey key;
         if (strType == "key")
         {
           CPrivKey pkey;
@@ -231,6 +231,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
           key.SetPrivKey(pkey);
           if (key.GetPubKey() != vchPubKey)
           {
+#if 0
             HDPrivKey hdkey;
             hdkey.SetPrivKey(pkey);
             if (hdkey.GetPubKey() != vchPubKey) {
@@ -241,6 +242,8 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
               //fprintf(stderr, "Error reading wallet database: invalid HDPrivKey\n");
               return DB_CORRUPT;
             }
+#endif
+						return DB_CORRUPT;
           } else if (!key.IsValid()) {
             //fprintf(stderr, "Error reading wallet database: invalid CPrivKey\n");
             return DB_CORRUPT;

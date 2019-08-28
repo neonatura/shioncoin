@@ -61,7 +61,6 @@ static const unsigned int MAX_INV_SZ = 50000;
 
 
 extern CMedianFilter<int> cPeerBlockCounts;
-extern map<uint256, CAlert> mapAlerts;
 extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
 
 #define MIN_TESTNET_PROTO_VERSION 2000000
@@ -338,13 +337,6 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     CBlockIndex *pindexBest = GetBestBlockIndex(TESTNET_COIN_IFACE);
     if (pindexBest) {
       InitServiceBlockEvent(TESTNET_COIN_IFACE, pfrom->nStartingHeight);
-    }
-
-    // Relay alerts
-    {
-      LOCK(cs_mapAlerts);
-      BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
-        item.second.RelayTo(pfrom);
     }
 
     pfrom->fSuccessfullyConnected = true;
@@ -854,24 +846,6 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
       // seconds to respond to each, the 5th ping the remote sends would appear to
       // return very quickly.
       pfrom->PushMessage("pong", nonce);
-    }
-  }
-
-
-  else if (strCommand == "alert")
-  {
-    CAlert alert;
-    vRecv >> alert;
-
-    if (alert.ProcessAlert(ifaceIndex))
-    {
-      // Relay
-      pfrom->setKnown.insert(alert.GetHash());
-      {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
-          alert.RelayTo(pnode);
-      }
     }
   }
 

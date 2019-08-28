@@ -220,10 +220,12 @@ class CWallet : public CCryptoKeyStore
 		CPubKey GenerateNewKey(bool fCompressed = true);
 		HDPubKey GenerateNewHDKey(bool fCompressed = true);
 		// Adds a key to the store, and saves it to disk.
+#if 0
 		bool AddKey(const HDPrivKey& key);
-		bool AddKey(const CKey& key);
+#endif
+		bool AddKey(const ECKey& key);
 		// Adds a key to the store, without saving it to disk (used by LoadWallet)
-		bool LoadKey(const CKey& key) { return CCryptoKeyStore::AddKey(key); }
+		bool LoadKey(const ECKey& key) { return CCryptoKeyStore::AddKey(key); }
 
 		// Adds an encrypted key to the store, and saves it to disk.
 		bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);

@@ -30,7 +30,7 @@
 
 bool CKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
 {
-  CKey key;
+  ECKey key;
 
   if (!GetKey(address, key))
     return false;
@@ -39,6 +39,7 @@ bool CKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
   return true;
 }
 
+#if 0
 bool CBasicKeyStore::AddKey(const HDPrivKey& key)
 {
     bool fCompressed = false;
@@ -49,8 +50,9 @@ bool CBasicKeyStore::AddKey(const HDPrivKey& key)
     }
     return true;
 }
+#endif
 
-bool CBasicKeyStore::AddKey(const CKey& key)
+bool CBasicKeyStore::AddKey(const ECKey& key)
 {
     bool fCompressed = false;
     CSecret secret = key.GetSecret(fCompressed);
@@ -154,7 +156,7 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
     return true;
 }
 
-bool CCryptoKeyStore::AddKey(const CKey& key)
+bool CCryptoKeyStore::AddKey(const ECKey& key)
 {
     {
         LOCK(cs_KeyStore);
@@ -179,6 +181,7 @@ bool CCryptoKeyStore::AddKey(const CKey& key)
 #endif
 }
 
+#if 0
 bool CCryptoKeyStore::AddKey(const HDPrivKey& key)
 {
   {
@@ -203,6 +206,7 @@ bool CCryptoKeyStore::AddKey(const HDPrivKey& key)
   return true;
 #endif
 }
+#endif
 
 
 bool CCryptoKeyStore::AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret)
@@ -217,7 +221,7 @@ bool CCryptoKeyStore::AddCryptedKey(const CPubKey &vchPubKey, const std::vector<
     return true;
 }
 
-bool CCryptoKeyStore::GetKey(const CKeyID &address, CKey& keyOut) const
+bool CCryptoKeyStore::GetKey(const CKeyID &address, ECKey& keyOut) const
 {
     {
         LOCK(cs_KeyStore);
@@ -247,6 +251,7 @@ bool CCryptoKeyStore::GetKey(const CKeyID &address, CKey& keyOut) const
     return false;
 #endif
 }
+#if 0
 bool CCryptoKeyStore::GetKey(const CKeyID &address, HDPrivKey& keyOut) const
 {
     {
@@ -277,6 +282,7 @@ bool CCryptoKeyStore::GetKey(const CKeyID &address, HDPrivKey& keyOut) const
     return false;
 #endif
 }
+#endif
 
 bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const
 {

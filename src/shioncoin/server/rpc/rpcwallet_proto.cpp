@@ -677,7 +677,7 @@ Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 					continue;// throw JSONRPCError(-5,"Invalid private key");
 				}
 
-				CKey key;
+				ECKey key;
 				bool fCompressed;
 				CSecret secret = vchSecret.GetSecret(fCompressed);
 				key.SetSecret(secret, fCompressed);
@@ -1407,7 +1407,7 @@ Value rpc_wallet_setkey(CIface *iface, const Array& params, bool fStratum)
 		throw JSONRPCError(SHERR_ILSEQ, "private-key");
 	}
 
-	CKey key;
+	ECKey key;
 	bool fCompressed = true;
 	CSecret secret = vchSecret.GetSecret(fCompressed); /* set's fCompressed */
 	key.SetSecret(secret, fCompressed);
@@ -1458,7 +1458,7 @@ Value rpc_wallet_setkeyphrase(CIface *iface, const Array& params, bool fStratum)
 	bool fGood = vchSecret.IsValid();
 	if (!fGood) throw JSONRPCError(-5,"Invalid private key");
 
-	CKey key;
+	ECKey key;
 	bool fCompressed;
 	CSecret secret = vchSecret.GetSecret(fCompressed);
 	key.SetSecret(secret, fCompressed);

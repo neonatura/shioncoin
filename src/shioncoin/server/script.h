@@ -849,7 +849,7 @@ public:
 
     void SetDestination(const CTxDestination& address);
 
-    void SetMultisig(int nRequired, const std::vector<CKey>& keys);
+    void SetMultisig(int nRequired, const std::vector<ECKey>& keys);
 
     void PrintHex() const
     {
@@ -879,9 +879,11 @@ public:
         return str;
     }
 
+#if 0
     void SetMultisig(const std::vector<HDPrivKey>& keys);
 
     void SetMultisig(int nRequired, const std::vector<HDPrivKey>& keys);
+#endif
 
     void print() const
     {

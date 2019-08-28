@@ -721,7 +721,7 @@ Value rpc_alt_setkey(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(SHERR_ILSEQ, "private-key");
   }
 
-  CKey key;
+  ECKey key;
   bool fCompressed = true;
   CSecret secret = vchSecret.GetSecret(fCompressed); /* set's fCompressed */
   key.SetSecret(secret, fCompressed);

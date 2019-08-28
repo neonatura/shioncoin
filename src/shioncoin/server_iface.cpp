@@ -54,7 +54,7 @@
 using namespace std;
 using namespace boost;
 
-
+extern std::string GetClientName(CIface *iface);
 
 void ThreadMessageHandler2(void* parg);
 void ThreadSocketHandler2(void* parg);

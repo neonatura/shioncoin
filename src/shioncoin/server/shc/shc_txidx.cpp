@@ -195,8 +195,10 @@ vTx.push_back(tx_hash);
       } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
 				if (IsContextTx(tx))
 					vContext.push_back(pindexNew);
+#if 0
       } else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
 				/* not implemented */
+#endif
       } else if (tx.isFlag(CTransaction::TXF_IDENT)) {
 				if (IsIdentTx(tx))
 					vIdent.push_back(pindexNew);
