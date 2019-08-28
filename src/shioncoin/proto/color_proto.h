@@ -30,7 +30,7 @@
 #define COLOR_VERSION_MAJOR 4 
 #define COLOR_VERSION_MINOR 0 
 #define COLOR_VERSION_REVISION 0 
-#define COLOR_VERSION_BUILD 1
+#define COLOR_VERSION_BUILD 2
 
 /** The default socket port for the COLOR coin service (none). */
 #define COLOR_COIN_DAEMON_PORT 0

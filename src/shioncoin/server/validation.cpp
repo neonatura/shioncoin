@@ -419,12 +419,16 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 		/* record that block could not be validated. */
 		iface->net_invalid = time(NULL);
 		pindex->nStatus |= BLOCK_FAILED_VALID;
+		if (wallet->pindexBestHeader == pindex)
+			wallet->pindexBestHeader = NULL;
 		return (error(ERR_INVAL, "(%s) core_AcceptBlock: error verifying block."));
 	}
 	if (!ContextualCheckBlock(pblock, pindexPrev)) {
 		/* record that block could not be validated. */
 		iface->net_invalid = time(NULL);
 		pindex->nStatus |= BLOCK_FAILED_VALID;
+		if (wallet->pindexBestHeader == pindex)
+			wallet->pindexBestHeader = NULL;
 		return (error(ERR_INVAL, "(%s) core_AcceptBlock: error verifying block \"%s\" with height %d [contextual].", iface->name, hash.GetHex().c_str(), nHeight));
 	}
 

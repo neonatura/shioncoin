@@ -198,12 +198,14 @@ shjson_t *stratum_miner_getblocktemplate(int ifaceIndex, int nAlg)
 		case ALGO_SKEIN:
 			/* set algo version. */
 		  pblock->nVersion = GetAlgoBits(nAlg);
-
+			pblock->nBits = pblock->GetNextWorkRequired(pindexPrev);
+#if 0
 			/* set difficulty for algo. */
 			CBigNum diff;
 			diff.SetCompact(pblock->nBits);
 			diff /= GetAlgoWorkFactor(nAlg);
 			pblock->nBits = diff.GetCompact();
+#endif
 
 			/* update merkle root. */
 			pblock->hashMerkleRoot = pblock->BuildMerkleTree();
