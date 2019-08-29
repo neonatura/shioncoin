@@ -53,5 +53,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_docdir}/shioncoin/shcoin_html.tar.gz
 
 %changelog
-* Sat Jul 27 2019 Neo Natura <support@neo-natura.com> - 4.0
+* Wed Aug 28 2019 Neo Natura <support@neo-natura.com> - 4.0
 - The RPM release version of this package.
