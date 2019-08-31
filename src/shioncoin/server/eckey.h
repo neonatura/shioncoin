@@ -89,6 +89,8 @@ class ECKey : public CKey
 			return (*this);
 		}
 
+		friend bool operator==(const ECKey &a, const ECKey &b) { return a.vch == b.vch; }
+
     bool IsNull() const;
 
     bool SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed = false);
@@ -130,12 +132,11 @@ class ECKey : public CKey
 
 };
 
-#if 0
 struct ECExtPubKey 
 {
-	unsigned char nDepth;
-	unsigned char vchFingerprint[4];
-	unsigned int nChild;
+	uint8_t nDepth;
+	uint8_t vchFingerprint[4];
+	uint32_t nChild;
 	ChainCode chaincode;
 	CPubKey pubkey;
 
@@ -152,35 +153,22 @@ struct ECExtPubKey
 
 	IMPLEMENT_SERIALIZE
 	(
-		if (fRead) {
-			READWRITE(FLATDATA(code));
-			nDepth = code[0];
-			memcpy(vchFingerprint, code+1, 4);
-			nChild = (code[5] << 24) | (code[6] << 16) | (code[7] << 8) | code[8];
-			memcpy(chaincode.begin(), code+9, 32);
-			pubkey.Set(cbuff(code+41, code+BIP32_EXTKEY_SIZE));
-		} else {
-			code[0] = nDepth;
-			memcpy(code+1, vchFingerprint, 4);
-			code[5] = (nChild >> 24) & 0xFF; code[6] = (nChild >> 16) & 0xFF;
-			code[7] = (nChild >>  8) & 0xFF; code[8] = (nChild >>  0) & 0xFF;
-			memcpy(code+9, chaincode.begin(), 32);
-//			assert(pubkey.size() == CPubKey::COMPRESSED_PUBLIC_KEY_SIZE);
-			memcpy(code+41, pubkey.begin(), CPubKey::COMPRESSED_PUBLIC_KEY_SIZE);
-			READWRITE(FLATDATA(code));
-		}
+		READWRITE(FLATDATA(nDepth));
+		READWRITE(FLATDATA(vchFingerprint));
+		READWRITE(FLATDATA(nChild));
+		READWRITE(chaincode);
+		READWRITE(pubkey);
 	)
 
 };
 
 struct ECExtKey
 {
-	unsigned char nDepth;
-	unsigned char vchFingerprint[4];
-	unsigned int nChild;
+	uint8_t nDepth;
+	uint8_t vchFingerprint[4];
+	uint32_t nChild;
 	ChainCode chaincode;
-	CKey key;
-
+	ECKey key;
 
 	friend bool operator==(const ECExtKey& a, const ECExtKey& b)
 	{
@@ -199,29 +187,13 @@ struct ECExtKey
 
 	IMPLEMENT_SERIALIZE
 	(
-		unsigned char code[BIP32_EXTKEY_SIZE];
-		if (fRead) {
-			READWRITE(FLATDATA(code));
-			nDepth = code[0];
-			memcpy(vchFingerprint, code+1, 4);
-			nChild = (code[5] << 24) | (code[6] << 16) | (code[7] << 8) | code[8];
-			memcpy(chaincode.begin(), code+9, 32);
-			key.Set(cbuff(code+42, code+BIP32_EXTKEY_SIZE), true);
-		} else {
-			code[0] = nDepth;
-			memcpy(code+1, vchFingerprint, 4);
-			code[5] = (nChild >> 24) & 0xFF; code[6] = (nChild >> 16) & 0xFF;
-			code[7] = (nChild >>  8) & 0xFF; code[8] = (nChild >>  0) & 0xFF;
-			memcpy(code+9, chaincode.begin(), 32);
-			code[41] = 0;
-//			assert(key.size() == 32);
-			memcpy(code+42, key.begin(), 32);
-			READWRITE(FLATDATA(code));
-		}
+		READWRITE(FLATDATA(nDepth));
+		READWRITE(FLATDATA(vchFingerprint));
+		READWRITE(FLATDATA(nChild));
+		READWRITE(chaincode);
 	)
 
 };
-#endif
 
 #endif /* __cplusplus */
 

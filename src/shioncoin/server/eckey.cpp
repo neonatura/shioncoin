@@ -556,3 +556,35 @@ bool ECKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, cons
 	return (ret);
 }
 
+bool ECExtKey::Derive(ECExtKey &out, unsigned int _nChild) const 
+{
+	out.nDepth = nDepth + 1;
+	CKeyID id = key.GetPubKey().GetID();
+	memcpy(&out.vchFingerprint[0], &id, 4);
+	out.nChild = _nChild;
+	return key.Derive(out.key, out.chaincode, _nChild, chaincode);
+}
+
+void ECExtKey::SetMaster(const unsigned char *seed, unsigned int nSeedLen) 
+{
+	static const unsigned char hashkey[] = {'S','h','i','o','n','c','o','i','n',' ','s','e','e','d'};
+	std::vector<unsigned char, secure_allocator<unsigned char>> vout(64);
+	CHMAC_SHA512(hashkey, sizeof(hashkey)).Write(seed, nSeedLen).Finalize(vout.data());
+	key.SetSecret(CSecret(vout.data(), vout.data() + 32), true);
+	memcpy(chaincode.begin(), vout.data() + 32, 32);
+	nDepth = 0;
+	nChild = 0;
+	memset(vchFingerprint, 0, sizeof(vchFingerprint));
+}
+
+ECExtPubKey ECExtKey::Neuter() const 
+{
+	ECExtPubKey ret;
+	ret.nDepth = nDepth;
+	memcpy(&ret.vchFingerprint[0], &vchFingerprint[0], 4);
+	ret.nChild = nChild;
+	ret.pubkey = key.GetPubKey();
+	ret.chaincode = chaincode;
+	return ret;
+}
+

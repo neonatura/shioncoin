@@ -30,7 +30,7 @@
 #include <list>
 
 #include "base58.h"
-
+#include "wallet.h"
 
 //class CKeyPool;
 class CAccount;
@@ -45,7 +45,6 @@ enum DBErrors
     DB_LOAD_FAIL,
     DB_NEED_REWRITE
 };
-
 
 /** Access to the wallet database (wallet.dat) */
 class CWalletDB : public CDB
@@ -91,8 +90,9 @@ public:
         return Read(std::make_pair(std::string("key"), vchPubKey.Raw()), vchPrivKey);
     }
 
-    bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey)
+    bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata& keyMeta)
     {
+        Write(std::make_pair(std::string("keymeta"), vchPubKey.Raw()), keyMeta, false);
         nWalletDBUpdated++;
         return Write(std::make_pair(std::string("key"), vchPubKey.Raw()), vchPrivKey, false);
     }
@@ -202,6 +202,9 @@ public:
     void ListAccountCreditDebit(const std::string& strAccount, std::list<CAccountingEntry>& acentries);
 
     int LoadWallet(CWallet* pwallet);
+
+		bool WriteHDChain(const CHDChain& chain);
+
 };
 
 #endif // __WALLETDB_H__

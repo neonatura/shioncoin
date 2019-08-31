@@ -52,6 +52,7 @@ enum WalletFeature
 	FEATURE_LATEST = 60000
 };
 
+const uint32_t BIP32_HARDENED_KEY_LIMIT = 0x80000000;
 
 typedef std::map<std::string, std::string> mapval_t;
 
@@ -76,6 +77,81 @@ class CAccountCache;
 
 #define MAX_ACCADDR 7
 
+class CHDChain
+{
+	public:
+		uint32_t nExternalChainCounter;
+		uint32_t nInternalChainCounter;
+		CKeyID masterKeyID; //!< master key hash160
+
+		static const int VERSION_HD_BASE        = 1;
+		static const int VERSION_HD_CHAIN_SPLIT = 2;
+		static const int CURRENT_VERSION        = VERSION_HD_CHAIN_SPLIT;
+		int nVersion; 
+
+		CHDChain() { SetNull(); }
+
+		void SetNull()
+		{
+			nVersion = CHDChain::CURRENT_VERSION;
+			nExternalChainCounter = 0;
+			nInternalChainCounter = 0;
+			masterKeyID.SetNull();
+		}
+
+		IMPLEMENT_SERIALIZE
+		(
+			READWRITE(this->nVersion);
+			READWRITE(nExternalChainCounter);
+			READWRITE(masterKeyID);
+			if (this->nVersion >= VERSION_HD_CHAIN_SPLIT)
+				READWRITE(nInternalChainCounter);
+		)
+
+};
+
+class CKeyMetadata
+{
+	public:
+		static const int VERSION_BASIC=1;
+		static const int VERSION_WITH_HDDATA=10;
+		static const int CURRENT_VERSION=VERSION_WITH_HDDATA;
+		int nVersion;
+		int64_t nCreateTime; // 0 means unknown
+		std::string hdKeypath; //optional HD/bip32 keypath
+		CKeyID hdMasterKeyID; //id of the HD masterkey used to derive this key
+
+		CKeyMetadata()
+		{
+			SetNull();
+		}
+
+		explicit CKeyMetadata(int64_t nCreateTime_)
+		{
+			SetNull();
+			nCreateTime = nCreateTime_;
+		}
+
+		void SetNull()
+		{
+			nVersion = CKeyMetadata::CURRENT_VERSION;
+			nCreateTime = 0;
+			hdKeypath.clear();
+			hdMasterKeyID.SetNull();
+		}
+
+		IMPLEMENT_SERIALIZE
+		(
+			READWRITE(this->nVersion);
+			READWRITE(nCreateTime);
+			if (this->nVersion >= VERSION_WITH_HDDATA)
+			{
+			READWRITE(hdKeypath);
+			READWRITE(hdMasterKeyID);
+			}
+		)
+
+};
 
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
@@ -154,9 +230,17 @@ class CWallet : public CCryptoKeyStore
 
 		std::string strWalletFile;
 
+    // Map from Key ID to key metadata.
+    std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
+
+    // Map from Script ID to key metadata (for watch-only keys).
+    std::map<CScriptID, CKeyMetadata> mapScriptMetadata;
+
 		typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
 		MasterKeyMap mapMasterKeys;
 		unsigned int nMasterKeyMaxID;
+
+		CHDChain hdChain;
 
 		/* best work done on current chain */
 		CBigNum bnBestChainWork;
@@ -484,6 +568,20 @@ class CWallet : public CCryptoKeyStore
 		bool WriteArchTx(const CWalletTx& wtx) const;
 		bool EraseArchTx(uint256 hash) const;
 		bool HasArchTx(uint256 hash) const;
+
+		void DeriveNewECKey(CKeyMetadata& metadata, ECKey& secret, bool internal);
+
+		CPubKey GenerateHDMasterKey();
+
+		bool SetHDMasterKey(const CPubKey& pubkey);
+
+		bool SetHDChain(const CHDChain& chain, bool memonly);
+
+		bool IsHDEnabled() const;
+
+		bool LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata &meta);
+
+		bool LoadKeyMetadata(const CKeyID& keyID, const CKeyMetadata &meta);
 
 		virtual bool IsAlgoSupported(int alg, CBlockIndex *pindexPrev = NULL, uint160 hColor = 0) = 0;
 

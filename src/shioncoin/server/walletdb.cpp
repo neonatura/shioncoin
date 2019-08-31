@@ -68,6 +68,11 @@ bool CWalletDB::WriteAccountingEntry(const CAccountingEntry& acentry)
     return Write(boost::make_tuple(string("acentry"), acentry.strAccount, ++nAccountingEntryNumber), acentry);
 }
 
+bool CWalletDB::WriteHDChain(const CHDChain& chain)
+{
+	return Write(std::string("hdchain"), chain);
+}
+
 int64 CWalletDB::GetAccountCreditDebit(const string& strAccount)
 {
     list<CAccountingEntry> entries;
@@ -272,6 +277,14 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
           return DB_CORRUPT;
         }
       }
+			else if (strType == "keymeta") {
+				CPubKey vchPubKey;
+				ssKey >> vchPubKey;
+				CKeyMetadata keyMeta;
+				ssValue >> keyMeta;
+//				wss.nKeyMeta++;
+				pwallet->LoadKeyMetadata(vchPubKey.GetID(), keyMeta);
+			}
       else if (strType == "mkey")
       {
         unsigned int nID;
@@ -329,7 +342,12 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
           //fprintf(stderr, "Error reading wallet database: LoadCScript failed\n");
           return DB_CORRUPT;
         }
-      }
+			} else if (strType == "hdchain") {
+				CHDChain chain;
+				ssValue >> chain;
+				pwallet->SetHDChain(chain, true);
+			}
+
     }
     pcursor->close();
   }
