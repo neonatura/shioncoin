@@ -34,6 +34,10 @@ uint256 CBlock::BuildMerkleTree() const
 {
   uint256 merkleHash = 0;
 
+  vMerkleTree.clear();
+  BOOST_FOREACH(const CTransaction& tx, vtx)
+    vMerkleTree.push_back(tx.GetHash());
+
 	if (ifaceIndex == TEST_COIN_IFACE ||
 			ifaceIndex == TESTNET_COIN_IFACE ||
 			ifaceIndex == SHC_COIN_IFACE ||
@@ -57,9 +61,6 @@ uint256 CBlock::BuildMerkleTree() const
 		}
 	}
 
-  vMerkleTree.clear();
-  BOOST_FOREACH(const CTransaction& tx, vtx)
-    vMerkleTree.push_back(tx.GetHash());
   int j = 0;
   for (int nSize = vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)
   {
@@ -84,6 +85,18 @@ std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
   if (vMerkleTree.empty()) {
     BuildMerkleTree();
   }
+
+	int nAlg = ALGO_SCRYPT;
+	if (ifaceIndex == TEST_COIN_IFACE ||
+			ifaceIndex == TESTNET_COIN_IFACE ||
+			ifaceIndex == SHC_COIN_IFACE ||
+			ifaceIndex == COLOR_COIN_IFACE) {
+		/* DEPLOYMENT_ALGO */
+		nAlg = GetAlgo();
+	}
+	if (nAlg != ALGO_SCRYPT) {
+		return (vMerkleTree);
+	}
 
   std::vector<uint256> vMerkleBranch;
   int j = 0;
