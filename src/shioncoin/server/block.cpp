@@ -3121,7 +3121,7 @@ fin:
 	}
 #endif
 	if (!fValid && pindexFail) {
-		error(SHERR_INVAL, "(%s): InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
+		error(SHERR_INVAL, "(%s) core_CommitBlock: invalid chain block=%s  height=%d  work=%s  date=%s\n",
 				iface->name, pindexFail->GetBlockHash().GetHex().c_str(),
 				pindexFail->nHeight, pindexFail->bnChainWork.ToString().c_str(),
 				DateTimeStrFormat("%x %H:%M:%S", pindexFail->GetBlockTime()).c_str());
@@ -3131,6 +3131,15 @@ fin:
 		/* re-establish chain at our failure/success point. */
 		WriteHashBestChain(iface, pindexLast->GetBlockHash());
 		SetBestBlockIndex(pblock->ifaceIndex, pindexLast);
+		wallet->bnBestChainWork = pindexLast->bnChainWork;
+		wallet->pindexBestHeader = pindexLast;
+
+		/* mark block as invalid. */
+		iface->net_invalid = time(NULL);
+		if (pindexFail)
+			pindexFail->nStatus |= BLOCK_FAILED_VALID;
+
+		Debug("(%s) core_CommitBlock: re-established chain at block \"%s\" (height %u).", iface->name, pindexLast->GetBlockHash().GetHex().c_str(), (unsigned int)pindexLast->nHeight); 
 	}
 
   BOOST_FOREACH(CBlock *block, vFree) {
@@ -3139,7 +3148,6 @@ fin:
 
   return (fValid);
 }
-
 
 void CTransaction::Init(const CTransaction& tx)
 {

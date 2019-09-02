@@ -1472,14 +1472,18 @@ int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
 			break;
 	if (nIndex == (int)pblock->vtx.size())
 	{
+#if 0
 		vMerkleBranch.clear();
+#endif
 		nIndex = -1;
 		//printf("ERROR: SetMerkleBranch() : couldn't find tx in block\n");
 		return 0;
 	}
 
+#if 0
 	// Fill in merkle branch
 	vMerkleBranch = pblock->GetMerkleBranch(nIndex);
+#endif
 
 	// Is the tx in a block that's in the main chain
 	map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex->find(hashBlock);
@@ -3549,5 +3553,44 @@ bool CWallet::SetHDChain(const CHDChain& chain, bool memonly)
 bool CWallet::IsHDEnabled() const
 {
 	return (hdChain.masterKeyID != 0);
+}
+
+const cbuff& CWallet::Base58Prefix(int type) const
+{
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	cbuff vchVersion;
+	uint8_t *raw;
+
+	if (!iface || !iface->enabled)
+		return (cbuff());
+
+	switch (type) {
+		case CCoinAddr::BASE58_PUBKEY_ADDRESS:
+			raw = &iface->base58_pubkey_address;
+			vchVersion = cbuff(raw, raw+1);
+			break;
+		case CCoinAddr::BASE58_SCRIPT_ADDRESS:
+			raw = &iface->base58_script_address;
+			vchVersion = cbuff(raw, raw+1);
+			break;
+		case CCoinAddr::BASE58_SCRIPT_ADDRESS2:
+			raw = &iface->base58_script_address2;
+			vchVersion = cbuff(raw, raw+1);
+			break;
+		case CCoinAddr::BASE58_SECRET_KEY:
+			raw = &iface->base58_secret_key;
+			vchVersion = cbuff(raw, raw+1);
+			break;
+		case CCoinAddr::BASE58_EXT_PUBLIC_KEY:
+			raw = (uint8_t *)iface->base58_ext_public_key;
+			vchVersion = cbuff(raw, raw+4);
+			break;
+		case CCoinAddr::BASE58_EXT_SECRET_KEY:
+			raw = (uint8_t *)iface->base58_ext_secret_key;
+			vchVersion = cbuff(raw, raw+4);
+			break;
+	}
+
+	return (vchVersion);
 }
 

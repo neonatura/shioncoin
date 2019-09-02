@@ -84,6 +84,17 @@ public:
 			SCRIPT_ADDRESS_2G = 55,
 		};
 
+		enum
+		{
+			BASE58_PUBKEY_ADDRESS,
+			BASE58_SCRIPT_ADDRESS,
+			BASE58_SCRIPT_ADDRESS2,
+			BASE58_SECRET_KEY,
+			BASE58_EXT_PUBLIC_KEY,
+			BASE58_EXT_SECRET_KEY,
+			MAX_BASE58_TYPES
+		};
+
 		int nType; /* ADDR_BASE58 | ADDR_BECH32 */
     int ifaceIndex;
 		int64_t nCreateTime; 
@@ -94,7 +105,7 @@ public:
 		{
 			ifaceIndex = 0;
 			nType = 0;
-			nVersion = 0;
+			vchVersion.clear();
 			vchData.clear();
 			nCreateTime = 0;
 			nAccessTime = 0;
@@ -138,7 +149,8 @@ public:
 		{
 			ifaceIndex = 0;
 			nType = 0;
-			nVersion = 0;
+			vchVersion.clear();
+			vchVersion.clear();
 			vchData.clear();
 			nCreateTime = time(NULL);
 			nAccessTime = 0;

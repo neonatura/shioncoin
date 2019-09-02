@@ -448,6 +448,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 			STAT_BLOCK_ACCEPTS(iface)++;
 			pindex->nStatus |= BLOCK_HAVE_UNDO;
 		}
+		Debug("(%s) core_AcceptBlock: block chain-work is insufficient for wallet: %s", iface->name, pblock->ToString().c_str());
 		return (true);
 	}
 	/* write to disk */

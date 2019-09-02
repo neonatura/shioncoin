@@ -111,39 +111,43 @@ bool CCoinAddr::Set(const CTxDestination &dest)
 bool CCoinAddr::IsValid() const
 {
 
+	if (vchVersion.size() == 0)
+		return (false);
+
+	const unsigned char *raw = vchVersion.data();
+	unsigned int nVersion = (unsigned int)raw[0];
+
 	if (nType != ADDR_BECH32) {
-		unsigned int nExpectedSize = 20;
-		switch(nVersion) {
-			case PUBKEY_G_ADDRESS:
-			case PUBKEY_C_ADDRESS:
-			case PUBKEY_E_ADDRESS:
-			case PUBKEY_L_ADDRESS:
-			case PUBKEY_S_ADDRESS:
-			case PUBKEY_T_ADDRESS:
-				nExpectedSize = 20; // Hash of public key
-				break;
-			case SCRIPT_ADDRESS:
-			case SCRIPT_ADDRESS_2:
-			case SCRIPT_ADDRESS_2S:
-			case SCRIPT_ADDRESS_2G:
-				nExpectedSize = 20; // Hash of CScript
-				break;
-			default:
-				return false;
-		}
-		if (vchData.size() != nExpectedSize) {
-			Debug("CCoinSecret: vchData.size() %d, nExpectedSize %d\n", vchData.size(), nExpectedSize);
-		}
-
-		if (vchData.size() != nExpectedSize)
-			return (false);
-
-		CIface *iface = GetCoinByIndex(ifaceIndex);
-		if (iface) {
-			if (nVersion != BASE58_PUBKEY_ADDRESS(iface) &&
-					nVersion != BASE58_SCRIPT_ADDRESS(iface) &&
-					nVersion != BASE58_SCRIPT_ADDRESS_2(iface)) {
+		if (vchVersion.size() == 1) {
+			unsigned int nExpectedSize = 20;
+			switch(nVersion) {
+				case PUBKEY_G_ADDRESS:
+				case PUBKEY_C_ADDRESS:
+				case PUBKEY_E_ADDRESS:
+				case PUBKEY_L_ADDRESS:
+				case PUBKEY_S_ADDRESS:
+				case PUBKEY_T_ADDRESS:
+					nExpectedSize = 20; // Hash of public key
+					break;
+				case SCRIPT_ADDRESS:
+				case SCRIPT_ADDRESS_2:
+				case SCRIPT_ADDRESS_2S:
+				case SCRIPT_ADDRESS_2G:
+					nExpectedSize = 20; // Hash of CScript
+					break;
+				default:
+					return false;
+			}
+			if (vchData.size() != nExpectedSize)
 				return (false);
+
+			CIface *iface = GetCoinByIndex(ifaceIndex);
+			if (iface) {
+				if (nVersion != BASE58_PUBKEY_ADDRESS(iface) &&
+						nVersion != BASE58_SCRIPT_ADDRESS(iface) &&
+						nVersion != BASE58_SCRIPT_ADDRESS_2(iface)) {
+					return (false);
+				}
 			}
 		}
 	} else {
@@ -190,28 +194,35 @@ CTxDestination CCoinAddr::Get() const
 		return CScriptID(id);
 	}
 #endif
-  switch (nVersion) {
-		case PUBKEY_G_ADDRESS:
-    case PUBKEY_C_ADDRESS:
-    case PUBKEY_E_ADDRESS:
-    case PUBKEY_L_ADDRESS:
-    case PUBKEY_S_ADDRESS:
-    case PUBKEY_T_ADDRESS:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        return CKeyID(id);
-      }
-    case SCRIPT_ADDRESS:
-    case SCRIPT_ADDRESS_2:
-    case SCRIPT_ADDRESS_2S:
-    case SCRIPT_ADDRESS_2G:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        return CScriptID(id);
-      }
-  }
+
+	if (vchVersion.size() == 1) {
+		const unsigned char *raw = vchVersion.data();
+		unsigned int nVersion = (unsigned int)raw[0];
+
+		switch (nVersion) {
+			case PUBKEY_G_ADDRESS:
+			case PUBKEY_C_ADDRESS:
+			case PUBKEY_E_ADDRESS:
+			case PUBKEY_L_ADDRESS:
+			case PUBKEY_S_ADDRESS:
+			case PUBKEY_T_ADDRESS:
+				{
+					uint160 id;
+					memcpy(&id, &vchData[0], 20);
+					return CKeyID(id);
+				}
+			case SCRIPT_ADDRESS:
+			case SCRIPT_ADDRESS_2:
+			case SCRIPT_ADDRESS_2S:
+			case SCRIPT_ADDRESS_2G:
+				{
+					uint160 id;
+					memcpy(&id, &vchData[0], 20);
+					return CScriptID(id);
+				}
+		}
+	}
+
   return CNoDestination();
 }
 
@@ -219,20 +230,26 @@ bool CCoinAddr::GetKeyID(CKeyID &keyID) const
 {
   if (!IsValid())
     return false;
-  switch (nVersion) {
-    case PUBKEY_G_ADDRESS:
-    case PUBKEY_C_ADDRESS:
-    case PUBKEY_E_ADDRESS:
-    case PUBKEY_S_ADDRESS:
-    case PUBKEY_L_ADDRESS:
-    case PUBKEY_T_ADDRESS:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        keyID = CKeyID(id);
-        return true;
-      }
-  }
+	if (vchVersion.size() == 1) {
+		const unsigned char *raw = vchVersion.data();
+		unsigned int nVersion = (unsigned int)raw[0];
+
+		switch (nVersion) {
+			case PUBKEY_G_ADDRESS:
+			case PUBKEY_C_ADDRESS:
+			case PUBKEY_E_ADDRESS:
+			case PUBKEY_S_ADDRESS:
+			case PUBKEY_L_ADDRESS:
+			case PUBKEY_T_ADDRESS:
+				{
+					uint160 id;
+					memcpy(&id, &vchData[0], 20);
+					keyID = CKeyID(id);
+					return true;
+				}
+		}
+	}
+
   return (false);
 }
 
@@ -252,19 +269,25 @@ bool CCoinAddr::GetScriptID(CScriptID& scriptID) const
       nVersion != SCRIPT_ADDRESS_TEST)
     return false;
 #endif
-	switch (nVersion) {
-		case SCRIPT_ADDRESS:
-    case SCRIPT_ADDRESS_2:
-    case SCRIPT_ADDRESS_2S:
-    case SCRIPT_ADDRESS_2G:
-			{
-				uint160 id;
-				memcpy(&id, &vchData[0], 20);
-				scriptID = CScriptID(id);
-			}
-			break;
-		default:
-			return (false);
+	if (vchVersion.size() == 1) {
+		const unsigned char *raw = vchVersion.data();
+		unsigned int nVersion = (unsigned int)raw[0];
+		switch (nVersion) {
+			case SCRIPT_ADDRESS:
+			case SCRIPT_ADDRESS_2:
+			case SCRIPT_ADDRESS_2S:
+			case SCRIPT_ADDRESS_2G:
+				{
+					uint160 id;
+					memcpy(&id, &vchData[0], 20);
+					scriptID = CScriptID(id);
+				}
+				break;
+			default:
+				return (false);
+		}
+	} else {
+		return (false);
 	}
 
 	return (true);
@@ -319,6 +342,7 @@ bool CCoinAddr::SetString(const std::string& str)
 		int version = bech.second[0]; // The first 5 bit symbol is the witness version (0-16)
 		// The rest of the symbols are converted witness program bytes.
 		if (ConvertBits<5, 8, false>(vchData, bech.second.begin() + 1, bech.second.end())) {
+
 #if 0
 			if (version == 0) {
 				{
@@ -350,6 +374,10 @@ bool CCoinAddr::SetString(const std::string& str)
 			return unk;
 #endif
 
+			unsigned char nVersion = (unsigned char)version;
+			unsigned char *raw = &nVersion;
+			vchVersion = cbuff(raw, raw + 1); 
+
 			nType = ADDR_BECH32;
 			return (true);
 		}
@@ -359,7 +387,7 @@ bool CCoinAddr::SetString(const std::string& str)
 
 	nType = ADDR_UNKNOWN;
 	vchData.clear();
-	nVersion = 0;
+	vchVersion.clear();//nVersion = 0;
 	return (error(SHERR_INVAL, "CCoinAddr.SetString: failure decoding \"%s\".", str.c_str()));
 }
 
@@ -369,7 +397,7 @@ std::string CCoinAddr::ToString() const
 	string strAddr = "";
 
 	if (iface && nType == ADDR_BECH32) {
-		std::vector<unsigned char> data = {nVersion};
+		std::vector<unsigned char> data = vchVersion;//{nVersion};
 		ConvertBits<8, 5, true>(data, vchData.begin(), vchData.end());
 		strAddr = bech32::Encode(iface->name, data);
 	} else {
@@ -385,14 +413,18 @@ bool CCoinAddr::IsScript() const
 	if (!IsValid())
 		return false;
 
-	switch (nVersion) {
-		case SCRIPT_ADDRESS:
-		case SCRIPT_ADDRESS_2:
-		case SCRIPT_ADDRESS_2S:
-		case SCRIPT_ADDRESS_2G:
-			{
-				return true;
-			}
+	if (vchVersion.size() == 1) {
+		const unsigned char *raw = vchVersion.data();
+		unsigned int nVersion = (unsigned int)raw[0];
+		switch (nVersion) {
+			case SCRIPT_ADDRESS:
+			case SCRIPT_ADDRESS_2:
+			case SCRIPT_ADDRESS_2S:
+			case SCRIPT_ADDRESS_2G:
+				{
+					return true;
+				}
+		}
 	}
 
 	return (false);

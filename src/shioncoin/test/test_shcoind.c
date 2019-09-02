@@ -70,7 +70,7 @@ extern TEST_chainwork(CuTest*);
 extern TEST_orphan_block(CuTest*);
 extern TEST_algo_sha256d(CuTest*);
 extern TEST_txmempool_conflict(CuTest *);
-
+extern TEST_bip32(CuTest *);
 
 
 extern void test_shcoind_init(void);
@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
   test_shcoind_init();
 
   /* core tests */
+  SUITE_ADD_TEST(suite, TEST_bip32);
   SUITE_ADD_TEST(suite, TEST_coinaddr);
   SUITE_ADD_TEST(suite, TEST_bloom_create_insert_key);
   SUITE_ADD_TEST(suite, TEST_bloom_match);
@@ -153,7 +154,6 @@ int main(int argc, char *argv[])
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);
-
 
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);

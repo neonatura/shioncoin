@@ -99,15 +99,14 @@ inline bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>
 class CBase58Data
 {
 	protected:
-		// the version byte
-		unsigned char nVersion;
-
+		// the version byte(s)
+		cbuff vchVersion;
 		// the actually encoded data
-		std::vector<unsigned char> vchData;
+		cbuff vchData;
 
 		CBase58Data()
 		{
-			nVersion = 0;
+			vchVersion.clear();
 			vchData.clear();
 		}
 
@@ -120,7 +119,12 @@ class CBase58Data
 
 		void SetData(int nVersionIn, const void* pdata, size_t nSize)
 		{
-			nVersion = nVersionIn;
+			unsigned char raw[4];
+
+			memset(raw, 0, sizeof(raw));
+			raw[0] = (unsigned char)nVersionIn;
+			vchVersion = cbuff(raw, raw + 1);
+
 			vchData.resize(nSize);
 			if (!vchData.empty())
 				memcpy(&vchData[0], pdata, nSize);
@@ -131,54 +135,41 @@ class CBase58Data
 			SetData(nVersionIn, (void*)pbegin, pend - pbegin);
 		}
 
-	public:
-		bool SetString(const char* psz);
-#if 0
-		bool SetString(const char* psz)
+		void SetData(const cbuff& vchVersionIn, const void* pdata, size_t nSize)
 		{
-			std::vector<unsigned char> vchTemp;
-			DecodeBase58Check(psz, vchTemp);
-			if (vchTemp.empty())
-			{
-				vchData.clear();
-				nVersion = 0;
-				return (error(SHERR_INVAL, "CBase58Data.SetString: failure decoding \"%s\".", psz));
-			}
-			nVersion = vchTemp[0];
-			vchData.resize(vchTemp.size() - 1);
+
+			vchVersion = vchVersionIn;
+
+			vchData.resize(nSize);
 			if (!vchData.empty())
-				memcpy(&vchData[0], &vchTemp[1], vchData.size());
-
-			/* wipe physical memory. note OPENSSL_cleanse() is an alternative. */
-			memset(&vchTemp[0], 0, vchTemp.size());
-			return true;
-		}
-#endif
-
-		bool SetString(const std::string& str)
-		{
-			return SetString(str.c_str());
+				memcpy(&vchData[0], pdata, nSize);
 		}
 
-		int GetVersion() const
+		void SetData(const cbuff& vchVersionIn, const unsigned char *pbegin, const unsigned char *pend)
 		{
-			return (nVersion);
+			SetData(vchVersionIn, (void*)pbegin, pend - pbegin);
+		}
+
+
+	public:
+		bool SetString(const char *psz, size_t nVersionSize = 1);
+
+		bool SetString(const std::string& str, size_t nVersionSize = 1)
+		{
+			return SetString(str.c_str(), nVersionSize);
+		}
+
+		const cbuff& GetVersion() const
+		{
+			return (vchVersion);
 		}
 
 		std::string ToString(int output_type = 0) const;
-#if 0
-		std::string ToString() const
-		{
-			std::vector<unsigned char> vch(1, nVersion);
-			vch.insert(vch.end(), vchData.begin(), vchData.end());
-			return EncodeBase58Check(vch);
-		}
-#endif
 
 		int CompareTo(const CBase58Data& b58) const
 		{
-			if (nVersion < b58.nVersion) return -1;
-			if (nVersion > b58.nVersion) return  1;
+			if (vchVersion < b58.vchVersion) return -1;
+			if (vchVersion > b58.vchVersion) return  1;
 			if (vchData < b58.vchData)   return -1;
 			if (vchData > b58.vchData)   return  1;
 			return 0;
@@ -245,8 +236,15 @@ class CCoinSecret : public CBase58Data
 			}
 #endif
 
-			if (nVersion <= 128)
-				return (false);
+			if (vchVersion.size() != 4) {
+				if (vchVersion.size() != 1)
+					return (false);
+
+				const unsigned char *raw = vchVersion.data();
+				if (raw[0] <= 128)
+					return (false);
+			}
+
 			return (vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1));
 
 			//return fExpectTestNet == fTestNet && (vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1));

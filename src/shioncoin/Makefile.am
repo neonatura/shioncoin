@@ -449,7 +449,8 @@ test_shcoind_SOURCES = \
 	test/testcoin_block.cpp \
 	test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp \
-	test/testcoin_algo.cpp
+	test/testcoin_algo.cpp \
+	test/testcoin_bip32.cpp
 
 test_shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \

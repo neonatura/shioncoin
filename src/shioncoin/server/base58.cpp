@@ -121,24 +121,31 @@ bool DecodeBase58(const char* psz, std::vector<unsigned char>& vchRet)
 	return true;
 }
 
-bool CBase58Data::SetString(const char *psz)
+bool CBase58Data::SetString(const char *psz, size_t nVersionSize)
 {
 	std::vector<unsigned char> vchTemp;
 
-	if (DecodeBase58Check(psz, vchTemp) && !vchTemp.empty()) {
-		nVersion = vchTemp[0];
-		vchData.resize(vchTemp.size() - 1);
-		if (!vchData.empty())
-			memcpy(&vchData[0], &vchTemp[1], vchData.size());
-		return (true);
+	bool rc58 = DecodeBase58Check(psz, vchTemp);
+	if ((!rc58) || (vchTemp.size() < nVersionSize)) {
+		vchData.clear();
+		vchVersion.clear();
+		return false;
 	}
 
-	return (false);
+	/* set addr version */
+	vchVersion.assign(vchTemp.begin(), vchTemp.begin() + nVersionSize);
+
+	/* set addr payload */
+	vchData.resize(vchTemp.size() - nVersionSize);
+	if (!vchData.empty())
+		memcpy(vchData.data(), vchTemp.data() + nVersionSize, vchData.size());
+
+	return true;
 }
 
 std::string CBase58Data::ToString(int output_type) const
 {
-	std::vector<unsigned char> vch(1, nVersion);
+	std::vector<unsigned char> vch = vchVersion;//(1, nVersion);
 	vch.insert(vch.end(), vchData.begin(), vchData.end());
 	return EncodeBase58Check(vch);
 }

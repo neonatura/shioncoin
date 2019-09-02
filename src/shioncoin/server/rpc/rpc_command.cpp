@@ -936,8 +936,37 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
 
     uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
 
+		int nIndex = 0;
+		int nAlg = ALGO_SCRYPT;
+		std::vector<uint256> vMerkleTree;
+		{
+			BOOST_FOREACH(const CTransaction& tx, pblock->vtx)
+				vMerkleTree.push_back(tx.GetHash());
+			if (ifaceIndex == TEST_COIN_IFACE ||
+					ifaceIndex == TESTNET_COIN_IFACE ||
+					ifaceIndex == SHC_COIN_IFACE ||
+					ifaceIndex == COLOR_COIN_IFACE) {
+				/* DEPLOYMENT_ALGO */
+				nAlg = pblock->GetAlgo();
+			}
+		}
+		if (nAlg == ALGO_SCRYPT) {
+			std::vector<uint256> vMerkleBranch;
+			int j = 0;
+			for (int nSize = pblock->vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)
+			{
+				int i = std::min(nIndex^1, nSize-1);
+				vMerkleBranch.push_back(vMerkleTree[j+i]);
+				nIndex >>= 1;
+				j += nSize;
+			}
+			vMerkleTree = vMerkleBranch;
+		}
+
     CTransaction coinbaseTx = pblock->vtx[0];
+#if 0
     std::vector<uint256> merkle = pblock->GetMerkleBranch(0);
+#endif
 
     Object result;
     result.push_back(Pair("data",     HexStr(BEGIN(pdata), END(pdata))));
@@ -949,7 +978,7 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
 
     Array merkle_arr;
 
-    BOOST_FOREACH(uint256 merkleh, merkle) {
+    BOOST_FOREACH(uint256 merkleh, vMerkleTree) {
       merkle_arr.push_back(HexStr(BEGIN(merkleh), END(merkleh)));
     }
 

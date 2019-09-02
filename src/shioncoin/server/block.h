@@ -1319,7 +1319,9 @@ class CBlock : public CBlockHeader
 {
   public:
     std::vector<CTransaction> vtx;
+#if 0
     mutable std::vector<uint256> vMerkleTree; /* mem only */
+#endif
     mutable CNode *originPeer;
 		uint160 hColor;
 
@@ -1351,7 +1353,9 @@ class CBlock : public CBlockHeader
     {
       CBlockHeader::SetNull();
       vtx.clear();
+#if 0
       vMerkleTree.clear();
+#endif
       originPeer = NULL;
     }
 
@@ -1366,7 +1370,9 @@ class CBlock : public CBlockHeader
      */
     uint256 BuildMerkleTree() const;
 
+#if 0
     std::vector<uint256> GetMerkleBranch(int nIndex) const;
+#endif
 
 #if 0
     /**

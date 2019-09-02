@@ -151,13 +151,27 @@ struct ECExtPubKey
 
 	bool Derive(ECExtPubKey& out, unsigned int nChild) const;
 
+	void Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const;
+
+	void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
+
 	IMPLEMENT_SERIALIZE
 	(
-		READWRITE(FLATDATA(nDepth));
-		READWRITE(FLATDATA(vchFingerprint));
-		READWRITE(FLATDATA(nChild));
-		READWRITE(chaincode);
-		READWRITE(pubkey);
+		unsigned char code[BIP32_EXTKEY_SIZE];
+		uint8_t code_size = BIP32_EXTKEY_SIZE;
+		if (fWrite) {
+			Encode(code);
+		}
+		READWRITE(FLATDATA(code_size));
+		READWRITE(FLATDATA(code));
+		if (fRead) {
+			ECExtPubKey *_self = (ECExtPubKey *)this;
+			_self->nDepth = code[0];
+			memcpy(_self->vchFingerprint, code+1, 4); 
+			_self->nChild = (code[5] << 24) | (code[6] << 16) | (code[7] << 8) | code[8];
+			memcpy(_self->chaincode.begin(), code+9, 32);
+			_self->pubkey = CPubKey(cbuff(code+41, code+BIP32_EXTKEY_SIZE));
+		} 
 	)
 
 };
@@ -185,12 +199,29 @@ struct ECExtKey
 
 	void SetMaster(const unsigned char* seed, unsigned int nSeedLen);
 
+	void Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const;
+
+	void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
+
 	IMPLEMENT_SERIALIZE
 	(
-		READWRITE(FLATDATA(nDepth));
-		READWRITE(FLATDATA(vchFingerprint));
-		READWRITE(FLATDATA(nChild));
-		READWRITE(chaincode);
+		unsigned char code[BIP32_EXTKEY_SIZE];
+		uint8_t code_size = BIP32_EXTKEY_SIZE;
+
+		if (fWrite) {
+			Encode(code);
+		}
+		READWRITE(FLATDATA(code_size));
+		READWRITE(FLATDATA(code));
+		if (fRead) {
+			ECExtKey *_self = (ECExtKey *)this;
+
+			_self->nDepth = code[0];
+			memcpy(_self->vchFingerprint, code+1, 4);
+			_self->nChild = (code[5] << 24) | (code[6] << 16) | (code[7] << 8) | code[8];
+			memcpy(_self->chaincode.begin(), code+9, 32);
+			_self->key.SetSecret(CSecret(code+42, code+BIP32_EXTKEY_SIZE), true);
+		}
 	)
 
 };

@@ -583,6 +583,8 @@ class CWallet : public CCryptoKeyStore
 
 		bool LoadKeyMetadata(const CKeyID& keyID, const CKeyMetadata &meta);
 
+		const cbuff& Base58Prefix(int type) const;
+
 		virtual bool IsAlgoSupported(int alg, CBlockIndex *pindexPrev = NULL, uint160 hColor = 0) = 0;
 
 };

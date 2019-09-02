@@ -57,7 +57,8 @@ uint256 CBlock::BuildMerkleTree() const
 		}
 	}
 
-  vMerkleTree.clear();
+	std::vector<uint256> vMerkleTree;
+  //vMerkleTree.clear();
   BOOST_FOREACH(const CTransaction& tx, vtx)
     vMerkleTree.push_back(tx.GetHash());
   int j = 0;
@@ -78,6 +79,7 @@ uint256 CBlock::BuildMerkleTree() const
 }
 
 
+#if 0
 std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
 {
 
@@ -97,6 +99,7 @@ std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
 
   return vMerkleBranch;
 }
+#endif
 
 #if 0
 uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
