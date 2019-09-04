@@ -68,7 +68,8 @@ public:
     }
 };
 
-typedef std::map<CKeyID, std::pair<CSecret, bool> > KeyMap;
+//typedef std::map<CKeyID, std::pair<CSecret, bool> > KeyMap;
+typedef std::map<CKeyID, ECKey> ECKeyMap;
 typedef std::map<CScriptID, CScript > ScriptMap;
 
 
@@ -76,7 +77,7 @@ typedef std::map<CScriptID, CScript > ScriptMap;
 class CBasicKeyStore : public CKeyStore
 {
 protected:
-    KeyMap mapKeys;
+    ECKeyMap mapECKeys;
     ScriptMap mapScripts;
 
 public:
@@ -87,7 +88,7 @@ public:
         bool result;
         {
             LOCK(cs_KeyStore);
-            result = (mapKeys.count(address) > 0);
+            result = (mapECKeys.count(address) > 0);
         }
         return result;
     }
@@ -96,8 +97,8 @@ public:
         setAddress.clear();
         {
             LOCK(cs_KeyStore);
-            KeyMap::const_iterator mi = mapKeys.begin();
-            while (mi != mapKeys.end())
+            ECKeyMap::const_iterator mi = mapECKeys.begin();
+            while (mi != mapECKeys.end())
             {
                 setAddress.insert((*mi).first);
                 mi++;
@@ -127,10 +128,11 @@ public:
     {
         {
             LOCK(cs_KeyStore);
-            KeyMap::const_iterator mi = mapKeys.find(address);
-            if (mi != mapKeys.end())
+            ECKeyMap::const_iterator mi = mapECKeys.find(address);
+            if (mi != mapECKeys.end())
             {
-                keyOut = ECKey((*mi).second.first, (*mi).second.second);
+                //keyOut = ECKey((*mi).second.first, (*mi).second.second);
+                keyOut = (*mi).second;
                 return true;
             }
         }

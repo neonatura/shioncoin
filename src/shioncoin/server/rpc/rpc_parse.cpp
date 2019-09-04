@@ -712,8 +712,8 @@ const RPCOp WALLET_WITADDR = {
 	"The optional type is either \"p2sh-segwit\" or \"bech32\"."
 }; 
 const RPCOp WALLET_LISTADDR = {
-  &rpc_wallet_addrlist, 1, {RPC_ACCOUNT},
-  "Syntax: <account>\n"
+  &rpc_wallet_addrlist, 1, {RPC_ACCOUNT, RPC_BOOL},
+  "Syntax: <account> [verbose]\n"
   "Returns the list of coin addresses for the given account."
 }; 
 const RPCOp WALLET_BALANCE = {
@@ -822,7 +822,11 @@ const RPCOp WALLET_NEW = {
   &rpc_wallet_new, 1, {RPC_ACCOUNT, RPC_STRING},
   "Syntax: <account> [type]\n"
   "Returns a new address for receiving payments to the specified account.\n"
+	"\n"
 	"The type is either \"legacy\", \"p2sh-segwit\", or \"bech32\"."
+	"\tlegacy\tA legacy pubkeyid address.\n"
+	"\tp2sh-segwit\tA standard segwit address.\n"
+	"\tbech32\tA standard segwit address.\n"
 };
 const RPCOp WALLET_DERIVE = {
   &rpc_wallet_derive, 2, {RPC_ACCOUNT, RPC_STRING},

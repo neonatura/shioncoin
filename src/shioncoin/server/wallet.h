@@ -110,48 +110,6 @@ class CHDChain
 
 };
 
-class CKeyMetadata
-{
-	public:
-		static const int VERSION_BASIC=1;
-		static const int VERSION_WITH_HDDATA=10;
-		static const int CURRENT_VERSION=VERSION_WITH_HDDATA;
-		int nVersion;
-		int64_t nCreateTime; // 0 means unknown
-		std::string hdKeypath; //optional HD/bip32 keypath
-		CKeyID hdMasterKeyID; //id of the HD masterkey used to derive this key
-
-		CKeyMetadata()
-		{
-			SetNull();
-		}
-
-		explicit CKeyMetadata(int64_t nCreateTime_)
-		{
-			SetNull();
-			nCreateTime = nCreateTime_;
-		}
-
-		void SetNull()
-		{
-			nVersion = CKeyMetadata::CURRENT_VERSION;
-			nCreateTime = 0;
-			hdKeypath.clear();
-			hdMasterKeyID.SetNull();
-		}
-
-		IMPLEMENT_SERIALIZE
-		(
-			READWRITE(this->nVersion);
-			READWRITE(nCreateTime);
-			if (this->nVersion >= VERSION_WITH_HDDATA)
-			{
-			READWRITE(hdKeypath);
-			READWRITE(hdMasterKeyID);
-			}
-		)
-
-};
 
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
@@ -239,8 +197,6 @@ class CWallet : public CCryptoKeyStore
 		typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
 		MasterKeyMap mapMasterKeys;
 		unsigned int nMasterKeyMaxID;
-
-		CHDChain hdChain;
 
 		/* best work done on current chain */
 		CBigNum bnBestChainWork;
@@ -569,15 +525,7 @@ class CWallet : public CCryptoKeyStore
 		bool EraseArchTx(uint256 hash) const;
 		bool HasArchTx(uint256 hash) const;
 
-		void DeriveNewECKey(CKeyMetadata& metadata, ECKey& secret, bool internal);
-
-		CPubKey GenerateHDMasterKey();
-
-		bool SetHDMasterKey(const CPubKey& pubkey);
-
-		bool SetHDChain(const CHDChain& chain, bool memonly);
-
-		bool IsHDEnabled() const;
+		void DeriveNewECKey(string strAccount, ECKey& secret, bool internal);
 
 		bool LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata &meta);
 
@@ -1018,6 +966,7 @@ class CAccount
 {
 	public:
 		CPubKey vchPubKey;
+		CHDChain chain;
 
 		CAccount()
 		{
@@ -1030,11 +979,13 @@ class CAccount
 		}
 
 		IMPLEMENT_SERIALIZE
-			(
-			 if (!(nType & SER_GETHASH))
-			 READWRITE(nVersion);
-			 READWRITE(vchPubKey);
-			)
+		(
+			if (!(nType & SER_GETHASH))
+				READWRITE(nVersion);
+			READWRITE(vchPubKey);
+			if (nVersion >= 4010000)
+				READWRITE(chain);
+		)
 };
 
 

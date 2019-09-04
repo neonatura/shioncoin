@@ -168,7 +168,7 @@ CCoinAddr CAccountCache::GetAddr(int type)
 		fOk = true;
 		fWitness = false;
 	} else {
-		CPubKey pubkey = account.vchPubKey;
+		CPubKey pubkey = wallet->GetPrimaryPubKey(strAccount);
 		fOk = CAccountCache_GenerateAddress(wallet, strAccount, pubkey, _pubkey_tag_table[type]);
 		if (fOk) {
 			/* an address unique for mode has been generated. */
@@ -301,3 +301,86 @@ bool CAccountCache::IsAddrUsed(const CPubKey& vchPubKey)
 }
 
 //bool CAccountCache::CreateHDKey(const CPubKey& vchPubKey)
+
+
+CHDChain *CAccountCache::GetHDChain()
+{
+
+	if (!account.vchPubKey.IsValid()) {
+		LOCK(wallet->cs_wallet);
+
+		/* load from wallet */
+		CWalletDB walletdb(wallet->strWalletFile);
+		walletdb.ReadAccount(strAccount, account);
+		walletdb.Close();
+	}
+
+	if (account.chain.masterKeyID == 0) {
+		/* intialize chain attributes. */
+		const CCoinAddr& m_addr = GetAddr(ACCADDR_HDKEY);
+
+		account.chain.nVersion = CHDChain::VERSION_HD_CHAIN_SPLIT;
+		m_addr.GetKeyID(account.chain.masterKeyID);
+
+		{
+			LOCK(wallet->cs_wallet);
+
+			/* save to wallet */
+			CWalletDB walletdb(wallet->strWalletFile);
+			walletdb.WriteAccount(strAccount, account);
+			walletdb.Close();
+		}
+	}
+
+	return (&account.chain);
+}
+
+#if 0
+CPubKey CAccountCache::GetMasterPubKey()
+{
+	CPubKey pubkey = account.vchPubKey;
+	bool bValid;
+	
+	bValid = pubkey.IsValid();
+	if (!bValid) {
+		LOCK(wallet->cs_wallet);
+
+		/* load from wallet */
+		CWalletDB walletdb(wallet->strWalletFile);
+		walletdb.ReadAccount(strAccount, account);
+		bValid = account.vchPubKey.IsValid();
+		walletdb.Close();
+	}
+	if (!bValid) {
+		account.vchPubKey = wallet->GenerateNewKey(true);
+		{
+			LOCK(wallet->cs_wallet);
+
+			/* save to wallet */
+			CWalletDB walletdb(wallet->strWalletFile);
+			walletdb.WriteAccount(strAccount, account);
+			walletdb.Close();
+		}
+	}
+
+	return (account.vchPubKey);
+}
+#endif
+
+void CAccountCache::UpdateHDChain()
+{
+
+	if (account.chain.masterKeyID == 0)
+		return;
+
+	{
+		LOCK(wallet->cs_wallet);
+
+		/* save to wallet */
+		CWalletDB walletdb(wallet->strWalletFile);
+		walletdb.WriteAccount(strAccount, account);
+		walletdb.Close();
+	}
+
+}
+

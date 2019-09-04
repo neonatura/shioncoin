@@ -222,7 +222,23 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         ssKey >> nNumber;
         if (nNumber > nAccountingEntryNumber)
           nAccountingEntryNumber = nNumber;
-      }
+      } else if (strType == "eckey") {
+        vector<unsigned char> vchPubKey;
+				ECKey key;
+
+        ssKey >> vchPubKey;
+				ssValue >> key;
+				const CPubKey& pubkey = key.GetPubKey();
+				if (pubkey != vchPubKey)
+					return DB_CORRUPT;
+
+//				key.SetPubKey(pubkey);
+				if (!pwallet->LoadKey(key))
+					return DB_CORRUPT;
+#if 0
+				pwallet->LoadKeyMetadata(pubkey.GetID(), key.meta);
+#endif
+			}
       else if (strType == "key" || strType == "wkey")
       {
         vector<unsigned char> vchPubKey;
@@ -277,6 +293,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
           return DB_CORRUPT;
         }
       }
+#if 0
 			else if (strType == "keymeta") {
 				CPubKey vchPubKey;
 				ssKey >> vchPubKey;
@@ -285,6 +302,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
 //				wss.nKeyMeta++;
 				pwallet->LoadKeyMetadata(vchPubKey.GetID(), keyMeta);
 			}
+#endif
       else if (strType == "mkey")
       {
         unsigned int nID;
@@ -342,10 +360,12 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
           //fprintf(stderr, "Error reading wallet database: LoadCScript failed\n");
           return DB_CORRUPT;
         }
+#if 0
 			} else if (strType == "hdchain") {
 				CHDChain chain;
 				ssValue >> chain;
 				pwallet->SetHDChain(chain, true);
+#endif
 			}
 
     }

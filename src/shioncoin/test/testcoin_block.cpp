@@ -1697,7 +1697,7 @@ _TEST(scriptid)
   _TRUE(addr.GetKeyID(keyID));
   CScript script = GetScriptForDestination(keyID);
  
-  _TRUE(wallet->AddCScript(script));
+  _FALSE(wallet->AddCScript(script)); /* because it got added above */
   CScriptID scriptID = CScriptID(script);
   wallet->SetAddressBookName(scriptID, strExtAccount);
 

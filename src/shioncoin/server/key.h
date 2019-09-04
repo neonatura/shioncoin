@@ -138,13 +138,67 @@ class CPubKey
 
 };
 
+class CKeyMetadata
+{
+	public:
+		static const int META_HD_ENABLED = (1 << 0);
+		static const int META_HD_KEY = (1 << 1);
+		static const int META_SEGWIT = (1 << 2);
+		static const int STANDARD_META_FLAGS = META_HD_ENABLED;
+
+		unsigned int nFlag;
+		int64_t nCreateTime; // 0 means unknown
+		std::string hdKeypath; //optional HD/bip32 keypath
+		CKeyID hdMasterKeyID; //id of the HD masterkey used to derive this key
+
+		CKeyMetadata()
+		{
+			SetNull();
+		}
+
+		explicit CKeyMetadata(int64_t nCreateTime_)
+		{
+			SetNull();
+			nCreateTime = nCreateTime_;
+		}
+
+		void SetNull()
+		{
+			nFlag = CKeyMetadata::STANDARD_META_FLAGS;
+			nCreateTime = 0;
+			hdKeypath.clear();
+			hdMasterKeyID.SetNull();
+		}
+
+		IMPLEMENT_SERIALIZE
+		(
+			READWRITE(nFlag);
+			READWRITE(nCreateTime);
+			if (nFlag & CKeyMetadata::META_HD_ENABLED) {
+				READWRITE(hdKeypath);
+				READWRITE(hdMasterKeyID);
+			}
+		)
+
+		const string GetFlagString() const
+		{
+			string ret_str;
+			if (nFlag & META_HD_KEY)
+				ret_str += "hdkey ";
+			if (ret_str.size() != 0)
+				ret_str.substr(0, ret_str.size()-1);
+			return (ret_str);
+		}
+
+};
+
 class CKey
 {
 	protected:
     CSecret vch;
-    bool fSet;
     bool fPubSet;
     bool fCompressedPubKey;
+    cbuff vchPub;
 
     void SetCompressedPubKey()
 		{
@@ -155,14 +209,13 @@ class CKey
 		{
 			vch = b.vch;
 			vchPub = b.vchPub;
-			fSet = b.fSet;
 			fPubSet = b.fPubSet;
 			fCompressedPubKey = b.fCompressedPubKey;
+			meta = b.meta;
 		}
 
 public:
-
-    cbuff vchPub;
+		CKeyMetadata meta;
 
     CKey()
 		{
@@ -180,14 +233,21 @@ public:
 			return (*this);
 		}
 
+    IMPLEMENT_SERIALIZE(
+			READWRITE(meta);
+			READWRITE(vch);
+			READWRITE(fCompressedPubKey);
+		)
+
     void SetNull()
 		{
 			fCompressedPubKey = false;
 			fPubSet = false;
-			fSet = false;
 
 			vch.clear();
 			vchPub.clear();
+
+			meta.SetNull();
 		}
 
 		void Reset()
@@ -197,7 +257,7 @@ public:
 
     bool IsNull() const
 		{
-			return !fSet;
+			return (vch.size() == 0);
 		}
 
     bool IsCompressed() const
@@ -212,7 +272,7 @@ public:
 			return (ret_secret);
 		}
 
-		unsigned int size() const { return (fSet ? vch.size() : 0); }
+		unsigned int size() const { return (vch.size()); }
 
 		const unsigned char* begin() const { return vch.data(); }
 

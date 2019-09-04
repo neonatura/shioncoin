@@ -119,7 +119,7 @@ void ECKey::MakeNewKey(bool fCompressed)
     SetCompressedPubKey();
 #endif
 
-  fSet = true;
+//  fSet = true;
   fPubSet = false;
 
 }
@@ -157,9 +157,14 @@ bool ECKey::SetSecret(const CSecret& vchSecret, bool fCompressed)
   }
 
 	vch = vchSecret;
-  fSet = true;
+  //fSet = true;
   if (fCompressed || fCompressedPubKey)
     SetCompressedPubKey();
+
+	if (meta.nCreateTime == 0)
+		meta.nCreateTime = GetTime();
+
+	fPubSet = false;
 
   return true;
 }
@@ -169,7 +174,7 @@ CPrivKey ECKey::GetPrivKey() const
 //  CPrivKey privkey;
   int ret;
 
-  if (!fSet)
+  if (IsNull())
     return (CPrivKey());
 
   unsigned char privkey_buf[280];
@@ -213,7 +218,7 @@ bool ECKey::SetPubKey(const CPubKey& vchPubKey)
 CPubKey ECKey::GetPubKey() const
 {
 
-  if (!fSet) {
+  if (IsNull()) {
     if (fPubSet) {
       /* key is carring a public key */
       return (CPubKey(vchPub));
@@ -249,7 +254,7 @@ CPubKey ECKey::GetPubKey() const
 bool ECKey::Sign(uint256 hash, std::vector<unsigned char>& vchSig)
 {
 
-  if (!fSet)
+  if (IsNull())
     return false;
 
   vchSig.resize(72);
@@ -276,7 +281,7 @@ bool ECKey::SignCompact(uint256 hash, std::vector<unsigned char>& vchSig)
   int rec;
   int ret;
 
-  if (!fSet) {
+  if (IsNull()) {
     return (error(SHERR_INVAL, "ECKey.SignCompact: error signing unitialized key."));
   }
 
@@ -416,7 +421,7 @@ bool ECKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
   }
 
   memset(&pubkey, 0, sizeof(pubkey));
-  if (!fSet && fPubSet) {
+  if (IsNull() && fPubSet) {
     if (!secp256k1_ec_pubkey_parse(secp256k1_context_sign, &pubkey, vchPub.data(), vchPub.size())) {
       return (error(SHERR_INVAL, "ECKey.Verify: error parsing public key.")); 
     }
@@ -457,7 +462,7 @@ bool ECKey::VerifyCompact(uint256 hash, const std::vector<unsigned char>& vchSig
 bool ECKey::IsValid()
 {
 
-  if (!fSet)
+  if (IsNull())
     return (false);
 
   return secp256k1_ec_seckey_verify(secp256k1_context_sign, vch.data());
@@ -673,3 +678,7 @@ void ECExtPubKey::Decode(const unsigned char code[BIP32_EXTKEY_SIZE])
 	pubkey = CPubKey(cbuff(code+41, code+BIP32_EXTKEY_SIZE));
 }
 
+bool ECKey::IsNull() const
+{
+	return (CKey::IsNull());
+}

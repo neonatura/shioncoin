@@ -49,7 +49,7 @@ class CAccountCache
 {
 	public:
 		CAccount account;
-		uint256 hChain;
+		uint256 _reserved0_;
 		string strAccount;
 		CCoinAddr vAddr[MAX_ACCADDR];
 
@@ -78,7 +78,7 @@ class CAccountCache
 
 		IMPLEMENT_SERIALIZE(
 				READWRITE(account);
-				READWRITE(hChain);
+				READWRITE(_reserved0_);
 				READWRITE(strAccount);
 #if 0
 				for (unsigned int i = 0; i < MAX_ACCADDR; i++)
@@ -89,7 +89,7 @@ class CAccountCache
 		void SetNull() 
 		{ 
 			account.vchPubKey.SetNull();
-			hChain = 0;
+			_reserved0_ = 0;
 			strAccount.clear();
 			for (unsigned int i = 0; i < MAX_ACCADDR; i++)
 				vAddr[i].SetNull();
@@ -143,6 +143,14 @@ class CAccountCache
 		CCoinAddr CreateNewAddr(int type);
 
 		CCoinAddr CreateAddr(int type);
+
+		CHDChain *GetHDChain();
+
+		void UpdateHDChain();
+
+#if 0
+		CPubKey GetMasterPubKey();
+#endif
 
 };
 

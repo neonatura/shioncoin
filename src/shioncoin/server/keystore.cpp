@@ -54,13 +54,22 @@ bool CBasicKeyStore::AddKey(const HDPrivKey& key)
 
 bool CBasicKeyStore::AddKey(const ECKey& key)
 {
-    bool fCompressed = false;
-    CSecret secret = key.GetSecret(fCompressed);
-    {
-        LOCK(cs_KeyStore);
-        mapKeys[key.GetPubKey().GetID()] = make_pair(secret, fCompressed);
-    }
-    return true;
+
+#if 0
+	bool fCompressed = false;
+	CSecret secret = key.GetSecret(fCompressed);
+#endif
+	{
+		LOCK(cs_KeyStore);
+
+#if 0
+		mapKeys[key.GetPubKey().GetID()] = make_pair(secret, fCompressed);
+#endif
+		const CPubKey& pubkey = key.GetPubKey();
+		mapECKeys[pubkey.GetID()] = key;
+	}
+
+	return true;
 }
 
 bool CBasicKeyStore::AddCScript(const CScript& redeemScript)
@@ -99,19 +108,22 @@ bool CBasicKeyStore::GetCScript(const CScriptID &hash, CScript& redeemScriptOut)
 
 bool CCryptoKeyStore::SetCrypted()
 {
+#if 0
     {
         LOCK(cs_KeyStore);
         if (fUseCrypto)
             return true;
-        if (!mapKeys.empty())
+        if (!mapECKeys.empty())
             return false;
         fUseCrypto = true;
     }
+#endif
     return true;
 }
 
 bool CCryptoKeyStore::Lock()
 {
+#if 0
     if (!SetCrypted())
         return false;
 
@@ -119,6 +131,7 @@ bool CCryptoKeyStore::Lock()
         LOCK(cs_KeyStore);
         vMasterKey.clear();
     }
+#endif
 
     //NotifyStatusChanged(this);
     return true;

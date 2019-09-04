@@ -90,6 +90,11 @@ public:
         return Read(std::make_pair(std::string("key"), vchPubKey.Raw()), vchPrivKey);
     }
 
+    bool WriteKey(const ECKey& key, const CPubKey& pubkey)
+		{
+			return Write(std::make_pair(std::string("eckey"), pubkey.Raw()), key, false);
+		}
+
     bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata& keyMeta)
     {
         Write(std::make_pair(std::string("keymeta"), vchPubKey.Raw()), keyMeta, false);

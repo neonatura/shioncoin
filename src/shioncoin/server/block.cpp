@@ -1810,7 +1810,7 @@ std::string CBlock::ToString(bool fVerbose)
   return (write_string(Value(ToValue(fVerbose)), false));
 }
 
-static inline string ToValue_date_format(time_t t)
+string ToValue_date_format(time_t t)
 {
   char buf[256];
 

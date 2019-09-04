@@ -60,7 +60,7 @@ extern json_spirit::Value ValueFromAmount(int64 amount);
 extern bool IsAccountValid(CIface *iface, std::string strAccount);
 extern string AccountFromValue(const Value& value);
 extern int GetPubKeyMode(const char *tag);
-
+extern string ToValue_date_format(time_t t);
 
 struct tallyitem
 {
@@ -1664,6 +1664,7 @@ Value rpc_wallet_validate(CIface *iface, const Array& params, bool fStratum)
 	{
 		CTxDestination dest = address.Get();
 		string currentAddress = address.ToString();
+
 		ret.push_back(Pair("address", currentAddress));
 		bool fMine = IsMine(*wallet, dest);
 		ret.push_back(Pair("ismine", fMine));
@@ -1675,6 +1676,50 @@ Value rpc_wallet_validate(CIface *iface, const Array& params, bool fStratum)
 #endif
 		if (wallet->mapAddressBook.count(dest))
 			ret.push_back(Pair("account", wallet->mapAddressBook[dest]));
+
+		CKeyID keyid;
+		if (address.GetKeyID(keyid)) {
+			/* CScriptID destination */
+			CScript scriptPubKey;
+			scriptPubKey.SetDestination(keyid);
+			CScriptID cid(scriptPubKey);
+			CCoinAddr cid_addr(ifaceIndex, cid);
+			ret.push_back(Pair("script-address", cid_addr.ToString()));
+
+			ECKey key;
+			if (wallet->GetKey(keyid, key)) {
+				bool fCompressed = false;
+				const CSecret& secret = key.GetSecret(fCompressed);
+				ret.push_back(Pair("compressed", fCompressed));
+
+				if (key.meta.nCreateTime != 0)
+					ret.push_back(Pair("created", ToValue_date_format((time_t)key.meta.nCreateTime)));
+				else
+					ret.push_back(Pair("created", string("")));
+				if (key.meta.nFlag != 0)
+					ret.push_back(Pair("flags", key.meta.GetFlagString()));
+				if (key.meta.nFlag & CKeyMetadata::META_HD_KEY) {
+					ret.push_back(Pair("hdkeypath", key.meta.hdKeypath));
+					//          ent.push_back(Pair("masterpubkey", key.meta.hdMasterKeyID.GetHex().c_str()));
+				}
+				if (!(key.meta.nFlag & CKeyMetadata::META_SEGWIT) &&
+						IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+					/* generate "program 0" p2sh-segwit address. */
+					CTxDestination sh_dest = address.GetWitness(OUTPUT_TYPE_P2SH_SEGWIT);
+					CCoinAddr segwit_addr(ifaceIndex, sh_dest);
+					ret.push_back(Pair("segwit-address", segwit_addr.ToString()));
+
+					if (opt_bool(OPT_BECH32)) {
+						/* bech32 destination address. */
+						CTxDestination be_dest = address.GetWitness(OUTPUT_TYPE_BECH32);
+						CCoinAddr bech32_addr(ifaceIndex, be_dest);
+						ret.push_back(Pair("bech32-address", bech32_addr.ToString()));
+					}
+				}
+			}
+
+		}
+
 	}
 	return ret;
 }
@@ -1682,33 +1727,124 @@ Value rpc_wallet_validate(CIface *iface, const Array& params, bool fStratum)
 Value rpc_wallet_addrlist(CIface *iface, const Array& params, bool fStratum)
 {
 
-	if (params.size() != 1)
-		throw runtime_error("wallet.addrlist <account>\nReturns the list of coin addresses for the given account.");
+	if (params.size() > 2 || params.size() == 0)
+		throw runtime_error("wallet.addrlist <account> [verbose]\n");
+	if (fStratum)
+		throw runtime_error("unsupported operation");
 
-	CWallet *pwalletMain = GetWallet(iface);
+	CWallet *wallet = GetWallet(iface);
 	int ifaceIndex = GetCoinIndex(iface);
 	string strAccount = AccountFromValue(params[0]);
 	if (!IsAccountValid(iface, strAccount))
 		throw JSONRPCError(SHERR_NOENT, "Invalid account name specified.");
 
+	bool fVerbose = false;
+	if (params.size() == 2 && params[1].get_bool() == true)
+		fVerbose = true;
+
+	vector<CTxDestination> vAddr;
+
 	// Find all addresses that have the given account
-	Array ret;
-	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, pwalletMain->mapAddressBook)
+	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
 	{
-		const CCoinAddr& address = CCoinAddr(ifaceIndex, item.first);
+		//		const CCoinAddr& address = CCoinAddr(ifaceIndex, item.first);
 		const string& strName = item.second;
-		if (strName == strAccount)
-			ret.push_back(address.ToString());
+		if (strName == strAccount) {
+			vAddr.push_back(item.first);//address);
+		}
 	}
 
 	if (strAccount.length() == 0) {
 		std::set<CKeyID> keys;
-		pwalletMain->GetKeys(keys);
+		wallet->GetKeys(keys);
 		BOOST_FOREACH(const CKeyID& key, keys) {
-			if (pwalletMain->mapAddressBook.count(key) == 0) { /* loner */
-				CCoinAddr addr(ifaceIndex, key);
-				ret.push_back(addr.ToString());
+			if (wallet->mapAddressBook.count(key) == 0) { /* loner */
+				//				CCoinAddr addr(ifaceIndex, key);
+				vAddr.push_back(key);//addr.Get());
 			}
+		}
+	}
+
+	Array ret;
+	if (!fVerbose) {
+		BOOST_FOREACH(CTxDestination& key, vAddr) {
+			CCoinAddr addr(ifaceIndex, key);
+			ret.push_back(addr.ToString());
+		}
+	} else {
+		const CPubKey& pubkeyMaster = wallet->GetPrimaryPubKey(strAccount);
+		const CKeyID& keyidMaster = pubkeyMaster.GetID();
+
+		BOOST_FOREACH(CTxDestination& dest, vAddr) {
+			CCoinAddr addr(ifaceIndex, dest);
+
+			Object ent;
+			ent.push_back(Pair("address", addr.ToString()));
+			CKeyID keyid;
+
+			if (!addr.GetKeyID(keyid))  {
+				CScriptID scriptID;
+
+				if (addr.GetScriptID(scriptID)) {
+					CScript script;
+
+					ent.push_back(Pair("scriptid", scriptID.GetHex()));
+					if (wallet->GetCScript(scriptID, script)) {
+						ent.push_back(Pair("script", script.ToString()));
+					}
+				}
+
+				ret.push_back(ent);
+				continue;
+			}
+
+			ent.push_back(Pair("keyid", keyid.GetHex()));
+			if (keyidMaster == keyid)
+				ent.push_back(Pair("master", true));
+
+			ECKey key;
+			if (wallet->GetKey(keyid, key)) {
+				bool fCompressed = false;
+				const CSecret& secret = key.GetSecret(fCompressed);
+				ent.push_back(Pair("compressed", fCompressed));
+				ent.push_back(Pair("key-length", secret.size())); 
+
+				if (key.meta.nCreateTime != 0)
+					ent.push_back(Pair("created", ToValue_date_format((time_t)key.meta.nCreateTime)));
+				else
+					ent.push_back(Pair("created", string("")));
+				if (key.meta.nFlag != 0)
+					ent.push_back(Pair("flags", key.meta.GetFlagString()));
+				if (key.meta.nFlag & CKeyMetadata::META_HD_KEY) {
+					ent.push_back(Pair("hdkeypath", key.meta.hdKeypath));
+					//					ent.push_back(Pair("masterpubkey", key.meta.hdMasterKeyID.GetHex().c_str()));
+				}
+				if (!(key.meta.nFlag & CKeyMetadata::META_SEGWIT) &&
+						IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+					/* generate "program 0" p2sh-segwit address. */
+					CTxDestination sh_dest = addr.GetWitness(OUTPUT_TYPE_P2SH_SEGWIT);
+					CCoinAddr segwit_addr(ifaceIndex, sh_dest);
+					ent.push_back(Pair("segwit-address", segwit_addr.ToString())); 
+
+					if (opt_bool(OPT_BECH32)) {
+						/* bech32 destination address. */
+						CTxDestination be_dest = addr.GetWitness(OUTPUT_TYPE_BECH32);
+						CCoinAddr bech32_addr(ifaceIndex, be_dest);
+						ent.push_back(Pair("bech32-address", bech32_addr.ToString())); 
+					}
+				}
+			}
+
+			/* CScriptID destination */
+			CScript scriptPubKey;
+			scriptPubKey.SetDestination(keyid);
+			CScriptID cid(scriptPubKey);
+			CCoinAddr cid_addr(ifaceIndex, cid);
+			ent.push_back(Pair("script-address", cid_addr.ToString()));
+
+
+
+			ret.push_back(ent);
 		}
 	}
 
@@ -1901,7 +2037,6 @@ Value rpc_wallet_new(CIface *iface, const Array& params, bool fStratum)
 
 	/* obtain legacy pubkey address. */
 	CCoinAddr addr = GetAccountAddress(GetWallet(iface), strAccount, true);
-
 	if (output_mode == OUTPUT_TYPE_NONE ||
 			output_mode == OUTPUT_TYPE_P2SH_SEGWIT ||
 			output_mode == OUTPUT_TYPE_BECH32) {

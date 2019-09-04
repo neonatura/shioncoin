@@ -135,13 +135,16 @@ bool CWallet::AddKey(const ECKey& key)
 			LOCK(cs_wallet);
 			CWalletDB db(strWalletFile);
 
-			CKeyMetadata meta;
 			const CPubKey& pubkey = key.GetPubKey();
+#if 0
 			const CKeyID& keyid = pubkey.GetID();
+			CKeyMetadata meta;
 			if (mapKeyMetadata.count(keyid) != 0)
 				meta = mapKeyMetadata[keyid];
-
 			ret = db.WriteKey(pubkey, key.GetPrivKey(), meta);
+#endif
+			ret = db.WriteKey(key, pubkey);
+
 			db.Close();
 		}
 		if (!ret)
@@ -1575,22 +1578,31 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 	}
 
 	if (bNew) {
-		/* retain in addressbook in order to identify */
+		/* retain pubkey in addressbook in order to identify. */
 		CKeyID keyID = pubkey.GetID();
 		wallet->SetAddressBookName(keyID, strAccount);
+
+		/* generate a standard CScriptID destination. */
+		CScript scriptPubKey;
+		scriptPubKey.SetDestination(keyID);
+		wallet->AddCScript(scriptPubKey);
+		CScriptID scriptID(scriptPubKey); 
+		wallet->SetAddressBookName(scriptID, strAccount);
 
 		CIface *iface = GetCoinByIndex(wallet->ifaceIndex); 
 		if (iface && IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
 			CCoinAddr addr(wallet->ifaceIndex, pubkey.GetID());
 
-			/* p2sh-segwit address */
+			/* generate "program 0" p2sh-segwit address. */
 			CTxDestination sh_dest = addr.GetWitness(OUTPUT_TYPE_P2SH_SEGWIT);
 			wallet->SetAddressBookName(sh_dest, strAccount);
 
-			if (opt_bool(OPT_BECH32)) {
+			/* config option more controls whether bech32 will be dispensed then supported or not. */
+//			if (opt_bool(OPT_BECH32)) {
+				/* bech32 destination address. */
 				CTxDestination be_dest = addr.GetWitness(OUTPUT_TYPE_BECH32);
 				wallet->SetAddressBookName(be_dest, strAccount);
-			}
+//			}
 		}
 	}
 
@@ -3234,6 +3246,11 @@ CAccountCache *CWallet::GetAccount(string strAccount)
 	return (mapAddrCache[strAccount]);
 }
 
+CPubKey CWallet::GetPrimaryPubKey(string strAccount)
+{
+	return (GetAccount(strAccount)->account.vchPubKey);
+}
+
 CCoinAddr CWallet::GetChangeAddr(string strAccount)
 {
 	return (GetAccount(strAccount)->GetAddr(ACCADDR_CHANGE));
@@ -3261,7 +3278,7 @@ CCoinAddr CWallet::GetRecvAddr(string strAccount)
 
 CCoinAddr CWallet::GetPrimaryAddr(string strAccount)
 {
-	const CPubKey& pubkey = GetAccount(strAccount)->account.vchPubKey;
+	const CPubKey& pubkey = GetPrimaryPubKey(strAccount);
 	return CCoinAddr(ifaceIndex, pubkey.GetID());
 }
 
@@ -3412,7 +3429,7 @@ CBlockIndex *CWallet::GetLocatorIndex(const CBlockLocator& loc)
   return (GetGenesisBlockIndex(iface));
 }
 
-void CWallet::DeriveNewECKey(CKeyMetadata& metadata, ECKey& secret, bool internal)
+void CWallet::DeriveNewECKey(string strAccount, ECKey& secret, bool internal)
 {
 	// for now we use a fixed keypath scheme of m/0'/0'/k
 	ECKey key;                      //master key seed (256bit)
@@ -3420,9 +3437,17 @@ void CWallet::DeriveNewECKey(CKeyMetadata& metadata, ECKey& secret, bool interna
 	ECExtKey accountKey;            //key at m/0'
 	ECExtKey chainChildKey;         //key at m/0'/0' (external) or m/0'/1' (internal)
 	ECExtKey childKey;              //key at m/0'/0'/<n>'
+	string hdKeypath;
+
+	CAccountCache *acc = GetAccount(strAccount);
+	if (!acc)
+		return;
+	CHDChain *hdChain = acc->GetHDChain();
+	if (!hdChain)
+		return;
 
 	// try to get the master key
-	if (!GetKey(hdChain.masterKeyID, key))
+	if (!GetKey(hdChain->masterKeyID, key))
 		throw std::runtime_error(std::string(__func__) + ": Master key not found");
 
 	masterKey.SetMaster(key.begin(), key.size());
@@ -3441,19 +3466,23 @@ void CWallet::DeriveNewECKey(CKeyMetadata& metadata, ECKey& secret, bool interna
 		// childIndex | BIP32_HARDENED_KEY_LIMIT = derive childIndex in hardened child-index-range
 		// example: 1 | BIP32_HARDENED_KEY_LIMIT == 0x80000001 == 2147483649
 		if (internal) {
-			chainChildKey.Derive(childKey, hdChain.nInternalChainCounter | BIP32_HARDENED_KEY_LIMIT);
-			metadata.hdKeypath = "m/0'/1'/" + std::to_string(hdChain.nInternalChainCounter) + "'";
-			hdChain.nInternalChainCounter++;
+			chainChildKey.Derive(childKey, hdChain->nInternalChainCounter | BIP32_HARDENED_KEY_LIMIT);
+			hdKeypath = "m/0'/1'/" + std::to_string(hdChain->nInternalChainCounter) + "'";
+			hdChain->nInternalChainCounter++;
 		}
 		else {
-			chainChildKey.Derive(childKey, hdChain.nExternalChainCounter | BIP32_HARDENED_KEY_LIMIT);
-			metadata.hdKeypath = "m/0'/0'/" + std::to_string(hdChain.nExternalChainCounter) + "'";
-			hdChain.nExternalChainCounter++;
+			chainChildKey.Derive(childKey, hdChain->nExternalChainCounter | BIP32_HARDENED_KEY_LIMIT);
+			hdKeypath = "m/0'/0'/" + std::to_string(hdChain->nExternalChainCounter) + "'";
+			hdChain->nExternalChainCounter++;
 		}
 	} while (HaveKey(childKey.key.GetPubKey().GetID()));
-	secret = childKey.key;
-	metadata.hdMasterKeyID = hdChain.masterKeyID;
 
+	secret = childKey.key;
+	secret.meta.hdMasterKeyID = hdChain->masterKeyID;
+	secret.meta.hdKeypath = hdKeypath;
+
+	acc->UpdateHDChain();
+#if 0
 	{
 		LOCK(cs_wallet);
 
@@ -3461,6 +3490,7 @@ void CWallet::DeriveNewECKey(CKeyMetadata& metadata, ECKey& secret, bool interna
 		walletdb.WriteHDChain(hdChain);
 		walletdb.Close();
 	}
+#endif
 
 }
 
@@ -3480,6 +3510,7 @@ bool CWallet::LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata 
 	return true;
 }
 
+#if 0
 CPubKey CWallet::GenerateHDMasterKey()
 {
 	ECKey key;
@@ -3554,6 +3585,7 @@ bool CWallet::IsHDEnabled() const
 {
 	return (hdChain.masterKeyID != 0);
 }
+#endif
 
 const cbuff& CWallet::Base58Prefix(int type) const
 {
