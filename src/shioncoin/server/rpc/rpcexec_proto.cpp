@@ -25,9 +25,8 @@
 
 #undef GNULIB_NAMESPACE
 #include "shcoind.h"
+#include "wallet.h"
 #include <libgen.h>
-
-#include "init.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */

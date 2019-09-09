@@ -39,7 +39,7 @@ int di3_derive_test(void)
 		return (err);
 
 	memset(chain, 0, sizeof(chain));
-	hd_hash = di3_derive_hash(m_pk, chain, 0);
+	hd_hash = di3_derive_keypair_hash(m_pk, chain, 0);
 	err = di3_derive_keypair(m_sk, hd_hash, pk, sk); 
 	if (err)
 		return (err);

@@ -25,8 +25,8 @@
 
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "ltc_pool.h"
@@ -42,9 +42,6 @@
 
 
 using namespace std;
-
-CScript LTC_CHARITY_SCRIPT;
-
 
 #if 0
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
@@ -547,9 +544,6 @@ static bool ltc_LoadBlockIndex()
 bool ltc_InitBlockIndex()
 {
   bool ret;
-
-#define CHARITY_ADDRESS "1cec44c9f9b769ae08ebf9d694c7611a16edf615"
-  LTC_CHARITY_SCRIPT << OP_DUP << OP_HASH160 << ParseHex(CHARITY_ADDRESS) << OP_EQUALVERIFY << OP_CHECKSIG;
 
 #ifdef USE_LEVELDB_COINDB
   LTCTxDB txdb("cr");

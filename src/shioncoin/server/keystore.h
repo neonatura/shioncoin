@@ -29,6 +29,7 @@
 #include "crypter.h"
 #include "sync.h"
 #include "eckey.h"
+#include "dikey.h"
 
 class CScript;
 
@@ -41,15 +42,24 @@ protected:
 public:
     virtual ~CKeyStore() {}
 
-    // Add a key to the store.
+    /* Add an ECDSA key to the store. */
     virtual bool AddKey(const ECKey& key) =0;
+
+    /* Add an DILITHIUM key to the store. */
+    virtual bool AddKey(const DIKey& key) =0;
 
     // Check whether a key corresponding to a given address is present in the store.
     virtual bool HaveKey(const CKeyID &address) const =0;
 #if 0
     virtual bool GetKey(const CKeyID &address, HDPrivKey& keyOut) const =0;
 #endif
-    virtual bool GetKey(const CKeyID &address, ECKey& keyOut) const =0;
+
+    virtual bool GetECKey(const CKeyID &address, ECKey& keyOut) const =0;
+
+    virtual bool GetDIKey(const CKeyID &address, DIKey& keyOut) const =0;
+
+    virtual CKey *GetKey(const CKeyID &address) const = 0;
+
     virtual void GetKeys(std::set<CKeyID> &setAddress) const =0;
     virtual bool GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const;
 
@@ -59,17 +69,20 @@ public:
     virtual bool GetCScript(const CScriptID &hash, CScript& redeemScriptOut) const =0;
 
     virtual bool GetSecret(const CKeyID &address, CSecret& vchSecret, bool &fCompressed) const
-    {
-        ECKey key;
-        if (!GetKey(address, key))
-            return false;
-        vchSecret = key.GetSecret(fCompressed);
-        return true;
+		{
+			const CKey *key;
+
+			if (!(key = GetKey(address)))
+				return (false);
+
+			vchSecret = key->GetSecret(fCompressed);
+			return (true);
     }
+
 };
 
-//typedef std::map<CKeyID, std::pair<CSecret, bool> > KeyMap;
 typedef std::map<CKeyID, ECKey> ECKeyMap;
+typedef std::map<CKeyID, DIKey> DIKeyMap;
 typedef std::map<CScriptID, CScript > ScriptMap;
 
 
@@ -78,17 +91,24 @@ class CBasicKeyStore : public CKeyStore
 {
 protected:
     ECKeyMap mapECKeys;
+    DIKeyMap mapDIKeys;
     ScriptMap mapScripts;
 
 public:
 //    bool AddKey(const HDPrivKey& key);
+
     bool AddKey(const ECKey& key);
+
+    bool AddKey(const DIKey& key);
+
     bool HaveKey(const CKeyID &address) const
     {
         bool result;
         {
             LOCK(cs_KeyStore);
             result = (mapECKeys.count(address) > 0);
+						if (!result)
+							result = (mapDIKeys.count(address) > 0);
         }
         return result;
     }
@@ -124,20 +144,15 @@ public:
         return false;
     }
 #endif
-    bool GetKey(const CKeyID &address, ECKey &keyOut) const
-    {
-        {
-            LOCK(cs_KeyStore);
-            ECKeyMap::const_iterator mi = mapECKeys.find(address);
-            if (mi != mapECKeys.end())
-            {
-                //keyOut = ECKey((*mi).second.first, (*mi).second.second);
-                keyOut = (*mi).second;
-                return true;
-            }
-        }
-        return false;
-    }
+
+    bool GetECKey(const CKeyID &address, ECKey &keyOut) const;
+
+    bool GetDIKey(const CKeyID &address, DIKey &keyOut) const;
+
+    CKey *GetKey(const CKeyID &address) const;
+
+    CKeyMetadata *GetKeyMetadata(const CKeyID &address) const;
+
     virtual bool AddCScript(const CScript& redeemScript);
     virtual bool HaveCScript(const CScriptID &hash) const;
     virtual bool GetCScript(const CScriptID &hash, CScript& redeemScriptOut) const;
@@ -145,98 +160,6 @@ public:
 
 typedef std::map<CKeyID, std::pair<CPubKey, std::vector<unsigned char> > > CryptedKeyMap;
 
-/** Keystore which keeps the private keys encrypted.
- * It derives from the basic key store, which is used if no encryption is active.
- */
-class CCryptoKeyStore : public CBasicKeyStore
-{
-private:
-    CryptedKeyMap mapCryptedKeys;
-
-    CKeyingMaterial vMasterKey;
-
-    // if fUseCrypto is true, mapKeys must be empty
-    // if fUseCrypto is false, vMasterKey must be empty
-    bool fUseCrypto;
-
-protected:
-    bool SetCrypted();
-
-    // will encrypt previously unencrypted keys
-    bool EncryptKeys(CKeyingMaterial& vMasterKeyIn);
-
-    bool Unlock(const CKeyingMaterial& vMasterKeyIn);
-
-public:
-    CCryptoKeyStore() : fUseCrypto(false)
-    {
-    }
-
-    bool IsCrypted() const
-    {
-        return fUseCrypto;
-    }
-
-#if 0
-    bool IsLocked() const
-    {
-        if (!IsCrypted())
-            return false;
-        bool result;
-        {
-            LOCK(cs_KeyStore);
-            result = vMasterKey.empty();
-        }
-        return result;
-    }
-#endif
-
-    bool Lock();
-
-    virtual bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
-#if 0
-    bool AddKey(const HDPrivKey& key);
-#endif
-    bool AddKey(const ECKey& key);
-    bool HaveKey(const CKeyID &address) const
-    {
-        {
-            LOCK(cs_KeyStore);
-            if (!IsCrypted())
-                return CBasicKeyStore::HaveKey(address);
-            return mapCryptedKeys.count(address) > 0;
-        }
-        return false;
-    }
-#if 0
-    bool GetKey(const CKeyID &address, HDPrivKey& keyOut) const;
-#endif
-    bool GetKey(const CKeyID &address, ECKey& keyOut) const;
-    bool GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const;
-    void GetKeys(std::set<CKeyID> &setAddress) const
-    {
-        if (!IsCrypted())
-        {
-            CBasicKeyStore::GetKeys(setAddress);
-            return;
-        }
-        setAddress.clear();
-        CryptedKeyMap::const_iterator mi = mapCryptedKeys.begin();
-        while (mi != mapCryptedKeys.end())
-        {
-            setAddress.insert((*mi).first);
-            mi++;
-        }
-    }
-
-#if 0
-    /* Wallet status (encrypted, locked) changed.
-     * Note: Called without locks held.
-     */
-    boost::signals2::signal<void (CCryptoKeyStore* wallet)> NotifyStatusChanged;
-#endif
-
-};
 
 #endif /* ndef __SERVER__KEYSTORE_H__ */
 

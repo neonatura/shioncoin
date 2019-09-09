@@ -24,8 +24,8 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "ltc_pool.h"
@@ -67,11 +67,6 @@ static const int64 ltc_nTargetTimespanNEW = 60;
 static const int64 ltc_nTargetSpacing = 2.5 * 60; 
 static const int64 ltc_nInterval = ltc_nTargetTimespan / ltc_nTargetSpacing;
 static const int64 ltc_nDiffChangeTarget = 56000; // Patch effective @ block 56000
-
-
-
-extern CScript LTC_CHARITY_SCRIPT;
-
 
 
 
@@ -428,9 +423,8 @@ CBlock* ltc_CreateNewBlock(const CPubKey& rkey)
   CTransaction txNew;
   txNew.vin.resize(1);
   txNew.vin[0].prevout.SetNull();
-  txNew.vout.resize(2);
-  txNew.vout[0].scriptPubKey = LTC_CHARITY_SCRIPT;
-  txNew.vout[1].scriptPubKey << rkey << OP_CHECKSIG;
+  txNew.vout.resize(1);
+  txNew.vout[0].scriptPubKey << rkey << OP_CHECKSIG;
   pblock->vtx.push_back(txNew);
 
   /* attributes */
@@ -453,11 +447,8 @@ CBlock* ltc_CreateNewBlock(const CPubKey& rkey)
   unsigned int nHeight = pindexPrev->nHeight + 1;
 
   /* assign reward(s) */
-  int64 nReward = ltc_GetBlockValue(nHeight, 0);
-  int64 nCharity = nReward * 2.5 / 100;
-  pblock->vtx[0].vout[0].nValue = nCharity;
-  pblock->vtx[0].vout[1].nValue = (nReward - nCharity) + nFees;
-
+  int64 nReward = ltc_GetBlockValue(nHeight, nFees);
+  pblock->vtx[0].vout[0].nValue = nReward;
 
   // Fill in header
   pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
@@ -490,7 +481,7 @@ bool ltc_CreateGenesisBlock()
   txNew.vout.resize(1);
   txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
   txNew.vout[0].nValue = 50 * COIN;
-  txNew.vout[0].scriptPubKey = LTC_CHARITY_SCRIPT;
+//  txNew.vout[0].scriptPubKey = ...;
   LTCBlock block;
   block.vtx.push_back(txNew);
   block.hashPrevBlock = 0;
@@ -1680,13 +1671,6 @@ bool LTCBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
   if (vtx[0].GetValueOut() > (nValue + nFees)) {
     sprintf(errbuf, "LTC_ConnectBlock: coinbase output (%d coins) higher than expected block value @ height %d (%d coins) [block %s].\n", FormatMoney(vtx[0].GetValueOut()).c_str(), pindex->nHeight, FormatMoney(nValue).c_str(), pindex->GetBlockHash().GetHex().c_str());
     return error(SHERR_INVAL, errbuf);
-  }
-  if (vtx[0].vout[0].scriptPubKey != LTC_CHARITY_SCRIPT) {
-    return error(SHERR_INVAL, "LTC_ConnectBlock() : coinbase does not pay to the charity.");
-  }
-  int64 nCharity = nValue * 2.5 / 100; 
-  if (vtx[0].vout[0].nValue < nCharity) {
-    return error(SHERR_INVAL, "LTC_ConnectBlock() : coinbase does not pay enough to the charity (actual=%llu vs required=%llu)", (unsigned long long)vtx[0].vout[0].nValue, (unsigned long long)nCharity);
   }
 
   if (pindex->pprev)

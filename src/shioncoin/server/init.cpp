@@ -62,67 +62,6 @@ void ExitTimeout(void* parg)
 #endif
 }
 
-void StartServerShutdown()
-{
-    // Without UI, Shutdown() can simply be started in a new thread
-    CreateThread(ServerShutdown, NULL);
-}
-
-void Shutdown2(void)
-{
-    static CCriticalSection cs_Shutdown;
-    static bool fTaken;
-
-    // Make this thread recognisable as the shutdown thread
-    RenameThread("bitcoin-shutoff");
-
-    bool fFirstThread = false;
-    {
-        TRY_LOCK(cs_Shutdown, lockShutdown);
-        if (lockShutdown)
-        {
-            fFirstThread = !fTaken;
-            fTaken = true;
-        }
-    }
-    static bool fExit;
-    if (fFirstThread)
-    {
-        fShutdown = true;
-        //nTransactionsUpdated++;
-        bitdb.Flush(false);
-        StopNode();
-        bitdb.Flush(true);
-        boost::filesystem::remove(GetPidFile());
-#if 0
-        UnregisterWallet(pwalletMain);
-        delete pwalletMain;
-#endif
-        CreateThread(ExitTimeout, NULL);
-        //Sleep(50);
-        sleep(1);
-        fExit = true;
-#ifndef QT_GUI
-        // ensure non UI client get's exited here, but let Bitcoin-Qt reach return 0; in bitcoin.cpp
-        exit(0);
-#endif
-    }
-    else
-    {
-        while (!fExit)
-          sleep(1);
-//            Sleep(500);
- //       Sleep(100);
-        ExitThread(0);
-    }
-}
-
-void ServerShutdown(void* parg)
-{
-  Shutdown2();
-}
-
-
 void HandleSIGTERM(int)
 {
     fRequestShutdown = true;

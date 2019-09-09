@@ -63,7 +63,7 @@ static bool CAccountCache_GenerateAddress(CWallet *wallet, const string& strAcco
 {
 	ECKey pkey;
 
-	if (!wallet->GetKey(pubkey.GetID(), pkey))
+	if (!wallet->GetECKey(pubkey.GetID(), pkey))
 		return (false);
 
 	cbuff tagbuff(tag, tag + strlen(tag));

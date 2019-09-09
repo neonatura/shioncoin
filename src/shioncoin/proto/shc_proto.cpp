@@ -385,6 +385,8 @@ coin_iface_t shc_coin_iface = {
   SHC_MAX_MONEY,
   SHC_COINBASE_MATURITY, 
   SHC_MAX_SIGOPS,
+	SHC_MAX_SCRIPT_SIZE,
+	SHC_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(shc_init),
   COINF(shc_bind),
   COINF(shc_term),

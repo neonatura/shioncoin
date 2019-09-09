@@ -51,13 +51,6 @@ using namespace std;
 #define MAX_OPCODE(_iface) \
 	(0xf9)
 
-#define MAX_SCRIPT_SIZE(_iface) \
-	(10000)
-
-#define MAX_SCRIPT_ELEMENT_SIZE(_iface) \
-	(520)
-
-
 /** Flags for nSequence and nLockTime locks */
 /** Interpret sequence numbers as relative lock-time constraints. */
 static const unsigned int LOCKTIME_VERIFY_SEQUENCE = (1 << 0);

@@ -708,7 +708,7 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 		/* sign local pubkeys */
 		fSolved = false;
 		if (//nUnsolved == 0 && /* notaries fill keys in order */ 
-				wallet->GetKey(kSend[i].GetID(), key)) {
+				wallet->GetECKey(kSend[i].GetID(), key)) {
 			int nHashType = SIGHASH_ALL;
 			cbuff result;
 

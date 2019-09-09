@@ -714,7 +714,6 @@ _TEST(identtx)
   string hexSeed;
   uint160 issuer;
   err = init_cert_tx(iface, cert_wtx, strAccount, "test", hexSeed, 1);
-if (err) fprintf(stderr, "DEBUG: identtx: %d = init_cert_tx\n", err); 
   _TRUE(0 == err);
   uint160 hashCert = cert_wtx.certificate.GetHash();
 
@@ -996,7 +995,6 @@ _TEST(offertx)
 
 	CWalletTx wtx;
 	err = init_offer_tx(iface, strLabel, TEST_COIN_IFACE, nValue, nValue, 1.0, wtx);
-if (err) fprintf(stderr, "DEBUG: TEST: OFFER: %d = init_offer_tx()\n", err);
   _TRUE(0 == err);
   uint160 hashOffer = wtx.offer.GetHash();
   uint256 hashTx = wtx.GetHash();
@@ -1021,7 +1019,7 @@ if (err) fprintf(stderr, "DEBUG: TEST: OFFER: %d = init_offer_tx()\n", err);
   if (err == -2) {
     CTxMemPool *mempool = GetTxMemPool(iface);
     if (mempool->exists(hashTx)) {
-      fprintf(stderr, "DEBUG: tx '%s' still in mempool\n", hashTx.GetHex().c_str());
+//      fprintf(stderr, "DEBUG: tx '%s' still in mempool\n", hashTx.GetHex().c_str());
     }
   }
   _TRUE(0 == err);

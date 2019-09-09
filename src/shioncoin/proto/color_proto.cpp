@@ -337,6 +337,8 @@ coin_iface_t color_coin_iface = {
   COLOR_MAX_MONEY,
   COLOR_COINBASE_MATURITY, 
   COLOR_MAX_SIGOPS,
+	COLOR_MAX_SCRIPT_SIZE,
+	COLOR_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(color_init),
   COINF(color_bind),
   COINF(color_term),

@@ -90,9 +90,16 @@ public:
         return Read(std::make_pair(std::string("key"), vchPubKey.Raw()), vchPrivKey);
     }
 
+		/* ECDSA 256k1 */
     bool WriteKey(const ECKey& key, const CPubKey& pubkey)
 		{
 			return Write(std::make_pair(std::string("eckey"), pubkey.Raw()), key, false);
+		}
+
+		/* DILITHIUM-3 */
+    bool WriteKey(const DIKey& key, const CPubKey& pubkey)
+		{
+			return Write(std::make_pair(std::string("dikey"), pubkey.Raw()), key, false);
 		}
 
     bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata& keyMeta)

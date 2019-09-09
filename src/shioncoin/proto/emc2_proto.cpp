@@ -377,6 +377,8 @@ coin_iface_t emc2_coin_iface = {
   EMC2_MAX_MONEY,
   EMC2_COINBASE_MATURITY, 
   EMC2_MAX_SIGOPS,
+	EMC2_MAX_SCRIPT_SIZE,
+	EMC2_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(emc2_init),
   COINF(emc2_bind),
   COINF(emc2_term),

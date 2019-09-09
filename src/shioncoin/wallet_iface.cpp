@@ -26,7 +26,6 @@
 #include "shcoind.h"
 #include "db.h"
 #include "net.h"
-#include "init.h"
 #include "util.h"
 #include "ui_interface.h"
 #include "rpc_proto.h"
@@ -262,16 +261,17 @@ static const char *cpp_stratum_walletkeylist(int ifaceIndex, const char *acc_nam
       bool fComp;
       CSecret secret;
       CKeyID keyID;
-      ECKey key;
 
       if (!address.IsValid())
         continue;
       if (!address.GetKeyID(keyID))
         continue;
-      if (!wallet->GetKey(keyID, key))
-        continue;
 
-      secret = key.GetSecret(fComp); 
+			CKey *key = wallet->GetKey(keyID);
+			if (!key)
+				continue;
+
+      secret = key->GetSecret(fComp); 
       //cbuff buff(secret.begin(), secret.end());
       ar.push_back(CCoinSecret(ifaceIndex, secret, fComp).ToString());
      // ar.push_back(HexStr(buff.begin(), buff.end()));

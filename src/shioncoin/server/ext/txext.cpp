@@ -249,7 +249,7 @@ bool CSign::SignAddress(int ifaceIndex, CCoinAddr& addr, unsigned char *data, si
     return error(SHERR_INVAL, "Address does not refer to key");
 
   ECKey key;
-  if (!wallet->GetKey(keyID, key))
+  if (!wallet->GetECKey(keyID, key))
     return error(SHERR_INVAL, "Private key not available");
 
   cbuff vchData(data, data + data_len);

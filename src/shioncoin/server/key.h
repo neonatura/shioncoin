@@ -122,7 +122,7 @@ class CPubKey
 		{
 			return 
 				vchPubKey.size() == 33 || vchPubKey.size() == 65 || /* ECDSA */ 
-				vchPubKey.size() == 1472; /* DILITHIUM-3 */
+				vchPubKey.size() == 1473; /* DILITHIUM-3 */
 		}
 
     bool IsCompressed() const
@@ -144,6 +144,7 @@ class CKeyMetadata
 		static const int META_HD_ENABLED = (1 << 0);
 		static const int META_HD_KEY = (1 << 1);
 		static const int META_SEGWIT = (1 << 2);
+		static const int META_DILITHIUM = (1 << 3);
 		static const int STANDARD_META_FLAGS = META_HD_ENABLED;
 
 		unsigned int nFlag;

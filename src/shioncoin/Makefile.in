@@ -149,7 +149,7 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/bignum.h server/rpcalias_proto.h server/rpccert_proto.h \
 	server/rpccontext_proto.h server/rpcexec_proto.h \
 	server/rpcoffer_proto.h server/compat.h server/txidx.h \
-	server/init.h server/key.h server/eckey.h server/keystore.h \
+	server/key.h server/eckey.h server/dikey.h server/keystore.h \
 	server/mruset.h server/netbase.h server/net.h \
 	server/txsignature.h server/versionbits.h server/algobits.h \
 	server/protocol.h server/script.h server/algo/blake2.h \
@@ -233,47 +233,48 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/bloom.cpp server/global.cpp server/block_merkle.cpp \
 	server/wit_merkle.cpp server/sha256d_merkle.cpp \
 	server/txidx.cpp server/init.cpp server/eckey.cpp \
-	server/keystore.cpp server/main.cpp server/script.cpp \
-	server/sync.cpp server/walletdb.cpp server/wallet.cpp \
-	server/wallettx.cpp server/account.cpp server/txcreator.cpp \
-	server/algo/blake2.c server/algo/blake2s.c \
-	server/algo/groestl.c server/algo/keccak.c server/algo/qubit.c \
-	server/algo/scrypt.c server/algo/sha512.cpp \
-	server/algo/hmac_sha512.cpp server/algo/skein.c \
-	server/algo/sph_blake.c server/algo/sph_bmw.c \
-	server/algo/sph_cubehash.c server/algo/sph_echo.c \
-	server/algo/sph_groestl.c server/algo/sph_jh.c \
-	server/algo/sph_keccak.c server/algo/sph_luffa.c \
-	server/algo/sph_shavite.c server/algo/sph_simd.c \
-	server/algo/sph_skein.c server/algo/x11.c server/addrman.h \
-	server/addrman.cpp server/base58.h server/base58.cpp \
-	server/coinaddr.h server/coinaddr.cpp wallet_iface.cpp \
-	block_iface.cpp server_iface.cpp stratum/stratum.h \
-	stratum/stratum_http.h stratum/stratum_message.h \
-	stratum/stratum_protocol.h stratum/stratum_user.h \
-	stratum/stratum_task.h stratum/stratum_sync.h \
-	stratum/stratum_api.h stratum/stratum_miner.h \
-	stratum/stratum_sha256d.h stratum/stratum_keccak.h \
-	stratum/stratum_x11.h stratum/stratum_blake2s.h \
-	stratum/stratum_qubit.h stratum/stratum_groestl.h \
-	stratum/stratum_skein.h stratum/http/http.h stratum/stratum.c \
-	stratum/stratum_http.c stratum/stratum_message.c \
-	stratum/stratum_protocol.c stratum/stratum_user.c \
-	stratum/stratum_task.c stratum/stratum_sync.c \
-	stratum/stratum_api.cpp stratum/stratum_api_faucet.cpp \
-	stratum/stratum_miner.cpp stratum/stratum_sha256d.c \
-	stratum/stratum_keccak.c stratum/stratum_x11.c \
-	stratum/stratum_blake2s.c stratum/stratum_qubit.c \
-	stratum/stratum_groestl.c stratum/stratum_skein.c \
-	stratum/http/http.c stratum/http/http_alias.c \
-	stratum/http/http_coin.c stratum/http/http_context.c \
-	stratum/http/http_fractal.c stratum/http/http_matrix.c \
-	stratum/http/http_pool.c server/emc2/emc2_txidx.cpp \
-	server/emc2/emc2_txidx.h server/emc2/emc2_block.cpp \
-	server/emc2/emc2_block.h server/emc2/emc2_wallet.cpp \
-	server/emc2/emc2_wallet.h server/emc2/emc2_netmsg.cpp \
-	server/emc2/emc2_netmsg.h server/emc2/emc2_pool.cpp \
-	server/emc2/emc2_pool.h server/testnet/testnet_netmsg.cpp \
+	server/dikey.cpp server/keystore.cpp server/main.cpp \
+	server/script.cpp server/sync.cpp server/walletdb.cpp \
+	server/wallet.cpp server/wallettx.cpp server/account.cpp \
+	server/txcreator.cpp server/algo/blake2.c \
+	server/algo/blake2s.c server/algo/groestl.c \
+	server/algo/keccak.c server/algo/qubit.c server/algo/scrypt.c \
+	server/algo/sha512.cpp server/algo/hmac_sha512.cpp \
+	server/algo/skein.c server/algo/sph_blake.c \
+	server/algo/sph_bmw.c server/algo/sph_cubehash.c \
+	server/algo/sph_echo.c server/algo/sph_groestl.c \
+	server/algo/sph_jh.c server/algo/sph_keccak.c \
+	server/algo/sph_luffa.c server/algo/sph_shavite.c \
+	server/algo/sph_simd.c server/algo/sph_skein.c \
+	server/algo/x11.c server/addrman.h server/addrman.cpp \
+	server/base58.h server/base58.cpp server/coinaddr.h \
+	server/coinaddr.cpp wallet_iface.cpp block_iface.cpp \
+	server_iface.cpp stratum/stratum.h stratum/stratum_http.h \
+	stratum/stratum_message.h stratum/stratum_protocol.h \
+	stratum/stratum_user.h stratum/stratum_task.h \
+	stratum/stratum_sync.h stratum/stratum_api.h \
+	stratum/stratum_miner.h stratum/stratum_sha256d.h \
+	stratum/stratum_keccak.h stratum/stratum_x11.h \
+	stratum/stratum_blake2s.h stratum/stratum_qubit.h \
+	stratum/stratum_groestl.h stratum/stratum_skein.h \
+	stratum/http/http.h stratum/stratum.c stratum/stratum_http.c \
+	stratum/stratum_message.c stratum/stratum_protocol.c \
+	stratum/stratum_user.c stratum/stratum_task.c \
+	stratum/stratum_sync.c stratum/stratum_api.cpp \
+	stratum/stratum_api_faucet.cpp stratum/stratum_miner.cpp \
+	stratum/stratum_sha256d.c stratum/stratum_keccak.c \
+	stratum/stratum_x11.c stratum/stratum_blake2s.c \
+	stratum/stratum_qubit.c stratum/stratum_groestl.c \
+	stratum/stratum_skein.c stratum/http/http.c \
+	stratum/http/http_alias.c stratum/http/http_coin.c \
+	stratum/http/http_context.c stratum/http/http_fractal.c \
+	stratum/http/http_matrix.c stratum/http/http_pool.c \
+	server/emc2/emc2_txidx.cpp server/emc2/emc2_txidx.h \
+	server/emc2/emc2_block.cpp server/emc2/emc2_block.h \
+	server/emc2/emc2_wallet.cpp server/emc2/emc2_wallet.h \
+	server/emc2/emc2_netmsg.cpp server/emc2/emc2_netmsg.h \
+	server/emc2/emc2_pool.cpp server/emc2/emc2_pool.h \
+	server/testnet/testnet_netmsg.cpp \
 	server/testnet/testnet_netmsg.h \
 	server/testnet/testnet_block.cpp \
 	server/testnet/testnet_block.h \
@@ -368,26 +369,26 @@ am__objects_11 = $(am__objects_3) $(am__objects_4) \
 	shcoind-global.$(OBJEXT) shcoind-block_merkle.$(OBJEXT) \
 	shcoind-wit_merkle.$(OBJEXT) shcoind-sha256d_merkle.$(OBJEXT) \
 	shcoind-txidx.$(OBJEXT) shcoind-init.$(OBJEXT) \
-	shcoind-eckey.$(OBJEXT) shcoind-keystore.$(OBJEXT) \
-	shcoind-main.$(OBJEXT) shcoind-script.$(OBJEXT) \
-	shcoind-sync.$(OBJEXT) shcoind-walletdb.$(OBJEXT) \
-	shcoind-wallet.$(OBJEXT) shcoind-wallettx.$(OBJEXT) \
-	shcoind-account.$(OBJEXT) shcoind-txcreator.$(OBJEXT) \
-	shcoind-blake2.$(OBJEXT) shcoind-blake2s.$(OBJEXT) \
-	shcoind-groestl.$(OBJEXT) shcoind-keccak.$(OBJEXT) \
-	shcoind-qubit.$(OBJEXT) shcoind-scrypt.$(OBJEXT) \
-	shcoind-sha512.$(OBJEXT) shcoind-hmac_sha512.$(OBJEXT) \
-	shcoind-skein.$(OBJEXT) shcoind-sph_blake.$(OBJEXT) \
-	shcoind-sph_bmw.$(OBJEXT) shcoind-sph_cubehash.$(OBJEXT) \
-	shcoind-sph_echo.$(OBJEXT) shcoind-sph_groestl.$(OBJEXT) \
-	shcoind-sph_jh.$(OBJEXT) shcoind-sph_keccak.$(OBJEXT) \
-	shcoind-sph_luffa.$(OBJEXT) shcoind-sph_shavite.$(OBJEXT) \
-	shcoind-sph_simd.$(OBJEXT) shcoind-sph_skein.$(OBJEXT) \
-	shcoind-x11.$(OBJEXT) shcoind-addrman.$(OBJEXT) \
-	shcoind-base58.$(OBJEXT) shcoind-coinaddr.$(OBJEXT) \
-	shcoind-wallet_iface.$(OBJEXT) shcoind-block_iface.$(OBJEXT) \
-	shcoind-server_iface.$(OBJEXT) $(am__objects_6) \
-	$(am__objects_8) $(am__objects_10)
+	shcoind-eckey.$(OBJEXT) shcoind-dikey.$(OBJEXT) \
+	shcoind-keystore.$(OBJEXT) shcoind-main.$(OBJEXT) \
+	shcoind-script.$(OBJEXT) shcoind-sync.$(OBJEXT) \
+	shcoind-walletdb.$(OBJEXT) shcoind-wallet.$(OBJEXT) \
+	shcoind-wallettx.$(OBJEXT) shcoind-account.$(OBJEXT) \
+	shcoind-txcreator.$(OBJEXT) shcoind-blake2.$(OBJEXT) \
+	shcoind-blake2s.$(OBJEXT) shcoind-groestl.$(OBJEXT) \
+	shcoind-keccak.$(OBJEXT) shcoind-qubit.$(OBJEXT) \
+	shcoind-scrypt.$(OBJEXT) shcoind-sha512.$(OBJEXT) \
+	shcoind-hmac_sha512.$(OBJEXT) shcoind-skein.$(OBJEXT) \
+	shcoind-sph_blake.$(OBJEXT) shcoind-sph_bmw.$(OBJEXT) \
+	shcoind-sph_cubehash.$(OBJEXT) shcoind-sph_echo.$(OBJEXT) \
+	shcoind-sph_groestl.$(OBJEXT) shcoind-sph_jh.$(OBJEXT) \
+	shcoind-sph_keccak.$(OBJEXT) shcoind-sph_luffa.$(OBJEXT) \
+	shcoind-sph_shavite.$(OBJEXT) shcoind-sph_simd.$(OBJEXT) \
+	shcoind-sph_skein.$(OBJEXT) shcoind-x11.$(OBJEXT) \
+	shcoind-addrman.$(OBJEXT) shcoind-base58.$(OBJEXT) \
+	shcoind-coinaddr.$(OBJEXT) shcoind-wallet_iface.$(OBJEXT) \
+	shcoind-block_iface.$(OBJEXT) shcoind-server_iface.$(OBJEXT) \
+	$(am__objects_6) $(am__objects_8) $(am__objects_10)
 @WINDOWS_TRUE@am__objects_12 = shcoind-shcoind_svc.$(OBJEXT)
 am_shcoind_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_11) shcoind-shcoind.$(OBJEXT) \
@@ -423,7 +424,7 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/bignum.h server/rpcalias_proto.h server/rpccert_proto.h \
 	server/rpccontext_proto.h server/rpcexec_proto.h \
 	server/rpcoffer_proto.h server/compat.h server/txidx.h \
-	server/init.h server/key.h server/eckey.h server/keystore.h \
+	server/key.h server/eckey.h server/dikey.h server/keystore.h \
 	server/mruset.h server/netbase.h server/net.h \
 	server/txsignature.h server/versionbits.h server/algobits.h \
 	server/protocol.h server/script.h server/algo/blake2.h \
@@ -507,47 +508,48 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/bloom.cpp server/global.cpp server/block_merkle.cpp \
 	server/wit_merkle.cpp server/sha256d_merkle.cpp \
 	server/txidx.cpp server/init.cpp server/eckey.cpp \
-	server/keystore.cpp server/main.cpp server/script.cpp \
-	server/sync.cpp server/walletdb.cpp server/wallet.cpp \
-	server/wallettx.cpp server/account.cpp server/txcreator.cpp \
-	server/algo/blake2.c server/algo/blake2s.c \
-	server/algo/groestl.c server/algo/keccak.c server/algo/qubit.c \
-	server/algo/scrypt.c server/algo/sha512.cpp \
-	server/algo/hmac_sha512.cpp server/algo/skein.c \
-	server/algo/sph_blake.c server/algo/sph_bmw.c \
-	server/algo/sph_cubehash.c server/algo/sph_echo.c \
-	server/algo/sph_groestl.c server/algo/sph_jh.c \
-	server/algo/sph_keccak.c server/algo/sph_luffa.c \
-	server/algo/sph_shavite.c server/algo/sph_simd.c \
-	server/algo/sph_skein.c server/algo/x11.c server/addrman.h \
-	server/addrman.cpp server/base58.h server/base58.cpp \
-	server/coinaddr.h server/coinaddr.cpp wallet_iface.cpp \
-	block_iface.cpp server_iface.cpp stratum/stratum.h \
-	stratum/stratum_http.h stratum/stratum_message.h \
-	stratum/stratum_protocol.h stratum/stratum_user.h \
-	stratum/stratum_task.h stratum/stratum_sync.h \
-	stratum/stratum_api.h stratum/stratum_miner.h \
-	stratum/stratum_sha256d.h stratum/stratum_keccak.h \
-	stratum/stratum_x11.h stratum/stratum_blake2s.h \
-	stratum/stratum_qubit.h stratum/stratum_groestl.h \
-	stratum/stratum_skein.h stratum/http/http.h stratum/stratum.c \
-	stratum/stratum_http.c stratum/stratum_message.c \
-	stratum/stratum_protocol.c stratum/stratum_user.c \
-	stratum/stratum_task.c stratum/stratum_sync.c \
-	stratum/stratum_api.cpp stratum/stratum_api_faucet.cpp \
-	stratum/stratum_miner.cpp stratum/stratum_sha256d.c \
-	stratum/stratum_keccak.c stratum/stratum_x11.c \
-	stratum/stratum_blake2s.c stratum/stratum_qubit.c \
-	stratum/stratum_groestl.c stratum/stratum_skein.c \
-	stratum/http/http.c stratum/http/http_alias.c \
-	stratum/http/http_coin.c stratum/http/http_context.c \
-	stratum/http/http_fractal.c stratum/http/http_matrix.c \
-	stratum/http/http_pool.c server/emc2/emc2_txidx.cpp \
-	server/emc2/emc2_txidx.h server/emc2/emc2_block.cpp \
-	server/emc2/emc2_block.h server/emc2/emc2_wallet.cpp \
-	server/emc2/emc2_wallet.h server/emc2/emc2_netmsg.cpp \
-	server/emc2/emc2_netmsg.h server/emc2/emc2_pool.cpp \
-	server/emc2/emc2_pool.h server/testnet/testnet_netmsg.cpp \
+	server/dikey.cpp server/keystore.cpp server/main.cpp \
+	server/script.cpp server/sync.cpp server/walletdb.cpp \
+	server/wallet.cpp server/wallettx.cpp server/account.cpp \
+	server/txcreator.cpp server/algo/blake2.c \
+	server/algo/blake2s.c server/algo/groestl.c \
+	server/algo/keccak.c server/algo/qubit.c server/algo/scrypt.c \
+	server/algo/sha512.cpp server/algo/hmac_sha512.cpp \
+	server/algo/skein.c server/algo/sph_blake.c \
+	server/algo/sph_bmw.c server/algo/sph_cubehash.c \
+	server/algo/sph_echo.c server/algo/sph_groestl.c \
+	server/algo/sph_jh.c server/algo/sph_keccak.c \
+	server/algo/sph_luffa.c server/algo/sph_shavite.c \
+	server/algo/sph_simd.c server/algo/sph_skein.c \
+	server/algo/x11.c server/addrman.h server/addrman.cpp \
+	server/base58.h server/base58.cpp server/coinaddr.h \
+	server/coinaddr.cpp wallet_iface.cpp block_iface.cpp \
+	server_iface.cpp stratum/stratum.h stratum/stratum_http.h \
+	stratum/stratum_message.h stratum/stratum_protocol.h \
+	stratum/stratum_user.h stratum/stratum_task.h \
+	stratum/stratum_sync.h stratum/stratum_api.h \
+	stratum/stratum_miner.h stratum/stratum_sha256d.h \
+	stratum/stratum_keccak.h stratum/stratum_x11.h \
+	stratum/stratum_blake2s.h stratum/stratum_qubit.h \
+	stratum/stratum_groestl.h stratum/stratum_skein.h \
+	stratum/http/http.h stratum/stratum.c stratum/stratum_http.c \
+	stratum/stratum_message.c stratum/stratum_protocol.c \
+	stratum/stratum_user.c stratum/stratum_task.c \
+	stratum/stratum_sync.c stratum/stratum_api.cpp \
+	stratum/stratum_api_faucet.cpp stratum/stratum_miner.cpp \
+	stratum/stratum_sha256d.c stratum/stratum_keccak.c \
+	stratum/stratum_x11.c stratum/stratum_blake2s.c \
+	stratum/stratum_qubit.c stratum/stratum_groestl.c \
+	stratum/stratum_skein.c stratum/http/http.c \
+	stratum/http/http_alias.c stratum/http/http_coin.c \
+	stratum/http/http_context.c stratum/http/http_fractal.c \
+	stratum/http/http_matrix.c stratum/http/http_pool.c \
+	server/emc2/emc2_txidx.cpp server/emc2/emc2_txidx.h \
+	server/emc2/emc2_block.cpp server/emc2/emc2_block.h \
+	server/emc2/emc2_wallet.cpp server/emc2/emc2_wallet.h \
+	server/emc2/emc2_netmsg.cpp server/emc2/emc2_netmsg.h \
+	server/emc2/emc2_pool.cpp server/emc2/emc2_pool.h \
+	server/testnet/testnet_netmsg.cpp \
 	server/testnet/testnet_netmsg.h \
 	server/testnet/testnet_block.cpp \
 	server/testnet/testnet_block.h \
@@ -561,7 +563,7 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	test/testcoin_bignum.cpp test/testcoin_hash.cpp \
 	test/testcoin_block.cpp test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp test/testcoin_algo.cpp \
-	test/testcoin_bip32.cpp
+	test/testcoin_bip32.cpp test/testcoin_sip33.cpp
 am__objects_13 = test_shcoind-shcoind_rpc.$(OBJEXT) \
 	test_shcoind-shcoind_error.$(OBJEXT) \
 	test_shcoind-shcoind_log.$(OBJEXT) \
@@ -682,11 +684,11 @@ am__objects_22 = $(am__objects_14) $(am__objects_15) \
 	test_shcoind-wit_merkle.$(OBJEXT) \
 	test_shcoind-sha256d_merkle.$(OBJEXT) \
 	test_shcoind-txidx.$(OBJEXT) test_shcoind-init.$(OBJEXT) \
-	test_shcoind-eckey.$(OBJEXT) test_shcoind-keystore.$(OBJEXT) \
-	test_shcoind-main.$(OBJEXT) test_shcoind-script.$(OBJEXT) \
-	test_shcoind-sync.$(OBJEXT) test_shcoind-walletdb.$(OBJEXT) \
-	test_shcoind-wallet.$(OBJEXT) test_shcoind-wallettx.$(OBJEXT) \
-	test_shcoind-account.$(OBJEXT) \
+	test_shcoind-eckey.$(OBJEXT) test_shcoind-dikey.$(OBJEXT) \
+	test_shcoind-keystore.$(OBJEXT) test_shcoind-main.$(OBJEXT) \
+	test_shcoind-script.$(OBJEXT) test_shcoind-sync.$(OBJEXT) \
+	test_shcoind-walletdb.$(OBJEXT) test_shcoind-wallet.$(OBJEXT) \
+	test_shcoind-wallettx.$(OBJEXT) test_shcoind-account.$(OBJEXT) \
 	test_shcoind-txcreator.$(OBJEXT) test_shcoind-blake2.$(OBJEXT) \
 	test_shcoind-blake2s.$(OBJEXT) test_shcoind-groestl.$(OBJEXT) \
 	test_shcoind-keccak.$(OBJEXT) test_shcoind-qubit.$(OBJEXT) \
@@ -721,11 +723,13 @@ am_test_shcoind_OBJECTS = $(am__objects_1) $(am__objects_13) \
 	test_shcoind-testcoin_json.$(OBJEXT) \
 	test_shcoind-testcoin_bloom.$(OBJEXT) \
 	test_shcoind-testcoin_algo.$(OBJEXT) \
-	test_shcoind-testcoin_bip32.$(OBJEXT)
+	test_shcoind-testcoin_bip32.$(OBJEXT) \
+	test_shcoind-testcoin_sip33.$(OBJEXT)
 test_shcoind_OBJECTS = $(am_test_shcoind_OBJECTS)
 test_shcoind_DEPENDENCIES =  \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(top_builddir)/src/libcrypto/libcrypto.a $(am__append_7) \
+	$(top_builddir)/src/libcrypto/libcrypto.a \
+	$(top_builddir)/src/libdi3/libdi3.a $(am__append_7) \
 	$(am__DEPENDENCIES_1)
 test_shcoind_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(test_shcoind_CXXFLAGS) \
@@ -1166,6 +1170,7 @@ with_kerneldir = @with_kerneldir@
 AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/secp256k1/include \
+	-I$(top_srcdir)/src/libdi3 \
 	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include \
 	-I$(top_srcdir)/src/share-lib \
 	-I$(srcdir)/proto \
@@ -1308,9 +1313,9 @@ common_includes = \
 	server/rpcoffer_proto.h \
 	server/compat.h \
 	server/txidx.h \
-	server/init.h \
 	server/key.h \
 	server/eckey.h \
+	server/dikey.h \
 	server/keystore.h \
 	server/mruset.h \
 	server/netbase.h \
@@ -1456,23 +1461,24 @@ server_sources = $(blockchain_sources) $(proto_sources) \
 	server/bloom.cpp server/global.cpp server/block_merkle.cpp \
 	server/wit_merkle.cpp server/sha256d_merkle.cpp \
 	server/txidx.cpp server/init.cpp server/eckey.cpp \
-	server/keystore.cpp server/main.cpp server/script.cpp \
-	server/sync.cpp server/walletdb.cpp server/wallet.cpp \
-	server/wallettx.cpp server/account.cpp server/txcreator.cpp \
-	server/algo/blake2.c server/algo/blake2s.c \
-	server/algo/groestl.c server/algo/keccak.c server/algo/qubit.c \
-	server/algo/scrypt.c server/algo/sha512.cpp \
-	server/algo/hmac_sha512.cpp server/algo/skein.c \
-	server/algo/sph_blake.c server/algo/sph_bmw.c \
-	server/algo/sph_cubehash.c server/algo/sph_echo.c \
-	server/algo/sph_groestl.c server/algo/sph_jh.c \
-	server/algo/sph_keccak.c server/algo/sph_luffa.c \
-	server/algo/sph_shavite.c server/algo/sph_simd.c \
-	server/algo/sph_skein.c server/algo/x11.c server/addrman.h \
-	server/addrman.cpp server/base58.h server/base58.cpp \
-	server/coinaddr.h server/coinaddr.cpp wallet_iface.cpp \
-	block_iface.cpp server_iface.cpp $(am__append_1) \
-	$(am__append_2) $(am__append_3)
+	server/dikey.cpp server/keystore.cpp server/main.cpp \
+	server/script.cpp server/sync.cpp server/walletdb.cpp \
+	server/wallet.cpp server/wallettx.cpp server/account.cpp \
+	server/txcreator.cpp server/algo/blake2.c \
+	server/algo/blake2s.c server/algo/groestl.c \
+	server/algo/keccak.c server/algo/qubit.c server/algo/scrypt.c \
+	server/algo/sha512.cpp server/algo/hmac_sha512.cpp \
+	server/algo/skein.c server/algo/sph_blake.c \
+	server/algo/sph_bmw.c server/algo/sph_cubehash.c \
+	server/algo/sph_echo.c server/algo/sph_groestl.c \
+	server/algo/sph_jh.c server/algo/sph_keccak.c \
+	server/algo/sph_luffa.c server/algo/sph_shavite.c \
+	server/algo/sph_simd.c server/algo/sph_skein.c \
+	server/algo/x11.c server/addrman.h server/addrman.cpp \
+	server/base58.h server/base58.cpp server/coinaddr.h \
+	server/coinaddr.cpp wallet_iface.cpp block_iface.cpp \
+	server_iface.cpp $(am__append_1) $(am__append_2) \
+	$(am__append_3)
 shcoind_SOURCES = $(common_includes) $(common_sources) \
 	$(server_sources) shcoind.c shcoind_daemon.c shcoind_daemon.h \
 	$(am__append_4)
@@ -1499,10 +1505,12 @@ test_shcoind_SOURCES = \
 	test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp \
 	test/testcoin_algo.cpp \
-	test/testcoin_bip32.cpp
+	test/testcoin_bip32.cpp \
+	test/testcoin_sip33.cpp
 
 test_shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(top_builddir)/src/libcrypto/libcrypto.a $(am__append_7) \
+	$(top_builddir)/src/libcrypto/libcrypto.a \
+	$(top_builddir)/src/libdi3/libdi3.a $(am__append_7) \
 	$(am__append_10) -lboost_system -lboost_filesystem \
 	-lboost_thread -ldb_cxx -lpthread -ldl
 test_shcoind_CFLAGS = -g -O0 -DTEST_SHCOIND $(am__append_8)
@@ -1649,6 +1657,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-color_txidx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-color_wallet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-context.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-dikey.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-eckey.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_netmsg.Po@am__quote@
@@ -1822,6 +1831,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-color_txidx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-color_wallet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-context.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-dikey.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-eckey.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_netmsg.Po@am__quote@
@@ -1934,6 +1944,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_json.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_key.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_sip33.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testnet_block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testnet_netmsg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testnet_pool.Po@am__quote@
@@ -4978,6 +4989,20 @@ shcoind-eckey.obj: server/eckey.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-eckey.obj `if test -f 'server/eckey.cpp'; then $(CYGPATH_W) 'server/eckey.cpp'; else $(CYGPATH_W) '$(srcdir)/server/eckey.cpp'; fi`
 
+shcoind-dikey.o: server/dikey.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-dikey.o -MD -MP -MF $(DEPDIR)/shcoind-dikey.Tpo -c -o shcoind-dikey.o `test -f 'server/dikey.cpp' || echo '$(srcdir)/'`server/dikey.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-dikey.Tpo $(DEPDIR)/shcoind-dikey.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/dikey.cpp' object='shcoind-dikey.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-dikey.o `test -f 'server/dikey.cpp' || echo '$(srcdir)/'`server/dikey.cpp
+
+shcoind-dikey.obj: server/dikey.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-dikey.obj -MD -MP -MF $(DEPDIR)/shcoind-dikey.Tpo -c -o shcoind-dikey.obj `if test -f 'server/dikey.cpp'; then $(CYGPATH_W) 'server/dikey.cpp'; else $(CYGPATH_W) '$(srcdir)/server/dikey.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-dikey.Tpo $(DEPDIR)/shcoind-dikey.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/dikey.cpp' object='shcoind-dikey.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-dikey.obj `if test -f 'server/dikey.cpp'; then $(CYGPATH_W) 'server/dikey.cpp'; else $(CYGPATH_W) '$(srcdir)/server/dikey.cpp'; fi`
+
 shcoind-keystore.o: server/keystore.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-keystore.o -MD -MP -MF $(DEPDIR)/shcoind-keystore.Tpo -c -o shcoind-keystore.o `test -f 'server/keystore.cpp' || echo '$(srcdir)/'`server/keystore.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-keystore.Tpo $(DEPDIR)/shcoind-keystore.Po
@@ -6392,6 +6417,20 @@ test_shcoind-eckey.obj: server/eckey.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-eckey.obj `if test -f 'server/eckey.cpp'; then $(CYGPATH_W) 'server/eckey.cpp'; else $(CYGPATH_W) '$(srcdir)/server/eckey.cpp'; fi`
 
+test_shcoind-dikey.o: server/dikey.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-dikey.o -MD -MP -MF $(DEPDIR)/test_shcoind-dikey.Tpo -c -o test_shcoind-dikey.o `test -f 'server/dikey.cpp' || echo '$(srcdir)/'`server/dikey.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-dikey.Tpo $(DEPDIR)/test_shcoind-dikey.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/dikey.cpp' object='test_shcoind-dikey.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-dikey.o `test -f 'server/dikey.cpp' || echo '$(srcdir)/'`server/dikey.cpp
+
+test_shcoind-dikey.obj: server/dikey.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-dikey.obj -MD -MP -MF $(DEPDIR)/test_shcoind-dikey.Tpo -c -o test_shcoind-dikey.obj `if test -f 'server/dikey.cpp'; then $(CYGPATH_W) 'server/dikey.cpp'; else $(CYGPATH_W) '$(srcdir)/server/dikey.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-dikey.Tpo $(DEPDIR)/test_shcoind-dikey.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/dikey.cpp' object='test_shcoind-dikey.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-dikey.obj `if test -f 'server/dikey.cpp'; then $(CYGPATH_W) 'server/dikey.cpp'; else $(CYGPATH_W) '$(srcdir)/server/dikey.cpp'; fi`
+
 test_shcoind-keystore.o: server/keystore.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-keystore.o -MD -MP -MF $(DEPDIR)/test_shcoind-keystore.Tpo -c -o test_shcoind-keystore.o `test -f 'server/keystore.cpp' || echo '$(srcdir)/'`server/keystore.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-keystore.Tpo $(DEPDIR)/test_shcoind-keystore.Po
@@ -6951,6 +6990,20 @@ test_shcoind-testcoin_bip32.obj: test/testcoin_bip32.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_bip32.cpp' object='test_shcoind-testcoin_bip32.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_bip32.obj `if test -f 'test/testcoin_bip32.cpp'; then $(CYGPATH_W) 'test/testcoin_bip32.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_bip32.cpp'; fi`
+
+test_shcoind-testcoin_sip33.o: test/testcoin_sip33.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip33.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip33.Tpo -c -o test_shcoind-testcoin_sip33.o `test -f 'test/testcoin_sip33.cpp' || echo '$(srcdir)/'`test/testcoin_sip33.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip33.Tpo $(DEPDIR)/test_shcoind-testcoin_sip33.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip33.cpp' object='test_shcoind-testcoin_sip33.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip33.o `test -f 'test/testcoin_sip33.cpp' || echo '$(srcdir)/'`test/testcoin_sip33.cpp
+
+test_shcoind-testcoin_sip33.obj: test/testcoin_sip33.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip33.obj -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip33.Tpo -c -o test_shcoind-testcoin_sip33.obj `if test -f 'test/testcoin_sip33.cpp'; then $(CYGPATH_W) 'test/testcoin_sip33.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip33.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip33.Tpo $(DEPDIR)/test_shcoind-testcoin_sip33.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip33.cpp' object='test_shcoind-testcoin_sip33.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip33.obj `if test -f 'test/testcoin_sip33.cpp'; then $(CYGPATH_W) 'test/testcoin_sip33.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip33.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

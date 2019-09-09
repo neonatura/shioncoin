@@ -27,14 +27,12 @@
 #include "shcoind.h"
 #include <unistd.h>
 using namespace std;
-
 #include "main.h"
 #include "wallet.h"
 #include "txcreator.h"
 #include "db.h"
 #include "walletdb.h"
 #include "net.h"
-#include "init.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
@@ -1051,7 +1049,7 @@ Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(-3, "Address does not refer to key");
 
   ECKey key;
-  if (!pwalletMain->GetKey(keyID, key))
+  if (!pwalletMain->GetECKey(keyID, key))
     throw JSONRPCError(-4, "Private key not available");
 
   string strMessageMagic;

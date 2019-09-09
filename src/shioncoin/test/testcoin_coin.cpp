@@ -456,7 +456,7 @@ _TEST(coin_spendall)
 
   scriptPubKey.SetDestination(addrTo.Get());
   strError = wallet->SendMoney(strFromAcc, scriptPubKey, nValue, wtx);
-if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall: %s\n", strError.c_str()); } 
+//if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall: %s\n", strError.c_str()); } 
   _TRUE(strError == "");
   _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
 

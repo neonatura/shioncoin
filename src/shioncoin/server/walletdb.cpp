@@ -238,6 +238,22 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
 #if 0
 				pwallet->LoadKeyMetadata(pubkey.GetID(), key.meta);
 #endif
+      } else if (strType == "dikey") {
+        vector<unsigned char> vchPubKey;
+				DIKey key;
+
+        ssKey >> vchPubKey;
+				ssValue >> key;
+				const CPubKey& pubkey = key.GetPubKey();
+				if (pubkey != vchPubKey)
+					return DB_CORRUPT;
+
+//				key.SetPubKey(pubkey);
+				if (!pwallet->LoadKey(key))
+					return DB_CORRUPT;
+#if 0
+				pwallet->LoadKeyMetadata(pubkey.GetID(), key.meta);
+#endif
 			}
       else if (strType == "key" || strType == "wkey")
       {
@@ -318,6 +334,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         if (pwallet->nMasterKeyMaxID < nID)
           pwallet->nMasterKeyMaxID = nID;
       }
+#if 0
       else if (strType == "ckey")
       {
         vector<unsigned char> vchPubKey;
@@ -331,6 +348,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         }
         fIsEncrypted = true;
       }
+#endif
       else if (strType == "defaultkey")
       {
         ssValue >> pwallet->vchDefaultKey;

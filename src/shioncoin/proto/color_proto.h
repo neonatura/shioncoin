@@ -46,6 +46,10 @@
  */
 #define COLOR_MAX_SIGOPS 4096
 
+#define COLOR_MAX_SCRIPT_SIZE 10000
+
+#define COLOR_MAX_SCRIPT_ELEMENT_SIZE 520
+
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
 #define COLOR_MAX_DRIFT_TIME 2880 /* 48 minutes */ 
 

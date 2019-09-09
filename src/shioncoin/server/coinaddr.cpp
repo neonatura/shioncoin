@@ -96,6 +96,18 @@ bool CCoinAddr::Set(const WitnessV0ScriptHash& id)
 	SetData(0, &id, 32);
 }
 
+bool CCoinAddr::Set(const WitnessV14KeyHash& id)
+{
+	nType = ADDR_BECH32;
+	SetData(0, &id, 20);
+}
+
+bool CCoinAddr::Set(const WitnessV14ScriptHash& id)
+{
+	nType = ADDR_BECH32;
+	SetData(0, &id, 32);
+}
+
 bool CCoinAddr::Set(const WitnessUnknown& id)
 {
 	nType = ADDR_BECH32;
@@ -452,13 +464,14 @@ CTxDestination CCoinAddr::GetWitness(int output_type) const
 		CScript subscript;
 
 		if (GetKeyID(keyID)) {
-			ECKey key;
-			if (!wallet->GetKey(keyID, key)) {
+			CKey *key;
+
+			key = wallet->GetKey(keyID);
+			if (!key)
 				return (result); /* non-local */
-			}
 
 			/* signing with uncompressed keys is disabled in witness scripts. */
-			if (!key.IsCompressed()) {
+			if (!key->IsCompressed()) {
 				return (result);
 			}
 
@@ -587,6 +600,20 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
 		return (true);
 	}
 
+	if (whichType == TX_WITNESS_V14_KEYHASH) {
+		WitnessV14KeyHash hash;
+		std::copy(vSolutions[0].begin(), vSolutions[0].end(), hash.begin());
+		addressRet = hash;
+		return true;
+	}
+
+	if (whichType == TX_WITNESS_V14_SCRIPTHASH) {
+		WitnessV14ScriptHash hash;
+		std::copy(vSolutions[0].begin(), vSolutions[0].end(), hash.begin());
+		addressRet = hash;
+		return (true);
+	}
+
 	if (whichType == TX_WITNESS_UNKNOWN) {
 		WitnessUnknown unk;
 		unk.version = vSolutions[0][0];
@@ -605,8 +632,10 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
 	addressRet.clear();
 	typeRet = TX_NONSTANDARD;
 	vector<valtype> vSolutions;
-	if (!Solver(scriptPubKey, typeRet, vSolutions))
+
+	if (!Solver(scriptPubKey, typeRet, vSolutions)) {
 		return false;
+	}
 
 	if (typeRet == TX_MULTISIG)
 	{
@@ -621,8 +650,9 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
 	{
 		nRequiredRet = 1;
 		CTxDestination address;
-		if (!ExtractDestination(scriptPubKey, address))
+		if (!ExtractDestination(scriptPubKey, address)) {
 			return false;
+		}
 		addressRet.push_back(address);
 	}
 

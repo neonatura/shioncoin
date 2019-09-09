@@ -53,8 +53,8 @@ enum txnouttype
     TX_WITNESS_V0_SCRIPTHASH,
     TX_WITNESS_V0_KEYHASH,
     TX_WITNESS_UNKNOWN,
-		__RESERVED_0,
-		__RESERVED_1,
+    TX_WITNESS_V14_SCRIPTHASH,
+    TX_WITNESS_V14_KEYHASH,
 		__RESERVED_2
 };
 
@@ -99,6 +99,20 @@ struct WitnessV0KeyHash : public uint160
 	using uint160::uint160;
 };
 
+struct WitnessV14ScriptHash : public uint256
+{
+	WitnessV14ScriptHash() : uint256() {}
+	explicit WitnessV14ScriptHash(const uint256& hash) : uint256(hash) {}
+	using uint256::uint256;
+};
+    
+struct WitnessV14KeyHash : public uint160
+{       
+	WitnessV14KeyHash() : uint160() {} 
+	explicit WitnessV14KeyHash(const uint160& hash) : uint160(hash) {}
+	using uint160::uint160;
+};
+
 //! CTxDestination subtype to encode any future Witness version
 struct WitnessUnknown
 {       
@@ -128,7 +142,7 @@ struct WitnessUnknown
  *  * CScriptID: TX_SCRIPTHASH destination
  *  A CTxDestination is the internal data type encoded in a CCoinAddr
  */
-typedef boost::variant<CNoDestination, CKeyID, CScriptID, WitnessV0ScriptHash, WitnessV0KeyHash, WitnessUnknown> CTxDestination;
+typedef boost::variant<CNoDestination, CKeyID, CScriptID, WitnessV0ScriptHash, WitnessV0KeyHash, WitnessV14ScriptHash, WitnessV14KeyHash, WitnessUnknown> CTxDestination;
 
 const char* GetTxnOutputType(txnouttype t);
 
@@ -285,6 +299,9 @@ enum opcodetype
 		OP_NOP8 = OP_CHECKALTPROOF,
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
+
+    OP_CHECKSIG_DILITHIUM = 0xc0,
+    OP_CHECKSIGVERIFY_DILITHIUM = 0xc1,
 
     /* tx extension operatives */
     OP_EXT_NEW = 0xf0,

@@ -2,7 +2,7 @@
 
 #include "di3.h"
 
-uint8_t *di3_derive_hash(uint8_t *pubkey, uint8_t *hd_chain, uint32_t hd_index)
+uint8_t *di3_derive_keypair_hash(uint8_t *pubkey, uint8_t *hd_chain, uint32_t hd_index)
 {
 	static const uint16_t seed = 0; /* not defined */
 	static char result[64];
@@ -19,6 +19,29 @@ uint8_t *di3_derive_hash(uint8_t *pubkey, uint8_t *hd_chain, uint32_t hd_index)
 
 	return (result);
 }
+
+int di3_derive_hash(uint8_t *result, size_t result_len, uint8_t *hash, size_t hash_len, uint8_t *hd_chain, uint32_t hd_index, uint16_t seed)
+{
+	uint8_t *data;
+	size_t data_len;
+
+	data_len = 36 + hash_len; /* 32 + 32 + 4 */
+	data = (uint8_t *)calloc(data_len, sizeof(uint8_t));
+	if (!data)
+		return (-1);
+
+	memcpy(data, hash, hash_len);
+	memcpy(data + hash_len, hd_chain, 32);
+	memcpy(data + (hash_len + 32), &hd_index, sizeof(uint32_t));
+
+	memset(result, 0, sizeof(result));
+	OQS_SHA3_cshake256_simple(result, result_len, seed, data, data_len); 
+
+	free(data);
+	return (0);
+}
+
+uint8_t *di3_derive_keypair_hash(uint8_t *pubkey, uint8_t *hd_chain, uint32_t hd_index);
 
 int di3_derive_keypair(uint8_t *sk_in, uint8_t *hash, uint8_t *pk, uint8_t *sk) 
 {

@@ -53,9 +53,12 @@ public:
     bool operator()(const CScriptID& id) const;
     bool operator()(const CNoDestination& no) const;
 
-		/* bech32 segwit addr */
+		/* bech32 segwit ecdsa address */
     bool operator()(const WitnessV0KeyHash& id) const;
     bool operator()(const WitnessV0ScriptHash& id) const;
+		/* bech32 segwit dilithium address */
+    bool operator()(const WitnessV14KeyHash& id) const;
+    bool operator()(const WitnessV14ScriptHash& id) const;
     bool operator()(const WitnessUnknown& id) const;
 };
 
@@ -164,6 +167,10 @@ public:
 
 		bool Set(const WitnessV0ScriptHash& id);
 
+		bool Set(const WitnessV14KeyHash& id);
+
+		bool Set(const WitnessV14ScriptHash& id);
+
 		bool Set(const WitnessUnknown& id);
 
 		bool Set(const CTxDestination &dest);
@@ -199,6 +206,8 @@ bool inline CCoinAddrVisitor::operator()(const CScriptID &id) const      { retur
 bool inline CCoinAddrVisitor::operator()(const CNoDestination &id) const { return false; }
 bool inline CCoinAddrVisitor::operator()(const WitnessV0KeyHash &id) const { return addr->Set(id); }
 bool inline CCoinAddrVisitor::operator()(const WitnessV0ScriptHash &id) const { return addr->Set(id); }
+bool inline CCoinAddrVisitor::operator()(const WitnessV14KeyHash &id) const { return addr->Set(id); }
+bool inline CCoinAddrVisitor::operator()(const WitnessV14ScriptHash &id) const { return addr->Set(id); }
 bool inline CCoinAddrVisitor::operator()(const WitnessUnknown &id) const { return addr->Set(id); }
 
 

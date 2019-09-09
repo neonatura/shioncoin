@@ -26,7 +26,7 @@
 
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
+#include "wallet.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"

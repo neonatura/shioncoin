@@ -27,14 +27,12 @@
 #include "shcoind.h"
 #include <unistd.h>
 using namespace std;
-
 #include "main.h"
 #include "wallet.h"
 #include "txcreator.h"
 #include "db.h"
 #include "walletdb.h"
 #include "net.h"
-#include "init.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
@@ -827,9 +825,12 @@ Value rpc_wallet_addr(CIface *iface, const Array& params, bool fStratum)
 			throw JSONRPCError(ERR_INVAL, "Invalid coin address mode specified.");
 	}
 
-	Value ret;
-	ret = wallet->GetAccount(strAccount)->GetAddr(mode).ToString();
+	CAccountCache *account = wallet->GetAccount(strAccount);
+	if (!account)
+		throw JSONRPCError(ERR_INVAL, "Invalid account specified.");
 
+	Value ret;
+	ret = account->GetAddr(mode).ToString();
 	return ret;
 }
 
@@ -1686,23 +1687,19 @@ Value rpc_wallet_validate(CIface *iface, const Array& params, bool fStratum)
 			CCoinAddr cid_addr(ifaceIndex, cid);
 			ret.push_back(Pair("script-address", cid_addr.ToString()));
 
-			ECKey key;
-			if (wallet->GetKey(keyid, key)) {
-				bool fCompressed = false;
-				const CSecret& secret = key.GetSecret(fCompressed);
-				ret.push_back(Pair("compressed", fCompressed));
+			CKey *key;
+			if (key = wallet->GetKey(keyid)) {
+				ret.push_back(Pair("compressed", key->IsCompressed()));
 
-				if (key.meta.nCreateTime != 0)
-					ret.push_back(Pair("created", ToValue_date_format((time_t)key.meta.nCreateTime)));
+				if (key->meta.nCreateTime != 0)
+					ret.push_back(Pair("created", ToValue_date_format((time_t)key->meta.nCreateTime)));
 				else
 					ret.push_back(Pair("created", string("")));
-				if (key.meta.nFlag != 0)
-					ret.push_back(Pair("flags", key.meta.GetFlagString()));
-				if (key.meta.nFlag & CKeyMetadata::META_HD_KEY) {
-					ret.push_back(Pair("hdkeypath", key.meta.hdKeypath));
-					//          ent.push_back(Pair("masterpubkey", key.meta.hdMasterKeyID.GetHex().c_str()));
-				}
-				if (!(key.meta.nFlag & CKeyMetadata::META_SEGWIT) &&
+				if (key->meta.nFlag != 0)
+					ret.push_back(Pair("flags", key->meta.GetFlagString()));
+				if (key->meta.hdKeypath.length() != 0)
+					ret.push_back(Pair("hdkeypath", key->meta.hdKeypath));
+				if (!(key->meta.nFlag & CKeyMetadata::META_SEGWIT) &&
 						IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
 					/* generate "program 0" p2sh-segwit address. */
 					CTxDestination sh_dest = address.GetWitness(OUTPUT_TYPE_P2SH_SEGWIT);
@@ -1803,7 +1800,7 @@ Value rpc_wallet_addrlist(CIface *iface, const Array& params, bool fStratum)
 				ent.push_back(Pair("master", true));
 
 			ECKey key;
-			if (wallet->GetKey(keyid, key)) {
+			if (wallet->GetECKey(keyid, key)) {
 				bool fCompressed = false;
 				const CSecret& secret = key.GetSecret(fCompressed);
 				ent.push_back(Pair("compressed", fCompressed));

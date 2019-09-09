@@ -26,7 +26,6 @@
 #include "shcoind.h"
 #include "block.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"

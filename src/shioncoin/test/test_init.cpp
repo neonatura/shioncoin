@@ -57,8 +57,6 @@ void test_shcoind_init(void)
   iface->nRuleChangeActivationThreshold = 4;
   iface->nMinerConfirmationWindow = 5;
 
-//CBlock *test_block = test_GenerateBlock(); /* DEBUG: */
-
 }
 
 

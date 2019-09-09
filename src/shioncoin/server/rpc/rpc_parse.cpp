@@ -27,14 +27,12 @@
 #include "shcoind.h"
 #include <unistd.h>
 using namespace std;
-
 #include "main.h"
 #include "wallet.h"
 #include "txcreator.h"
 #include "db.h"
 #include "walletdb.h"
 #include "net.h"
-#include "init.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */

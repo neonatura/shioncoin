@@ -54,7 +54,7 @@ static const CBigNum bnTrue(1);
 static const size_t nMaxNumSize = 4;
 
 // Maximum number of bytes pushable to the stack
-static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520;
+//static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520;
 
 extern CIface *GetCoinByHash(uint160 hash);
 
@@ -120,6 +120,8 @@ const char* GetTxnOutputType(txnouttype t)
     case TX_RETURN: return "return";
     case TX_WITNESS_V0_KEYHASH: return "witness_v0_keyhash";
     case TX_WITNESS_V0_SCRIPTHASH: return "witness_v0_scripthash";
+    case TX_WITNESS_V14_KEYHASH: return "witness_v14_keyhash";
+    case TX_WITNESS_V14_SCRIPTHASH: return "witness_v14_scripthash";
     }
     return NULL;
 }
@@ -562,7 +564,8 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
                 if (stack.size() < 1)
                   return false;
                 valtype& vch = stacktop(-1);
-                if (sigver == SIGVERSION_WITNESS_V0 && 
+                if ((sigver == SIGVERSION_WITNESS_V0 ||
+											sigver == SIGVERSION_WITNESS_V14) && 
                     (flags & SCRIPT_VERIFY_MINIMALIF)) {
                   if (vch.size() > 1)
                     return false;
@@ -1157,7 +1160,7 @@ bool EvalScript(CSignature& sig, cstack_t& stack, const CScript& script, unsigne
                 scriptCode.FindAndDelete(CScript(vchSig));
               }
 
-              if (flags & SCRIPT_VERIFY_LOW_S) {
+              if (sigver != 14 && (flags & SCRIPT_VERIFY_LOW_S)) {
                 std::vector<unsigned char> vchSigCopy(vchSig.begin(), vchSig.begin() + vchSig.size() - 1);
                 if (!_CheckLowS(vchSigCopy))
                   return (false); 
@@ -1604,6 +1607,16 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
       vSolutionsRet.push_back(witnessprogram);
       return true;
     }
+    if (witnessversion == 14 && witnessprogram.size() == 20) {
+      typeRet = TX_WITNESS_V14_KEYHASH;
+      vSolutionsRet.push_back(witnessprogram);
+      return true;
+    }
+    if (witnessversion == 14 && witnessprogram.size() == 32) {
+      typeRet = TX_WITNESS_V14_SCRIPTHASH;
+      vSolutionsRet.push_back(witnessprogram);
+      return true;
+    }
     return false;
   }
 
@@ -1784,12 +1797,21 @@ bool Sign1(const CKeyID& address, const CKeyStore& keystore, uint256 hash, int n
   }
 #endif
 	{
+#if 0
     ECKey key;
-    if (!keystore.GetKey(address, key))
+    if (!keystore.GetECKey(address, key))
       return false;
 
     vector<unsigned char> vchSig;
     if (!key.Sign(hash, vchSig))
+      return false;
+#endif
+    CKey *key = keystore.GetKey(address);
+		if (!key)
+			return (false);
+
+    vector<unsigned char> vchSig;
+    if (!key->Sign(hash, vchSig))
       return false;
     vchSig.push_back((unsigned char)nHashType);
     scriptSigRet << vchSig;
@@ -1857,6 +1879,9 @@ int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned c
     case TX_WITNESS_V0_SCRIPTHASH:
     case TX_WITNESS_V0_KEYHASH:
       return 0;
+    case TX_WITNESS_V14_SCRIPTHASH:
+    case TX_WITNESS_V14_KEYHASH:
+      return 0;
   }
   return -1;
 }
@@ -1918,6 +1943,19 @@ public:
 
 			const cbuff vch(scriptID.begin(), scriptID.end());
 			//CRIPEMD160().Write(scriptID.begin(), 32).Finalize(id.begin());
+			RIPEMD160(&vch[0], vch.size(), (unsigned char *)&id);
+			return (keystore->HaveCScript(id));
+		}
+    bool operator()(const WitnessV14KeyHash& keyId) const 
+		{ 
+			CKeyID id(keyId);
+			return (keystore->HaveKey(id));
+		}
+    bool operator()(const WitnessV14ScriptHash& scriptID) const 
+		{ 
+			CScriptID id;
+
+			const cbuff vch(scriptID.begin(), scriptID.end());
 			RIPEMD160(&vch[0], vch.size(), (unsigned char *)&id);
 			return (keystore->HaveCScript(id));
 		}
@@ -2016,6 +2054,39 @@ bool IsMine(const CKeyStore &keystore, const CScript& scriptPubKey, bool fWitnes
 
         return (true);
       }
+
+    case TX_WITNESS_V14_KEYHASH:
+      {
+        if (!keystore.HaveCScript(CScriptID(CScript() << OP_14 << vSolutions[0]))) {
+          /* do not support bare witness outputs unless the P2SH version of it would be acceptable as well. */
+          break;
+        }
+
+        CScript subscript = GetScriptForDestination(CKeyID(uint160(vSolutions[0])));
+        return (::IsMine(keystore, subscript, true));
+      }
+
+    case TX_WITNESS_V14_SCRIPTHASH:
+      {
+        if (!keystore.HaveCScript(CScriptID(CScript() << OP_14 << vSolutions[0])))
+          break;
+
+        uint160 hash2;
+        const cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
+        cbuff vchHash;
+        uint160 hash160;
+        RIPEMD160(&vch[0], vch.size(), &vchHash[0]);
+        memcpy(&hash160, &vchHash[0], sizeof(hash160));
+
+        CScriptID scriptID = CScriptID(hash160);    
+        CScript subscript;
+        if (!keystore.GetCScript(scriptID, subscript))
+          return (false);
+        if (!IsMine(keystore, subscript, true))
+          return (false);
+
+        return (true);
+      }
   }
 
   return false;
@@ -2033,8 +2104,10 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
   const CTransaction& txTo = *sig.tx;
   vector<vector<unsigned char> > stack;
   CScript scriptPubKey;
+	int sigver = 0;
 
   if (witversion == 0) {
+		sigver = SIGVERSION_WITNESS_V0;
     if (program.size() == 32) {
       // Version 0 segregated witness program: SHA256(CScript) inside the program, CScript + inputs in witness
       if (witness.size() == 0) {
@@ -2044,12 +2117,35 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
       stack = std::vector<std::vector<unsigned char> >(witness.begin(), witness.end() - 1);
       uint256 hashScriptPubKey;
 
-      //CSHA256().Write(&scriptPubKey[0], scriptPubKey.size()).Finalize(hashScriptPubKey.begin());
-
 			unsigned char *raw = (unsigned char *)&hashScriptPubKey;
 			SHA256(&scriptPubKey[0], scriptPubKey.size(), raw);
 
-//      hashScriptPubKey = Hash(scriptPubKey.begin(), scriptPubKey.end());
+      if (0 != memcmp(raw, &program[0], 32)) {
+        return error(ERR_INVAL, "VerifyWitnessProgram: invalid program");
+      }
+    } else if (program.size() == 20) {
+      // Special case for pay-to-pubkeyhash; signature + pubkey in witness
+      if (witness.size() != 2) {
+        return error(ERR_INVAL, "VerifyWitnessProgram: program does not contain exactly two elements (x%d) [P2SH].", witness.size());
+      }
+      scriptPubKey << OP_DUP << OP_HASH160 << program << OP_EQUALVERIFY << OP_CHECKSIG;
+      stack = witness;
+    } else {
+      return error(ERR_INVAL, "VerifyWitnessProgram: wrong program length.");
+    }
+	} else if (witversion == 14) {
+		sigver = SIGVERSION_WITNESS_V14;
+    if (program.size() == 32) {
+      // Version 14 segregated witness program: SHA256(CScript) inside the program, CScript + inputs in witness
+      if (witness.size() == 0) {
+        return error(ERR_INVAL, "VerifyWitnessProgram: empty witness stack.");
+      }
+      scriptPubKey = CScript(witness.back().begin(), witness.back().end());
+      stack = std::vector<std::vector<unsigned char> >(witness.begin(), witness.end() - 1);
+      uint256 hashScriptPubKey;
+
+			unsigned char *raw = (unsigned char *)&hashScriptPubKey;
+			SHA256(&scriptPubKey[0], scriptPubKey.size(), raw);
 
       if (0 != memcmp(raw, &program[0], 32)) {
         return error(ERR_INVAL, "VerifyWitnessProgram: invalid program");
@@ -2071,13 +2167,14 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
     return (true);//set_success(serror);
   }
 
-  // Disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack
-  for (unsigned int i = 0; i < stack.size(); i++) {
-    if (stack.at(i).size() > MAX_SCRIPT_ELEMENT_SIZE)
-      return error(SHERR_INVAL, "VerifyScriptProgram: script exceeds push size.");
-  }
+	/* disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack. */
+	CIface *iface = sig.GetIface();
+	for (unsigned int i = 0; i < stack.size(); i++) {
+		if (stack.at(i).size() > MAX_SCRIPT_ELEMENT_SIZE(iface))
+			return error(SHERR_INVAL, "VerifyScriptProgram: witness (v%d) script exceeds push size (%d).", witversion, stack.at(i).size());
+	}
 
-  if (!EvalScript(sig, stack, scriptPubKey, SIGVERSION_WITNESS_V0, SCRIPT_VERIFY_MINIMALIF | flags)) {
+  if (!EvalScript(sig, stack, scriptPubKey, sigver, SCRIPT_VERIFY_MINIMALIF | flags)) {
     return (error(SHERR_INVAL, "VerifyWitnessProgram: error evaluating witness program."));
   }
 
@@ -2123,7 +2220,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
   }
 
   // Bare witness programs
-  int witnessversion;
+  int witnessversion = -1;
   std::vector<unsigned char> witnessprogram;
   if (flags & SCRIPT_VERIFY_WITNESS) {
     if (scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram)) {
@@ -2476,6 +2573,19 @@ public:
     bool operator()(const WitnessV0ScriptHash& id) const {
 			script->clear();
 			*script << OP_0 << ToByteVector(id);
+			return true;
+    }
+
+    bool operator()(const WitnessV14KeyHash& id) const 
+		{
+			script->clear();
+			*script << OP_14 << ToByteVector(id);
+			return true;
+    }
+
+    bool operator()(const WitnessV14ScriptHash& id) const {
+			script->clear();
+			*script << OP_14 << ToByteVector(id);
 			return true;
     }
 

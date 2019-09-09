@@ -24,12 +24,12 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <net/if.h>
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "shc/shc_netmsg.h"

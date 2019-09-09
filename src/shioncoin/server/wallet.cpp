@@ -113,36 +113,50 @@ CPubKey CWallet::GenerateNewKey(bool fCompressed)
 
 	}
 
-	CPubKey pubkey = key.GetPubKey();
-	CKeyMetadata metadata(GetTime());
-
 	if (!AddKey(key))
 		throw std::runtime_error("CWallet::GenerateNewKey() : AddKey failed");
 
-	mapKeyMetadata[pubkey.GetID()] = metadata;
-
+	CPubKey pubkey = key.GetPubKey();
 	return (pubkey);
 }
 
 bool CWallet::AddKey(const ECKey& key)
 {
 
-	if (!CCryptoKeyStore::AddKey(key))
+	if (!CBasicKeyStore::AddKey(key))
 		return (error(SHERR_INVAL, "CWallet.AddKey: error adding key to crypto key-store."));
-	if (!IsCrypted()) {
+
+	{
 		bool ret = false;
 		{
 			LOCK(cs_wallet);
 			CWalletDB db(strWalletFile);
 
 			const CPubKey& pubkey = key.GetPubKey();
-#if 0
-			const CKeyID& keyid = pubkey.GetID();
-			CKeyMetadata meta;
-			if (mapKeyMetadata.count(keyid) != 0)
-				meta = mapKeyMetadata[keyid];
-			ret = db.WriteKey(pubkey, key.GetPrivKey(), meta);
-#endif
+			ret = db.WriteKey(key, pubkey);
+
+			db.Close();
+		}
+		if (!ret)
+			return (error(SHERR_INVAL, "CWallet.AddKey: error writing key to wallet."));
+	}
+
+	return true;
+}
+
+bool CWallet::AddKey(const DIKey& key)
+{
+
+	if (!CBasicKeyStore::AddKey(key))
+		return (error(SHERR_INVAL, "CWallet.AddKey: error adding key to crypto key-store."));
+
+	{
+		bool ret = false;
+		{
+			LOCK(cs_wallet);
+			CWalletDB db(strWalletFile);
+
+			const CPubKey& pubkey = key.GetPubKey();
 			ret = db.WriteKey(key, pubkey);
 
 			db.Close();
@@ -180,24 +194,9 @@ HDPubKey CWallet::GenerateNewHDKey(bool fCompressed)
 #endif
 
 #if 0
-bool CWallet::AddKey(const HDPrivKey& key)
-{
-	if (!CCryptoKeyStore::AddKey(key))
-		return false;
-	if (!IsCrypted()) {
-		LOCK(cs_wallet);
-
-		CWalletDB db(strWalletFile);
-		db.WriteKey(key.GetPubKey(), key.GetPrivKey());
-		db.Close();
-	}
-	return true;
-}
-#endif
-
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey, const vector<unsigned char> &vchCryptedSecret)
 {
-	if (!CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
+	if (!CBasicKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
 		return false;
 	{
 		LOCK(cs_wallet);
@@ -212,11 +211,12 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey, const vector<unsigned char
 
 	return false;
 }
+#endif
 
 bool CWallet::AddCScript(const CScript& redeemScript)
 {
 
-	if (!CCryptoKeyStore::AddCScript(redeemScript))
+	if (!CBasicKeyStore::AddCScript(redeemScript))
 		return false;
 
 	uint160 sid = Hash160(redeemScript);
@@ -1639,7 +1639,7 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
 			}
 		}
 
-		if (!GetKey(account.vchPubKey.GetID(), pkey)) {
+		if (!GetECKey(account.vchPubKey.GetID(), pkey)) {
 			return error(SHERR_INVAL, "CWallet::GetMergedAddress: account '%s' has no primary key.", strAccount.c_str());
 		}
 
@@ -3447,7 +3447,72 @@ void CWallet::DeriveNewECKey(string strAccount, ECKey& secret, bool internal)
 		return;
 
 	// try to get the master key
-	if (!GetKey(hdChain->masterKeyID, key))
+	if (!GetECKey(hdChain->masterKeyID, key))
+		throw std::runtime_error(std::string(__func__) + ": Master key not found");
+
+	masterKey.SetMaster(key.begin(), key.size());
+
+	// derive m/0'
+	// use hardened derivation (child keys >= 0x80000000 are hardened after bip32)
+	masterKey.Derive(accountKey, BIP32_HARDENED_KEY_LIMIT);
+
+	// derive m/0'/0' (external chain) OR m/0'/1' (internal chain)
+//	assert(internal ? CanSupportFeature(FEATURE_HD_SPLIT) : true);
+	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT+(internal ? 1 : 0));
+
+	// derive child key at next index, skip keys already known to the wallet
+	do {
+		// always derive hardened keys
+		// childIndex | BIP32_HARDENED_KEY_LIMIT = derive childIndex in hardened child-index-range
+		// example: 1 | BIP32_HARDENED_KEY_LIMIT == 0x80000001 == 2147483649
+		if (internal) {
+			chainChildKey.Derive(childKey, hdChain->nInternalChainCounter | BIP32_HARDENED_KEY_LIMIT);
+			hdKeypath = "m/0'/1'/" + std::to_string(hdChain->nInternalChainCounter) + "'";
+			hdChain->nInternalChainCounter++;
+		}
+		else {
+			chainChildKey.Derive(childKey, hdChain->nExternalChainCounter | BIP32_HARDENED_KEY_LIMIT);
+			hdKeypath = "m/0'/0'/" + std::to_string(hdChain->nExternalChainCounter) + "'";
+			hdChain->nExternalChainCounter++;
+		}
+	} while (HaveKey(childKey.key.GetPubKey().GetID()));
+
+	secret = childKey.key;
+	secret.meta.hdMasterKeyID = hdChain->masterKeyID;
+	secret.meta.hdKeypath = hdKeypath;
+
+	acc->UpdateHDChain();
+#if 0
+	{
+		LOCK(cs_wallet);
+
+		CWalletDB walletdb(strWalletFile);
+		walletdb.WriteHDChain(hdChain);
+		walletdb.Close();
+	}
+#endif
+
+}
+
+void CWallet::DeriveNewDIKey(string strAccount, DIKey& secret, bool internal)
+{
+	// for now we use a fixed keypath scheme of m/0'/0'/k
+	DIKey key;                      //master key seed (256bit)
+	DIExtKey masterKey;             //hd master key
+	DIExtKey accountKey;            //key at m/0'
+	DIExtKey chainChildKey;         //key at m/0'/0' (external) or m/0'/1' (internal)
+	DIExtKey childKey;              //key at m/0'/0'/<n>'
+	string hdKeypath;
+
+	CAccountCache *acc = GetAccount(strAccount);
+	if (!acc)
+		return;
+	CHDChain *hdChain = acc->GetHDChain();
+	if (!hdChain)
+		return;
+
+	// try to get the master key
+	if (!GetDIKey(hdChain->masterKeyID, key))
 		throw std::runtime_error(std::string(__func__) + ": Master key not found");
 
 	masterKey.SetMaster(key.begin(), key.size());
@@ -3509,83 +3574,6 @@ bool CWallet::LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata 
 	mapScriptMetadata[script_id] = meta;
 	return true;
 }
-
-#if 0
-CPubKey CWallet::GenerateHDMasterKey()
-{
-	ECKey key;
-
-	key.MakeNewKey(true);
-
-	int64_t nCreationTime = GetTime();
-	CKeyMetadata metadata(nCreationTime);
-
-	// calculate the pubkey
-	CPubKey pubkey = key.GetPubKey();
-//	assert(key.VerifyPubKey(pubkey));
-
-	// set the hd keypath to "m" -> Master, refers the masterkeyid to itself
-	metadata.hdKeypath     = "m";
-	metadata.hdMasterKeyID = pubkey.GetID();
-
-	{
-		LOCK(cs_wallet);
-
-		if (!AddKey(key))
-			throw std::runtime_error("CWallet::GenerateNewKey() : AddKey failed");
-
-		// mem store the metadata
-		mapKeyMetadata[pubkey.GetID()] = metadata;
-
-#if 0
-		// write the key&metadata to the database
-		if (!AddKeyPubKey(key, pubkey))
-			throw std::runtime_error(std::string(__func__) + ": AddKeyPubKey failed");
-#endif
-	}
-
-	return pubkey;
-}
-
-bool CWallet::SetHDMasterKey(const CPubKey& pubkey)
-{
-	LOCK(cs_wallet);
-	// store the keyid (hash160) together with
-	// the child index counter in the database
-	// as a hdchain object
-	CHDChain newHdChain;
-	//newHdChain.nVersion = CanSupportFeature(FEATURE_HD_SPLIT) ? CHDChain::VERSION_HD_CHAIN_SPLIT : CHDChain::VERSION_HD_BASE;
-	newHdChain.nVersion = CHDChain::VERSION_HD_CHAIN_SPLIT;
-	newHdChain.masterKeyID = pubkey.GetID();
-	SetHDChain(newHdChain, false);
-
-	return true;
-}
-
-bool CWallet::SetHDChain(const CHDChain& chain, bool memonly)
-{
-	LOCK(cs_wallet);
-
-	if (!memonly) {
-		LOCK(cs_wallet);
-		bool ok;
-
-		CWalletDB walletdb(strWalletFile);
-		ok = walletdb.WriteHDChain(chain);
-		walletdb.Close();
-		if (!ok)
-			return (false);
-	}
-
-	hdChain = chain;
-	return true;
-}
-
-bool CWallet::IsHDEnabled() const
-{
-	return (hdChain.masterKeyID != 0);
-}
-#endif
 
 const cbuff& CWallet::Base58Prefix(int type) const
 {

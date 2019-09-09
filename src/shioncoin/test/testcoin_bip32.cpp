@@ -55,7 +55,7 @@ struct TestVector {
     }
 };
 
-TestVector test =
+static TestVector test =
   TestVector("000102030405060708090a0b0c0d0e0f")
     (
 		 "xpub661MyMwAqRbcEb8K6igAJA4igisrruQkrtLmsmE9gHwVNzn9sZCbUWQC5hfAEMaVLjWoBePSAoYWs1dSwFFL37bgPE1iz3mAHD5iUsgjxJi",
@@ -93,10 +93,10 @@ enum Base58Type {
 	MAX_BASE58_TYPES
 };
 
-std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
+static std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
 
 
-const std::vector<unsigned char>& Base58Prefix(Base58Type type) 
+static const std::vector<unsigned char>& Base58Prefix(Base58Type type) 
 { 
 
 #if 0
@@ -155,7 +155,7 @@ typedef CBitcoinExtKeyBase<ECExtPubKey, BIP32_EXTKEY_SIZE, EXT_PUBLIC_KEY> CBitc
 extern "C" {
 #endif
 
-_TEST(bip32)
+_TEST(bip32_hdkey)
 {
 	std::vector<unsigned char> seed = ParseHex(test.strHexMaster);
 	ECExtKey key;

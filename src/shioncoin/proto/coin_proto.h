@@ -171,6 +171,12 @@ typedef int (*coin_f)(struct coin_iface_t * /*iface*/, void * /* arg */);
 	((_iface)->base58_ext_secret_key)
 
 
+#define MAX_SCRIPT_SIZE(_iface) \
+  ((_iface) ? (_iface)->max_script_size : 10000)
+
+#define MAX_SCRIPT_ELEMENT_SIZE(_iface) \
+  ((_iface) ? (_iface)->max_script_element_size : 520)
+
 
 /* shared traits for services that support */
 /** Number of blocks that can be requested at any given time from a single peer. */ 
@@ -253,6 +259,8 @@ typedef struct coin_iface_t
   uint64_t max_money;
   uint64_t coinbase_maturity;
   uint64_t max_sigops;
+	uint64_t max_script_size;
+	uint64_t max_script_element_size;
 
   /* coin operations */
   coin_f op_init;

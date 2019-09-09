@@ -21,15 +21,22 @@ The usage and methodology of the signing process is consistent with ECDSA. A pub
 
 The introduction of a new signing method implies the ability to handle multiple types of pubkey and signature data on the blockchain. 
 
-A new script operation OP_CHECKSIG_DILITHIUM is introduced in order to accomodate signature verification using the dilithium algorythm. The script operation is used in the transaction output script using the traditional "OP_DUP << OP_HASH160 << OP_PUBKEYHASH << OP_EQUALVERIFY << OP_CHECKSIG_DILITHIUM" method.
+The existing script operation OP_CHECKSIG is enhanced to verify against a dilithium signature when the dilithium witness version (14) is set. The manner in which pubkey and script IDs is consitent with regular transactions. The witness v0 method is essentially identical to the dilithium witness program except that is verified using the dilithium-3 algorythm and that the public key and signature components of the segwit signature are larger in size. Note that the dilithium-3 signature, which is 2701, exceeds the traditional script maximum element size of 520 bytes. 
+
+//A new script operation OP_CHECKSIG_DILITHIUM is introduced in order to accomodate signature verification using the dilithium algorythm. The script operation is used in the transaction output script using the traditional "OP_DUP << OP_HASH160 << OP_PUBKEYHASH << OP_EQUALVERIFY << OP_CHECKSIG_DILITHIUM" method.
+
+The dilithium public key, stored in the wallet and used in transactions, is prefixed with a single byte set to the constants 0x3. This single-byte prefix is embedded for future extensions.
 
 Using the set of script ops above, the sender will include a keyid (28 bytes) and the receiver will include the full pubkey and signature.
 
 The new signature method is exclusively isolated to a single witness program. The witness program version "14" is utilized in order to distinguish a dilithium signed transaction. 
+
+Given a 20-byte key ID; a witness v14 destination address script would be "0x14 <keyid>". This is interpretted equivelant to a "OP_HASH160 <keyid> OP_EQUALVERIFY" with the witness version being set to 14. Note that a traditional witness script is not utilized (due to exclusive bech32 method).
 
 In addition, the signing method is reserved for use with the bech32 address format. As the bech32 specifies a particular witness program version, a receiver coin address can be specified that implies the signature will be stored on the segwit portion of the transaction (no counted against total block size) and that a dilithium algorythm must be used in order to verify the transaction as an subsequent input.
 
 ==Deriving HD Keys==
 The implementation includes a HD (bip32) chain in order to derive dilithium based coin addresses. Each account is provided a master key which uses a standard "hd key path" method in order to provide derived keys for use with each user account.
 
-
+==Restrictions==
+The 

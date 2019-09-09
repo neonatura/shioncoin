@@ -40,6 +40,10 @@
 
 #define LTC_MAX_SIGOPS 20000
 
+#define LTC_MAX_SCRIPT_SIZE 10000
+
+#define LTC_MAX_SCRIPT_ELEMENT_SIZE 520
+
 #define LTC_MAX_DRIFT_TIME 7200 /* 2 hours */
 
 static const int LTC_PROTOCOL_VERSION = 70015;

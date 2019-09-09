@@ -189,6 +189,23 @@ bool CSignature::SignatureHash(CScript scriptCode, int sigver, uint256& hashRet)
     return (true);
 	}
 
+  if (sigver == SIGVERSION_WITNESS_V14) {
+    CWallet *wallet = GetWallet(ifaceIndex); 
+    CTxOut out;
+
+    if (!wallet->FillInputs(*tx, mapInputs)) {
+      return (false);
+    }
+
+    const CTxIn& in = tx->vin[nIn];
+    if (!tx->GetOutputFor(in, mapInputs, out)) {
+      return (false);
+}
+
+    hashRet = witness_v0_SignatureHash(scriptCode, *tx, nIn, nHashType, out.nValue);
+    return (true);
+	}
+
   if (nIn >= tx->vin.size()) {
     return (error(SHERR_INVAL, "SignatureHash: nIn out of range"));
   }
@@ -238,12 +255,23 @@ bool CSignature::CheckSig(cbuff vchSig, cbuff vchPubKey, CScript scriptCode, int
     }
   }
 #endif
-	ECKey key;
-	if (!key.SetPubKey(vchPubKey))
-		return false;
 
-	if (!key.Verify(sighash, vch)) {
-		return (error(SHERR_ACCESS, "CSignature.CheckSig: signature verification failure: \"%s\" [script: %s].", HexStr(vchSig.begin(), vchSig.end()).c_str(), scriptCode.ToString().c_str()));
+	if (sigver != SIGVERSION_WITNESS_V14) { /* ECDSA 256k1 */
+		ECKey key;
+		if (!key.SetPubKey(vchPubKey))
+			return false;
+
+		if (!key.Verify(sighash, vch)) {
+			return (error(SHERR_ACCESS, "CSignature.CheckSig: ecdsa signature verification failure: \"%s\" [script: %s].", HexStr(vchSig.begin(), vchSig.end()).c_str(), scriptCode.ToString().c_str()));
+		}
+	} else /* DILITHIUM-3 */ {
+		DIKey key;
+		if (!key.SetPubKey(vchPubKey))
+			return false;
+
+		if (!key.Verify(sighash, vch)) {
+			return (error(SHERR_ACCESS, "CSignature.CheckSig: dilithium signature verification failure: \"%s\" [script: %s].", HexStr(vchSig.begin(), vchSig.end()).c_str(), scriptCode.ToString().c_str()));
+		}
 	}
 
   return true;
@@ -318,6 +346,31 @@ bool CSignature::SignSignature(const CScript& fromPubKey)
 
     txnouttype subType;
     fSolved = fSolved && SignAddress(witnessscript, result, subType, SIGVERSION_WITNESS_V0) && subType != TX_SCRIPTHASH && subType != TX_WITNESS_V0_SCRIPTHASH && subType != TX_WITNESS_V0_KEYHASH; 
+    result.push_back(std::vector<unsigned char>(witnessscript.begin(), witnessscript.end()));
+    stack = result;
+
+    txin.scriptSig = CScript();
+    result.clear();
+	} else if (fSolved && whichType == TX_WITNESS_V14_KEYHASH) {
+    cbuff vchSig = ToByteVector(result[0]);
+    CScript witnessscript;
+    witnessscript << OP_DUP << OP_HASH160 << ToByteVector(result[0]) << OP_EQUALVERIFY << OP_CHECKSIG;
+
+    txnouttype subType;
+    fSolved = fSolved && SignAddress(witnessscript, result, subType, SIGVERSION_WITNESS_V14);
+
+    cbuff st2(result[0].begin(), result[0].end());
+
+    stack = result; /* signature */
+
+
+    txin.scriptSig = CScript();
+    result.clear();
+  } else if (fSolved && whichType == TX_WITNESS_V14_SCRIPTHASH) {
+    CScript witnessscript(result[0].begin(), result[0].end());
+
+    txnouttype subType;
+    fSolved = fSolved && SignAddress(witnessscript, result, subType, SIGVERSION_WITNESS_V14) && subType != TX_SCRIPTHASH && subType != TX_WITNESS_V14_SCRIPTHASH && subType != TX_WITNESS_V14_KEYHASH; 
     result.push_back(std::vector<unsigned char>(witnessscript.begin(), witnessscript.end()));
     stack = result;
 
@@ -432,21 +485,31 @@ bool CSignature::CreateSignature(cbuff& vchSig, const CKeyID& address, const CSc
       return false;
   }
 #endif
+
+#if 0
 	ECKey key;
 	if (!keystore.GetKey(address, key))
 		return (error(SHERR_ACCESS, "CreateSignature: error obtaining private key for CKeyID \"%s\".", address.GetHex().c_str()));
+
 	// Signing with uncompressed keys is disabled in witness scripts
 	if (sigversion == SIGVERSION_WITNESS_V0 && !key.IsCompressed()) {
 		return (error(SHERR_INVAL, "CreateSignature: generating witness program signature unsupportd for non-compressed key: script \"%s\" [sigver %d].", scriptCode.ToString().c_str(), sigversion));
 		return false;
 	}
+#endif
 
-	if (!key.Sign(hash, vchSig))
-		return (error(SHERR_ACCESS, "CreateSignature: error signing signature."));
+	CKey *key = keystore.GetKey(address);
+	if (key) {
+		if (sigversion == SIGVERSION_WITNESS_V0 && !key->IsCompressed()) {
+			return (error(SHERR_INVAL, "CreateSignature: generating witness program signature unsupportd for non-compressed eckey: script \"%s\" [sigver %d].", scriptCode.ToString().c_str(), sigversion));
+			return false;
+		}
+		if (!key->Sign(hash, vchSig))
+			return (error(SHERR_ACCESS, "CreateSignature: error signing signature."));
+	}
 
   vchSig.push_back((unsigned char)nHashType);
-
-  return true;
+  return (true);
 }
 
 static bool Sign1(CSignature *sig, const CKeyID& address, const CScript& scriptCode, cstack_t& ret, int sigversion)
@@ -552,19 +615,42 @@ bool CSignature::SignAddress(const CScript& scriptPubKey, cstack_t& ret, txnoutt
       return (true);
 
     case TX_WITNESS_V0_SCRIPTHASH:
-      CScript scriptSigRet;
-      const cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
-      cbuff vchHash;
-      uint160 hash160;
+			{
+				CScript scriptSigRet;
+				const cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
+				cbuff vchHash;
+				uint160 hash160;
 
-      RIPEMD160(&vch[0], vch.size(), &vchHash[0]);
-      memcpy(&hash160, &vchHash[0], sizeof(hash160));
+				RIPEMD160(&vch[0], vch.size(), &vchHash[0]);
+				memcpy(&hash160, &vchHash[0], sizeof(hash160));
 
-      if (!keystore.GetCScript(hash160, scriptSigRet))
-        return (error(SHERR_NOENT, "SignAddress: unknown script \"%s\".", hash160.GetHex().c_str()));
+				if (!keystore.GetCScript(hash160, scriptSigRet))
+					return (error(SHERR_NOENT, "SignAddress: unknown script \"%s\".", hash160.GetHex().c_str()));
 
-      ret.push_back(cbuff(scriptSigRet.begin(), scriptSigRet.end()));
+				ret.push_back(cbuff(scriptSigRet.begin(), scriptSigRet.end()));
+				return (true);
+			}
+
+    case TX_WITNESS_V14_KEYHASH:
+      ret.push_back(vSolutions[0]);
       return (true);
+
+    case TX_WITNESS_V14_SCRIPTHASH:
+			{
+				CScript scriptSigRet;
+				const cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
+				cbuff vchHash;
+				uint160 hash160;
+
+				RIPEMD160(&vch[0], vch.size(), &vchHash[0]);
+				memcpy(&hash160, &vchHash[0], sizeof(hash160));
+
+				if (!keystore.GetCScript(hash160, scriptSigRet))
+					return (error(SHERR_NOENT, "SignAddress: unknown script \"%s\".", hash160.GetHex().c_str()));
+
+				ret.push_back(cbuff(scriptSigRet.begin(), scriptSigRet.end()));
+				return (true);
+			}
   }
 
   return (false);

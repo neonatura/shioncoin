@@ -70,7 +70,9 @@ extern TEST_chainwork(CuTest*);
 extern TEST_orphan_block(CuTest*);
 extern TEST_algo_sha256d(CuTest*);
 extern TEST_txmempool_conflict(CuTest *);
-extern TEST_bip32(CuTest *);
+extern TEST_bip32_hdkey(CuTest *);
+extern TEST_sip33_hdkey(CuTest *);
+extern TEST_sip33_tx(CuTest*);
 
 
 extern void test_shcoind_init(void);
@@ -97,7 +99,8 @@ int main(int argc, char *argv[])
   test_shcoind_init();
 
   /* core tests */
-  SUITE_ADD_TEST(suite, TEST_bip32);
+  SUITE_ADD_TEST(suite, TEST_bip32_hdkey);
+  SUITE_ADD_TEST(suite, TEST_sip33_hdkey);
   SUITE_ADD_TEST(suite, TEST_coinaddr);
   SUITE_ADD_TEST(suite, TEST_bloom_create_insert_key);
   SUITE_ADD_TEST(suite, TEST_bloom_match);
@@ -118,6 +121,7 @@ int main(int argc, char *argv[])
 	SUITE_ADD_TEST(suite, TEST_algo_sha256d);
   SUITE_ADD_TEST(suite, TEST_identtx);
   SUITE_ADD_TEST(suite, TEST_matrixtx);
+#if 0
   SUITE_ADD_TEST(suite, TEST_signtx);
   SUITE_ADD_TEST(suite, TEST_cointx);
   SUITE_ADD_TEST(suite, TEST_aliastx);
@@ -139,6 +143,7 @@ int main(int argc, char *argv[])
 
   SUITE_ADD_TEST(suite, TEST_respend);
   SUITE_ADD_TEST(suite, TEST_orphan_block);
+#endif
 
 
   /* pre-finale */
@@ -151,6 +156,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_segwit_serializetx);
   SUITE_ADD_TEST(suite, TEST_seqlocktx); /* BIP68+ */
   SUITE_ADD_TEST(suite, TEST_bech32); /* BIP173 */
+  SUITE_ADD_TEST(suite, TEST_sip33_tx); /* SIP33 */
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);

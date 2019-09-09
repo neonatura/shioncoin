@@ -354,6 +354,8 @@ coin_iface_t ltc_coin_iface = {
   LTC_MAX_MONEY,
   LTC_COINBASE_MATURITY, 
   LTC_MAX_SIGOPS,
+	LTC_MAX_SCRIPT_SIZE,
+	LTC_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(ltc_init),
   COINF(ltc_bind),
   COINF(ltc_term),

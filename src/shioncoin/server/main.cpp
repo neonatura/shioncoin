@@ -24,9 +24,10 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
+#include "main.h"
 #include "db.h"
 #include "net.h"
-#include "init.h"
 #include "ui_interface.h"
 #include "block.h"
 #include "script.h"
@@ -234,6 +235,7 @@ unsigned int CTransaction::GetP2SHSigOpCount(const MapPrevTx& inputs) const
 }
 
 
+#if 0
 bool CheckDiskSpace(uint64 nAdditionalBytes)
 {
     uint64 nFreeBytesAvailable = filesystem::space(GetDataDir()).available;
@@ -250,6 +252,7 @@ bool CheckDiskSpace(uint64 nAdditionalBytes)
     }
     return true;
 }
+#endif
 
 FILE* OpenBlockFile(unsigned int nFile, unsigned int nBlockPos, const char* pszMode)
 {

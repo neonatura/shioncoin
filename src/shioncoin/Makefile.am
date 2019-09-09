@@ -6,6 +6,7 @@ check_PROGRAMS = test_shcoind
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/secp256k1/include \
+	-I$(top_srcdir)/src/libdi3 \
 	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include \
 	-I$(top_srcdir)/src/share-lib \
 	-I$(srcdir)/proto \
@@ -150,9 +151,9 @@ common_includes = \
 	server/rpcoffer_proto.h \
 	server/compat.h \
 	server/txidx.h \
-	server/init.h \
 	server/key.h \
 	server/eckey.h \
+	server/dikey.h \
 	server/keystore.h \
 	server/mruset.h \
 	server/netbase.h \
@@ -352,6 +353,7 @@ server_sources = \
 	server/txidx.cpp \
 	server/init.cpp \
 	server/eckey.cpp \
+	server/dikey.cpp \
 	server/keystore.cpp \
 	server/main.cpp \
 	server/script.cpp \
@@ -450,11 +452,13 @@ test_shcoind_SOURCES = \
 	test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp \
 	test/testcoin_algo.cpp \
-	test/testcoin_bip32.cpp
+	test/testcoin_bip32.cpp \
+	test/testcoin_sip33.cpp
 
 test_shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(top_builddir)/src/libcrypto/libcrypto.a
+	$(top_builddir)/src/libcrypto/libcrypto.a \
+	$(top_builddir)/src/libdi3/libdi3.a
 test_shcoind_CFLAGS = -g -O0 -DTEST_SHCOIND
 test_shcoind_CXXFLAGS = -g -O0 -DTEST_SHCOIND
 if STATIC_LIBSHARE

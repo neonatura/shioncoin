@@ -46,6 +46,10 @@
  */
 #define SHC_MAX_SIGOPS 32768
 
+#define SHC_MAX_SCRIPT_SIZE 60624
+
+#define SHC_MAX_SCRIPT_ELEMENT_SIZE 3368
+
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
 #define SHC_MAX_DRIFT_TIME 720 /* 12 minutes */
 

@@ -114,7 +114,7 @@ class CHDChain
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
  */
-class CWallet : public CCryptoKeyStore
+class CWallet : public CBasicKeyStore
 {
 	private:
 		CWalletDB *pwalletdbEncryption;
@@ -263,16 +263,25 @@ class CWallet : public CCryptoKeyStore
 #if 0
 		bool AddKey(const HDPrivKey& key);
 #endif
-		bool AddKey(const ECKey& key);
-		// Adds a key to the store, without saving it to disk (used by LoadWallet)
-		bool LoadKey(const ECKey& key) { return CCryptoKeyStore::AddKey(key); }
 
+		bool AddKey(const ECKey& key);
+
+		bool AddKey(const DIKey& key);
+
+		// Adds a key to the store, without saving it to disk (used by LoadWallet)
+		bool LoadKey(const ECKey& key) { return CBasicKeyStore::AddKey(key); }
+		//
+		// Adds a key to the store, without saving it to disk (used by LoadWallet)
+		bool LoadKey(const DIKey& key) { return CBasicKeyStore::AddKey(key); }
+
+#if 0
 		// Adds an encrypted key to the store, and saves it to disk.
 		bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
 		// Adds an encrypted key to the store, without saving it to disk (used by LoadWallet)
-		bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret) { return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret); }
+		bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret) { return CBasicKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret); }
+#endif
 		bool AddCScript(const CScript& redeemScript);
-		bool LoadCScript(const CScript& redeemScript) { return CCryptoKeyStore::AddCScript(redeemScript); }
+		bool LoadCScript(const CScript& redeemScript) { return CBasicKeyStore::AddCScript(redeemScript); }
 
 #if 0
 		bool Unlock(const SecureString& strWalletPassphrase);
@@ -526,6 +535,8 @@ class CWallet : public CCryptoKeyStore
 		bool HasArchTx(uint256 hash) const;
 
 		void DeriveNewECKey(string strAccount, ECKey& secret, bool internal);
+
+		void DeriveNewDIKey(string strAccount, DIKey& secret, bool internal);
 
 		bool LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata &meta);
 

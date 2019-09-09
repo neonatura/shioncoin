@@ -27,11 +27,8 @@
 #define __SERVER__TXCREATOR_H__
 
 #include "main.h"
-#include "key.h"
-#include "keystore.h"
+#include "wallet.h"
 #include "script.h"
-
-
 
 typedef set<pair<CWalletTx *,unsigned int> > coin_set;
 

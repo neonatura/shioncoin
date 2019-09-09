@@ -39,6 +39,10 @@
 
 #define TEST_MAX_SIGOPS 32768
 
+#define TEST_MAX_SCRIPT_SIZE 60624
+
+#define TEST_MAX_SCRIPT_ELEMENT_SIZE 3368
+
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
 #define TEST_MAX_DRIFT_TIME 1440 /* 24 minutes */ 
 

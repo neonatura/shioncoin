@@ -361,6 +361,8 @@ coin_iface_t testnet_coin_iface = {
   TESTNET_MAX_MONEY,
   TESTNET_COINBASE_MATURITY, 
   TESTNET_MAX_SIGOPS,
+	TESTNET_MAX_SCRIPT_SIZE,
+	TESTNET_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(testnet_init),
   COINF(testnet_bind),
   COINF(testnet_term),

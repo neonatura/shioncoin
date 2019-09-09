@@ -360,8 +360,6 @@ _TEST(coin_hdkey)
 
 		CPubKey t_pubkey2 = t_privkey.GetPubKey();
 if (t_pubkey.Raw().size() != 33 || t_pubkey2.Raw().size() != 33) {
-	fprintf(stderr, "DEBUG: TEST_coin_hdkey: t_pubkey2.Raw().size() = %d\n", t_pubkey2.Raw().size()); 
-	fprintf(stderr, "DEBUG: TEST_coin_hdkey: t_pubkey.Raw().size() = %d\n", t_pubkey.Raw().size()); 
 }
 		_TRUE(t_pubkey2.Raw() == t_pubkey.Raw());
 

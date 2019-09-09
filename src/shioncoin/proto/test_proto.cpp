@@ -227,6 +227,8 @@ coin_iface_t test_coin_iface = {
   TEST_MAX_MONEY,
   TEST_COINBASE_MATURITY, 
   TEST_MAX_SIGOPS,
+	TEST_MAX_SCRIPT_SIZE,
+	TEST_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(test_init),
   COINF(test_bind),
   COINF(test_term),
