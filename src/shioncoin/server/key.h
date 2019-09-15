@@ -145,6 +145,9 @@ class CKeyMetadata
 		static const int META_HD_KEY = (1 << 1);
 		static const int META_SEGWIT = (1 << 2);
 		static const int META_DILITHIUM = (1 << 3);
+		static const int META_STATIC = (1 << 4);
+		static const int META_INTERNAL = (1 << 5);
+
 		static const int STANDARD_META_FLAGS = META_HD_ENABLED;
 
 		unsigned int nFlag;

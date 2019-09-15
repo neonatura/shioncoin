@@ -36,13 +36,14 @@
 
 
 /* use segwit program, if available. */
-#define ACCADDRF_WITNESS (1 << 0)
+#define ACCADDRF_WITNESS CKeyMetadata::META_SEGWIT
 /* derived via hdkey, if available. */
-#define ACCADDRF_DERIVE (1 << 1)
+#define ACCADDRF_DERIVE CKeyMetadata::META_HD_KEY
 /* always the same address returned */
-#define ACCADDRF_STATIC (1 << 2)
-/* use extended account */
-#define ACCADDRF_STATIC (1 << 2)
+#define ACCADDRF_STATIC CKeyMetadata::META_STATIC
+/* permit dilithium signature */
+#define ACCADDRF_DILITHIUM CKeyMetadata::META_DILITHIUM
+#define ACCADDRF_INTERNAL CKeyMetadata::META_INTERNAL
 
 
 class CAccountCache
@@ -130,27 +131,44 @@ class CAccountCache
 
 		bool IsAddrUsed(const CPubKey& vchPubKey);
 
-		CCoinAddr GetStaticAddr(int type);
+//		CCoinAddr GetStaticAddr(int type);
 
-		CCoinAddr GetDynamicAddr(int type);
+//		CCoinAddr GetDynamicAddr(int type);
 
 		CCoinAddr GetDefaultAddr();
 
+		void SetDefaultAddr(const CPubKey& pubkey);
+
 		CCoinAddr GetAddr(int type);
 
-		void AddAddr(CCoinAddr pubkey, int type);
+		void SetAddr(int type, CCoinAddr pubkey);
 
-		CCoinAddr CreateNewAddr(int type);
+		void ResetAddr(int type);
 
-		CCoinAddr CreateAddr(int type);
+//		CCoinAddr CreateNewAddr(int type);
+
+//		CCoinAddr CreateAddr(int type);
 
 		CHDChain *GetHDChain();
 
-		void UpdateHDChain();
+		void UpdateAccount();
 
-#if 0
-		CPubKey GetMasterPubKey();
-#endif
+		void UpdateHDChain()
+		{
+			UpdateAccount();
+		}
+
+		bool GetPrimaryAddr(int type, CTxDestination& addrRet);
+
+		bool GetPrimaryPubKey(int type, CPubKey& pubkeyRet);
+
+		bool CreateNewAddr(CTxDestination& addrRet, int type, int flags);
+
+		bool CreateNewPubKey(CPubKey& addrRet, int flags);
+
+		void GetAddrDestination(const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0);
+
+		void SetAddrDestinations(const CKeyID& keyid, int nFlag = 0);
 
 };
 

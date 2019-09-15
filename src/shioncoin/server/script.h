@@ -300,9 +300,6 @@ enum opcodetype
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
 
-    OP_CHECKSIG_DILITHIUM = 0xc0,
-    OP_CHECKSIGVERIFY_DILITHIUM = 0xc1,
-
     /* tx extension operatives */
     OP_EXT_NEW = 0xf0,
     OP_EXT_ACTIVATE = 0xf1,

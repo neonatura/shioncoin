@@ -1,3 +1,38 @@
+2019-09-09  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP33
+
+	SIP33
+	Introduces the Dilithium (level 3) signature signing algorythm for use with shioncoin transactions.
+
+2019-09-03  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CKeyMetadata
+
+2019-09-01  Brian Burrell  <bburrell.brian@gmail.com>
+
+	BIP32
+
+2019-08-30  Brian Burrell  <bburrell.brian@gmail.com>
+
+	BIP32
+
+2019-08-27  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP32
+
+	ECKey
+
+	abstract CKey
+
+2019-08-23  Brian Burrell  <bburrell.brian@gmail.com>
+
+	DILITHIUM-3 A signature algorythm library.
+
+2019-08-19  Brian Burrell  <bburrell.brian@gmail.com>
+
+	disable eroneous services for unit runtime tests
+
 2019-08-13  Brian Burrell  <bburrell.brian@gmail.com>
 
 	v4.1

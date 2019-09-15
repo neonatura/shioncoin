@@ -563,7 +563,8 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	test/testcoin_bignum.cpp test/testcoin_hash.cpp \
 	test/testcoin_block.cpp test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp test/testcoin_algo.cpp \
-	test/testcoin_bip32.cpp test/testcoin_sip33.cpp
+	test/testcoin_bip32.cpp test/testcoin_sip33.cpp \
+	test/testcoin_account.cpp
 am__objects_13 = test_shcoind-shcoind_rpc.$(OBJEXT) \
 	test_shcoind-shcoind_error.$(OBJEXT) \
 	test_shcoind-shcoind_log.$(OBJEXT) \
@@ -724,7 +725,8 @@ am_test_shcoind_OBJECTS = $(am__objects_1) $(am__objects_13) \
 	test_shcoind-testcoin_bloom.$(OBJEXT) \
 	test_shcoind-testcoin_algo.$(OBJEXT) \
 	test_shcoind-testcoin_bip32.$(OBJEXT) \
-	test_shcoind-testcoin_sip33.$(OBJEXT)
+	test_shcoind-testcoin_sip33.$(OBJEXT) \
+	test_shcoind-testcoin_account.$(OBJEXT)
 test_shcoind_OBJECTS = $(am_test_shcoind_OBJECTS)
 test_shcoind_DEPENDENCIES =  \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
@@ -1506,7 +1508,8 @@ test_shcoind_SOURCES = \
 	test/testcoin_bloom.cpp \
 	test/testcoin_algo.cpp \
 	test/testcoin_bip32.cpp \
-	test/testcoin_sip33.cpp
+	test/testcoin_sip33.cpp \
+	test/testcoin_account.cpp
 
 test_shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
 	$(top_builddir)/src/libcrypto/libcrypto.a \
@@ -1935,6 +1938,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-test_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-test_shcoind.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-test_wallet.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_account.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_algo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_bignum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_bip32.Po@am__quote@
@@ -7004,6 +7008,20 @@ test_shcoind-testcoin_sip33.obj: test/testcoin_sip33.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip33.cpp' object='test_shcoind-testcoin_sip33.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip33.obj `if test -f 'test/testcoin_sip33.cpp'; then $(CYGPATH_W) 'test/testcoin_sip33.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip33.cpp'; fi`
+
+test_shcoind-testcoin_account.o: test/testcoin_account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_account.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_account.Tpo -c -o test_shcoind-testcoin_account.o `test -f 'test/testcoin_account.cpp' || echo '$(srcdir)/'`test/testcoin_account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_account.Tpo $(DEPDIR)/test_shcoind-testcoin_account.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_account.cpp' object='test_shcoind-testcoin_account.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_account.o `test -f 'test/testcoin_account.cpp' || echo '$(srcdir)/'`test/testcoin_account.cpp
+
+test_shcoind-testcoin_account.obj: test/testcoin_account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_account.obj -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_account.Tpo -c -o test_shcoind-testcoin_account.obj `if test -f 'test/testcoin_account.cpp'; then $(CYGPATH_W) 'test/testcoin_account.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_account.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_account.Tpo $(DEPDIR)/test_shcoind-testcoin_account.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_account.cpp' object='test_shcoind-testcoin_account.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_account.obj `if test -f 'test/testcoin_account.cpp'; then $(CYGPATH_W) 'test/testcoin_account.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_account.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

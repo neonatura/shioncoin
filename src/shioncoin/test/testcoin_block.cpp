@@ -491,7 +491,6 @@ _TEST(cointx)
 	for (int i = 0; i < vErase.size(); i++) {
 		wallet->mapWallet.erase(vErase[i]);
 	}
-//fprintf(stderr, "DEBUG: TEST: COINTX: erased x%d arch tx's.\n", vErase.size()); 
 }
 
 _TEST(aliastx)
@@ -1039,7 +1038,6 @@ _TEST(offertx)
   /* offer generate operation */
   CWalletTx gen_wtx;
   err = generate_offer_tx(iface, strLabel, hashOffer, gen_wtx);
-if (err) fprintf(stderr, "DEBUG: %d = generate_offer_tx()\n", err);
   _TRUE(0 == err);
   uint160 hashGen = gen_wtx.offer.GetHash();
   _TRUE(gen_wtx.CheckTransaction(TEST_COIN_IFACE));
@@ -1812,7 +1810,6 @@ _TEST(segwit)
   CTxCreator wtx1(wallet, strAccount);
   wtx1.AddOutput(extAddr.Get(), COIN);
   ok = wtx1.Send();
-  strError = wtx1.GetError();
   _TRUE(ok);
   _TRUE(strError == "");
   _TRUE(wtx1.CheckTransaction(TEST_COIN_IFACE)); /* .. */
@@ -1839,10 +1836,12 @@ _TEST(segwit)
 		CCoinAddr witAddr(TEST_COIN_IFACE);
 		_TRUE(wallet->GetWitnessAddress(extAddr, witAddr) == true);
 		CTxCreator wit_wtx(wallet, strAccount);
-		wit_wtx.AddOutput(witAddr.Get(), COIN / 4);
+		ok = wit_wtx.AddOutput(witAddr.Get(), COIN / 4);
+		if (!ok) fprintf(stderr, "DEBUG: TEST: SEGWIT: AddOutput \"%s\": %s\n", wit_wtx.GetError().c_str(), wit_wtx.ToString(TEST_COIN_IFACE).c_str());
+		_TRUE(ok);
 		ok = wit_wtx.Send();
 		strError = wit_wtx.GetError();
-		if (strError != "") fprintf(stderr, "DEBUG: strerror = \"%s\"\n", strError.c_str());
+		if (strError != "") fprintf(stderr, "DEBUG: TEST: SEGWIT: Send \"%s\": %s\n", strError.c_str(), wit_wtx.ToString(TEST_COIN_IFACE).c_str());
 		_TRUE(ok == true);
 		_TRUE(strError == "");
 		_TRUE(wit_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
@@ -2454,8 +2453,9 @@ _TEST(bolo)
 	CTxCreator s_wtx(wallet, "");
 	CScript script;
 	script << OP_RETURN << OP_0;
-	s_wtx.AddOutput(script, 1000);
-	_TRUE(s_wtx.Send());
+	_TRUE(s_wtx.AddOutput(script, 1000));
+	bool fOk = s_wtx.Send();
+	_TRUE(fOk);
 	int height;
 	uint256 hBlock;
   {

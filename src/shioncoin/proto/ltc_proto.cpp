@@ -195,7 +195,7 @@ static CPubKey ltc_GetMainAccountPubKey(CWallet *wallet)
       ret_key = reservekey.GetReservedKey();
       reservekey.KeepKey();
 #endif
-			ret_key = wallet->GenerateNewKey();
+			ret_key = wallet->GenerateNewECKey();
     } else {
       CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
       Debug("(ltc) GetMainAccountPubKey: using '%s' for mining address.",

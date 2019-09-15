@@ -124,6 +124,15 @@ public:
                 mi++;
             }
         }
+        {
+            LOCK(cs_KeyStore);
+            DIKeyMap::const_iterator mi = mapDIKeys.begin();
+            while (mi != mapDIKeys.end())
+            {
+                setAddress.insert((*mi).first);
+                mi++;
+            }
+        }
     }
 #if 0
     bool GetKey(const CKeyID &address, HDPrivKey &keyOut) const

@@ -165,6 +165,12 @@ static opt_t _option_table[] = {
 		"A hexadecimal color code to enable stratum mining for the COLOR coin interface." },
 #endif
 
+	{ OPT_HDKEY, OPT_TYPE_BOOL, 0, NULL,
+		"Derive new wallet keys using a hierarhchically deterministic algorythm." },
+
+	{ OPT_DILITHIUM, OPT_TYPE_BOOL, 0, NULL,
+		"Use the Dilithium signing algorythm for new coin addresses." },
+
 	/* end of the line */
 	{ "", OPT_TYPE_NULL, 0, "" },
 

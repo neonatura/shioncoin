@@ -196,11 +196,9 @@ class CCoinSecret : public CBase58Data
 
 		void SetSecret(int ifaceIndex, const CSecret& vchSecret, bool fCompressed)
 		{ 
-//			int PRIVKEY_ADDRESS = (CCoinAddr::GetCoinAddrVersion(ifaceIndex) + 128);
 			int PRIVKEY_ADDRESS = (BASE58_PUBKEY_ADDRESS(GetCoinByIndex(ifaceIndex)) + 128);
-			assert(vchSecret.size() == 32);
+//			assert(vchSecret.size() == 32);
 			SetData(PRIVKEY_ADDRESS, &vchSecret[0], vchSecret.size());
-			//SetData(fTestNet ? PRIVKEY_ADDRESS_TEST : PRIVKEY_ADDRESS, &vchSecret[0], vchSecret.size());
 			if (fCompressed)
 				vchData.push_back(1);
 		}
@@ -208,10 +206,19 @@ class CCoinSecret : public CBase58Data
 		CSecret GetSecret(bool &fCompressedOut)
 		{
 			CSecret vchSecret;
-			vchSecret.resize(32);
-			memcpy(&vchSecret[0], &vchData[0], 32);
-			fCompressedOut = vchData.size() == 33;
-			return vchSecret;
+
+			if (vchData.size() == 32) {
+				fCompressedOut = false;
+				vchSecret = CSecret(vchData.begin(), vchData.end());
+			} else if (vchData.size() == 33) {
+				fCompressedOut = true;
+				vchSecret = CSecret(vchData.begin(), vchData.end() - 1);
+			} else if (vchData.size() == 97) {
+				fCompressedOut = true;
+				vchSecret = CSecret(vchData.begin(), vchData.end() - 1);
+			}
+
+			return (vchSecret);
 		}
 
 		bool SetString(const char* pszSecret);
@@ -220,21 +227,6 @@ class CCoinSecret : public CBase58Data
 
 		bool IsValid() const
 		{
-#if 0
-			bool fExpectTestNet = false;
-			switch(nVersion)
-			{
-				case PRIVKEY_ADDRESS:
-					break;
-
-				case PRIVKEY_ADDRESS_TEST:
-					fExpectTestNet = true;
-					break;
-
-				default:
-					return false;
-			}
-#endif
 
 			if (vchVersion.size() != 4) {
 				if (vchVersion.size() != 1)
@@ -245,9 +237,11 @@ class CCoinSecret : public CBase58Data
 					return (false);
 			}
 
-			return (vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1));
-
-			//return fExpectTestNet == fTestNet && (vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1));
+			return (
+					vchData.size() == 32 || /* ecdsa */ 
+					(vchData.size() == 33 && vchData[32] == 1) || /* comp. ecdsa */
+					(vchData.size() == 97 && vchData[96] == 1) /* dilithium */
+					);
 		}
 
 

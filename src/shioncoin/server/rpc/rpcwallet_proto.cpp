@@ -246,95 +246,88 @@ Value rpc_wallet_export(CIface *iface, const Array& params, bool fStratum)
 	shjson_t *json = shjson_init(NULL);
 	shjson_t *tree = shjson_array_add(json, iface->name);
 	shjson_t *node;
+	bool fCompressed;
 	FILE *fl;
 	char *text;
 
-	CWallet *pwalletMain = GetWallet(iface);
+	CWallet *wallet = GetWallet(iface);
 
 	std::set<CKeyID> keys;
-	pwalletMain->GetKeys(keys);
-	BOOST_FOREACH(const CKeyID& key, keys) {
-		if (pwalletMain->mapAddressBook.count(key) == 0) { /* loner */
+	wallet->GetKeys(keys);
+	BOOST_FOREACH(const CKeyID& keyid, keys) {
+		if (wallet->mapAddressBook.count(keyid) != 0) 
+			continue;
 
-			/* todo: try again w/ txdb removed */
-#if 0
-			/* TODO: commented out; takes too long with large wallet */
-			/* was this key ever used. */
-			int nTxInput = 0;
-			int nTxSpent = 0;
-			BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet) {
-				const CWalletTx& tx = item.second;
-				int i;
-				for (i = 0; i < tx.vout.size(); i++) {
-					CTxDestination dest;
-					if (!ExtractDestination(tx.vout[i].scriptPubKey, dest))
-						continue;
-					CKeyID k1;
-					CCoinAddr(ifaceIndex, dest).GetKeyID(k1);
-					if (k1 == key) {
-						if (tx.IsSpent(i)) {
-							nTxSpent++;
-						}
-						nTxInput++;
-					}
-				}
-			}
-			if (nTxInput == 0 || (nTxSpent >= nTxInput))
-				continue; /* never used or spent */
-#endif
+		CCoinAddr addr(ifaceIndex, keyid);
+		CKey *key = wallet->GetKey(keyid);
+		if (!key)
+			continue;
 
-			/* pub key */
-			CCoinAddr addr(ifaceIndex, key);
+		CSecret vchSecret = key->GetSecret(fCompressed);
+		CCoinSecret csec(ifaceIndex, vchSecret, fCompressed);
 
-			/* priv key */
-			CSecret vchSecret;
-			bool fCompressed;
-			if (!pwalletMain->GetSecret(key, vchSecret, fCompressed))
-				continue;
-			CCoinSecret csec(ifaceIndex, vchSecret, fCompressed);
-			string strKey = csec.ToString();
-
-			node = shjson_obj_add(tree, NULL);
-			shjson_str_add(node, "key", (char *)strKey.c_str()); 
-			shjson_str_add(node, "label", "coinbase");
-			shjson_str_add(node, "addr", (char *)addr.ToString().c_str());
-			//      shjson_str_add(node, "phrase", (char *)EncodeMnemonicSecret(csec).c_str());
-			//      shjson_num_add(node, "inputs", (nTxInput - nTxSpent));
-		}
+		node = shjson_obj_add(tree, NULL);
+		shjson_str_add(node, "key", (char *)csec.ToString().c_str()); 
+		shjson_str_add(node, "label", "coinbase");
+		shjson_str_add(node, "addr", (char *)addr.ToString().c_str());
 	}
 
-
-	map<string, int64> mapAccountBalances;
-	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, pwalletMain->mapAddressBook) {
+	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
 		CTxDestination dest = entry.first;
 		string strLabel = entry.second;
 
-		if (!IsMine(*pwalletMain, dest))
-			continue;
-
-#if 0
-		CCoinAddr address;
-		if (!address.SetString(strLabel))
-			continue;//throw JSONRPCError(-5, "Invalid address");
-#endif
-
 		CCoinAddr addr(ifaceIndex, dest);
 		CKeyID keyID;
-		if (!addr.GetKeyID(keyID))
-			continue;//throw JSONRPCError(-3, "Address does not refer to a key");
+		if (!addr.GetKeyID(keyID)) {
+			CScriptID scriptID;
+			if (!addr.GetScriptID(scriptID))
+				continue; /* something else */
 
-		CSecret vchSecret;
-		bool fCompressed;
-		if (!pwalletMain->GetSecret(keyID, vchSecret, fCompressed))
-			continue;//throw JSONRPCError(-4,"Private key for address " + strLabel + " is not known");
+			CCoinAddr addr(wallet->ifaceIndex, scriptID);
+			CScript script;
+			if (!wallet->GetCScript(scriptID, script))
+				continue;
+
+			node = shjson_obj_add(tree, NULL);
+			shjson_str_add(node, "script", (char *)HexStr(script).c_str());
+			shjson_str_add(node, "label", (char *)strLabel.c_str());
+			shjson_str_add(node, "addr", (char *)addr.ToString().c_str());
+			continue; /* onward yo */
+		}
+
+		CKey *key = wallet->GetKey(keyID);
+		if (!key)
+			continue;
+
+		CSecret vchSecret = key->GetSecret(fCompressed);;
 		CCoinSecret csec(ifaceIndex, vchSecret, fCompressed);
-		string strKey = csec.ToString();
 
 		node = shjson_obj_add(tree, NULL);
-		shjson_str_add(node, "key", (char *)strKey.c_str()); 
+		shjson_str_add(node, "key", (char *)csec.ToString().c_str()); 
 		shjson_str_add(node, "label", (char *)strLabel.c_str());
 		shjson_str_add(node, "addr", (char *)addr.ToString().c_str());
-		//    shjson_str_add(node, "phrase", (char *)EncodeMnemonicSecret(csec).c_str());
+
+		CAccountCache *acc = wallet->GetAccount(strLabel);
+		if (acc) {
+			const CPubKey& pubkey = key->GetPubKey();
+			CKeyMetadata *meta = &key->meta;
+
+			if (meta->nCreateTime != 0)
+				shjson_num_add(node, "create", meta->nCreateTime);
+			if (meta->nFlag != 0)
+				shjson_num_add(node, "flag", meta->nFlag);
+			if (acc->account.vchPubKey == pubkey) {
+				shjson_bool_add(node, "default", TRUE);
+			}
+			CHDChain *chain = acc->GetHDChain();
+			if (chain) {
+				if (chain->masterKeyID == pubkey.GetID()) {
+					shjson_bool_add(node, "master", TRUE);
+					shjson_num_add(node, "hdindex", chain->nExternalChainCounter);
+				}
+			}
+		}
+
 	}
 
 	text = shjson_print(json);
@@ -603,18 +596,19 @@ Value rpc_wallet_cscript(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 {
+
 	if (fStratum)
 		throw runtime_error("unsupported operation");
-	CWallet *pwalletMain = GetWallet(iface);
+	if (params.size() != 1)
+		throw runtime_error("wallet.import");
+
+	CWallet *wallet = GetWallet(iface);
 	int ifaceIndex = GetCoinIndex(iface);
-
-	if (params.size() != 1) {
-		throw runtime_error(
-				"wallet.import <path>\n"
-				"Import a JSON wallet file.");
-	}
-
 	std::string strPath = params[0].get_str();
+	char *script_hex;
+	time_t nMinTime = 0;
+
+	wallet->MarkDirty();
 
 	{
 		shjson_t *json;
@@ -626,6 +620,8 @@ Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 		char label[256];
 		char addr[256];
 		char key[256];
+		uint32_t nFlag;
+		time_t nCreateTime;
 
 		memset(label, 0, sizeof(label));
 		memset(addr, 0, sizeof(addr));
@@ -664,6 +660,18 @@ Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 				strncpy(label, shjson_astr(node, "label", ""), sizeof(label)-1);
 				strncpy(addr, shjson_astr(node, "addr", ""), sizeof(addr)-1);
 				strncpy(key, shjson_astr(node, "key", ""), sizeof(key)-1);
+				nFlag = (uint32_t)shjson_num(node, "flag", 0);
+				nCreateTime = (time_t)shjson_num(node, "create", 0);
+				script_hex = shjson_str(node, "script", NULL);
+
+				if (script_hex) {
+
+					/* .. */
+
+					free(script_hex);
+					continue;
+				}
+
 				if (!*key) continue;
 
 				string strSecret(key);
@@ -675,67 +683,99 @@ Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 					continue;// throw JSONRPCError(-5,"Invalid private key");
 				}
 
-				ECKey key;
 				bool fCompressed;
 				CSecret secret = vchSecret.GetSecret(fCompressed);
-				key.SetSecret(secret, fCompressed);
-				CKeyID vchAddress = key.GetPubKey().GetID();
-
 
 				{
-					LOCK2(cs_main, pwalletMain->cs_wallet);
+					LOCK2(cs_main, wallet->cs_wallet);
 
-					if (pwalletMain->HaveKey(vchAddress)) {
-						/* pubkey has already been assigned to an account. */
+					CKey *key = NULL;
+					CKeyID vchAddress;
+
+					if (secret.size() == 96) {
+						/* dilithium */
+						static DIKey dikey;
+						dikey.SetSecret(secret, fCompressed);
+
+						vchAddress = dikey.GetPubKey().GetID();
+						if (wallet->HaveKey(vchAddress))
+							continue;
+
+						dikey.meta.nFlag |= nFlag;
+						dikey.meta.nFlag |= CKeyMetadata::META_DILITHIUM;
+						dikey.meta.nCreateTime = nCreateTime;
+						if (!wallet->AddKey(dikey))
+							continue; 
+
+						key = &dikey;
+					} else {
+						/* ecdsa */
+						static ECKey eckey;
+						eckey.SetSecret(secret, fCompressed);
+
+						vchAddress = eckey.GetPubKey().GetID();
+						if (wallet->HaveKey(vchAddress))
+							continue;
+
+						eckey.meta.nFlag |= nFlag;
+						eckey.meta.nCreateTime = nCreateTime;
+						if (!wallet->AddKey(eckey))
+							continue; 
+
+						key = &eckey;
+					}
+
+					if (nMinTime == 0 || nMinTime > nCreateTime)
+						nMinTime = (time_t)nCreateTime;
+
+					/* redundant */
+					wallet->SetAddressBookName(vchAddress, strLabel);
+
+					CAccountCache *acc = wallet->GetAccount(strLabel); 
+					if (!acc)
 						continue;
-					}
 
-					if (!pwalletMain->AddKey(key)) {
-						//JSONRPCError(-4,"Error adding key to wallet"); 
-						continue; 
-					}
+					/* generate all the coin address variants for this pubkey addr. */
+					acc->SetAddrDestinations(vchAddress, nFlag);
 
-					pwalletMain->MarkDirty();
-					pwalletMain->SetAddressBookName(vchAddress, strLabel);
+					if (shjson_bool(node, "default", FALSE)) {
+						acc->SetDefaultAddr(key->GetPubKey());
+					} else if (shjson_bool(node, "master", FALSE)) {
+						int hdindex = shjson_num(node, "hdindex", 0);
+						if (acc->account.chain.masterKeyID != vchAddress) {
+							acc->account.chain.SetNull();
+							acc->account.chain.masterKeyID = vchAddress;
+							acc->account.chain.nExternalChainCounter = hdindex;
+							acc->UpdateAccount();
+							/* TODO: generate 0 .. hdindex */
+						}
+					}
 				}
-			}
+
+			} /* for(node) */
 		}
 
 		shjson_free(&json);
 	}
-	pwalletMain->ScanForWalletTransactions(GetGenesisBlockIndex(iface), true);
-	pwalletMain->ReacceptWalletTransactions();
 
-#if 0
-	string strSecret = params[0].get_str();
-	string strLabel = "";
-	//  if (params.size() > 1)
-	strLabel = params[1].get_str();
-	CCoinSecret vchSecret;
-	bool fGood = vchSecret.SetString(strSecret);
-
-	if (!fGood) throw JSONRPCError(-5,"Invalid private key");
-
-	CKey key;
-	bool fCompressed;
-	CSecret secret = vchSecret.GetSecret(fCompressed);
-	key.SetSecret(secret, fCompressed);
-	CKeyID vchAddress = key.GetPubKey().GetID();
-	{
-		LOCK2(cs_main, pwalletMain->cs_wallet);
-
-		pwalletMain->MarkDirty();
-		pwalletMain->SetAddressBookName(vchAddress, strLabel);
-
-		if (!pwalletMain->AddKey(key))
-			throw JSONRPCError(-4,"Error adding key to wallet");
-
-		pwalletMain->ScanForWalletTransactions(GetGenesisBlockIndex(iface), true);
-		pwalletMain->ReacceptWalletTransactions();
+	CBlockIndex *pindexStart = NULL;
+	if (nMinTime == 0) {
+		/* scan from beginning of chain */
+		pindexStart = GetGenesisBlockIndex(iface);
+	} else {
+		/* rewind to minimum time */
+		pindexStart = GetBestBlockIndex(iface);
+		while (pindexStart && pindexStart->pprev &&
+				pindexStart->nTime > nMinTime)
+			pindexStart = pindexStart->pprev;
 	}
-#endif
+	wallet->ScanForWalletTransactions(pindexStart, true);
+	wallet->ReacceptWalletTransactions();
 
-	return Value::null;
+	Object ret;
+	ret.push_back(Pair("mincreate", (uint64_t)pindexStart->nTime));
+
+	return ret;
 }
 
 Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum)

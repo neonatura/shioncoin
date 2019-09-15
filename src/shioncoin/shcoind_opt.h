@@ -63,6 +63,9 @@ extern "C" {
 #define OPT_STRATUM_TESTNET "stratum-testnet"
 #define OPT_STRATUM_COLOR "stratum-color"
 
+#define OPT_HDKEY "hdkey"
+#define OPT_DILITHIUM "dilithium"
+
 /* PoW Algorthm. */
 #define OPT_STRATUM_SHA256D "stratum-sha256d"
 #define OPT_STRATUM_SHA256D_PORT "stratum-sha256d-port"

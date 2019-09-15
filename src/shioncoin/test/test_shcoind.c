@@ -28,7 +28,6 @@
 #include "test_proto.h"
 #include "stratum/stratum.h"
 
-
 user_t *client_list;
 
 extern TEST_jsonencap(CuTest*);
@@ -73,6 +72,7 @@ extern TEST_txmempool_conflict(CuTest *);
 extern TEST_bip32_hdkey(CuTest *);
 extern TEST_sip33_hdkey(CuTest *);
 extern TEST_sip33_tx(CuTest*);
+extern TEST_account_cache(CuTest*);
 
 
 extern void test_shcoind_init(void);
@@ -121,7 +121,6 @@ int main(int argc, char *argv[])
 	SUITE_ADD_TEST(suite, TEST_algo_sha256d);
   SUITE_ADD_TEST(suite, TEST_identtx);
   SUITE_ADD_TEST(suite, TEST_matrixtx);
-#if 0
   SUITE_ADD_TEST(suite, TEST_signtx);
   SUITE_ADD_TEST(suite, TEST_cointx);
   SUITE_ADD_TEST(suite, TEST_aliastx);
@@ -143,7 +142,6 @@ int main(int argc, char *argv[])
 
   SUITE_ADD_TEST(suite, TEST_respend);
   SUITE_ADD_TEST(suite, TEST_orphan_block);
-#endif
 
 
   /* pre-finale */
@@ -157,6 +155,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_seqlocktx); /* BIP68+ */
   SUITE_ADD_TEST(suite, TEST_bech32); /* BIP173 */
   SUITE_ADD_TEST(suite, TEST_sip33_tx); /* SIP33 */
+  SUITE_ADD_TEST(suite, TEST_account_cache);
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);

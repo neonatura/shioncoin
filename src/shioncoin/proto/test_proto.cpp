@@ -111,7 +111,7 @@ static CPubKey test_GetMainAccountPubKey(CWallet *wallet)
 	if (!ret_key.IsValid()) {
 		GetAccountAddress(wallet, strAccount, false);
 
-		ret_key = wallet->GenerateNewKey(true);
+		ret_key = wallet->GenerateNewECKey(true);
 		if (!ret_key.IsValid()) {
 			ret_key = GetAccountPubKey(wallet, strAccount);
 		} else {

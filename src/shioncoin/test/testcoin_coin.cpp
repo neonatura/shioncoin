@@ -493,16 +493,16 @@ _TEST(coin_spendall_segwit)
   strError = wallet->SendMoney(strFromAcc, scriptPubKey, nValue, wtx);
 if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall_segwit: %s\n", strError.c_str()); } 
   _TRUE(strError == "");
-  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
 
   _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-  {
+  for (int i = 0; i < 2; i++) {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
   _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
 
 }
 

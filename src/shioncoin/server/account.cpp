@@ -42,19 +42,19 @@ static const char *_pubkey_tag_table[MAX_ACCADDR] = {
 	"change",
 	"exec",
 	"hdkey",
-	"segwit",
 	"ext",
-	"notary"
+	"notary",
+	"miner"
 };
 
 static int _account_address_flags[MAX_ACCADDR] = {
-	ACCADDRF_WITNESS | ACCADDRF_DERIVE, /* Recv */
+	ACCADDRF_WITNESS | ACCADDRF_DERIVE | ACCADDRF_DILITHIUM, /* Recv */
 	ACCADDRF_WITNESS | ACCADDRF_DERIVE, /* Change */
-	ACCADDRF_STATIC | ACCADDRF_DERIVE, /* Exec */
+	ACCADDRF_STATIC, /* Exec */
 	ACCADDRF_STATIC, /* HDKey (master) */
-	ACCADDRF_WITNESS, /* SegWit (Recv) */
 	ACCADDRF_DERIVE, /* Ext */
 	ACCADDRF_STATIC, /* Notary */
+	ACCADDRF_STATIC, /* Miner */
 };
 #define IS_ACCOUNT(type, flag) \
 	(_account_address_flags[(type)] & (flag))
@@ -107,6 +107,7 @@ int GetPubKeyMode(const char *tag)
 	return (-1);
 }
 
+#if 0
 CCoinAddr CAccountCache::CreateAddr(int type)
 {
 	CCoinAddr addr(wallet->ifaceIndex, CNoDestination());
@@ -118,11 +119,13 @@ CCoinAddr CAccountCache::CreateAddr(int type)
 	wallet->GetMergedPubKey(strAccount, GetPubKeyTag(type), pubkey);
 
 	addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
-	AddAddr(addr, type);
+	SetAddr(type, addr);
 
 	return (addr);
 }
+#endif
 
+#if 0
 CCoinAddr CAccountCache::CreateNewAddr(int type)
 {
 	CCoinAddr addr(wallet->ifaceIndex, CNoDestination());
@@ -136,8 +139,9 @@ CCoinAddr CAccountCache::CreateNewAddr(int type)
 
 	return (addr);
 }
+#endif
 
-void CAccountCache::AddAddr(CCoinAddr addr, int type)
+void CAccountCache::SetAddr(int type, CCoinAddr addr)
 {
 
 	if (type < 0 || type >= MAX_ACCADDR)
@@ -149,15 +153,65 @@ void CAccountCache::AddAddr(CCoinAddr addr, int type)
 	vAddr[type] = addr;
 }
 
+void CAccountCache::ResetAddr(int type)
+{
+	CCoinAddr null_addr(wallet->ifaceIndex);
+
+	if (type < 0 || type >= MAX_ACCADDR)
+		return;
+
+	vAddr[type] = null_addr;
+}
+
 CCoinAddr CAccountCache::GetAddr(int type)
 {
-	CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
 	static CPubKey null_key;
+	CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
 	CCoinAddr addr(wallet->ifaceIndex);
 
 	if (type < 0 || type >= MAX_ACCADDR)
 		return (addr); /* invalid */
 
+	addr = vAddr[type];
+	if (addr.IsValid()) {
+		/* last addr */
+		if (IS_ACCOUNT(type, ACCADDRF_STATIC)) {
+			/* only dispences a single coin address. */
+			return (addr);
+		}
+		int flags = 0;
+		CKeyID keyid;
+		if (addr.GetKeyID(keyid)) {
+			CKeyMetadata *meta = wallet->GetKeyMetadata(keyid);
+			flags = meta->nFlag;
+		}
+		if (!(flags & ACCADDRF_INTERNAL) && !IsAddrUsed(addr)) {
+			/* this is not an internal use address and it has not been used yet. */
+			return (addr);
+		}
+	}
+
+	if (IS_ACCOUNT(type, ACCADDRF_STATIC)) {
+		CTxDestination dest;
+		/* primary address for type. */
+		if (GetPrimaryAddr(type, dest))
+			addr = CCoinAddr(wallet->ifaceIndex, dest); 
+	} else {
+		CTxDestination dest;
+		/* derived/generated address. */
+		if (CreateNewAddr(dest, type, 0))
+			addr = CCoinAddr(wallet->ifaceIndex, dest);
+	}
+	if (addr.IsValid()) {
+		SetAddr(type, addr);
+		vAddr[type].nAccessTime = time(NULL);
+	}
+
+
+	return (addr);
+
+
+#if 0
 	bool fOk = false;
 	bool fWitness = true;
 	addr = vAddr[type];
@@ -202,6 +256,7 @@ CCoinAddr CAccountCache::GetAddr(int type)
 	vAddr[type] = addr;
 	vAddr[type].nAccessTime = time(NULL);
 	return (addr);
+#endif
 }
 
 CCoinAddr CAccountCache::GetDefaultAddr()
@@ -209,6 +264,28 @@ CCoinAddr CAccountCache::GetDefaultAddr()
 	return (CCoinAddr(wallet->ifaceIndex, account.vchPubKey.GetID()));
 }
 
+void CAccountCache::SetDefaultAddr(const CPubKey& pubkey)
+{
+
+	if (!pubkey.IsValid())
+		return; /* nerp */
+
+	if (pubkey == account.vchPubKey)
+		return; /* done */
+
+	account.vchPubKey = pubkey;
+
+	{ /* save to wallet */
+		LOCK(wallet->cs_wallet);
+		CWalletDB walletdb(wallet->strWalletFile);
+		walletdb.WriteAccount(strAccount, account);
+		walletdb.Close();
+	}
+
+}
+
+
+#if 0
 CCoinAddr CAccountCache::GetDynamicAddr(int type)
 {
 	CCoinAddr addr;
@@ -238,6 +315,7 @@ CCoinAddr CAccountCache::GetStaticAddr(int type)
 
 	return (addr);
 }
+#endif
 
 bool CAccountCache::IsAddrUsed(const CCoinAddr& addr)
 {
@@ -246,21 +324,14 @@ bool CAccountCache::IsAddrUsed(const CCoinAddr& addr)
 	if (!wallet)
 		return (false);
 
-	/* check if the current key has been used */
-	CKeyID keyID;
-	if (!addr.GetKeyID(keyID))
-		return (false);
-
-	CScript scriptPubKey;
-	scriptPubKey.SetDestination(keyID);
-
+	CScript script;
+	script.SetDestination(addr.Get());
 	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
 			it != wallet->mapWallet.end();
-			++it)
-	{
+			++it) {
 		const CWalletTx& wtx = (*it).second;
 		BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
-			if (txout.scriptPubKey == scriptPubKey) {
+			if (txout.scriptPubKey == script) {
 				bKeyUsed = true;
 				break;
 			}
@@ -278,22 +349,35 @@ bool CAccountCache::IsAddrUsed(const CPubKey& vchPubKey)
 		return (false);
 
 	/* check if the current key has been used */
-	CScript scriptPubKey;
-	scriptPubKey.SetDestination(vchPubKey.GetID());
-	CScript cbPubKey;
-	cbPubKey << vchPubKey << OP_CHECKSIG;
+	CKey *key = wallet->GetKey(vchPubKey.GetID());
+	if (!key)
+		return (false); /* unknown */
+
+	const CKeyID& keyid = vchPubKey.GetID();
+	vector<CTxDestination> vDest;
+	GetAddrDestination(keyid, vDest, key->meta.nFlag);
+
+	vector<CScript> vScript;
+	BOOST_FOREACH(const CTxDestination& dest, vDest) {
+		CScript script;
+		script.SetDestination(dest);
+		vScript.push_back(script);
+	}
 
 	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
-			it != wallet->mapWallet.end() && vchPubKey.IsValid();
+			it != wallet->mapWallet.end();
 			++it)
 	{
 		const CWalletTx& wtx = (*it).second;
 		BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
-			if (txout.scriptPubKey == scriptPubKey ||
-					txout.scriptPubKey == cbPubKey) {
-				bKeyUsed = true;
-				break;
+			BOOST_FOREACH(const CScript& scriptPubKey, vScript) {
+				if (txout.scriptPubKey == scriptPubKey) {
+					bKeyUsed = true;
+					break;
+				}
 			}
+			if (bKeyUsed)
+				break;
 		}
 	}
 
@@ -306,6 +390,7 @@ bool CAccountCache::IsAddrUsed(const CPubKey& vchPubKey)
 CHDChain *CAccountCache::GetHDChain()
 {
 
+#if 0
 	if (!account.vchPubKey.IsValid()) {
 		LOCK(wallet->cs_wallet);
 
@@ -314,6 +399,7 @@ CHDChain *CAccountCache::GetHDChain()
 		walletdb.ReadAccount(strAccount, account);
 		walletdb.Close();
 	}
+#endif
 
 	if (account.chain.masterKeyID == 0) {
 		/* intialize chain attributes. */
@@ -367,11 +453,8 @@ CPubKey CAccountCache::GetMasterPubKey()
 }
 #endif
 
-void CAccountCache::UpdateHDChain()
+void CAccountCache::UpdateAccount()
 {
-
-	if (account.chain.masterKeyID == 0)
-		return;
 
 	{
 		LOCK(wallet->cs_wallet);
@@ -382,5 +465,204 @@ void CAccountCache::UpdateHDChain()
 		walletdb.Close();
 	}
 
+}
+
+bool CAccountCache::GetPrimaryAddr(int type, CTxDestination& addrRet)
+{
+	CPubKey pubkey;
+	if (!GetPrimaryPubKey(type, pubkey))
+		return (false);
+
+	addrRet = pubkey.GetID();
+	return (true);
+}
+
+bool CAccountCache::GetPrimaryPubKey(int type, CPubKey& pubkeyRet)
+{
+	CKey *pkey;
+	const char *tag = GetPubKeyTag(type);
+	cbuff tagbuff(tag, tag + strlen(tag));
+
+	pkey = wallet->GetKey(account.vchPubKey.GetID());
+	if (!pkey)
+		return (false);
+
+	ECKey key;
+	pkey->MergeKey(key, tagbuff);
+	key.meta.nFlag |= ACCADDRF_INTERNAL;
+
+	pubkeyRet = key.GetPubKey();
+	if (!pubkeyRet.IsValid())
+		return (false);
+
+	const CKeyID& keyid = pubkeyRet.GetID();
+	if (!wallet->HaveKey(keyid)) {
+		/* add key to address book */
+		if (!wallet->AddKey(key))
+			return (false);
+		
+		/* add all the address variants to the wallet's address book. */
+		SetAddrDestinations(keyid);
+	}
+
+	return (true);
+}
+
+bool CAccountCache::CreateNewAddr(CTxDestination& addrRet, int type, int flags)
+{
+	CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+	bool fWitness = IsWitnessEnabled(iface, GetBestBlockIndex(iface));
+	bool fDilithium = opt_bool(OPT_DILITHIUM);
+	bool fHDKey = opt_bool(OPT_HDKEY);
+	bool fBech32 = opt_bool(OPT_BECH32);
+	CPubKey pubkey;
+
+	if (type < 0 || type >= MAX_ACCADDR)
+		return (false);
+
+	flags |= _account_address_flags[type];
+	if (!fWitness)
+		flags &= ~ACCADDRF_WITNESS;
+	if (!(flags & ACCADDRF_WITNESS))
+		fBech32 = false;
+	if (!fBech32 || !fDilithium) {
+		flags &= ~ACCADDRF_DILITHIUM;
+	}
+	if (!fHDKey)
+		flags &= ~ACCADDRF_DERIVE;
+
+	if (!CreateNewPubKey(pubkey, flags))
+		return (false);
+
+	if ((flags & ACCADDRF_WITNESS)) {
+		if (!fBech32) {
+			CCoinAddr addr(wallet->ifaceIndex, pubkey.GetID());
+			addrRet = addr.GetWitness(OUTPUT_TYPE_P2SH_SEGWIT);
+		} else {
+			CCoinAddr addr(wallet->ifaceIndex, pubkey.GetID());
+			addrRet = addr.GetWitness(OUTPUT_TYPE_BECH32);
+		}
+	} else {
+		/* regular */
+		addrRet = pubkey.GetID();
+	}
+	if (addrRet == CTxDestination(CNoDestination()))
+		return (false);
+
+	return (true);
+}
+
+bool CAccountCache::CreateNewPubKey(CPubKey& addrRet, int flags)
+{
+	CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+	bool fWitness = IsWitnessEnabled(iface, GetBestBlockIndex(iface));
+	bool fDilithium = opt_bool(OPT_DILITHIUM);
+	bool fHDKey = opt_bool(OPT_HDKEY);
+	bool fBech32 = opt_bool(OPT_BECH32);
+	CPubKey pubkey;
+
+	if (!fWitness || !fBech32 || !fDilithium)
+		flags &= ~ACCADDRF_DILITHIUM;
+
+	if (flags & ACCADDRF_DILITHIUM) {
+		if (!(flags & ACCADDRF_DERIVE)) {
+			if (!wallet->GenerateNewDIKey(pubkey, flags))
+				flags &= ~ACCADDRF_DILITHIUM;
+		} else {
+			DIKey key;
+			CHDChain *hdChain = GetHDChain();
+			if (!wallet->DeriveNewDIKey(hdChain, key, false)) {
+				flags &= ~ACCADDRF_DILITHIUM;
+			} else {
+				key.meta.nFlag = flags;
+				if (!wallet->AddKey(key)) {
+					error(SHERR_INVAL, "CreateNewPubKey: error adding derived dilithium key to wallet.");
+					return (false);
+				}
+				pubkey = key.GetPubKey();
+			}
+		}
+	}
+	if (!(flags & ACCADDRF_DILITHIUM)) {
+		if (!(flags & ACCADDRF_DERIVE)) {
+			if (!wallet->GenerateNewECKey(pubkey, true, flags)) {
+				error(SHERR_INVAL, "CreateNewPubKey: error generating key.");
+				return (false);
+			}
+		} else {
+			ECKey key;
+			CHDChain *hdChain = GetHDChain();
+			if (!wallet->DeriveNewECKey(hdChain, key, false)) {
+				error(SHERR_INVAL, "CreateNewPubKey: error deriving key.");
+				return (false);
+			}
+			key.meta.nFlag = flags;
+			if (!wallet->AddKey(key)) {
+				error(SHERR_INVAL, "CreateNewPubKey: error adding derived ecdsa key to wallet.");
+				return (false);
+			}
+			pubkey = key.GetPubKey();
+		}
+	}
+
+	/* add all the address variants to the wallet's address book. */
+	SetAddrDestinations(pubkey.GetID(), flags);
+
+	addrRet = pubkey;
+	return (true);
+}
+
+void CAccountCache::GetAddrDestination(const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag)
+{
+
+	vDest.clear();
+
+	if (keyid == 0)
+		return;
+
+	/* pubkey coin address */
+	if (wallet->mapAddressBook.count(keyid) == 0) {
+		wallet->SetAddressBookName(keyid, strAccount);
+	}
+	if (!(nFlag & ACCADDRF_DILITHIUM))
+		vDest.push_back(keyid);
+
+	/* CScriptID destination to pubkey. */
+	CScript scriptPubKey;
+	scriptPubKey.SetDestination(keyid);
+	wallet->AddCScript(scriptPubKey);
+	CScriptID scriptID(scriptPubKey);
+	if (wallet->mapAddressBook.count(scriptID) == 0) {
+		wallet->SetAddressBookName(scriptID, strAccount);
+	}
+	if (!(nFlag & ACCADDRF_DILITHIUM))
+		vDest.push_back(keyid);
+
+	CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
+	if (iface && IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+		CCoinAddr addr(wallet->ifaceIndex, keyid);
+
+		/* generate "program 0" p2sh-segwit address. */
+		CTxDestination sh_dest = addr.GetWitness(OUTPUT_TYPE_P2SH_SEGWIT);
+		if (wallet->mapAddressBook.count(sh_dest) == 0) {
+			wallet->SetAddressBookName(sh_dest, strAccount);
+		}
+		if (!(nFlag & ACCADDRF_DILITHIUM))
+			vDest.push_back(sh_dest);
+
+		/* bech32 destination address. */
+		CTxDestination be_dest = addr.GetWitness(OUTPUT_TYPE_BECH32);
+		if (wallet->mapAddressBook.count(be_dest) == 0) {
+			wallet->SetAddressBookName(be_dest, strAccount);
+		}
+		vDest.push_back(be_dest);
+	}
+
+}
+
+void CAccountCache::SetAddrDestinations(const CKeyID& keyid, int nFlag)
+{
+	vector<CTxDestination> vDest;
+	GetAddrDestination(keyid, vDest, nFlag);
 }
 

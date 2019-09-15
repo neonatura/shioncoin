@@ -26,6 +26,7 @@
 #include "shcoind.h"
 #include "wallet.h"
 #include "walletdb.h"
+#include "account.h"
 #include "crypter.h"
 #include "ui_interface.h"
 #include "base58.h"
@@ -243,9 +244,30 @@ bool CTxCreator::HaveOutput(const CPubKey& pubKey)
 	return (HaveOutput(pubKey.GetID()));
 }
 
-bool CTxCreator::SetChange(const CPubKey& scriptPubKey)
+bool CTxCreator::SetChangeAddr(const CPubKey& scriptPubKey)
 {
   changePubKey = scriptPubKey;
+}
+
+CCoinAddr CTxCreator::GetChangeAddr()
+{
+  CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
+	CCoinAddr changeAddr(pwallet->ifaceIndex);
+	bool fOk = false;
+
+  int ext_idx = IndexOfExtOutput(*this);
+  if (fAccount && (ext_idx == -1) && !changePubKey.IsValid()) {
+		changeAddr = pwallet->GetChangeAddr(strFromAccount);
+		fOk = (changeAddr.IsValid() && !HaveInput(changeAddr.Get()));
+	}
+	if (!fOk) {
+		CPubKey pubkey;
+		if (!pwallet->GetAccount(fAccount ? strFromAccount : "")->CreateNewPubKey(pubkey, CKeyMetadata::META_HD_KEY)) {
+			changeAddr = CCoinAddr(pwallet->ifaceIndex, pubkey.GetID()); 
+		}
+	}
+
+	return (changeAddr);
 }
 
 void CTxCreator::SetMinFee(int64 nMinFeeIn)
@@ -265,19 +287,6 @@ int64 CTxCreator::CalculateFee()
   nFee = pwallet->CalculateFee(*this, nMinFee);
 
   return (nFee);
-}
-
-void CTxCreator::CreateChangeAddr()
-{
-
-	if (!fAccount) {
-		string strAccount("");
-		changePubKey = GetAccountPubKey(pwallet, strAccount, true);
-//		changePubKey = pwallet->GenerateNewKey();
-	} else {
-		changePubKey = GetAccountPubKey(pwallet, strFromAccount, true);
-	}
-
 }
 
 bool CTxCreator::SetLockHeight(uint32_t nHeight)
@@ -375,7 +384,7 @@ static uint32_t txcreator_RecentBlockHeight(CIface *iface)
 	// e.g. high-latency mix networks and some CoinJoin implementations, have
 	// better privacy.
 	if (0 == (shrand() % 10))
-		nLockTime = MAX(0, nLockTime - GetRandInt(100));
+		nLockTime = MAX(0, nLockTime - (shrand() % 100));
 
 	return ((uint32_t)nLockTime);
 }
@@ -386,7 +395,6 @@ bool CTxCreator::Generate()
 	const cbuff sigPub(64, '\000');
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
   CWallet *wallet = GetWallet(iface);
-	CCoinAddr changeAddr(wallet->ifaceIndex);
   int64 nFee;
   bool ok;
 
@@ -395,41 +403,13 @@ bool CTxCreator::Generate()
     return (false);
   }
 
-  /* establish "coin change" destination address */
-  int ext_idx = IndexOfExtOutput(*this);
-  if (fAccount && (ext_idx == -1) && !changePubKey.IsValid()) {
-		changeAddr = wallet->GetChangeAddr(strFromAccount);
-#if 0
-    CPubKey changePubKey;
-
-    ok = pwallet->GetMergedPubKey(strFromAccount, "change", changePubKey);
-    if (ok && !HaveInput(changePubKey) && !HaveOutput(changePubKey)) {
-      SetChange(changePubKey);
-    }
-#endif
-  }
-	if (!changeAddr.IsValid()) {
-		if (!changePubKey.IsValid())
-			CreateChangeAddr();
-		changeAddr = CCoinAddr(wallet->ifaceIndex, changePubKey.GetID());
-	}
-#if 0
-  if (!changePubKey.IsValid()) {
-    /* pull a reserved key from the pool. */
-    CreateChangeAddr();
-#if 0
-    /* done in Send() instead */
-    if (fAccount)
-      pwallet->SetAddressBookName(changePubKey.GetID(), strFromAccount);
-#endif
-  }
-#endif
-
 	if (isAutoLock() &&
-			pwallet->ifaceIndex != COLOR_COIN_IFACE && 
-			(ext_idx == -1)) {
-		/* auto set lock height to recent height */
-		SetLockHeight(txcreator_RecentBlockHeight(iface));
+			pwallet->ifaceIndex != COLOR_COIN_IFACE) {
+		int ext_idx = IndexOfExtOutput(*this);
+		if	(ext_idx == -1) {
+			/* auto set lock height to recent height */
+			SetLockHeight(txcreator_RecentBlockHeight(iface));
+		}
 	}
 
   vector<COutput> vCoins;
@@ -531,9 +511,10 @@ bool CTxCreator::Generate()
     }
 
     int64 nChange = (nTotCredit - nDebit - nFee);
-    if (nChange >= MIN_TX_FEE(iface)) {
+		if (nChange >= MIN_INPUT_VALUE(iface) &&
+				nChange >= MIN_RELAY_TX_FEE(iface)) {
+			const CCoinAddr& changeAddr = wallet->GetChangeAddr(fAccount ? strFromAccount : "");
       CScript script;
-
       script.SetDestination(changeAddr.Get());
       t_wtx.vout.insert(t_wtx.vout.end(), CTxOut(nChange, script));
     }
@@ -563,8 +544,8 @@ bool CTxCreator::Generate()
   int64 nChange = (nCredit - nDebit - nFee);
   if (nChange >= MIN_INPUT_VALUE(iface) &&
       nChange >= MIN_RELAY_TX_FEE(iface)) {
+		const CCoinAddr& changeAddr = GetChangeAddr();
     AddOutput(changeAddr.Get(), nChange); 
-    //AddOutput(changePubKey, nChange); 
   }
 
   /* add inputs to transaction */

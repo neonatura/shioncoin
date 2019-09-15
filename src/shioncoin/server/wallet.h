@@ -68,12 +68,12 @@ class CAccountCache;
 #define ACCADDR_EXEC 2
 /* primary pubkey used for hdkey */
 #define ACCADDR_HDKEY 3
-/* redeem pubkey for segwit addr. */
-#define ACCADDR_SEGWIT 4 
 /* ext transactions (@account) */
-#define ACCADDR_EXT 5 
+#define ACCADDR_EXT 4 
 /* notary address */
-#define ACCADDR_NOTARY 6 
+#define ACCADDR_NOTARY 5
+/* miner address */
+#define ACCADDR_MINER 6
 
 #define MAX_ACCADDR 7
 
@@ -255,10 +255,20 @@ class CWallet : public CBasicKeyStore
 
 		bool SelectAccountCoins(string strAccount, int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet, uint160 hColor = 0) const;
 
-		// keystore implementation
-		// Generate a new key
-		CPubKey GenerateNewKey(bool fCompressed = true);
+		bool GenerateNewECKey(CPubKey& pubkeyRet, bool fCompressed = true, int nFlag = 0);
+
+		CPubKey GenerateNewECKey(bool fCompressed = true, int nFlag = 0)
+		{
+			CPubKey pubkey;
+			GenerateNewECKey(pubkey, fCompressed, nFlag);
+			return (pubkey);
+		}
+
+		bool GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag = 0);
+
+#if 0
 		HDPubKey GenerateNewHDKey(bool fCompressed = true);
+#endif
 		// Adds a key to the store, and saves it to disk.
 #if 0
 		bool AddKey(const HDPrivKey& key);
@@ -534,9 +544,9 @@ class CWallet : public CBasicKeyStore
 		bool EraseArchTx(uint256 hash) const;
 		bool HasArchTx(uint256 hash) const;
 
-		void DeriveNewECKey(string strAccount, ECKey& secret, bool internal);
+		bool DeriveNewECKey(CHDChain *hdChain, ECKey& secret, bool internal = false);
 
-		void DeriveNewDIKey(string strAccount, DIKey& secret, bool internal);
+		bool DeriveNewDIKey(CHDChain *hdChain, DIKey& secret, bool internal = false);
 
 		bool LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata &meta);
 
@@ -977,6 +987,7 @@ class CAccount
 {
 	public:
 		CPubKey vchPubKey;
+		uint160 hCert;
 		CHDChain chain;
 
 		CAccount()
@@ -987,6 +998,8 @@ class CAccount
 		void SetNull()
 		{
 			vchPubKey = CPubKey();
+			hCert = 0;
+			chain.SetNull();
 		}
 
 		IMPLEMENT_SERIALIZE
@@ -994,8 +1007,10 @@ class CAccount
 			if (!(nType & SER_GETHASH))
 				READWRITE(nVersion);
 			READWRITE(vchPubKey);
-			if (nVersion >= 4010000)
+			if (nVersion >= 4010000) {
+				READWRITE(hCert);
 				READWRITE(chain);
+			}
 		)
 };
 

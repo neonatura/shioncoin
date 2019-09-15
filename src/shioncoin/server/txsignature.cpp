@@ -177,13 +177,14 @@ bool CSignature::SignatureHash(CScript scriptCode, int sigver, uint256& hashRet)
     CTxOut out;
 
     if (!wallet->FillInputs(*tx, mapInputs)) {
+      return (error(ERR_INVAL, "SignatureHash: SIGVERSION_WITNESS_V0: error filling inputs (tx %s)", tx->GetHash().GetHex().c_str()));
       return (false);
     }
 
     const CTxIn& in = tx->vin[nIn];
     if (!tx->GetOutputFor(in, mapInputs, out)) {
-      return (false);
-}
+      return (error(ERR_INVAL, "SignatureHash: SIGVERSION_WITNESS_V10: error generating output (hash %s)\n", in.prevout.hash.GetHex().c_str()));
+		}
 
     hashRet = witness_v0_SignatureHash(scriptCode, *tx, nIn, nHashType, out.nValue);
     return (true);
@@ -194,13 +195,12 @@ bool CSignature::SignatureHash(CScript scriptCode, int sigver, uint256& hashRet)
     CTxOut out;
 
     if (!wallet->FillInputs(*tx, mapInputs)) {
-      return (false);
+      return (error(ERR_INVAL, "SignatureHash: SIGVERSION_WITNESS_V14: error filling inputs (tx %s)", tx->GetHash().GetHex().c_str()));
     }
 
     const CTxIn& in = tx->vin[nIn];
-    if (!tx->GetOutputFor(in, mapInputs, out)) {
-      return (false);
-}
+    if (!tx->GetOutputFor(in, mapInputs, out))
+      return (error(ERR_INVAL, "SignatureHash: SIGVERSION_WITNESS_V14: error generating output (hash %s)\n", in.prevout.hash.GetHex().c_str()));
 
     hashRet = witness_v0_SignatureHash(scriptCode, *tx, nIn, nHashType, out.nValue);
     return (true);

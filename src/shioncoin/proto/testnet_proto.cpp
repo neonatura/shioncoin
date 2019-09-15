@@ -217,7 +217,7 @@ static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
   if (!ret_key.IsValid()) {
 		ret_key = GetAccountPubKey(wallet, strAccount, false);
     if (!ret_key.IsValid()) { /* fallback. */
-			ret_key = wallet->GenerateNewKey(true);
+			ret_key = wallet->GenerateNewECKey(true);
 			wallet->SetAddressBookName(ret_key.GetID(), strAccount);
     }
 

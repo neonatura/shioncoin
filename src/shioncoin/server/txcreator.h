@@ -128,15 +128,15 @@ class CTxCreator : public CWalletTx
 
     bool HaveOutput(const CPubKey& pubKey);
 
-    bool SetChange(const CPubKey& addr);
+    bool SetChangeAddr(const CPubKey& addr);
+
+    CCoinAddr GetChangeAddr();
 
     void SetMinFee(int64 nMinFeeIn);
 
     size_t GetSerializedSize();
 
     int64 CalculateFee();
-
-    void CreateChangeAddr();
 
     bool Generate();
 
