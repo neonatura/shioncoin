@@ -28,6 +28,7 @@
 #include "json/json_spirit_writer_template.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include "wallet.h"
+#include "account.h"
 #include "txcreator.h"
 
 using namespace std;
@@ -942,15 +943,18 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
   if (count != 0)
     return (SHERR_NOTUNIQ);
 
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+	CTxDestination dest;
+	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
+	CCoinAddr addr(wallet->ifaceIndex, dest);
+//  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
   if (!addr.IsValid())
     return (SHERR_INVAL);
 
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
+  if (!extAddr.IsValid())
+    return (SHERR_INVAL);
+
   CCert *cert;
-  //string strExtAccount = "@" + strAccount;
-  string strExtAccount(strAccount);
-  strExtAccount.insert(0, 1, '@'); /* ext account prefix */
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
 
   /* embed cert content into transaction */
   wtx.SetNull();
@@ -995,7 +999,6 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
-  string strExtAccount = "@" + strAccount;
 
   if(strTitle.length() == 0)
     return (SHERR_INVAL);
@@ -1025,17 +1028,22 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
     if (!GetCoinAddr(wallet, extAddr, strValAccount)) {
       return error(SHERR_ACCESS, "derive_cert_tx: private entity warning: invalid chain certificate coin address.");
     }
+
+		string strExtAccount = "@" + strAccount;
     if (strValAccount != strExtAccount) {
       return error(SHERR_ACCESS, "derive_cert_tx: must be certificate owner to derive 'private entity' certificate."); 
     }
   } else {
-    extAddr = GetAccountAddress(wallet, strExtAccount, true);
+		extAddr = wallet->GetExtAddr(strAccount);
   }
 
   if (!chain->VerifySignature(ifaceIndex))
     return error(SHERR_INVAL, "derive_cert_tx: signature integrity error.");
 
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+	CTxDestination dest;
+	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
+	CCoinAddr addr(wallet->ifaceIndex, dest);
+//  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
   if (!addr.IsValid())
     return (SHERR_INVAL);
 
@@ -1114,8 +1122,7 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
   if (!certAddr.IsValid())
     return (error(SHERR_INVAL, "init_license_tx: certAddr '%s' is invalid: %s\n", certAddr.ToString().c_str(), tx.certificate.ToString().c_str()));
   
-  string strExtAccount = "@" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
   if (!extAddr.IsValid())
     return (error(SHERR_INVAL, "error generating ext account addr"));
 
@@ -1496,7 +1503,10 @@ int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint
   CTransaction tx;
   bool hasCert = GetTxOfCert(iface, hashCert, tx);
 
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+	CTxDestination dest;
+	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
+	CCoinAddr addr(wallet->ifaceIndex, dest);
+//  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
   if (!addr.IsValid())
     return (SHERR_INVAL);
 
@@ -1600,7 +1610,10 @@ int init_ident_stamp_tx(CIface *iface, std::string strAccount, std::string strCo
 
   int64 nFee = iface->min_tx_fee;
 
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+	CTxDestination dest;
+	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
+	CCoinAddr addr(wallet->ifaceIndex, dest);
+//  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
   if (!addr.IsValid())
     return (SHERR_INVAL);
 
@@ -1645,7 +1658,6 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
   int ifaceIndex = GetCoinIndex(iface);
   int64 nMinValue = MIN_TX_FEE(iface); 
   int64 nMinInput = MIN_INPUT_VALUE(iface); 
-  CIdent *ident;
 
   if (ifaceIndex != TEST_COIN_IFACE && ifaceIndex != SHC_COIN_IFACE)
     return (SHERR_OPNOTSUPP);
@@ -1672,31 +1684,43 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
     return (SHERR_INVAL);
   }
 
-  wtx.SetNull();
   if (!IsCertAccount(iface, tx, strAccount)) { 
     error(SHERR_ACCESS, "init_ident_certcoin_tx: certificate is not local.");
     return (SHERR_ACCESS);
   }
 
+	CTxDestination dest;
+	if (!wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest))
+		return (ERR_INVAL);
+
+	CTxCreator s_wtx(wallet, strAccount);
   CIdent& s_cert = (CIdent&)tx.certificate;
-  ident = wtx.CreateIdent(&s_cert);
-  if (!ident) {
-    return (SHERR_INVAL);
-  }
+  CIdent *ident = s_wtx.CreateIdent(&s_cert);
+	if (!ident)
+		return (ERR_INVAL);
 
-  uint160 hashIdent = ident->GetHash();
+  CScript destPubKey;
+  destPubKey.SetDestination(addrDest.Get());
+	s_wtx.AddOutput(destPubKey, nValue); 
 
-  /* send to intermediate account. */
-  //CReserveKey rkey(wallet);
-  wtx.strFromAccount = strAccount;
+	CScript scriptExt;
+  const uint160& hashIdent = ident->GetHash();
+  scriptExt << OP_EXT_PAY << CScript::EncodeOP_N(OP_IDENT) << OP_HASH160 << hashIdent << OP_2DROP << OP_RETURN << OP_0;
+	s_wtx.AddOutput(scriptExt, 0, true);
 
+	if (!s_wtx.Send())
+    return (SHERR_CANCELED);
+
+	wtx = (CWalletTx)s_wtx;
+
+#if 0
 	/* set destination address. */
   CScript scriptPubKeyOrig;
-	CPubKey vchPubKey = GetAccountPubKey(wallet, strAccount, true);
-  scriptPubKeyOrig.SetDestination(vchPubKey.GetID());
+	scriptPubKeyOrig.SetDestination(dest);
 
   CScript scriptPubKey;
   scriptPubKey << OP_EXT_PAY << CScript::EncodeOP_N(OP_IDENT) << OP_HASH160 << hashIdent << OP_2DROP;
+
   scriptPubKey += scriptPubKeyOrig;
   int64 nFeeRequired;
 	string strError;
@@ -1727,6 +1751,7 @@ CTransaction *tx = (CTransaction *)&wtx;
   }
 
   Debug("CERT-TX: sent certified payment of %f [fee %f]\n", ((double)nValue/(double)COIN), ((double)(nMinValue+nFeeRequired)/(double)COIN)); 
+#endif
 
   return (0);
 }
@@ -1859,7 +1884,7 @@ Object CIdent::ToValue()
   }
 
   if (vAddr.size() != 0)
-    obj.push_back(Pair("addr", stringFromVch(vAddr)));
+    obj.push_back(Pair("address", stringFromVch(vAddr)));
 
   return (obj);
 }

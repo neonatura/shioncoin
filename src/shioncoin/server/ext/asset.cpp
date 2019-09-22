@@ -385,8 +385,7 @@ int init_asset_tx(CIface *iface, string strAccount, uint160 hashCert, string str
     return (ERR_FEE);
   }
 
-  string strExtAccount = "@" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
 
   CTxCreator s_wtx(wallet, strAccount);
   CAsset *asset = s_wtx.CreateAsset(strTitle, strHash);
@@ -455,8 +454,7 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   uint256 hTxIn = tx.GetHash();
 
   /* generate new coin address */
-  string strExtAccount = "@" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
   if (!extAddr.IsValid()) {
     return (SHERR_INVAL);
   }

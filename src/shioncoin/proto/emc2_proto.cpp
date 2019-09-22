@@ -27,6 +27,7 @@
 #include "block.h"
 #include "main.h"
 #include "wallet.h"
+#include "account.h"
 #include "coin_proto.h"
 #include "checkpoints.h"
 #include "emc2/emc2_netmsg.h"
@@ -240,6 +241,7 @@ static int emc2_block_process(CIface *iface, CBlock *block)
 
 static CPubKey emc2_GetMainAccountPubKey(CWallet *wallet)
 {
+#if 0
   static CPubKey ret_key; 
 	string strAccount("");
 
@@ -289,6 +291,18 @@ static CPubKey emc2_GetMainAccountPubKey(CWallet *wallet)
 #endif
 
   return (ret_key);
+#endif
+
+  static CPubKey pubkey;
+  if (!pubkey.IsValid()) {
+    CAccountCache *account = wallet->GetAccount("");
+    account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+    /* miner fee */
+		wallet->GetAccount("bank");
+    /* cpu miner */
+		wallet->GetAccount("system");
+  }
+  return (pubkey);
 }
 
 static int emc2_block_templ(CIface *iface, CBlock **block_p)

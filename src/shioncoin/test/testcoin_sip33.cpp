@@ -242,7 +242,7 @@ _TEST(sip33_hdkey)
 
 		CDataStream ssPriv(SER_DISK, CLIENT_VERSION);
 		ssPriv << keyNew;
-		_TRUE(ssPriv.size() == 172);
+		_TRUE(ssPriv.size() == 151);
 
 		DIExtPubKey pubCheck;
 		DIExtKey privCheck;
@@ -279,7 +279,7 @@ _TEST(sip33_tx)
 
 	CScript basescript = GetScriptForDestination(keyid);
 	wallet->AddCScript(basescript);
-	CScript witscript = GetScriptForWitness(basescript);
+	CScript witscript = GetScriptForWitness(basescript, 14); /* witness v14 */
 	wallet->AddCScript(witscript);
 
 	WitnessV14KeyHash di_keyid(keyid);

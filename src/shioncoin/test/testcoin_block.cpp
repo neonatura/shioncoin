@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include "wallet.h"
+#include "account.h"
 #include "txcreator.h"
 #include "bech32.h"
 #include "test/test_pool.h"
@@ -51,6 +52,14 @@
 extern "C" {
 #endif
 
+
+static CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool fNew = false)
+{
+	static CPubKey pubkey;
+	CAccountCache *acc = wallet->GetAccount(strAccount);
+	acc->CreateNewPubKey(pubkey, 0);
+	return (pubkey);
+}
 
 
 
@@ -387,7 +396,7 @@ _TEST(signtx)
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
   CWallet *wallet = GetWallet(iface);
   string strAccount("");
-  CCoinAddr extAddr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr extAddr = GetAccountAddress(wallet, strAccount);
   char *data;
   size_t data_len;
   bool ret;
@@ -450,7 +459,7 @@ _TEST(cointx)
   }
 
   string strExtAccount = "*" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
+  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount);
 
   CWalletTx wtx;
   wtx.SetNull();
@@ -491,193 +500,6 @@ _TEST(cointx)
 	for (int i = 0; i < vErase.size(); i++) {
 		wallet->mapWallet.erase(vErase[i]);
 	}
-}
-
-_TEST(aliastx)
-{
-  CWallet *wallet = GetWallet(TEST_COIN_IFACE);
-  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  int idx;
-  int err;
-
-  string strLabel("");
-
-  /* create a coin balance */
-  for (idx = 0; idx < 2; idx++) {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  CCoinAddr addr = GetAccountAddress(wallet, strLabel, false);
-  _TRUE(addr.IsValid() == true);
-
-  CWalletTx wtx;
-  err = init_alias_addr_tx(iface, "test", addr, wtx);
-  _TRUE(0 == err);
-
-  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyAlias(wtx) == true);
-
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  /* update */
-
-  CWalletTx mod_wtx;
-  err = update_alias_addr_tx(iface, "test", addr, mod_wtx);
-  _TRUE(0 == err);
-  _TRUE(mod_wtx.CheckTransaction(TEST_COIN_IFACE) == true); /* .. */
-  _TRUE(VerifyAlias(mod_wtx) == true);
-  _TRUE(mod_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-
-  /* insert into block-chain */
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  _TRUE(mod_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-  CTransaction t_tx;
-  string strTitle("test");
-  _TRUE(GetTxOfAlias(iface, strTitle, t_tx) == true);
-
-  /* remove */
-
-  CWalletTx rem_wtx;
-  err = remove_alias_addr_tx(iface, strLabel, strTitle, rem_wtx);
-  _TRUE(0 == err);
-  _TRUE(rem_wtx.CheckTransaction(TEST_COIN_IFACE) == true); /* .. */
-  _TRUE(VerifyAlias(rem_wtx) == true);
-  _TRUE(rem_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-
-  /* insert into block-chain */
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  _TRUE(rem_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-  _TRUE(GetTxOfAlias(iface, strTitle, t_tx) == false);
-
-}
-
-
-
-
-
-_TEST(assettx)
-{
-  CWallet *wallet = GetWallet(TEST_COIN_IFACE);
-  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  int idx;
-  int err;
-
-
-  string strLabel("");
-
-  /* create a coin balance */
-  for (idx = 0; idx < 2; idx++) {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  CCoinAddr addr = GetAccountAddress(wallet, strLabel, false);
-  _TRUE(addr.IsValid() == true);
-
-	/* create certificate */
-  CWalletTx cert_wtx;
-	string hexSeed;
-	err = init_cert_tx(iface, cert_wtx, strLabel, "asset", hexSeed, 1);
-	_TRUE(0 == err);
-  uint160 hashCert = cert_wtx.certificate.GetHash();
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  CWalletTx wtx;
-  err = init_asset_tx(iface, strLabel, hashCert, "test", addr.ToString(), wtx);
-  _TRUE(0 == err);
-  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyAsset(wtx) == true);
-  CAsset *asset = wtx.GetAsset();
-	_TRUEPTR(asset);
-  uint160 hashAsset = asset->GetHash();
-  _TRUE(asset->VerifySignature(TEST_COIN_IFACE));
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-	for (int i = 0; i < 2; i++) {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-	/* perform asset update. */
-	CWalletTx u_wtx(wallet);
-  err = update_asset_tx(iface, strLabel, hashAsset, "test", "updated data", u_wtx);
-  _TRUE(0 == err);
-  _TRUE(u_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyAsset(u_wtx) == true);
-  _TRUE(u_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-	for (int i = 0; i < 2; i++) {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-  _TRUE(u_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-
-	/* verify asset update */
-	CTransaction u_tx;
-	_TRUE(GetTxOfAsset(iface, hashAsset, u_tx) == true); 
-	CAsset *u_asset = u_tx.GetAsset();
-	_TRUEPTR(u_asset);
-	_TRUE(u_asset->GetHash() == u_wtx.GetAsset()->GetHash());
-
-
-
-	/* perform asset removal. */
-	CWalletTx r_wtx(wallet);
-  err = remove_asset_tx(iface, strLabel, hashAsset, r_wtx);
-  _TRUE(0 == err);
-  _TRUE(r_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyAsset(r_wtx) == true);
-  _TRUE(r_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-	{
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-  _TRUE(r_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-	/* verify asset removal */
-	CTransaction r_tx;
-	_TRUE(GetTxOfAsset(iface, hashAsset, r_tx) == false);
-
-	/* fall back to previous. */
-	_TRUE(DisconnectAssetTx(iface, r_wtx) == true);
-	CTransaction u2_tx;
-	_TRUE(GetTxOfAsset(iface, hashAsset, u2_tx) == true);
-	_TRUE(u2_tx.GetAsset()->GetHash() == u_tx.GetAsset()->GetHash());
-
 }
 
 _TEST(identtx)
@@ -752,7 +574,7 @@ _TEST(identtx)
 
 
   /* send certified coins to self */
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount);
   _TRUE(addr.IsValid() == true);
 
   CWalletTx csend_tx;
@@ -774,170 +596,6 @@ _TEST(identtx)
 
 }
 
-_TEST(certtx)
-{
-  CWallet *wallet = GetWallet(TEST_COIN_IFACE);
-  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  int idx;
-  int err;
-
-
-  string strLabel("");
-
-  /* create a coin balance */
-  for (idx = 0; idx < 2; idx++) {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  CCoinAddr addr = GetAccountAddress(wallet, strLabel, false);
-  _TRUE(addr.IsValid() == true);
-
-  CWalletTx wtx;
-  unsigned int nBestHeight = GetBestHeight(iface) + 1;
-  {
-    string hexSeed;
-    err = init_cert_tx(iface, wtx, strLabel, "SHCOIND TEST CA", hexSeed, 1);
-    _TRUE(0 == err);
-  }
-  uint160 hashCert = wtx.certificate.GetHash();
-
-  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyCert(iface, wtx, nBestHeight) == true);
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-
-  /* insert cert into chain */
-  for (idx = 0; idx < 2; idx++) {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  /* verify insertion */
-  CTransaction t_tx;
-  _TRUE(GetTxOfCert(iface, hashCert, t_tx) == true);
-  _TRUE(t_tx.GetHash() == wtx.GetHash());
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-
-  /* chained certificate */
-  CWalletTx chain_wtx;
-  string strTitle("SHCOIND TEST CHAIN");
-  err = derive_cert_tx(iface, chain_wtx, hashCert, strLabel, strTitle);
-  _TRUE(err == 0);
-  _TRUE(chain_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyCert(iface, chain_wtx, nBestHeight) == true);
-  _TRUE(chain_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-
-  for (unsigned int i = 0; i < 3; i++) { /* insert derived cert into chain */
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  /* verify insertion */
-  t_tx.SetNull();
-  hashCert = chain_wtx.certificate.GetHash();
-  _TRUE(GetTxOfCert(iface, hashCert, t_tx) == true);
-  _TRUE(t_tx.GetHash() == chain_wtx.GetHash());
-  _TRUE(chain_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-  /* generake test license from certificate */
-  CWalletTx lic_wtx;
-  err = init_license_tx(iface, strLabel, hashCert, lic_wtx);
-  _TRUE(0 == err);
-
-  _TRUE(lic_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyLicense(lic_wtx) == true);
-  CLicense lic(lic_wtx.certificate);
-  uint160 licHash = lic.GetHash();
-
-  _TRUE(lic_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-  /* insert license */
-  for (idx = 0; idx < 2; idx++) {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-  _TRUE(lic_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-  /* verify insertion */
-  CTransaction t2_tx;
-  _TRUE(GetTxOfLicense(iface, licHash, t2_tx) == true);
-
-}
-
-_TEST(ctxtx)
-{
-  CWallet *wallet = GetWallet(TEST_COIN_IFACE);
-  CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-  shgeo_t geo;
-  int idx;
-  int err;
-
-  string strLabel("");
-
-  for (idx = 0; idx < 3; idx++) {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-  int64 bal = GetAccountBalance(TEST_COIN_IFACE, strLabel, 1);
-
-  CWalletTx wtx;
-  int nBestHeight = GetBestHeight(iface) + 1;
-  {
-    const char *payload = "test context value";
-    string strName = "test context name";
-    cbuff vchValue(payload, payload + strlen(payload));
-    err = init_ctx_tx(iface, wtx, strLabel, strName, vchValue);
-    _TRUE(0 == err);
-  }
-  CContext ctx(wtx.certificate);
-  uint160 hashContext = ctx.GetHash();
-
-  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyContextTx(iface, wtx, nBestHeight) == true);
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
-
-  /* insert ctx into chain + create a coin balance */
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-  /* verify insertion */
-  CTransaction t_tx;
-  _TRUEPTR(GetContextByHash(iface, hashContext, t_tx));
-  _TRUE(t_tx.GetHash() == wtx.GetHash());
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-  /* test geodetic context */
-  shgeo_set(&geo, 46.7467, -114.1096, 0);
-  string strName = "geo:46.7467,-114.1096";
-  const char *payload = "{\"name\":\"mountain\",\"code\":\"AREA\"}";
-  cbuff vchValue(payload, payload + strlen(payload));
-  err = init_ctx_tx(iface, wtx, strLabel, strName, vchValue, &geo);
-  _TRUE(err == 0);
-
-  /* insert ctx into chain + create a coin balance */
-  {
-    CBlock *block = test_GenerateBlock();
-    _TRUEPTR(block);
-    _TRUE(ProcessBlock(NULL, block) == true);
-    delete block;
-  }
-
-}
-
 _TEST(offertx)
 {
   CWallet *wallet = GetWallet(TEST_COIN_IFACE);
@@ -950,12 +608,13 @@ _TEST(offertx)
 
   string strLabel("");
 
-
+#if 0
   CCoinAddr addr = GetAccountAddress(wallet, strLabel, false);
   _TRUE(addr.IsValid() == true);
+#endif
 
 	string strAltLabel("offer");
-  CCoinAddr alt_addr = GetAccountAddress(wallet, strAltLabel, false);
+  CCoinAddr alt_addr = GetAccountAddress(wallet, strAltLabel);//, false);
   _TRUE(alt_addr.IsValid() == true);
 
   /* create x2 coin inputs for strAltLabel account. */
@@ -1015,12 +674,6 @@ _TEST(offertx)
 
 	CWalletTx acc_wtx;
 	err = accept_offer_tx(iface, strAltLabel, hashOffer, nValue, acc_wtx); 
-  if (err == -2) {
-    CTxMemPool *mempool = GetTxMemPool(iface);
-    if (mempool->exists(hashTx)) {
-//      fprintf(stderr, "DEBUG: tx '%s' still in mempool\n", hashTx.GetHex().c_str());
-    }
-  }
   _TRUE(0 == err);
   uint160 hashAccept = acc_wtx.offer.GetHash();
   _TRUE(acc_wtx.CheckTransaction(TEST_COIN_IFACE));
@@ -1515,12 +1168,10 @@ _TEST(exectx)
 	exec_write_base_object(sx_path);
 
 	err = TEST_sexe_compile("BaseObject.sx", "BaseObject.lua", "", NULL);
-	if (err) {
-		fprintf(stderr, "DEBUG: %d = TEST_sexe_compile()\n", err);
-	}
+//	if (err) { fprintf(stderr, "DEBUG: %d = TEST_sexe_compile()\n", err); }
 	_TRUE(err == 0);
 
-  CCoinAddr sendAddr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr sendAddr = GetAccountAddress(wallet, strAccount);
 
   /* create a coin balance. */
   for (idx = 0; idx < 2; idx++) {
@@ -1536,7 +1187,7 @@ _TEST(exectx)
 
   string strPath("BaseObject.sx");
   err = init_exec_tx(iface, strAccount, strPath, wtx); 
-if (err) fprintf(stderr, "DEBUG: TEST: EXECTX[status %d]: %s\n", err, wtx.ToString(TEST_COIN_IFACE).c_str());
+//if (err) fprintf(stderr, "DEBUG: TEST: EXECTX[status %d]: %s\n", err, wtx.ToString(TEST_COIN_IFACE).c_str());
   _TRUE(err == 0);
 
   CExec *exec = wtx.GetExec();
@@ -1561,7 +1212,7 @@ if (err) fprintf(stderr, "DEBUG: TEST: EXECTX[status %d]: %s\n", err, wtx.ToStri
   CWalletTx wtx_call;
 	wtx_call.SetNull();
 	CExecCall *call = wtx_call.GenerateExec(*exec);
-if (!call) { fprintf(stderr, "DEBUG: TEST: exectx: !call\n"); } 
+//if (!call) { fprintf(stderr, "DEBUG: TEST: exectx: !call\n"); } 
 	_TRUEPTR(call);
 
 	call->hExec = hExec;
@@ -1600,7 +1251,7 @@ if (!call) { fprintf(stderr, "DEBUG: TEST: exectx: !call\n"); }
 	char *args[3]; args[0] = NULL;
 	Value ret_val;
 	err = generate_exec_tx(iface, strAccount, strClass, COIN, "update", args, ret_val, wtx_call);  
-if (err) fprintf(stderr, "DEBUG: %d = generate_exec_tx()\n", err);
+//if (err) fprintf(stderr, "DEBUG: %d = generate_exec_tx()\n", err);
 	_TRUE(err == 0);
 	_TRUE(ret_val.get_bool() == true);
 	uint160 hCall = wtx_call.GetExecCall()->GetHash();
@@ -1645,7 +1296,7 @@ if (err) fprintf(stderr, "DEBUG: %d = generate_exec_tx()\n", err);
   CWalletTx wtx2_call;
 	wtx2_call.SetNull();
 	err = generate_exec_tx(iface, strAccount, strClass, COIN, "update", args, ret_val, wtx2_call);  
-if (err) fprintf(stderr, "DEBUG: %d = generate_exec_tx()/2\n", err);
+//if (err) fprintf(stderr, "DEBUG: %d = generate_exec_tx()/2\n", err);
 	_TRUE(err == 0);
 
 	{
@@ -1684,9 +1335,9 @@ _TEST(scriptid)
   string strAccount("");
   string strExtAccount("scriptid");
 
-  CCoinAddr ret_addr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr ret_addr = GetAccountAddress(wallet, strAccount);
   _TRUE(ret_addr.IsValid());
-  CCoinAddr addr = GetAccountAddress(wallet, strExtAccount, true);
+  CCoinAddr addr = GetAccountAddress(wallet, strExtAccount);
   _TRUE(addr.IsValid());
 
   CKeyID keyID;
@@ -1805,7 +1456,7 @@ _TEST(segwit)
 
   /* send to extended tx storage account */
   string strWitAccount = "witness";
-  CCoinAddr extAddr = GetAccountAddress(wallet, strWitAccount, true);
+  CCoinAddr extAddr = GetAccountAddress(wallet, strWitAccount);
 
   CTxCreator wtx1(wallet, strAccount);
   wtx1.AddOutput(extAddr.Get(), COIN);
@@ -1832,16 +1483,17 @@ _TEST(segwit)
   nValue = GetAccountBalance(TEST_COIN_IFACE, strWitAccount, 1);
 
 	for (i = 0; i < 4; i++) {
-		extAddr = GetAccountAddress(wallet, strWitAccount, true);
-		CCoinAddr witAddr(TEST_COIN_IFACE);
-		_TRUE(wallet->GetWitnessAddress(extAddr, witAddr) == true);
+		extAddr = GetAccountAddress(wallet, strWitAccount);
+		CTxDestination witDest = extAddr.GetWitness();
+		CCoinAddr witAddr(TEST_COIN_IFACE, witDest); 
+		//_TRUE(wallet->GetWitnessAddress(extAddr, witAddr) == true);
 		CTxCreator wit_wtx(wallet, strAccount);
 		ok = wit_wtx.AddOutput(witAddr.Get(), COIN / 4);
-		if (!ok) fprintf(stderr, "DEBUG: TEST: SEGWIT: AddOutput \"%s\": %s\n", wit_wtx.GetError().c_str(), wit_wtx.ToString(TEST_COIN_IFACE).c_str());
+//		if (!ok) fprintf(stderr, "DEBUG: TEST: SEGWIT: AddOutput \"%s\": %s\n", wit_wtx.GetError().c_str(), wit_wtx.ToString(TEST_COIN_IFACE).c_str());
 		_TRUE(ok);
 		ok = wit_wtx.Send();
 		strError = wit_wtx.GetError();
-		if (strError != "") fprintf(stderr, "DEBUG: TEST: SEGWIT: Send \"%s\": %s\n", strError.c_str(), wit_wtx.ToString(TEST_COIN_IFACE).c_str());
+//		if (strError != "") fprintf(stderr, "DEBUG: TEST: SEGWIT: Send \"%s\": %s\n", strError.c_str(), wit_wtx.ToString(TEST_COIN_IFACE).c_str());
 		_TRUE(ok == true);
 		_TRUE(strError == "");
 		_TRUE(wit_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
@@ -1908,7 +1560,7 @@ _TEST(segwit)
   wtx3.AddOutput(addr.Get(), nValue - (MIN_TX_FEE(iface) * 2));
   _TRUE(wtx3.Send());
   strError = wtx3.GetError();
-if (strError != "") fprintf(stderr, "DEBUG: wtx3.strerror = \"%s\"\n", strError.c_str());
+//if (strError != "") fprintf(stderr, "DEBUG: wtx3.strerror = \"%s\"\n", strError.c_str());
   _TRUE(strError == "");
   _TRUE(wtx3.CheckTransaction(TEST_COIN_IFACE)); /* .. */
 
@@ -1968,7 +1620,7 @@ _TEST(txmempool_pending)
   CTxCreator inv_tx(wallet, strAccount);
 
   /* generate transaction without commiting to pool. */
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount);
   _TRUE(true == inv_tx.AddOutput(addr.Get(), (int64)COIN));
   _TRUE(true == inv_tx.Generate());
 
@@ -1993,7 +1645,7 @@ _TEST(txmempool_inval)
   CTxCreator inv_tx(wallet, strAccount);
 
   /* generate transaction without commiting to pool. */
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount);
   _TRUE(true == inv_tx.AddOutput(addr.Get(), (int64)COIN));
   _TRUE(true == inv_tx.Generate());
 
@@ -2015,7 +1667,7 @@ _TEST(respend)
   int reuseOut;
 
   /* obtain test coin address */
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount);
 
   /* create transaction and track primary input */
   CTxCreator tx(wallet, strAccount);
@@ -2059,7 +1711,7 @@ _TEST(txmempool_depend)
   string strAccount("");
 
   /* obtain test coin address */
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount);
 
   {
     CBlock *block = test_GenerateBlock();
@@ -2103,7 +1755,7 @@ _TEST(txmempool_conflict)
   string strAccount("");
 
   /* obtain test coin address */
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount);
 
   {
     CBlock *block = test_GenerateBlock();
@@ -2201,7 +1853,7 @@ _TEST(seqlocktx)
 	string strAccount("");
 	int nHeight;
 
-  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
+  CCoinAddr addr = GetAccountAddress(wallet, strAccount);
   _TRUE(addr.IsValid() == true);
 
 	/* v1 nLockTime */
@@ -2348,9 +2000,15 @@ _TEST(bech32)
   CWallet *wallet = GetWallet(iface);
 	string strWitAccount = "bech32";
 
-	CCoinAddr addr = GetAccountAddress(wallet, strWitAccount, true);
-	CCoinAddr witAddr(TEST_COIN_IFACE);
-	_TRUE(wallet->GetWitnessAddress(addr, witAddr) == true);
+	CPubKey pubkey;
+	CAccountCache *acc = wallet->GetAccount("");
+	_TRUE(acc->CreateNewPubKey(pubkey, 0));
+	//CCoinAddr addr = GetAccountAddress(wallet, strWitAccount);
+	CCoinAddr addr(wallet->ifaceIndex, pubkey.GetID());
+	//CCoinAddr witAddr(TEST_COIN_IFACE);
+	//_TRUE(wallet->GetWitnessAddress(addr, witAddr) == true);
+	CTxDestination witDest = addr.GetWitness();
+	CCoinAddr witAddr(TEST_COIN_IFACE, witDest); 
 
 	string str_bech32;
 	string str_wit;
@@ -2442,7 +2100,7 @@ _TEST(bolo)
 	int i;
 
 	/* fund "bank" account for bolo TXs. */
-	CCoinAddr bank_addr = GetAccountAddress(wallet, "bank", true);
+	CCoinAddr bank_addr = GetAccountAddress(wallet, "bank");
 	CTxCreator wit_wtx(wallet, "");
 	_TRUE(wit_wtx.AddOutput(bank_addr.Get(), COIN));
 	_TRUE(wit_wtx.Send() == true);
@@ -2478,7 +2136,7 @@ _TEST(bolo)
 
 	/* emulate 10x proposals. */
 	for (i = 0; i < 10; i++) {
-		CCoinAddr bank_addr = GetAccountAddress(wallet, "bank", true);
+		CCoinAddr bank_addr = GetAccountAddress(wallet, "bank");
 		bolo_PROPOSED_NOTARY = false;
 		bolo_ProposeMasterTx(bolo_PROPOSED_BLOCK, bolo_PROPOSED_HEIGHT, &bank_addr);
 		{

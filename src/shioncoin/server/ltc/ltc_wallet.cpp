@@ -83,13 +83,9 @@ bool ltc_LoadWallet(void)
   bool fFirstRun = true;
   ltcWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(ltcWallet, strAccount, true);
-		//CPubKey newDefaultKey = ltcWallet->GenerateNewKey();
-		ltcWallet->SetDefaultKey(newDefaultKey);
-		ltcWallet->SetAddressBookName(ltcWallet->vchDefaultKey.GetID(), "");
+		ltcWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(ltcWallet);
@@ -640,7 +636,7 @@ bool LTCWallet::CreateAccountTransaction(string strFromAccount, const vector<pai
 
         if (nChange > 0) {
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true); 
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);

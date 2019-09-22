@@ -327,7 +327,8 @@ server_sources = \
 	server/rpc/rpcdump.cpp \
 	server/rpc/rpc_command.cpp \
 	server/rpc/rpc_parse.cpp \
-	server/rpc/rpcwallet_proto.cpp \
+	server/rpc/rpc_wallet.cpp \
+	server/rpc/rpc_wallet_addr.cpp \
 	server/rpc/rpcrawtransaction.cpp \
 	server/versionbits.cpp \
 	server/algobits.cpp \
@@ -452,9 +453,13 @@ test_shcoind_SOURCES = \
 	test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp \
 	test/testcoin_algo.cpp \
+	test/testcoin_account.cpp \
 	test/testcoin_bip32.cpp \
-	test/testcoin_sip33.cpp \
-	test/testcoin_account.cpp
+	test/testcoin_sip5.cpp \
+	test/testcoin_sip6.cpp \
+	test/testcoin_sip10.cpp \
+	test/testcoin_sip25.cpp \
+	test/testcoin_sip33.cpp
 
 test_shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
@@ -500,10 +505,10 @@ endif
 
 if DEBUG
 CFLAGS += -g3 
-CXXFLAGS += -g3
+CXXFLAGS += -g3 -Wno-write-strings
 else
 CFLAGS += -O2
-CXXFLAGS += -O2
+CXXFLAGS += -O2 -Wno-write-strings
 endif
 
 

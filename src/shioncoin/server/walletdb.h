@@ -215,7 +215,9 @@ public:
 
     int LoadWallet(CWallet* pwallet);
 
+#if 0
 		bool WriteHDChain(const CHDChain& chain);
+#endif
 
 };
 

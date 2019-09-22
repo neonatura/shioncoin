@@ -1402,8 +1402,12 @@ CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr
 {
   cbuff vchContext;
 
-  if (nFlag & CTransaction::TXF_CERTIFICATE)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_CERTIFICATE;
   certificate = CCert(strTitle);
@@ -1447,8 +1451,12 @@ CCert *CTransaction::CreateLicense(CCert *cert)
 {
   double lic_span;
 
-  if (nFlag & CTransaction::TXF_LICENSE)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
   
   nFlag |= CTransaction::TXF_LICENSE;
   CLicense license;//(*cert);
@@ -1550,8 +1558,12 @@ CAsset *CTransaction::CreateAsset(string strAssetName, string strAssetHash)
 {
 	CAsset *asset;
 
-  if (nFlag & CTransaction::TXF_ASSET)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_ASSET;
 	asset = GetAsset();
@@ -1602,8 +1614,12 @@ CAsset *CTransaction::RemoveAsset(const CAsset& assetIn)
 CIdent *CTransaction::CreateIdent(CIdent *ident)
 {
 
-  if (nFlag & CTransaction::TXF_IDENT)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_IDENT;
   certificate = CCert(*ident);
@@ -1961,9 +1977,11 @@ Object CTransaction::ToValue(int ifaceIndex)
 		}
 	}
 
+#if 0 /* redundant */
 	CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION(iface));
 	ssTx << *this;
 	obj.push_back(Pair("hex", HexStr(ssTx.begin(), ssTx.end())));
+#endif
 
   return (obj);
 }
@@ -2281,8 +2299,12 @@ CContext *CTransaction::CreateContext()
 {
   CContext *ctx;
 
-  if (nFlag & CTransaction::TXF_CONTEXT)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_CONTEXT;
 

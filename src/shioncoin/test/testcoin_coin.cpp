@@ -451,7 +451,7 @@ _TEST(coin_spendall)
   wtx.strFromAccount = strFromAcc;
 
   bal = GetAccountBalance(TEST_COIN_IFACE, strFromAcc, 1);
-  CCoinAddr addrTo = GetAccountAddress(wallet, strToAcc, true);
+  CCoinAddr addrTo = GetAccountAddress(wallet, strToAcc);
   nValue = bal - COIN;
 
   scriptPubKey.SetDestination(addrTo.Get());
@@ -486,12 +486,12 @@ _TEST(coin_spendall_segwit)
   wtx.strFromAccount = strFromAcc;
 
   bal = GetAccountBalance(TEST_COIN_IFACE, strFromAcc, 1);
-  CCoinAddr addrTo = GetAccountAddress(wallet, strToAcc, true);
+  CCoinAddr addrTo = GetAccountAddress(wallet, strToAcc);
   nValue = bal - COIN;
 
   scriptPubKey.SetDestination(addrTo.Get());
   strError = wallet->SendMoney(strFromAcc, scriptPubKey, nValue, wtx);
-if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall_segwit: %s\n", strError.c_str()); } 
+//if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall_segwit: %s\n", strError.c_str()); } 
   _TRUE(strError == "");
 
   _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);

@@ -74,13 +74,9 @@ bool testnet_LoadWallet(void)
   bool fFirstRun = true;
   testnetWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(testnetWallet, strAccount, true);
-		//CPubKey newDefaultKey = testnetWallet->GenerateNewKey();
-		testnetWallet->SetDefaultKey(newDefaultKey);
-		testnetWallet->SetAddressBookName(testnetWallet->vchDefaultKey.GetID(), "");
+    testnetWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(testnetWallet);
@@ -539,7 +535,7 @@ bool TESTNETWallet::CreateAccountTransaction(string strFromAccount, const vector
 
         if (nChange > 0) {
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);

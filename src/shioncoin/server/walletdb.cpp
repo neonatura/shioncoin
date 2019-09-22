@@ -68,10 +68,12 @@ bool CWalletDB::WriteAccountingEntry(const CAccountingEntry& acentry)
     return Write(boost::make_tuple(string("acentry"), acentry.strAccount, ++nAccountingEntryNumber), acentry);
 }
 
+#if 0
 bool CWalletDB::WriteHDChain(const CHDChain& chain)
 {
 	return Write(std::string("hdchain"), chain);
 }
+#endif
 
 int64 CWalletDB::GetAccountCreditDebit(const string& strAccount)
 {
@@ -310,15 +312,6 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         }
       }
 #if 0
-			else if (strType == "keymeta") {
-				CPubKey vchPubKey;
-				ssKey >> vchPubKey;
-				CKeyMetadata keyMeta;
-				ssValue >> keyMeta;
-//				wss.nKeyMeta++;
-				pwallet->LoadKeyMetadata(vchPubKey.GetID(), keyMeta);
-			}
-#endif
       else if (strType == "mkey")
       {
         unsigned int nID;
@@ -334,6 +327,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         if (pwallet->nMasterKeyMaxID < nID)
           pwallet->nMasterKeyMaxID = nID;
       }
+#endif
 #if 0
       else if (strType == "ckey")
       {

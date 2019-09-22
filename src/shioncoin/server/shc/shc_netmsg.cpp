@@ -825,7 +825,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 		Debug("(shc) ProcessMessage[getaddr]: sending %d addresses to node \"%s\".", pfrom->vAddrToSend.size(), pfrom->addr.ToString().c_str());
   }
 
-
+#if 0
   else if (strCommand == "checkorder")
   {
     uint256 hashReply;
@@ -854,8 +854,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     scriptPubKey << mapReuseKey[pfrom->addr] << OP_CHECKSIG;
     pfrom->PushMessage("reply", hashReply, (int)0, scriptPubKey);
   }
-
-
   else if (strCommand == "reply")
   {
     uint256 hashReply;
@@ -874,6 +872,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     if (!tracker.IsNull())
       tracker.fn(tracker.param1, vRecv);
   }
+#endif
 
   /* exclusively used by bloom filter supported coin services, but does not require they have a bloom filter enabled for node. */
   else if (strCommand == "mempool")

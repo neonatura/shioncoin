@@ -65,10 +65,10 @@ bool DIKey::SetSecret(const CSecret& vchSecret)
 
 	vch = vchSecret;
 
-	if (meta.nCreateTime == 0)
-		meta.nCreateTime = GetTime();
+	if (nCreateTime == 0)
+		nCreateTime = GetTime();
 
-	meta.nFlag |= CKeyMetadata::META_DILITHIUM;
+//	nFlag |= CKeyMetadata::META_DILITHIUM;
 
 	/* always considered 'compressed'. */
 	SetCompressedPubKey();

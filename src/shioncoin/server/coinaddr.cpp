@@ -99,13 +99,13 @@ bool CCoinAddr::Set(const WitnessV0ScriptHash& id)
 bool CCoinAddr::Set(const WitnessV14KeyHash& id)
 {
 	nType = ADDR_BECH32;
-	SetData(0, &id, 20);
+	SetData(14, &id, 20);
 }
 
 bool CCoinAddr::Set(const WitnessV14ScriptHash& id)
 {
 	nType = ADDR_BECH32;
-	SetData(0, &id, 32);
+	SetData(14, &id, 32);
 }
 
 bool CCoinAddr::Set(const WitnessUnknown& id)
@@ -176,17 +176,42 @@ bool CCoinAddr::IsValid() const
 
 CTxDestination CCoinAddr::Get() const 
 {
-
+	
 	if (nType == ADDR_BECH32) {
-		if (vchData.size() == sizeof(WitnessV0KeyHash)) {
-			WitnessV0KeyHash id;
-			memcpy(&id, &vchData[0], vchData.size());
-			return (id);
+		unsigned int nVersion = 0;
+		if (vchVersion.size() != 0) {
+			const unsigned char *raw = vchVersion.data();
+			nVersion = (unsigned int)raw[0];
 		}
-		if (vchData.size() == sizeof(WitnessV0ScriptHash)) {
-			WitnessV0ScriptHash id;
-			memcpy(&id, &vchData[0], vchData.size());
-			return (id);
+		switch (nVersion) {
+			case 0:
+				{
+					if (vchData.size() == sizeof(WitnessV0KeyHash)) {
+						WitnessV0KeyHash id;
+						memcpy(&id, &vchData[0], vchData.size());
+						return (id);
+					}
+					if (vchData.size() == sizeof(WitnessV0ScriptHash)) {
+						WitnessV0ScriptHash id;
+						memcpy(&id, &vchData[0], vchData.size());
+						return (id);
+					}
+				}
+				break;
+			case 14:
+				{
+					if (vchData.size() == sizeof(WitnessV14KeyHash)) {
+						WitnessV14KeyHash id;
+						memcpy(&id, &vchData[0], vchData.size());
+						return (id);
+					}
+					if (vchData.size() == sizeof(WitnessV14ScriptHash)) {
+						WitnessV14ScriptHash id;
+						memcpy(&id, &vchData[0], vchData.size());
+						return (id);
+					}
+				}
+				break;
 		}
 	}
 
@@ -475,11 +500,21 @@ CTxDestination CCoinAddr::GetWitness(int output_type) const
 				return (result);
 			}
 
+			if (key->IsDilithium())
+				output_type = OUTPUT_TYPE_DILITHIUM;
+
+			int ver = 0;
+			if (output_type == OUTPUT_TYPE_DILITHIUM)
+				ver = 14;
+
 			CScript basescript = GetScriptForDestination(keyID);
-			CScript witscript = GetScriptForWitness(basescript);
+			CScript witscript = GetScriptForWitness(basescript, ver);
 			wallet->AddCScript(witscript);
 
-			if (output_type == OUTPUT_TYPE_BECH32) {
+			if (output_type == OUTPUT_TYPE_DILITHIUM) {
+				WitnessV14KeyHash hash = keyID;
+				result = hash;
+			} else if (output_type == OUTPUT_TYPE_BECH32) {
 				WitnessV0KeyHash hash = keyID;
 				result = hash;
 			} else {
@@ -493,10 +528,15 @@ CTxDestination CCoinAddr::GetWitness(int output_type) const
 				/* ID is already for a witness program script */
 				result = scriptID;
 			} else {
-				CScript witscript = GetScriptForWitness(subscript);
+				int ver = (output_type == OUTPUT_TYPE_DILITHIUM) ? 14 : 0;
+				CScript witscript = GetScriptForWitness(subscript, ver);
 				wallet->AddCScript(witscript);
 
-				if (output_type == OUTPUT_TYPE_BECH32) {
+				if (output_type == OUTPUT_TYPE_DILITHIUM) {
+					WitnessV14ScriptHash hash;
+					SHA256((unsigned char *)&subscript[0], subscript.size(), (unsigned char *)&hash);
+					result = hash;
+				} else if (output_type == OUTPUT_TYPE_BECH32) {
 					WitnessV0ScriptHash hash;
 					SHA256((unsigned char *)&subscript[0], subscript.size(), (unsigned char *)&hash);
 					result = hash;
@@ -528,9 +568,12 @@ CScript CCoinAddr::GetScript()
 }
 
 /* build a P2WSH scriptPubKey */
-CScript GetScriptForWitness(const CScript& redeemscript)
+CScript GetScriptForWitness(const CScript& redeemscript, int nVer)
 {
 	CScript ret;
+	opcodetype opVer;
+	
+	opVer = CScript::EncodeOP_N(nVer);
 
 	txnouttype typ;
 	std::vector<std::vector<unsigned char> > vSolutions;
@@ -538,21 +581,19 @@ CScript GetScriptForWitness(const CScript& redeemscript)
 		if (typ == TX_PUBKEY) {
 			cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
 			uint160 h160 = Hash160(vch);
-			ret << OP_0 << h160;
+			ret << opVer << h160;
 			return ret;
 		} else if (typ == TX_PUBKEYHASH) {
-			ret << OP_0 << vSolutions[0];
+			ret << opVer << vSolutions[0];
 			return ret;
 		}
 	}
 
 	uint256 hash;
-	//  CSHA256().Write(&redeemscript[0], redeemscript.size()).Finalize(hash.begin());
-//	hash = Hash(redeemscript.begin(), redeemscript.end());
 	SHA256(&redeemscript[0], redeemscript.size(), (unsigned char *)&hash);
-	ret << OP_0 << ToByteVector(hash);
+	ret << opVer << ToByteVector(hash);
 
-	return ret;
+	return (ret);
 }
 
 bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
@@ -658,4 +699,5 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
 
 	return true;
 }
+
 

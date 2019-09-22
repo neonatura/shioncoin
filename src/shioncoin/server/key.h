@@ -36,6 +36,10 @@
 #include "uint256.h"
 #include "util.h"
 
+#define SIGN_ALG_NONE 0
+#define SIGN_ALG_ECDSA 1
+#define SIGN_ALG_DILITHIUM 2
+
 typedef uint256 ChainCode;
 
 // secure_allocator is defined in serialize.h
@@ -75,59 +79,75 @@ class CScriptID : public uint160
 /** An encapsulated public key. */
 class CPubKey 
 {
+
 	protected:
-    std::vector<unsigned char> vchPubKey;
-    friend class CKey;
+		std::vector<unsigned char> vchPubKey;
+		friend class CKey;
 
 	public:
-    CPubKey()
-    {
-      SetNull();
-    }
-
-    CPubKey(const std::vector<unsigned char> &vchPubKeyIn) : vchPubKey(vchPubKeyIn) { }
-
-    friend bool operator==(const CPubKey &a, const CPubKey &b) { return a.vchPubKey == b.vchPubKey; }
-    friend bool operator!=(const CPubKey &a, const CPubKey &b) { return a.vchPubKey != b.vchPubKey; }
-    friend bool operator<(const CPubKey &a, const CPubKey &b) { return a.vchPubKey < b.vchPubKey; }
-
-    IMPLEMENT_SERIALIZE(
-        READWRITE(vchPubKey);
-    )
-
-    CKeyID GetID() const {
-        return CKeyID(Hash160(vchPubKey));
-    }
-
-    uint256 GetHash() const {
-        return Hash(vchPubKey.begin(), vchPubKey.end());
-    }
-
-    void SetNull()
-    {
-      vchPubKey.clear();
-    }
-
-    std::vector<unsigned char> Raw() const 
-    {
-        return vchPubKey;
-    }
-
-    void Invalidate()
-    {
-      SetNull();
-    }
-
-    bool IsValid() const
+		CPubKey()
 		{
-			return 
-				vchPubKey.size() == 33 || vchPubKey.size() == 65 || /* ECDSA */ 
-				vchPubKey.size() == 1473; /* DILITHIUM-3 */
+			SetNull();
 		}
 
-    bool IsCompressed() const
+		CPubKey(const std::vector<unsigned char> &vchPubKeyIn) : vchPubKey(vchPubKeyIn) { }
+
+		friend bool operator==(const CPubKey &a, const CPubKey &b) { return a.vchPubKey == b.vchPubKey; }
+		friend bool operator!=(const CPubKey &a, const CPubKey &b) { return a.vchPubKey != b.vchPubKey; }
+		friend bool operator<(const CPubKey &a, const CPubKey &b) { return a.vchPubKey < b.vchPubKey; }
+
+		IMPLEMENT_SERIALIZE(
+				READWRITE(vchPubKey);
+				)
+
+			CKeyID GetID() const {
+				return CKeyID(Hash160(vchPubKey));
+			}
+
+		uint256 GetHash() const {
+			return Hash(vchPubKey.begin(), vchPubKey.end());
+		}
+
+		void SetNull()
 		{
-			return vchPubKey.size() == 33;
+			vchPubKey.clear();
+		}
+
+		std::vector<unsigned char> Raw() const 
+		{
+			return vchPubKey;
+		}
+
+		void Invalidate()
+		{
+			SetNull();
+		}
+
+		bool IsValid() const
+		{
+			return (
+					GetMethod() == SIGN_ALG_ECDSA || 
+					GetMethod() == SIGN_ALG_DILITHIUM
+					);
+		}
+
+		bool IsCompressed() const
+		{
+			return (vchPubKey.size() == 33 || IsDilithium());
+		}
+
+		int GetMethod() const
+		{
+			switch (vchPubKey.size()) {
+				case 1473: return SIGN_ALG_DILITHIUM; /* DILITHIUM-3 */
+				case 33: case 65: return SIGN_ALG_ECDSA; /* ECDSA 256k1 */
+			}
+			return (SIGN_ALG_NONE);
+		}
+
+		bool IsDilithium() const
+		{
+			return (GetMethod() == SIGN_ALG_DILITHIUM);
 		}
 
 		unsigned int size() const { return vchPubKey.size(); }
@@ -141,14 +161,9 @@ class CPubKey
 class CKeyMetadata
 {
 	public:
-		static const int META_HD_ENABLED = (1 << 0);
+		static const int META_SEGWIT = (1 << 0);
 		static const int META_HD_KEY = (1 << 1);
-		static const int META_SEGWIT = (1 << 2);
-		static const int META_DILITHIUM = (1 << 3);
-		static const int META_STATIC = (1 << 4);
-		static const int META_INTERNAL = (1 << 5);
-
-		static const int STANDARD_META_FLAGS = META_HD_ENABLED;
+		static const int META_INTERNAL = (1 << 2);
 
 		unsigned int nFlag;
 		int64_t nCreateTime; // 0 means unknown
@@ -168,17 +183,25 @@ class CKeyMetadata
 
 		void SetNull()
 		{
-			nFlag = CKeyMetadata::STANDARD_META_FLAGS;
+			nFlag = 0;
 			nCreateTime = 0;
 			hdKeypath.clear();
 			hdMasterKeyID.SetNull();
+		}
+
+		void Init(const CKeyMetadata& b)
+		{
+			nFlag = b.nFlag;
+			nCreateTime = b.nCreateTime;
+			hdKeypath = b.hdKeypath;
+			hdMasterKeyID = b.hdMasterKeyID;
 		}
 
 		IMPLEMENT_SERIALIZE
 		(
 			READWRITE(nFlag);
 			READWRITE(nCreateTime);
-			if (nFlag & CKeyMetadata::META_HD_ENABLED) {
+			if (nFlag & CKeyMetadata::META_HD_KEY) {
 				READWRITE(hdKeypath);
 				READWRITE(hdMasterKeyID);
 			}
@@ -188,15 +211,19 @@ class CKeyMetadata
 		{
 			string ret_str;
 			if (nFlag & META_HD_KEY)
-				ret_str += "hdkey ";
+				ret_str += "hd ";
+			if (nFlag & META_SEGWIT)
+				ret_str += "wit ";
+			if (nFlag & META_INTERNAL)
+				ret_str += "int ";
 			if (ret_str.size() != 0)
-				ret_str.substr(0, ret_str.size()-1);
+				ret_str = ret_str.substr(0, ret_str.size()-1);
 			return (ret_str);
 		}
 
 };
 
-class CKey
+class CKey : public CKeyMetadata
 {
 	protected:
     CSecret vch;
@@ -211,15 +238,15 @@ class CKey
 
 		void Init(const CKey& b)
 		{
+			CKeyMetadata::Init(b);
 			vch = b.vch;
 			vchPub = b.vchPub;
 			fPubSet = b.fPubSet;
 			fCompressedPubKey = b.fCompressedPubKey;
-			meta = b.meta;
 		}
 
 public:
-		CKeyMetadata meta;
+
 
     CKey()
 		{
@@ -238,20 +265,18 @@ public:
 		}
 
     IMPLEMENT_SERIALIZE(
-			READWRITE(meta);
+			READWRITE(*(CKeyMetadata *)this);
 			READWRITE(vch);
 			READWRITE(fCompressedPubKey);
 		)
 
     void SetNull()
 		{
+			CKeyMetadata::SetNull();
 			fCompressedPubKey = false;
 			fPubSet = false;
-
 			vch.clear();
 			vchPub.clear();
-
-			meta.SetNull();
 		}
 
 		void Reset()
@@ -274,6 +299,20 @@ public:
 			CSecret ret_secret(vch);
 			fCompressed = fCompressedPubKey;
 			return (ret_secret);
+		}
+
+		int GetMethod() const
+		{
+			switch (vch.size()) {
+				case 96: return SIGN_ALG_DILITHIUM;
+				case 32: return SIGN_ALG_ECDSA;
+			}
+			return SIGN_ALG_NONE;
+		}
+
+		bool IsDilithium() const
+		{
+			return (GetMethod() == SIGN_ALG_DILITHIUM);
 		}
 
 		unsigned int size() const { return (vch.size()); }
@@ -318,6 +357,7 @@ public:
     virtual void MergeKey(CKey& keyChild, cbuff tag) = 0;
 
 		virtual bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const = 0;
+
 
 };
 

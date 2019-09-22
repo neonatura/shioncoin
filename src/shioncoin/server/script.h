@@ -176,12 +176,14 @@ enum opcodetype
     OP_16 = 0x60,
 
     /* extension ops */
+    OP_EXT_RESERVED1 = 0x01,
+    OP_EXT_RESERVED2 = 0x02,
 		OP_PARAM = 0x03,
 		OP_ALTCHAIN = 0x04,
     OP_CONTEXT = 0x05,
     OP_EXEC = 0x06,
     OP_CHANNEL = 0x07,
-    OP_VAULT = 0x08,
+    OP_EXT_RESERVED8 = 0x08,
     OP_MATRIX = 0x09,
     OP_ALIAS = 0x0a,
     OP_OFFER=0x0b,
@@ -309,6 +311,8 @@ enum opcodetype
     OP_EXT_TRANSFER = 0xf5,
     OP_EXT_PAY = 0xf6,
     OP_EXT_VALIDATE = 0xf7,
+		OP_EXT_NOP8 = 0xf8,
+		OP_EXT_NOP9 = 0xf9,
 
     // template matching params
     OP_SMALLINTEGER = 0xfa,

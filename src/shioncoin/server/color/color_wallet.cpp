@@ -88,13 +88,10 @@ bool color_LoadWallet(void)
   bool fFirstRun = true;
   colorWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
+		/* generate default address for system account. */
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(colorWallet, strAccount, true);
-		//CPubKey newDefaultKey = colorWallet->GenerateNewKey();
-		colorWallet->SetDefaultKey(newDefaultKey);
-		colorWallet->SetAddressBookName(colorWallet->vchDefaultKey.GetID(), "");
+		colorWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(colorWallet);
@@ -371,7 +368,7 @@ bool COLORWallet::CreateAccountTransaction(string strFromAccount, const vector<p
 
         if (nChange > 0) {
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);

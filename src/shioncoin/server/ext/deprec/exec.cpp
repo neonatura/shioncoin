@@ -971,7 +971,7 @@ int init_exec_tx(CIface *iface, string strAccount, string strPath, int64 nExecFe
   }
 
   string strExtAccount = "@" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
+  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount);
 
   wtx.SetNull();
   wtx.strFromAccount = strAccount; /* originating account for payment */
@@ -1090,7 +1090,7 @@ int update_exec_tx(CIface *iface, const uint160& hashExec, string strPath, CWall
     return (SHERR_INVAL);
 
   /* generate new ext addr */
-  extAddr = GetAccountAddress(wallet, strExtAccount, true);
+  extAddr = GetAccountAddress(wallet, strExtAccount);
 
   /* load new sexe code */
   cbuff data;

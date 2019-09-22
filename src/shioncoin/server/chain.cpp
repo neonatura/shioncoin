@@ -215,7 +215,7 @@ static bool ServiceWalletEvent(int ifaceIndex)
       wallet->nScanHeight = nHeight;
     }
   }
-  Debug("ServiceWalletEvent: scanned blocks %d .. %d", nStartHeight, nHeight);
+  Debug("ServiceWalletEvent: scanned %s blocks %d .. %d", iface->name, nStartHeight, nHeight);
 
   if (nHeight >= nBestHeight) {
     /* service event has completed task. */

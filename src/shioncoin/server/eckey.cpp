@@ -161,8 +161,8 @@ bool ECKey::SetSecret(const CSecret& vchSecret, bool fCompressed)
   if (fCompressed || fCompressedPubKey)
     SetCompressedPubKey();
 
-	if (meta.nCreateTime == 0)
-		meta.nCreateTime = GetTime();
+	if (nCreateTime == 0)
+		nCreateTime = GetTime();
 
 	fPubSet = false;
 

@@ -36,6 +36,7 @@
 #define OUTPUT_TYPE_LEGACY 1
 #define OUTPUT_TYPE_P2SH_SEGWIT 2
 #define OUTPUT_TYPE_BECH32 3
+#define OUTPUT_TYPE_DILITHIUM 4
 
 #define ADDR_UNKNOWN 0
 #define ADDR_BASE58 1
@@ -264,11 +265,12 @@ class COLORCoinAddr : public CCoinAddr
 };
 
 
-CScript GetScriptForWitness(const CScript& redeemscript);
+CScript GetScriptForWitness(const CScript& redeemscript, int nVer);
 
 bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet);
 
 bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vector<CTxDestination>& addressRet, int& nRequiredRet);
+
 
 
 #endif /* ndef __SERVER__COINADDR_H__ */

@@ -886,8 +886,7 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
   CScript scriptPubKey;
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_CONTEXT) << OP_HASH160 << hContext << OP_2DROP;
 
-  string strExtAccount = "@" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
   CScript destPubKey;
   destPubKey.SetDestination(extAddr.Get());
   scriptPubKey += destPubKey;
@@ -981,7 +980,7 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
 
   uint160 hContext = ctx->GetHash();
 
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
   CScript destPubKey;
   destPubKey.SetDestination(extAddr.Get());
 

@@ -165,7 +165,13 @@ static opt_t _option_table[] = {
 		"A hexadecimal color code to enable stratum mining for the COLOR coin interface." },
 #endif
 
-	{ OPT_HDKEY, OPT_TYPE_BOOL, 0, NULL,
+	/** 
+	 * HD Keys are derived individually per account. Retaining the "default"
+	 * or "master" (the master is derived from the default) key for an account
+	 * can regenerate all underlying HD addresses.
+	 * Note: Disable this option for added security.
+	 */
+	{ OPT_HDKEY, OPT_TYPE_BOOL, 1, NULL,
 		"Derive new wallet keys using a hierarhchically deterministic algorythm." },
 
 	{ OPT_DILITHIUM, OPT_TYPE_BOOL, 0, NULL,

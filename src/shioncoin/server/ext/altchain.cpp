@@ -829,9 +829,9 @@ static int FillAltChainBlock(string strAccount, CBlock *block, CTransaction *tx,
 	nChange = (nChange > nTxFee) ? (nChange - nTxFee) : 0;
 	if (nChange > MIN_TX_FEE(alt_iface)) {
 		CScript scriptPubKey;
-		CPubKey changePubKey = GetAccountPubKey(alt_wallet, strAccount, true);
-		scriptPubKey.SetDestination(changePubKey.GetID());
-    vector<CTxOut>::iterator position = tx->vout.begin()+GetRandInt(tx->vout.size());
+		const CCoinAddr& changeAddr = alt_wallet->GetRecvAddr(strAccount);
+		scriptPubKey.SetDestination(changeAddr.Get());
+		vector<CTxOut>::iterator position = tx->vout.begin()+GetRandInt(tx->vout.size());
 		tx->vout.insert(position, CTxOut(nChange, scriptPubKey));
 	}
 
@@ -958,16 +958,7 @@ const CPubKey& GetAltChainAddr(uint160 hColor, string strAccount, bool bForceNew
 {
 	static CPubKey pubkey;
 	CWallet *wallet = GetWallet(COLOR_COIN_IFACE);
-
-#if 0
-	if (bForceNew) {
-		wallet->GetMergedPubKey(strAccount, hColor.GetHex().c_str(), pubkey);
-	} else { 
-		pubkey = GetAccountPubKey(wallet, strAccount, false);
-	}
-#endif
 	wallet->GetMergedPubKey(strAccount, hColor.GetHex().c_str(), pubkey);
-
 	return (pubkey);
 }
 

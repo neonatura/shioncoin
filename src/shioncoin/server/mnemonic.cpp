@@ -1710,7 +1710,8 @@ const string EncodeMnemonicSecret(CCoinSecret& secret)
   bool fCompressed = false;
 
   CSecret secret_buff = secret.GetSecret(fCompressed);
-  cbuff buff(secret_buff.begin(), secret_buff.begin() + 32);
+  cbuff buff(secret_buff.begin(), secret_buff.begin() + secret_buff.size());
+  //cbuff buff(secret_buff.begin(), secret_buff.begin() + 32);
   string hex = HexStr(buff);
   string_list words = EncodeMnemonic(hex);
 
@@ -1775,11 +1776,13 @@ bool DecodeMnemonicSecret(int ifaceIndex, const string phrase, CCoinSecret& addr
     string hex = DecodeMnemonic(words);
     secret = ParseHex(hex);
   }
-  if (secret.size() != 32)
+  if (secret.size() != 32 && 
+			secret.size() != 96)
     return (false);
 
   {
-    CSecret t_buff(secret.begin(), secret.begin() + 32);
+    //CSecret t_buff(secret.begin(), secret.begin() + 32);
+    CSecret t_buff(secret.begin(), secret.begin() + secret.size());
     addr = CCoinSecret(ifaceIndex, t_buff, false);
   }
 

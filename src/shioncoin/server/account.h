@@ -36,14 +36,16 @@
 
 
 /* use segwit program, if available. */
-#define ACCADDRF_WITNESS CKeyMetadata::META_SEGWIT
+#define ACCADDRF_WITNESS (1 << 0)
 /* derived via hdkey, if available. */
-#define ACCADDRF_DERIVE CKeyMetadata::META_HD_KEY
+#define ACCADDRF_DERIVE (1 << 1)
 /* always the same address returned */
-#define ACCADDRF_STATIC CKeyMetadata::META_STATIC
+#define ACCADDRF_STATIC (1 << 2)
 /* permit dilithium signature */
-#define ACCADDRF_DILITHIUM CKeyMetadata::META_DILITHIUM
-#define ACCADDRF_INTERNAL CKeyMetadata::META_INTERNAL
+#define ACCADDRF_DILITHIUM (1 << 3)
+
+
+void GetAddrDestination(int ifaceIndex, const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0);
 
 
 class CAccountCache
@@ -149,14 +151,7 @@ class CAccountCache
 
 //		CCoinAddr CreateAddr(int type);
 
-		CHDChain *GetHDChain();
-
 		void UpdateAccount();
-
-		void UpdateHDChain()
-		{
-			UpdateAccount();
-		}
 
 		bool GetPrimaryAddr(int type, CTxDestination& addrRet);
 
@@ -166,9 +161,36 @@ class CAccountCache
 
 		bool CreateNewPubKey(CPubKey& addrRet, int flags);
 
-		void GetAddrDestination(const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0);
+		/**
+		 * When the ACCADDRF_DILITHIUM flag is passed in then only the bech32 Witness v14 address is returned, and otherwise a pubkey, pubkey-script, witness, and bech32 is returned based on blockchain capability.
+		 * @param nFlag ACCADDRF_XX
+		 */
+		void GetAddrDestination(const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0)
+		{
+			::GetAddrDestination(wallet->ifaceIndex, keyid, vDest, nFlag);
+		}
 
-		void SetAddrDestinations(const CKeyID& keyid, int nFlag = 0);
+		void SetAddrDestinations(const CKeyID& keyid);
+
+		bool GetMergedPubKey(cbuff tag, CPubKey& pubkey);
+
+		bool GetMergedAddr(cbuff tag, CCoinAddr& addr);
+
+		bool GetMergedPubKey(const char *tag, CPubKey& pubkey)
+		{
+			cbuff tagbuf(tag, tag + strlen(tag));
+			return (GetMergedPubKey(tagbuf, pubkey));
+		}
+
+		bool GetMergedAddr(const char *tag, CCoinAddr& addr)
+		{
+			cbuff tagbuf(tag, tag + strlen(tag));
+			return (GetMergedAddr(tagbuf, addr));
+		}
+
+		bool SetCertHash(const uint160& hCert);
+
+		uint160 GetCertHash() const;
 
 };
 

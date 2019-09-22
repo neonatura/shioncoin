@@ -37,12 +37,13 @@
 
 using namespace std;
 using namespace boost;
-//using namespace boost::asio;
 using namespace json_spirit;
-//using namespace boost::assign;
-
 
 extern json_spirit::Value ValueFromAmount(int64 amount);
+
+extern void rpcwallet_GetVerboseAddr(CWallet *wallet, CAccountCache *acc, CTxDestination dest, Object& ent);
+
+extern void rpcwallet_GetWalletAddr(CWallet *wallet, shjson_t *tree, string strLabel, const CKeyID& keyID);
 
 static bool fHelp = false;
 
@@ -246,9 +247,11 @@ Value rpc_alias_get(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_alias_getaddr(CIface *iface, const Array& params, bool fStratum) 
 {
+  CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   CTransaction tx;
   CAlias *alias;
+	CKeyID keyid;
 
   if (params.size() != 1)
     throw runtime_error("invalid parameters");
@@ -258,12 +261,24 @@ Value rpc_alias_getaddr(CIface *iface, const Array& params, bool fStratum)
   if (!alias)
     throw JSONRPCError(-5, "invalid alias label");
 
-  return (alias->ToValue(ifaceIndex));
+	Object ent = alias->ToValue(ifaceIndex);
+	ent.push_back(Pair("tx", tx.GetHash().GetHex()));
+
+	CCoinAddr addr(wallet->ifaceIndex);
+	if (alias->GetCoinAddr(ifaceIndex, addr) &&
+			ExtractDestinationKey(wallet, addr.Get(), keyid)) {
+		Object pubent;
+		rpcwallet_GetVerboseAddr(wallet, NULL, addr.Get(), pubent);
+		ent.push_back(Pair("pubkey", pubent));
+	}
+
+	return (ent);
 }
 
 Value rpc_alias_listaddr(CIface *iface, const Array& params, bool fStratum) 
 {
   int ifaceIndex = GetCoinIndex(iface);
+	bool fVerbose = false;
   CAlias *alias;
   alias_list *list;
 
@@ -271,7 +286,7 @@ Value rpc_alias_listaddr(CIface *iface, const Array& params, bool fStratum)
     throw runtime_error("invalid parameters");
 
   string keyword;
-  if (params.size() != 0)
+  if (params.size() > 0)
     keyword = params[0].get_str();
 
   Object result;
@@ -286,24 +301,19 @@ Value rpc_alias_listaddr(CIface *iface, const Array& params, bool fStratum)
         label.find(keyword) == std::string::npos)
       continue;
 
-    if (!GetTransaction(iface, hash, tx, &hBlock))
+    if (!GetTransaction(iface, hash, tx, NULL))
       continue;
 
-    Object obj;
-
-    obj.push_back(Pair("block", hBlock.GetHex()));
-    obj.push_back(Pair("tx", tx.GetHash().GetHex()));
-
     alias = (CAlias *)&tx.alias;
-    obj.push_back(Pair("alias", alias->GetHash().GetHex()));
-    if (alias->GetType() == CAlias::ALIAS_COINADDR) {
-      CCoinAddr addr(ifaceIndex);
-      if (alias->GetCoinAddr(ifaceIndex, addr))
-        obj.push_back(Pair("addr", addr.ToString().c_str()));
-    }
 
-    result.push_back(Pair(label, obj));
-  }
+		CCoinAddr addr(ifaceIndex);
+		if (!alias->GetCoinAddr(ifaceIndex, addr))
+			continue;
+		if (addr.IsValid())
+			continue;
+
+		result.push_back(Pair(label, addr.ToString()));
+	}
 
   return (result);
 }
@@ -370,7 +380,49 @@ Value rpc_alias_remove(CIface *iface, const Array& params, bool fStratum)
   return (wtx.ToValue(ifaceIndex));
 }
 
+#if 0
+Value rpc_alias_export(CIface *iface, const Array& params, bool fStratum) 
+{
+  CWallet *wallet = GetWallet(iface);
 
+  if (fStratum)
+    throw runtime_error("unsupported operation");
 
+  if (params.size() != 1)
+    throw runtime_error("invalid parameters");
 
+  int ifaceIndex = GetCoinIndex(iface);
+  if (ifaceIndex != TEST_COIN_IFACE &&
+      ifaceIndex != TESTNET_COIN_IFACE &&
+      ifaceIndex != SHC_COIN_IFACE)
+    throw runtime_error("unsupported operation");
+
+	CTransaction tx;
+	if (!GetAliasByName(iface, label, tx))
+    throw JSONRPCError(ERR_NOENT, "Unknown alias name: " + label);
+
+	int mode;
+	int nOut;
+	CScript scriptPubKey;
+	if (!GetExtOutput(tx, OP_ALIAS, mode, nOut, scriptPubKey))
+    throw JSONRPCError(ERR_NOENT, "Invalid alias transaction: " + tx.GetHash().GetHex());
+
+	CTxDestination dest;
+	if (!ExtractDestination(scriptPubKey, dest))
+    throw JSONRPCError(ERR_NOENT, "Unknown output destination: " + tx.GetHash().GetHex());
+
+	CKeyID keyid;
+	if (!ExtractDestinationKey(wallet, dest, keyid))
+    throw JSONRPCError(ERR_NOENT, "Unknown output pubkey: " + tx.GetHash().GetHex());
+
+	key = wallet->GetKey(keyID);
+	if (!key)
+    throw JSONRPCError(ERR_REMOTE, "non local pubkey: " + keyid.GetHex());
+
+	bool fCompressed = false;
+	CSecret vchSecret = key->GetSecret(fCompressed);;
+	CCoinSecret csec(wallet->ifaceIndex, vchSecret, fCompressed);
+	return (csec.ToString());
+}
+#endif
 

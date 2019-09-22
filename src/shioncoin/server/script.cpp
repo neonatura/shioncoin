@@ -267,8 +267,10 @@ const char* GetOpName(opcodetype opcode)
     case OP_LICENSE                : return "OP_LICENSE";
     case OP_ASSET                  : return "OP_ASSET";
     case OP_MATRIX                 : return "OP_MATRIX";
-    case OP_VAULT                  : return "OP_VAULT";
     case OP_CHANNEL                : return "OP_CHANNEL";
+    case OP_EXT_RESERVED1          : return "OP_EXT_RESERVED1";
+    case OP_EXT_RESERVED2          : return "OP_EXT_RESERVED2";
+    case OP_EXT_RESERVED8          : return "OP_EXT_RESERVED8";
 
     /* extension operatives */
     case OP_EXT_NEW                : return "OP_EXT_NEW";
@@ -2224,6 +2226,7 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
   std::vector<unsigned char> witnessprogram;
   if (flags & SCRIPT_VERIFY_WITNESS) {
     if (scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram)) {
+if (!witness.empty()) error(ERR_INVAL, "DEBUG: VerifyScript: witnessversion(%d) program(<%d bytes>) \"%s\"\n", witnessversion, witnessprogram.size(), scriptPubKey.ToString().c_str()); 
       hadWitness = true;
       if (scriptSig.size() != 0) {
         // The scriptSig must be _exactly_ CScript(), otherwise we reintroduce malleability.
@@ -2235,7 +2238,9 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
       // Bypass the cleanstack check at the end. The actual stack is obviously not clean
       // for witness programs.
       stack.resize(1);
-    }
+    } else {
+if (!witness.empty()) error(ERR_INVAL, "DEBUG: VerifyScript: not witness program \"%s\"\n", scriptPubKey.ToString().c_str()); 
+		}
 	}
 
   // Additional validation for spend-to-script-hash transactions:
@@ -2260,10 +2265,11 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
     if (flags & SCRIPT_VERIFY_WITNESS) {
       if (pubKey2.IsWitnessProgram(witnessversion, witnessprogram)) {
         hadWitness = true;
-        if (scriptSig != CScript() << std::vector<unsigned char>(pubKey2.begin(), pubKey2.end())) {
-          // The scriptSig must be _exactly_ a single push of the redeemScript. Otherwise we
-          // reintroduce malleability.
-          return error(SHERR_INVAL, "VeriyScript: witness address pubkey failure.");
+				CScript scriptCmp;
+				scriptCmp << std::vector<unsigned char>(pubKey2.begin(), pubKey2.end());
+        if (scriptSig != scriptCmp) {
+          /* The scriptSig must be _exactly_ a single push of the redeemScript. Otherwise we introduce malleability. */
+          return error(SHERR_INVAL, "VeriyScript: witness address pubkey failure (%s).", pubKey2.ToString().c_str());
         }
         if (!VerifyWitnessProgram(sig, witness, witnessversion, witnessprogram,  flags)) {
           return error(SHERR_INVAL, "VeriyScript: error verifying witness program (P2SH).");
@@ -2521,19 +2527,53 @@ bool CScript::IsPayToScriptHash() const
 
 bool CScript::IsWitnessProgram(int& version, std::vector<unsigned char>& program) const 
 {
-	if (this->size() < 4 || this->size() > 42) {
-		return false;
-	}
-	if ((*this)[0] != OP_0 && ((*this)[0] < OP_1 || (*this)[0] > OP_16)) {
-		return false;
+	const unsigned int tot_len = this->size();
+	opcodetype vercode;
+	opcodetype opcode;
+
+	if (tot_len < 4)
+		return (false);
+
+	CScript::const_iterator pc = this->begin();
+	if (!GetOp(pc, vercode))
+		return (false);
+
+	if (vercode >= OP_EXT_NEW && vercode <= OP_EXT_NOP9) {
+		cbuff vch;
+
+		if (!GetOp(pc, opcode)) /* ext tx type */
+			return (false);
+		if (!GetOp(pc, opcode)) /* OP_HASH160 */
+			return (false);
+		if (!GetOp(pc, opcode, vch)) /* <hash> */
+			return (false);
+		if (vch.size() == 0)
+			return (false);
+		if (!GetOp(pc, opcode)) /* OP_2DROP */
+			return (false);
+		if (opcode != OP_2DROP)
+			return (false);
+		if (!GetOp(pc, vercode))
+			return (false);
 	}
 
-	if ((size_t)((*this)[1] + 2) == this->size()) {
-		version = DecodeOP_N((opcodetype)(*this)[0]);
-		program = std::vector<unsigned char>(this->begin() + 2, this->end());
-		return true;
+	/* sanity */
+	if (vercode != OP_0 && (vercode < OP_1 || vercode > OP_16))
+		return (false);
+	if ((this->end() - pc + 1) < 4 || (this->end() - pc + 1) > 42)
+		return (false);
+
+	unsigned char of = (pc - this->begin());
+	if (of < tot_len) {
+		unsigned int sz = (unsigned int)((*this)[of++]);
+		if (sz == (tot_len - of)) {
+			version = DecodeOP_N(vercode);
+			program = std::vector<unsigned char>(this->begin() + of, this->end());
+			return (true);
+		}
 	}
-	return false;
+
+	return (false);
 }
 
 class CScriptVisitor : public boost::static_visitor<bool>

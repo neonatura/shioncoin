@@ -254,7 +254,7 @@ static bool emc2_LoadBlockIndex()
 
   int nCheckDepth = (GetBestHeight(EMC2_COIN_IFACE) / 640) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;
-  int nValidateCheckDepth = nCheckDepth * 4;
+  int nValidateCheckDepth = nCheckDepth * 3;
   int total = 0;
   int invalid = 0;
   int maxHeight = 0;

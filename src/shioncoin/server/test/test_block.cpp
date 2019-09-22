@@ -25,6 +25,7 @@
 
 #include "shcoind.h"
 #include "wallet.h"
+#include "account.h"
 #include "net.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
@@ -395,16 +396,16 @@ CBlock *test_GenerateBlock(CBlockIndex *pindexPrev)
     return (NULL);
 
   CWallet *wallet = GetWallet(iface);
-
   string sysAccount("");
-  CPubKey pubkey = GetAccountPubKey(wallet, sysAccount);
-//  CReserveKey reservekey(wallet);
+	CAccountCache *acc = wallet->GetAccount(sysAccount);
+	CPubKey pubkey;
+
+	if (!acc->CreateNewPubKey(pubkey, 0))
+		return (NULL);
+
   CBlock *block = test_CreateNewBlock(pubkey, pindexPrev);
   if (!block)
     return (NULL);
-//reservekey.KeepKey();
-//wallet->SetAddressBookName(reservekey.GetReservedKey().GetID(), sysAccount); 
-
 
 //  block->vtx.push_back(txNew);
 // if (bestIndex) block->hashPrevBlock = bestIndex->GetBlockHash();

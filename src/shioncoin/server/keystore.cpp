@@ -429,7 +429,6 @@ CKeyMetadata *CBasicKeyStore::GetKeyMetadata(const CKeyID &address) const
 	if (!key)
 		return (NULL);
 
-	return (&key->meta);
+	return ((CKeyMetadata *)key);
 }
-
 

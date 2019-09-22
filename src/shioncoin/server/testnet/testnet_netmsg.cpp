@@ -712,7 +712,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 
   }
 
-
+#if 0
   else if (strCommand == "checkorder")
   {
     uint256 hashReply;
@@ -741,8 +741,6 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     scriptPubKey << mapReuseKey[pfrom->addr] << OP_CHECKSIG;
     pfrom->PushMessage("reply", hashReply, (int)0, scriptPubKey);
   }
-
-
   else if (strCommand == "reply")
   {
     uint256 hashReply;
@@ -761,6 +759,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     if (!tracker.IsNull())
       tracker.fn(tracker.param1, vRecv);
   }
+#endif
 
   /* exclusively used by bloom filter supported coin services, but does not require they have a bloom filter enabled for node. */
   else if (strCommand == "mempool")

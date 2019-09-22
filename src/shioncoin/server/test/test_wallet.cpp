@@ -86,13 +86,9 @@ bool test_LoadWallet(void)
   bool fFirstRun = true;
   testWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(testWallet, strAccount, true);
-		//CPubKey newDefaultKey = testWallet->GenerateNewKey(); 
-    testWallet->SetDefaultKey(newDefaultKey);
-//    testWallet->SetAddressBookName(testWallet->vchDefaultKey.GetID(), "");
+    testWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(testWallet);

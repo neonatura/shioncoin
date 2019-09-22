@@ -45,16 +45,20 @@ extern TEST_matrixtx(CuTest*);
 extern TEST_signtx(CuTest*);
 extern TEST_cointx(CuTest*);
 extern TEST_offertx(CuTest*);
-extern TEST_aliastx(CuTest*);
-extern TEST_assettx(CuTest*);
-extern TEST_certtx(CuTest*);
+extern TEST_sip6_aliastx(CuTest*);
+extern TEST_sip6_di_aliastx(CuTest*);
+extern TEST_sip25_assettx(CuTest*);
+extern TEST_sip25_di_assettx(CuTest*);
+extern TEST_sip5_certtx(CuTest*);
+extern TEST_sip5_di_certtx(CuTest*);
 extern TEST_identtx(CuTest*);
 extern TEST_bloom_create_insert_key(CuTest*);
 extern TEST_bloom_match(CuTest*);
 extern TEST_exectx(CuTest*);
 extern TEST_coin_spendall(CuTest*);
 extern TEST_coin_spendall_segwit(CuTest*);
-extern TEST_ctxtx(CuTest*);
+extern TEST_sip10_ctxtx(CuTest*);
+extern TEST_sip10_di_ctxtx(CuTest*);
 extern TEST_scriptid(CuTest*);
 extern TEST_segwit(CuTest*);
 extern TEST_segwit_serializetx(CuTest*);
@@ -123,13 +127,13 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_matrixtx);
   SUITE_ADD_TEST(suite, TEST_signtx);
   SUITE_ADD_TEST(suite, TEST_cointx);
-  SUITE_ADD_TEST(suite, TEST_aliastx);
-  SUITE_ADD_TEST(suite, TEST_certtx);
-  SUITE_ADD_TEST(suite, TEST_assettx);
+  SUITE_ADD_TEST(suite, TEST_sip6_aliastx);
+  SUITE_ADD_TEST(suite, TEST_sip5_certtx);
+  SUITE_ADD_TEST(suite, TEST_sip25_assettx);
 #ifdef USE_SEXE
   SUITE_ADD_TEST(suite, TEST_exectx);
 #endif
-  SUITE_ADD_TEST(suite, TEST_ctxtx);
+  SUITE_ADD_TEST(suite, TEST_sip10_ctxtx);
   SUITE_ADD_TEST(suite, TEST_scriptid);
   SUITE_ADD_TEST(suite, TEST_chainwork);
   SUITE_ADD_TEST(suite, TEST_offertx);
@@ -143,7 +147,6 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_respend);
   SUITE_ADD_TEST(suite, TEST_orphan_block);
 
-
   /* pre-finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall);
 
@@ -156,6 +159,12 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_bech32); /* BIP173 */
   SUITE_ADD_TEST(suite, TEST_sip33_tx); /* SIP33 */
   SUITE_ADD_TEST(suite, TEST_account_cache);
+
+	/* dilithium SIP33 */
+  SUITE_ADD_TEST(suite, TEST_sip6_di_aliastx);
+  SUITE_ADD_TEST(suite, TEST_sip10_di_ctxtx);
+  SUITE_ADD_TEST(suite, TEST_sip25_di_assettx);
+  SUITE_ADD_TEST(suite, TEST_sip5_di_certtx);
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);

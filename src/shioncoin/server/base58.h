@@ -207,8 +207,8 @@ class CCoinSecret : public CBase58Data
 		{
 			CSecret vchSecret;
 
+			fCompressedOut = false;
 			if (vchData.size() == 32) {
-				fCompressedOut = false;
 				vchSecret = CSecret(vchData.begin(), vchData.end());
 			} else if (vchData.size() == 33) {
 				fCompressedOut = true;

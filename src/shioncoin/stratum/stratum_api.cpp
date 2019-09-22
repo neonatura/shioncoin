@@ -30,6 +30,7 @@
 #include "rpc/rpc_proto.h"
 #include "stratum.h"
 #include "wallet.h"
+#include "account.h"
 #include "mnemonic.h"
 #include "txcreator.h"
 #include "chain.h"
@@ -186,13 +187,26 @@ static const ApiItems& stratum_api_account_create(int ifaceIndex, string strAcco
 		if (!alt_wallet)
 			continue;
 
+#if 0
 		newKey = GetAccountPubKey(alt_wallet, strAccount, true);
-
 		CKeyID keyId = newKey.GetID();
 		alt_wallet->SetAddressBookName(keyId, strAccount);
 		if (ifaceIndex == idx) {
 			coinAddr = CCoinAddr(ifaceIndex, keyId).ToString();
 			phash = get_private_key_hash(alt_wallet, keyId);
+		}
+#endif
+
+		CPubKey pubkey;
+		CAccountCache *acc = alt_wallet->GetAccount(strAccount);
+		if (!acc->CreateNewPubKey(pubkey, 0))
+			continue;
+		const CKeyID& keyID = pubkey.GetID();
+
+		if (ifaceIndex == idx) {
+			CCoinAddr addrNew(ifaceIndex, keyID);
+			coinAddr = addrNew.ToString();
+			phash = get_private_key_hash(alt_wallet, keyID);
 		}
 	}
 

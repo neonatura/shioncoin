@@ -90,6 +90,18 @@ const RPCOp WALLET_STAMP = {
     "A single coin reward can be achieved by creating an ident stamp transaction on a location present in the \"spring matrix\". The reward will be given, at most, once per location. A minimum transaction fee will apply and is sub-sequently returned once the transaction has been processed."
 };
 
+const RPCOp WALLET_GETCERT = {
+  &rpc_wallet_getcert, 1, {RPC_ACCOUNT},
+  "Syntax: <address>\n"
+	"Get the default certificate for the given account name."
+};
+
+const RPCOp WALLET_SETCERT = {
+  &rpc_wallet_setcert, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <address> <cert-hash>\n"
+	"Set the default certificate for the given account name."
+};
+
 
 /* ext tx: alias */
 const RPCOp ALIAS_INFO = {
@@ -620,7 +632,9 @@ void shc_RegisterRPCOp(int ifaceIndex)
 
   RegisterRPCOp(ifaceIndex, "wallet.csend", WALLET_CSEND);
   RegisterRPCOp(ifaceIndex, "wallet.donate", WALLET_DONATE);
+  RegisterRPCOp(ifaceIndex, "wallet.getcert", WALLET_GETCERT);
   RegisterRPCOp(ifaceIndex, "wallet.keyphrase", WALLET_KEYPHRASE);
+  RegisterRPCOp(ifaceIndex, "wallet.setcert", WALLET_SETCERT);
   RegisterRPCOp(ifaceIndex, "wallet.setkeyphrase", WALLET_SETKEYPHRASE);
   RegisterRPCOp(ifaceIndex, "wallet.stamp", WALLET_STAMP);
 

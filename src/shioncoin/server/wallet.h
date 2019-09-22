@@ -77,39 +77,7 @@ class CAccountCache;
 
 #define MAX_ACCADDR 7
 
-class CHDChain
-{
-	public:
-		uint32_t nExternalChainCounter;
-		uint32_t nInternalChainCounter;
-		CKeyID masterKeyID; //!< master key hash160
-
-		static const int VERSION_HD_BASE        = 1;
-		static const int VERSION_HD_CHAIN_SPLIT = 2;
-		static const int CURRENT_VERSION        = VERSION_HD_CHAIN_SPLIT;
-		int nVersion; 
-
-		CHDChain() { SetNull(); }
-
-		void SetNull()
-		{
-			nVersion = CHDChain::CURRENT_VERSION;
-			nExternalChainCounter = 0;
-			nInternalChainCounter = 0;
-			masterKeyID.SetNull();
-		}
-
-		IMPLEMENT_SERIALIZE
-		(
-			READWRITE(this->nVersion);
-			READWRITE(nExternalChainCounter);
-			READWRITE(masterKeyID);
-			if (this->nVersion >= VERSION_HD_CHAIN_SPLIT)
-				READWRITE(nInternalChainCounter);
-		)
-
-};
-
+class CAccount;
 
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
@@ -188,15 +156,11 @@ class CWallet : public CBasicKeyStore
 
 		std::string strWalletFile;
 
-    // Map from Key ID to key metadata.
-    std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
-
-    // Map from Script ID to key metadata (for watch-only keys).
-    std::map<CScriptID, CKeyMetadata> mapScriptMetadata;
-
+#if 0
 		typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
 		MasterKeyMap mapMasterKeys;
 		unsigned int nMasterKeyMaxID;
+#endif
 
 		/* best work done on current chain */
 		CBigNum bnBestChainWork;
@@ -208,7 +172,9 @@ class CWallet : public CBasicKeyStore
 
 		CWallet(int index)
 		{
+#if 0
 			nMasterKeyMaxID = 0;
+#endif
 			pwalletdbEncryption = NULL;
 			checkpoints = NULL;
 			ifaceIndex = index;
@@ -222,7 +188,9 @@ class CWallet : public CBasicKeyStore
 		CWallet(int index, std::string strWalletFileIn)
 		{
 			strWalletFile = strWalletFileIn;
+#if 0
 			nMasterKeyMaxID = 0;
+#endif
 			pwalletdbEncryption = NULL;
 			checkpoints = NULL;
 			ifaceIndex = index;
@@ -437,8 +405,9 @@ class CWallet : public CBasicKeyStore
 		bool GetMergedAddress(string strAccount, const char *tag, CCoinAddr& addrRet);
 		bool GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubkey);
 
-
+#if 0
 		bool GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr);
+#endif
 
 		int64 CalculateFee(CWalletTx& tx, int64 nMinFee = 0);
 
@@ -508,14 +477,6 @@ class CWallet : public CBasicKeyStore
 
 		CAccountCache *GetAccount(string strAccount);
 
-		CPubKey GetChangePubKey(string strAccount);
-
-		CPubKey GetExecPubKey(string strAccount);
-
-		CPubKey GetExtPubKey(string strAccount);
-
-		CPubKey GetRecvPubKey(string strAccount);
-
 		CPubKey GetPrimaryPubKey(string strAccount);
 
 		CCoinAddr GetChangeAddr(string strAccount);
@@ -544,13 +505,15 @@ class CWallet : public CBasicKeyStore
 		bool EraseArchTx(uint256 hash) const;
 		bool HasArchTx(uint256 hash) const;
 
-		bool DeriveNewECKey(CHDChain *hdChain, ECKey& secret, bool internal = false);
+		bool DeriveNewECKey(CAccount *hdChain, ECKey& secret, bool internal = false);
 
-		bool DeriveNewDIKey(CHDChain *hdChain, DIKey& secret, bool internal = false);
+		bool DeriveNewDIKey(CAccount *hdChain, DIKey& secret, bool internal = false);
 
+#if 0
 		bool LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata &meta);
 
 		bool LoadKeyMetadata(const CKeyID& keyID, const CKeyMetadata &meta);
+#endif
 
 		const cbuff& Base58Prefix(int type) const;
 
@@ -988,18 +951,45 @@ class CAccount
 	public:
 		CPubKey vchPubKey;
 		uint160 hCert;
-		CHDChain chain;
+
+		/* HD Chain */
+		uint32_t nExternalECChainCounter;
+		uint32_t nExternalDIChainCounter;
+		uint32_t nInternalECChainCounter;
+		uint32_t nInternalDIChainCounter;
+		CKeyID masterKeyID; //!< master key hash160
 
 		CAccount()
 		{
 			SetNull();
 		}
 
+		CAccount(const CAccount& accountIn)
+		{
+			SetNull();
+			Init(accountIn);
+		}
+
 		void SetNull()
 		{
 			vchPubKey = CPubKey();
 			hCert = 0;
-			chain.SetNull();
+			masterKeyID.SetNull();
+			nExternalECChainCounter = 0;
+			nExternalDIChainCounter = 0;
+			nInternalECChainCounter = 0;
+			nInternalDIChainCounter = 0;
+		}
+
+		void Init(const CAccount& b)
+		{
+			vchPubKey = b.vchPubKey;
+			hCert = b.hCert;
+			masterKeyID = b.masterKeyID;
+			nExternalECChainCounter = b.nExternalECChainCounter;
+			nExternalDIChainCounter = b.nExternalDIChainCounter;
+			nInternalECChainCounter = b.nInternalECChainCounter;
+			nInternalDIChainCounter = b.nInternalDIChainCounter;
 		}
 
 		IMPLEMENT_SERIALIZE
@@ -1009,7 +999,11 @@ class CAccount
 			READWRITE(vchPubKey);
 			if (nVersion >= 4010000) {
 				READWRITE(hCert);
-				READWRITE(chain);
+				READWRITE(masterKeyID); //!< master key hash160
+				READWRITE(nInternalECChainCounter);
+				READWRITE(nInternalDIChainCounter);
+				READWRITE(nExternalECChainCounter);
+				READWRITE(nExternalDIChainCounter);
 			}
 		)
 };
@@ -1076,9 +1070,13 @@ bool LoadBlockIndex(CIface *iface);
 int IndexOfExtOutput(const CTransaction& tx);
 
 
+#if 0
 CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew=false);
 
 CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount, bool bForceNew=false);
+#endif
+CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount);
+
 
 /** 
  * Send coins with the inclusion of a specific input transaction.
@@ -1127,6 +1125,8 @@ bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWal
 bool IsAccountValid(CIface *iface, std::string strAccount);
 
 int GetDefaultOutputType(CIface *iface);
+
+bool ExtractDestinationKey(CWallet *wallet, const CTxDestination& dest, CKeyID& keyid);
 
 #endif
 

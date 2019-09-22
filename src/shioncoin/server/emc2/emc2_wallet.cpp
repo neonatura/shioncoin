@@ -84,13 +84,10 @@ bool emc2_LoadWallet(void)
   bool fFirstRun = true;
   emc2Wallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
+		/* generate default address for system account. */
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(emc2Wallet, strAccount, true);
-		//CPubKey newDefaultKey = emc2Wallet->GenerateNewKey();
-		emc2Wallet->SetDefaultKey(newDefaultKey);
-		emc2Wallet->SetAddressBookName(emc2Wallet->vchDefaultKey.GetID(), "");
+		emc2Wallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(emc2Wallet);
@@ -640,7 +637,7 @@ bool EMC2Wallet::CreateAccountTransaction(string strFromAccount, const vector<pa
 				if (nChange > 0)
 				{
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);

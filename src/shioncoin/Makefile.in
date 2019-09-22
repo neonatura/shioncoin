@@ -111,9 +111,9 @@ check_PROGRAMS = test_shcoind$(EXEEXT)
 @STATIC_LIBSHARE_TRUE@am__append_9 = -I$(LIBSHARE)/include -I$(LIBSHARE)/../src/sexe
 @STATIC_LIBSHARE_FALSE@am__append_10 = -lshare -lshare_sexe
 @DEBUG_TRUE@am__append_11 = -g3 
-@DEBUG_TRUE@am__append_12 = -g3
+@DEBUG_TRUE@am__append_12 = -g3 -Wno-write-strings
 @DEBUG_FALSE@am__append_13 = -O2
-@DEBUG_FALSE@am__append_14 = -O2
+@DEBUG_FALSE@am__append_14 = -O2 -Wno-write-strings
 subdir = src/shioncoin
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac-path-kernel-source.m4 \
@@ -223,7 +223,8 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/rpc/rpccolor_proto.cpp server/rpc/rpccontext_proto.cpp \
 	server/rpc/rpcexec_proto.cpp server/rpc/rpcoffer_proto.cpp \
 	server/rpc/rpcdump.cpp server/rpc/rpc_command.cpp \
-	server/rpc/rpc_parse.cpp server/rpc/rpcwallet_proto.cpp \
+	server/rpc/rpc_parse.cpp server/rpc/rpc_wallet.cpp \
+	server/rpc/rpc_wallet_addr.cpp \
 	server/rpc/rpcrawtransaction.cpp server/versionbits.cpp \
 	server/algobits.cpp server/txsignature.cpp server/protocol.cpp \
 	server/block.cpp server/block.h server/checkpoints.cpp \
@@ -357,7 +358,7 @@ am__objects_11 = $(am__objects_3) $(am__objects_4) \
 	shcoind-rpcexec_proto.$(OBJEXT) \
 	shcoind-rpcoffer_proto.$(OBJEXT) shcoind-rpcdump.$(OBJEXT) \
 	shcoind-rpc_command.$(OBJEXT) shcoind-rpc_parse.$(OBJEXT) \
-	shcoind-rpcwallet_proto.$(OBJEXT) \
+	shcoind-rpc_wallet.$(OBJEXT) shcoind-rpc_wallet_addr.$(OBJEXT) \
 	shcoind-rpcrawtransaction.$(OBJEXT) \
 	shcoind-versionbits.$(OBJEXT) shcoind-algobits.$(OBJEXT) \
 	shcoind-txsignature.$(OBJEXT) shcoind-protocol.$(OBJEXT) \
@@ -498,7 +499,8 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/rpc/rpccolor_proto.cpp server/rpc/rpccontext_proto.cpp \
 	server/rpc/rpcexec_proto.cpp server/rpc/rpcoffer_proto.cpp \
 	server/rpc/rpcdump.cpp server/rpc/rpc_command.cpp \
-	server/rpc/rpc_parse.cpp server/rpc/rpcwallet_proto.cpp \
+	server/rpc/rpc_parse.cpp server/rpc/rpc_wallet.cpp \
+	server/rpc/rpc_wallet_addr.cpp \
 	server/rpc/rpcrawtransaction.cpp server/versionbits.cpp \
 	server/algobits.cpp server/txsignature.cpp server/protocol.cpp \
 	server/block.cpp server/block.h server/checkpoints.cpp \
@@ -563,8 +565,10 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	test/testcoin_bignum.cpp test/testcoin_hash.cpp \
 	test/testcoin_block.cpp test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp test/testcoin_algo.cpp \
-	test/testcoin_bip32.cpp test/testcoin_sip33.cpp \
-	test/testcoin_account.cpp
+	test/testcoin_account.cpp test/testcoin_bip32.cpp \
+	test/testcoin_sip5.cpp test/testcoin_sip6.cpp \
+	test/testcoin_sip10.cpp test/testcoin_sip25.cpp \
+	test/testcoin_sip33.cpp
 am__objects_13 = test_shcoind-shcoind_rpc.$(OBJEXT) \
 	test_shcoind-shcoind_error.$(OBJEXT) \
 	test_shcoind-shcoind_log.$(OBJEXT) \
@@ -669,7 +673,8 @@ am__objects_22 = $(am__objects_14) $(am__objects_15) \
 	test_shcoind-rpcdump.$(OBJEXT) \
 	test_shcoind-rpc_command.$(OBJEXT) \
 	test_shcoind-rpc_parse.$(OBJEXT) \
-	test_shcoind-rpcwallet_proto.$(OBJEXT) \
+	test_shcoind-rpc_wallet.$(OBJEXT) \
+	test_shcoind-rpc_wallet_addr.$(OBJEXT) \
 	test_shcoind-rpcrawtransaction.$(OBJEXT) \
 	test_shcoind-versionbits.$(OBJEXT) \
 	test_shcoind-algobits.$(OBJEXT) \
@@ -724,9 +729,13 @@ am_test_shcoind_OBJECTS = $(am__objects_1) $(am__objects_13) \
 	test_shcoind-testcoin_json.$(OBJEXT) \
 	test_shcoind-testcoin_bloom.$(OBJEXT) \
 	test_shcoind-testcoin_algo.$(OBJEXT) \
+	test_shcoind-testcoin_account.$(OBJEXT) \
 	test_shcoind-testcoin_bip32.$(OBJEXT) \
-	test_shcoind-testcoin_sip33.$(OBJEXT) \
-	test_shcoind-testcoin_account.$(OBJEXT)
+	test_shcoind-testcoin_sip5.$(OBJEXT) \
+	test_shcoind-testcoin_sip6.$(OBJEXT) \
+	test_shcoind-testcoin_sip10.$(OBJEXT) \
+	test_shcoind-testcoin_sip25.$(OBJEXT) \
+	test_shcoind-testcoin_sip33.$(OBJEXT)
 test_shcoind_OBJECTS = $(am_test_shcoind_OBJECTS)
 test_shcoind_DEPENDENCIES =  \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
@@ -1453,7 +1462,8 @@ server_sources = $(blockchain_sources) $(proto_sources) \
 	server/rpc/rpccolor_proto.cpp server/rpc/rpccontext_proto.cpp \
 	server/rpc/rpcexec_proto.cpp server/rpc/rpcoffer_proto.cpp \
 	server/rpc/rpcdump.cpp server/rpc/rpc_command.cpp \
-	server/rpc/rpc_parse.cpp server/rpc/rpcwallet_proto.cpp \
+	server/rpc/rpc_parse.cpp server/rpc/rpc_wallet.cpp \
+	server/rpc/rpc_wallet_addr.cpp \
 	server/rpc/rpcrawtransaction.cpp server/versionbits.cpp \
 	server/algobits.cpp server/txsignature.cpp server/protocol.cpp \
 	server/block.cpp server/block.h server/checkpoints.cpp \
@@ -1507,9 +1517,13 @@ test_shcoind_SOURCES = \
 	test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp \
 	test/testcoin_algo.cpp \
+	test/testcoin_account.cpp \
 	test/testcoin_bip32.cpp \
-	test/testcoin_sip33.cpp \
-	test/testcoin_account.cpp
+	test/testcoin_sip5.cpp \
+	test/testcoin_sip6.cpp \
+	test/testcoin_sip10.cpp \
+	test/testcoin_sip25.cpp \
+	test/testcoin_sip33.cpp
 
 test_shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
 	$(top_builddir)/src/libcrypto/libcrypto.a \
@@ -1700,6 +1714,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-qubit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpc_command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpc_parse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpc_wallet.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpc_wallet_addr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcalias_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpccert_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpccolor_proto.Po@am__quote@
@@ -1708,7 +1724,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcexec_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcoffer_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcrawtransaction.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcwallet_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-script.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-scrypt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-server_iface.Po@am__quote@
@@ -1874,6 +1889,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-qubit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpc_command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpc_parse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpc_wallet.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpc_wallet_addr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcalias_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpccert_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpccolor_proto.Po@am__quote@
@@ -1882,7 +1899,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcexec_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcoffer_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcrawtransaction.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcwallet_proto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-script.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-scrypt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-server_iface.Po@am__quote@
@@ -1948,7 +1964,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_json.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_key.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_sip10.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_sip25.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_sip33.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_sip5.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testcoin_sip6.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testnet_block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testnet_netmsg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-testnet_pool.Po@am__quote@
@@ -4685,19 +4705,33 @@ shcoind-rpc_parse.obj: server/rpc/rpc_parse.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpc_parse.obj `if test -f 'server/rpc/rpc_parse.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_parse.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_parse.cpp'; fi`
 
-shcoind-rpcwallet_proto.o: server/rpc/rpcwallet_proto.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpcwallet_proto.o -MD -MP -MF $(DEPDIR)/shcoind-rpcwallet_proto.Tpo -c -o shcoind-rpcwallet_proto.o `test -f 'server/rpc/rpcwallet_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcwallet_proto.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpcwallet_proto.Tpo $(DEPDIR)/shcoind-rpcwallet_proto.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcwallet_proto.cpp' object='shcoind-rpcwallet_proto.o' libtool=no @AMDEPBACKSLASH@
+shcoind-rpc_wallet.o: server/rpc/rpc_wallet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpc_wallet.o -MD -MP -MF $(DEPDIR)/shcoind-rpc_wallet.Tpo -c -o shcoind-rpc_wallet.o `test -f 'server/rpc/rpc_wallet.cpp' || echo '$(srcdir)/'`server/rpc/rpc_wallet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpc_wallet.Tpo $(DEPDIR)/shcoind-rpc_wallet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpc_wallet.cpp' object='shcoind-rpc_wallet.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpcwallet_proto.o `test -f 'server/rpc/rpcwallet_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcwallet_proto.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpc_wallet.o `test -f 'server/rpc/rpc_wallet.cpp' || echo '$(srcdir)/'`server/rpc/rpc_wallet.cpp
 
-shcoind-rpcwallet_proto.obj: server/rpc/rpcwallet_proto.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpcwallet_proto.obj -MD -MP -MF $(DEPDIR)/shcoind-rpcwallet_proto.Tpo -c -o shcoind-rpcwallet_proto.obj `if test -f 'server/rpc/rpcwallet_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcwallet_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcwallet_proto.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpcwallet_proto.Tpo $(DEPDIR)/shcoind-rpcwallet_proto.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcwallet_proto.cpp' object='shcoind-rpcwallet_proto.obj' libtool=no @AMDEPBACKSLASH@
+shcoind-rpc_wallet.obj: server/rpc/rpc_wallet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpc_wallet.obj -MD -MP -MF $(DEPDIR)/shcoind-rpc_wallet.Tpo -c -o shcoind-rpc_wallet.obj `if test -f 'server/rpc/rpc_wallet.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_wallet.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_wallet.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpc_wallet.Tpo $(DEPDIR)/shcoind-rpc_wallet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpc_wallet.cpp' object='shcoind-rpc_wallet.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpcwallet_proto.obj `if test -f 'server/rpc/rpcwallet_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcwallet_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcwallet_proto.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpc_wallet.obj `if test -f 'server/rpc/rpc_wallet.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_wallet.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_wallet.cpp'; fi`
+
+shcoind-rpc_wallet_addr.o: server/rpc/rpc_wallet_addr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpc_wallet_addr.o -MD -MP -MF $(DEPDIR)/shcoind-rpc_wallet_addr.Tpo -c -o shcoind-rpc_wallet_addr.o `test -f 'server/rpc/rpc_wallet_addr.cpp' || echo '$(srcdir)/'`server/rpc/rpc_wallet_addr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpc_wallet_addr.Tpo $(DEPDIR)/shcoind-rpc_wallet_addr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpc_wallet_addr.cpp' object='shcoind-rpc_wallet_addr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpc_wallet_addr.o `test -f 'server/rpc/rpc_wallet_addr.cpp' || echo '$(srcdir)/'`server/rpc/rpc_wallet_addr.cpp
+
+shcoind-rpc_wallet_addr.obj: server/rpc/rpc_wallet_addr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpc_wallet_addr.obj -MD -MP -MF $(DEPDIR)/shcoind-rpc_wallet_addr.Tpo -c -o shcoind-rpc_wallet_addr.obj `if test -f 'server/rpc/rpc_wallet_addr.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_wallet_addr.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_wallet_addr.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpc_wallet_addr.Tpo $(DEPDIR)/shcoind-rpc_wallet_addr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpc_wallet_addr.cpp' object='shcoind-rpc_wallet_addr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpc_wallet_addr.obj `if test -f 'server/rpc/rpc_wallet_addr.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_wallet_addr.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_wallet_addr.cpp'; fi`
 
 shcoind-rpcrawtransaction.o: server/rpc/rpcrawtransaction.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpcrawtransaction.o -MD -MP -MF $(DEPDIR)/shcoind-rpcrawtransaction.Tpo -c -o shcoind-rpcrawtransaction.o `test -f 'server/rpc/rpcrawtransaction.cpp' || echo '$(srcdir)/'`server/rpc/rpcrawtransaction.cpp
@@ -6113,19 +6147,33 @@ test_shcoind-rpc_parse.obj: server/rpc/rpc_parse.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpc_parse.obj `if test -f 'server/rpc/rpc_parse.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_parse.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_parse.cpp'; fi`
 
-test_shcoind-rpcwallet_proto.o: server/rpc/rpcwallet_proto.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpcwallet_proto.o -MD -MP -MF $(DEPDIR)/test_shcoind-rpcwallet_proto.Tpo -c -o test_shcoind-rpcwallet_proto.o `test -f 'server/rpc/rpcwallet_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcwallet_proto.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpcwallet_proto.Tpo $(DEPDIR)/test_shcoind-rpcwallet_proto.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcwallet_proto.cpp' object='test_shcoind-rpcwallet_proto.o' libtool=no @AMDEPBACKSLASH@
+test_shcoind-rpc_wallet.o: server/rpc/rpc_wallet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpc_wallet.o -MD -MP -MF $(DEPDIR)/test_shcoind-rpc_wallet.Tpo -c -o test_shcoind-rpc_wallet.o `test -f 'server/rpc/rpc_wallet.cpp' || echo '$(srcdir)/'`server/rpc/rpc_wallet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpc_wallet.Tpo $(DEPDIR)/test_shcoind-rpc_wallet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpc_wallet.cpp' object='test_shcoind-rpc_wallet.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpcwallet_proto.o `test -f 'server/rpc/rpcwallet_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcwallet_proto.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpc_wallet.o `test -f 'server/rpc/rpc_wallet.cpp' || echo '$(srcdir)/'`server/rpc/rpc_wallet.cpp
 
-test_shcoind-rpcwallet_proto.obj: server/rpc/rpcwallet_proto.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpcwallet_proto.obj -MD -MP -MF $(DEPDIR)/test_shcoind-rpcwallet_proto.Tpo -c -o test_shcoind-rpcwallet_proto.obj `if test -f 'server/rpc/rpcwallet_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcwallet_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcwallet_proto.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpcwallet_proto.Tpo $(DEPDIR)/test_shcoind-rpcwallet_proto.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcwallet_proto.cpp' object='test_shcoind-rpcwallet_proto.obj' libtool=no @AMDEPBACKSLASH@
+test_shcoind-rpc_wallet.obj: server/rpc/rpc_wallet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpc_wallet.obj -MD -MP -MF $(DEPDIR)/test_shcoind-rpc_wallet.Tpo -c -o test_shcoind-rpc_wallet.obj `if test -f 'server/rpc/rpc_wallet.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_wallet.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_wallet.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpc_wallet.Tpo $(DEPDIR)/test_shcoind-rpc_wallet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpc_wallet.cpp' object='test_shcoind-rpc_wallet.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpcwallet_proto.obj `if test -f 'server/rpc/rpcwallet_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcwallet_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcwallet_proto.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpc_wallet.obj `if test -f 'server/rpc/rpc_wallet.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_wallet.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_wallet.cpp'; fi`
+
+test_shcoind-rpc_wallet_addr.o: server/rpc/rpc_wallet_addr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpc_wallet_addr.o -MD -MP -MF $(DEPDIR)/test_shcoind-rpc_wallet_addr.Tpo -c -o test_shcoind-rpc_wallet_addr.o `test -f 'server/rpc/rpc_wallet_addr.cpp' || echo '$(srcdir)/'`server/rpc/rpc_wallet_addr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpc_wallet_addr.Tpo $(DEPDIR)/test_shcoind-rpc_wallet_addr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpc_wallet_addr.cpp' object='test_shcoind-rpc_wallet_addr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpc_wallet_addr.o `test -f 'server/rpc/rpc_wallet_addr.cpp' || echo '$(srcdir)/'`server/rpc/rpc_wallet_addr.cpp
+
+test_shcoind-rpc_wallet_addr.obj: server/rpc/rpc_wallet_addr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpc_wallet_addr.obj -MD -MP -MF $(DEPDIR)/test_shcoind-rpc_wallet_addr.Tpo -c -o test_shcoind-rpc_wallet_addr.obj `if test -f 'server/rpc/rpc_wallet_addr.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_wallet_addr.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_wallet_addr.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpc_wallet_addr.Tpo $(DEPDIR)/test_shcoind-rpc_wallet_addr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpc_wallet_addr.cpp' object='test_shcoind-rpc_wallet_addr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpc_wallet_addr.obj `if test -f 'server/rpc/rpc_wallet_addr.cpp'; then $(CYGPATH_W) 'server/rpc/rpc_wallet_addr.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpc_wallet_addr.cpp'; fi`
 
 test_shcoind-rpcrawtransaction.o: server/rpc/rpcrawtransaction.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpcrawtransaction.o -MD -MP -MF $(DEPDIR)/test_shcoind-rpcrawtransaction.Tpo -c -o test_shcoind-rpcrawtransaction.o `test -f 'server/rpc/rpcrawtransaction.cpp' || echo '$(srcdir)/'`server/rpc/rpcrawtransaction.cpp
@@ -6981,6 +7029,20 @@ test_shcoind-testcoin_algo.obj: test/testcoin_algo.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_algo.obj `if test -f 'test/testcoin_algo.cpp'; then $(CYGPATH_W) 'test/testcoin_algo.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_algo.cpp'; fi`
 
+test_shcoind-testcoin_account.o: test/testcoin_account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_account.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_account.Tpo -c -o test_shcoind-testcoin_account.o `test -f 'test/testcoin_account.cpp' || echo '$(srcdir)/'`test/testcoin_account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_account.Tpo $(DEPDIR)/test_shcoind-testcoin_account.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_account.cpp' object='test_shcoind-testcoin_account.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_account.o `test -f 'test/testcoin_account.cpp' || echo '$(srcdir)/'`test/testcoin_account.cpp
+
+test_shcoind-testcoin_account.obj: test/testcoin_account.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_account.obj -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_account.Tpo -c -o test_shcoind-testcoin_account.obj `if test -f 'test/testcoin_account.cpp'; then $(CYGPATH_W) 'test/testcoin_account.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_account.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_account.Tpo $(DEPDIR)/test_shcoind-testcoin_account.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_account.cpp' object='test_shcoind-testcoin_account.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_account.obj `if test -f 'test/testcoin_account.cpp'; then $(CYGPATH_W) 'test/testcoin_account.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_account.cpp'; fi`
+
 test_shcoind-testcoin_bip32.o: test/testcoin_bip32.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_bip32.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_bip32.Tpo -c -o test_shcoind-testcoin_bip32.o `test -f 'test/testcoin_bip32.cpp' || echo '$(srcdir)/'`test/testcoin_bip32.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_bip32.Tpo $(DEPDIR)/test_shcoind-testcoin_bip32.Po
@@ -6995,6 +7057,62 @@ test_shcoind-testcoin_bip32.obj: test/testcoin_bip32.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_bip32.obj `if test -f 'test/testcoin_bip32.cpp'; then $(CYGPATH_W) 'test/testcoin_bip32.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_bip32.cpp'; fi`
 
+test_shcoind-testcoin_sip5.o: test/testcoin_sip5.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip5.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip5.Tpo -c -o test_shcoind-testcoin_sip5.o `test -f 'test/testcoin_sip5.cpp' || echo '$(srcdir)/'`test/testcoin_sip5.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip5.Tpo $(DEPDIR)/test_shcoind-testcoin_sip5.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip5.cpp' object='test_shcoind-testcoin_sip5.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip5.o `test -f 'test/testcoin_sip5.cpp' || echo '$(srcdir)/'`test/testcoin_sip5.cpp
+
+test_shcoind-testcoin_sip5.obj: test/testcoin_sip5.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip5.obj -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip5.Tpo -c -o test_shcoind-testcoin_sip5.obj `if test -f 'test/testcoin_sip5.cpp'; then $(CYGPATH_W) 'test/testcoin_sip5.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip5.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip5.Tpo $(DEPDIR)/test_shcoind-testcoin_sip5.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip5.cpp' object='test_shcoind-testcoin_sip5.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip5.obj `if test -f 'test/testcoin_sip5.cpp'; then $(CYGPATH_W) 'test/testcoin_sip5.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip5.cpp'; fi`
+
+test_shcoind-testcoin_sip6.o: test/testcoin_sip6.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip6.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip6.Tpo -c -o test_shcoind-testcoin_sip6.o `test -f 'test/testcoin_sip6.cpp' || echo '$(srcdir)/'`test/testcoin_sip6.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip6.Tpo $(DEPDIR)/test_shcoind-testcoin_sip6.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip6.cpp' object='test_shcoind-testcoin_sip6.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip6.o `test -f 'test/testcoin_sip6.cpp' || echo '$(srcdir)/'`test/testcoin_sip6.cpp
+
+test_shcoind-testcoin_sip6.obj: test/testcoin_sip6.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip6.obj -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip6.Tpo -c -o test_shcoind-testcoin_sip6.obj `if test -f 'test/testcoin_sip6.cpp'; then $(CYGPATH_W) 'test/testcoin_sip6.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip6.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip6.Tpo $(DEPDIR)/test_shcoind-testcoin_sip6.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip6.cpp' object='test_shcoind-testcoin_sip6.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip6.obj `if test -f 'test/testcoin_sip6.cpp'; then $(CYGPATH_W) 'test/testcoin_sip6.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip6.cpp'; fi`
+
+test_shcoind-testcoin_sip10.o: test/testcoin_sip10.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip10.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip10.Tpo -c -o test_shcoind-testcoin_sip10.o `test -f 'test/testcoin_sip10.cpp' || echo '$(srcdir)/'`test/testcoin_sip10.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip10.Tpo $(DEPDIR)/test_shcoind-testcoin_sip10.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip10.cpp' object='test_shcoind-testcoin_sip10.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip10.o `test -f 'test/testcoin_sip10.cpp' || echo '$(srcdir)/'`test/testcoin_sip10.cpp
+
+test_shcoind-testcoin_sip10.obj: test/testcoin_sip10.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip10.obj -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip10.Tpo -c -o test_shcoind-testcoin_sip10.obj `if test -f 'test/testcoin_sip10.cpp'; then $(CYGPATH_W) 'test/testcoin_sip10.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip10.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip10.Tpo $(DEPDIR)/test_shcoind-testcoin_sip10.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip10.cpp' object='test_shcoind-testcoin_sip10.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip10.obj `if test -f 'test/testcoin_sip10.cpp'; then $(CYGPATH_W) 'test/testcoin_sip10.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip10.cpp'; fi`
+
+test_shcoind-testcoin_sip25.o: test/testcoin_sip25.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip25.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip25.Tpo -c -o test_shcoind-testcoin_sip25.o `test -f 'test/testcoin_sip25.cpp' || echo '$(srcdir)/'`test/testcoin_sip25.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip25.Tpo $(DEPDIR)/test_shcoind-testcoin_sip25.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip25.cpp' object='test_shcoind-testcoin_sip25.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip25.o `test -f 'test/testcoin_sip25.cpp' || echo '$(srcdir)/'`test/testcoin_sip25.cpp
+
+test_shcoind-testcoin_sip25.obj: test/testcoin_sip25.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip25.obj -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip25.Tpo -c -o test_shcoind-testcoin_sip25.obj `if test -f 'test/testcoin_sip25.cpp'; then $(CYGPATH_W) 'test/testcoin_sip25.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip25.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip25.Tpo $(DEPDIR)/test_shcoind-testcoin_sip25.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip25.cpp' object='test_shcoind-testcoin_sip25.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip25.obj `if test -f 'test/testcoin_sip25.cpp'; then $(CYGPATH_W) 'test/testcoin_sip25.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip25.cpp'; fi`
+
 test_shcoind-testcoin_sip33.o: test/testcoin_sip33.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_sip33.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_sip33.Tpo -c -o test_shcoind-testcoin_sip33.o `test -f 'test/testcoin_sip33.cpp' || echo '$(srcdir)/'`test/testcoin_sip33.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_sip33.Tpo $(DEPDIR)/test_shcoind-testcoin_sip33.Po
@@ -7008,20 +7126,6 @@ test_shcoind-testcoin_sip33.obj: test/testcoin_sip33.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip33.cpp' object='test_shcoind-testcoin_sip33.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_sip33.obj `if test -f 'test/testcoin_sip33.cpp'; then $(CYGPATH_W) 'test/testcoin_sip33.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip33.cpp'; fi`
-
-test_shcoind-testcoin_account.o: test/testcoin_account.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_account.o -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_account.Tpo -c -o test_shcoind-testcoin_account.o `test -f 'test/testcoin_account.cpp' || echo '$(srcdir)/'`test/testcoin_account.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_account.Tpo $(DEPDIR)/test_shcoind-testcoin_account.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_account.cpp' object='test_shcoind-testcoin_account.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_account.o `test -f 'test/testcoin_account.cpp' || echo '$(srcdir)/'`test/testcoin_account.cpp
-
-test_shcoind-testcoin_account.obj: test/testcoin_account.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-testcoin_account.obj -MD -MP -MF $(DEPDIR)/test_shcoind-testcoin_account.Tpo -c -o test_shcoind-testcoin_account.obj `if test -f 'test/testcoin_account.cpp'; then $(CYGPATH_W) 'test/testcoin_account.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_account.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-testcoin_account.Tpo $(DEPDIR)/test_shcoind-testcoin_account.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_account.cpp' object='test_shcoind-testcoin_account.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-testcoin_account.obj `if test -f 'test/testcoin_account.cpp'; then $(CYGPATH_W) 'test/testcoin_account.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_account.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

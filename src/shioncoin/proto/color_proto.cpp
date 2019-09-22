@@ -27,6 +27,7 @@
 #include "block.h"
 #include "main.h"
 #include "wallet.h"
+#include "account.h"
 #include "coin_proto.h"
 #include "txmempool.h"
 #include "color/color_pool.h"
@@ -199,6 +200,7 @@ static int color_block_process(CIface *iface, CBlock *block)
 
 static CPubKey color_GetMainAccountPubKey(CWallet *wallet)
 {
+#if 0
   static CPubKey ret_key;
 	static int _index;
 	string strAccount("");
@@ -245,6 +247,18 @@ static CPubKey color_GetMainAccountPubKey(CWallet *wallet)
 	}
 
   return (ret_key);
+#endif
+
+	static CPubKey pubkey;
+	if (!pubkey.IsValid()) {
+		CAccountCache *account = wallet->GetAccount("");
+		account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+		/* miner fee */
+		wallet->GetAccount("bank");
+		/* cpu miner */
+		wallet->GetAccount("system");
+	}
+	return (pubkey);
 }
 
 static int color_block_templ(CIface *iface, CBlock **block_p)
