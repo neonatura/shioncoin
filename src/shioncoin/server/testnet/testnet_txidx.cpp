@@ -600,8 +600,10 @@ bool testnet_InitBlockIndex()
   bool ret;
 
   ret = testnet_LoadBlockIndex();
-  if (!ret)
+  if (!ret) {
+		error(ERR_INVAL, "DEBUG: testnet_InitBlockIndex: LoadBlockIndex failure");
     return (false);
+	}
 
   if (!testnet_CreateGenesisBlock())
     return (false);

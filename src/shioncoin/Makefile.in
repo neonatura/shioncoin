@@ -252,14 +252,15 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/coinaddr.cpp wallet_iface.cpp block_iface.cpp \
 	server_iface.cpp stratum/stratum.h stratum/stratum_http.h \
 	stratum/stratum_message.h stratum/stratum_protocol.h \
-	stratum/stratum_user.h stratum/stratum_task.h \
-	stratum/stratum_sync.h stratum/stratum_api.h \
-	stratum/stratum_miner.h stratum/stratum_sha256d.h \
-	stratum/stratum_keccak.h stratum/stratum_x11.h \
-	stratum/stratum_blake2s.h stratum/stratum_qubit.h \
-	stratum/stratum_groestl.h stratum/stratum_skein.h \
-	stratum/http/http.h stratum/stratum.c stratum/stratum_http.c \
-	stratum/stratum_message.c stratum/stratum_protocol.c \
+	stratum/stratum_command.h stratum/stratum_user.h \
+	stratum/stratum_task.h stratum/stratum_sync.h \
+	stratum/stratum_api.h stratum/stratum_miner.h \
+	stratum/stratum_sha256d.h stratum/stratum_keccak.h \
+	stratum/stratum_x11.h stratum/stratum_blake2s.h \
+	stratum/stratum_qubit.h stratum/stratum_groestl.h \
+	stratum/stratum_skein.h stratum/http/http.h stratum/stratum.c \
+	stratum/stratum_http.c stratum/stratum_message.c \
+	stratum/stratum_protocol.c stratum/stratum_command.c \
 	stratum/stratum_user.c stratum/stratum_task.c \
 	stratum/stratum_sync.c stratum/stratum_api.cpp \
 	stratum/stratum_api_faucet.cpp stratum/stratum_miner.cpp \
@@ -309,6 +310,7 @@ am__objects_5 = shcoind-stratum.$(OBJEXT) \
 	shcoind-stratum_http.$(OBJEXT) \
 	shcoind-stratum_message.$(OBJEXT) \
 	shcoind-stratum_protocol.$(OBJEXT) \
+	shcoind-stratum_command.$(OBJEXT) \
 	shcoind-stratum_user.$(OBJEXT) shcoind-stratum_task.$(OBJEXT) \
 	shcoind-stratum_sync.$(OBJEXT) shcoind-stratum_api.$(OBJEXT) \
 	shcoind-stratum_api_faucet.$(OBJEXT) \
@@ -528,14 +530,15 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/coinaddr.cpp wallet_iface.cpp block_iface.cpp \
 	server_iface.cpp stratum/stratum.h stratum/stratum_http.h \
 	stratum/stratum_message.h stratum/stratum_protocol.h \
-	stratum/stratum_user.h stratum/stratum_task.h \
-	stratum/stratum_sync.h stratum/stratum_api.h \
-	stratum/stratum_miner.h stratum/stratum_sha256d.h \
-	stratum/stratum_keccak.h stratum/stratum_x11.h \
-	stratum/stratum_blake2s.h stratum/stratum_qubit.h \
-	stratum/stratum_groestl.h stratum/stratum_skein.h \
-	stratum/http/http.h stratum/stratum.c stratum/stratum_http.c \
-	stratum/stratum_message.c stratum/stratum_protocol.c \
+	stratum/stratum_command.h stratum/stratum_user.h \
+	stratum/stratum_task.h stratum/stratum_sync.h \
+	stratum/stratum_api.h stratum/stratum_miner.h \
+	stratum/stratum_sha256d.h stratum/stratum_keccak.h \
+	stratum/stratum_x11.h stratum/stratum_blake2s.h \
+	stratum/stratum_qubit.h stratum/stratum_groestl.h \
+	stratum/stratum_skein.h stratum/http/http.h stratum/stratum.c \
+	stratum/stratum_http.c stratum/stratum_message.c \
+	stratum/stratum_protocol.c stratum/stratum_command.c \
 	stratum/stratum_user.c stratum/stratum_task.c \
 	stratum/stratum_sync.c stratum/stratum_api.cpp \
 	stratum/stratum_api_faucet.cpp stratum/stratum_miner.cpp \
@@ -603,6 +606,7 @@ am__objects_16 = test_shcoind-stratum.$(OBJEXT) \
 	test_shcoind-stratum_http.$(OBJEXT) \
 	test_shcoind-stratum_message.$(OBJEXT) \
 	test_shcoind-stratum_protocol.$(OBJEXT) \
+	test_shcoind-stratum_command.$(OBJEXT) \
 	test_shcoind-stratum_user.$(OBJEXT) \
 	test_shcoind-stratum_task.$(OBJEXT) \
 	test_shcoind-stratum_sync.$(OBJEXT) \
@@ -1228,6 +1232,7 @@ stratum_sources = \
 	stratum/stratum_http.h \
 	stratum/stratum_message.h \
 	stratum/stratum_protocol.h \
+	stratum/stratum_command.h \
 	stratum/stratum_user.h \
 	stratum/stratum_task.h \
 	stratum/stratum_sync.h \
@@ -1245,6 +1250,7 @@ stratum_sources = \
 	stratum/stratum_http.c \
 	stratum/stratum_message.c \
 	stratum/stratum_protocol.c \
+	stratum/stratum_command.c \
 	stratum/stratum_user.c \
 	stratum/stratum_task.c \
 	stratum/stratum_sync.c \
@@ -1762,6 +1768,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_api.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_api_faucet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_blake2s.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_groestl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_http.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-stratum_keccak.Po@am__quote@
@@ -1934,6 +1941,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_api.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_api_faucet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_blake2s.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_groestl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_http.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-stratum_keccak.Po@am__quote@
@@ -2737,6 +2745,20 @@ shcoind-stratum_protocol.obj: stratum/stratum_protocol.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/stratum_protocol.c' object='shcoind-stratum_protocol.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-stratum_protocol.obj `if test -f 'stratum/stratum_protocol.c'; then $(CYGPATH_W) 'stratum/stratum_protocol.c'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_protocol.c'; fi`
+
+shcoind-stratum_command.o: stratum/stratum_command.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-stratum_command.o -MD -MP -MF $(DEPDIR)/shcoind-stratum_command.Tpo -c -o shcoind-stratum_command.o `test -f 'stratum/stratum_command.c' || echo '$(srcdir)/'`stratum/stratum_command.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-stratum_command.Tpo $(DEPDIR)/shcoind-stratum_command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/stratum_command.c' object='shcoind-stratum_command.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-stratum_command.o `test -f 'stratum/stratum_command.c' || echo '$(srcdir)/'`stratum/stratum_command.c
+
+shcoind-stratum_command.obj: stratum/stratum_command.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-stratum_command.obj -MD -MP -MF $(DEPDIR)/shcoind-stratum_command.Tpo -c -o shcoind-stratum_command.obj `if test -f 'stratum/stratum_command.c'; then $(CYGPATH_W) 'stratum/stratum_command.c'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_command.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-stratum_command.Tpo $(DEPDIR)/shcoind-stratum_command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/stratum_command.c' object='shcoind-stratum_command.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -c -o shcoind-stratum_command.obj `if test -f 'stratum/stratum_command.c'; then $(CYGPATH_W) 'stratum/stratum_command.c'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_command.c'; fi`
 
 shcoind-stratum_user.o: stratum/stratum_user.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CFLAGS) $(CFLAGS) -MT shcoind-stratum_user.o -MD -MP -MF $(DEPDIR)/shcoind-stratum_user.Tpo -c -o shcoind-stratum_user.o `test -f 'stratum/stratum_user.c' || echo '$(srcdir)/'`stratum/stratum_user.c
@@ -3731,6 +3753,20 @@ test_shcoind-stratum_protocol.obj: stratum/stratum_protocol.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/stratum_protocol.c' object='test_shcoind-stratum_protocol.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-stratum_protocol.obj `if test -f 'stratum/stratum_protocol.c'; then $(CYGPATH_W) 'stratum/stratum_protocol.c'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_protocol.c'; fi`
+
+test_shcoind-stratum_command.o: stratum/stratum_command.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-stratum_command.o -MD -MP -MF $(DEPDIR)/test_shcoind-stratum_command.Tpo -c -o test_shcoind-stratum_command.o `test -f 'stratum/stratum_command.c' || echo '$(srcdir)/'`stratum/stratum_command.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-stratum_command.Tpo $(DEPDIR)/test_shcoind-stratum_command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/stratum_command.c' object='test_shcoind-stratum_command.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-stratum_command.o `test -f 'stratum/stratum_command.c' || echo '$(srcdir)/'`stratum/stratum_command.c
+
+test_shcoind-stratum_command.obj: stratum/stratum_command.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-stratum_command.obj -MD -MP -MF $(DEPDIR)/test_shcoind-stratum_command.Tpo -c -o test_shcoind-stratum_command.obj `if test -f 'stratum/stratum_command.c'; then $(CYGPATH_W) 'stratum/stratum_command.c'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_command.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-stratum_command.Tpo $(DEPDIR)/test_shcoind-stratum_command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='stratum/stratum_command.c' object='test_shcoind-stratum_command.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -c -o test_shcoind-stratum_command.obj `if test -f 'stratum/stratum_command.c'; then $(CYGPATH_W) 'stratum/stratum_command.c'; else $(CYGPATH_W) '$(srcdir)/stratum/stratum_command.c'; fi`
 
 test_shcoind-stratum_user.o: stratum/stratum_user.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CFLAGS) $(CFLAGS) -MT test_shcoind-stratum_user.o -MD -MP -MF $(DEPDIR)/test_shcoind-stratum_user.Tpo -c -o test_shcoind-stratum_user.o `test -f 'stratum/stratum_user.c' || echo '$(srcdir)/'`stratum/stratum_user.c

@@ -30,7 +30,7 @@
 #include "validation.h"
 #include "algobits.h"
 #include "versionbits.h"
-#include "stratum/stratum_miner.h"
+#include "stratum/stratum.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>

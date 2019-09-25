@@ -1028,32 +1028,6 @@ int stratum_request_message(user_t *user, shjson_t *json)
       shjson_free(&reply);
       return (err);
     }
-#if 0
-    if (0 == strcmp(method, "mining.get_transactions")) {
-      char *work_id_str;
-      char *json_str;
-      unsigned int work_id;
-
-      work_id_str = (char *)shjson_array_astr(json, "params", 0);
-      if (!work_id_str) {
-        set_stratum_error(reply, -2, "invalid task id");
-        shjson_null_add(reply, "result");
-      } else {
-        work_id = (unsigned int)strtoll(work_id_str, NULL, 16);
-
-        json_str = getminingtransactioninfo(ifaceIndex, work_id);
-
-        reply = shjson_init(json_str);
-        if (!json_str) {
-          set_stratum_error(reply, -2, "invalid task id");
-          shjson_null_add(reply, "result");
-        }
-      }
-      err = stratum_send_message(user, reply);
-      shjson_free(&reply);
-      return (err);
-    }
-#endif
 
     if (0 == strcmp(method, "chain.info")) {
       shjson_t *json_data = getchaininfo(ifaceIndex);

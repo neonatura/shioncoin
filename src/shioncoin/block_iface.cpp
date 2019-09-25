@@ -440,42 +440,6 @@ uint64_t c_getblockheight(int ifaceIndex)
   return ((int64_t)(pindexBest->nHeight+1));
 }
 
-string miningtransactioninfo_json;
-const char *c_getminingtransactions(int ifaceIndex, unsigned int workId)
-{
-  Array result;
-//  map<uint256, int64_t> setTxIndex;
-  int i = 0;
-  CBlock *pblock;
-  int err;
-  bool ok;
-
-  if (mapWork.count(workId) == 0) {
-    return (NULL);
-  }
- 
-  pblock = mapWork[workId];
-  CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
-	if (!iface)
-		return (NULL);
-
-  BOOST_FOREACH (CTransaction& tx, pblock->vtx)
-  {
-    Object entry;
-
-    if (tx.IsCoinBase())
-      continue;
-
-    CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION(iface));
-    ssTx << tx;
-
-    result.push_back(HexStr(ssTx.begin(), ssTx.end()));
-  }
-
-  miningtransactioninfo_json = JSONRPCReply(result, Value::null, Value::null);
-  return (miningtransactioninfo_json.c_str());
-}
-
 int GetBlockDepthInMainChain(CIface *iface, uint256 blockHash)
 {
   int ifaceIndex = GetCoinIndex(iface);
@@ -621,11 +585,6 @@ const char *getlastblockinfo(int ifaceIndex, int height)
 uint64_t getblockheight(int ifaceIndex)
 {
   return (c_getblockheight(ifaceIndex));
-}
-
-const char *getminingtransactioninfo(int ifaceIndex, unsigned int workId)
-{
-  return (c_getminingtransactions(ifaceIndex, workId));
 }
 
 const char *getaliaslist(int ifaceIndex)

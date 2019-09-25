@@ -54,6 +54,7 @@ stratum_sources = \
 	stratum/stratum_http.h \
 	stratum/stratum_message.h \
 	stratum/stratum_protocol.h \
+	stratum/stratum_command.h \
 	stratum/stratum_user.h \
 	stratum/stratum_task.h \
 	stratum/stratum_sync.h \
@@ -71,6 +72,7 @@ stratum_sources = \
 	stratum/stratum_http.c \
 	stratum/stratum_message.c \
 	stratum/stratum_protocol.c \
+	stratum/stratum_command.c \
 	stratum/stratum_user.c \
 	stratum/stratum_task.c \
 	stratum/stratum_sync.c \

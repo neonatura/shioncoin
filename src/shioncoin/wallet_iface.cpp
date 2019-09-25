@@ -703,11 +703,11 @@ void c_sendblockreward(int ifaceIndex)
 		const string& strAccount = item.first;
 		const int64& nValue = item.second;
 
-		bool found = false;
-		CCoinAddr address = GetAddressByAccount(wallet, strAccount.c_str(), found);
-		if (!found || !address.IsValid()) {
-			continue;
-		}
+		/* Get miner address assigned for account. */
+		CAccountCache *acc = wallet->GetAccount(strAccount);
+		if (!acc) continue;
+		CCoinAddr address = acc->GetAddr(ACCADDR_MINER);
+		if (!address.IsValid()) continue;
 
 		if (nValue < MIN_TX_FEE(iface)) {
 			vecNewRewardSend[strAccount] = nValue;

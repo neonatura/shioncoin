@@ -105,9 +105,6 @@ const char *stratum_getaddressinfo(int ifaceIndex, const char *addr_hash);
 
 const char *stratum_getaddresssecret(int ifaceIndex, const char *addr_hash, const char *pkey_str);
 
-
-const char *getminingtransactioninfo(int ifaceIndex, unsigned int workId);
-
 const char *stratum_create_account(int ifaceIndex, const char *acc_name);
 
 const char *stratum_create_transaction(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount);

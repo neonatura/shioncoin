@@ -58,9 +58,13 @@
 using namespace std;
 using namespace boost;
 
-
+uint256 test_hashGenesisBlock("0xa2128a434c48ff41bfb911857639fa24b69012aebf690b12e6dfa799cd5d914e");
+static uint256 test_hashGenesisMerkle("0xd395f73903efc28ce99ade1778666e404be2ee018f4022205a5d871c533548c8");
+#if 0
 uint256 test_hashGenesisBlock("0xf4e533069fcce5b4a3488b4363caa24e9f3265b260868794881c0164e286394b");
 uint256 test_hashGenesisMerkle("0x96f34a50bdbe2f2f50308b52ee2a5fd9dba09824d95df16798fabad0de3a7f67");
+#endif
+static CBigNum TEST_bnGenesisProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum TEST_bnProofOfWorkLimit(~uint256(0) >> 9);
 
 
@@ -178,15 +182,17 @@ uint256 test_GetOrphanRoot(uint256 hash)
 /** TestNet : difficulty level is always lowest possible per protocol. */
 unsigned int TESTBlock::GetNextWorkRequired(const CBlockIndex* pindexLast)
 {
-	CBigNum bnDiff = TEST_bnProofOfWorkLimit;
-
-	bnDiff /= GetAlgoWorkFactor(GetAlgo());
-
-  return bnDiff.GetCompact();
+	if (pindexLast) { 
+		CBigNum bnDiff = TEST_bnProofOfWorkLimit;
+		bnDiff /= GetAlgoWorkFactor(GetAlgo());
+		return bnDiff.GetCompact();
+	}
+	return (TEST_bnGenesisProofOfWorkLimit.GetCompact());
 }
 
 int64 test_GetBlockValue(int nHeight, int64 nFees)
 {
+	if (nHeight == 0) return (800 * COIN);
   int64 nSubsidy = (nHeight+1) * COIN;
   return nSubsidy + nFees;
 }
@@ -350,6 +356,7 @@ bool test_CreateGenesisBlock()
 }
 
   // Genesis block
+#if 0
   const char* pszTimestamp = "Neo Natura (share-coin) 2016";
   CTransaction txNew;
   txNew.vin.resize(1);
@@ -365,6 +372,22 @@ bool test_CreateGenesisBlock()
   block.nTime    = 1365048244;
   block.nBits    = 0x1f7fffff; 
   block.nNonce   = 299;
+#endif
+  const char* pszTimestamp = "Neo Natura (shioncoin) 2019";
+  CTransaction txNew;
+  txNew.vin.resize(1);
+  txNew.vout.resize(1);
+  txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+  txNew.vout[0].nValue = 800 * COIN;
+  txNew.vout[0].scriptPubKey = CScript() << ParseHex("04a5814813115273a109cff99907ba4a05d951873dae7acb6c973d0c9e7c88911a3dbc9aa600deac241b91707e7b4ffb30ad91c8e56e695a1ddf318592988afe0a") << OP_CHECKSIG;
+  TESTBlock block;
+  block.vtx.push_back(txNew);
+  block.hashPrevBlock = 0;
+  block.hashMerkleRoot = block.BuildMerkleTree();
+  block.nVersion = 2;
+  block.nTime = 1555780563;
+  block.nBits = 0x1e0ffff0;
+  block.nNonce = 0xe2280fad;
 
   if (block.GetHash() != test_hashGenesisBlock)
     return (false);
