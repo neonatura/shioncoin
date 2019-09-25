@@ -40,6 +40,10 @@ void add_stratum_miner_block(int ifaceIndex, char *block_hash);
 
 shjson_t *stratum_miner_lastminerblock(int ifaceIndex);
 
+int stratum_miner_extranonce_subscribe(CIface *iface, user_t *user, shjson_t *param, shjson_t **reply_p);
+
+int stratum_miner_get_transactions(CIface *iface, user_t *user, shjson_t *param, shjson_t **reply_p);
+
 #ifdef __cplusplus
 CBlockIndex *get_stratum_miner_block(int ifaceIndex, uint256 hBlock);
 vector<CBlockIndex *> get_stratum_miner_blocks(int ifaceIndex);

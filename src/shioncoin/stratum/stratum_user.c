@@ -40,7 +40,7 @@
 #define MAX_USER_WORK_DIFFICULTY 1024000
 
 /* stratum connection user flags */
-#define MAX_USER_FLAGS 8
+#define MAX_USER_FLAGS 9
 static const char *user_flag_label[MAX_USER_FLAGS] = {
   "system",
   "auth",
@@ -49,7 +49,8 @@ static const char *user_flag_label[MAX_USER_FLAGS] = {
   "client",
   "remote",
   "rpc",
-  "elevate"
+  "elevate",
+	"extranonce"
 };
 
 const char *get_user_flag_label(int flag)

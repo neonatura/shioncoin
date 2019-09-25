@@ -1028,6 +1028,7 @@ int stratum_request_message(user_t *user, shjson_t *json)
       shjson_free(&reply);
       return (err);
     }
+#if 0
     if (0 == strcmp(method, "mining.get_transactions")) {
       char *work_id_str;
       char *json_str;
@@ -1052,6 +1053,7 @@ int stratum_request_message(user_t *user, shjson_t *json)
       shjson_free(&reply);
       return (err);
     }
+#endif
 
     if (0 == strcmp(method, "chain.info")) {
       shjson_t *json_data = getchaininfo(ifaceIndex);
@@ -1202,6 +1204,11 @@ int stratum_request_message(user_t *user, shjson_t *json)
 			return (0);
 		}
 
+		/* execute generic stratum miner command. */
+		err = stratum_command_api(ifaceIndex, 
+				user, method, shjson_obj(json, "params"));
+		if (err != 1) /* 1 = Not a known command. */
+			return (err);
   } /* !USER_RPC */
 
   {
