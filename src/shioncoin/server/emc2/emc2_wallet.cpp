@@ -743,20 +743,6 @@ unsigned int EMC2Wallet::GetTransactionWeight(const CTransaction& tx)
   return (nBytes);
 }
 
-static unsigned int emc2_nBytesPerSigOp = EMC2_DEFAULT_BYTES_PER_SIGOP;
-
-unsigned int EMC2Wallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{ 
-  return (std::max(nWeight, nSigOpCost * emc2_nBytesPerSigOp) + EMC2_WITNESS_SCALE_FACTOR - 1) / EMC2_WITNESS_SCALE_FACTOR; 
-}
-
-
-unsigned int EMC2Wallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(GetTransactionWeight(tx), nSigOpCost));
-}
-
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */
 double EMC2Wallet::AllowFreeThreshold()
 {

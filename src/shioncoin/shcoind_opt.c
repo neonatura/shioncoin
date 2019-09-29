@@ -81,7 +81,7 @@ static opt_t _option_table[] = {
 		"The built-in stratum miner service." },
 	{ OPT_STRATUM_PORT, OPT_TYPE_NUM, 9448, NULL, 
 		"The socket port to listen for stratum connections." },
-	{ OPT_STRATUM_WORK_CYCLE, OPT_TYPE_NUM, 16, NULL,
+	{ OPT_STRATUM_WORK_CYCLE, OPT_TYPE_NUM, 12, NULL,
 		"The maximum number of seconds between \"getwork\" notifications." },
 #endif
 
@@ -176,6 +176,9 @@ static opt_t _option_table[] = {
 
 	{ OPT_DILITHIUM, OPT_TYPE_BOOL, 0, NULL,
 		"Use the Dilithium signing algorythm for new coin addresses." },
+
+	{ OPT_PARAM_TX, OPT_TYPE_BOOL, 0, NULL,
+		"Embed consensus-based blockchain paramater extended transactions." },
 
 	/* end of the line */
 	{ "", OPT_TYPE_NULL, 0, "" },

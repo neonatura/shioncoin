@@ -657,17 +657,6 @@ unsigned int TESTNETWallet::GetTransactionWeight(const CTransaction& tx)
   return (nBytes);
 }
 
-unsigned int TESTNETWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{
-  return (std::max(nWeight, nSigOpCost * testnet_nBytesPerSigOp) + TESTNET_WITNESS_SCALE_FACTOR - 1) / TESTNET_WITNESS_SCALE_FACTOR;
-}
-unsigned int TESTNETWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  unsigned int nWeight = GetTransactionWeight(tx);
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(nWeight, nSigOpCost));
-}
-
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */
 double TESTNETWallet::AllowFreeThreshold()
 {

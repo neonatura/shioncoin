@@ -689,6 +689,14 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 				}
 			}
 
+			/* non-exclusive */
+			if (IsParamTx(tx)) {
+				if (VersionBitsState(pindexPrev, iface, 
+							DEPLOYMENT_PARAM) == THRESHOLD_ACTIVE) {
+					ConnectParamTx(iface, &tx, pblock->nTime);
+				}
+			}
+
 			/* check for matrix validation notary tx's. */
 			ProcessValidateMatrixNotaryTx(iface, tx);
 		}
@@ -698,5 +706,4 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	STAT_BLOCK_ACCEPTS(iface)++;
 	return true;
 }
-
 

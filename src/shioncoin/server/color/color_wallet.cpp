@@ -528,17 +528,6 @@ unsigned int COLORWallet::GetTransactionWeight(const CTransaction& tx)
   return (nBytes);
 }
 
-unsigned int COLORWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{
-  return (std::max(nWeight, nSigOpCost * color_nBytesPerSigOp) + COLOR_WITNESS_SCALE_FACTOR - 1) / COLOR_WITNESS_SCALE_FACTOR;
-}
-unsigned int COLORWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  unsigned int nWeight = GetTransactionWeight(tx);
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(nWeight, nSigOpCost));
-}
-
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */
 double COLORWallet::AllowFreeThreshold()
 {

@@ -267,10 +267,12 @@ bool CWallet::AddTx(const CWalletTx& wtxIn)
 #endif
 
   uint256 hash = wtxIn.GetHash();
+#if 0
 	if (HasArchTx(hash)) {
 		CWalletTx& wtx = GetTx(hash);
-//		EraseWalletTx(hash); /* redundant */
+		EraseWalletTx(hash); /* redundant */
 	}
+#endif
 
 	{
     LOCK(cs_wallet);

@@ -35,6 +35,7 @@
 #include "rpccontext_proto.h"
 #include "rpcexec_proto.h"
 #include "rpcoffer_proto.h"
+#include "rpcparam_proto.h"
 
 
 using namespace std;
@@ -560,6 +561,23 @@ const RPCOp OFFER_STATUS = {
   "Summary: List the pending and completed exchanges for an account.\n"
 };
 
+const RPCOp PARAM_LIST = {
+	&rpc_param_list, 0, {RPC_BOOL},
+  "Syntax: [<verbose>]\n"
+	"Summary: List all active dynamic blockchain param transactions."
+};
+
+const RPCOp PARAM_VALUE = {
+	&rpc_param_value, 1, {RPC_STRING},
+	"Summary: Get info about a particular dynamic blockchain parameter mode.\n"
+	"Valid modes are: \"blocksize\" or \"minfee\"."
+};
+
+const RPCOp PARAM_GET = {
+	&rpc_param_get, 1, {RPC_STRING},
+  "Syntax: <param-hash>\n"
+	"Summary: Get info about a particular param transaction."
+};
 
 void shc_RegisterRPCOp(int ifaceIndex)
 {
@@ -629,6 +647,10 @@ void shc_RegisterRPCOp(int ifaceIndex)
 	RegisterRPCOp(ifaceIndex, "offer.info", OFFER_INFO);
 	RegisterRPCOp(ifaceIndex, "offer.list", OFFER_LIST);
 	RegisterRPCOp(ifaceIndex, "offer.status", OFFER_STATUS);
+
+	RegisterRPCOp(ifaceIndex, "param.list", PARAM_LIST);
+	RegisterRPCOp(ifaceIndex, "param.value", PARAM_VALUE);
+	RegisterRPCOp(ifaceIndex, "param.get", PARAM_GET);
 
   RegisterRPCOp(ifaceIndex, "wallet.csend", WALLET_CSEND);
   RegisterRPCOp(ifaceIndex, "wallet.donate", WALLET_DONATE);

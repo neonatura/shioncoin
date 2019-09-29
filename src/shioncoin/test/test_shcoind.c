@@ -51,6 +51,7 @@ extern TEST_sip25_assettx(CuTest*);
 extern TEST_sip25_di_assettx(CuTest*);
 extern TEST_sip5_certtx(CuTest*);
 extern TEST_sip5_di_certtx(CuTest*);
+extern TEST_sip12_consensus(CuTest*);
 extern TEST_identtx(CuTest*);
 extern TEST_bloom_create_insert_key(CuTest*);
 extern TEST_bloom_match(CuTest*);
@@ -165,6 +166,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_sip10_di_ctxtx);
   SUITE_ADD_TEST(suite, TEST_sip25_di_assettx);
   SUITE_ADD_TEST(suite, TEST_sip5_di_certtx);
+  SUITE_ADD_TEST(suite, TEST_sip12_consensus);
 
 	/* finale */
   SUITE_ADD_TEST(suite, TEST_coin_spendall_segwit);

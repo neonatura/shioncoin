@@ -868,9 +868,10 @@ const RPCOp WALLET_VERIFY = {
   "Rescan the block-chain for personal wallet transactions."
 };
 const RPCOp WALLET_SEND = {
-  &rpc_wallet_send, 3, {RPC_ACCOUNT, RPC_COINADDR, RPC_DOUBLE, RPC_INT64, RPC_STRING, RPC_STRING},
-  "Syntax: <fromaccount> <toaddress> <amount> [minconf=1] [comment] [comment-to]\n"
-  "Note: The <amount> is a real and is rounded to the nearest 0.00000001"
+  &rpc_wallet_send, 3, {RPC_ACCOUNT, RPC_COINADDR, RPC_DOUBLE, RPC_DOUBLE},
+  "Syntax: <fromaccount> <toaddress> <amount> [<fee>]\n"
+	"Summary: Send a coin amount to a coin address destination.\n"
+  "Note: The <amount> and <fee> are reals rounded to the nearest 0.00000001"
 };
 const RPCOp WALLET_BSEND = {
   &rpc_wallet_bsend, 3, {RPC_ACCOUNT, RPC_COINADDR, RPC_DOUBLE, RPC_INT64, RPC_STRING, RPC_STRING},

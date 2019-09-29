@@ -389,10 +389,33 @@ static uint32_t txcreator_RecentBlockHeight(CIface *iface)
 	return ((uint32_t)nLockTime);
 }
 
+static void txcreator_AddDummySignature(CIface *iface, const CTransaction& tx, int nOut, CTxIn& in, CTxInWitness& wit)
+{
+	int witnessversion = -1;
+	std::vector<unsigned char> witnessprogram;
+
+	//Solver(scriptPubKey, typeRet, vSolutions);
+	const CScript& scriptPubKey = tx.vout[nOut].scriptPubKey;
+	if (!scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram)) {
+		const cbuff sigDummy(40, '\007');
+		const cbuff sigPub(65, '\007');
+		in.scriptSig << sigDummy << sigPub;
+	} else if (witnessversion == 14) {
+		const cbuff sigDummy(2702, '\007');
+		const cbuff sigPub(1474, '\007');
+		wit.scriptWitness.stack.push_back(sigDummy);
+		wit.scriptWitness.stack.push_back(sigPub);
+	} else {
+		const cbuff sigDummy(40, '\007');
+		const cbuff sigPub(65, '\007');
+		wit.scriptWitness.stack.push_back(sigDummy);
+		wit.scriptWitness.stack.push_back(sigPub);
+	}
+
+}
+
 bool CTxCreator::Generate()
 {
-	const cbuff sigDummy(72, '\000');
-	const cbuff sigPub(64, '\000');
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
   CWallet *wallet = GetWallet(iface);
   int64 nFee;
@@ -474,11 +497,15 @@ bool CTxCreator::Generate()
       return (false);
     } 
 
-    CWalletTx t_wtx(wallet);
+		/* create temp which includes any underlying ext-tx */
+    CWalletTx t_wtx(wallet, *this);
+
+		t_wtx.wit.vtxinwit.resize(setCoinsCopy.size());
 
     /* add inputs */
     int nCount = 0;
     nTotCredit = 0;
+		int nOut = 0;
     BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoinsCopy) {
       CWalletTx *wtx = (CWalletTx *)coin.first;
       unsigned int n = coin.second;
@@ -489,7 +516,8 @@ bool CTxCreator::Generate()
       }
 
       CTxIn in = CTxIn(coin.first->GetHash(), coin.second);
-      in.scriptSig << sigDummy << sigPub;
+			txcreator_AddDummySignature(iface, *wtx, n, in, t_wtx.wit.vtxinwit[nOut]);
+			nOut++;
       t_wtx.vin.push_back(in);
 
       nCount++;
@@ -511,15 +539,16 @@ bool CTxCreator::Generate()
     }
 
     int64 nChange = (nTotCredit - nDebit - nFee);
-		if (nChange >= MIN_INPUT_VALUE(iface) &&
-				nChange >= MIN_RELAY_TX_FEE(iface)) {
+		if (MoneyRange(iface, nChange) &&
+				nChange >= MIN_INPUT_VALUE(iface) &&
+				nChange >= DUST_RELAY_TX_FEE(iface)) {
 			const CCoinAddr& changeAddr = wallet->GetChangeAddr(fAccount ? strFromAccount : "");
       CScript script;
       script.SetDestination(changeAddr.Get());
       t_wtx.vout.insert(t_wtx.vout.end(), CTxOut(nChange, script));
     }
 
-    nFee = wallet->CalculateFee(t_wtx, nMinFee);
+    nFee = wallet->CalculateFee(t_wtx, nMinFee, nFeeDepth);
   } while (nDebit + nFee > nTotCredit);
   if (!MoneyRange(iface, nFee)) {
     strError = "The calculated fee is out-of-range.";
@@ -542,8 +571,9 @@ bool CTxCreator::Generate()
 
   /* handle coin change */
   int64 nChange = (nCredit - nDebit - nFee);
-  if (nChange >= MIN_INPUT_VALUE(iface) &&
-      nChange >= MIN_RELAY_TX_FEE(iface)) {
+	if (MoneyRange(iface, nChange) &&
+			nChange >= MIN_INPUT_VALUE(iface) &&
+			nChange >= DUST_RELAY_TX_FEE(iface)) {
 		const CCoinAddr& changeAddr = GetChangeAddr();
     AddOutput(changeAddr.Get(), nChange); 
   }
@@ -739,7 +769,8 @@ bool CTxBatchCreator::CreateBatchTx()
     nTotSelect += wtx->vout[n].nValue; 
   }
 
-  if (nTotSelect < (nTotDebit + MIN_TX_FEE(iface))) {
+//  if (nTotSelect < (nTotDebit + MIN_TX_FEE(iface)))
+  if (nTotSelect < (nTotDebit + MIN_RELAY_TX_FEE(iface))) {
     /* insufficient funds to proceed. */
     strError = "insufficient funds to create transaction.";
     return (error(SHERR_INVAL, "CreateBatchTx: insufficient funds (%f < %f)", (double)nTotSelect/COIN, (double)nTotDebit/COIN));
@@ -795,7 +826,8 @@ bool CTxBatchCreator::CreateBatchTx()
  
   nTotDebit = MAX(0, /* sanity */
       MIN(nTotDebit, (nTotCredit - nFee)));
-  if (nTotDebit <= CENT + MIN_TX_FEE(iface)) {
+//  if (nTotDebit <= CENT + MIN_TX_FEE(iface))
+  if (nTotDebit < MIN_INPUT_VALUE(iface)) {
     strError = strprintf(_("The output coin value is too small (%-8.8f)."), (double)nTotDebit/COIN);
     return (false);
   }

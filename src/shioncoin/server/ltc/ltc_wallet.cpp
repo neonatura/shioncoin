@@ -744,18 +744,6 @@ unsigned int LTCWallet::GetTransactionWeight(const CTransaction& tx)
 
 static unsigned int ltc_nBytesPerSigOp = LTC_DEFAULT_BYTES_PER_SIGOP;
 
-unsigned int LTCWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{ 
-  return (std::max(nWeight, nSigOpCost * ltc_nBytesPerSigOp) + LTC_WITNESS_SCALE_FACTOR - 1) / LTC_WITNESS_SCALE_FACTOR; 
-}
-
-
-unsigned int LTCWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(GetTransactionWeight(tx), nSigOpCost));
-}
-
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */
 double LTCWallet::AllowFreeThreshold()
 {

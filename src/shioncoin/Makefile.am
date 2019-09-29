@@ -151,6 +151,7 @@ common_includes = \
 	server/rpccontext_proto.h \
 	server/rpcexec_proto.h \
 	server/rpcoffer_proto.h \
+	server/rpcparam_proto.h \
 	server/compat.h \
 	server/txidx.h \
 	server/key.h \
@@ -326,6 +327,7 @@ server_sources = \
 	server/rpc/rpccontext_proto.cpp \
 	server/rpc/rpcexec_proto.cpp \
 	server/rpc/rpcoffer_proto.cpp \
+	server/rpc/rpcparam_proto.cpp \
 	server/rpc/rpcdump.cpp \
 	server/rpc/rpc_command.cpp \
 	server/rpc/rpc_parse.cpp \
@@ -460,6 +462,7 @@ test_shcoind_SOURCES = \
 	test/testcoin_sip5.cpp \
 	test/testcoin_sip6.cpp \
 	test/testcoin_sip10.cpp \
+	test/testcoin_sip12.cpp \
 	test/testcoin_sip25.cpp \
 	test/testcoin_sip33.cpp
 

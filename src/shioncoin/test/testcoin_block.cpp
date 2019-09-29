@@ -388,6 +388,15 @@ char hashstr[256];
   cmp_matrix.Init(mtx.matrix);
   _TRUE(mtx.matrix.GetHash() == cmp_matrix.GetHash());
 
+	CTransaction ptx;
+	ptx.nFlag |= CTransaction::TXF_PARAM;
+	ptx.param.SetLabel("test");
+	ptx.param.nValue = 1;
+	CTransaction cmp_ptx;
+	a_ser << ptx;
+	a_ser >> cmp_ptx;
+	_TRUE(ptx.param.GetHash() == cmp_ptx.param.GetHash());
+	_TRUE(ptx.GetHash() == cmp_ptx.GetHash());
 
 }
 
@@ -1419,6 +1428,9 @@ _TEST(segwit)
   iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = time(NULL);
   iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = time(NULL) + 120;
 
+  iface->vDeployments[DEPLOYMENT_PARAM].bit = 6;
+  iface->vDeployments[DEPLOYMENT_PARAM].nStartTime = time(NULL);
+  iface->vDeployments[DEPLOYMENT_PARAM].nTimeout = time(NULL) + 120;
 
   /* create some blocks */
   for (i = 0; i < 1024; i++) { 
@@ -1465,14 +1477,12 @@ _TEST(segwit)
   _TRUE(strError == "");
   _TRUE(wtx1.CheckTransaction(TEST_COIN_IFACE)); /* .. */
 
-
   {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
-
 
   {
     CBlock *block = test_GenerateBlock();
@@ -1489,11 +1499,9 @@ _TEST(segwit)
 		//_TRUE(wallet->GetWitnessAddress(extAddr, witAddr) == true);
 		CTxCreator wit_wtx(wallet, strAccount);
 		ok = wit_wtx.AddOutput(witAddr.Get(), COIN / 4);
-//		if (!ok) fprintf(stderr, "DEBUG: TEST: SEGWIT: AddOutput \"%s\": %s\n", wit_wtx.GetError().c_str(), wit_wtx.ToString(TEST_COIN_IFACE).c_str());
 		_TRUE(ok);
 		ok = wit_wtx.Send();
 		strError = wit_wtx.GetError();
-//		if (strError != "") fprintf(stderr, "DEBUG: TEST: SEGWIT: Send \"%s\": %s\n", strError.c_str(), wit_wtx.ToString(TEST_COIN_IFACE).c_str());
 		_TRUE(ok == true);
 		_TRUE(strError == "");
 		_TRUE(wit_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
@@ -1557,11 +1565,9 @@ _TEST(segwit)
 
   /* return coins back to main account. */
   CTxCreator wtx3(wallet, strWitAccount);
-  wtx3.AddOutput(addr.Get(), nValue - (MIN_TX_FEE(iface) * 2));
-  _TRUE(wtx3.Send());
-  strError = wtx3.GetError();
-//if (strError != "") fprintf(stderr, "DEBUG: wtx3.strerror = \"%s\"\n", strError.c_str());
-  _TRUE(strError == "");
+  wtx3.AddOutput(addr.Get(), nValue - (MIN_TX_FEE(iface) * 100));
+  bool fOk = wtx3.Send();
+	_TRUE(fOk);
   _TRUE(wtx3.CheckTransaction(TEST_COIN_IFACE)); /* .. */
 
   {

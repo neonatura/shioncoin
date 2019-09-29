@@ -63,12 +63,11 @@ extern "C" {
 
 #define MAX_BLOCK_SIZE(_iface) \
   ((_iface)->max_block_size)
+#define DEFAULT_MAX_BLOCK_SIZE(_iface) \
+  ((_iface)->def_max_block_size)
 
 #define MAX_BLOCK_WEIGHT(_iface) \
   ((_iface)->max_block_size * 4)
-
-#define MAX_BLOCK_SIZE_GEN(_iface) \
-  ((_iface)->max_block_size / 2)
 
 #define MAX_ORPHAN_TRANSACTIONS(_iface) \
   ((_iface)->max_orphan_tx)
@@ -96,6 +95,11 @@ extern "C" {
  */
 #define MIN_RELAY_TX_FEE(_iface) \
 	(int64)( !(_iface) ? 0 : (_iface)->min_relay_fee )
+#define DEFAULT_MIN_RELAY_TX_FEE(_iface) \
+	(int64)( !(_iface) ? 0 : (_iface)->min_relay_fee )
+
+#define DUST_RELAY_TX_FEE(_iface) \
+	(int64)((_iface)->min_relay_fee * 3)
 
 /**
  * The minimum coin value allowed to be transfered in a single transaction.
@@ -250,10 +254,12 @@ typedef struct coin_iface_t
   uint64_t services; /* NODE_XXX */
   uint64_t min_input;
   uint64_t max_block_size;
+  uint64_t def_max_block_size;
   uint64_t max_orphan_tx;
   uint64_t max_tx_weight;
   uint64_t min_tx_fee;
   uint64_t min_relay_fee;
+  uint64_t def_min_relay_fee;
   uint64_t max_tx_fee;
   uint64_t max_free_tx_size;
   uint64_t max_money;

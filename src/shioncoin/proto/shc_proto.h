@@ -68,8 +68,7 @@ static const int SHC_PROTOCOL_VERSION = 2000000;
  */
 #define SHC_MAX_BLOCK_SIZE 4096000
 
-#define SHC_MAX_BLOCK_SIZE_GEN SHC_MAX_BLOCK_SIZE/2
-#define SHC_MAX_TRANSACTION_WEIGHT SHC_MAX_BLOCK_SIZE_GEN/5
+#define SHC_MAX_TRANSACTION_WEIGHT 3280000 /* 820k */ 
 
 #define SHC_MAX_STANDARD_TX_WEIGHT 1600000
 
@@ -83,7 +82,7 @@ static const int SHC_PROTOCOL_VERSION = 2000000;
 /**
  * The minimum "satashi" permitted to be sent in a single transaction.
  */
-static const int64 SHC_MIN_INPUT = 100;
+static const int64 SHC_MIN_INPUT = 1;
 
 /**
  * The transaction fee per 1k of block content.

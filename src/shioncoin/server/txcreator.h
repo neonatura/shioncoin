@@ -48,6 +48,7 @@ class CTxCreator : public CWalletTx
     unsigned int nDepth;
     coin_set setInput;
 		map<unsigned int,unsigned int> setSeq;
+		int nFeeDepth;
 
     CPubKey changePubKey;
     int64 nReserveIndex;
@@ -100,6 +101,7 @@ class CTxCreator : public CWalletTx
       nReserveIndex = -1;
       changePubKey = CPubKey();
       nDepth = 0;
+      nFeeDepth = 6;
       strError = "";
       setInput.clear();
     }
@@ -184,6 +186,16 @@ class CTxCreator : public CWalletTx
 		int getInputCount()
 		{
 			return (setInput.size());
+		}
+
+		void setLowFeeRate()
+		{
+			nFeeDepth = 0;
+		}
+
+		void setHighFeeRate()
+		{
+			nFeeDepth = 12;
 		}
 
 };

@@ -68,8 +68,7 @@ static const int TESTNET_PROTOCOL_VERSION = 2000000;
  */
 #define TESTNET_MAX_BLOCK_SIZE 4096000
 
-#define TESTNET_MAX_BLOCK_SIZE_GEN TESTNET_MAX_BLOCK_SIZE/2
-#define TESTNET_MAX_TRANSACTION_WEIGHT TESTNET_MAX_BLOCK_SIZE_GEN/5
+#define TESTNET_MAX_TRANSACTION_WEIGHT 3280000
 
 #define TESTNET_MAX_STANDARD_TX_WEIGHT 1600000
 
@@ -85,7 +84,7 @@ static const int TESTNET_PROTOCOL_VERSION = 2000000;
 /**
  * The minimum "satashi" permitted to be sent in a single transaction.
  */
-static const int64 TESTNET_MIN_INPUT = 100;
+static const int64 TESTNET_MIN_INPUT = 1;
 
 /**
  * The transaction fee per 1k of block content.

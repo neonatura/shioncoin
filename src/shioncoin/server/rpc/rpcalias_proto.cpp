@@ -307,10 +307,12 @@ Value rpc_alias_listaddr(CIface *iface, const Array& params, bool fStratum)
     alias = (CAlias *)&tx.alias;
 
 		CCoinAddr addr(ifaceIndex);
-		if (!alias->GetCoinAddr(ifaceIndex, addr))
+		if (!alias->GetCoinAddr(ifaceIndex, addr)) {
 			continue;
-		if (addr.IsValid())
+		}
+		if (!addr.IsValid()) {
 			continue;
+		}
 
 		result.push_back(Pair(label, addr.ToString()));
 	}

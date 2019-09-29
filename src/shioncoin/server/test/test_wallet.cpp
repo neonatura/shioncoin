@@ -760,18 +760,6 @@ unsigned int TESTWallet::GetTransactionWeight(const CTransaction& tx)
   return (nBytes);
 }
 
-unsigned int TESTWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{
-  return (std::max(nWeight, nSigOpCost * test_nBytesPerSigOp) + TEST_WITNESS_SCALE_FACTOR - 1) / TEST_WITNESS_SCALE_FACTOR;
-}
-
-unsigned int TESTWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  unsigned int nWeight = GetTransactionWeight(tx);
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(nWeight, nSigOpCost));
-}
-
 double TESTWallet::AllowFreeThreshold()
 {
   static const double block_daily = 360;

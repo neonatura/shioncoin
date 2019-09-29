@@ -68,8 +68,7 @@ static const int COLOR_PROTOCOL_VERSION = 2000000;
  */
 #define COLOR_MAX_BLOCK_SIZE 512000
 
-#define COLOR_MAX_BLOCK_SIZE_GEN COLOR_MAX_BLOCK_SIZE/2
-#define COLOR_MAX_TRANSACTION_WEIGHT COLOR_MAX_BLOCK_SIZE_GEN/5
+#define COLOR_MAX_TRANSACTION_WEIGHT 2000000 /* 500k */
 
 #define COLOR_MAX_STANDARD_TX_WEIGHT 200000
 
@@ -83,7 +82,7 @@ static const int COLOR_PROTOCOL_VERSION = 2000000;
 /**
  * The minimum "satashi" permitted to be sent in a single transaction.
  */
-static const int64 COLOR_MIN_INPUT = 100;
+static const int64 COLOR_MIN_INPUT = 1;
 
 /**
  * Transaction fee applied to every 1k of size.

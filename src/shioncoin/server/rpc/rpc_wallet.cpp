@@ -861,10 +861,8 @@ Value rpc_wallet_send(CIface *iface, const Array& params, bool fStratum)
 	CWallet *wallet = GetWallet(iface);
 	int ifaceIndex = GetCoinIndex(iface);
 
-	if (params.size() < 3 || params.size() > 6)
-		throw runtime_error(
-				"wallet.send <fromaccount> <toaddress> <amount> [minconf=1] [comment] [comment-to]\n"
-				"<amount> is a real and is rounded to the nearest 0.00000001");
+	if (params.size() > 4)
+		throw runtime_error("wallet.send");
 
 	/* originating account  */
 	string strAccount = AccountFromValue(params[0]);
@@ -880,16 +878,36 @@ Value rpc_wallet_send(CIface *iface, const Array& params, bool fStratum)
 
 	int64 nAmount = AmountFromValue(params[2]);
 	int nMinDepth = 1;
-	if (params.size() > 3)
-		nMinDepth = params[3].get_int();
 
-	CTxCreator wtx(wallet, strAccount);
 	//CWalletTx wtx;
 	//wtx.strFromAccount = strAccount;
+#if 0
+	if (params.size() > 3)
+		nMinDepth = params[3].get_int();
 	if (params.size() > 4 && params[4].type() != null_type && !params[4].get_str().empty())
 		wtx.mapValue["comment"] = params[4].get_str();
 	if (params.size() > 5 && params[5].type() != null_type && !params[5].get_str().empty())
 		wtx.mapValue["to"]      = params[5].get_str();
+#endif
+	int64 nFee = 0;
+	if (params.size() == 4)
+		nFee = params[3].get_real();
+
+	if (nFee >= MAX_TRANSACTION_FEE(iface)) {
+		throw JSONRPCError(ERR_INVAL, "The fee exceeds the maximum permitted.");
+	}
+
+	CTxCreator wtx(wallet, strAccount);
+	wtx.SetMinFee(nFee);
+#if 0
+	if (feeRate.length() != 0) {
+		if (feeRate.substring(0, 1) == "l") { /* low */
+			wtx.setLowFeeRate();
+		} else if (feeRate.substring(0, 1) == "h") { /* high */
+			wtx.setHighFeeRate();
+		}
+	}
+#endif
 
 	// Check funds
 	int64 nBalance = GetAccountBalance(ifaceIndex, strAccount, nMinDepth);

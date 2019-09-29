@@ -99,6 +99,7 @@ class CWallet : public CBasicKeyStore
 		map<uint256, CPubKey> mapValidateNotary;
 
 		mutable std::vector<CParam> mapParam;
+		mutable std::vector<uint256> mapParamArch;
 
 		mutable std::map<std::string, uint256> mapAlias;
 		mutable std::map<uint256, std::string> mapAliasArch;
@@ -409,7 +410,7 @@ class CWallet : public CBasicKeyStore
 		bool GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr);
 #endif
 
-		int64 CalculateFee(CWalletTx& tx, int64 nMinFee = 0);
+		int64 CalculateFee(CWalletTx& tx, int64 nMinFee = 0, int confTarget = 0);
 
 		bool FillInputs(const CTransaction& tx, tx_cache& inputs, bool fAllowSpent = true);
 
@@ -440,9 +441,15 @@ class CWallet : public CBasicKeyStore
 		/* the serialized size of the transaction. */
 		virtual unsigned int GetTransactionWeight(const CTransaction& tx) = 0;  
 
-		virtual unsigned int GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost = 0) = 0;
+		unsigned int GetVirtualTransactionSize(int64 nWeight)
+		{
+			return ((nWeight + 3) / 4);
+		}
 
-		virtual unsigned int GetVirtualTransactionSize(const CTransaction& tx) = 0;
+		unsigned int GetVirtualTransactionSize(const CTransaction& tx)
+		{
+			return (GetVirtualTransactionSize(GetTransactionWeight(tx)));
+		}
 
 		virtual double AllowFreeThreshold() = 0;
 
@@ -824,48 +831,7 @@ class CWalletTx : public CMerkleTx
 				 return (GetDebit() > 0);
 			 }
 
-			 bool IsConfirmed() const
-			 {
-				 // Quick answer in most cases
-				 if (!IsFinal(pwallet->ifaceIndex))
-					 return false;
-				 if (GetDepthInMainChain(pwallet->ifaceIndex) >= 1)
-					 return true;
-				 if (!IsFromMe()) // using wtx's cached debit
-					 return false;
-
-				 // If no confirmations but it's from us, we can still
-				 // consider it confirmed if all dependencies are confirmed
-				 std::map<uint256, const CMerkleTx*> mapPrev;
-				 std::vector<const CMerkleTx*> vWorkQueue;
-				 vWorkQueue.reserve(vtxPrev.size()+1);
-				 vWorkQueue.push_back(this);
-				 for (unsigned int i = 0; i < vWorkQueue.size(); i++)
-				 {
-					 const CMerkleTx* ptx = vWorkQueue[i];
-
-					 if (!ptx->IsFinal(pwallet->ifaceIndex))
-						 return false;
-					 if (ptx->GetDepthInMainChain(pwallet->ifaceIndex) >= 1)
-						 continue;
-					 if (!pwallet->IsFromMe(*ptx))
-						 return false;
-
-					 if (mapPrev.empty())
-					 {
-						 BOOST_FOREACH(const CMerkleTx& tx, vtxPrev)
-							 mapPrev[tx.GetHash()] = &tx;
-					 }
-
-					 BOOST_FOREACH(const CTxIn& txin, ptx->vin)
-					 {
-						 if (!mapPrev.count(txin.prevout.hash))
-							 return false;
-						 vWorkQueue.push_back(mapPrev[txin.prevout.hash]);
-					 }
-				 }
-				 return true;
-			 }
+			 bool IsConfirmed() const;
 
 #if 0
 			 bool WriteToDisk();

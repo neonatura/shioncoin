@@ -172,7 +172,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
 
   if (!ptx.IsLocal() && !VerifySoftLimits(ptx)) {
     /* initial breach of soft limits [non-local] starts in overflow queue. */
-    Debug("CPool.FillInputs: info: tx \"%s\" breached soft limits.", ptx.GetHash().GetHex().c_str());
+    Debug("CPool.AddTx: info: tx \"%s\" breached soft limits.", ptx.GetHash().GetHex().c_str());
     ptx.SetFlag(POOL_SOFT_LIMIT);
     return (AddOverflowTx(ptx));
   }
@@ -181,7 +181,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
   if (ptx.nFee >= MIN_RELAY_TX_FEE(iface)) {
     int64 nSoftFee = CalculateSoftFee(ptx.GetTx());
     if (ptx.nFee < nSoftFee) {
-      Debug("CPool.FillInputs: info: tx \"%s\" has insufficient soft fee.", ptx.GetHash().GetHex().c_str());
+      Debug("CPool.AddTx: info: tx \"%s\" has insufficient soft fee (%f/%f).", ptx.GetHash().GetHex().c_str(), ((double)ptx.nFee/COIN), ((double)nSoftFee/COIN));
 
       /* meets minimum requirements -- process as low priority */
       ptx.SetFlag(POOL_FEE_LOW);
@@ -420,8 +420,7 @@ void CPool::CalculateLimits(CPoolTx& ptx)
 
   ptx.nWeight = wallet->GetTransactionWeight(ptx.GetTx());
   ptx.nSigOpCost = ptx.GetTx().GetSigOpCost(ptx.GetInputs());
-  ptx.nTxSize = wallet->GetVirtualTransactionSize(ptx.nWeight, ptx.nSigOpCost);
-
+  ptx.nTxSize = wallet->GetVirtualTransactionSize(ptx.nWeight);//, ptx.nSigOpCost);
 
 }
 
@@ -472,7 +471,6 @@ bool CPool::FillInputs(CPoolTx& ptx)
   CTransaction& tx = ptx.GetTx();
   bool ok;
 
-
   for (unsigned int i = 0; i < tx.vin.size(); i++) {
     COutPoint prevout = tx.vin[i].prevout;
     if (ptx.GetInputs().count(prevout.hash))
@@ -482,12 +480,24 @@ bool CPool::FillInputs(CPoolTx& ptx)
 
     prevTx.SetNull();
 
-    ok = GetTx(prevout.hash, prevTx); /* check mempool */
+    ok = GetTx(prevout.hash, prevTx, POOL_ACTIVE); /* check mempool */
     if (!ok) 
       ok = GetTransaction(iface, prevout.hash, prevTx, NULL);
     if (!ok) {
-      /* check for orphan */
-      if (pending.count(prevout.hash)) {
+			if (overflow.count(prevout.hash)) { /* check in overflow */
+        CPoolTx& of = overflow[prevout.hash];
+				if (of.CheckFinal(iface) &&
+						GetActiveWeight() + of.GetWeight() >= GetMaxWeight()) {
+					CPoolTx new_ptx(of);
+					RemoveTx(prevout.hash);
+
+					ok = AddActiveTx(new_ptx);
+					if (ok) {
+						/* overflow input is now an active pool tx */
+						prevTx = new_ptx.GetTx();
+					}
+				}
+			} else if (pending.count(prevout.hash)) { /* check for orphan */
         CPoolTx& orphan = pending[prevout.hash];
         /* verify whether inputs are now correct */
         ok = RefillInputs(orphan);

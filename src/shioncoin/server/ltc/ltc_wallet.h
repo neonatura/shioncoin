@@ -57,10 +57,6 @@ class LTCWallet : public CWallet
 
     unsigned int GetTransactionWeight(const CTransaction& tx);
 
-    unsigned int GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost = 0);
-
-    unsigned int GetVirtualTransactionSize(const CTransaction& tx);
-
     double AllowFreeThreshold();
 
     int64 GetFeeRate(uint160 hColor);

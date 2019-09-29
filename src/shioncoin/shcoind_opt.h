@@ -66,6 +66,8 @@ extern "C" {
 #define OPT_HDKEY "hdkey"
 #define OPT_DILITHIUM "dilithium"
 
+#define OPT_PARAM_TX "param-tx"
+
 /* PoW Algorthm. */
 #define OPT_STRATUM_SHA256D "stratum-sha256d"
 #define OPT_STRATUM_SHA256D_PORT "stratum-sha256d-port"

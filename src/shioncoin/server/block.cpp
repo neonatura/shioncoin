@@ -1340,9 +1340,9 @@ CParam *CTransaction::UpdateParam(std::string strName, int64_t nValue)
 	if (!par)
 		return (NULL);
 
+	par->SetNull();
   par->SetLabel(strName);
-//	par->SetValue(nValue);
-	par->nValue = nValue;
+	par->nValue = (int64)nValue;
 
 	/* expiration is primarily for creating a unique hash. */
   par->SetExpireSpan((double)DEFAULT_PARAM_LIFESPAN);
@@ -3088,9 +3088,11 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   /* perform connect */
   BOOST_FOREACH(CBlockIndex *pindex, vConnect) {
     CBlock *block = mConnectBlocks[pindex->GetBlockHash()];
+		bool fOk;
 
-    if (!block->ConnectBlock(pindex)) {
-      error(SHERR_INVAL, "Reorganize() : ConnectBlock %s failed", pindex->GetBlockHash().ToString().c_str());
+    fOk = block->ConnectBlock(pindex);
+		if (!fOk) {
+      error(SHERR_INVAL, "(%s) core_CommitBlock: ConnectBlock \"%s\" failure.", iface->name, pindex->GetBlockHash().ToString().c_str());
       fValid = false;
 			pindexFail = pindex;
       break;
@@ -3118,6 +3120,12 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
     BOOST_FOREACH(CTransaction& tx, block->vtx) {
       if (tx.IsCoinBase())
         continue;
+
+#if 0
+	/* TODO: */
+	CPoolTx ptx(tx);
+	pool->AddActiveTx(ptx);
+#endif
 
       pool->AddTx(tx);
     }
@@ -3218,6 +3226,10 @@ void CTransaction::Init(const CTransaction& tx)
 	/* non-exclusive */
 	if (this->nFlag & TXF_ALTCHAIN)
 		altchain = tx.altchain;
+
+	/* non-exclusive */
+	if (this->nFlag & TXF_PARAM)
+		param = tx.param;
 
 }
 

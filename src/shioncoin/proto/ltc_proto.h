@@ -52,8 +52,7 @@ static const int LTC_PROTOCOL_VERSION = 70015;
 
 #define LTC_MAX_BLOCK_SIZE 1000000
 
-#define LTC_MAX_BLOCK_SIZE_GEN LTC_MAX_BLOCK_SIZE/2
-#define LTC_MAX_TRANSACTION_WEIGHT LTC_MAX_BLOCK_SIZE_GEN/5
+#define LTC_MAX_TRANSACTION_WEIGHT 100000
 
 #define LTC_MAX_STANDARD_TX_WEIGHT 100000
 
@@ -64,7 +63,7 @@ static const int LTC_PROTOCOL_VERSION = 70015;
 /* Disallow all free transactions. */
 #define LTC_MAX_FREE_TX_SIZE 0
 
-static const int64 LTC_MIN_INPUT = 294;
+static const int64 LTC_MIN_INPUT = 1;//294;
 static const int64 LTC_MIN_TX_FEE = 10000;
 static const int64 LTC_MIN_RELAY_TX_FEE = 1000;
 static const int64 LTC_MAX_MONEY = 84000000 * LTC_COIN;

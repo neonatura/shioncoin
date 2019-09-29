@@ -2226,7 +2226,6 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
   std::vector<unsigned char> witnessprogram;
   if (flags & SCRIPT_VERIFY_WITNESS) {
     if (scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram)) {
-if (!witness.empty()) error(ERR_INVAL, "DEBUG: VerifyScript: witnessversion(%d) program(<%d bytes>) \"%s\"\n", witnessversion, witnessprogram.size(), scriptPubKey.ToString().c_str()); 
       hadWitness = true;
       if (scriptSig.size() != 0) {
         // The scriptSig must be _exactly_ CScript(), otherwise we reintroduce malleability.
@@ -2238,8 +2237,6 @@ if (!witness.empty()) error(ERR_INVAL, "DEBUG: VerifyScript: witnessversion(%d) 
       // Bypass the cleanstack check at the end. The actual stack is obviously not clean
       // for witness programs.
       stack.resize(1);
-    } else {
-if (!witness.empty()) error(ERR_INVAL, "DEBUG: VerifyScript: not witness program \"%s\"\n", scriptPubKey.ToString().c_str()); 
 		}
 	}
 

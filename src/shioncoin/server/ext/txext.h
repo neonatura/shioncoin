@@ -263,6 +263,14 @@ class CExtCore
       return (shtime_after(shtime(), tExpire));
     }
 
+    bool IsExpired(int64_t nTime)
+    {
+      if (tExpire == SHTIME_UNDEFINED)
+        return (false);
+			shtime_t t = shtimeu((time_t)nTime);
+      return (shtime_after(t, tExpire));
+    }
+
     void Init(const CExtCore& b)
     {
       nVersion = b.nVersion;

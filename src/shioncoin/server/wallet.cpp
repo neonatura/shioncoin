@@ -2890,14 +2890,14 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 }
 #endif
 
-int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee)
+int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee, int confTarget)
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
+	CWallet *wallet = GetWallet(ifaceIndex);
 	int64 nBytes;
 	int64 nFee;
 
 	nBytes = (int64)GetVirtualTransactionSize(tx); 
-	//nBytes = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION(iface));
 
 	/* base fee */
 	nFee = (int64)MIN_RELAY_TX_FEE(iface);
@@ -2913,14 +2913,14 @@ int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee)
 	}
 	nFee = MAX(nFee, nMinFee);
 
-	int64 nEstFee = 0;
-	CBlockPolicyEstimator *est = GetFeeEstimator(iface);
-	if (est) {
-		static const unsigned int confTarget = 2;
-		nEstFee = est->estimateSmartFee(confTarget, NULL).GetFee(nBytes);
-		if (nEstFee > nFee) {
-			nFee = nEstFee;
-//			Debug("CWallet.CalculateFee: using estimated fee %f.", (double)nFee/COIN);
+	if (confTarget != 0) {
+		int64 nEstFee = 0;
+		CBlockPolicyEstimator *est = GetFeeEstimator(iface);
+		if (est) {
+			nEstFee = est->estimateSmartFee(confTarget, NULL).GetFee(nBytes);
+			if (nEstFee > nFee) {
+				nFee = nEstFee;
+			}
 		}
 	}
 
@@ -2950,7 +2950,10 @@ bool CWallet::FillInputs(const CTransaction& tx, tx_cache& inputs, bool fAllowSp
 			CTransaction prevTx;
 			const uint256& prev_hash = prevout.hash;
 			if (!::GetTransaction(iface, prev_hash, prevTx, NULL)) {
-				return (error(SHERR_INVAL, "FillInputs: unknown tx hash \"%s\".", prev_hash.GetHex().c_str()));
+				CTxMemPool *pool = GetTxMemPool(iface);
+				if (!pool->GetTx(prev_hash, prevTx, POOL_ACTIVE)) {
+					return (error(SHERR_INVAL, "(%s) FillInputs: unknown tx hash \"%s\" [tx: %s].", iface->name, prev_hash.GetHex().c_str(), tx.GetHash().GetHex().c_str()));
+				}
 			}
 
 			if (!fAllowSpent) {
@@ -3663,3 +3666,63 @@ bool ExtractDestinationKey(CWallet *wallet, const CTxDestination& dest, CKeyID& 
 	return (true);
 }
 
+bool CWalletTx::IsConfirmed() const
+{
+
+	// Quick answer in most cases
+	if (!IsFinal(pwallet->ifaceIndex)) {
+		return false;
+	}
+
+	int nDepth = GetDepthInMainChain(pwallet->ifaceIndex);
+	if (nDepth >= 1) {
+		return true;
+	}
+
+	if (!IsFromMe()) { // using wtx's cached debit
+		return false;
+	}
+
+	{
+		CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
+		CTxMemPool *pool = GetTxMemPool(iface);
+		const uint256& hash = GetHash();
+		CTransaction tmpTx;
+		if (!pool || !pool->GetTx(hash, tmpTx, POOL_ACTIVE)) {
+			/* must be in active pool in order to use as input [when not confirmed]. */
+			return (false);
+		}
+	}
+
+	// If no confirmations but it's from us, we can still
+	// consider it confirmed if all dependencies are confirmed
+	std::map<uint256, const CMerkleTx*> mapPrev;
+	std::vector<const CMerkleTx*> vWorkQueue;
+	vWorkQueue.reserve(vtxPrev.size()+1);
+	vWorkQueue.push_back(this);
+	for (unsigned int i = 0; i < vWorkQueue.size(); i++)
+	{
+		const CMerkleTx* ptx = vWorkQueue[i];
+
+		if (!ptx->IsFinal(pwallet->ifaceIndex))
+			return false;
+		if (ptx->GetDepthInMainChain(pwallet->ifaceIndex) >= 1)
+			continue;
+		if (!pwallet->IsFromMe(*ptx))
+			return false;
+
+		if (mapPrev.empty())
+		{
+			BOOST_FOREACH(const CMerkleTx& tx, vtxPrev)
+				mapPrev[tx.GetHash()] = &tx;
+		}
+
+		BOOST_FOREACH(const CTxIn& txin, ptx->vin)
+		{
+			if (!mapPrev.count(txin.prevout.hash))
+				return false;
+			vWorkQueue.push_back(mapPrev[txin.prevout.hash]);
+		}
+	}
+	return true;
+}
