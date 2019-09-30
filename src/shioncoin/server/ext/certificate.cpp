@@ -1670,14 +1670,12 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
   if (!addrDest.IsValid())
     return (SHERR_INVAL);
 
-  if (nValue <= (nMinValue+nMinValue+nMinInput)) {
-    return (SHERR_INVAL);
-  }
+	if (nValue < MIN_RELAY_TX_FEE(iface))
+		return (ERR_INVAL); /* output value is too small. */
 
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nValue) {
-    return (ERR_FEE);
-  }
+  if (bal < (nValue + MIN_RELAY_TX_FEE(iface)))
+    return (ERR_FEE); /* account has insufficient funds. */
 
   CTransaction tx;
   bool hasCert = GetTxOfCert(iface, hashCert, tx);
@@ -1687,13 +1685,9 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
   }
 
   if (!IsCertAccount(iface, tx, strAccount)) { 
-    error(SHERR_ACCESS, "init_ident_certcoin_tx: certificate is not local.");
+    error(SHERR_ACCESS, "init_ident_certcoin_tx: account '%s' is not owner of cert '%s'.", strAccount.c_str(), hashCert.GetHex().c_str());
     return (SHERR_ACCESS);
   }
-
-	CTxDestination dest;
-	if (!wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest))
-		return (ERR_INVAL);
 
 	CTxCreator s_wtx(wallet, strAccount);
   CIdent& s_cert = (CIdent&)tx.certificate;
@@ -1701,14 +1695,14 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
 	if (!ident)
 		return (ERR_INVAL);
 
-  CScript destPubKey;
-  destPubKey.SetDestination(addrDest.Get());
-	s_wtx.AddOutput(destPubKey, nValue); 
+  CScript scriptPubKey;
+  scriptPubKey.SetDestination(addrDest.Get());
 
 	CScript scriptExt;
   const uint160& hashIdent = ident->GetHash();
-  scriptExt << OP_EXT_PAY << CScript::EncodeOP_N(OP_IDENT) << OP_HASH160 << hashIdent << OP_2DROP << OP_RETURN << OP_0;
-	s_wtx.AddOutput(scriptExt, 0, true);
+  scriptExt << OP_EXT_PAY << CScript::EncodeOP_N(OP_IDENT) << OP_HASH160 << hashIdent << OP_2DROP;
+	scriptExt += scriptPubKey;
+	s_wtx.AddOutput(scriptExt, nValue, true);
 
 	if (!s_wtx.Send())
     return (SHERR_CANCELED);
@@ -1716,6 +1710,10 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
 	wtx = (CWalletTx)s_wtx;
 
 #if 0
+	CTxDestination dest;
+	if (!wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest))
+		return (ERR_INVAL);
+
 	/* set destination address. */
   CScript scriptPubKeyOrig;
 	scriptPubKeyOrig.SetDestination(dest);
