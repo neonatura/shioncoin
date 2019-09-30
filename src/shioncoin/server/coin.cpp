@@ -554,7 +554,7 @@ bool CTransaction::ConnectInputs(int ifaceIndex, const CBlockIndex* pindexBlock,
   return (ok);
 }
 
-void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight)
+void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight, CBlockIndex *pindexPrev)
 {
   int ifaceIndex = GetCoinIndex(iface);
 	int mode;
@@ -627,12 +627,14 @@ void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight)
 
 		/* non-exclusive */
 		if (IsParamTx(tx)) {
-//if (VersionBitsState(pindexPrev, iface, DEPLOYMENT_PARAM) == THRESHOLD_ACTIVE)
-			ConnectParamTx(iface, &tx, pblock->nTime);
+			ConnectParamTx(iface, &tx, pindexPrev);
 		}
 
 		/* check for matrix validation notary tx's. */
-		ProcessValidateMatrixNotaryTx(iface, tx);
+		if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
+				tx.vout[0].nValue <= CTxMatrix::MAX_NOTARY_TX_VALUE) {
+			ProcessValidateMatrixNotaryTx(iface, tx);
+		}
 	}
 
 }
@@ -780,7 +782,7 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 
 	/* handle processing extended tx operations. */
   timing_init("ConnectBlock/ConnectExtTx", &ts);
-	core_ConnectExtTx(iface, block, nHeight);
+	core_ConnectExtTx(iface, block, nHeight, pindex->pprev);
   timing_term(block->ifaceIndex, "ConnectBlock/ConnectExtTx", &ts);
 
 	bolo_connectblock_slave(pindex, *block);

@@ -525,6 +525,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 }
 
 
+#if 0
 /**
  * The scrypt legacy method of accepting a new block onto the block-chain.
  */
@@ -691,10 +692,7 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 
 			/* non-exclusive */
 			if (IsParamTx(tx)) {
-				if (VersionBitsState(pindexPrev, iface, 
-							DEPLOYMENT_PARAM) == THRESHOLD_ACTIVE) {
-					ConnectParamTx(iface, &tx, pblock->nTime);
-				}
+				ConnectParamTx(iface, &tx, pblock->nTime);
 			}
 
 			/* check for matrix validation notary tx's. */
@@ -706,4 +704,5 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	STAT_BLOCK_ACCEPTS(iface)++;
 	return true;
 }
+#endif
 

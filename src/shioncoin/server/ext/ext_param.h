@@ -107,6 +107,9 @@ class CParam : public CExtCore
 
 };
 
+/* Whether blockchain is capable of processing Param extended transactions. */
+bool HasParamConsensus(CIface *iface, CBlockIndex *pindexPrev = NULL);
+
 /**
  * Verify the integrity of an param transaction.
  */
@@ -117,7 +120,7 @@ bool VerifyParamTx(CTransaction& tx, int& mode);
  */
 bool IsParamTx(const CTransaction& tx);
 
-bool ConnectParamTx(CIface *iface, CTransaction *tx, int64_t nTime);
+bool ConnectParamTx(CIface *iface, CTransaction *tx, CBlockIndex *pindexPrev);
 
 bool DisconnectParamTx(CIface *iface, CTransaction *tx);
 

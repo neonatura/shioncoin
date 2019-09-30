@@ -1545,7 +1545,7 @@ test_shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
 	-lboost_thread -ldb_cxx -lpthread -ldl
 test_shcoind_CFLAGS = -g -O0 -DTEST_SHCOIND $(am__append_8)
 test_shcoind_CXXFLAGS = -g -O0 -DTEST_SHCOIND $(am__append_9)
-@HAVE_SYSTEMCTL_TRUE@SYSD_FILE = /lib/systemd/system/shcoind.service
+@HAVE_SYSTEMCTL_TRUE@SYSD_FILE = /usr/lib/systemd/system/shcoind.service
 all: all-am
 
 .SUFFIXES:
@@ -7605,8 +7605,7 @@ uninstall-am: uninstall-sbinPROGRAMS
 
 
 @HAVE_SYSTEMCTL_TRUE@install-exec-hook:
-@HAVE_SYSTEMCTL_TRUE@	mkdir -p /lib/systemd/system/
-@HAVE_SYSTEMCTL_TRUE@	rm -f /etc/systemd/system/shcoind.service
+@HAVE_SYSTEMCTL_TRUE@	mkdir -p /usr/lib/systemd/system/
 @HAVE_SYSTEMCTL_TRUE@	echo "[Unit]" > $(SYSD_FILE) 
 @HAVE_SYSTEMCTL_TRUE@	echo "Description=ShionCoin" >> $(SYSD_FILE) 
 @HAVE_SYSTEMCTL_TRUE@	echo "Wants=network.target" >> $(SYSD_FILE) 
@@ -7617,7 +7616,9 @@ uninstall-am: uninstall-sbinPROGRAMS
 @HAVE_SYSTEMCTL_TRUE@	echo "WantedBy=sysinit.target" >> $(SYSD_FILE) 
 @HAVE_SYSTEMCTL_TRUE@	echo "Alias=shcoind.service" >> $(SYSD_FILE) 
 @HAVE_SYSTEMCTL_TRUE@	systemctl daemon-reload 
+@HAVE_SYSTEMCTL_TRUE@	systemctl disable shcoind
 @HAVE_SYSTEMCTL_TRUE@	systemctl enable shcoind
+@HAVE_SYSTEMCTL_TRUE@	[ -e /etc/systemd/system/shcoind.service ] || ln -sf  /usr/lib/systemd/system/shcoind.service /etc/systemd/system/shcoind.service
 
 @HAVE_SYSTEMCTL_TRUE@uninstall-hook:
 @HAVE_SYSTEMCTL_TRUE@	rm -f $(SYSD_FILE) /etc/systemd/system/shcoind.service

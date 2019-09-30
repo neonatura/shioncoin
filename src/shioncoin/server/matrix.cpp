@@ -252,7 +252,7 @@ bool CreateValidateNotaryTx(CIface *iface, const CTransaction& txPrev, int nPrev
 	/* output */
 	CScript scriptReturn;
 	scriptReturn.SetNoDestination(); /* null output */
-	CTxOut out(MIN_INPUT_VALUE(iface), scriptReturn);
+	CTxOut out(CTxMatrix::MAX_NOTARY_TX_VALUE, scriptReturn);
 	tx.vout.insert(tx.vout.end(), out);
 	
 	/* sign */
@@ -534,13 +534,14 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 	if (tx.IsCoinBase())
 		return (false);
 
+	if (tx.vin.size() != 1 || tx.vout.size() != 1)
+		return (false);
+
 	/* check whether tx input ref's latest published matrix tx. */
 	const CTxIn& txin = tx.vin[0];
 	if (std::find(wallet->mapValidateTx.begin(), wallet->mapValidateTx.end(), txin.prevout.hash) == wallet->mapValidateTx.end()) {
 		return (false);
 	}
-	if (tx.vin.size() != 1 || tx.vout.size() != 1)
-		return (false);
 
 	if (wallet->matrixValidate.nHeight == 0)
 		return (false);
@@ -561,14 +562,14 @@ bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 		return (false);
 	}
 
-	/* output must be OP_RETURN script with MIN_INPUT nValue */
+	/* output must be OP_RETURN script with MAX_NOTARY_TX_VALUE nValue */
 	const CTxOut& txout = tx.vout[0];
 	CScript scriptReturn;
 	scriptReturn.SetNoDestination(); /* null output */
 	if (txout.scriptPubKey != scriptReturn)
 		return (error(ERR_INVAL, "ProcessValidateMatrixNotaryTx: invalid output script: %s", txout.scriptPubKey.ToString().c_str()));
-	if (txout.nValue > MIN_INPUT_VALUE(iface))
-		return (error(ERR_INVAL, "ProcessValidateMatrixNotaryTx: txout.nValue(%f) > MIN_INPUT_VALUE", (double)txout.nValue/COIN));
+	if (txout.nValue > CTxMatrix::MAX_NOTARY_TX_VALUE)
+		return (error(ERR_INVAL, "ProcessValidateMatrixNotaryTx: txout.nValue(%f) > MAX_NOTARY_TX_VALUE", (double)txout.nValue/COIN));
 
 	/* is block old enough to match required notary-tx locktime? */
 	pindex = GetBlockIndexByHash(ifaceIndex, hMatrixBlock);

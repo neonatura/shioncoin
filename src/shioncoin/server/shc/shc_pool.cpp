@@ -159,7 +159,7 @@ void SHC_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
 			return;
 
 		const CTxOut& out = prev.vout[tx.vin[0].prevout.n];
-		if (tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) 
+		if (tx.vout[0].nValue <= CTxMatrix::MAX_NOTARY_TX_VALUE)
 			UpdateValidateNotaryTx(iface, tx, out.scriptPubKey);
 	}
 

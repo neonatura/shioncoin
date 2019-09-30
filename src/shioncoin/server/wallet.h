@@ -320,8 +320,8 @@ class CWallet : public CBasicKeyStore
 			BOOST_FOREACH(const CTxOut& txout, tx.vout) {
 				// If output is less than minimum value, then don't include transaction.
 				// This is to help deal with dust spam bloating the wallet.
-				if (IsMine(txout) && txout.nValue >= nMinimumInputValue)
-					return true;
+				if ((txout.nValue >= nMinimumInputValue) && IsMine(txout))
+					return (true);
 			}
 			return false;
 		}

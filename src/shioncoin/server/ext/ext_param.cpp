@@ -41,6 +41,25 @@ using namespace json_spirit;
 
 #define MIN_PARAM_CONCENSUS_TOTAL 10240
 
+bool HasParamConsensus(CIface *iface, CBlockIndex *pindexPrev)
+{
+	int ifaceIndex = GetCoinIndex(iface);
+
+	if (ifaceIndex != TEST_COIN_IFACE &&
+			ifaceIndex != TESTNET_COIN_IFACE &&
+			ifaceIndex != SHC_COIN_IFACE)
+		return (false);
+
+	if (!pindexPrev)
+		pindexPrev = GetBestBlockIndex(iface);
+	if (!pindexPrev)
+		return (false);
+	if (VersionBitsState(pindexPrev, iface, DEPLOYMENT_PARAM) != THRESHOLD_ACTIVE)
+		return (false);
+
+	return (true);
+}
+
 bool DecodeParamHash(const CScript& script, int& mode, uint160& hash)
 {
   CScript::const_iterator pc = script.begin();
@@ -336,11 +355,17 @@ static bool ApplyParam(CIface *iface, string strMode, uint64_t nNewValue)
 	return (true);
 }
 
-bool ConnectParamTx(CIface *iface, CTransaction *tx, int64_t nTime)
+bool ConnectParamTx(CIface *iface, CTransaction *tx, CBlockIndex *pindexPrev)
 {
   CWallet *wallet = GetWallet(iface);
 	CParam *param;
 	int op_mode;
+
+	if (!iface || !tx || !pindexPrev)
+		return (false); /* sanity */
+
+	if (!HasParamConsensus(iface, pindexPrev))
+		return (false);
 
 	param = tx->GetParam();
 	if (!param)
@@ -358,7 +383,7 @@ bool ConnectParamTx(CIface *iface, CTransaction *tx, int64_t nTime)
 
 		int64_t nNewValue;
 		const string& strMode = param->GetMode();
-		if (GetParamTxConsensus(iface, strMode, nTime, nNewValue) &&
+		if (GetParamTxConsensus(iface, strMode, pindexPrev->nTime, nNewValue) &&
 				nNewValue != GetParamTxValue(iface, strMode)) {
 			if (!ApplyParam(iface, strMode, nNewValue)) {
 				return (error(ERR_INVAL, "(%s) ConnectParamTx: error applying new param \"%s\" value \"%llu\".", iface->name, strMode.c_str(), nNewValue));
@@ -453,9 +478,7 @@ void AddParamIfNeccessary(CIface *iface, CWalletTx& wtx)
 	int64_t nMinFee = (int64_t)opt_num(OPT_MIN_FEE);
 	int err;
 
-	CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
-	if (!pindexPrev || !VersionBitsState(pindexPrev, iface,
-				DEPLOYMENT_PARAM) == THRESHOLD_ACTIVE)
+	if (!HasParamConsensus(iface))
 		return;
 	
 	if (nBlockSize != GetParamTxValue(iface, EXTPARAM_BLOCKSIZE)) {
@@ -477,7 +500,6 @@ void AddParamIfNeccessary(CIface *iface, CWalletTx& wtx)
 int update_param_tx(CIface *iface, string strParam, int64_t valParam, CWalletTx& wtx)
 {
 	CWallet *wallet = GetWallet(iface);
-	int ifaceIndex = GetCoinIndex(iface);
 
 	if (!wallet)
 		return (ERR_INVAL);
@@ -502,4 +524,5 @@ int update_param_tx(CIface *iface, string strParam, int64_t valParam, CWalletTx&
 	Debug("(%s) PARAM-UPDATE: %s", iface->name, param->ToString().c_str());
 	return (0);
 }
+
 

@@ -34,6 +34,9 @@ class CTxMatrix
     static const int M_VALIDATE = 1;
     static const int M_SPRING = 2;
 
+		/* output value for a matrix notary tx. */
+		static const int MAX_NOTARY_TX_VALUE = 100;
+
     unsigned int nType;
     unsigned int nHeight; 
     uint160 hRef;

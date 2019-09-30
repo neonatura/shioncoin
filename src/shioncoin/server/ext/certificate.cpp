@@ -1659,7 +1659,9 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
   int64 nMinValue = MIN_TX_FEE(iface); 
   int64 nMinInput = MIN_INPUT_VALUE(iface); 
 
-  if (ifaceIndex != TEST_COIN_IFACE && ifaceIndex != SHC_COIN_IFACE)
+  if (ifaceIndex != TEST_COIN_IFACE && 
+			ifaceIndex != TESTNET_COIN_IFACE && 
+			ifaceIndex != SHC_COIN_IFACE)
     return (SHERR_OPNOTSUPP);
 
   if (!wallet || !iface->enabled)

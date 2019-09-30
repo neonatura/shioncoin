@@ -34,6 +34,7 @@
 #include "chain.h"
 #include "spring.h"
 #include "coin.h"
+#include "ext/ext_param.h"
 
 #include <boost/array.hpp>
 #include <boost/assign/list_of.hpp>
@@ -177,7 +178,7 @@ vTx.push_back(tx_hash);
 			} else {
 				/* check for notary tx */
 				if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
-						tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) {
+						tx.vout[0].nValue <= CTxMatrix::MAX_NOTARY_TX_VALUE) {
 					ProcessValidateMatrixNotaryTx(iface, tx);
 				}
 			}
@@ -223,6 +224,12 @@ vTx.push_back(tx_hash);
       if (tx.isFlag(CTransaction::TXF_ALTCHAIN)) {
 				if (IsAltChainTx(tx)) {
 					CommitAltChainTx(iface, tx, NULL, true);
+				}
+			}
+
+      if (tx.isFlag(CTransaction::TXF_PARAM)) {
+				if (IsParamTx(tx)) {
+					ConnectParamTx(iface, &tx, lastIndex);
 				}
 			}
     } /* FOREACH (tx) */

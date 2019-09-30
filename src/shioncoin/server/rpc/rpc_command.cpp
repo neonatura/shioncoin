@@ -47,6 +47,7 @@ using namespace std;
 #include "algobits.h"
 #include "stratum/stratum.h"
 #include "bolo/bolo_validation03.h"
+#include "ext/ext_param.h"
 
 #include <boost/assign/list_of.hpp>
 
@@ -360,6 +361,8 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
 			flag_str += "BIP68 ";
 		if (IsWitnessEnabled(iface, pindexBest))
 			flag_str += "BIP141 ";
+		if (HasParamConsensus(iface, pindexBest))
+			flag_str += "SIP12 ";
 		if (HasAlgoConsensus(iface, pindexBest))
 			flag_str += "SIP32 ";
 

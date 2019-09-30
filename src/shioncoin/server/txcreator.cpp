@@ -202,10 +202,12 @@ bool CTxCreator::AddOutput(CScript scriptPubKey, int64 nValue, bool fInsert)
     strError = "An invalid coin output value was specified.";
     return (false);
   }
-  if (nValue < 0) { //MIN_INPUT_VALUE(iface)) {
+#if 0
+  if (nValue < MIN_INPUT_VALUE(iface)) {
     strError = "Output value is less than minimum allowed.";
     return (false);
   }
+#endif
 
   if (fInsert) {
     vout.insert(vout.begin(), CTxOut(nValue, scriptPubKey));

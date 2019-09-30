@@ -486,11 +486,10 @@ test_shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx 
 
 
 if HAVE_SYSTEMCTL
-SYSD_FILE = /lib/systemd/system/shcoind.service
+SYSD_FILE = /usr/lib/systemd/system/shcoind.service
 
 install-exec-hook:
-	mkdir -p /lib/systemd/system/
-	rm -f /etc/systemd/system/shcoind.service
+	mkdir -p /usr/lib/systemd/system/
 	echo "[Unit]" > $(SYSD_FILE) 
 	echo "Description=ShionCoin" >> $(SYSD_FILE) 
 	echo "Wants=network.target" >> $(SYSD_FILE) 
@@ -501,7 +500,9 @@ install-exec-hook:
 	echo "WantedBy=sysinit.target" >> $(SYSD_FILE) 
 	echo "Alias=shcoind.service" >> $(SYSD_FILE) 
 	systemctl daemon-reload 
+	systemctl disable shcoind
 	systemctl enable shcoind
+	[ -e /etc/systemd/system/shcoind.service ] || ln -sf  /usr/lib/systemd/system/shcoind.service /etc/systemd/system/shcoind.service
 
 uninstall-hook:
 	rm -f $(SYSD_FILE) /etc/systemd/system/shcoind.service
