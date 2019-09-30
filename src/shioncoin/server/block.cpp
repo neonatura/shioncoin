@@ -1183,8 +1183,9 @@ bool CBlock::WriteBlock(uint64_t nHeight)
     tx.WriteTx(ifaceIndex, nHeight); 
   }
 
-  trust(1, "healthy block processed");
-  Debug("WriteBlock: %s @ height %u\n", hash.GetHex().c_str(), (unsigned int)nHeight);
+  trust(1, "healthy block");
+  Debug("(%s) WriteBlock: block \"%s\" [height: %u]", 
+			iface->name, hash.GetHex().c_str(), (unsigned int)nHeight);
 
   return (true);
 }
@@ -3150,7 +3151,7 @@ fin:
 				DateTimeStrFormat("%x %H:%M:%S", pindexFail->GetBlockTime()).c_str());
 	}
 
-	if (pbest != pindexLast) {
+	if (pbest != pindexLast->pprev) {
 		/* re-establish chain at our failure/success point. */
 		WriteHashBestChain(iface, pindexLast->GetBlockHash());
 		SetBestBlockIndex(pblock->ifaceIndex, pindexLast);
@@ -3163,6 +3164,10 @@ fin:
 			pindexFail->nStatus |= BLOCK_FAILED_VALID;
 
 		Debug("(%s) core_CommitBlock: re-established chain at block \"%s\" (height %u).", iface->name, pindexLast->GetBlockHash().GetHex().c_str(), (unsigned int)pindexLast->nHeight); 
+	} else {
+		/* added one new block. */
+		WriteHashBestChain(iface, pindexNew->GetBlockHash());
+		SetBestBlockIndex(pblock->ifaceIndex, pindexNew);
 	}
 
   BOOST_FOREACH(CBlock *block, vFree) {
