@@ -49,6 +49,16 @@ extern offer_list *GetOfferTable(int ifaceIndex);
 extern bool IsContextName(CIface *iface, string strName);
 extern double print_rpc_difficulty(CBigNum val);
 
+static std::string HexBits(unsigned int nBits)
+{
+	union {
+		int32_t nBits;
+		char cBits[4];
+	} uBits;
+	uBits.nBits = htonl((int32_t)nBits);
+	return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
+}
+
 bool GetOutputsForAccount(CWallet *wallet, string strAccount, vector<CTxDestination>& addr_list)
 {
 
@@ -1591,6 +1601,52 @@ static const ApiItems& stratum_api_block_mined(int ifaceIndex, user_t *user, shj
 	return (items);
 }
 
+static const ApiItems& stratum_api_block_list(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
+{
+	static ApiItems items;
+
+	if (begin_t == 0)
+		begin_t = (time(NULL) - 86400);
+	items.clear();
+
+	CBlockIndex *pindex = GetBestBlockIndex(ifaceIndex);
+	while (pindex && pindex->pprev) {
+		Object obj;
+		obj.push_back(Pair("blockhash", pindex->GetBlockHash().GetHex()));
+		obj.push_back(Pair("merkleroot", pindex->hashMerkleRoot.GetHex()));
+		obj.push_back(Pair("version", (int)pindex->nVersion));
+		obj.push_back(Pair("time", (int)pindex->nTime));
+		obj.push_back(Pair("height", pindex->nHeight));
+		obj.push_back(Pair("bits", HexBits(pindex->nBits)));
+		items.push_back(obj);
+		if (pindex->GetBlockTime() < begin_t)
+			break;
+		pindex = pindex->pprev;
+	}
+
+	return (items);
+}
+
+static const ApiItems& stratum_api_block_get(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
+{
+	static ApiItems items;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+
+	items.clear();
+
+	uint256 hash(string(shjson_astr(params, "blockhash", "")));
+	if (hash == 0)
+		return (items);
+
+	CBlock *block = GetBlockByHash(iface, hash);
+	if (block) {
+		items.push_back(block->ToValue());
+		delete block;
+	}
+
+	return (items);
+}
+
 static const ApiItems& stratum_api_validate_list(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
 {
 	static ApiItems items;
@@ -1754,6 +1810,10 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 		result = stratum_api_faucet_info(ifaceIndex, strAccount, params);
 	} else if (0 == strcmp(method, "api.block.mined")) {
 		result = stratum_api_block_mined(ifaceIndex, user, params, begin_t);
+	} else if (0 == strcmp(method, "api.block.list")) {
+		result = stratum_api_block_list(ifaceIndex, user, params, begin_t);
+	} else if (0 == strcmp(method, "api.block.get")) {
+		result = stratum_api_block_get(ifaceIndex, user, params, begin_t);
 	}
 	if (result.size() == 0 && strError != "") {
 		shjson_t *reply = shjson_init(NULL);
@@ -1828,6 +1888,13 @@ shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson
 	if (!iface || !iface->enabled) {
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_OPNOTSUPP, "coin interface");
+		shjson_null_add(reply, "result");
+		return (reply);
+	}
+
+	if (!auth) {
+		shjson_t *reply = shjson_init(NULL);
+		set_stratum_error(reply, ERR_ACCESS, "authorization");
 		shjson_null_add(reply, "result");
 		return (reply);
 	}

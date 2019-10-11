@@ -751,7 +751,13 @@ int stratum_request_message(user_t *user, shjson_t *json)
     if (0 == strcmp(method, "mining.subscribe")) {
       err = stratum_subscribe(user);
       if (!err) {
-        stratum_set_difficulty(user, DEFAULT_WORK_DIFFICULTY);
+				int diff = DEFAULT_WORK_DIFFICULTY;
+				diff /= GetAlgoWorkFactor(user->alg);
+				diff--;
+				diff /= 64;
+				diff++;
+				diff *= 64;
+        stratum_set_difficulty(user, diff); 
       }
 
       //reset_task_work_time();
