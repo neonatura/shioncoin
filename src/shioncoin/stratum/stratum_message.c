@@ -39,6 +39,10 @@ int stratum_send_message(user_t *user, shjson_t *msg)
     shcoind_log("stratum_send_message: stratum_send_message: null user");
     return (0);
   }
+	if (!msg) {
+    shcoind_log("stratum_send_message: stratum_send_message: null message");
+    return (0);
+	}
 
   if (user->flags & USER_SYSTEM)
     return (0); /* dummy user */
@@ -61,7 +65,7 @@ int stratum_send_message(user_t *user, shjson_t *msg)
     unet_write(user->fd, text, strlen(text));
     unet_write(user->fd, "\n", 1);
     free(text);
-  }
+	}
 
   return (0);
 }

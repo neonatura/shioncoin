@@ -210,6 +210,7 @@ class CTxBatchCreator : public CTxCreator
 
     int64 nMaxTxSize;
     int64 nMaxSigOp;
+    int64 nMinFee;
     int64 nMaxFee;
     CScript scriptPub;
 
@@ -249,6 +250,11 @@ class CTxBatchCreator : public CTxCreator
         Generate();
       return (vTxList); 
     }
+
+		void SetMinFee(int64 nFee)
+		{
+			nMinFee = nFee;
+		}
 
     /** Generate one or more transactions based on the underlying transaction's inputs and outputs. */
     bool Generate();

@@ -392,65 +392,58 @@ class CTxIn
  */
 class CTxOut
 {
-public:
-    int64 nValue;
-    CScript scriptPubKey;
+	public:
+		int64 nValue;
+		CScript scriptPubKey;
 
-    CTxOut()
-    {
-        SetNull();
-    }
+		CTxOut()
+		{
+			SetNull();
+		}
 
-    CTxOut(int64 nValueIn, CScript scriptPubKeyIn)
-    {
-        nValue = nValueIn;
-        scriptPubKey = scriptPubKeyIn;
-    }
+		CTxOut(int64 nValueIn, CScript scriptPubKeyIn)
+		{
+			nValue = nValueIn;
+			scriptPubKey = scriptPubKeyIn;
+		}
 
-    IMPLEMENT_SERIALIZE
-    (
-        READWRITE(nValue);
-        READWRITE(scriptPubKey);
-    )
+		IMPLEMENT_SERIALIZE
+			(
+			 READWRITE(nValue);
+			 READWRITE(scriptPubKey);
+			)
 
-    void SetNull()
-    {
-        nValue = -1;
-        scriptPubKey.clear();
-    }
+			void SetNull()
+			{
+				nValue = -1;
+				scriptPubKey.clear();
+			}
 
-    bool IsNull()
-    {
-        return (nValue == -1);
-    }
+		bool IsNull()
+		{
+			return (nValue == -1);
+		}
 
-    uint256 GetHash() const
-    {
-      return SerializeHash(*this);
-    }
+		uint256 GetHash() const
+		{
+			return SerializeHash(*this);
+		}
 
-    friend bool operator==(const CTxOut& a, const CTxOut& b)
-    {
-        return (a.nValue       == b.nValue &&
-                a.scriptPubKey == b.scriptPubKey);
-    }
+		friend bool operator==(const CTxOut& a, const CTxOut& b)
+		{
+			return (a.nValue       == b.nValue &&
+					a.scriptPubKey == b.scriptPubKey);
+		}
 
-    friend bool operator!=(const CTxOut& a, const CTxOut& b)
-    {
-        return !(a == b);
-    }
+		friend bool operator!=(const CTxOut& a, const CTxOut& b)
+		{
+			return !(a == b);
+		}
 
-    std::string ToString() const
-    {
-        if (scriptPubKey.size() < 6)
-            return "CTxOut(error)";
-        return strprintf("CTxOut(nValue=%" PRI64d ".%08" PRI64d ", scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30).c_str());
-    }
+		std::string ToString(int ifaceIndex);
 
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
-    }
+		Object ToValue(int ifaceIndex);
+
 };
 
 

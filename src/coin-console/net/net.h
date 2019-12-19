@@ -28,7 +28,7 @@
 
 
 /** The maximum seconds, by default, to wait for a response after a command is requested. */
-#define DEFAULT_COMMAND_WAIT 300
+#define DEFAULT_COMMAND_WAIT 600
 
 
 /** Send a JSON message to the server. */

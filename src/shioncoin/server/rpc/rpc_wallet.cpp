@@ -1153,13 +1153,19 @@ Value rpc_wallet_set(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_wallet_unspent(CIface *iface, const Array& params, bool fStratum)
 {
+	CWallet *pwalletMain = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	string strAccount;
+
+	if (fStratum)
+		throw runtime_error("unsupported operation");
 
 	if (params.size() == 0 || params.size() > 2)
 		throw runtime_error("unsupported operation");
 
-	CWallet *pwalletMain = GetWallet(iface);
-	int ifaceIndex = GetCoinIndex(iface);
-	string strAccount = AccountFromValue(params[0]);
+	strAccount = AccountFromValue(params[0]);
+	if (!IsAccountValid(iface, strAccount))
+		throw JSONRPCError(ERR_NOENT, "unknown account");
 
 	int nMinDepth = 1;
 	if (params.size() > 1)
@@ -1169,16 +1175,16 @@ Value rpc_wallet_unspent(CIface *iface, const Array& params, bool fStratum)
 	vector<COutput> vecOutputs;
 	pwalletMain->AvailableAccountCoins(strAccount, vecOutputs, 
 			(nMinDepth == 0 ? false : true));
-	BOOST_FOREACH(const COutput& out, vecOutputs)
-	{
+	BOOST_FOREACH(const COutput& out, vecOutputs) {
 		if (out.nDepth < nMinDepth)
 			continue;
 
 		int64 nValue = out.tx->vout[out.i].nValue;
 		const CScript& pk = out.tx->vout[out.i].scriptPubKey;
 		Object entry;
+
 		entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
-		entry.push_back(Pair("hash", out.tx->GetWitnessHash().GetHex()));
+//		entry.push_back(Pair("hash", out.tx->GetWitnessHash().GetHex()));
 		entry.push_back(Pair("vout", out.i));
 		entry.push_back(Pair("script", pk.ToString()));
 		entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
@@ -1194,17 +1200,25 @@ Value rpc_wallet_spent(CIface *iface, const Array& params, bool fStratum)
 {
 	CWallet *pwalletMain = GetWallet(iface);
 	int ifaceIndex = GetCoinIndex(iface);
-	string strAccount = params[0].get_str();
 	bc_t *bc = GetWalletTxChain(iface);
 	string strSysAccount("*");
+	string strAccount;
 	bcpos_t nArch = 0;
 	bcpos_t posTx;
-	bool fVerbose = false;
+	bool fVerbose;
 	int i;
+
+	if (fStratum)
+		throw runtime_error("unsupported operation");
 
 	if (params.size() > 2)
 		throw runtime_error("unsupported operation");
 
+	strAccount = AccountFromValue(params[0]);
+	if (!IsAccountValid(iface, strAccount))
+		throw JSONRPCError(ERR_NOENT, "unknown account");
+
+	fVerbose = false;
 	if (params.size() == 2)
 		fVerbose = params[1].get_bool();
 

@@ -100,38 +100,45 @@ static bool serv_state(CIface *iface, int flag)
 
 
 
-static void chain_UpdateWalletCoins(int ifaceIndex, const CTransaction& tx)
+static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransaction& tx)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(iface);
   uint256 tx_hash = tx.GetHash();
 
+	/* check for missing wallet tx. */
+	if (wallet->mapWallet.count(tx_hash) == 0) {
+		if (!wallet->HasArchTx(tx_hash) && wallet->IsMine(tx)) {
+			CWalletTx wtx(wallet, tx);
+			wallet->AddTx(tx, block);
+			return;
+		}
+	}
+
+	/* scan tx inputs for missing spends. */
   BOOST_FOREACH(const CTxIn& txin, tx.vin) {
     const uint256& hash = txin.prevout.hash;
     int nOut = txin.prevout.n;
 
-    if (wallet->mapWallet.count(hash) != 0) {
-      vector<uint256> vOuts;
-      CWalletTx& wtx = wallet->mapWallet[hash];
+		if (wallet->mapWallet.count(hash) != 0) {
+			vector<uint256> vOuts;
+			CWalletTx& wtx = wallet->mapWallet[hash];
 
 			/* coin db */
-      if (wtx.ReadCoins(ifaceIndex, vOuts) &&
-          nOut < vOuts.size() && vOuts[nOut].IsNull()) {
-        vOuts[nOut] = tx_hash;
-        if (wtx.WriteCoins(ifaceIndex, vOuts)) {
-          Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
-        }
-      }
+			if (wtx.ReadCoins(ifaceIndex, vOuts) &&
+					nOut < vOuts.size() && vOuts[nOut].IsNull()) {
+				vOuts[nOut] = tx_hash;
+				if (wtx.WriteCoins(ifaceIndex, vOuts)) {
+					Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
+				}
+			}
 
 			/* wallet db */
-			if (!wtx.IsSpent(nOut) && wallet->IsMine(wtx.vout[nOut])) {
+			if (!wtx.IsSpent(nOut)) {// && wallet->IsMine(wtx.vout[nOut])) {
 				wtx.MarkSpent(nOut);
-#if 0
-				wtx.WriteToDisk();
-#endif
 				wallet->AddTx(wtx);
 			}
-    }
+		}
   }
  
 }
@@ -203,7 +210,7 @@ static bool ServiceWalletEvent(int ifaceIndex)
 			/* enforce validity on wallet & recent tx's spent chain */
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
 				if (!tx.IsCoinBase())
-					chain_UpdateWalletCoins(ifaceIndex, tx);
+					chain_UpdateWalletCoins(ifaceIndex, block, tx);
       }
 
 			if (fCoinbase) {

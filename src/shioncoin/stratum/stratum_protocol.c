@@ -1050,7 +1050,8 @@ int stratum_request_message(user_t *user, shjson_t *json)
 		}
 
     if (0 == strcmp(method, "block.info")) {
-      char *json_data = "{\"result\":null,\"error\":null}";
+      static const char *blank_json_data = "{\"result\":null,\"error\":null}";
+      char *json_data = blank_json_data;
       shtime_t ts2;
       char *hash;
       int mode;

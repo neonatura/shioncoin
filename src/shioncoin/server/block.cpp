@@ -3507,3 +3507,47 @@ CBigNum CBlockIndex::GetBlockWork(bool fUseAlgo) const
 	return (CBigNum(1)<<256) / (bnTarget+1);
 }
 
+static void _PubKeyToJSON(int ifaceIndex, const CScript& scriptPubKey, Object& out)
+{
+	txnouttype type;
+	vector<CTxDestination> addresses;
+	int nRequired;
+
+	if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired))
+	{
+		out.push_back(Pair("type", GetTxnOutputType(TX_NONSTANDARD)));
+		return;
+	}
+
+	out.push_back(Pair("reqSigs", nRequired));
+	out.push_back(Pair("type", GetTxnOutputType(type)));
+
+	Array a;
+	BOOST_FOREACH(const CTxDestination& addr, addresses)
+		a.push_back(CCoinAddr(ifaceIndex, addr).ToString());
+	out.push_back(Pair("addresses", a));
+
+}
+
+Object CTxOut::ToValue(int ifaceIndex)
+{
+  Object obj;
+
+	obj.push_back(Pair("value", ValueFromAmount(nValue)));
+
+	Object scriptSig;
+	scriptSig.push_back(Pair("asm", scriptPubKey.ToString()));
+	scriptSig.push_back(Pair("hex", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
+	obj.push_back(Pair("scriptSig", scriptSig));
+
+	_PubKeyToJSON(ifaceIndex, scriptPubKey, obj); 
+
+	return (obj);
+}
+
+std::string CTxOut::ToString(int ifaceIndex)
+{
+  return (write_string(Value(ToValue(ifaceIndex)), false));
+}
+
+

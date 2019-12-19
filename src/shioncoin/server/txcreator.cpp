@@ -810,6 +810,7 @@ bool CTxBatchCreator::CreateBatchTx()
 
     nFee = ((nWeight / 4 / 1000) + 4) * MIN_TX_FEE(iface);
     nFee += MIN_RELAY_TX_FEE(iface);
+		nFee = MAX(nFee, nMinFee);
     if (nFee > nMaxFee) {
       break;
     }

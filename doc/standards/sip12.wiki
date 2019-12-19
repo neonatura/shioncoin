@@ -34,7 +34,7 @@ The param output has a traditional extended transaction format:
 OP_EXT_UPDATE << EncodeOP_N(OP_PARAM) << OP_HASH160 << hashParam << OP_2DROP << OP_RETURN << OP_0
 
 A consensus occurs when 10240 or more param ext-txs are submitted and a particular mode value has 90% of the votes. Each param ext-tx will expire after 30 days. 
-For example, if at least 10240 param outputs are generated in less than 30 days, and at least 90% of then specify a maximum block size of 8192000, then the new blockchain parameter will be applied once the 90% mark is hit.   
+For example, if at last 10240 param outputs are generated in less than 30 days, and at least 90% of them specify a maximum block size of 8192000, then the new blockchain parameter will be applied once the 90% mark is hit.   
 
 The rpc command "sys.info" provides a method to review what the current parameter values are. The rpc command "param.list" returns a list of all params that are not expired.
 

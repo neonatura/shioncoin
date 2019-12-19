@@ -103,11 +103,12 @@ void CWallet::WalletUpdateSpent(const CTransaction &tx)
 			if (mi == mapWallet.end()) continue;
 			CWalletTx& wtx = (*mi).second;
 
-			/* archive wallet transaction if all outputs are spent. */
+			/* archive wallet transaction if all our outputs are spent. */
 			bool fArch = true;
 			unsigned int idx;
 			for (idx = 0; idx < wtx.vout.size(); idx++) {
-				if (!wtx.IsSpent(idx)) {
+				if (!wtx.IsSpent(idx) &&
+						IsMine(wtx.vout[idx])) {
 					fArch = false;
 					break;
 				}
@@ -317,12 +318,13 @@ bool CWallet::AddTx(const CWalletTx& wtxIn)
     }
 
     Debug("AddToWallet %s  %s%s\n", wtxIn.GetHash().ToString().substr(0,10).c_str(), (fInsertedNew ? "new" : ""), (fUpdated ? "update" : ""));
-   // Write to disk
-    if (fInsertedNew || fUpdated) {
+
+    if (fInsertedNew || fUpdated) { /* db */
 			bool fArch = true;
 			unsigned int idx;
 			for (idx = 0; idx < wtx.vout.size(); idx++) {
-				if (!wtx.IsSpent(idx)) {
+				if (!wtx.IsSpent(idx) &&
+						IsMine(wtx.vout[idx])) {
 					fArch = false;
 					break;
 				}
@@ -335,7 +337,7 @@ bool CWallet::AddTx(const CWalletTx& wtxIn)
 			}
     }
 
-		// since AddToWallet is called directly for self-originating transactions, check for consumption of own coins
+		/* mark all outputs which reference this tx as spent. */
 		WalletUpdateSpent(wtx);
 	}
 

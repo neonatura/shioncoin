@@ -311,7 +311,11 @@ const char *c_getchaininfo(int ifaceIndex)
 	/* total blocks */
 	result.push_back(nHeight);
 	/* ~ blocks per day */
-	result.push_back(86400 / GetAverageBlockSpan(iface));
+	double avg_bspan = GetAverageBlockSpan(iface);
+	if (avg_bspan == 0)
+		result.push_back(0);
+	else
+		result.push_back(86400 / avg_bspan);
 	/* ~ tx per day */
 	result.push_back((int)GetDailyTxRate(iface));
 	/* difficulty */
