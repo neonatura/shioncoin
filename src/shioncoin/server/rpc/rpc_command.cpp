@@ -27,14 +27,12 @@
 #include "shcoind.h"
 #include <unistd.h>
 using namespace std;
-
 #include "main.h"
 #include "wallet.h"
 #include "txcreator.h"
 #include "db.h"
 #include "walletdb.h"
 #include "net.h"
-#include "init.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
@@ -49,6 +47,7 @@ using namespace std;
 #include "algobits.h"
 #include "stratum/stratum.h"
 #include "bolo/bolo_validation03.h"
+#include "ext/ext_param.h"
 
 #include <boost/assign/list_of.hpp>
 
@@ -184,7 +183,7 @@ Value rpc_peer_info(CIface *iface, const Array& params, bool fStratum)
   return obj;
 }
 
-static double GetAverageBlockSpan(CIface *iface)
+double GetAverageBlockSpan(CIface *iface)
 {
   CBlockIndex *pindex = GetBestBlockIndex(iface);
   CBlockIndex *l_pindex;
@@ -214,7 +213,7 @@ static double GetAverageBlockSpan(CIface *iface)
 	return (avg);
 }
 
-static unsigned int GetDailyTxRate(CIface *iface)
+unsigned int GetDailyTxRate(CIface *iface)
 {
   CBlockIndex *pindex = GetBestBlockIndex(iface);
 	time_t span = time(NULL) - 86400; 
@@ -225,7 +224,12 @@ static unsigned int GetDailyTxRate(CIface *iface)
 		if (pindex->nTime < span)
 			break;
 
-		total++;
+		CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+		if (block) {
+			total += (block->vtx.size() - 1); 
+			delete block;
+		}
+
 		pindex = pindex->pprev;
 	}
 
@@ -357,6 +361,8 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
 			flag_str += "BIP68 ";
 		if (IsWitnessEnabled(iface, pindexBest))
 			flag_str += "BIP141 ";
+		if (HasParamConsensus(iface, pindexBest))
+			flag_str += "SIP12 ";
 		if (HasAlgoConsensus(iface, pindexBest))
 			flag_str += "SIP32 ";
 
@@ -931,8 +937,37 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
 
     uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
 
+		int nIndex = 0;
+		int nAlg = ALGO_SCRYPT;
+		std::vector<uint256> vMerkleTree;
+		{
+			BOOST_FOREACH(const CTransaction& tx, pblock->vtx)
+				vMerkleTree.push_back(tx.GetHash());
+			if (ifaceIndex == TEST_COIN_IFACE ||
+					ifaceIndex == TESTNET_COIN_IFACE ||
+					ifaceIndex == SHC_COIN_IFACE ||
+					ifaceIndex == COLOR_COIN_IFACE) {
+				/* DEPLOYMENT_ALGO */
+				nAlg = pblock->GetAlgo();
+			}
+		}
+		if (nAlg == ALGO_SCRYPT) {
+			std::vector<uint256> vMerkleBranch;
+			int j = 0;
+			for (int nSize = pblock->vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)
+			{
+				int i = std::min(nIndex^1, nSize-1);
+				vMerkleBranch.push_back(vMerkleTree[j+i]);
+				nIndex >>= 1;
+				j += nSize;
+			}
+			vMerkleTree = vMerkleBranch;
+		}
+
     CTransaction coinbaseTx = pblock->vtx[0];
+#if 0
     std::vector<uint256> merkle = pblock->GetMerkleBranch(0);
+#endif
 
     Object result;
     result.push_back(Pair("data",     HexStr(BEGIN(pdata), END(pdata))));
@@ -944,7 +979,7 @@ Value rpc_block_workex(CIface *iface, const Array& params, bool fStratum)
 
     Array merkle_arr;
 
-    BOOST_FOREACH(uint256 merkleh, merkle) {
+    BOOST_FOREACH(uint256 merkleh, vMerkleTree) {
       merkle_arr.push_back(HexStr(BEGIN(merkleh), END(merkleh)));
     }
 
@@ -1016,8 +1051,8 @@ Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
   if (!addr.GetKeyID(keyID))
     throw JSONRPCError(-3, "Address does not refer to key");
 
-  CKey key;
-  if (!pwalletMain->GetKey(keyID, key))
+  ECKey key;
+  if (!pwalletMain->GetECKey(keyID, key))
     throw JSONRPCError(-4, "Private key not available");
 
   string strMessageMagic;
@@ -1026,8 +1061,6 @@ Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
   else
     strMessage.append(iface->name);
   strMessage.append(" Signed Message:\n");
-//const string strMessageMagic = "usde Signed Message:\n";
-
 
   CDataStream ss(SER_GETHASH, 0);
   ss << strMessageMagic;
@@ -1081,7 +1114,7 @@ Value rpc_msg_verify(CIface *iface, const Array& params, bool fStratum)
   ss << strMessageMagic;
   ss << strMessage;
 
-  CKey key;
+  ECKey key;
   if (!key.SetCompactSignature(Hash(ss.begin(), ss.end()), vchSig))
     return false;
 
@@ -1251,27 +1284,36 @@ Value rpc_stratum_keyremove(CIface *iface, const Array& params, bool fStratum)
 Value rpc_stratum_blocks(CIface *iface, const Array& params, bool fStratum)
 {
   int ifaceIndex = GetCoinIndex(iface);
+	time_t timeSpan;
+	time_t timeMin;
 
   if (fStratum)
     throw runtime_error("unsupported operation");
 
 	bool fVerbose = false;
-	if (params.size() == 1)
+	if (params.size() >= 1)
 		fVerbose = params[0].get_bool();
+
+	if (params.size() >= 2)
+		timeSpan = (time_t)params[1].get_int();
+	else
+		timeSpan = 86400;
+	timeMin = (time(NULL) - timeSpan);
 
 	Array ar;
 #ifdef STRATUM_SERVICE 
 	vector<CBlockIndex *> vBlock = get_stratum_miner_blocks(ifaceIndex);
   BOOST_FOREACH(CBlockIndex *pindex, vBlock) {
-		if (fVerbose) {
-			CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
-			if (!block)
-				continue;
-
-			ar.push_back(block->ToValue());
-			delete block;
-		} else {
-			ar.push_back(pindex->GetBlockHash().GetHex());
+		if (pindex->nTime >= timeMin) {
+			if (fVerbose) {
+				CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+				if (!block)
+					continue;
+				ar.push_back(block->ToValue());
+				delete block;
+			} else {
+				ar.push_back(pindex->GetBlockHash().GetHex());
+			}
 		}
 	}
 #endif
@@ -2036,7 +2078,7 @@ Value rpc_addmultisigaddress(CIface *iface, const Array& params, bool fStratum)
         throw runtime_error(
             strprintf("not enough keys supplied "
                       "(got %d keys, but need at least %d to redeem)", keys.size(), nRequired));
-    std::vector<CKey> pubkeys;
+    std::vector<ECKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
     {

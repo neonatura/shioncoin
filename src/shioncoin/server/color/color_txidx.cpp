@@ -24,8 +24,8 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "color_pool.h"
@@ -212,7 +212,7 @@ static bool color_LoadBlockIndex()
 
   int nCheckDepth = (GetBestHeight(COLOR_COIN_IFACE) / 640) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;
-  int nValidateCheckDepth = nCheckDepth * 4;
+  int nValidateCheckDepth = nCheckDepth * 3;
   int total = 0;
   int invalid = 0;
   int maxHeight = 0;

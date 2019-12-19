@@ -1,0 +1,15 @@
+'''SHA-256d''' is the hash function forming the core of Bitcoin.
+
+==About==
+'''SHA-256d''' was proposed in one of the Ferguson/Schneier books like so:
+
+'''SHA-256d(x) = SHA-256(SHA-256(x))'''
+
+The motivation for this construction is to avoid length extension attacks.
+
+==Example==
+'''An example''' is this protocol designed to provide mutual proof that each party has made some minimum number of evaluations of some 256-bit hash function H (note: Alice performs the odd steps, and the next even step is performed by Bob with roles reversed):
+
+When H is SHA-256, this protocol is safe for both Alice and Bob. However if H is SHA-256d, defined as x↦SHA-256(SHA-256(x)), there is a simple "mirror" attack for Bob:
+
+This strategy allows Bob to apparently perform his duties with computational effort about a single evaluation of SHA-256d, by circumventing the tests performed by Alice at step 5., which intend was to prevent Bob from choosing B0 as one of the Aj so that most of his work could in fact be done by Alice.

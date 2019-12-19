@@ -44,6 +44,6 @@ All difficulties displayed through stratum or rpc are still shown in comparison 
 
 ShionCoin uses the Kimoto Gravity Well to determine the difficulty rate of newly generated blocks. When the difficulty of the next block is computed, the first block processed will be the last block in the chain that has been commited for the particular PoW algorithm desired to be submitted. As such, the time since the last block with the same PoW algorythm commited to the blockchain is used in order to determine the difficulty.
 
-The minimum difficulty is used if a block with that PoW algorithm has never been comitted. Only the first block, though, is filtered in this manner, and the remainder of the previous chain blocks will be processed regardless of their underlying associated PoW algorithm.
+Only the first block, though, is filtered in this manner, and the remainder of the previous chain blocks used to compute the difficulty will be processed; regardless of their underlying associated PoW algorithm.
 
-
+The minimum difficulty is used if a block with that PoW algorithm has never been comitted. 

@@ -24,21 +24,29 @@
  */  
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "main.h"
 #include "keystore.h"
 #include "script.h"
 
 bool CKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
 {
-  CKey key;
+#if 0
+  ECKey key;
 
   if (!GetKey(address, key))
     return false;
 
   vchPubKeyOut = key.GetPubKey();
+#endif
+	const CKey *key = GetKey(address);
+	if (!key)
+		return (false);
+  vchPubKeyOut = key->GetPubKey();
   return true;
 }
 
+#if 0
 bool CBasicKeyStore::AddKey(const HDPrivKey& key)
 {
     bool fCompressed = false;
@@ -49,16 +57,33 @@ bool CBasicKeyStore::AddKey(const HDPrivKey& key)
     }
     return true;
 }
+#endif
 
-bool CBasicKeyStore::AddKey(const CKey& key)
+bool CBasicKeyStore::AddKey(const ECKey& key)
 {
-    bool fCompressed = false;
-    CSecret secret = key.GetSecret(fCompressed);
-    {
-        LOCK(cs_KeyStore);
-        mapKeys[key.GetPubKey().GetID()] = make_pair(secret, fCompressed);
-    }
-    return true;
+	const CPubKey& pubkey = key.GetPubKey();
+	const CKeyID& keyid = pubkey.GetID();
+
+	{
+		LOCK(cs_KeyStore);
+		mapECKeys[keyid] = key;
+	}
+
+	return (true);
+}
+
+bool CBasicKeyStore::AddKey(const DIKey& key)
+{
+
+	const CPubKey& pubkey = key.GetPubKey();
+	const CKeyID& keyid = pubkey.GetID();
+
+	{
+		LOCK(cs_KeyStore);
+		mapDIKeys[keyid] = key;
+	}
+
+	return (true);
 }
 
 bool CBasicKeyStore::AddCScript(const CScript& redeemScript)
@@ -95,21 +120,27 @@ bool CBasicKeyStore::GetCScript(const CScriptID &hash, CScript& redeemScriptOut)
     return false;
 }
 
+#if 0
 bool CCryptoKeyStore::SetCrypted()
 {
+#if 0
     {
         LOCK(cs_KeyStore);
         if (fUseCrypto)
             return true;
-        if (!mapKeys.empty())
+        if (!mapECKeys.empty())
             return false;
         fUseCrypto = true;
     }
+#endif
     return true;
 }
+#endif
 
+#if 0
 bool CCryptoKeyStore::Lock()
 {
+#if 0
     if (!SetCrypted())
         return false;
 
@@ -117,11 +148,14 @@ bool CCryptoKeyStore::Lock()
         LOCK(cs_KeyStore);
         vMasterKey.clear();
     }
+#endif
 
     //NotifyStatusChanged(this);
     return true;
 }
+#endif
 
+#if 0
 bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
 {
 #if 0
@@ -153,8 +187,10 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
 #endif
     return true;
 }
+#endif
 
-bool CCryptoKeyStore::AddKey(const CKey& key)
+#if 0
+bool CCryptoKeyStore::AddKey(const ECKey& key)
 {
     {
         LOCK(cs_KeyStore);
@@ -178,7 +214,9 @@ bool CCryptoKeyStore::AddKey(const CKey& key)
     return true;
 #endif
 }
+#endif
 
+#if 0
 bool CCryptoKeyStore::AddKey(const HDPrivKey& key)
 {
   {
@@ -203,8 +241,9 @@ bool CCryptoKeyStore::AddKey(const HDPrivKey& key)
   return true;
 #endif
 }
+#endif
 
-
+#if 0
 bool CCryptoKeyStore::AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret)
 {
     {
@@ -216,8 +255,10 @@ bool CCryptoKeyStore::AddCryptedKey(const CPubKey &vchPubKey, const std::vector<
     }
     return true;
 }
+#endif
 
-bool CCryptoKeyStore::GetKey(const CKeyID &address, CKey& keyOut) const
+#if 0
+bool CCryptoKeyStore::GetKey(const CKeyID &address, ECKey& keyOut) const
 {
     {
         LOCK(cs_KeyStore);
@@ -247,6 +288,9 @@ bool CCryptoKeyStore::GetKey(const CKeyID &address, CKey& keyOut) const
     return false;
 #endif
 }
+#endif
+
+#if 0
 bool CCryptoKeyStore::GetKey(const CKeyID &address, HDPrivKey& keyOut) const
 {
     {
@@ -277,7 +321,9 @@ bool CCryptoKeyStore::GetKey(const CKeyID &address, HDPrivKey& keyOut) const
     return false;
 #endif
 }
+#endif
 
+#if 0
 bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const
 {
     {
@@ -294,7 +340,9 @@ bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) co
     }
     return false;
 }
+#endif
 
+#if 0
 bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
 {
 #if 0
@@ -322,3 +370,65 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
 #endif
     return true;
 }
+#endif
+
+bool CBasicKeyStore::GetECKey(const CKeyID &address, ECKey &keyOut) const
+{
+	{
+		LOCK(cs_KeyStore);
+		ECKeyMap::const_iterator mi = mapECKeys.find(address);
+		if (mi != mapECKeys.end())
+		{
+			keyOut = (*mi).second;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CBasicKeyStore::GetDIKey(const CKeyID &address, DIKey &keyOut) const
+{
+	{
+		LOCK(cs_KeyStore);
+		DIKeyMap::const_iterator mi = mapDIKeys.find(address);
+		if (mi != mapDIKeys.end())
+		{
+			keyOut = (*mi).second;
+			return true;
+		}
+	}
+	return false;
+}
+
+CKey *CBasicKeyStore::GetKey(const CKeyID &address) const
+{
+
+	{
+		LOCK(cs_KeyStore);
+		ECKeyMap::const_iterator mi = mapECKeys.find(address);
+		if (mi != mapECKeys.end()) {
+			return (CKey *)(&(*mi).second);
+		}
+	}
+
+	{
+		LOCK(cs_KeyStore);
+		DIKeyMap::const_iterator mi = mapDIKeys.find(address);
+		if (mi != mapDIKeys.end()) {
+			return (CKey *)(&(*mi).second);
+		}
+	}
+
+	return (NULL);
+}
+
+CKeyMetadata *CBasicKeyStore::GetKeyMetadata(const CKeyID &address) const
+{
+
+	CKey *key = GetKey(address);
+	if (!key)
+		return (NULL);
+
+	return ((CKeyMetadata *)key);
+}
+

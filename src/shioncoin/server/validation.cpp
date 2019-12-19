@@ -65,8 +65,7 @@ bool ContextualCheckBlockHeader(CIface *iface, const CBlockHeader& block, CBlock
 	const int ifaceIndex = GetCoinIndex(iface);
 	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
 
-	if (ifaceIndex != EMC2_COIN_IFACE &&
-			ifaceIndex != USDE_COIN_IFACE) {
+	if (ifaceIndex != EMC2_COIN_IFACE) {
 		/* verify block version. */
 		if (iface->BIP34Height != -1 && 
 				(uint32_t)nHeight >= iface->BIP34Height) {
@@ -453,6 +452,7 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 			STAT_BLOCK_ACCEPTS(iface)++;
 			pindex->nStatus |= BLOCK_HAVE_UNDO;
 		}
+		Debug("(%s) core_AcceptBlock: block chain-work is insufficient for wallet: %s", iface->name, pblock->ToString().c_str());
 		return (true);
 	}
 	/* write to disk */
@@ -490,15 +490,46 @@ bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 
   STAT_BLOCK_ACCEPTS(iface)++;
 	iface->net_valid = time(NULL);
+
 	if (pblock->vtx.size() != 0) {
-		BOOST_FOREACH(const CTxOut& txout, pblock->vtx[0].vout)
-			STAT_TX_MINT(iface) += txout.nValue;
+	  opcodetype opcode;
+
+		/* statistics */
+		BOOST_FOREACH(const CTxOut& txout, pblock->vtx[0].vout) {
+			bool fReturn = false;
+			const CScript& script = txout.scriptPubKey;
+			CScript::const_iterator pc = script.begin();
+			while (script.GetOp(pc, opcode)) { 
+				if (opcode == OP_RETURN) { 
+					STAT_TX_RETURNS(iface) += txout.nValue;
+					fReturn = true;
+					break;
+				} 
+			} 
+			if (!fReturn) {
+				STAT_TX_MINT(iface) += txout.nValue;
+			}
+		}
+
+		/* redundant removal of any mempool transactions with accepted block's inputs. */
+		CTxMemPool *pool = GetTxMemPool(iface);
+		if (pool) {
+			BOOST_FOREACH(const CTransaction& tx, pblock->vtx) {
+				if (tx.IsCoinBase())
+					continue;
+
+				BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+					pool->RemoveTxWithInput(txin);
+				}
+			}
+		}
 	}
 
   return true;
 }
 
 
+#if 0
 /**
  * The scrypt legacy method of accepting a new block onto the block-chain.
  */
@@ -630,8 +661,10 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 				if (err) {
 					error(err, "CommitContextTx failure");
 				}
+#if 0
 			} else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
 				/* not implemented. */
+#endif
 			} else if (tx.isFlag(CTransaction::TXF_IDENT)) {
 				InsertIdentTable(iface, tx);
 			} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
@@ -661,6 +694,11 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 				}
 			}
 
+			/* non-exclusive */
+			if (IsParamTx(tx)) {
+				ConnectParamTx(iface, &tx, pblock->nTime);
+			}
+
 			/* check for matrix validation notary tx's. */
 			ProcessValidateMatrixNotaryTx(iface, tx);
 		}
@@ -670,5 +708,5 @@ bool legacy_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev)
 	STAT_BLOCK_ACCEPTS(iface)++;
 	return true;
 }
-
+#endif
 

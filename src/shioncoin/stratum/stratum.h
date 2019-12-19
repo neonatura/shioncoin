@@ -55,6 +55,7 @@
 #define USER_REMOTE (1 << 5)
 #define USER_RPC (1 << 6)
 #define USER_ELEVATE (1 << 7)
+#define USER_EXTRANONCE (1 << 8)
 
 /* sync flags */
 #define SYNC_AUTH (1 << 1)

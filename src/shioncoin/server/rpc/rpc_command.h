@@ -136,7 +136,7 @@ Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_keyremove(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_fee(CIface *iface, const Array& params, bool fStratum);
 
-
+Value rpc_wallet_extaddrlist(CIface *iface, const Array& params, bool fStratum);
 
 #endif /* ndef __SERVER__RPCCOMMAND_PROTO_H__ */
 

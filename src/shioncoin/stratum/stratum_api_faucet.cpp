@@ -49,7 +49,8 @@ const ApiItems& stratum_api_faucet_send(int ifaceIndex, string strAccount, shjso
 
 	items.clear();
 
-	CCoinAddr address = GetAccountAddress(wallet, "faucet", false);
+	CCoinAddr address = wallet->GetPrimaryAddr("faucet");
+	//CCoinAddr address = GetAccountAddress(wallet, "faucet", false);
 	if (!address.IsValid()) {
 		strError = string("invalid 'faucet' account.");
 		return (items);
@@ -98,7 +99,8 @@ const ApiItems& stratum_api_faucet_recv(int ifaceIndex, string strAccount, shjso
 
 	items.clear();
 
-	CCoinAddr address = GetAccountAddress(wallet, strAccount, false);
+	CCoinAddr address = wallet->GetPrimaryAddr("faucet");
+	//CCoinAddr address = GetAccountAddress(wallet, strAccount, false);
 	if (!address.IsValid()) {
 		strError = string("invalid account coin address.");
 		return (items);
@@ -205,7 +207,8 @@ const ApiItems& stratum_api_faucet_info(int ifaceIndex, string strAccount, shjso
 		}
 	}
 
-	CCoinAddr address = GetAccountAddress(wallet, "faucet", false);
+	CCoinAddr address = wallet->GetPrimaryAddr("faucet");
+//	CCoinAddr address = GetAccountAddress(wallet, "faucet", false);
 
 	int64 nAmount = 0;
 	{

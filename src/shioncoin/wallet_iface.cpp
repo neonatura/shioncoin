@@ -26,11 +26,11 @@
 #include "shcoind.h"
 #include "db.h"
 #include "net.h"
-#include "init.h"
 #include "util.h"
 #include "ui_interface.h"
 #include "rpc_proto.h"
 #include "txcreator.h"
+#include "account.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -175,11 +175,12 @@ Object JSONAddressInfo(int ifaceIndex, CCoinAddr address, bool show_priv)
   return (result);
 }
 
+#if 0
 CCoinAddr GetNewAddress(CWallet *wallet, string strAccount)
 {
-
-  return GetAccountAddress(wallet, strAccount, true);
+  return GetAccountAddress(wallet, strAccount);
 }
+#endif
 
 string getnewaddr_str;
 const char *json_getnewaddress(int ifaceIndex, const char *account)
@@ -190,14 +191,19 @@ const char *json_getnewaddress(int ifaceIndex, const char *account)
   if (!wallet)
     return (NULL);
 
+#if 0
   // Generate a new key that is added to wallet
   CPubKey newKey;
-
 	newKey = GetAccountPubKey(wallet, strAccount, true);
-
 	CKeyID keyID = newKey.GetID();
   getnewaddr_str = CCoinAddr(ifaceIndex, keyID).ToString();
+#endif
 
+	CCoinAddr addr = wallet->GetRecvAddr(strAccount);
+	if (!addr.IsValid())
+		throw JSONRPCError(ERR_INVAL, "receive address [create]");
+
+	getnewaddr_str = addr.ToString();
   return (getnewaddr_str.c_str());
 }
 
@@ -262,16 +268,17 @@ static const char *cpp_stratum_walletkeylist(int ifaceIndex, const char *acc_nam
       bool fComp;
       CSecret secret;
       CKeyID keyID;
-      CKey key;
 
       if (!address.IsValid())
         continue;
       if (!address.GetKeyID(keyID))
         continue;
-      if (!wallet->GetKey(keyID, key))
-        continue;
 
-      secret = key.GetSecret(fComp); 
+			CKey *key = wallet->GetKey(keyID);
+			if (!key)
+				continue;
+
+      secret = key->GetSecret(fComp); 
       //cbuff buff(secret.begin(), secret.end());
       ar.push_back(CCoinSecret(ifaceIndex, secret, fComp).ToString());
      // ar.push_back(HexStr(buff.begin(), buff.end()));
@@ -616,7 +623,6 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
     char errbuf[1024];
     sprintf(errbuf, "setblockreward: account '%s' has invalid %s address.", accountName, iface->name);
     shcoind_log(errbuf);
-    //throw JSONRPCError(-5, "Invalid usde address");
     return (-5);
   }
 
@@ -697,11 +703,11 @@ void c_sendblockreward(int ifaceIndex)
 		const string& strAccount = item.first;
 		const int64& nValue = item.second;
 
-		bool found = false;
-		CCoinAddr address = GetAddressByAccount(wallet, strAccount.c_str(), found);
-		if (!found || !address.IsValid()) {
-			continue;
-		}
+		/* Get miner address assigned for account. */
+		CAccountCache *acc = wallet->GetAccount(strAccount);
+		if (!acc) continue;
+		CCoinAddr address = acc->GetAddr(ACCADDR_MINER);
+		if (!address.IsValid()) continue;
 
 		if (nValue < MIN_TX_FEE(iface)) {
 			vecNewRewardSend[strAccount] = nValue;
@@ -842,7 +848,6 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
 
   //address = GetAddressByAccount(accountName);
   if (!address.IsValid()) {
-    //throw JSONRPCError(-5, "Invalid usde address");
     return (-5);
   }
 
@@ -1139,14 +1144,24 @@ static const char *json_stratum_create_account(int ifaceIndex, const char *acc_n
         }
       }
 #endif
+
+#if 0
       newKey = GetAccountPubKey(wallet, strAccount, true);
-
-
       CKeyID keyId = newKey.GetID();
       wallet->SetAddressBookName(keyId, strAccount);
+#endif
+
+			CPubKey pubkey;
+			CAccountCache *acc = wallet->GetAccount(strAccount);
+			if (!acc->CreateNewPubKey(pubkey, 0))
+				continue;
+			const CKeyID& keyID = pubkey.GetID();
+
+
       if (ifaceIndex == idx) {
-        coinAddr = CCoinAddr(ifaceIndex, keyId).ToString();
-        phash = get_private_key_hash(wallet, keyId);
+				CCoinAddr addrNew(ifaceIndex, keyID);
+        coinAddr = addrNew.ToString();
+        phash = get_private_key_hash(wallet, keyID);
       }
     }
   } catch(Object& objError) {
@@ -1518,7 +1533,7 @@ static const char *json_stratum_account_import(int ifaceIndex, const char *acc_n
       return (NULL);//throw JSONRPCError(STERR_INVAL, "Invalid private key specified.");
     }
 
-    CKey key;
+    ECKey key;
     bool fCompressed;
     CSecret secret = vchSecret.GetSecret(fCompressed);
     key.SetSecret(secret, fCompressed);
@@ -1606,7 +1621,7 @@ int sendblockreward(int ifaceIndex)
 int wallet_account_transfer(int ifaceIndex, const char *sourceAccountName, const char *accountName, const char *comment, double amount)
 {
   if (!accountName || !*accountName)
-    return (-5); /* invalid usde address */
+    return (-5); /* invalid address */
   return (c_wallet_account_transfer(ifaceIndex, sourceAccountName, accountName, comment, amount));
 }
 
@@ -1736,6 +1751,7 @@ const char *stratum_walletkeylist(int ifaceIndex, char *acc_name)
   return (cpp_stratum_walletkeylist(ifaceIndex, (const char *)acc_name));
 }
 
+#if 0
 string stratumRetAddr;
 const char *stratum_getaccountaddress(int ifaceIndex, char *account)
 {
@@ -1748,6 +1764,7 @@ const char *stratum_getaccountaddress(int ifaceIndex, char *account)
   stratumRetAddr = addr.ToString();
   return (stratumRetAddr.c_str());
 }
+#endif
 
 void stratum_listaddrkey(int ifaceIndex, char *account, shjson_t *obj)
 {
@@ -1758,7 +1775,7 @@ void stratum_listaddrkey(int ifaceIndex, char *account, shjson_t *obj)
   vector<string> vAcc;
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
     const string& strAccount = entry.second;
-    CKey pkey;
+    ECKey pkey;
 
     if (strAccount != strListAccount &&
         strAccount != strListExtAccount)
@@ -1795,7 +1812,7 @@ int stratum_getaddrkey(int ifaceIndex, char *account, char *pubkey, char *ret_pk
   vector<string> vAcc;
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
     const string& strAccount = entry.second;
-    CKey pkey;
+    ECKey pkey;
 
     if (strAccount != strListAccount &&
         strAccount != strListExtAccount)
@@ -1831,7 +1848,7 @@ int stratum_getaddrkey(int ifaceIndex, char *account, char *pubkey, char *ret_pk
   return (SHERR_NOENT);
 }
 
-
+#if 0
 int stratum_setdefaultkey(int ifaceIndex, char *account, char *pub_key)
 {
   CWallet *wallet = GetWallet(ifaceIndex);
@@ -1855,6 +1872,7 @@ int stratum_setdefaultkey(int ifaceIndex, char *account, char *pub_key)
 
   return (0);
 }
+#endif
 
 const char *stratum_accountalias(int ifaceIndex, char *account, char *pkey, char *mode, char *alias_name, char *alias_addr)
 {

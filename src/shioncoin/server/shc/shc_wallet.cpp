@@ -26,7 +26,6 @@
 #include "shcoind.h"
 #include "block.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
@@ -93,13 +92,9 @@ bool shc_LoadWallet(void)
   bool fFirstRun = true;
   shcWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(shcWallet, strAccount, true);
-		//CPubKey newDefaultKey = shcWallet->GenerateNewKey();
-		shcWallet->SetDefaultKey(newDefaultKey);
-		shcWallet->SetAddressBookName(shcWallet->vchDefaultKey.GetID(), "");
+		shcWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(shcWallet);
@@ -615,7 +610,7 @@ bool SHCWallet::CreateAccountTransaction(string strFromAccount, const vector<pai
 
         if (nChange > 0) {
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);
@@ -735,17 +730,6 @@ unsigned int SHCWallet::GetTransactionWeight(const CTransaction& tx)
     ::GetSerializeSize(tx, SER_NETWORK, SHC_PROTOCOL_VERSION);
 
   return (nBytes);
-}
-
-unsigned int SHCWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{
-  return (std::max(nWeight, nSigOpCost * shc_nBytesPerSigOp) + SHC_WITNESS_SCALE_FACTOR - 1) / SHC_WITNESS_SCALE_FACTOR;
-}
-unsigned int SHCWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  unsigned int nWeight = GetTransactionWeight(tx);
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(nWeight, nSigOpCost));
 }
 
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */

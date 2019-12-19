@@ -53,8 +53,8 @@ enum txnouttype
     TX_WITNESS_V0_SCRIPTHASH,
     TX_WITNESS_V0_KEYHASH,
     TX_WITNESS_UNKNOWN,
-		__RESERVED_0,
-		__RESERVED_1,
+    TX_WITNESS_V14_SCRIPTHASH,
+    TX_WITNESS_V14_KEYHASH,
 		__RESERVED_2
 };
 
@@ -99,6 +99,20 @@ struct WitnessV0KeyHash : public uint160
 	using uint160::uint160;
 };
 
+struct WitnessV14ScriptHash : public uint256
+{
+	WitnessV14ScriptHash() : uint256() {}
+	explicit WitnessV14ScriptHash(const uint256& hash) : uint256(hash) {}
+	using uint256::uint256;
+};
+    
+struct WitnessV14KeyHash : public uint160
+{       
+	WitnessV14KeyHash() : uint160() {} 
+	explicit WitnessV14KeyHash(const uint160& hash) : uint160(hash) {}
+	using uint160::uint160;
+};
+
 //! CTxDestination subtype to encode any future Witness version
 struct WitnessUnknown
 {       
@@ -128,7 +142,7 @@ struct WitnessUnknown
  *  * CScriptID: TX_SCRIPTHASH destination
  *  A CTxDestination is the internal data type encoded in a CCoinAddr
  */
-typedef boost::variant<CNoDestination, CKeyID, CScriptID, WitnessV0ScriptHash, WitnessV0KeyHash, WitnessUnknown> CTxDestination;
+typedef boost::variant<CNoDestination, CKeyID, CScriptID, WitnessV0ScriptHash, WitnessV0KeyHash, WitnessV14ScriptHash, WitnessV14KeyHash, WitnessUnknown> CTxDestination;
 
 const char* GetTxnOutputType(txnouttype t);
 
@@ -162,12 +176,14 @@ enum opcodetype
     OP_16 = 0x60,
 
     /* extension ops */
+    OP_EXT_RESERVED1 = 0x01,
+    OP_EXT_RESERVED2 = 0x02,
 		OP_PARAM = 0x03,
 		OP_ALTCHAIN = 0x04,
     OP_CONTEXT = 0x05,
     OP_EXEC = 0x06,
     OP_CHANNEL = 0x07,
-    OP_VAULT = 0x08,
+    OP_EXT_RESERVED8 = 0x08,
     OP_MATRIX = 0x09,
     OP_ALIAS = 0x0a,
     OP_OFFER=0x0b,
@@ -295,6 +311,8 @@ enum opcodetype
     OP_EXT_TRANSFER = 0xf5,
     OP_EXT_PAY = 0xf6,
     OP_EXT_VALIDATE = 0xf7,
+		OP_EXT_NOP8 = 0xf8,
+		OP_EXT_NOP9 = 0xf9,
 
     // template matching params
     OP_SMALLINTEGER = 0xfa,
@@ -849,7 +867,7 @@ public:
 
     void SetDestination(const CTxDestination& address);
 
-    void SetMultisig(int nRequired, const std::vector<CKey>& keys);
+    void SetMultisig(int nRequired, const std::vector<ECKey>& keys);
 
     void PrintHex() const
     {
@@ -879,9 +897,11 @@ public:
         return str;
     }
 
+#if 0
     void SetMultisig(const std::vector<HDPrivKey>& keys);
 
     void SetMultisig(int nRequired, const std::vector<HDPrivKey>& keys);
+#endif
 
     void print() const
     {

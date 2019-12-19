@@ -24,8 +24,8 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "shc_pool.h"
@@ -356,6 +356,7 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
   return pblock.release();
 }
 
+#if 0
 static void create_nonce(SHCBlock *block)
 {
 	static unsigned int nNonceIndex = 0xE2222222;
@@ -386,6 +387,7 @@ static void create_nonce(SHCBlock *block)
 
 fprintf(stderr, "DEBUG: NONCE: %x\n", block->nNonce);
 }
+#endif
 
 bool shc_CreateGenesisBlock()
 {

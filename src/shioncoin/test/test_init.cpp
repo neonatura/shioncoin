@@ -6,7 +6,7 @@
 #include "server/test/test_block.h"
 #include "server/test/test_wallet.h"
 #include "server/test/test_txidx.h"
-#include "server/derkey.h"
+#include "server/eckey.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +33,9 @@ void test_shcoind_init(void)
   //RegisterWallet(testWallet);
   //RandAddSeedPerfmon();
 
+	GetCoinByIndex(EMC2_COIN_IFACE)->enabled = FALSE;
+	GetCoinByIndex(TESTNET_COIN_IFACE)->enabled = FALSE;
+
   iface->op_init(iface, NULL);
 
 
@@ -53,8 +56,6 @@ void test_shcoind_init(void)
 
   iface->nRuleChangeActivationThreshold = 4;
   iface->nMinerConfirmationWindow = 5;
-
-//CBlock *test_block = test_GenerateBlock(); /* DEBUG: */
 
 }
 

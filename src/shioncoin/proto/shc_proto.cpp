@@ -27,6 +27,7 @@
 #include "block.h"
 #include "main.h"
 #include "wallet.h"
+#include "account.h"
 #include "coin_proto.h"
 #include "shc/shc_netmsg.h"
 #include "shc/shc_pool.h"
@@ -220,6 +221,7 @@ static int shc_block_process(CIface *iface, CBlock *block)
 
 static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 {
+#if 0
 	static int _index = 0;
   static CPubKey ret_key;
 	string strAccount("");
@@ -267,6 +269,18 @@ static CPubKey shc_GetMainAccountPubKey(CWallet *wallet)
 #endif
 
   return (ret_key);
+#endif
+
+  static CPubKey pubkey;
+  if (!pubkey.IsValid()) {
+    CAccountCache *account = wallet->GetAccount("");
+    account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+    /* miner fee */
+		wallet->GetAccount("bank");
+    /* cpu miner */
+		wallet->GetAccount("system");
+  }
+  return (pubkey);
 }
 
 static int shc_block_templ(CIface *iface, CBlock **block_p)
@@ -371,20 +385,24 @@ coin_iface_t shc_coin_iface = {
 	5, /* 3 */
 	25, /* A */
 	190,
-	{0x04, 0x88, 0xB2, 0x1E},
-	{0x04, 0x88, 0xAD, 0xE4},
+	{0x04, 0x80, 0xB2, 0x1E},
+	{0x04, 0x80, 0xAD, 0xE4},
 	NODE_NETWORK | NODE_BLOOM | NODE_WITNESS,
   SHC_MIN_INPUT,
+  SHC_MAX_BLOCK_SIZE,
   SHC_MAX_BLOCK_SIZE,
   SHC_MAX_ORPHAN_TRANSACTIONS,
   SHC_MAX_TRANSACTION_WEIGHT,
   SHC_MIN_TX_FEE,
+  SHC_MIN_RELAY_TX_FEE,
   SHC_MIN_RELAY_TX_FEE,
   SHC_MAX_TX_FEE,
   SHC_MAX_FREE_TX_SIZE,
   SHC_MAX_MONEY,
   SHC_COINBASE_MATURITY, 
   SHC_MAX_SIGOPS,
+	SHC_MAX_SCRIPT_SIZE,
+	SHC_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(shc_init),
   COINF(shc_bind),
   COINF(shc_term),

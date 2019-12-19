@@ -27,11 +27,8 @@
 #define __SERVER__TXCREATOR_H__
 
 #include "main.h"
-#include "key.h"
-#include "keystore.h"
+#include "wallet.h"
 #include "script.h"
-
-
 
 typedef set<pair<CWalletTx *,unsigned int> > coin_set;
 
@@ -51,6 +48,7 @@ class CTxCreator : public CWalletTx
     unsigned int nDepth;
     coin_set setInput;
 		map<unsigned int,unsigned int> setSeq;
+		int nFeeDepth;
 
     CPubKey changePubKey;
     int64 nReserveIndex;
@@ -103,6 +101,7 @@ class CTxCreator : public CWalletTx
       nReserveIndex = -1;
       changePubKey = CPubKey();
       nDepth = 0;
+      nFeeDepth = 6;
       strError = "";
       setInput.clear();
     }
@@ -131,15 +130,15 @@ class CTxCreator : public CWalletTx
 
     bool HaveOutput(const CPubKey& pubKey);
 
-    bool SetChange(const CPubKey& addr);
+    bool SetChangeAddr(const CPubKey& addr);
+
+    CCoinAddr GetChangeAddr();
 
     void SetMinFee(int64 nMinFeeIn);
 
     size_t GetSerializedSize();
 
     int64 CalculateFee();
-
-    void CreateChangeAddr();
 
     bool Generate();
 
@@ -184,6 +183,21 @@ class CTxCreator : public CWalletTx
       return (strError);
     }
 
+		int getInputCount()
+		{
+			return (setInput.size());
+		}
+
+		void setLowFeeRate()
+		{
+			nFeeDepth = 0;
+		}
+
+		void setHighFeeRate()
+		{
+			nFeeDepth = 12;
+		}
+
 };
 
 class CTxBatchCreator : public CTxCreator
@@ -196,6 +210,7 @@ class CTxBatchCreator : public CTxCreator
 
     int64 nMaxTxSize;
     int64 nMaxSigOp;
+    int64 nMinFee;
     int64 nMaxFee;
     CScript scriptPub;
 
@@ -235,6 +250,11 @@ class CTxBatchCreator : public CTxCreator
         Generate();
       return (vTxList); 
     }
+
+		void SetMinFee(int64 nFee)
+		{
+			nMinFee = nFee;
+		}
 
     /** Generate one or more transactions based on the underlying transaction's inputs and outputs. */
     bool Generate();

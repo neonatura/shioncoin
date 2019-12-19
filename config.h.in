@@ -576,9 +576,6 @@
 /* Define for UnixWare systems. */
 #undef UNIXWARE
 
-/* Define to enable the USDE coin service. */
-#undef USDE_SERVICE
-
 /* Define to enable the BLAKE2S pow algorythm. */
 #undef USE_ALGO_BLAKE2S
 

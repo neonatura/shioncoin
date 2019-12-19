@@ -1,3 +1,65 @@
+2019-09-09  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP33
+
+	SIP33
+	Introduces the Dilithium (level 3) signature signing algorythm for use with shioncoin transactions.
+
+2019-09-03  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CKeyMetadata
+
+2019-09-01  Brian Burrell  <bburrell.brian@gmail.com>
+
+	BIP32
+
+2019-08-30  Brian Burrell  <bburrell.brian@gmail.com>
+
+	BIP32
+
+2019-08-27  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP32
+
+	ECKey
+
+	abstract CKey
+
+2019-08-23  Brian Burrell  <bburrell.brian@gmail.com>
+
+	DILITHIUM-3 A signature algorythm library.
+
+2019-08-19  Brian Burrell  <bburrell.brian@gmail.com>
+
+	disable eroneous services for unit runtime tests
+
+2019-08-13  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v4.1
+	build/release file update
+
+	stratum
+
+	draft wiki pages for new PoW algorythms
+
+	draft wiki pages for new PoW algorythms
+
+2019-08-11  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2019-07-27  Brian Burrell  <bburrell.brian@gmail.com>
+
+	removed USDE emulation service
+
+	stratum miner reward fix (introduced in SIP32)
+
+2019-07-21  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v4.1 prep
+
+	v4.0
+
 2019-05-15  Brian Burrell  <bburrell.brian@gmail.com>
 
 	[configure] 	--enable-emc2 	--enable-usde 	--disable-stratum

@@ -30,7 +30,7 @@
 #include <list>
 
 #include "base58.h"
-
+#include "wallet.h"
 
 //class CKeyPool;
 class CAccount;
@@ -45,7 +45,6 @@ enum DBErrors
     DB_LOAD_FAIL,
     DB_NEED_REWRITE
 };
-
 
 /** Access to the wallet database (wallet.dat) */
 class CWalletDB : public CDB
@@ -91,8 +90,21 @@ public:
         return Read(std::make_pair(std::string("key"), vchPubKey.Raw()), vchPrivKey);
     }
 
-    bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey)
+		/* ECDSA 256k1 */
+    bool WriteKey(const ECKey& key, const CPubKey& pubkey)
+		{
+			return Write(std::make_pair(std::string("eckey"), pubkey.Raw()), key, false);
+		}
+
+		/* DILITHIUM-3 */
+    bool WriteKey(const DIKey& key, const CPubKey& pubkey)
+		{
+			return Write(std::make_pair(std::string("dikey"), pubkey.Raw()), key, false);
+		}
+
+    bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata& keyMeta)
     {
+        Write(std::make_pair(std::string("keymeta"), vchPubKey.Raw()), keyMeta, false);
         nWalletDBUpdated++;
         return Write(std::make_pair(std::string("key"), vchPubKey.Raw()), vchPrivKey, false);
     }
@@ -202,6 +214,11 @@ public:
     void ListAccountCreditDebit(const std::string& strAccount, std::list<CAccountingEntry>& acentries);
 
     int LoadWallet(CWallet* pwallet);
+
+#if 0
+		bool WriteHDChain(const CHDChain& chain);
+#endif
+
 };
 
 #endif // __WALLETDB_H__

@@ -90,8 +90,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @HAVE_GIT_TRUE@am__append_1 = ChangeLog
-@USDE_SERVICE_TRUE@am__append_2 = .usde$(EXEEXT)
-@EMC2_SERVICE_TRUE@am__append_3 = .emc2$(EXEEXT)
+@EMC2_SERVICE_TRUE@am__append_2 = .emc2$(EXEEXT)
 subdir = bin
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac-path-kernel-source.m4 \
@@ -332,7 +331,7 @@ version_patch = @version_patch@
 with_kernel = @with_kernel@
 with_kerneldir = @with_kerneldir@
 noinst_PROGRAMS = shc$(EXEEXT) shcoind$(EXEEXT) .notice$(EXEEXT) 
-noinst_SCRIPTS = $(am__append_1) $(am__append_2) $(am__append_3)
+noinst_SCRIPTS = $(am__append_1) $(am__append_2)
 all: all-am
 
 .SUFFIXES:
@@ -620,10 +619,6 @@ uninstall-am:
 
 @HAVE_GIT_TRUE@ChangeLog:
 @HAVE_GIT_TRUE@	git --git-dir $(top_srcdir)/.git log > ChangeLog || touch ChangeLog
-
-@USDE_SERVICE_TRUE@.usde$(EXEEXT):
-@USDE_SERVICE_TRUE@	ln -sf $(top_builddir)/src/coin-console/usde$(EXEEXT)
-@USDE_SERVICE_TRUE@	@echo > .usde$(EXEEXT)
 
 @EMC2_SERVICE_TRUE@.emc2$(EXEEXT):
 @EMC2_SERVICE_TRUE@	ln -sf $(top_builddir)/src/coin-console/emc2$(EXEEXT)

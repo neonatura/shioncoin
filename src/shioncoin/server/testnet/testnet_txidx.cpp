@@ -24,8 +24,8 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "testnet_pool.h"
@@ -34,6 +34,7 @@
 #include "chain.h"
 #include "spring.h"
 #include "coin.h"
+#include "ext/ext_param.h"
 
 #include <boost/array.hpp>
 #include <boost/assign/list_of.hpp>
@@ -124,21 +125,30 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
 
 		bool fCheck = true;
 
+
+
     BOOST_FOREACH(CTransaction& tx, block.vtx) {
+			bool fCoinbase = tx.IsCoinBase();
+
 			/* stats */
 			BOOST_FOREACH(const CTxOut& out, tx.vout) {
+				bool fReturn = false;
 				const CScript& script = out.scriptPubKey;
 				CScript::const_iterator pc = script.begin();
 				while (script.GetOp(pc, opcode)) {
 					if (opcode == OP_RETURN) {
 						STAT_TX_RETURNS(iface) += out.nValue;
+						fReturn = true;
 						break;
 					}
+				}
+				if (fCoinbase && !fReturn) {
+					STAT_TX_MINT(iface) += out.nValue;
 				}
 			}
 
 			/* register extended transactions. */
-			if (tx.IsCoinBase()) {
+			if (fCoinbase) {
 				int nMode;
 				if (VerifyMatrixTx(tx, nMode)) {
 					if (nMode == OP_EXT_VALIDATE) {
@@ -150,7 +160,7 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
 			} else {
 				/* check for notary tx */
 				if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
-						tx.vout[0].nValue <= MIN_INPUT_VALUE(iface)) {
+						tx.vout[0].nValue <= CTxMatrix::MAX_NOTARY_TX_VALUE) {
 					ProcessValidateMatrixNotaryTx(iface, tx);
 				}
 			}
@@ -168,8 +178,10 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
       } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
         if (IsContextTx(tx))
           vContext.push_back(pindexNew);
+#if 0
       } else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
         /* not implemented */
+#endif
       } else if (tx.isFlag(CTransaction::TXF_IDENT)) {
         if (IsIdentTx(tx))
           vIdent.push_back(pindexNew);
@@ -194,6 +206,12 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
 			if (tx.isFlag(CTransaction::TXF_ALTCHAIN)) {
 				if (IsAltChainTx(tx)) {
 					CommitAltChainTx(iface, tx, NULL, true);
+				}
+			}
+
+			if (tx.isFlag(CTransaction::TXF_PARAM)) {
+				if (IsParamTx(tx)) {
+					ConnectParamTx(iface, &tx, lastIndex);
 				}
 			}
     } /* FOREACH (tx) */
@@ -326,7 +344,7 @@ static bool testnet_LoadBlockIndex()
 
   int nCheckDepth = (GetBestHeight(TESTNET_COIN_IFACE) / 640) + 640;
   int nWalletCheckDepth = nCheckDepth * 1.5;
-  int nValidateCheckDepth = nCheckDepth * 4;
+  int nValidateCheckDepth = nCheckDepth * 3;
   int total = 0;
   int invalid = 0;
   int maxHeight = 0;
@@ -589,8 +607,10 @@ bool testnet_InitBlockIndex()
   bool ret;
 
   ret = testnet_LoadBlockIndex();
-  if (!ret)
+  if (!ret) {
+		error(ERR_INVAL, "DEBUG: testnet_InitBlockIndex: LoadBlockIndex failure");
     return (false);
+	}
 
   if (!testnet_CreateGenesisBlock())
     return (false);

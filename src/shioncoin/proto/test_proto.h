@@ -27,7 +27,7 @@
 #define __TEST_PROTO_H__
 
 #define TEST_VERSION_MAJOR 4
-#define TEST_VERSION_MINOR 0
+#define TEST_VERSION_MINOR 1
 #define TEST_VERSION_REVISION 0
 #define TEST_VERSION_BUILD 2
 
@@ -39,6 +39,10 @@
 
 #define TEST_MAX_SIGOPS 32768
 
+#define TEST_MAX_SCRIPT_SIZE 60624
+
+#define TEST_MAX_SCRIPT_ELEMENT_SIZE 3368
+
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
 #define TEST_MAX_DRIFT_TIME 1440 /* 24 minutes */ 
 
@@ -46,12 +50,11 @@ static const int TEST_PROTOCOL_VERSION = 1000000;
 
 #define TEST_COIN (uint64_t)100000000
 
-#define TEST_MAX_BLOCK_SIZE 1000000
+#define TEST_MAX_BLOCK_SIZE 1024000 /* 1m */
 
-#define TEST_MAX_BLOCK_SIZE_GEN TEST_MAX_BLOCK_SIZE/2
-#define TEST_MAX_TRANSACTION_WEIGHT TEST_MAX_BLOCK_SIZE_GEN/5
+#define TEST_MAX_TRANSACTION_WEIGHT 820000 /* 205k */
 
-#define TEST_MAX_STANDARD_TX_WEIGHT 400000
+#define TEST_MAX_STANDARD_TX_WEIGHT 410000
 
 #define TEST_MAX_STANDARD_TX_SIGOP_COST 16000
 
@@ -61,7 +64,7 @@ static const int TEST_PROTOCOL_VERSION = 1000000;
 #define TEST_MAX_FREE_TX_SIZE 512
 
 
-static const int64 TEST_MIN_INPUT = 100;
+static const int64 TEST_MIN_INPUT = 1;
 static const int64 TEST_MIN_TX_FEE = 10000;
 static const int64 TEST_MIN_RELAY_TX_FEE = 1000;
 static const int64 TEST_MAX_MONEY = 1600000000 * TEST_COIN;

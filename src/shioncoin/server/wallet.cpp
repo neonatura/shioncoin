@@ -103,40 +103,56 @@ struct CompareValueOnly
 	}
 };
 
-CPubKey CWallet::GenerateNewKey(bool fCompressed)
+bool CWallet::GenerateNewECKey(CPubKey& pubkeyRet, bool fCompressed, int nFlag)
 {
-	CKey key;
+	ECKey key;
 
 	{
 		LOCK(cs_wallet);
-
 		key.MakeNewKey(fCompressed);
 
-#if 0
-		// Compressed public keys were introduced in version 0.6.0
-		if (fCompressed)
-			SetMinVersion(FEATURE_COMPRPUBKEY);
-#endif
-
-		if (!AddKey(key))
-			throw std::runtime_error("CWallet::GenerateNewKey() : AddKey failed");
 	}
 
-	CPubKey pubkey = key.GetPubKey();
-	return (pubkey);
+	key.nFlag |= nFlag;
+	if (!AddKey(key))
+		return (false);
+
+	pubkeyRet = key.GetPubKey();
+	return (true);
 }
 
-bool CWallet::AddKey(const CKey& key)
+bool CWallet::GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag)
+{
+	DIKey key;
+
+	{
+		LOCK(cs_wallet);
+		key.MakeNewKey();
+	}
+
+	key.nFlag |= nFlag;
+	if (!AddKey(key))
+		return (false);
+
+	pubkeyRet = key.GetPubKey();
+	return (true);
+}
+
+bool CWallet::AddKey(const ECKey& key)
 {
 
-	if (!CCryptoKeyStore::AddKey(key))
+	if (!CBasicKeyStore::AddKey(key))
 		return (error(SHERR_INVAL, "CWallet.AddKey: error adding key to crypto key-store."));
-	if (!IsCrypted()) {
+
+	{
 		bool ret = false;
 		{
 			LOCK(cs_wallet);
 			CWalletDB db(strWalletFile);
-			ret = db.WriteKey(key.GetPubKey(), key.GetPrivKey());
+
+			const CPubKey& pubkey = key.GetPubKey();
+			ret = db.WriteKey(key, pubkey);
+
 			db.Close();
 		}
 		if (!ret)
@@ -146,6 +162,31 @@ bool CWallet::AddKey(const CKey& key)
 	return true;
 }
 
+bool CWallet::AddKey(const DIKey& key)
+{
+
+	if (!CBasicKeyStore::AddKey(key))
+		return (error(SHERR_INVAL, "CWallet.AddKey: error adding key to crypto key-store."));
+
+	{
+		bool ret = false;
+		{
+			LOCK(cs_wallet);
+			CWalletDB db(strWalletFile);
+
+			const CPubKey& pubkey = key.GetPubKey();
+			ret = db.WriteKey(key, pubkey);
+
+			db.Close();
+		}
+		if (!ret)
+			return (error(SHERR_INVAL, "CWallet.AddKey: error writing key to wallet."));
+	}
+
+	return true;
+}
+
+#if 0
 HDPubKey CWallet::GenerateNewHDKey(bool fCompressed)
 {
 	HDMasterPrivKey key;
@@ -168,24 +209,12 @@ HDPubKey CWallet::GenerateNewHDKey(bool fCompressed)
 	HDPubKey pubkey = key.GetMasterPubKey();
 	return pubkey;
 }
+#endif
 
-bool CWallet::AddKey(const HDPrivKey& key)
-{
-	if (!CCryptoKeyStore::AddKey(key))
-		return false;
-	if (!IsCrypted()) {
-		LOCK(cs_wallet);
-
-		CWalletDB db(strWalletFile);
-		db.WriteKey(key.GetPubKey(), key.GetPrivKey());
-		db.Close();
-	}
-	return true;
-}
-
+#if 0
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey, const vector<unsigned char> &vchCryptedSecret)
 {
-	if (!CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
+	if (!CBasicKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
 		return false;
 	{
 		LOCK(cs_wallet);
@@ -200,11 +229,12 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey, const vector<unsigned char
 
 	return false;
 }
+#endif
 
 bool CWallet::AddCScript(const CScript& redeemScript)
 {
 
-	if (!CCryptoKeyStore::AddCScript(redeemScript))
+	if (!CBasicKeyStore::AddCScript(redeemScript))
 		return false;
 
 	uint160 sid = Hash160(redeemScript);
@@ -604,48 +634,6 @@ void CWalletTx::GetAmounts(int ifaceIndex, int64& nGeneratedImmature, int64& nGe
 
 }
 
-#if 0
-bool CWalletTx::WriteToDisk()
-{
-	{
-		LOCK(pwallet->cs_wallet);
-
-		CWalletDB db(pwallet->strWalletFile);
-		db.WriteTx(GetHash(), *this);
-		db.Close();
-	}
-
-	return (true);
-}
-#endif
-
-#if 0
-// Scan the block chain (starting in pindexStart) for transactions
-// from or to us. If fUpdate is true, found transactions that already
-// exist in the wallet will be updated.
-int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
-{
-	int ret = 0;
-
-	CBlockIndex* pindex = pindexStart;
-	{
-		LOCK(cs_wallet);
-		while (pindex)
-		{
-			USDEBlock block;
-			block.ReadFromDisk(pindex, true);
-			BOOST_FOREACH(CTransaction& tx, block.vtx)
-			{
-				if (AddToWalletIfInvolvingMe(tx, &block, fUpdate))
-					ret++;
-			}
-			pindex = pindex->pnext;
-		}
-	}
-	return ret;
-}
-#endif
-
 int CWallet::ScanForWalletTransaction(const uint256& hashTx)
 {
 	CTransaction tx;
@@ -815,23 +803,10 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
 		GetKeys(keys);
 		BOOST_FOREACH(const CKeyID& key, keys) {
 			if (mapAddressBook.count(key) == 0) { /* loner */
-				CCoinAddr addr(ifaceIndex, key);
-				vDest.push_back(addr.Get());
+				vDest.push_back(CTxDestination(key));
 			}
 		}
 	}
-
-#if 0
-	{
-		std::set<CKeyID> keys;
-		GetKeys(keys);
-		BOOST_FOREACH(const CKeyID& key, keys) {
-			if (mapAddressBook.count(key) == 0) { /* loner */
-				vDest.push_back(key);
-			}
-		}
-	}
-#endif
 
 	{
 		LOCK(cs_wallet);
@@ -862,10 +837,9 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
 				}
 			}
 
-			// If output is less than minimum value, then don't include transaction.
-			// This is to help deal with dust spam clogging up create transactions.
 			uint256 pcoinHash = pcoin->GetHash();
 			for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
+#if 0
 				opcodetype opcode;
 				const CScript& script = pcoin->vout[i].scriptPubKey;
 				CScript::const_iterator pc = script.begin();
@@ -873,7 +847,9 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
 						opcode >= 0xf0 && opcode <= 0xf9) { /* ext mode */
 					continue; /* not avail */
 				}
+#endif
 
+				/* If output is less than minimum value, then don't include transaction. */
 				if (pcoin->vout[i].nValue < nMinValue)
 					continue;
 
@@ -1505,14 +1481,18 @@ int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
 			break;
 	if (nIndex == (int)pblock->vtx.size())
 	{
+#if 0
 		vMerkleBranch.clear();
+#endif
 		nIndex = -1;
 		//printf("ERROR: SetMerkleBranch() : couldn't find tx in block\n");
 		return 0;
 	}
 
+#if 0
 	// Fill in merkle branch
 	vMerkleBranch = pblock->GetMerkleBranch(nIndex);
+#endif
 
 	// Is the tx in a block that's in the main chain
 	map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex->find(hashBlock);
@@ -1545,6 +1525,7 @@ int CMerkleTx::SetMerkleBranch(int ifaceIndex)
 	return (ret);
 }
 
+#if 0
 CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 {
 	bool bKeyUsed = false;
@@ -1584,7 +1565,7 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 	if (!bValid) {
 		/* first time -- generate primary key for account */
 		bNew = true;
-		account.vchPubKey = wallet->GenerateNewKey(true);
+		account.vchPubKey = wallet->GenerateNewECKey(true);
 
 		{
 			LOCK(wallet->cs_wallet);
@@ -1598,28 +1579,37 @@ CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew)
 	} else if (bForceNew && bKeyUsed) {
 		/* generate a new key */
 		bNew = true;
-		pubkey = wallet->GenerateNewKey(true);
+		pubkey = wallet->GenerateNewECKey(true);
 	} else {
 		pubkey = account.vchPubKey;
 	}
 
 	if (bNew) {
-		/* retain in addressbook in order to identify */
+		/* retain pubkey in addressbook in order to identify. */
 		CKeyID keyID = pubkey.GetID();
 		wallet->SetAddressBookName(keyID, strAccount);
+
+		/* generate a standard CScriptID destination. */
+		CScript scriptPubKey;
+		scriptPubKey.SetDestination(keyID);
+		wallet->AddCScript(scriptPubKey);
+		CScriptID scriptID(scriptPubKey); 
+		wallet->SetAddressBookName(scriptID, strAccount);
 
 		CIface *iface = GetCoinByIndex(wallet->ifaceIndex); 
 		if (iface && IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
 			CCoinAddr addr(wallet->ifaceIndex, pubkey.GetID());
 
-			/* p2sh-segwit address */
+			/* generate "program 0" p2sh-segwit address. */
 			CTxDestination sh_dest = addr.GetWitness(OUTPUT_TYPE_P2SH_SEGWIT);
 			wallet->SetAddressBookName(sh_dest, strAccount);
 
-			if (opt_bool(OPT_BECH32)) {
+			/* config option more controls whether bech32 will be dispensed then supported or not. */
+//			if (opt_bool(OPT_BECH32)) {
+				/* bech32 destination address. */
 				CTxDestination be_dest = addr.GetWitness(OUTPUT_TYPE_BECH32);
 				wallet->SetAddressBookName(be_dest, strAccount);
-			}
+//			}
 		}
 	}
 
@@ -1631,22 +1621,27 @@ CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount, bool bForceNew)
 	const CPubKey& pubkey = GetAccountPubKey(wallet, strAccount, bForceNew);
 	return CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
 }
+#endif
+CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount)
+{
+	return (wallet->GetRecvAddr(strAccount));
+}
 
 bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubkey)
 {
-
+#if 0
 	{
 		LOCK(cs_wallet);
 
 		CAccount account;
-		CKey pkey;
+		ECKey pkey;
 
 		CWalletDB walletdb(strWalletFile);
 		walletdb.ReadAccount(strAccount, account);
 		walletdb.Close();
 
 		if (!account.vchPubKey.IsValid()) {
-			account.vchPubKey = GenerateNewKey(true);
+			account.vchPubKey = GenerateNewECKey(true);
 
 			SetAddressBookName(account.vchPubKey.GetID(), strAccount);
 			{
@@ -1656,12 +1651,13 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
 			}
 		}
 
-		if (!GetKey(account.vchPubKey.GetID(), pkey)) {
+		if (!GetECKey(account.vchPubKey.GetID(), pkey)) {
 			return error(SHERR_INVAL, "CWallet::GetMergedAddress: account '%s' has no primary key.", strAccount.c_str());
 		}
 
 		cbuff tagbuff(tag, tag + strlen(tag)); 
-		CKey key = pkey.MergeKey(tagbuff);
+		ECKey key;
+		pkey.MergeKey(key, tagbuff);
 
 		pubkey = key.GetPubKey();
 		if (!pubkey.IsValid()) {
@@ -1679,14 +1675,15 @@ bool CWallet::GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubke
 	}
 
 	return (true);
+#endif
+	CAccountCache *acc = GetAccount(strAccount);
+	return (acc->GetMergedPubKey(tag, pubkey));
 }
 
 bool CWallet::GetMergedAddress(string strAccount, const char *tag, CCoinAddr& addrRet)
 {
 
 	{
-		LOCK(cs_wallet);
-
 		CPubKey pubkey;
 		bool fRet = GetMergedPubKey(strAccount, tag, pubkey);
 		if (!fRet)
@@ -1772,7 +1769,7 @@ bool CreateTransactionWithInputTx(CIface *iface, string strAccount, const vector
 			// Fill a vout back to self (new addr) with any change
 			int64 nChange = MAX(0, nValueIn - nTotalValue - nTxFee);
 			if (nChange >= CENT) {
-				CCoinAddr returnAddr = GetAccountAddress(pwalletMain, wtxNew.strFromAccount, true);
+				CCoinAddr returnAddr = GetAccountAddress(pwalletMain, wtxNew.strFromAccount);
 				CScript scriptChange;
 
 				if (returnAddr.IsValid()) {
@@ -1905,7 +1902,7 @@ bool GetCoinAddr(CWallet *wallet, CCoinAddr& addrAccount, string& strAccount)
 	bool fIsScript = addrAccount.IsScript();
 
 	if (!addrAccount.IsValid())
-		return (false);
+		return (error(SHERR_INVAL, "GetCoinAddr: invalid address \"%s\" specified for account \"%s\".", addrAccount.ToString().c_str(), strAccount.c_str()));
 
 	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
 	{
@@ -1923,6 +1920,7 @@ bool GetCoinAddr(CWallet *wallet, CCoinAddr& addrAccount, string& strAccount)
 		}
 	}
 
+	error(ERR_INVAL, "GetCoinAddr: mapAddressBook missing address \"%s\"\n", addrAccount.ToString().c_str());
 	return (false);
 }
 
@@ -2854,6 +2852,7 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 }
 #endif
 
+#if 0
 bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -2889,15 +2888,16 @@ bool CWallet::GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr)
 
 	return (true);
 }
+#endif
 
-int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee)
+int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee, int confTarget)
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
+	CWallet *wallet = GetWallet(ifaceIndex);
 	int64 nBytes;
 	int64 nFee;
 
 	nBytes = (int64)GetVirtualTransactionSize(tx); 
-	//nBytes = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION(iface));
 
 	/* base fee */
 	nFee = (int64)MIN_RELAY_TX_FEE(iface);
@@ -2913,14 +2913,14 @@ int64 CWallet::CalculateFee(CWalletTx& tx, int64 nMinFee)
 	}
 	nFee = MAX(nFee, nMinFee);
 
-	int64 nEstFee = 0;
-	CBlockPolicyEstimator *est = GetFeeEstimator(iface);
-	if (est) {
-		static const unsigned int confTarget = 2;
-		nEstFee = est->estimateSmartFee(confTarget, NULL).GetFee(nBytes);
-		if (nEstFee > nFee) {
-			nFee = nEstFee;
-//			Debug("CWallet.CalculateFee: using estimated fee %f.", (double)nFee/COIN);
+	if (confTarget != 0) {
+		int64 nEstFee = 0;
+		CBlockPolicyEstimator *est = GetFeeEstimator(iface);
+		if (est) {
+			nEstFee = est->estimateSmartFee(confTarget, NULL).GetFee(nBytes);
+			if (nEstFee > nFee) {
+				nFee = nEstFee;
+			}
 		}
 	}
 
@@ -2949,8 +2949,12 @@ bool CWallet::FillInputs(const CTransaction& tx, tx_cache& inputs, bool fAllowSp
 
 			CTransaction prevTx;
 			const uint256& prev_hash = prevout.hash;
-			if (!::GetTransaction(iface, prev_hash, prevTx, NULL))
-				return (false);
+			if (!::GetTransaction(iface, prev_hash, prevTx, NULL)) {
+				CTxMemPool *pool = GetTxMemPool(iface);
+				if (!pool->GetTx(prev_hash, prevTx, POOL_ACTIVE)) {
+					return (error(SHERR_INVAL, "(%s) FillInputs: unknown tx hash \"%s\" [tx: %s].", iface->name, prev_hash.GetHex().c_str(), tx.GetHash().GetHex().c_str()));
+				}
+			}
 
 			if (!fAllowSpent) {
 				vector<uint256> vOuts;
@@ -3216,50 +3220,42 @@ bool CWallet::EraseTx(uint256 hash)
 }
 #endif
 
-static void wallet_LoadAccount(CWallet *wallet, string strAccount, CAccount& account)
-{
-	CPubKey pubkey;
-
-	account.SetNull();
-
-	{
-		LOCK(wallet->cs_wallet);
-
-		/* load from wallet */
-		CWalletDB walletdb(wallet->strWalletFile);
-		walletdb.ReadAccount(strAccount, account);
-		walletdb.Close();
-	}
-
-	bool bValid = account.vchPubKey.IsValid();
-
-	if (!bValid) {
-		/* first time -- generate primary key for account */
-		account.vchPubKey = wallet->GenerateNewKey(true);
-		wallet->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
-
-		{
-			LOCK(wallet->cs_wallet);
-
-			/* load from wallet */
-			CWalletDB walletdb(wallet->strWalletFile);
-			walletdb.WriteAccount(strAccount, account);
-			walletdb.Close();
-		}
-	}
-
-}
-
 CAccountCache *CWallet::GetAccount(string strAccount)
 {
 	if (mapAddrCache.count(strAccount) == 0) {
 		CAccountCache *ca = new CAccountCache(this);
+		CPubKey pubkey;
+
 		ca->strAccount = strAccount;
-		wallet_LoadAccount(this, strAccount, ca->account);
+		ca->account.SetNull();
+
+		{
+			LOCK(cs_wallet);
+
+			/* load from wallet */
+			CWalletDB walletdb(strWalletFile);
+			walletdb.ReadAccount(strAccount, ca->account);
+			walletdb.Close();
+		}
+
+		if (!ca->account.vchPubKey.IsValid())
+			ca->CreateNewPubKey(ca->account.vchPubKey, 0);
+
+		if (ca->account.masterKeyID == 0) {
+			CPubKey pubkey;
+			if (ca->GetPrimaryPubKey(ACCADDR_HDKEY, pubkey))
+				ca->account.masterKeyID = pubkey.GetID();
+		}
 
 		mapAddrCache[strAccount] = ca;
 	}
+
 	return (mapAddrCache[strAccount]);
+}
+
+CPubKey CWallet::GetPrimaryPubKey(string strAccount)
+{
+	return (GetAccount(strAccount)->account.vchPubKey);
 }
 
 CCoinAddr CWallet::GetChangeAddr(string strAccount)
@@ -3284,12 +3280,12 @@ CCoinAddr CWallet::GetNotaryAddr(string strAccount)
 
 CCoinAddr CWallet::GetRecvAddr(string strAccount)
 {
-	return (GetAccount(strAccount)->GetDynamicAddr(ACCADDR_RECV));
+	return (GetAccount(strAccount)->GetAddr(ACCADDR_RECV));
 }
 
 CCoinAddr CWallet::GetPrimaryAddr(string strAccount)
 {
-	const CPubKey& pubkey = GetAccount(strAccount)->account.vchPubKey;
+	const CPubKey& pubkey = GetPrimaryPubKey(strAccount);
 	return CCoinAddr(ifaceIndex, pubkey.GetID());
 }
 
@@ -3440,3 +3436,293 @@ CBlockIndex *CWallet::GetLocatorIndex(const CBlockLocator& loc)
   return (GetGenesisBlockIndex(iface));
 }
 
+bool CWallet::DeriveNewECKey(CAccount *hdChain, ECKey& secret, bool internal)
+{
+	// for now we use a fixed keypath scheme of m/0'/0'/k
+	ECExtKey masterKey;             //hd master key
+	ECExtKey accountKey;            //key at m/0'
+	ECExtKey chainChildKey;         //key at m/0'/0' (external) or m/0'/1' (internal)
+	ECExtKey childKey;              //key at m/0'/0'/<n>'
+	string hdKeypath;
+
+	if (!hdChain)
+		return (false);
+
+	CKey *key = GetKey(hdChain->masterKeyID);
+	if (!key)
+		return (false);
+
+	masterKey.SetMaster(key->begin(), key->size());
+
+	// derive m/0'
+	// use hardened derivation (child keys >= 0x80000000 are hardened after bip32)
+	masterKey.Derive(accountKey, BIP32_HARDENED_KEY_LIMIT);
+
+	// derive m/0'/0' (external chain) OR m/0'/1' (internal chain)
+//	assert(internal ? CanSupportFeature(FEATURE_HD_SPLIT) : true);
+	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT+(internal ? 1 : 0));
+
+	// derive child key at next index, skip keys already known to the wallet
+	do {
+		// always derive hardened keys
+		// childIndex | BIP32_HARDENED_KEY_LIMIT = derive childIndex in hardened child-index-range
+		// example: 1 | BIP32_HARDENED_KEY_LIMIT == 0x80000001 == 2147483649
+		if (internal) {
+			chainChildKey.Derive(childKey, hdChain->nInternalECChainCounter | BIP32_HARDENED_KEY_LIMIT);
+			hdKeypath = "m/0'/1'/" + std::to_string(hdChain->nInternalECChainCounter) + "'";
+			hdChain->nInternalECChainCounter++;
+		}
+		else {
+			chainChildKey.Derive(childKey, hdChain->nExternalECChainCounter | BIP32_HARDENED_KEY_LIMIT);
+			hdKeypath = "m/0'/0'/" + std::to_string(hdChain->nExternalECChainCounter) + "'";
+			hdChain->nExternalECChainCounter++;
+		}
+	} while (HaveKey(childKey.key.GetPubKey().GetID()));
+
+	secret = childKey.key;
+	secret.nFlag |= CKeyMetadata::META_HD_KEY;
+	secret.hdMasterKeyID = hdChain->masterKeyID;
+	secret.hdKeypath = hdKeypath;
+
+//	acc->UpdateHDChain();
+#if 0
+	{
+		LOCK(cs_wallet);
+
+		CWalletDB walletdb(strWalletFile);
+		walletdb.WriteHDChain(hdChain);
+		walletdb.Close();
+	}
+#endif
+
+	return (true);
+}
+
+bool CWallet::DeriveNewDIKey(CAccount *hdChain, DIKey& secret, bool internal)
+{
+	// for now we use a fixed keypath scheme of m/0'/0'/k
+	DIExtKey masterKey;             //hd master key
+	DIExtKey accountKey;            //key at m/0'
+	DIExtKey chainChildKey;         //key at m/0'/0' (external) or m/0'/1' (internal)
+	DIExtKey childKey;              //key at m/0'/0'/<n>'
+	string hdKeypath;
+
+	if (!hdChain)
+		return (false);
+
+	CKey *key = GetKey(hdChain->masterKeyID);
+	if (!key)
+		return (false);
+
+	masterKey.SetMaster(key->begin(), key->size());
+
+	// derive m/0'
+	// use hardened derivation (child keys >= 0x80000000 are hardened after bip32)
+	masterKey.Derive(accountKey, BIP32_HARDENED_KEY_LIMIT);
+
+	// derive m/0'/0' (external chain) OR m/0'/1' (internal chain)
+//	assert(internal ? CanSupportFeature(FEATURE_HD_SPLIT) : true);
+	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT+(internal ? 1 : 0));
+
+	// derive child key at next index, skip keys already known to the wallet
+	do {
+		// always derive hardened keys
+		// childIndex | BIP32_HARDENED_KEY_LIMIT = derive childIndex in hardened child-index-range
+		// example: 1 | BIP32_HARDENED_KEY_LIMIT == 0x80000001 == 2147483649
+		if (internal) {
+			chainChildKey.Derive(childKey, hdChain->nInternalDIChainCounter | BIP32_HARDENED_KEY_LIMIT);
+			hdKeypath = "m/0'/1'/" + std::to_string(hdChain->nInternalDIChainCounter) + "'";
+			hdChain->nInternalDIChainCounter++;
+		}
+		else {
+			chainChildKey.Derive(childKey, hdChain->nExternalDIChainCounter | BIP32_HARDENED_KEY_LIMIT);
+			hdKeypath = "m/0'/0'/" + std::to_string(hdChain->nExternalDIChainCounter) + "'";
+			hdChain->nExternalDIChainCounter++;
+		}
+	} while (HaveKey(childKey.key.GetPubKey().GetID()));
+
+	secret = childKey.key;
+	secret.nFlag |= CKeyMetadata::META_HD_KEY;
+	secret.hdMasterKeyID = hdChain->masterKeyID;
+	secret.hdKeypath = hdKeypath;
+
+	return (true);
+}
+
+#if 0
+bool CWallet::LoadKeyMetadata(const CKeyID& keyID, const CKeyMetadata &meta)
+{
+	LOCK(cs_wallet);
+	//UpdateTimeFirstKey(meta.nCreateTime);
+	mapKeyMetadata[keyID] = meta;
+	return true;
+}
+
+bool CWallet::LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata &meta)
+{
+	LOCK(cs_wallet);
+	//UpdateTimeFirstKey(meta.nCreateTime);
+	mapScriptMetadata[script_id] = meta;
+	return true;
+}
+#endif
+
+const cbuff& CWallet::Base58Prefix(int type) const
+{
+	static cbuff vchVersion;
+	static cbuff empty_buff;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	uint8_t *raw;
+
+	if (!iface || !iface->enabled)
+		return (empty_buff);
+
+	vchVersion.clear();
+
+	switch (type) {
+		case CCoinAddr::BASE58_PUBKEY_ADDRESS:
+			raw = &iface->base58_pubkey_address;
+			vchVersion = cbuff(raw, raw+1);
+			break;
+		case CCoinAddr::BASE58_SCRIPT_ADDRESS:
+			raw = &iface->base58_script_address;
+			vchVersion = cbuff(raw, raw+1);
+			break;
+		case CCoinAddr::BASE58_SCRIPT_ADDRESS2:
+			raw = &iface->base58_script_address2;
+			vchVersion = cbuff(raw, raw+1);
+			break;
+		case CCoinAddr::BASE58_SECRET_KEY:
+			raw = &iface->base58_secret_key;
+			vchVersion = cbuff(raw, raw+1);
+			break;
+		case CCoinAddr::BASE58_EXT_PUBLIC_KEY:
+			raw = (uint8_t *)iface->base58_ext_public_key;
+			vchVersion = cbuff(raw, raw+4);
+			break;
+		case CCoinAddr::BASE58_EXT_SECRET_KEY:
+			raw = (uint8_t *)iface->base58_ext_secret_key;
+			vchVersion = cbuff(raw, raw+4);
+			break;
+	}
+
+	return (vchVersion);
+}
+
+bool ExtractDestinationKey(CWallet *wallet, const CTxDestination& dest, CKeyID& keyid)
+{
+	CScript scriptPubKey;
+	vector<cbuff> vSolutions;
+	txnouttype whichType;
+
+	/* reset key */
+	keyid.SetNull();
+
+	scriptPubKey.SetDestination(dest);
+	if (!Solver(scriptPubKey, whichType, vSolutions))
+		return (false);
+
+	if (whichType == TX_SCRIPTHASH) {
+		CScriptID scriptid;
+		scriptid = CScriptID(uint160(vSolutions[0]));
+		CScript subscript;
+		if (!wallet->GetCScript(scriptid, subscript))
+			return (false);
+		vSolutions.clear();
+		if (!Solver(subscript, whichType, vSolutions))
+			return (false);
+	} else if (whichType == TX_WITNESS_V0_SCRIPTHASH ||
+			whichType == TX_WITNESS_V14_SCRIPTHASH) {
+		uint160 hash2;
+		const cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
+		cbuff vchHash;
+		uint160 hash160;
+		RIPEMD160(&vch[0], vch.size(), &vchHash[0]);
+		memcpy(&hash160, &vchHash[0], sizeof(hash160));
+
+		CScriptID scriptID = CScriptID(hash160);
+		CScript subscript;
+		if (!wallet->GetCScript(scriptID, subscript))
+			return (false);
+		if (!Solver(subscript, whichType, vSolutions))
+			return (false);
+	}
+
+	switch (whichType) {
+		case TX_PUBKEY:
+			keyid = CPubKey(vSolutions[0]).GetID();
+			break;
+		case TX_PUBKEYHASH:
+			keyid = CKeyID(uint160(vSolutions[0]));
+			break;
+		case TX_WITNESS_V0_KEYHASH:
+		case TX_WITNESS_V14_KEYHASH:
+			keyid = CKeyID(uint160(vSolutions[0]));
+			break;
+	}	
+	if (keyid == 0)
+		return (false);
+
+	return (true);
+}
+
+bool CWalletTx::IsConfirmed() const
+{
+
+	// Quick answer in most cases
+	if (!IsFinal(pwallet->ifaceIndex)) {
+		return false;
+	}
+
+	int nDepth = GetDepthInMainChain(pwallet->ifaceIndex);
+	if (nDepth >= 1) {
+		return true;
+	}
+
+	if (!IsFromMe()) { // using wtx's cached debit
+		return false;
+	}
+
+	{
+		CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
+		CTxMemPool *pool = GetTxMemPool(iface);
+		const uint256& hash = GetHash();
+		CTransaction tmpTx;
+		if (!pool || !pool->GetTx(hash, tmpTx, POOL_ACTIVE)) {
+			/* must be in active pool in order to use as input [when not confirmed]. */
+			return (false);
+		}
+	}
+
+	// If no confirmations but it's from us, we can still
+	// consider it confirmed if all dependencies are confirmed
+	std::map<uint256, const CMerkleTx*> mapPrev;
+	std::vector<const CMerkleTx*> vWorkQueue;
+	vWorkQueue.reserve(vtxPrev.size()+1);
+	vWorkQueue.push_back(this);
+	for (unsigned int i = 0; i < vWorkQueue.size(); i++)
+	{
+		const CMerkleTx* ptx = vWorkQueue[i];
+
+		if (!ptx->IsFinal(pwallet->ifaceIndex))
+			return false;
+		if (ptx->GetDepthInMainChain(pwallet->ifaceIndex) >= 1)
+			continue;
+		if (!pwallet->IsFromMe(*ptx))
+			return false;
+
+		if (mapPrev.empty())
+		{
+			BOOST_FOREACH(const CMerkleTx& tx, vtxPrev)
+				mapPrev[tx.GetHash()] = &tx;
+		}
+
+		BOOST_FOREACH(const CTxIn& txin, ptx->vin)
+		{
+			if (!mapPrev.count(txin.prevout.hash))
+				return false;
+			vWorkQueue.push_back(mapPrev[txin.prevout.hash]);
+		}
+	}
+	return true;
+}

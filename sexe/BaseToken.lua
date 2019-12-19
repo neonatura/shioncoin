@@ -222,7 +222,7 @@ function BaseToken.transferOwnership(addr)
 		return (false);
 	end
 
-	-- update odule's user-data with new "owner" address.
+	-- update module's user-data with new "owner" address.
 	BaseToken.data["owner"] = addr
 	return (BaseToken.update())
 end

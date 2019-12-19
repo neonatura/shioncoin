@@ -120,7 +120,7 @@ string channelFromOp(int op) {
 	case OP_EXT_GENERATE:
 		return "channelgenerate";
 	case OP_EXT_REMOVE:
-		return "channelgenerate";
+		return "channelremove";
 	default:
 		return "<unknown channel op>";
 	}
@@ -269,7 +269,7 @@ bool IsLocalChannel(CIface *iface, const CTransaction& tx)
 
 
 /**
- * Verify the integrity of an channel transaction.
+ * Verify the integrity of a channel transaction.
  */
 bool VerifyChannel(CTransaction& tx)
 {
@@ -1088,7 +1088,7 @@ int validate_channel_tx(CIface *iface, CTransaction *txCommit, CWalletTx& wtx)
   if (nOut == -1)
     return error(SHERR_INVAL, "validate_channel_tx: no channel output.");
 
-  /* first output shall be direct remitance to us */
+  /* first output is direct remitance to us */
   CTxDestination dest;
   if (!ExtractDestination(txCommit->vout[0].scriptPubKey, dest))
     return error(SHERR_INVAL, "validate_channel_tx: invalid out (#2).");

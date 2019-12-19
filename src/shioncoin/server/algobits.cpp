@@ -93,7 +93,7 @@ bool IsAlgoBitsMask(unsigned int nVersion)
 
 uint32_t GetAlgoWorkFactor(int alg)
 {
-	uint32_t rate = 1.0;
+	uint32_t rate = 1;
 
 	switch (alg) {
 		case ALGO_SHA256D:

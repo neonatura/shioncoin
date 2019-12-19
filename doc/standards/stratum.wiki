@@ -1,0 +1,151 @@
+The [[stratum]] overlay protocol was extended to support pooled mining as a replacement for obsolete [[Getwork|getwork]] protocol in late 2012.
+The mining service specification was initially announced via [[Slush's pool]]'s website<ref>[http://mining.bitcoin.cz/stratum-mining/ Stratum mining protocol specification at slush's pool's website]</ref>.
+Shortly thereafter, alternative "cheat sheet" style documentation was provided by [[BTCGuild]]<ref>[https://www.btcguild.com/new_protocol.php Stratum mining protocol cheat sheet at BTCGuild's website]</ref>.
+As the extension lacks a formal [[BIP]] describing an official standard, it has further developed only by discussion and implementation<ref>[https://bitcointalk.org/?topic=108533.0 Stratum discussion thread on BitcoinTalk Forum]</ref>.
+
+==Protocol==
+
+===Overview===
+[http://mining.bitcoin.cz/stratum-mining/#example See also: Original example on slush's pool site]
+
+===Methods (client to server)===
+
+====mining.authorize====
+ mining.authorize("username", "password")
+
+The result from an authorize request is usually true (successful), or false.
+The password may be omitted if the server does not require passwords.
+
+====mining.capabilities (DRAFT)====
+NOTE: This is a draft extension proposal. It is not yet in use, and may change at any moment.
+
+ mining.capabilities({"notify":[], "set_difficulty":{}, "set_goal":{}, "suggested_target": "hex target"})
+
+The client may send this to inform the server of its capabilities and options.
+The singleton parameter is an Object describing capabilities;
+by default, it is considered as {"notify":{}, "set_difficulty":[]}, but as soon as this method is used these must be explicitly included if desired.
+The "suggested_target" key may supersede the mining.suggest_target method.
+
+Note that most of the keys do not have any meaningful value at this time, and the values thereof should be ignored (ie, only their presence matters).
+
+====mining.extranonce.subscribe====
+ mining.extranonce.subscribe()
+
+Indicates to the server that the client supports the mining.set_extranonce method.
+
+====mining.get_transactions====
+ mining.get_transactions("job id")
+
+Server should send back an array with a hexdump of each transaction in the block specified for the given job id.
+
+====mining.submit====
+ mining.submit("username", "job id", "ExtraNonce2", "nTime", "nOnce")
+
+Miners submit shares using the method "mining.submit".
+Client submissions contain:
+# ''Worker Name.''
+# ''Job ID.''
+# ''ExtraNonce2.''
+# ''nTime.''
+# ''nOnce.''
+
+Server response is result: true for accepted, false for rejected (or you may get an error with more details).
+
+====mining.subscribe====
+ mining.subscribe("user agent/version", "extranonce1")
+
+The optional second parameter specifies a mining.notify subscription id the client wishes to resume working with (possibly due to a dropped connection).
+If provided, a server MAY (at its option) issue the connection the same extranonce1.
+Note that the extranonce1 may be the same (allowing a resumed connection) even if the subscription id is changed!
+
+The client receives a result:
+ [[["mining.set_difficulty", "subscription id 1"], ["mining.notify", "subscription id 2"]], "extranonce1", extranonce2_size]
+The result contains three items:
+* ''Subscriptions.'' - An array of 2-item tuples, each with a subscription type and id.
+* ''ExtraNonce1.'' - Hex-encoded, per-connection unique string which will be used for creating generation transactions later.
+* ''ExtraNonce2_size.'' - The number of bytes that the miner users for its ExtraNonce2 counter.
+
+====mining.suggest_difficulty====
+ mining.suggest_difficulty(preferred share difficulty Number)
+
+Used to indicate a preference for share difficulty to the pool.
+Servers are not required to honour this request, even if they support the stratum method.
+
+====mining.suggest_target====
+ mining.suggest_target("full hex share target")
+
+Used to indicate a preference for share target to the pool, usually prior to mining.subscribe.
+Servers are not required to honour this request, even if they support the stratum method.
+
+===Methods (server to client)===
+
+====client.get_version====
+ client.get_version()
+
+The client should send a result String with its name and version.
+
+====client.reconnect====
+ client.reconnect("hostname", port, waittime)
+
+The client should disconnect, wait ''waittime'' seconds (if provided), then connect to the given host/port (which defaults to the current server).
+Note that for security purposes, clients may ignore such requests if the destination is not the same or similar.
+
+====client.show_message====
+ client.show_message("human-readable message")
+
+The client should display the message to its user in some reasonable way.
+
+====mining.notify====
+ mining.notify(...)
+
+Fields in order:
+# ''Job ID.'' This is included when miners submit a results so work can be matched with proper transactions.
+# ''Hash of previous block.'' Used to build the header.
+# ''Generation transaction (part 1).'' The miner inserts ExtraNonce1 and ExtraNonce2 after this section of the transaction data.
+# ''Generation transaction (part 2).'' The miner appends this after the first part of the transaction data and the two ExtraNonce values.
+# ''List of merkle branches.'' The generation transaction is hashed against the merkle branches to build the final merkle root.
+# ''Bitcoin block version.'' Used in the block header.
+# ''nBits.'' The encoded network difficulty. Used in the block header.
+# ''nTime.'' The current time. nTime rolling should be supported, but should not increase faster than actual time.
+# ''Clean Jobs.'' If true, miners should abort their current work and immediately use the new job. If false, they can still use the current job, but should move to the new one after exhausting the current nonce range.
+
+====mining.set_difficulty====
+ mining.set_difficulty(difficulty)
+
+The server can adjust the difficulty required for miner shares with the "mining.set_difficulty" method.
+The miner should begin enforcing the new difficulty on the next job received.
+Some pools may force a new job out when set_difficulty is sent, using clean_jobs to force the miner to begin using the new difficulty immediately.
+
+====mining.set_extranonce====
+ mining.set_extranonce("extranonce1", extranonce2_size)
+
+These values, when provided, replace the initial subscription values beginning with the next mining.notify job.
+
+====mining.set_goal (DRAFT)====
+NOTE: This is a draft extension proposal. It is not yet in use, and may change at any moment.
+
+ mining.set_goal("goal name", {"malgo": "SHA256d", ...})
+
+Informs the client that future jobs will be working on a specific named goal, with various parameters (currently only "malgo" is defined as the mining algorithm).
+Miners may assume goals with the same name are equivalent, but should recognise parameter changes in case a goal varies its parameters.
+
+==Software support==
+
+Tables showing miner/server support for Stratum mining protocol:
+* [[Mining software]]
+* [[Poolservers]]
+
+==Criticism==
+
+===Closed development===
+
+The mining extensions have been criticised as having been developed behind closed doors without input from the wider development and mining community, resulting in various obvious problems that could have been addressed had it followed the standard [[BIP]] drafting process<ref>[https://bitcointalk.org/?topic=557991.msg6079772#msg6079772 BitcoinTalk: Criticism of stratum's closed creation]</ref>.
+
+===Displacing GBT===
+
+The mining extensions were announced after the community had spent months developing a mostly superior open standard protocol for mining ([[getblocktemplate]])<ref>[https://bitcointalk.org/?topic=557991.msg6105355#msg6105355 BitcoinTalk: Criticism of stratum displacing GBT]</ref>.
+Because stratum's mining extensions launched backed by a major mining pool, GBT adoption suffered, and decentralised mining is often neglected while stratum is deployed.
+
+==References==
+<references/>
+

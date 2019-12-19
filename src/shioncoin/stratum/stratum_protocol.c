@@ -680,6 +680,8 @@ shjson_t *getminingroundsinfo(void)
   return (reply);
 }
 
+extern const char *getchaininfo(int ifaceIndex);
+
 /**
  * @todo: leave stale worker users (without open fd) until next round reset. current behavior does not payout if connection is severed.
  */ 
@@ -749,7 +751,13 @@ int stratum_request_message(user_t *user, shjson_t *json)
     if (0 == strcmp(method, "mining.subscribe")) {
       err = stratum_subscribe(user);
       if (!err) {
-        stratum_set_difficulty(user, DEFAULT_WORK_DIFFICULTY);
+				int diff = DEFAULT_WORK_DIFFICULTY;
+				diff /= GetAlgoWorkFactor(user->alg);
+				diff--;
+				diff /= 64;
+				diff++;
+				diff *= 64;
+        stratum_set_difficulty(user, diff); 
       }
 
       //reset_task_work_time();
@@ -1026,33 +1034,23 @@ int stratum_request_message(user_t *user, shjson_t *json)
       shjson_free(&reply);
       return (err);
     }
-    if (0 == strcmp(method, "mining.get_transactions")) {
-      char *work_id_str;
-      char *json_str;
-      unsigned int work_id;
 
-      work_id_str = (char *)shjson_array_astr(json, "params", 0);
-      if (!work_id_str) {
-        set_stratum_error(reply, -2, "invalid task id");
+    if (0 == strcmp(method, "chain.info")) {
+      shjson_t *json_data = getchaininfo(ifaceIndex);
+      if (!json_data) {
+        reply = shjson_init(NULL);
+        set_stratum_error(reply, -5, "invalid");
         shjson_null_add(reply, "result");
       } else {
-        work_id = (unsigned int)strtoll(work_id_str, NULL, 16);
-
-        json_str = getminingtransactioninfo(ifaceIndex, work_id);
-
-        reply = shjson_init(json_str);
-        if (!json_str) {
-          set_stratum_error(reply, -2, "invalid task id");
-          shjson_null_add(reply, "result");
-        }
+        reply = shjson_init(json_data);
       }
       err = stratum_send_message(user, reply);
       shjson_free(&reply);
       return (err);
-    }
+		}
 
     if (0 == strcmp(method, "block.info")) {
-      const char *json_data = "{\"result\":null,\"error\":null}";
+      char *json_data = "{\"result\":null,\"error\":null}";
       shtime_t ts2;
       char *hash;
       int mode;
@@ -1186,6 +1184,11 @@ int stratum_request_message(user_t *user, shjson_t *json)
 			return (0);
 		}
 
+		/* execute generic stratum miner command. */
+		err = stratum_command_api(ifaceIndex, 
+				user, method, shjson_obj(json, "params"));
+		if (err != 1) /* 1 = Not a known command. */
+			return (err);
   } /* !USER_RPC */
 
   {

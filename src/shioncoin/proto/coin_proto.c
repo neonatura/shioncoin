@@ -35,7 +35,6 @@ extern "C" {
 
 extern coin_iface_t test_coin_iface;
 extern coin_iface_t shc_coin_iface;
-extern coin_iface_t usde_coin_iface;
 extern coin_iface_t emc2_coin_iface;
 extern coin_iface_t ltc_coin_iface;
 extern coin_iface_t testnet_coin_iface;
@@ -44,7 +43,7 @@ extern coin_iface_t color_coin_iface;
 static coin_iface_t *_iface_table[MAX_COIN_IFACE] = {
   &test_coin_iface,
   &shc_coin_iface,
-  &usde_coin_iface,
+  NULL,
   &emc2_coin_iface,
   &ltc_coin_iface,
   &testnet_coin_iface,
@@ -64,6 +63,8 @@ int GetCoinIndex(coin_iface_t *iface)
 #ifndef TEST_SHCOIND
     if (idx == 0) continue;
 #endif
+		if (!_iface_table[idx])
+			continue;
     if (0 == strcmp(iface->name, _iface_table[idx]->name))
       return (idx);
   }
@@ -116,6 +117,8 @@ coin_iface_t *GetCoin(const char *name)
     if (i == 0)
       continue;
 #endif
+    if (!_iface_table[i])
+			continue;
     if (0 == strcasecmp(_iface_table[i]->name, name))
       return (_iface_table[i]);
   }

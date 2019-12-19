@@ -28,7 +28,7 @@
 
 
 #define TESTNET_VERSION_MAJOR 4 
-#define TESTNET_VERSION_MINOR 0 
+#define TESTNET_VERSION_MINOR 1 
 #define TESTNET_VERSION_REVISION 0 
 #define TESTNET_VERSION_BUILD 2
 
@@ -45,6 +45,10 @@
  * The maximum number of signature "script" operations in a single block.
  */
 #define TESTNET_MAX_SIGOPS 32768
+
+#define TESTNET_MAX_SCRIPT_SIZE 60624
+
+#define TESTNET_MAX_SCRIPT_ELEMENT_SIZE 3368
 
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
 #define TESTNET_MAX_DRIFT_TIME 1440 /* 24 minutes */ 
@@ -64,8 +68,7 @@ static const int TESTNET_PROTOCOL_VERSION = 2000000;
  */
 #define TESTNET_MAX_BLOCK_SIZE 4096000
 
-#define TESTNET_MAX_BLOCK_SIZE_GEN TESTNET_MAX_BLOCK_SIZE/2
-#define TESTNET_MAX_TRANSACTION_WEIGHT TESTNET_MAX_BLOCK_SIZE_GEN/5
+#define TESTNET_MAX_TRANSACTION_WEIGHT 3280000
 
 #define TESTNET_MAX_STANDARD_TX_WEIGHT 1600000
 
@@ -81,7 +84,7 @@ static const int TESTNET_PROTOCOL_VERSION = 2000000;
 /**
  * The minimum "satashi" permitted to be sent in a single transaction.
  */
-static const int64 TESTNET_MIN_INPUT = 100;
+static const int64 TESTNET_MIN_INPUT = 1;
 
 /**
  * The transaction fee per 1k of block content.

@@ -50,12 +50,9 @@ extern "C" {
 #define OPT_RPC_MAP "rpc-map"
 #define OPT_SERV_TESTNET "testnet"
 #define OPT_TESTNET_PORT "testnet-port"
-#define OPT_SERV_USDE "usde"
-#define OPT_USDE_PORT "usde-port"
 #define OPT_SERV_EMC2 "emc2"
 #define OPT_EMC2_PORT "emc2-port"
 #define OPT_SHC_BACKUP_RESTORE "shc-backup-restore"
-#define OPT_USDE_BACKUP_RESTORE "usde-backup-restore"
 #define OPT_EMC2_BACKUP_RESTORE "emc2-backup-restore"
 #define OPT_LTC_BACKUP_RESTORE "ltc-backup-restore"
 #define OPT_BLOCK_SIZE "block-size"
@@ -65,6 +62,11 @@ extern "C" {
 /* Stratum mining interfaces. */
 #define OPT_STRATUM_TESTNET "stratum-testnet"
 #define OPT_STRATUM_COLOR "stratum-color"
+
+#define OPT_HDKEY "hdkey"
+#define OPT_DILITHIUM "dilithium"
+
+#define OPT_PARAM_TX "param-tx"
 
 /* PoW Algorthm. */
 #define OPT_STRATUM_SHA256D "stratum-sha256d"

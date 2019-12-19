@@ -24,8 +24,8 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
@@ -61,7 +61,6 @@ static const unsigned int MAX_INV_SZ = 50000;
 
 
 extern CMedianFilter<int> cPeerBlockCounts;
-extern map<uint256, CAlert> mapAlerts;
 extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
 
 #define MIN_TESTNET_PROTO_VERSION 2000000
@@ -338,13 +337,6 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     CBlockIndex *pindexBest = GetBestBlockIndex(TESTNET_COIN_IFACE);
     if (pindexBest) {
       InitServiceBlockEvent(TESTNET_COIN_IFACE, pfrom->nStartingHeight);
-    }
-
-    // Relay alerts
-    {
-      LOCK(cs_mapAlerts);
-      BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
-        item.second.RelayTo(pfrom);
     }
 
     pfrom->fSuccessfullyConnected = true;
@@ -720,7 +712,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
 
   }
 
-
+#if 0
   else if (strCommand == "checkorder")
   {
     uint256 hashReply;
@@ -749,8 +741,6 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     scriptPubKey << mapReuseKey[pfrom->addr] << OP_CHECKSIG;
     pfrom->PushMessage("reply", hashReply, (int)0, scriptPubKey);
   }
-
-
   else if (strCommand == "reply")
   {
     uint256 hashReply;
@@ -769,6 +759,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
     if (!tracker.IsNull())
       tracker.fn(tracker.param1, vRecv);
   }
+#endif
 
   /* exclusively used by bloom filter supported coin services, but does not require they have a bloom filter enabled for node. */
   else if (strCommand == "mempool")
@@ -854,24 +845,6 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
       // seconds to respond to each, the 5th ping the remote sends would appear to
       // return very quickly.
       pfrom->PushMessage("pong", nonce);
-    }
-  }
-
-
-  else if (strCommand == "alert")
-  {
-    CAlert alert;
-    vRecv >> alert;
-
-    if (alert.ProcessAlert(ifaceIndex))
-    {
-      // Relay
-      pfrom->setKnown.insert(alert.GetHash());
-      {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
-          alert.RelayTo(pnode);
-      }
     }
   }
 

@@ -9,14 +9,6 @@ ChangeLog:
 	git --git-dir $(top_srcdir)/.git log > ChangeLog || touch ChangeLog
 endif
 
-if USDE_SERVICE
-noinst_SCRIPTS += .usde$(EXEEXT)
-
-.usde$(EXEEXT):
-	ln -sf $(top_builddir)/src/coin-console/usde$(EXEEXT)
-	@echo > .usde$(EXEEXT)
-endif
-
 if EMC2_SERVICE
 noinst_SCRIPTS += .emc2$(EXEEXT)
 

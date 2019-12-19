@@ -91,33 +91,6 @@ enum GetMinFee_mode
 
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 
-
-#if 0
-/* 1MEG Max Block Size */
-#define MAX_BLOCK_SIZE USDE_MAX_BLOCK_SIZE
-#define MAX_BLOCK_SIGOPS USDE_MAX_BLOCK_SIGOPS
-#define MIN_TX_FEE USDE_MIN_TX_FEE
-#define MIN_RELAY_TX_FEE USDE_MIN_RELAY_TX_FEE
-#define MAX_MONEY USDE_MAX_MONEY
-#define COINBASE_MATURITY USDE_COINBASE_MATURITY
-#endif
-
-#if 0
-static const unsigned int MAX_BLOCK_SIZE = 1000000;
-static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
-static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
-static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
-static const int64 MIN_TX_FEE = 10000000;
-static const int64 MIN_RELAY_TX_FEE = MIN_TX_FEE;
-#if CLIENT_VERSION_REVISION > 4
-static const int64 MAX_MONEY = 320000000000 * COIN; /* 320bil */
-#else
-static const int64 MAX_MONEY = 1600000000 * COIN; /* 1.6bil */
-#endif
-static const int COINBASE_MATURITY = 100;
-#endif
-
-
 inline bool MoneyRange(CIface *iface, int64 nValue) 
 { 
   if (!iface) return (false);
@@ -419,65 +392,58 @@ class CTxIn
  */
 class CTxOut
 {
-public:
-    int64 nValue;
-    CScript scriptPubKey;
+	public:
+		int64 nValue;
+		CScript scriptPubKey;
 
-    CTxOut()
-    {
-        SetNull();
-    }
+		CTxOut()
+		{
+			SetNull();
+		}
 
-    CTxOut(int64 nValueIn, CScript scriptPubKeyIn)
-    {
-        nValue = nValueIn;
-        scriptPubKey = scriptPubKeyIn;
-    }
+		CTxOut(int64 nValueIn, CScript scriptPubKeyIn)
+		{
+			nValue = nValueIn;
+			scriptPubKey = scriptPubKeyIn;
+		}
 
-    IMPLEMENT_SERIALIZE
-    (
-        READWRITE(nValue);
-        READWRITE(scriptPubKey);
-    )
+		IMPLEMENT_SERIALIZE
+			(
+			 READWRITE(nValue);
+			 READWRITE(scriptPubKey);
+			)
 
-    void SetNull()
-    {
-        nValue = -1;
-        scriptPubKey.clear();
-    }
+			void SetNull()
+			{
+				nValue = -1;
+				scriptPubKey.clear();
+			}
 
-    bool IsNull()
-    {
-        return (nValue == -1);
-    }
+		bool IsNull()
+		{
+			return (nValue == -1);
+		}
 
-    uint256 GetHash() const
-    {
-      return SerializeHash(*this);
-    }
+		uint256 GetHash() const
+		{
+			return SerializeHash(*this);
+		}
 
-    friend bool operator==(const CTxOut& a, const CTxOut& b)
-    {
-        return (a.nValue       == b.nValue &&
-                a.scriptPubKey == b.scriptPubKey);
-    }
+		friend bool operator==(const CTxOut& a, const CTxOut& b)
+		{
+			return (a.nValue       == b.nValue &&
+					a.scriptPubKey == b.scriptPubKey);
+		}
 
-    friend bool operator!=(const CTxOut& a, const CTxOut& b)
-    {
-        return !(a == b);
-    }
+		friend bool operator!=(const CTxOut& a, const CTxOut& b)
+		{
+			return !(a == b);
+		}
 
-    std::string ToString() const
-    {
-        if (scriptPubKey.size() < 6)
-            return "CTxOut(error)";
-        return strprintf("CTxOut(nValue=%" PRI64d ".%08" PRI64d ", scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30).c_str());
-    }
+		std::string ToString(int ifaceIndex);
 
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
-    }
+		Object ToValue(int ifaceIndex);
+
 };
 
 
@@ -574,7 +540,9 @@ class CTransactionCore
     static const int TXF_ASSET = (1 << 9);
     static const int TXF_IDENT = (1 << 10);
     static const int TXF_MATRIX = (1 << 11);
+#if 0
     static const int TXF_CHANNEL = (1 << 12);
+#endif
     static const int TXF_EXEC = (1 << 13);
     static const int TXF_CONTEXT = (1 << 14);
     static const int TXF_ALTCHAIN = (1 << 15);
@@ -721,7 +689,9 @@ class CTransaction : public CTransactionCore
     CAlias alias;
     COffer offer;
     CTxMatrix matrix;
+#if 0
     CChannel channel;
+#endif
 		CExecCore exec;
 		CAltChain altchain;
 		CParam param; 
@@ -778,8 +748,10 @@ class CTransaction : public CTransactionCore
         READWRITE(offer);
       if (this->nFlag & TXF_MATRIX)
         READWRITE(matrix);
+#if 0
       if (this->nFlag & TXF_CHANNEL)
         READWRITE(channel);
+#endif
 
       if (this->nFlag & TXF_ALTCHAIN)
         READWRITE(altchain);
@@ -798,7 +770,9 @@ class CTransaction : public CTransactionCore
 			alias.SetNull();
       offer.SetNull();
       matrix.SetNull();
+#if 0
       channel.SetNull();
+#endif
 			exec.SetNull();
 			altchain.SetNull();
 			param.SetNull();
@@ -1105,6 +1079,7 @@ class CTransaction : public CTransactionCore
     bool VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, shnum_t *lat_p, shnum_t *lon_p);
 
 
+#if 0
     /**
      * @param lcl_addr The local coin-addr to pay to.
      * @param rem_addr The remote coin-addr to pay to.
@@ -1126,7 +1101,7 @@ class CTransaction : public CTransactionCore
     CChannel *GenerateChannel(const CChannel& channelIn);
 
     CChannel *RemoveChannel(const CChannel& channelIn);
-
+#endif
 
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
@@ -1337,7 +1312,9 @@ class CBlock : public CBlockHeader
 {
   public:
     std::vector<CTransaction> vtx;
+#if 0
     mutable std::vector<uint256> vMerkleTree; /* mem only */
+#endif
     mutable CNode *originPeer;
 		uint160 hColor;
 
@@ -1369,7 +1346,9 @@ class CBlock : public CBlockHeader
     {
       CBlockHeader::SetNull();
       vtx.clear();
+#if 0
       vMerkleTree.clear();
+#endif
       originPeer = NULL;
     }
 
@@ -1384,7 +1363,9 @@ class CBlock : public CBlockHeader
      */
     uint256 BuildMerkleTree() const;
 
+#if 0
     std::vector<uint256> GetMerkleBranch(int nIndex) const;
+#endif
 
 #if 0
     /**

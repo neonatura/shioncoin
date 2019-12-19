@@ -1,5 +1,5 @@
-shioncoin (4.0) stable; urgency=low
+shioncoin (4.1) stable; urgency=low
 
-  * Debian release (Closes: #8)
+  * Debian release
 
- -- Neo Natura <support@neo-natura.com>  Fri, 30 Aug 2019 23:00:59 -0600
+ -- Neo Natura <support@neo-natura.com>  Wed, 18 Dec 2019 23:00:59 -0600

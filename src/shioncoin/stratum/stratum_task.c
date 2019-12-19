@@ -84,7 +84,7 @@ static void check_payout(int ifaceIndex)
 
 	tree = block = stratum_miner_lastminerblock(ifaceIndex);
 	if (!tree) {
-		shcoind_log("task_init: cannot parse json result");
+//		shcoind_log("task_init: cannot parse json result");
 		return;
 	}
 
@@ -119,16 +119,17 @@ static void check_payout(int ifaceIndex)
 	/* winner winner chicken dinner */
 	add_stratum_miner_block(ifaceIndex, block_hash);
 
+	if (!client_list)
+		return;
+
 	{
 		double amount = shjson_num(block, "amount", 0);
 		double fee;
 
-		if (amount < 0.1) {
+		if (amount < 1) {
 			shjson_free(&tree);
 			return;
 		}
-		if (!client_list)
-			return;
 
 		fee = amount * 0.001; /* 0.1% */
 		amount -= fee;
@@ -166,7 +167,9 @@ static void check_payout(int ifaceIndex)
 				shcoind_log(buf);
 			}
 		}
+
 	}
+
 
 	shjson_free(&tree);
 
@@ -716,10 +719,10 @@ int is_stratum_task_pending(int *ret_iface)
 
 		usec = 1;
 		return (TRUE);
-	} 
+	}
 
 	return (FALSE);
-} 
+}
 
 void stratum_task_gen(task_attr_t *attr)
 {

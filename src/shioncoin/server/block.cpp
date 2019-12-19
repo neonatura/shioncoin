@@ -51,13 +51,6 @@ using namespace std;
 #define MAX_OPCODE(_iface) \
 	(0xf9)
 
-#define MAX_SCRIPT_SIZE(_iface) \
-	(10000)
-
-#define MAX_SCRIPT_ELEMENT_SIZE(_iface) \
-	(520)
-
-
 /** Flags for nSequence and nLockTime locks */
 /** Interpret sequence numbers as relative lock-time constraints. */
 static const unsigned int LOCKTIME_VERIFY_SEQUENCE = (1 << 0);
@@ -833,28 +826,9 @@ bool CTransaction::ClientConnectInputs(int ifaceIndex)
   return true;
 }
 
-static bool legacy_IsInMainChain(int ifaceIndex, const CBlockIndex *pindex)
-{
-	if (pindex->pnext)
-		return (true); /* has valid parent */
-
-	CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
-	if (pindexBest && pindex->GetBlockHash() == pindexBest->GetBlockHash());
-	return (true);
-
-	return (false);
-}
-
 bool CBlockIndex::IsInMainChain(int ifaceIndex) const
 {
-	bool ok;
-
-	if (ifaceIndex == USDE_COIN_IFACE) 
-		ok = legacy_IsInMainChain(ifaceIndex, this);
-	else
-		ok = (nStatus & BLOCK_HAVE_DATA);
-
-	return (ok);
+	return (nStatus & BLOCK_HAVE_DATA);
 }
 
 int GetBestHeight(CIface *iface)
@@ -998,25 +972,6 @@ CBlock *GetBlankBlock(CIface *iface)
 
   return (block);
 }
-#if 0
-CBlock *GetBlankBlock(CIface *iface)
-{
-  int ifaceIndex = GetCoinIndex(iface);
-  CBlock *block;
-
-  block = NULL;
-  switch (ifaceIndex) {
-    case SHC_COIN_IFACE:
-      block = new SHCBlock();
-      break;
-    case USDE_COIN_IFACE:
-      block = new USDEBlock();
-      break;
-  }
-
-  return (block);
-}
-#endif
 
 /* TODO: faster to read via nHeight */
 bool CBlock::ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions)
@@ -1228,8 +1183,9 @@ bool CBlock::WriteBlock(uint64_t nHeight)
     tx.WriteTx(ifaceIndex, nHeight); 
   }
 
-  trust(1, "healthy block processed");
-  Debug("WriteBlock: %s @ height %u\n", hash.GetHex().c_str(), (unsigned int)nHeight);
+  trust(1, "healthy block");
+  Debug("(%s) WriteBlock: block \"%s\" [height: %u]", 
+			iface->name, hash.GetHex().c_str(), (unsigned int)nHeight);
 
   return (true);
 }
@@ -1385,9 +1341,9 @@ CParam *CTransaction::UpdateParam(std::string strName, int64_t nValue)
 	if (!par)
 		return (NULL);
 
+	par->SetNull();
   par->SetLabel(strName);
-//	par->SetValue(nValue);
-	par->nValue = nValue;
+	par->nValue = (int64)nValue;
 
 	/* expiration is primarily for creating a unique hash. */
   par->SetExpireSpan((double)DEFAULT_PARAM_LIFESPAN);
@@ -1447,8 +1403,12 @@ CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr
 {
   cbuff vchContext;
 
-  if (nFlag & CTransaction::TXF_CERTIFICATE)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_CERTIFICATE;
   certificate = CCert(strTitle);
@@ -1492,8 +1452,12 @@ CCert *CTransaction::CreateLicense(CCert *cert)
 {
   double lic_span;
 
-  if (nFlag & CTransaction::TXF_LICENSE)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
   
   nFlag |= CTransaction::TXF_LICENSE;
   CLicense license;//(*cert);
@@ -1595,8 +1559,12 @@ CAsset *CTransaction::CreateAsset(string strAssetName, string strAssetHash)
 {
 	CAsset *asset;
 
-  if (nFlag & CTransaction::TXF_ASSET)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_ASSET;
 	asset = GetAsset();
@@ -1647,8 +1615,12 @@ CAsset *CTransaction::RemoveAsset(const CAsset& assetIn)
 CIdent *CTransaction::CreateIdent(CIdent *ident)
 {
 
-  if (nFlag & CTransaction::TXF_IDENT)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_IDENT;
   certificate = CCert(*ident);
@@ -1848,7 +1820,7 @@ std::string CBlock::ToString(bool fVerbose)
   return (write_string(Value(ToValue(fVerbose)), false));
 }
 
-static inline string ToValue_date_format(time_t t)
+string ToValue_date_format(time_t t)
 {
   char buf[256];
 
@@ -1989,9 +1961,11 @@ Object CTransaction::ToValue(int ifaceIndex)
 		if (flags & TXF_MATRIX) {
 			obj.push_back(Pair("matrix", matrix.ToValue()));
 		}
+#if 0
 		if (flags & TXF_CHANNEL) {
 			obj.push_back(Pair("channel", channel.ToValue()));
 		}
+#endif
 		if (flags & TXF_CONTEXT) {
 			CContext ctx(certificate);
 			obj.push_back(Pair("context", ctx.ToValue()));
@@ -2004,9 +1978,11 @@ Object CTransaction::ToValue(int ifaceIndex)
 		}
 	}
 
+#if 0 /* redundant */
 	CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION(iface));
 	ssTx << *this;
 	obj.push_back(Pair("hex", HexStr(ssTx.begin(), ssTx.end())));
+#endif
 
   return (obj);
 }
@@ -2134,6 +2110,7 @@ int CTransaction::GetDepthInMainChain(int ifaceIndex, CBlockIndex* &pindexRet) c
 }
 
 
+#if 0
 CChannel *CTransaction::CreateChannel(CCoinAddr& src_addr, CCoinAddr& dest_addr, int64 nValue)
 {
 
@@ -2160,7 +2137,6 @@ CChannel *CTransaction::CreateChannel(CCoinAddr& src_addr, CCoinAddr& dest_addr,
 
   return (&channel);
 }
-
 CChannel *CTransaction::ActivateChannel(const CChannel& channelIn, int64 nValue)
 {
 
@@ -2174,7 +2150,6 @@ CChannel *CTransaction::ActivateChannel(const CChannel& channelIn, int64 nValue)
 
   return (&channel);
 }
-
 CChannel *CTransaction::PayChannel(const CChannel& channelIn)
 {
   if (isFlag(CTransaction::TXF_CHANNEL))
@@ -2188,7 +2163,6 @@ CChannel *CTransaction::PayChannel(const CChannel& channelIn)
 
   return (&channel);
 }
-
 CChannel *CTransaction::GenerateChannel(const CChannel& channelIn)
 {
 
@@ -2201,12 +2175,12 @@ CChannel *CTransaction::GenerateChannel(const CChannel& channelIn)
 
   return (&channel);
 }
-
 CChannel *CTransaction::RemoveChannel(const CChannel& channelIn)
 {
 
   return (&channel);
 }
+#endif
 
 CExec *CTransaction::CreateExec()
 {
@@ -2326,8 +2300,12 @@ CContext *CTransaction::CreateContext()
 {
   CContext *ctx;
 
-  if (nFlag & CTransaction::TXF_CONTEXT)
-    return (NULL);
+  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
+			(nFlag & CTransaction::TXF_LICENSE) ||
+			(nFlag & CTransaction::TXF_ASSET) ||
+			(nFlag & CTransaction::TXF_IDENT) ||
+			(nFlag & CTransaction::TXF_CONTEXT))
+    return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_CONTEXT;
 
@@ -2934,13 +2912,6 @@ void core_IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev)
 	} else { /* BIP30 */
     qual = pblock->nTime;
 	}
-#if 0
-  if (pblock->ifaceIndex == USDE_COIN_IFACE) {
-    qual = pblock->nTime;
-  } else {
-    qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
-  }
-#endif
 
   sprintf(hex, "%sf0000000", GetSiteExtraNonceHex());
   string hexStr(hex, hex + strlen(hex));
@@ -2962,11 +2933,7 @@ void core_SetExtraNonce(CBlock* pblock, const char *xn_hex)
   unsigned int qual;
 
   /* qualifier */ 
-  if (pblock->ifaceIndex == USDE_COIN_IFACE) {
-    qual = pblock->nTime;
-  } else {
-    qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
-  }
+	qual = pindexPrev ? (pindexPrev->nHeight+1) : 0;
 
   sprintf(hex, "%s%s", GetSiteExtraNonceHex(), xn_hex);
   string hexStr = hex;
@@ -3122,9 +3089,11 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   /* perform connect */
   BOOST_FOREACH(CBlockIndex *pindex, vConnect) {
     CBlock *block = mConnectBlocks[pindex->GetBlockHash()];
+		bool fOk;
 
-    if (!block->ConnectBlock(pindex)) {
-      error(SHERR_INVAL, "Reorganize() : ConnectBlock %s failed", pindex->GetBlockHash().ToString().c_str());
+    fOk = block->ConnectBlock(pindex);
+		if (!fOk) {
+      error(SHERR_INVAL, "(%s) core_CommitBlock: ConnectBlock \"%s\" failure.", iface->name, pindex->GetBlockHash().ToString().c_str());
       fValid = false;
 			pindexFail = pindex;
       break;
@@ -3153,6 +3122,12 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
       if (tx.IsCoinBase())
         continue;
 
+#if 0
+	/* TODO: */
+	CPoolTx ptx(tx);
+	pool->AddActiveTx(ptx);
+#endif
+
       pool->AddTx(tx);
     }
   }
@@ -3170,16 +3145,29 @@ fin:
 	}
 #endif
 	if (!fValid && pindexFail) {
-		error(SHERR_INVAL, "(%s): InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
+		error(SHERR_INVAL, "(%s) core_CommitBlock: invalid chain block=%s  height=%d  work=%s  date=%s\n",
 				iface->name, pindexFail->GetBlockHash().GetHex().c_str(),
 				pindexFail->nHeight, pindexFail->bnChainWork.ToString().c_str(),
 				DateTimeStrFormat("%x %H:%M:%S", pindexFail->GetBlockTime()).c_str());
 	}
 
-	if (pbest != pindexLast) {
+	if (pbest != pindexLast->pprev) {
 		/* re-establish chain at our failure/success point. */
 		WriteHashBestChain(iface, pindexLast->GetBlockHash());
 		SetBestBlockIndex(pblock->ifaceIndex, pindexLast);
+		wallet->bnBestChainWork = pindexLast->bnChainWork;
+		wallet->pindexBestHeader = pindexLast;
+
+		/* mark block as invalid. */
+		iface->net_invalid = time(NULL);
+		if (pindexFail)
+			pindexFail->nStatus |= BLOCK_FAILED_VALID;
+
+		Debug("(%s) core_CommitBlock: re-established chain at block \"%s\" (height %u).", iface->name, pindexLast->GetBlockHash().GetHex().c_str(), (unsigned int)pindexLast->nHeight); 
+	} else {
+		/* added one new block. */
+		WriteHashBestChain(iface, pindexNew->GetBlockHash());
+		SetBestBlockIndex(pblock->ifaceIndex, pindexNew);
 	}
 
   BOOST_FOREACH(CBlock *block, vFree) {
@@ -3188,7 +3176,6 @@ fin:
 
   return (fValid);
 }
-
 
 void CTransaction::Init(const CTransaction& tx)
 {
@@ -3222,8 +3209,10 @@ void CTransaction::Init(const CTransaction& tx)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_CERTIFICATE)
 		certificate = tx.certificate;
+#if 0
 	else if (this->nFlag & TXF_CHANNEL)
 		channel = tx.channel;
+#endif
 	else if (this->nFlag & TXF_CONTEXT)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_IDENT)
@@ -3242,6 +3231,10 @@ void CTransaction::Init(const CTransaction& tx)
 	/* non-exclusive */
 	if (this->nFlag & TXF_ALTCHAIN)
 		altchain = tx.altchain;
+
+	/* non-exclusive */
+	if (this->nFlag & TXF_PARAM)
+		param = tx.param;
 
 }
 
@@ -3513,4 +3506,48 @@ CBigNum CBlockIndex::GetBlockWork(bool fUseAlgo) const
 		return 0;
 	return (CBigNum(1)<<256) / (bnTarget+1);
 }
+
+static void _PubKeyToJSON(int ifaceIndex, const CScript& scriptPubKey, Object& out)
+{
+	txnouttype type;
+	vector<CTxDestination> addresses;
+	int nRequired;
+
+	if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired))
+	{
+		out.push_back(Pair("type", GetTxnOutputType(TX_NONSTANDARD)));
+		return;
+	}
+
+	out.push_back(Pair("reqSigs", nRequired));
+	out.push_back(Pair("type", GetTxnOutputType(type)));
+
+	Array a;
+	BOOST_FOREACH(const CTxDestination& addr, addresses)
+		a.push_back(CCoinAddr(ifaceIndex, addr).ToString());
+	out.push_back(Pair("addresses", a));
+
+}
+
+Object CTxOut::ToValue(int ifaceIndex)
+{
+  Object obj;
+
+	obj.push_back(Pair("value", ValueFromAmount(nValue)));
+
+	Object scriptSig;
+	scriptSig.push_back(Pair("asm", scriptPubKey.ToString()));
+	scriptSig.push_back(Pair("hex", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
+	obj.push_back(Pair("scriptSig", scriptSig));
+
+	_PubKeyToJSON(ifaceIndex, scriptPubKey, obj); 
+
+	return (obj);
+}
+
+std::string CTxOut::ToString(int ifaceIndex)
+{
+  return (write_string(Value(ToValue(ifaceIndex)), false));
+}
+
 

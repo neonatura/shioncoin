@@ -376,6 +376,8 @@ class CTxMemPool
 
     virtual double CalculateFeePriority(CPoolTx *ptx) = 0;
 
+		virtual void RemoveTxWithInput(const CTxIn& txin) = 0;
+
 };
 
 class CPool : public CTxMemPool
@@ -632,10 +634,9 @@ class CPool : public CTxMemPool
 
     virtual void EnforceCoinStandards(CTransaction& tx) = 0;
 
+		void RemoveTxWithInput(const CTxIn& txin);
+ 
 
-
-
-    
 /* IncrPriority(uint256 hash) */
 /* DecrPriority(uint256 hash) */
 /* SetMinFee(double v) */

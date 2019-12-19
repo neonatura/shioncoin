@@ -1,0 +1,50 @@
+'''X11 algorithm''' was developed in 2014 by Evan Duffield, the main developer of the Darkcoin cryptocurrency (later Dash). Initially, he set himself the task to create an algorithm that would make cryptocurrencies protected from specialized mining devices of ASICs, which are considered to be the killers of decentralization.
+
+==What is X11?==
+X11’s chained hashing algorithm utilizes a sequence of eleven scientific hashing algorithms for the proof-of-work. This is so that the processing distribution is fair and coins will be distributed in much the same way Bitcoin’s were originally. X11 was intended to make ASICs much more difficult to create, thus giving the currency plenty of time to develop before mining centralization became a threat. This approach was largely successful; as of early 2016, ASICs for X11 now exist and comprise a significant portion of the network hashrate, but have not resulted in the level of centralization present in Bitcoin.
+
+X11 is the name of the chained Proof-of-work (PoW) algorithm that was introduced in Dash (launched January 2014 as “Xcoin”). It was partially inspired by the chained-hashing approach of Quark, adding further “depth” and complexity by increasing the number of hashes, yet it differs from Quark in that the rounds of hashes are determined a priori instead of having some hashes being randomly picked.
+
+The X11 algorithm uses multiple rounds of 11 different hashes, thus making it one of the safest and more sophisticated cryptographic hashes in use by modern cryptocurrencies. The name X11 is not related to the open source X11 windowing system common on UNIX-like operating systems.
+
+X11 is an algorithm for mining cryptocurrency which uses 11 different hash functions. X11 was well received by the mining community due to its energy-efficiency when mining with a home rig. It isn't a secret that X11 is more complicated than a SHA​-256 algorithm, which prevented the use of ASIC miners for a time. 
+
+To do this, Evan Duffield combined 11 different hash functions in one algorithm: Blake, BMW, Groestl, JH, Keccak, Skein, Luffa, Cubehash, Shavite, Simd, Echo.
+
+It is noteworthy that Evan Duffield himself never ruled out the possibility of developing ASIC devices for X11. In his interviews, he claimed that such equipment would be created in any case, but before that, manufacturers would have to work hard.
+
+Mining farms for X11 already exist today, however, the mining of coins on this algorithm still remains profitable and can be performed on the GPU (Video cards).
+
+===History of X11===
+The emergence of the algorithm is directly intertwined with the development of the Dash cryptocurrency. Evan Duffield questioned the reliability of the SHA-256, so he began to search for an alternative.
+
+The original goal of X11 was to prevent problems with the centralization of the Dash blockchain. The excessive simplicity of the SHA-256 could cause a sharp price collapse of the cryptocurrency, as it is likely that most of the digital currency will be concentrated in the hands of several influential pools.
+
+Evan Duffield also worked on increasing the level of mining security. Sequential hashing, consisting of several rounds, significantly increased the protection against hacking. The developer himself has repeatedly stressed that many investors are afraid to invest in Bitcoin and other coins due to the fact that the SHA-256 algorithm can not be called 100% protected from hacking. The X11 algorithm has been actively used since 2014.
+
+Immediately after the launch of X11, work began on creating new versions of this algorithm. Updates have no fundamental differences, except that the number of rounds changes. The most popular version was the algorithm X17.
+
+===Principle===
+To show the principle of work of X11 at a high level, when a value is submitted to the BLAKE function, it produces a hash value, which is submitted to the BMW function and then it produces another value. The repeating of process continues till the last function.
+
+What's interesting, all of the algorithms in X11 were entered into the US National Institute of Standards and Technology (NIST) competition for developing the newest hash function – SHA-3, which was more secure then the previous ones: SHA-1, SHA-2. There were 64 different algorithms in the competition and all of the 11 functions in X11 were accepted as first-round candidates. In the second round, there were 14 hash functions, all functions of X11 were accepted again. In the final round there were Keccak, BLAKE, Skein, JH, Grøstl and X11. Keccak would then be the function to win the competition.
+
+To sum up, the involvement of these functions in what was a 5-year long competition, speaks to their security and credibility.
+
+==X11 Mining==
+The main feature of cryptocurrency mining on X11 is financial profitability in comparison with other algorithms. Mining efficiency is expressed in three components:
+
+* Performance.
+* Minimal costs for payment of electricity bills.
+* The cost of altcoins.
+
+For example, AMD Radeon 6930 graphics card produces 1800 Kh/s, if you use the same module for cryptocurrency mining on the Scrypt algorithm, the indicator will decrease almost three times. Video cards of other models show approximately such ratio of change of power.
+
+When choosing mining equipment, you should prefer a model with an impressive number of Shader processes and a high frequency of the graphics core. If we talk about Radeon graphics cards, pay attention to 7950 and 7970. Nvidia also has analogues to these models.
+
+As for CPU-mining, AMD processors with 6-8 cores or Intel i5/i7 demonstrate not the highest level of performance, but also consume much less electricity.
+
+==Advantages of X11==
+The advantages of the X11 algorithm include:
+* Security. Most cryptographic algorithms used in cryptocurrencies use only one hash function for calculation. There are 11 of them in X11, which provides a higher degree of protection against hackers and scams. 
+* More secure than Bitcoin. The Bitcoin algorithm is SHA-256 is based on a previous secure hash algorithm family of standards, namely SHA-2, the hash functions within the X11 algorithm all successfully made it into the second-round in search for a new, more secure standard – SHA-3. Keccak, the function which won the competition and is therefore the new standard on which SHA-3 is based on, can at the very least be considered more secure that SHA-256.

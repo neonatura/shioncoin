@@ -33,6 +33,7 @@ using namespace json_spirit;
 
 #include "block.h"
 #include "wallet.h"
+#include "account.h"
 #include "txcreator.h"
 #include "certificate.h"
 #include "alias.h"
@@ -641,17 +642,16 @@ int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalle
   uint160 aliasHash = alias->GetHash();
   CScript scriptPubKey;
 
-  string strExtAccount = "@" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
   if (!extAddr.IsValid())
-    return (error(SHERR_INVAL, "init_alias_addr_tx: error obtaining address for '%s'\n", strExtAccount.c_str()));
+    return (error(SHERR_INVAL, "init_alias_addr_tx: error extended obtaining address for \"%s\".\n", strAccount.c_str()));
 
   scriptPubKeyOrig.SetDestination(extAddr.Get());
   scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_ALIAS) << OP_HASH160 << aliasHash << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
 
   if (!s_wtx.AddOutput(scriptPubKey, nFee)) {
-    error(ERR_INVAL, "AddOutput: %s", s_wtx.GetError().c_str());
+    error(ERR_INVAL, "init_alias_addr_tx: AddOutput: %s", s_wtx.GetError().c_str());
 		return (ERR_INVAL);
 	}
 
@@ -684,13 +684,17 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
   CTransaction tx;
   if (!GetTxOfAlias(iface, strTitle, tx))
     return (SHERR_NOENT);
-  if(!IsLocalAlias(iface, tx))
+  if(!IsLocalAlias(iface, tx)) {
+		error(ERR_REMOTE, "(%s) update_alias_addr_tx: !IsLocalAlias: tx \"%s\".", iface->name, tx.GetHash().GetHex().c_str());
     return (SHERR_REMOTE);
+	}
 
   /* establish original tx */
   uint256 wtxInHash = tx.GetHash();
-  if (!wallet->HasTx(wtxInHash))// wallet->mapWallet.count(wtxInHash) == 0)
+  if (!wallet->HasTx(wtxInHash)) {
+		error(ERR_REMOTE, "(%s) update_alias_addr_tx: !HasTx: tx \"%s\".", iface->name, wtxInHash.GetHex().c_str());
     return (SHERR_REMOTE);
+	}
 
   /* establish account */
   string strAccount;
@@ -709,14 +713,15 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
     return (SHERR_INVAL);
   if (!GetCoinAddr(wallet, addrIn, strAccountIn))
     return (SHERR_REMOTE);
+
+	if (strAccount.substr(0, 1) == "@")
+		strAccount = strAccount.substr(1, strAccount.length());
+
 #if 0
   if (strAccountIn != strAccount)
     return (SHERR_ACCESS);
 #endif
 
-  /* generate new coin address */
-  string strExtAccount = "@" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
 
   /* generate tx */
   CAlias *alias;
@@ -731,26 +736,28 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
 
   uint160 aliasHash = alias->GetHash();
   vector<pair<CScript, int64> > vecSend;
-  CWalletTx& wtxIn = wallet->GetTx(wtxInHash);// wallet->mapWallet[wtxInHash];
+  CWalletTx& wtxIn = wallet->GetTx(wtxInHash);
 
-  /* generate output script */
+  /* generate new coin address */
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
 	CScript scriptPubKeyOrig;
   scriptPubKeyOrig.SetDestination(extAddr.Get());
+
+  /* generate output script */
 	scriptPubKey << OP_EXT_UPDATE << CScript::EncodeOP_N(OP_ALIAS) << OP_HASH160 << aliasHash << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
 
-  if (!s_wtx.AddExtTx(&wtxIn, scriptPubKey))
+  if (!s_wtx.AddExtTx(&wtxIn, scriptPubKey)) {
+		error(SHERR_CANCELED, "update_alias_addr_tx: add input tx \"%s\" to \"%s\" failure (%s).", iface->name, wtxIn.GetHash().GetHex().c_str(), s_wtx.GetHash().GetHex().c_str(), s_wtx.GetError().c_str());
     return (SHERR_CANCELED);
+	}
 
-  if (!s_wtx.Send())
+  if (!s_wtx.Send()) {
+		error(SHERR_CANCELED, "update_alias_addr_tx: submit transaction \"%s\" failure (%s).", iface->name, s_wtx.GetHash().GetHex().c_str(), s_wtx.GetError().c_str());
     return (SHERR_CANCELED);
-#if 0
-  if (!SendMoneyWithExtTx(iface, wtxIn, wtx, scriptPubKey, vecSend))
-    return (SHERR_INVAL);
-#endif
+	}
 
   wtx = (CWalletTx)s_wtx;
-
   Debug("SENT:ALIASUPDATE : title=%s, aliashash=%s, tx=%s\n", title, alias->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
 
 	return (0);
@@ -793,13 +800,12 @@ int remove_alias_addr_tx(CIface *iface, string strAccount, string strTitle, CWal
   CWalletTx& wtxIn = wallet->GetTx(wtxInHash);// wallet->mapWallet[wtxInHash];
 
   /* generate output script */
-	scriptPubKey << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_ALIAS) << OP_HASH160 << aliasHash << OP_2DROP << OP_RETURN;
+	scriptPubKey << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_ALIAS) << OP_HASH160 << aliasHash << OP_2DROP << OP_RETURN << OP_0;
 
   int64 nNetFee = (int64)MIN_TX_FEE(iface);
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nNetFee) {
+  if (bal < nNetFee)
     return (ERR_FEE);
-  }
 
   if (!s_wtx.AddExtTx(&wtxIn, scriptPubKey))
     return (SHERR_CANCELED);
@@ -807,21 +813,13 @@ int remove_alias_addr_tx(CIface *iface, string strAccount, string strTitle, CWal
   if (!s_wtx.Send())
     return (SHERR_CANCELED);
 
-#if 0
-  vector<pair<CScript, int64> > vecSend;
-  if (!SendMoneyWithExtTx(iface, wtxIn, wtx, scriptPubKey, vecSend))
-    return (SHERR_INVAL);
-#endif
-
   wtx = (CWalletTx)s_wtx;
-
   Debug("(%s) SENT:ALIASREMOVE : title \"%s\", aliashash \"%s\", tx \"%s\"", 
       iface->name, strTitle.c_str(), 
       alias->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
 
 	return (0);
 }
-
 
 std::string CAlias::ToString(int ifaceIndex)
 {
@@ -834,14 +832,26 @@ Object CAlias::ToValue(int ifaceIndex)
 
 /* DEBUG: TODO: custimize CIDent::TOValue */
   if (GetType() == ALIAS_COINADDR) {
-    obj.push_back(Pair("type-name", "pubkey"));
+    obj.push_back(Pair("type-name", "coinaddr"));
 
 #if 0
-    CCoinAddr addr(ifaceIndex);
-    if (GetCoinAddr(addr))
-      obj.push_back(Pair("address", addr.ToString().c_str()));
-    else
-      obj.push_back(Pair("valid", "false"));
+		CCoinAddr addr(ifaceIndex);
+		if (GetCoinAddr(ifaceIndex, addr)) {
+			CCoinAddr addr;
+			CKeyID keyid;
+			if (addr.GetKeyID(keyid)) {
+				CWallet *wallet = GetWallet(ifaceIndex);
+				Array addr_list;
+				vector<CTxDestination> vDest;
+
+				GetAddrDestination(wallet->ifaceIndex, keyid, vDest);
+				BOOST_FOREACH(const CTxDestination& destTmp, vDest) {
+					CCoinAddr addrTmp(ifaceIndex, destTmp);
+					addr_list.push_back(addrTmp.ToString());
+				}
+				obj.push_back(Pair("address", addr_list));
+			}
+		}
 #endif
   }
 

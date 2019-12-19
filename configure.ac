@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(shioncoin, 4.0)
+AC_INIT(shioncoin, 4.1)
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -22,7 +22,7 @@ LT_INIT
 
 version_patch=0
 AC_SUBST(version_patch)
-version_info=4.0:0
+version_info=4:1:0
 AC_SUBST(version_info)
 
 AC_CONFIG_FILES([doc/NEWS])
@@ -438,14 +438,6 @@ if test "x$enable_skein" != "xno" ; then
   AC_DEFINE_UNQUOTED([USE_ALGO_SKEIN], 1, [Define to enable the SKEIN pow algorythm.])
 fi
 
-
-AC_ARG_ENABLE([usde],
-  AS_HELP_STRING([--enable-usde], [Enable USDE coin service.]))
-AM_CONDITIONAL(USDE_SERVICE, [test "x$enable_usde" = "xyes"])
-if test "x$enable_usde" = "xyes" ; then
-  AC_DEFINE_UNQUOTED([USDE_SERVICE], 1, [Define to enable the USDE coin service.])
-fi
-
 AC_ARG_ENABLE([emc2],
   AS_HELP_STRING([--enable-emc2], [Enable EMC2 coin service.]))
 AM_CONDITIONAL(EMC2_SERVICE, [test "x$enable_emc2" = "xyes"])
@@ -478,5 +470,5 @@ fi
 #AM_CONDITIONAL(ENABLE_WALLET, [test "x$enable_wallet" != "xno"])
 #AM_CONDITIONAL([ENABLE_WALLET], 1, [Define to share-wallet functionality.])
 
-AC_OUTPUT(Makefile depend/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile)
+AC_OUTPUT(Makefile depend/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/libdi3/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile)
 

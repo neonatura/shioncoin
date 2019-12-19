@@ -96,6 +96,18 @@ bool CCoinAddr::Set(const WitnessV0ScriptHash& id)
 	SetData(0, &id, 32);
 }
 
+bool CCoinAddr::Set(const WitnessV14KeyHash& id)
+{
+	nType = ADDR_BECH32;
+	SetData(14, &id, 20);
+}
+
+bool CCoinAddr::Set(const WitnessV14ScriptHash& id)
+{
+	nType = ADDR_BECH32;
+	SetData(14, &id, 32);
+}
+
 bool CCoinAddr::Set(const WitnessUnknown& id)
 {
 	nType = ADDR_BECH32;
@@ -111,39 +123,43 @@ bool CCoinAddr::Set(const CTxDestination &dest)
 bool CCoinAddr::IsValid() const
 {
 
+	if (vchVersion.size() == 0)
+		return (false);
+
+	const unsigned char *raw = vchVersion.data();
+	unsigned int nVersion = (unsigned int)raw[0];
+
 	if (nType != ADDR_BECH32) {
-		unsigned int nExpectedSize = 20;
-		switch(nVersion) {
-			case PUBKEY_G_ADDRESS:
-			case PUBKEY_C_ADDRESS:
-			case PUBKEY_E_ADDRESS:
-			case PUBKEY_L_ADDRESS:
-			case PUBKEY_S_ADDRESS:
-			case PUBKEY_T_ADDRESS:
-				nExpectedSize = 20; // Hash of public key
-				break;
-			case SCRIPT_ADDRESS:
-			case SCRIPT_ADDRESS_2:
-			case SCRIPT_ADDRESS_2S:
-			case SCRIPT_ADDRESS_2G:
-				nExpectedSize = 20; // Hash of CScript
-				break;
-			default:
-				return false;
-		}
-		if (vchData.size() != nExpectedSize) {
-			Debug("CCoinSecret: vchData.size() %d, nExpectedSize %d\n", vchData.size(), nExpectedSize);
-		}
-
-		if (vchData.size() != nExpectedSize)
-			return (false);
-
-		CIface *iface = GetCoinByIndex(ifaceIndex);
-		if (iface) {
-			if (nVersion != BASE58_PUBKEY_ADDRESS(iface) &&
-					nVersion != BASE58_SCRIPT_ADDRESS(iface) &&
-					nVersion != BASE58_SCRIPT_ADDRESS_2(iface)) {
+		if (vchVersion.size() == 1) {
+			unsigned int nExpectedSize = 20;
+			switch(nVersion) {
+				case PUBKEY_G_ADDRESS:
+				case PUBKEY_C_ADDRESS:
+				case PUBKEY_E_ADDRESS:
+				case PUBKEY_L_ADDRESS:
+				case PUBKEY_S_ADDRESS:
+				case PUBKEY_T_ADDRESS:
+					nExpectedSize = 20; // Hash of public key
+					break;
+				case SCRIPT_ADDRESS:
+				case SCRIPT_ADDRESS_2:
+				case SCRIPT_ADDRESS_2S:
+				case SCRIPT_ADDRESS_2G:
+					nExpectedSize = 20; // Hash of CScript
+					break;
+				default:
+					return false;
+			}
+			if (vchData.size() != nExpectedSize)
 				return (false);
+
+			CIface *iface = GetCoinByIndex(ifaceIndex);
+			if (iface) {
+				if (nVersion != BASE58_PUBKEY_ADDRESS(iface) &&
+						nVersion != BASE58_SCRIPT_ADDRESS(iface) &&
+						nVersion != BASE58_SCRIPT_ADDRESS_2(iface)) {
+					return (false);
+				}
 			}
 		}
 	} else {
@@ -160,17 +176,42 @@ bool CCoinAddr::IsValid() const
 
 CTxDestination CCoinAddr::Get() const 
 {
-
+	
 	if (nType == ADDR_BECH32) {
-		if (vchData.size() == sizeof(WitnessV0KeyHash)) {
-			WitnessV0KeyHash id;
-			memcpy(&id, &vchData[0], vchData.size());
-			return (id);
+		unsigned int nVersion = 0;
+		if (vchVersion.size() != 0) {
+			const unsigned char *raw = vchVersion.data();
+			nVersion = (unsigned int)raw[0];
 		}
-		if (vchData.size() == sizeof(WitnessV0ScriptHash)) {
-			WitnessV0ScriptHash id;
-			memcpy(&id, &vchData[0], vchData.size());
-			return (id);
+		switch (nVersion) {
+			case 0:
+				{
+					if (vchData.size() == sizeof(WitnessV0KeyHash)) {
+						WitnessV0KeyHash id;
+						memcpy(&id, &vchData[0], vchData.size());
+						return (id);
+					}
+					if (vchData.size() == sizeof(WitnessV0ScriptHash)) {
+						WitnessV0ScriptHash id;
+						memcpy(&id, &vchData[0], vchData.size());
+						return (id);
+					}
+				}
+				break;
+			case 14:
+				{
+					if (vchData.size() == sizeof(WitnessV14KeyHash)) {
+						WitnessV14KeyHash id;
+						memcpy(&id, &vchData[0], vchData.size());
+						return (id);
+					}
+					if (vchData.size() == sizeof(WitnessV14ScriptHash)) {
+						WitnessV14ScriptHash id;
+						memcpy(&id, &vchData[0], vchData.size());
+						return (id);
+					}
+				}
+				break;
 		}
 	}
 
@@ -190,28 +231,35 @@ CTxDestination CCoinAddr::Get() const
 		return CScriptID(id);
 	}
 #endif
-  switch (nVersion) {
-		case PUBKEY_G_ADDRESS:
-    case PUBKEY_C_ADDRESS:
-    case PUBKEY_E_ADDRESS:
-    case PUBKEY_L_ADDRESS:
-    case PUBKEY_S_ADDRESS:
-    case PUBKEY_T_ADDRESS:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        return CKeyID(id);
-      }
-    case SCRIPT_ADDRESS:
-    case SCRIPT_ADDRESS_2:
-    case SCRIPT_ADDRESS_2S:
-    case SCRIPT_ADDRESS_2G:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        return CScriptID(id);
-      }
-  }
+
+	if (vchVersion.size() == 1) {
+		const unsigned char *raw = vchVersion.data();
+		unsigned int nVersion = (unsigned int)raw[0];
+
+		switch (nVersion) {
+			case PUBKEY_G_ADDRESS:
+			case PUBKEY_C_ADDRESS:
+			case PUBKEY_E_ADDRESS:
+			case PUBKEY_L_ADDRESS:
+			case PUBKEY_S_ADDRESS:
+			case PUBKEY_T_ADDRESS:
+				{
+					uint160 id;
+					memcpy(&id, &vchData[0], 20);
+					return CKeyID(id);
+				}
+			case SCRIPT_ADDRESS:
+			case SCRIPT_ADDRESS_2:
+			case SCRIPT_ADDRESS_2S:
+			case SCRIPT_ADDRESS_2G:
+				{
+					uint160 id;
+					memcpy(&id, &vchData[0], 20);
+					return CScriptID(id);
+				}
+		}
+	}
+
   return CNoDestination();
 }
 
@@ -219,20 +267,26 @@ bool CCoinAddr::GetKeyID(CKeyID &keyID) const
 {
   if (!IsValid())
     return false;
-  switch (nVersion) {
-    case PUBKEY_G_ADDRESS:
-    case PUBKEY_C_ADDRESS:
-    case PUBKEY_E_ADDRESS:
-    case PUBKEY_S_ADDRESS:
-    case PUBKEY_L_ADDRESS:
-    case PUBKEY_T_ADDRESS:
-      {
-        uint160 id;
-        memcpy(&id, &vchData[0], 20);
-        keyID = CKeyID(id);
-        return true;
-      }
-  }
+	if (vchVersion.size() == 1) {
+		const unsigned char *raw = vchVersion.data();
+		unsigned int nVersion = (unsigned int)raw[0];
+
+		switch (nVersion) {
+			case PUBKEY_G_ADDRESS:
+			case PUBKEY_C_ADDRESS:
+			case PUBKEY_E_ADDRESS:
+			case PUBKEY_S_ADDRESS:
+			case PUBKEY_L_ADDRESS:
+			case PUBKEY_T_ADDRESS:
+				{
+					uint160 id;
+					memcpy(&id, &vchData[0], 20);
+					keyID = CKeyID(id);
+					return true;
+				}
+		}
+	}
+
   return (false);
 }
 
@@ -252,19 +306,25 @@ bool CCoinAddr::GetScriptID(CScriptID& scriptID) const
       nVersion != SCRIPT_ADDRESS_TEST)
     return false;
 #endif
-	switch (nVersion) {
-		case SCRIPT_ADDRESS:
-    case SCRIPT_ADDRESS_2:
-    case SCRIPT_ADDRESS_2S:
-    case SCRIPT_ADDRESS_2G:
-			{
-				uint160 id;
-				memcpy(&id, &vchData[0], 20);
-				scriptID = CScriptID(id);
-			}
-			break;
-		default:
-			return (false);
+	if (vchVersion.size() == 1) {
+		const unsigned char *raw = vchVersion.data();
+		unsigned int nVersion = (unsigned int)raw[0];
+		switch (nVersion) {
+			case SCRIPT_ADDRESS:
+			case SCRIPT_ADDRESS_2:
+			case SCRIPT_ADDRESS_2S:
+			case SCRIPT_ADDRESS_2G:
+				{
+					uint160 id;
+					memcpy(&id, &vchData[0], 20);
+					scriptID = CScriptID(id);
+				}
+				break;
+			default:
+				return (false);
+		}
+	} else {
+		return (false);
 	}
 
 	return (true);
@@ -319,6 +379,7 @@ bool CCoinAddr::SetString(const std::string& str)
 		int version = bech.second[0]; // The first 5 bit symbol is the witness version (0-16)
 		// The rest of the symbols are converted witness program bytes.
 		if (ConvertBits<5, 8, false>(vchData, bech.second.begin() + 1, bech.second.end())) {
+
 #if 0
 			if (version == 0) {
 				{
@@ -350,6 +411,10 @@ bool CCoinAddr::SetString(const std::string& str)
 			return unk;
 #endif
 
+			unsigned char nVersion = (unsigned char)version;
+			unsigned char *raw = &nVersion;
+			vchVersion = cbuff(raw, raw + 1); 
+
 			nType = ADDR_BECH32;
 			return (true);
 		}
@@ -359,7 +424,7 @@ bool CCoinAddr::SetString(const std::string& str)
 
 	nType = ADDR_UNKNOWN;
 	vchData.clear();
-	nVersion = 0;
+	vchVersion.clear();//nVersion = 0;
 	return (error(SHERR_INVAL, "CCoinAddr.SetString: failure decoding \"%s\".", str.c_str()));
 }
 
@@ -369,7 +434,7 @@ std::string CCoinAddr::ToString() const
 	string strAddr = "";
 
 	if (iface && nType == ADDR_BECH32) {
-		std::vector<unsigned char> data = {nVersion};
+		std::vector<unsigned char> data = vchVersion;//{nVersion};
 		ConvertBits<8, 5, true>(data, vchData.begin(), vchData.end());
 		strAddr = bech32::Encode(iface->name, data);
 	} else {
@@ -385,14 +450,18 @@ bool CCoinAddr::IsScript() const
 	if (!IsValid())
 		return false;
 
-	switch (nVersion) {
-		case SCRIPT_ADDRESS:
-		case SCRIPT_ADDRESS_2:
-		case SCRIPT_ADDRESS_2S:
-		case SCRIPT_ADDRESS_2G:
-			{
-				return true;
-			}
+	if (vchVersion.size() == 1) {
+		const unsigned char *raw = vchVersion.data();
+		unsigned int nVersion = (unsigned int)raw[0];
+		switch (nVersion) {
+			case SCRIPT_ADDRESS:
+			case SCRIPT_ADDRESS_2:
+			case SCRIPT_ADDRESS_2S:
+			case SCRIPT_ADDRESS_2G:
+				{
+					return true;
+				}
+		}
 	}
 
 	return (false);
@@ -420,21 +489,32 @@ CTxDestination CCoinAddr::GetWitness(int output_type) const
 		CScript subscript;
 
 		if (GetKeyID(keyID)) {
-			CKey key;
-			if (!wallet->GetKey(keyID, key)) {
+			CKey *key;
+
+			key = wallet->GetKey(keyID);
+			if (!key)
 				return (result); /* non-local */
-			}
 
 			/* signing with uncompressed keys is disabled in witness scripts. */
-			if (!key.IsCompressed()) {
+			if (!key->IsCompressed()) {
 				return (result);
 			}
 
+			if (key->IsDilithium())
+				output_type = OUTPUT_TYPE_DILITHIUM;
+
+			int ver = 0;
+			if (output_type == OUTPUT_TYPE_DILITHIUM)
+				ver = 14;
+
 			CScript basescript = GetScriptForDestination(keyID);
-			CScript witscript = GetScriptForWitness(basescript);
+			CScript witscript = GetScriptForWitness(basescript, ver);
 			wallet->AddCScript(witscript);
 
-			if (output_type == OUTPUT_TYPE_BECH32) {
+			if (output_type == OUTPUT_TYPE_DILITHIUM) {
+				WitnessV14KeyHash hash = keyID;
+				result = hash;
+			} else if (output_type == OUTPUT_TYPE_BECH32) {
 				WitnessV0KeyHash hash = keyID;
 				result = hash;
 			} else {
@@ -448,10 +528,15 @@ CTxDestination CCoinAddr::GetWitness(int output_type) const
 				/* ID is already for a witness program script */
 				result = scriptID;
 			} else {
-				CScript witscript = GetScriptForWitness(subscript);
+				int ver = (output_type == OUTPUT_TYPE_DILITHIUM) ? 14 : 0;
+				CScript witscript = GetScriptForWitness(subscript, ver);
 				wallet->AddCScript(witscript);
 
-				if (output_type == OUTPUT_TYPE_BECH32) {
+				if (output_type == OUTPUT_TYPE_DILITHIUM) {
+					WitnessV14ScriptHash hash;
+					SHA256((unsigned char *)&subscript[0], subscript.size(), (unsigned char *)&hash);
+					result = hash;
+				} else if (output_type == OUTPUT_TYPE_BECH32) {
 					WitnessV0ScriptHash hash;
 					SHA256((unsigned char *)&subscript[0], subscript.size(), (unsigned char *)&hash);
 					result = hash;
@@ -483,9 +568,12 @@ CScript CCoinAddr::GetScript()
 }
 
 /* build a P2WSH scriptPubKey */
-CScript GetScriptForWitness(const CScript& redeemscript)
+CScript GetScriptForWitness(const CScript& redeemscript, int nVer)
 {
 	CScript ret;
+	opcodetype opVer;
+	
+	opVer = CScript::EncodeOP_N(nVer);
 
 	txnouttype typ;
 	std::vector<std::vector<unsigned char> > vSolutions;
@@ -493,21 +581,19 @@ CScript GetScriptForWitness(const CScript& redeemscript)
 		if (typ == TX_PUBKEY) {
 			cbuff vch(vSolutions[0].begin(), vSolutions[0].end());
 			uint160 h160 = Hash160(vch);
-			ret << OP_0 << h160;
+			ret << opVer << h160;
 			return ret;
 		} else if (typ == TX_PUBKEYHASH) {
-			ret << OP_0 << vSolutions[0];
+			ret << opVer << vSolutions[0];
 			return ret;
 		}
 	}
 
 	uint256 hash;
-	//  CSHA256().Write(&redeemscript[0], redeemscript.size()).Finalize(hash.begin());
-//	hash = Hash(redeemscript.begin(), redeemscript.end());
 	SHA256(&redeemscript[0], redeemscript.size(), (unsigned char *)&hash);
-	ret << OP_0 << ToByteVector(hash);
+	ret << opVer << ToByteVector(hash);
 
-	return ret;
+	return (ret);
 }
 
 bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
@@ -555,6 +641,20 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
 		return (true);
 	}
 
+	if (whichType == TX_WITNESS_V14_KEYHASH) {
+		WitnessV14KeyHash hash;
+		std::copy(vSolutions[0].begin(), vSolutions[0].end(), hash.begin());
+		addressRet = hash;
+		return true;
+	}
+
+	if (whichType == TX_WITNESS_V14_SCRIPTHASH) {
+		WitnessV14ScriptHash hash;
+		std::copy(vSolutions[0].begin(), vSolutions[0].end(), hash.begin());
+		addressRet = hash;
+		return (true);
+	}
+
 	if (whichType == TX_WITNESS_UNKNOWN) {
 		WitnessUnknown unk;
 		unk.version = vSolutions[0][0];
@@ -573,8 +673,10 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
 	addressRet.clear();
 	typeRet = TX_NONSTANDARD;
 	vector<valtype> vSolutions;
-	if (!Solver(scriptPubKey, typeRet, vSolutions))
+
+	if (!Solver(scriptPubKey, typeRet, vSolutions)) {
 		return false;
+	}
 
 	if (typeRet == TX_MULTISIG)
 	{
@@ -589,11 +691,13 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
 	{
 		nRequiredRet = 1;
 		CTxDestination address;
-		if (!ExtractDestination(scriptPubKey, address))
+		if (!ExtractDestination(scriptPubKey, address)) {
 			return false;
+		}
 		addressRet.push_back(address);
 	}
 
 	return true;
 }
+
 

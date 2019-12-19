@@ -68,6 +68,13 @@ bool CWalletDB::WriteAccountingEntry(const CAccountingEntry& acentry)
     return Write(boost::make_tuple(string("acentry"), acentry.strAccount, ++nAccountingEntryNumber), acentry);
 }
 
+#if 0
+bool CWalletDB::WriteHDChain(const CHDChain& chain)
+{
+	return Write(std::string("hdchain"), chain);
+}
+#endif
+
 int64 CWalletDB::GetAccountCreditDebit(const string& strAccount)
 {
     list<CAccountingEntry> entries;
@@ -217,12 +224,44 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         ssKey >> nNumber;
         if (nNumber > nAccountingEntryNumber)
           nAccountingEntryNumber = nNumber;
-      }
+      } else if (strType == "eckey") {
+        vector<unsigned char> vchPubKey;
+				ECKey key;
+
+        ssKey >> vchPubKey;
+				ssValue >> key;
+				const CPubKey& pubkey = key.GetPubKey();
+				if (pubkey != vchPubKey)
+					return DB_CORRUPT;
+
+//				key.SetPubKey(pubkey);
+				if (!pwallet->LoadKey(key))
+					return DB_CORRUPT;
+#if 0
+				pwallet->LoadKeyMetadata(pubkey.GetID(), key.meta);
+#endif
+      } else if (strType == "dikey") {
+        vector<unsigned char> vchPubKey;
+				DIKey key;
+
+        ssKey >> vchPubKey;
+				ssValue >> key;
+				const CPubKey& pubkey = key.GetPubKey();
+				if (pubkey != vchPubKey)
+					return DB_CORRUPT;
+
+//				key.SetPubKey(pubkey);
+				if (!pwallet->LoadKey(key))
+					return DB_CORRUPT;
+#if 0
+				pwallet->LoadKeyMetadata(pubkey.GetID(), key.meta);
+#endif
+			}
       else if (strType == "key" || strType == "wkey")
       {
         vector<unsigned char> vchPubKey;
         ssKey >> vchPubKey;
-        CKey key;
+        ECKey key;
         if (strType == "key")
         {
           CPrivKey pkey;
@@ -231,6 +270,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
           key.SetPrivKey(pkey);
           if (key.GetPubKey() != vchPubKey)
           {
+#if 0
             HDPrivKey hdkey;
             hdkey.SetPrivKey(pkey);
             if (hdkey.GetPubKey() != vchPubKey) {
@@ -241,6 +281,8 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
               //fprintf(stderr, "Error reading wallet database: invalid HDPrivKey\n");
               return DB_CORRUPT;
             }
+#endif
+						return DB_CORRUPT;
           } else if (!key.IsValid()) {
             //fprintf(stderr, "Error reading wallet database: invalid CPrivKey\n");
             return DB_CORRUPT;
@@ -269,6 +311,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
           return DB_CORRUPT;
         }
       }
+#if 0
       else if (strType == "mkey")
       {
         unsigned int nID;
@@ -284,6 +327,8 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         if (pwallet->nMasterKeyMaxID < nID)
           pwallet->nMasterKeyMaxID = nID;
       }
+#endif
+#if 0
       else if (strType == "ckey")
       {
         vector<unsigned char> vchPubKey;
@@ -297,6 +342,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         }
         fIsEncrypted = true;
       }
+#endif
       else if (strType == "defaultkey")
       {
         ssValue >> pwallet->vchDefaultKey;
@@ -326,7 +372,14 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
           //fprintf(stderr, "Error reading wallet database: LoadCScript failed\n");
           return DB_CORRUPT;
         }
-      }
+#if 0
+			} else if (strType == "hdchain") {
+				CHDChain chain;
+				ssValue >> chain;
+				pwallet->SetHDChain(chain, true);
+#endif
+			}
+
     }
     pcursor->close();
   }

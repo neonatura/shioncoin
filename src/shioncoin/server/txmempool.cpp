@@ -172,7 +172,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
 
   if (!ptx.IsLocal() && !VerifySoftLimits(ptx)) {
     /* initial breach of soft limits [non-local] starts in overflow queue. */
-    Debug("CPool.FillInputs: info: tx \"%s\" breached soft limits.", ptx.GetHash().GetHex().c_str());
+    Debug("CPool.AddTx: info: tx \"%s\" breached soft limits.", ptx.GetHash().GetHex().c_str());
     ptx.SetFlag(POOL_SOFT_LIMIT);
     return (AddOverflowTx(ptx));
   }
@@ -181,7 +181,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
   if (ptx.nFee >= MIN_RELAY_TX_FEE(iface)) {
     int64 nSoftFee = CalculateSoftFee(ptx.GetTx());
     if (ptx.nFee < nSoftFee) {
-      Debug("CPool.FillInputs: info: tx \"%s\" has insufficient soft fee.", ptx.GetHash().GetHex().c_str());
+      Debug("CPool.AddTx: info: tx \"%s\" has insufficient soft fee (%f/%f).", ptx.GetHash().GetHex().c_str(), ((double)ptx.nFee/COIN), ((double)nSoftFee/COIN));
 
       /* meets minimum requirements -- process as low priority */
       ptx.SetFlag(POOL_FEE_LOW);
@@ -334,17 +334,20 @@ bool CPool::ResolveConflicts(CPoolTx& ptx)
       COutPoint out = ptx.GetTx().vin[i].prevout;
       if (a_ptx.mapNextTx.count(out) != 0) {
         /* found conflict */
+				Debug("CPool.ResolveConflicts: tx \"%s\" conflicts with active mempool tx \"%s\".", ptx.GetHash().GetHex().c_str(), a_ptx.GetHash().GetHex().c_str());
 
         if (a_ptx.GetTx().IsNewerThan(ptx.GetTx())) {
-          return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted transaction with older time-stamp (%s).", ptx.GetHash().GetHex().c_str()));
+          return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted tx \"%s\" due to conflict.", ptx.GetHash().GetHex().c_str()));
         }
 
+#if 0
         if (ifaceIndex == TEST_COIN_IFACE || ifaceIndex == SHC_COIN_IFACE) {
           if (ptx.GetTx().isFlag(CTransaction::TXF_CHANNEL) ||
               a_ptx.GetTx().isFlag(CTransaction::TXF_CHANNEL)) {
-            return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted duplicate channel transaction.")); 
+            return (error(SHERR_INVAL, "CPool.ResolveConflicts: warning: rejecting submitted duplicate channel tx \"%s\".", ptx.GetHash().GetHex().c_str())); 
           }
         }
+#endif
 
         /* replace */
         vRemove.push_back(a_ptx.GetTx());
@@ -359,12 +362,6 @@ bool CPool::ResolveConflicts(CPoolTx& ptx)
     if (!RemoveTx(tx)) {
       error(SHERR_INVAL, "CPool.ResolveConflicts: error removing conflicting transaction \"%s\".", tx_hash.GetHex().c_str()); 
     }
-
-    /* abandon invalidated wallet tx [redundant] . */
-    wallet->EraseFromWallet(tx_hash);
-
-    CIface *iface = GetCoinByIndex(ifaceIndex);
-    Debug("(%s) CPool.ResolveConflict: removed tx \"%s\" from pool due to conflicting input transaction.", iface->name, tx_hash.GetHex().c_str()); 
   }
 
   /* create mapping for sequential checks */
@@ -423,8 +420,7 @@ void CPool::CalculateLimits(CPoolTx& ptx)
 
   ptx.nWeight = wallet->GetTransactionWeight(ptx.GetTx());
   ptx.nSigOpCost = ptx.GetTx().GetSigOpCost(ptx.GetInputs());
-  ptx.nTxSize = wallet->GetVirtualTransactionSize(ptx.nWeight, ptx.nSigOpCost);
-
+  ptx.nTxSize = wallet->GetVirtualTransactionSize(ptx.nWeight);//, ptx.nSigOpCost);
 
 }
 
@@ -475,7 +471,6 @@ bool CPool::FillInputs(CPoolTx& ptx)
   CTransaction& tx = ptx.GetTx();
   bool ok;
 
-
   for (unsigned int i = 0; i < tx.vin.size(); i++) {
     COutPoint prevout = tx.vin[i].prevout;
     if (ptx.GetInputs().count(prevout.hash))
@@ -485,12 +480,24 @@ bool CPool::FillInputs(CPoolTx& ptx)
 
     prevTx.SetNull();
 
-    ok = GetTx(prevout.hash, prevTx); /* check mempool */
+    ok = GetTx(prevout.hash, prevTx, POOL_ACTIVE); /* check mempool */
     if (!ok) 
       ok = GetTransaction(iface, prevout.hash, prevTx, NULL);
     if (!ok) {
-      /* check for orphan */
-      if (pending.count(prevout.hash)) {
+			if (overflow.count(prevout.hash)) { /* check in overflow */
+        CPoolTx& of = overflow[prevout.hash];
+				if (of.CheckFinal(iface) &&
+						GetActiveWeight() + of.GetWeight() >= GetMaxWeight()) {
+					CPoolTx new_ptx(of);
+					RemoveTx(prevout.hash);
+
+					ok = AddActiveTx(new_ptx);
+					if (ok) {
+						/* overflow input is now an active pool tx */
+						prevTx = new_ptx.GetTx();
+					}
+				}
+			} else if (pending.count(prevout.hash)) { /* check for orphan */
         CPoolTx& orphan = pending[prevout.hash];
         /* verify whether inputs are now correct */
         ok = RefillInputs(orphan);
@@ -639,6 +646,15 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
   if (fee) {
     fee->processTransaction(ptx, true);
   }
+
+	{
+		LOCK(wallet->cs_wallet);
+		if (wallet->mapWallet.count(ptx.GetHash()) != 0) {
+			CWalletTx& wtx = wallet->mapWallet[ptx.GetHash()]; 
+			/* inform peers of active tx */
+			wallet->RelayWalletTransaction(wtx);
+		}
+	}
 
   return (true);
 }
@@ -1063,6 +1079,12 @@ static void cpool_RemoveTxWithInput(CPool *pool, const CTxIn& txin)
   }
 
 }
+
+void CPool::RemoveTxWithInput(const CTxIn& txin)
+{
+	cpool_RemoveTxWithInput(this, txin);
+}
+
 
 bool CPool::Commit(CBlock& block)
 {

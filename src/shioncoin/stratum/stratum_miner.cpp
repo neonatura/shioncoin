@@ -33,10 +33,10 @@
 #include "base58.h"
 #include "server_iface.h" /* BLKERR_XXX */
 #include "algobits.h"
+#include "stratum.h"
 #include "color/color_pool.h"
 #include "color/color_block.h"
 
-#undef printf
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -47,7 +47,6 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/shared_ptr.hpp>
 #include <list>
-#define printf OutputDebugStringF
 
 using namespace std;
 using namespace boost;
@@ -569,7 +568,8 @@ void add_stratum_miner_block(int ifaceIndex, char *block_hash)
 		return;
 	}
 
-	vGenBlocks[ifaceIndex][hBlock] = pindex;
+	if (vGenBlocks[ifaceIndex].count(hBlock) == 0)
+		vGenBlocks[ifaceIndex][hBlock] = pindex;
 }
 
 CBlockIndex *get_stratum_miner_block(int ifaceIndex, uint256 hBlock)
@@ -598,6 +598,53 @@ vector<CBlockIndex *> get_stratum_miner_blocks(int ifaceIndex)
 	return (vRet);
 }
 
+<<<<<<< HEAD
+=======
+int stratum_miner_extranonce_subscribe(CIface *iface, user_t *user, shjson_t *param, shjson_t **reply_p)
+{
+	user->flags |= USER_EXTRANONCE;
+	return (0);
+}
+
+int stratum_miner_get_transactions(CIface *iface, user_t *user, shjson_t *param, shjson_t **reply_p)
+{
+  CBlock *pblock;
+	shjson_t *tx_list;
+	shjson_t *reply;
+	unsigned int workId;
+	char *str;
+  int err;
+
+	str = shjson_array_str(param, NULL, 0);
+	if (!str)
+		return (ERR_NOENT);
+	workId = (unsigned int)strtoul(str, NULL, 16);
+  if (mapWork.count(workId) == 0)
+		return (ERR_NOENT);
+
+  pblock = mapWork[workId];
+  iface = GetCoinByIndex(pblock->ifaceIndex);
+  if (!iface || !iface->enabled)
+		return (ERR_OPNOTSUPP);
+
+	reply = shjson_init(NULL); 
+	shjson_null_add(reply, "error");
+	tx_list = shjson_array_add(reply, "result");
+  BOOST_FOREACH (CTransaction& tx, pblock->vtx)
+  {
+    if (tx.IsCoinBase())
+      continue;
+
+    CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION(iface));
+    ssTx << tx;
+		shjson_str_add(tx_list, NULL, 
+				(char *)HexStr(ssTx.begin(), ssTx.end()).c_str());
+  }
+
+	*reply_p = reply;
+	return (0);
+}
+>>>>>>> v4.1
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,95 @@
+In cryptography, '''scrypt''' (pronounced "ess crypt"<ref>{{cite web|title=Colin Percival on Twitter|url=https://twitter.com/cperciva/status/734613598383841281}}</ref>) is a password-based key derivation function created by Colin Percival, originally for the Tarsnap online backup service.<ref>{{cite web|title=scrypt page on the Tarsnap website|url=http://www.tarsnap.com/scrypt.html|accessdate=21 January 2014}}</ref>  The algorithm was specifically designed to make it costly to perform large-scale custom hardware attacks by requiring large amounts of memory. In 2016, the scrypt algorithm was published by Internet Engineering Task Force|IETF as RFC 7914. A simplified version of scrypt is used as a proof-of-work scheme by a number of Cryptocurrency|cryptocurrencies, first implemented by an anonymous programmer called ArtForz in Tenebrix and followed by Fairbrix and Litecoin soon after.
+
+== Introduction ==
+
+A password-based key derivation function (password-based KDF) is generally designed to be computationally intensive, so that it takes a relatively long time to compute (say on the order of several hundred milliseconds). Legitimate users only need to perform the function once per operation (e.g., authentication), and so the time required is negligible. However, a brute-force attack would likely need to perform the operation billions of times, at which point the time requirements become significant and, ideally, prohibitive.
+
+Previous password-based KDFs (such as the popular PBKDF2 from RSA Laboratories) have relatively low resource demands, meaning they do not require elaborate hardware or very much memory to perform. They are therefore easily and cheaply implemented in hardware (for instance on an ASIC or even an FPGA). This allows an attacker with sufficient resources to launch a large-scale parallel attack by building hundreds or even thousands of implementations of the algorithm in hardware and having each search a different subset of the key space. This divides the amount of time needed to complete a brute-force attack by the number of implementations available, very possibly bringing it down to a reasonable time frame.
+
+The scrypt function is designed to hinder such attempts by raising the resource demands of the algorithm. Specifically, the algorithm is designed to use a large amount of memory compared to other password-based KDFs, making the size and the cost of a hardware implementation much more expensive, and therefore limiting the amount of parallelism an attacker can use, for a given amount of financial resources.
+
+== Overview ==
+The large memory requirements of scrypt come from a large vector of pseudorandom bit strings that are generated as part of the algorithm. Once the vector is generated, the elements of it are accessed in a pseudo-random order and combined to produce the derived key. A straightforward implementation would need to keep the entire vector in RAM so that it can be accessed as needed.
+
+Because the elements of the vector are generated algorithmically, each element could be generated ''on the fly'' as needed, only storing one element in memory at a time and therefore cutting the memory requirements significantly. However, the generation of each element is intended to be computationally expensive, and the elements are expected to be accessed many times throughout the execution of the function. Thus there is a significant trade-off in speed in order to get rid of the large memory requirements.
+
+This sort of space–time tradeoff often exists in computer algorithms: speed can be increased at the cost of using more memory, or memory requirements decreased at the cost of performing more operations and taking longer. The idea behind scrypt is to deliberately make this trade-off costly in either direction. Thus an attacker could use an implementation that doesn't require many resources (and can therefore be massively parallelized with limited expense) but runs very slowly, or use an implementation that runs more quickly but has very large memory requirements and is therefore more expensive to parallelize.
+
+== Algorithm ==
+
+The algorithm includes the following parameters:
+
+* Passphrase - The string of characters to be hashed.
+* Salt - A string of characters that modifies the hash to protect against Rainbow table attacks
+* N - CPU/memory cost parameter.
+* p - Parallelization parameter; a positive integer satisfying p ≤ (2<sup>32</sup>− 1) * hLen / MFLen.
+* dkLen - Intended output length in octets of the derived key; a positive integer satisfying dkLen ≤ (2<sup>32</sup>− 1) * hLen.
+* r - The blocksize parameter, which fine-tunes sequential memory read size and performance. 8 is commonly used.
+* hLen - The length in octets of the hash function (32 for SHA256).
+* MFlen - The length in octets of the output of the mixing function (''SMix'' below). Defined as r * 128 in RFC7914.
+
+ <span style="color:blue;">'''Function'''</span> scrypt
+    <span style="color:blue;">'''Inputs:'''</span>
+       Passphrase:                Bytes    <span style="color:green;">string of characters to be hashed</span>
+       Salt:                      Bytes    <span style="color:green;">random salt</span>
+       CostFactor (N):            Integer  <span style="color:green;">CPU/memory cost parameter</span>
+       BlockSizeFactor (r):       Integer  <span style="color:green;">blocksize parameter (8 is commonly used)</span>
+       ParallelizationFactor (p): Integer  <span style="color:green;">''Parallelization parameter. (1..2<sup>32</sup>-1 * hLen/MFlen)''</span>
+       DesiredKeyLen:             Integer  <span style="color:green;">Desired key length in bytes</span>
+    <span style="color:blue;">'''Output:'''</span>
+       DerivedKey:                Bytes    <span style="color:green;">array of bytes, DesiredKeyLen long</span>
+ 
+    <span style="color:green;">''Step 1. Generate expensive salt''</span>
+    blockSize ← 128*BlockSizeFactor  <span style="color:green;">//Length (in bytes) of the SMix mixing function output (e.g. 128*8 = 1024 bytes)''</span>
+ 
+    <span style="color:green;">Use PBKDF2 to generate initial 128*BlockSizeFactor*p bytes of data (e.g. 128*8*3 = 3072 bytes)</span>
+    <span style="color:green;">Treat the result as an array of ''p'' elements, each entry being ''blocksize'' bytes (e.g. 3 elements, each 1024 bytes)</span>
+    [B<sub>0</sub>...B<sub>p−1</sub>] ← PBKDF2<sub>HMAC-SHA256</sub>(''Passphrase'', ''Salt'', 1, blockSize*ParallelizationFactor)
+ 
+    <span style="color:green;">Mix each block in '''B''' 2<sup>CostFactor</sup> times using '''ROMix''' function (each block can be mixed in parallel)</span>
+    <span style="color:blue;">'''for'''</span> i ← 0 <span style="color:blue;">'''to'''</span> p-1 <span style="color:blue;">'''do'''</span>
+       B<sub>i</sub> ← ROMix(B<sub>i</sub>, 2<sup>CostFactor</sup>)
+ 
+    <span style="color:green;">All the elements of B is our new "expensive" salt</span>
+    expensiveSalt ← B<sub>0</sub>∥B<sub>1</sub>∥B<sub>2</sub>∥ ... ∥B<sub>p-1</sub>  <span style="color:green;">''//where ∥ is concatenation</span>
+  
+    <span style="color:green;">''Step 2. Use PBKDF2 to generate the desired number of bytes, but using the expensive salt we just generated''</span>
+    <span style="color:blue;">'''return'''</span> PBKDF2<sub>HMAC-SHA256</sub>(Passphrase, expensiveSalt, 1, DesiredKeyLen);
+
+Where ''PBKDF2(P, S, c, dkLen)'' notation is defined in RFC 2898, where c is an iteration count.
+
+This notation is used by RFC 7914 for specifying a usage of PBKDF2 with c = 1.
+ '''Function''' ROMix(Block, Iterations)
+ 
+    <span style="color:green;">Create ''Iterations'' copies of ''X''</span>
+    X ← Block
+    '''for''' i ← 0 '''to''' Iterations−1 '''do'''
+       V<sub>i</sub> ← X
+       X ← BlockMix(X)
+ 
+    '''for''' i ← 0 '''to''' Iterations−1 '''do'''
+       j ← Integerify(X) mod Iterations 
+       X ← BlockMix(X '''xor''' V<sub>j</sub>)
+ 
+    '''return''' X
+
+Where RFC 7914 defines ''Integerify(X)'' as the result of interpreting the last 64 bytes of X as a ''little-endian'' integer A<sub>1</sub>.
+
+Since Iterations equals 2 to the power of N, only the ''first'' Ceiling(N / 8) bytes among the ''last'' 64 bytes of X, interpreted as a ''little-endian'' integer A<sub>2</sub>, are actually needed to compute ''Integerify(X) mod Iterations = A<sub>1</sub> mod Iterations = A<sub>2</sub> mod Iterations''.
+
+ '''Function''' BlockMix(B):
+ 
+     <span style="color:green;">''The block B is r 128-byte chunks (which is equivalent of 2r 64-byte chunks)''</span>
+     r ← Length(B) / 128;
+ 
+     <span style="color:green;">''Treat B as an array of 2r 64-byte chuncks''</span>
+     [B<sub>0</sub>...B<sub>2r-1</sub>] ← B
+ 
+     X ← B<sub>2r−1</sub>
+     '''for''' i ← 0 '''to''' 2r−1 '''do'''
+         X ← Salsa20/8(X xor B<sub>i</sub>)  <span style="color:green;">'''//Salsa20/8 hashes from 64-bytes to 64-bytes'''</span>
+         Y<sub>i</sub> ← X
+ 
+     '''return''' ← Y<sub>0</sub>∥Y<sub>2</sub>∥...∥Y<sub>2r−2</sub> ∥ Y<sub>1</sub>∥Y<sub>3</sub>∥...∥Y<sub>2r−1</sub>
+
+Where ''Salsa20/8'' is the 8-round version of Salsa20.

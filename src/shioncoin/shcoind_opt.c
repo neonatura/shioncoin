@@ -81,7 +81,7 @@ static opt_t _option_table[] = {
 		"The built-in stratum miner service." },
 	{ OPT_STRATUM_PORT, OPT_TYPE_NUM, 9448, NULL, 
 		"The socket port to listen for stratum connections." },
-	{ OPT_STRATUM_WORK_CYCLE, OPT_TYPE_NUM, 16, NULL,
+	{ OPT_STRATUM_WORK_CYCLE, OPT_TYPE_NUM, 12, NULL,
 		"The maximum number of seconds between \"getwork\" notifications." },
 #endif
 
@@ -109,14 +109,6 @@ static opt_t _option_table[] = {
 		"The EMC2 currency service." },
 	{ OPT_EMC2_PORT, OPT_TYPE_NUM, 41878, NULL, 
 		"The socket port to listen for EMC2 connections." },
-#endif
-
-	/* The USDE service is available when compiled with "--enable-usde". */
-#ifdef USDE_SERVICE
-	{ OPT_SERV_USDE, OPT_TYPE_BOOL, 1, NULL,
-		"The USDE currency service." },
-	{ OPT_USDE_PORT, OPT_TYPE_NUM, 54449, NULL, 
-		"The socket port to listen for USDE connections." },
 #endif
 
 #ifdef STRATUM_SERVICE
@@ -172,6 +164,21 @@ static opt_t _option_table[] = {
 	{ OPT_STRATUM_COLOR, OPT_TYPE_STR, 0, "",
 		"A hexadecimal color code to enable stratum mining for the COLOR coin interface." },
 #endif
+
+	/** 
+	 * HD Keys are derived individually per account. Retaining the "default"
+	 * or "master" (the master is derived from the default) key for an account
+	 * can regenerate all underlying HD addresses.
+	 * Note: Disable this option for added security.
+	 */
+	{ OPT_HDKEY, OPT_TYPE_BOOL, 1, NULL,
+		"Derive new wallet keys using a hierarhchically deterministic algorythm." },
+
+	{ OPT_DILITHIUM, OPT_TYPE_BOOL, 0, NULL,
+		"Use the Dilithium signing algorythm for new coin addresses." },
+
+	{ OPT_PARAM_TX, OPT_TYPE_BOOL, 0, NULL,
+		"Embed consensus-based blockchain paramater extended transactions." },
 
 	/* end of the line */
 	{ "", OPT_TYPE_NULL, 0, "" },

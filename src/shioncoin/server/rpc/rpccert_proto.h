@@ -56,6 +56,10 @@ Value rpc_wallet_csend(CIface *iface, const Array& params, bool fHelp);
  
 Value rpc_wallet_stamp(CIface *iface, const Array& params, bool fHelp);
 
+Value rpc_wallet_getcert(CIface *iface, const Array& params, bool fStratum);
+
+Value rpc_wallet_setcert(CIface *iface, const Array& params, bool fStratum);
+
 Value rpc_cert_export(CIface *iface, const Array& params, bool fHelp);
 
 Value rpc_asset_get(CIface *iface, const Array& params, bool fHelp);

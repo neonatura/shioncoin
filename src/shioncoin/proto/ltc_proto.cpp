@@ -27,6 +27,7 @@
 #include "block.h"
 #include "main.h"
 #include "wallet.h"
+#include "account.h"
 #include "coin_proto.h"
 #include "ltc/ltc_netmsg.h"
 #include "ltc/ltc_pool.h"
@@ -181,6 +182,7 @@ static int ltc_block_process(CIface *iface, CBlock *block)
 
 static CPubKey ltc_GetMainAccountPubKey(CWallet *wallet)
 {
+#if 0
   static CPubKey ret_key;
 	string strAccount("");
 
@@ -195,7 +197,7 @@ static CPubKey ltc_GetMainAccountPubKey(CWallet *wallet)
       ret_key = reservekey.GetReservedKey();
       reservekey.KeepKey();
 #endif
-			ret_key = wallet->GenerateNewKey();
+			ret_key = wallet->GenerateNewECKey();
     } else {
       CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
       Debug("(ltc) GetMainAccountPubKey: using '%s' for mining address.",
@@ -231,6 +233,18 @@ static CPubKey ltc_GetMainAccountPubKey(CWallet *wallet)
 #endif
 
   return (ret_key);
+#endif
+
+  static CPubKey pubkey;
+  if (!pubkey.IsValid()) {
+    CAccountCache *account = wallet->GetAccount("");
+    account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+    /* miner fee */
+		wallet->GetAccount("bank");
+    /* cpu miner */
+		wallet->GetAccount("system");
+  }
+  return (pubkey);
 }
 
 static int ltc_block_templ(CIface *iface, CBlock **block_p)
@@ -345,15 +359,19 @@ coin_iface_t ltc_coin_iface = {
   NODE_NETWORK | NODE_BLOOM,
   LTC_MIN_INPUT,
   LTC_MAX_BLOCK_SIZE,
+  LTC_MAX_BLOCK_SIZE,
   LTC_MAX_ORPHAN_TRANSACTIONS,
   LTC_MAX_TRANSACTION_WEIGHT,
   LTC_MIN_TX_FEE,
+  LTC_MIN_RELAY_TX_FEE,
   LTC_MIN_RELAY_TX_FEE,
   LTC_MAX_TX_FEE,
   LTC_MAX_FREE_TX_SIZE,
   LTC_MAX_MONEY,
   LTC_COINBASE_MATURITY, 
   LTC_MAX_SIGOPS,
+	LTC_MAX_SCRIPT_SIZE,
+	LTC_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(ltc_init),
   COINF(ltc_bind),
   COINF(ltc_term),

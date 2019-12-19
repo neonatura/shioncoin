@@ -27,6 +27,7 @@
 #include "block.h"
 #include "main.h"
 #include "wallet.h"
+#include "account.h"
 #include "coin_proto.h"
 #include "txmempool.h"
 #include "color/color_pool.h"
@@ -199,6 +200,7 @@ static int color_block_process(CIface *iface, CBlock *block)
 
 static CPubKey color_GetMainAccountPubKey(CWallet *wallet)
 {
+#if 0
   static CPubKey ret_key;
 	static int _index;
 	string strAccount("");
@@ -214,7 +216,7 @@ static CPubKey color_GetMainAccountPubKey(CWallet *wallet)
       ret_key = reservekey.GetReservedKey();
       reservekey.KeepKey();
 #endif
-			ret_key = wallet->GenerateNewKey();
+			ret_key = wallet->GenerateNewECKey();
     } else {
       CCoinAddr addr(wallet->ifaceIndex, ret_key.GetID()); 
       Debug("(color) GetMainAccountPubKey: using '%s' for mining address.",
@@ -245,6 +247,18 @@ static CPubKey color_GetMainAccountPubKey(CWallet *wallet)
 	}
 
   return (ret_key);
+#endif
+
+	static CPubKey pubkey;
+	if (!pubkey.IsValid()) {
+		CAccountCache *account = wallet->GetAccount("");
+		account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+		/* miner fee */
+		wallet->GetAccount("bank");
+		/* cpu miner */
+		wallet->GetAccount("system");
+	}
+	return (pubkey);
 }
 
 static int color_block_templ(CIface *iface, CBlock **block_p)
@@ -328,15 +342,19 @@ coin_iface_t color_coin_iface = {
   0, //NODE_NETWORK | NODE_BLOOM,
   COLOR_MIN_INPUT,
   COLOR_MAX_BLOCK_SIZE,
+  COLOR_MAX_BLOCK_SIZE,
   COLOR_MAX_ORPHAN_TRANSACTIONS,
   COLOR_MAX_TRANSACTION_WEIGHT,
   COLOR_MIN_TX_FEE,
+  COLOR_MIN_RELAY_TX_FEE,
   COLOR_MIN_RELAY_TX_FEE,
   COLOR_MAX_TX_FEE,
   COLOR_MAX_FREE_TX_SIZE,
   COLOR_MAX_MONEY,
   COLOR_COINBASE_MATURITY, 
   COLOR_MAX_SIGOPS,
+	COLOR_MAX_SCRIPT_SIZE,
+	COLOR_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(color_init),
   COINF(color_bind),
   COINF(color_term),

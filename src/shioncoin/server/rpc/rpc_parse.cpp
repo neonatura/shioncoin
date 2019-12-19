@@ -27,14 +27,12 @@
 #include "shcoind.h"
 #include <unistd.h>
 using namespace std;
-
 #include "main.h"
 #include "wallet.h"
 #include "txcreator.h"
 #include "db.h"
 #include "walletdb.h"
 #include "net.h"
-#include "init.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
@@ -700,11 +698,22 @@ const RPCOp TX_PURGE = {
   "Reverts all transaction awaiting confirmation."
 };
 const RPCOp WALLET_ADDR = {
-  &rpc_wallet_addr, 1, {RPC_ACCOUNT, RPC_STRING},
-  "Syntax: <account> [mode]\n"
+  &rpc_wallet_addr, 1, {RPC_ACCOUNT, RPC_STRING, RPC_BOOL},
+  "Syntax: <account> [mode] [verbose]\n"
+	"\n"
   "Returns the current coin address for receiving payments to this account.\n"
-	"The mode is either \"receive\" (default), \"change\", \"exec\", or \"notary\"."
-}; 
+	"\n"
+	"The mode is either;\n"
+	"\t\"receive\" The next receive address for account, (default)\n"
+	"\t\"change\"  The next change address for account,\n"
+	"\t\"exec\"    The exclusive address used for execution (sexe),\n"
+	"\t\"notary\"  The exclusive address used to notarize TXs,\n"
+	"\t\"miner\"   The exclusive address used for mining, or\n"
+	"\t\"hdkey\"   The master key for deriving new addresses.\n"
+	"\t\"ext\"     The next ext-tx address for the extended account,\n"
+	"\n"
+	"Note: The ext-tx address should be used for extended transactions only. Coins sent to this address will not be retrievable through this account."
+};
 const RPCOp WALLET_WITADDR = {
   &rpc_wallet_witaddr, 1, {RPC_STRING, RPC_STRING},
   "Syntax: <coin address> [<address type>]\n"
@@ -712,10 +721,15 @@ const RPCOp WALLET_WITADDR = {
 	"The optional type is either \"p2sh-segwit\" or \"bech32\"."
 }; 
 const RPCOp WALLET_LISTADDR = {
-  &rpc_wallet_addrlist, 1, {RPC_ACCOUNT},
-  "Syntax: <account>\n"
+  &rpc_wallet_addrlist, 1, {RPC_ACCOUNT, RPC_BOOL},
+  "Syntax: <account> [verbose]\n"
   "Returns the list of coin addresses for the given account."
 }; 
+const RPCOp WALLET_LISTEXTADDR = {
+  &rpc_wallet_extaddrlist, 1, {RPC_ACCOUNT, RPC_BOOL},
+  "Syntax: <account> [verbose]\n"
+  "Returns the list of extended coin addresses for the given account."
+};
 const RPCOp WALLET_BALANCE = {
   &rpc_wallet_balance, 0, {RPC_ACCOUNT, RPC_INT},
   "wallet.balance [account] [minconf=1]\n"
@@ -819,10 +833,16 @@ const RPCOp WALLET_MULTISEND = {
   "Note: Coin amounts are double-precision floating point numbers."
 };
 const RPCOp WALLET_NEW = {
-  &rpc_wallet_new, 1, {RPC_ACCOUNT, RPC_STRING},
-  "Syntax: <account> [type]\n"
-  "Returns a new address for receiving payments to the specified account.\n"
-	"The type is either \"legacy\", \"p2sh-segwit\", or \"bech32\"."
+  &rpc_wallet_new, 1, {RPC_ACCOUNT, RPC_STRING, RPC_BOOL},
+  "Syntax: <account> [type] [verbose]\n"
+  "Generate a new address for the specified account.\n"
+	"\n"
+	"The type is either;\n"
+	"\tdefault     Generate a new address based on server configuration,\n"
+	"\tlegacy      A legacy pubkeyid address in base58 format,\n"
+	"\tsegwit      A segwit v0 address in base58 format,\n"
+	"\tbech32      A segwit v0 address in bech32 format, or\n"
+	"\tdilithium   A segwit v14 address in bech32 format."
 };
 const RPCOp WALLET_DERIVE = {
   &rpc_wallet_derive, 2, {RPC_ACCOUNT, RPC_STRING},
@@ -848,9 +868,10 @@ const RPCOp WALLET_VERIFY = {
   "Rescan the block-chain for personal wallet transactions."
 };
 const RPCOp WALLET_SEND = {
-  &rpc_wallet_send, 3, {RPC_ACCOUNT, RPC_COINADDR, RPC_DOUBLE, RPC_INT64, RPC_STRING, RPC_STRING},
-  "Syntax: <fromaccount> <toaddress> <amount> [minconf=1] [comment] [comment-to]\n"
-  "Note: The <amount> is a real and is rounded to the nearest 0.00000001"
+  &rpc_wallet_send, 3, {RPC_ACCOUNT, RPC_COINADDR, RPC_DOUBLE, RPC_DOUBLE},
+  "Syntax: <fromaccount> <toaddress> <amount> [<fee>]\n"
+	"Summary: Send a coin amount to a coin address destination.\n"
+  "Note: The <amount> and <fee> are reals rounded to the nearest 0.00000001"
 };
 const RPCOp WALLET_BSEND = {
   &rpc_wallet_bsend, 3, {RPC_ACCOUNT, RPC_COINADDR, RPC_DOUBLE, RPC_INT64, RPC_STRING, RPC_STRING},
@@ -867,15 +888,18 @@ const RPCOp WALLET_TSEND = {
   "Used in order to obtain information about the details involved if a particular transaction were to take place -- without actually performing the transaction.\n"
   "Note: The <amount> is a real and is rounded to the nearest 0.00000001"
 };
+#if 0
 const RPCOp WALLET_SET = {
   &rpc_wallet_set, 2, {RPC_STRING, RPC_ACCOUNT},
   "Syntax: <coin-address> <account>\n"
   "Sets the account associated with the given address."
 };
+#endif
 const RPCOp WALLET_SETKEY = {
-  &rpc_wallet_setkey, 2, {RPC_STRING, RPC_ACCOUNT},
-  "Syntax: <priv-key> <account>\n"
-  "Adds a private key (as returned by wallet.key) to your wallet."
+  &rpc_wallet_setkey, 2, {RPC_STRING, RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <priv-key> <account> [<type>]\n"
+  "Adds a private key (as returned by wallet.key) to your wallet.\n"
+	"Setting the <type> to \"default\" assigns the account's default key."
 };
 const RPCOp WALLET_TX = {
   &rpc_wallet_tx, 1, {RPC_STRING}, 
@@ -928,9 +952,12 @@ const RPCOp STRATUM_KEYREMOVE = {
   "Remove a stratum synchronization key."
 };
 const RPCOp STRATUM_BLOCKS = {
-  &rpc_stratum_blocks, 0, {RPC_BOOL},
-  "Syntax: <verbose>\n"
-  "List blocks generated by this node."
+  &rpc_stratum_blocks, 0, {RPC_BOOL, RPC_INT64},
+  "Syntax: <verbose=false> <timespan=86400>\n"
+  "List blocks generated by this node.\n"
+	"\n"
+	"<verbose> A boolean indicating whether to show the hash or the full block.\n"
+	"<timespan> The number of seconds before now to report on."
 };
 
 
@@ -1054,8 +1081,12 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "tx.validate", TX_VALIDATE);
 
   RegisterRPCOp(ifaceIndex, "wallet.addr", WALLET_ADDR);
+  if (opt_bool(OPT_ADMIN)) {
+		//RegisterRPCOp(ifaceIndex, "wallet.burn", WALLET_BURN);
+	}
   RegisterRPCOp(ifaceIndex, "wallet.witaddr", WALLET_WITADDR);
   RegisterRPCOp(ifaceIndex, "wallet.listaddr", WALLET_LISTADDR);
+	RegisterRPCOp(ifaceIndex, "wallet.listextaddr", WALLET_LISTEXTADDR);
   RegisterRPCOp(ifaceIndex, "wallet.balance", WALLET_BALANCE);
 
   RegisterRPCOp(ifaceIndex, "wallet.cscript", WALLET_CSCRIPT);
@@ -1104,7 +1135,9 @@ void RegisterRPCOpDefaults(int ifaceIndex)
 
   RegisterRPCOp(ifaceIndex, "wallet.tsend", WALLET_TSEND);
 
+#if 0
   RegisterRPCOp(ifaceIndex, "wallet.set", WALLET_SET);
+#endif
 
   RegisterRPCOp(ifaceIndex, "wallet.setkey", WALLET_SETKEY);
   RegisterRPCAlias(ifaceIndex, "importprivkey", WALLET_SETKEY);
@@ -1139,7 +1172,7 @@ void JSONRequest::parse(const Value& valRequest)
   }
   if (!iface) {
     /* default */
-    iface = GetCoinByIndex(USDE_COIN_IFACE);
+    iface = GetCoinByIndex(SHC_COIN_IFACE);
   }
 
   // Parse method

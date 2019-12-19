@@ -10,28 +10,58 @@
 
 ==Abstract==
 
-This SIP defines a new extended transaction called a "parameter" that is attached to coinbase and normal fund transfer transactions. The structure defines a set of rules that are being proposed for the blockchain. 
+This SIP defines a new extended transaction called a "parameter" that can be attached to shioncoin blockchain transactions. The structure defines a set of rules that are being proposed for the blockchain. 
 
 ==Motivation==
 
 The "extended parameter transaction" provides the ability to dynamically change aspects of the blockchain based on a user concensus.
 
+In addition to providing the partipants of the network control over the blockchain's behaviour, this mechanism provides a method to alter behaviour in order to mitigate behaviour that is later deemed inappropriate.
+
+In other words, by providing a dynamic method of altering blockchain parameters, a mechanism is provided to apply conditions to the current state of things as opposed to what was considered suitable when the functionality was originally implemented.
+
 ==Specification==
+
+The Param extended transaction is being introduced by bit 6 of the VersionBits mechanism. The starting deployment date is 01/01/21 and the timeout is 01/01/22. The testnet is set to one year earlier. 
+
+The embedded param ext-tx specifies a preferred value for a single parameter mode. The output coin value of the param ext-tx is always 0 coins.
+
+The parameter value must be either half or double the current established reference value. For example, since the default maximum blocksize of the shioncoin blockchain is 4megs, the "max blocksize" param mode can initially specify a value of "2048000" or "8192000". 
+
+To include a parameter specification, an additional output is added and the "TXF_PARAM" flag is enabled for the transaction. 
+
+The param output has a traditional extended transaction format:
+OP_EXT_UPDATE << EncodeOP_N(OP_PARAM) << OP_HASH160 << hashParam << OP_2DROP << OP_RETURN << OP_0
+
+A consensus occurs when 10240 or more param ext-txs are submitted and a particular mode value has 90% of the votes. Each param ext-tx will expire after 30 days. 
+For example, if at last 10240 param outputs are generated in less than 30 days, and at least 90% of them specify a maximum block size of 8192000, then the new blockchain parameter will be applied once the 90% mark is hit.   
+
+The rpc command "sys.info" provides a method to review what the current parameter values are. The rpc command "param.list" returns a list of all params that are not expired.
+
+==Parameters==
 
 This SIP introduces two initial parameters; the "maximum block size" and the "minimum relay fee". 
 
-..
+The proposal supplies a method to insert a param ext-tx into a transaction. The transaction may be coinbase transaction, a regular coin transfer transaction, or another extended transaction.
 
-== Examples ==
+=== Maximum Blocksize ===
 
+The maximum blocksize denotes the maximum non-witness byte size of a block committed to the shioncoin blockchain.
 
-== Future extensions ==
+The shioncoin blockchain, by default, has a maximum block size of 4096000 bytes. 
+By supplying a dynamic method of adjusting the amount of information contained in each block, the partipants of the shioncoin blockchain network can decide, by a consensus decision, how much information is prudent to be stored in a single block.
 
-== Footnotes ==
+=== Minimum Fee Rate ===
 
-<references />
+The minimum fee rate param references the "minimum tx relay fee". This is the absolute minimum that a transaction may have and still be accepted into a node's transaction mempool. 
 
-== Copyright ==
+This value is not to be confused with the "minimum tx fee" which denotes a multiplier value against each kilo-byte of information in the transaction.
 
-This document is placed in the public domain.
+The shioncoin blockchain, by default, has a 0.00001 minimum tx relay fee.
 
+Similar to aspects of the maximum block size, this parameter affects the over-all cost of sending transactions on the shioncoin blockchain. 
+
+== Extensions ==
+A particular extension could affect previous node behaviour (hard fork), and it is the intent that if this occurs the change be introduced in a manner that mitigates this to only affecting very old nodes. For example, by introducing functionality in a particular version, and then waiting until a later version to introduce the param which most nodes should already be "ready" for.
+
+If possible, though, any introduction of new dynamic blockchain parameters would be preferred to be entirely backwards compatible.

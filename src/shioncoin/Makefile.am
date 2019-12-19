@@ -6,6 +6,7 @@ check_PROGRAMS = test_shcoind
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/secp256k1/include \
+	-I$(top_srcdir)/src/libdi3 \
 	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include \
 	-I$(top_srcdir)/src/share-lib \
 	-I$(srcdir)/proto \
@@ -34,7 +35,6 @@ blockchain_sources = \
 proto_sources = \
 	$(srcdir)/proto/coin_proto.c \
 	$(srcdir)/proto/shc_proto.cpp \
-	$(srcdir)/proto/usde_proto.cpp \
 	$(srcdir)/proto/emc2_proto.cpp \
 	$(srcdir)/proto/test_proto.cpp \
 	$(srcdir)/proto/ltc_proto.cpp \
@@ -42,7 +42,6 @@ proto_sources = \
 	$(srcdir)/proto/color_proto.cpp \
 	$(srcdir)/proto/coin_proto.h \
 	$(srcdir)/proto/shc_proto.h \
-	$(srcdir)/proto/usde_proto.h \
 	$(srcdir)/proto/emc2_proto.h \
 	$(srcdir)/proto/test_proto.h \
 	$(srcdir)/proto/ltc_proto.h \
@@ -55,6 +54,7 @@ stratum_sources = \
 	stratum/stratum_http.h \
 	stratum/stratum_message.h \
 	stratum/stratum_protocol.h \
+	stratum/stratum_command.h \
 	stratum/stratum_user.h \
 	stratum/stratum_task.h \
 	stratum/stratum_sync.h \
@@ -72,6 +72,7 @@ stratum_sources = \
 	stratum/stratum_http.c \
 	stratum/stratum_message.c \
 	stratum/stratum_protocol.c \
+	stratum/stratum_command.c \
 	stratum/stratum_user.c \
 	stratum/stratum_task.c \
 	stratum/stratum_sync.c \
@@ -150,10 +151,12 @@ common_includes = \
 	server/rpccontext_proto.h \
 	server/rpcexec_proto.h \
 	server/rpcoffer_proto.h \
+	server/rpcparam_proto.h \
 	server/compat.h \
 	server/txidx.h \
-	server/init.h \
 	server/key.h \
+	server/eckey.h \
+	server/dikey.h \
 	server/keystore.h \
 	server/mruset.h \
 	server/netbase.h \
@@ -168,6 +171,8 @@ common_includes = \
 	server/algo/keccak.h \
 	server/algo/qubit.h \
 	server/algo/scrypt.h \
+	server/algo/sha512.h \
+	server/algo/hmac_sha512.h \
 	server/algo/sph_blake.h \
 	server/algo/sph_bmw.h \
 	server/algo/sph_cubehash.h \
@@ -237,19 +242,6 @@ testnet_sources = \
 	server/testnet/testnet_txidx.h \
 	server/testnet/testnet_pool.cpp \
 	server/testnet/testnet_pool.h
-
-# usde emulation interface
-usde_sources = \
-	server/usde/usde_netmsg.cpp \
-	server/usde/usde_netmsg.h \
-	server/usde/usde_block.cpp \
-	server/usde/usde_block.h \
-	server/usde/usde_wallet.cpp \
-	server/usde/usde_wallet.h \
-	server/usde/usde_txidx.cpp \
-	server/usde/usde_txidx.h \
-	server/usde/usde_pool.cpp \
-	server/usde/usde_pool.h
 
 # emc2 emulation service
 emc2_sources = \
@@ -323,8 +315,6 @@ server_sources = \
 	server/ext/asset.h \
 	server/ext/exec.cpp \
 	server/ext/exec.h \
-	server/ext/channel.cpp \
-	server/ext/channel.h \
 	server/ext/context.cpp \
 	server/ext/context.h \
 	server/ext/altchain.cpp \
@@ -337,10 +327,12 @@ server_sources = \
 	server/rpc/rpccontext_proto.cpp \
 	server/rpc/rpcexec_proto.cpp \
 	server/rpc/rpcoffer_proto.cpp \
+	server/rpc/rpcparam_proto.cpp \
 	server/rpc/rpcdump.cpp \
 	server/rpc/rpc_command.cpp \
 	server/rpc/rpc_parse.cpp \
-	server/rpc/rpcwallet_proto.cpp \
+	server/rpc/rpc_wallet.cpp \
+	server/rpc/rpc_wallet_addr.cpp \
 	server/rpc/rpcrawtransaction.cpp \
 	server/versionbits.cpp \
 	server/algobits.cpp \
@@ -365,8 +357,8 @@ server_sources = \
 	server/sha256d_merkle.cpp \
 	server/txidx.cpp \
 	server/init.cpp \
-	server/derkey.cpp \
-	server/hdkey.cpp \
+	server/eckey.cpp \
+	server/dikey.cpp \
 	server/keystore.cpp \
 	server/main.cpp \
 	server/script.cpp \
@@ -382,6 +374,8 @@ server_sources = \
 	server/algo/keccak.c \
 	server/algo/qubit.c \
 	server/algo/scrypt.c \
+	server/algo/sha512.cpp \
+	server/algo/hmac_sha512.cpp \
 	server/algo/skein.c \
 	server/algo/sph_blake.c \
 	server/algo/sph_bmw.c \
@@ -409,10 +403,6 @@ if STRATUM_SERVICE
 server_sources += $(stratum_sources)
 endif
 
-if USDE_SERVICE
-server_sources += $(usde_sources)
-endif
-
 if EMC2_SERVICE
 server_sources += $(emc2_sources)
 endif
@@ -435,7 +425,8 @@ endif
 
 shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(top_builddir)/src/libcrypto/libcrypto.a
+	$(top_builddir)/src/libcrypto/libcrypto.a \
+	$(top_builddir)/src/libdi3/libdi3.a
 if STATIC_LIBSHARE
 shcoind_LDADD += \
 	$(LIBSHARE)/src/share-lib/libshare.a \
@@ -465,11 +456,20 @@ test_shcoind_SOURCES = \
 	test/testcoin_block.cpp \
 	test/testcoin_json.cpp \
 	test/testcoin_bloom.cpp \
-	test/testcoin_algo.cpp
+	test/testcoin_algo.cpp \
+	test/testcoin_account.cpp \
+	test/testcoin_bip32.cpp \
+	test/testcoin_sip5.cpp \
+	test/testcoin_sip6.cpp \
+	test/testcoin_sip10.cpp \
+	test/testcoin_sip12.cpp \
+	test/testcoin_sip25.cpp \
+	test/testcoin_sip33.cpp
 
 test_shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
-	$(top_builddir)/src/libcrypto/libcrypto.a
+	$(top_builddir)/src/libcrypto/libcrypto.a \
+	$(top_builddir)/src/libdi3/libdi3.a
 test_shcoind_CFLAGS = -g -O0 -DTEST_SHCOIND
 test_shcoind_CXXFLAGS = -g -O0 -DTEST_SHCOIND
 if STATIC_LIBSHARE
@@ -486,11 +486,10 @@ test_shcoind_LDADD += -lboost_system -lboost_filesystem -lboost_thread -ldb_cxx 
 
 
 if HAVE_SYSTEMCTL
-SYSD_FILE = /lib/systemd/system/shcoind.service
+SYSD_FILE = /usr/lib/systemd/system/shcoind.service
 
 install-exec-hook:
-	mkdir -p /lib/systemd/system/
-	rm -f /etc/systemd/system/shcoind.service
+	mkdir -p /usr/lib/systemd/system/
 	echo "[Unit]" > $(SYSD_FILE) 
 	echo "Description=ShionCoin" >> $(SYSD_FILE) 
 	echo "Wants=network.target" >> $(SYSD_FILE) 
@@ -501,7 +500,9 @@ install-exec-hook:
 	echo "WantedBy=sysinit.target" >> $(SYSD_FILE) 
 	echo "Alias=shcoind.service" >> $(SYSD_FILE) 
 	systemctl daemon-reload 
+	systemctl disable shcoind
 	systemctl enable shcoind
+	[ -e /etc/systemd/system/shcoind.service ] || ln -sf  /usr/lib/systemd/system/shcoind.service /etc/systemd/system/shcoind.service
 
 uninstall-hook:
 	rm -f $(SYSD_FILE) /etc/systemd/system/shcoind.service
@@ -510,10 +511,10 @@ endif
 
 if DEBUG
 CFLAGS += -g3 
-CXXFLAGS += -g3
+CXXFLAGS += -g3 -Wno-write-strings
 else
 CFLAGS += -O2
-CXXFLAGS += -O2
+CXXFLAGS += -O2 -Wno-write-strings
 endif
 
 

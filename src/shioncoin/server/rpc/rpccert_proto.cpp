@@ -25,7 +25,6 @@
 
 #undef GNULIB_NAMESPACE
 #include "shcoind.h"
-#include "init.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
@@ -338,18 +337,18 @@ Value rpc_wallet_donate(CIface *iface, const Array& params, bool fStratum)
 
   int64 nValue = AmountFromValue(params[1]);
   if (nValue < iface->min_tx_fee || nValue > (MAX_TRANSACTION_FEE(iface) / 2))
-    throw JSONRPCError(err, "Invalid coin value specified.");
+    throw JSONRPCError(SHERR_INVAL, "Invalid coin value specified.");
 
   uint160 hCert;
   if (params.size() > 2) {
     hCert = uint160(params[2].get_str().c_str());
     if (!VerifyCertHash(iface, hCert)) 
-      throw JSONRPCError(err, "Invalid certificate hash specified.");
+      throw JSONRPCError(SHERR_INVAL, "Invalid certificate hash specified.");
   }
 
   nBalance = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (nBalance < nValue)
-    throw JSONRPCError(err, "Insufficient funds available for amount specified.");
+    throw JSONRPCError(ERR_FEE, "Insufficient funds available for amount specified.");
 
   CWalletTx wtx;
   err = init_ident_donate_tx(iface, strAccount, nValue, hCert, wtx);

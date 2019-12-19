@@ -24,8 +24,8 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
@@ -59,7 +59,6 @@ static const unsigned int MAX_INV_SZ = 50000;
 
 
 extern CMedianFilter<int> cPeerBlockCounts;
-//extern map<uint256, CAlert> mapAlerts;
 extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
 
 #define MIN_LTC_PROTO_VERSION 70002
@@ -363,16 +362,6 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     if (pindexBest) {
       InitServiceBlockEvent(LTC_COIN_IFACE, pfrom->nStartingHeight);
     }
-
-
-#if 0
-    // Relay alerts
-    {
-      LOCK(cs_mapAlerts);
-      BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
-        item.second.RelayTo(pfrom);
-    }
-#endif
 
     pfrom->fSuccessfullyConnected = true;
 
@@ -853,26 +842,6 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       pfrom->PushMessage("pong", nonce);
     }
   }
-
-
-#if 0
-  else if (strCommand == "alert")
-  {
-    CAlert alert;
-    vRecv >> alert;
-
-    if (alert.ProcessAlert(ifaceIndex))
-    {
-      // Relay
-      pfrom->setKnown.insert(alert.GetHash());
-      {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
-          alert.RelayTo(pnode);
-      }
-    }
-  }
-#endif
 
   /* exclusively used by bloom filter */
   else if (strCommand == "filterload")

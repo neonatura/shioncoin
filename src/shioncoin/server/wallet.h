@@ -52,6 +52,7 @@ enum WalletFeature
 	FEATURE_LATEST = 60000
 };
 
+const uint32_t BIP32_HARDENED_KEY_LIMIT = 0x80000000;
 
 typedef std::map<std::string, std::string> mapval_t;
 
@@ -67,20 +68,21 @@ class CAccountCache;
 #define ACCADDR_EXEC 2
 /* primary pubkey used for hdkey */
 #define ACCADDR_HDKEY 3
-/* redeem pubkey for segwit addr. */
-#define ACCADDR_SEGWIT 4 
 /* ext transactions (@account) */
-#define ACCADDR_EXT 5 
+#define ACCADDR_EXT 4 
 /* notary address */
-#define ACCADDR_NOTARY 6 
+#define ACCADDR_NOTARY 5
+/* miner address */
+#define ACCADDR_MINER 6
 
 #define MAX_ACCADDR 7
 
+class CAccount;
 
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
  */
-class CWallet : public CCryptoKeyStore
+class CWallet : public CBasicKeyStore
 {
 	private:
 		CWalletDB *pwalletdbEncryption;
@@ -97,6 +99,7 @@ class CWallet : public CCryptoKeyStore
 		map<uint256, CPubKey> mapValidateNotary;
 
 		mutable std::vector<CParam> mapParam;
+		mutable std::vector<uint256> mapParamArch;
 
 		mutable std::map<std::string, uint256> mapAlias;
 		mutable std::map<uint256, std::string> mapAliasArch;
@@ -154,9 +157,11 @@ class CWallet : public CCryptoKeyStore
 
 		std::string strWalletFile;
 
+#if 0
 		typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
 		MasterKeyMap mapMasterKeys;
 		unsigned int nMasterKeyMaxID;
+#endif
 
 		/* best work done on current chain */
 		CBigNum bnBestChainWork;
@@ -168,7 +173,9 @@ class CWallet : public CCryptoKeyStore
 
 		CWallet(int index)
 		{
+#if 0
 			nMasterKeyMaxID = 0;
+#endif
 			pwalletdbEncryption = NULL;
 			checkpoints = NULL;
 			ifaceIndex = index;
@@ -182,7 +189,9 @@ class CWallet : public CCryptoKeyStore
 		CWallet(int index, std::string strWalletFileIn)
 		{
 			strWalletFile = strWalletFileIn;
+#if 0
 			nMasterKeyMaxID = 0;
+#endif
 			pwalletdbEncryption = NULL;
 			checkpoints = NULL;
 			ifaceIndex = index;
@@ -215,22 +224,43 @@ class CWallet : public CCryptoKeyStore
 
 		bool SelectAccountCoins(string strAccount, int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet, uint160 hColor = 0) const;
 
-		// keystore implementation
-		// Generate a new key
-		CPubKey GenerateNewKey(bool fCompressed = true);
-		HDPubKey GenerateNewHDKey(bool fCompressed = true);
-		// Adds a key to the store, and saves it to disk.
-		bool AddKey(const HDPrivKey& key);
-		bool AddKey(const CKey& key);
-		// Adds a key to the store, without saving it to disk (used by LoadWallet)
-		bool LoadKey(const CKey& key) { return CCryptoKeyStore::AddKey(key); }
+		bool GenerateNewECKey(CPubKey& pubkeyRet, bool fCompressed = true, int nFlag = 0);
 
+		CPubKey GenerateNewECKey(bool fCompressed = true, int nFlag = 0)
+		{
+			CPubKey pubkey;
+			GenerateNewECKey(pubkey, fCompressed, nFlag);
+			return (pubkey);
+		}
+
+		bool GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag = 0);
+
+#if 0
+		HDPubKey GenerateNewHDKey(bool fCompressed = true);
+#endif
+		// Adds a key to the store, and saves it to disk.
+#if 0
+		bool AddKey(const HDPrivKey& key);
+#endif
+
+		bool AddKey(const ECKey& key);
+
+		bool AddKey(const DIKey& key);
+
+		// Adds a key to the store, without saving it to disk (used by LoadWallet)
+		bool LoadKey(const ECKey& key) { return CBasicKeyStore::AddKey(key); }
+		//
+		// Adds a key to the store, without saving it to disk (used by LoadWallet)
+		bool LoadKey(const DIKey& key) { return CBasicKeyStore::AddKey(key); }
+
+#if 0
 		// Adds an encrypted key to the store, and saves it to disk.
 		bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
 		// Adds an encrypted key to the store, without saving it to disk (used by LoadWallet)
-		bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret) { return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret); }
+		bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret) { return CBasicKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret); }
+#endif
 		bool AddCScript(const CScript& redeemScript);
-		bool LoadCScript(const CScript& redeemScript) { return CCryptoKeyStore::AddCScript(redeemScript); }
+		bool LoadCScript(const CScript& redeemScript) { return CBasicKeyStore::AddCScript(redeemScript); }
 
 #if 0
 		bool Unlock(const SecureString& strWalletPassphrase);
@@ -290,8 +320,8 @@ class CWallet : public CCryptoKeyStore
 			BOOST_FOREACH(const CTxOut& txout, tx.vout) {
 				// If output is less than minimum value, then don't include transaction.
 				// This is to help deal with dust spam bloating the wallet.
-				if (IsMine(txout) && txout.nValue >= nMinimumInputValue)
-					return true;
+				if ((txout.nValue >= nMinimumInputValue) && IsMine(txout))
+					return (true);
 			}
 			return false;
 		}
@@ -376,10 +406,11 @@ class CWallet : public CCryptoKeyStore
 		bool GetMergedAddress(string strAccount, const char *tag, CCoinAddr& addrRet);
 		bool GetMergedPubKey(string strAccount, const char *tag, CPubKey& pubkey);
 
-
+#if 0
 		bool GetWitnessAddress(CCoinAddr& addr, CCoinAddr& witAddr);
+#endif
 
-		int64 CalculateFee(CWalletTx& tx, int64 nMinFee = 0);
+		int64 CalculateFee(CWalletTx& tx, int64 nMinFee = 0, int confTarget = 0);
 
 		bool FillInputs(const CTransaction& tx, tx_cache& inputs, bool fAllowSpent = true);
 
@@ -410,9 +441,15 @@ class CWallet : public CCryptoKeyStore
 		/* the serialized size of the transaction. */
 		virtual unsigned int GetTransactionWeight(const CTransaction& tx) = 0;  
 
-		virtual unsigned int GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost = 0) = 0;
+		unsigned int GetVirtualTransactionSize(int64 nWeight)
+		{
+			return ((nWeight + 3) / 4);
+		}
 
-		virtual unsigned int GetVirtualTransactionSize(const CTransaction& tx) = 0;
+		unsigned int GetVirtualTransactionSize(const CTransaction& tx)
+		{
+			return (GetVirtualTransactionSize(GetTransactionWeight(tx)));
+		}
 
 		virtual double AllowFreeThreshold() = 0;
 
@@ -447,14 +484,6 @@ class CWallet : public CCryptoKeyStore
 
 		CAccountCache *GetAccount(string strAccount);
 
-		CPubKey GetChangePubKey(string strAccount);
-
-		CPubKey GetExecPubKey(string strAccount);
-
-		CPubKey GetExtPubKey(string strAccount);
-
-		CPubKey GetRecvPubKey(string strAccount);
-
 		CPubKey GetPrimaryPubKey(string strAccount);
 
 		CCoinAddr GetChangeAddr(string strAccount);
@@ -482,6 +511,18 @@ class CWallet : public CCryptoKeyStore
 		bool WriteArchTx(const CWalletTx& wtx) const;
 		bool EraseArchTx(uint256 hash) const;
 		bool HasArchTx(uint256 hash) const;
+
+		bool DeriveNewECKey(CAccount *hdChain, ECKey& secret, bool internal = false);
+
+		bool DeriveNewDIKey(CAccount *hdChain, DIKey& secret, bool internal = false);
+
+#if 0
+		bool LoadScriptMetadata(const CScriptID& script_id, const CKeyMetadata &meta);
+
+		bool LoadKeyMetadata(const CKeyID& keyID, const CKeyMetadata &meta);
+#endif
+
+		const cbuff& Base58Prefix(int type) const;
 
 		virtual bool IsAlgoSupported(int alg, CBlockIndex *pindexPrev = NULL, uint160 hColor = 0) = 0;
 
@@ -790,48 +831,7 @@ class CWalletTx : public CMerkleTx
 				 return (GetDebit() > 0);
 			 }
 
-			 bool IsConfirmed() const
-			 {
-				 // Quick answer in most cases
-				 if (!IsFinal(pwallet->ifaceIndex))
-					 return false;
-				 if (GetDepthInMainChain(pwallet->ifaceIndex) >= 1)
-					 return true;
-				 if (!IsFromMe()) // using wtx's cached debit
-					 return false;
-
-				 // If no confirmations but it's from us, we can still
-				 // consider it confirmed if all dependencies are confirmed
-				 std::map<uint256, const CMerkleTx*> mapPrev;
-				 std::vector<const CMerkleTx*> vWorkQueue;
-				 vWorkQueue.reserve(vtxPrev.size()+1);
-				 vWorkQueue.push_back(this);
-				 for (unsigned int i = 0; i < vWorkQueue.size(); i++)
-				 {
-					 const CMerkleTx* ptx = vWorkQueue[i];
-
-					 if (!ptx->IsFinal(pwallet->ifaceIndex))
-						 return false;
-					 if (ptx->GetDepthInMainChain(pwallet->ifaceIndex) >= 1)
-						 continue;
-					 if (!pwallet->IsFromMe(*ptx))
-						 return false;
-
-					 if (mapPrev.empty())
-					 {
-						 BOOST_FOREACH(const CMerkleTx& tx, vtxPrev)
-							 mapPrev[tx.GetHash()] = &tx;
-					 }
-
-					 BOOST_FOREACH(const CTxIn& txin, ptx->vin)
-					 {
-						 if (!mapPrev.count(txin.prevout.hash))
-							 return false;
-						 vWorkQueue.push_back(mapPrev[txin.prevout.hash]);
-					 }
-				 }
-				 return true;
-			 }
+			 bool IsConfirmed() const;
 
 #if 0
 			 bool WriteToDisk();
@@ -916,23 +916,62 @@ class CAccount
 {
 	public:
 		CPubKey vchPubKey;
+		uint160 hCert;
+
+		/* HD Chain */
+		uint32_t nExternalECChainCounter;
+		uint32_t nExternalDIChainCounter;
+		uint32_t nInternalECChainCounter;
+		uint32_t nInternalDIChainCounter;
+		CKeyID masterKeyID; //!< master key hash160
 
 		CAccount()
 		{
 			SetNull();
 		}
 
+		CAccount(const CAccount& accountIn)
+		{
+			SetNull();
+			Init(accountIn);
+		}
+
 		void SetNull()
 		{
 			vchPubKey = CPubKey();
+			hCert = 0;
+			masterKeyID.SetNull();
+			nExternalECChainCounter = 0;
+			nExternalDIChainCounter = 0;
+			nInternalECChainCounter = 0;
+			nInternalDIChainCounter = 0;
+		}
+
+		void Init(const CAccount& b)
+		{
+			vchPubKey = b.vchPubKey;
+			hCert = b.hCert;
+			masterKeyID = b.masterKeyID;
+			nExternalECChainCounter = b.nExternalECChainCounter;
+			nExternalDIChainCounter = b.nExternalDIChainCounter;
+			nInternalECChainCounter = b.nInternalECChainCounter;
+			nInternalDIChainCounter = b.nInternalDIChainCounter;
 		}
 
 		IMPLEMENT_SERIALIZE
-			(
-			 if (!(nType & SER_GETHASH))
-			 READWRITE(nVersion);
-			 READWRITE(vchPubKey);
-			)
+		(
+			if (!(nType & SER_GETHASH))
+				READWRITE(nVersion);
+			READWRITE(vchPubKey);
+			if (nVersion >= 4010000) {
+				READWRITE(hCert);
+				READWRITE(masterKeyID); //!< master key hash160
+				READWRITE(nInternalECChainCounter);
+				READWRITE(nInternalDIChainCounter);
+				READWRITE(nExternalECChainCounter);
+				READWRITE(nExternalDIChainCounter);
+			}
+		)
 };
 
 
@@ -997,9 +1036,13 @@ bool LoadBlockIndex(CIface *iface);
 int IndexOfExtOutput(const CTransaction& tx);
 
 
+#if 0
 CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool bForceNew=false);
 
 CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount, bool bForceNew=false);
+#endif
+CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount);
+
 
 /** 
  * Send coins with the inclusion of a specific input transaction.
@@ -1048,6 +1091,8 @@ bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWal
 bool IsAccountValid(CIface *iface, std::string strAccount);
 
 int GetDefaultOutputType(CIface *iface);
+
+bool ExtractDestinationKey(CWallet *wallet, const CTxDestination& dest, CKeyID& keyid);
 
 #endif
 

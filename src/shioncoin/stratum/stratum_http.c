@@ -72,6 +72,8 @@ unet_table_t *t;
   CIface *iface = NULL;
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
     iface = GetCoinByIndex(idx);
+		if (!iface)
+			continue;
     if (0 == strncmp(url+1, iface->name, strlen(iface->name)))
       break;
   }
@@ -529,7 +531,8 @@ void stratum_http_main_html(unsigned int sk, char *url, shbuf_t *buff)
   shbuf_catstr(buff, "Content-Type: text/html\r\n");
   shbuf_catstr(buff, "\r\n"); 
   shbuf_catstr(buff, "<html><body>\r\n"); 
-  shbuf_catstr(buff, stratum_http_response(sk, url, &ifaceIndex));
+	const char *resp_data = stratum_http_response(sk, url, &ifaceIndex);
+	if (resp_data) shbuf_catstr(buff, resp_data);
 
   shbuf_catstr(buff, "<div style=\"clear : both;\"></div>");
 

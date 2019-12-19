@@ -42,6 +42,10 @@
 #define EMC2_MAX_SIGOPS 20000
 //#define EMC2_MAX_SIGOPS 80000 /* consensus.h, 07.20.17 */
 
+#define EMC2_MAX_SCRIPT_SIZE 10000
+
+#define EMC2_MAX_SCRIPT_ELEMENT_SIZE 520
+
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
 #define EMC2_MAX_DRIFT_TIME 7200 /* 120 minutes */ 
 

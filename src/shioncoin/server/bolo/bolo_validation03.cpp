@@ -970,8 +970,6 @@ void bolo_connectblock_master(CBlockIndex *pindex, CBlock& block)
 			bolo_mapNotary.push_back(in);
 			bolo_mapNotaryScript.push_back(script);
 
-//fprintf(stderr, "DEBUG: bolo_connectblock_master: bolo_mapNotary.size() = %d\n", bolo_mapNotary.size());
-
 			if (bolo_PROPOSED_NOTARY &&
 					bolo_mapNotary.size() >= BOLO_MINRATIFY) {
 				CWalletTx wtx(wallet);

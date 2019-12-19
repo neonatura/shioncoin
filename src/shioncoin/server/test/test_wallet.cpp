@@ -25,7 +25,6 @@
 
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "txcreator.h"
@@ -87,13 +86,9 @@ bool test_LoadWallet(void)
   bool fFirstRun = true;
   testWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(testWallet, strAccount, true);
-		//CPubKey newDefaultKey = testWallet->GenerateNewKey(); 
-    testWallet->SetDefaultKey(newDefaultKey);
-//    testWallet->SetAddressBookName(testWallet->vchDefaultKey.GetID(), "");
+    testWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(testWallet);
@@ -763,18 +758,6 @@ unsigned int TESTWallet::GetTransactionWeight(const CTransaction& tx)
     ::GetSerializeSize(tx, SER_NETWORK, TEST_PROTOCOL_VERSION);
 
   return (nBytes);
-}
-
-unsigned int TESTWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{
-  return (std::max(nWeight, nSigOpCost * test_nBytesPerSigOp) + TEST_WITNESS_SCALE_FACTOR - 1) / TEST_WITNESS_SCALE_FACTOR;
-}
-
-unsigned int TESTWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  unsigned int nWeight = GetTransactionWeight(tx);
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(nWeight, nSigOpCost));
 }
 
 double TESTWallet::AllowFreeThreshold()

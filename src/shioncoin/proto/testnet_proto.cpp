@@ -27,6 +27,7 @@
 #include "block.h"
 #include "main.h"
 #include "wallet.h"
+#include "account.h"
 #include "coin_proto.h"
 #include "testnet/testnet_netmsg.h"
 #include "testnet/testnet_pool.h"
@@ -211,13 +212,14 @@ static int testnet_block_process(CIface *iface, CBlock *block)
 
 static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
 {
+#if 0
   static CPubKey ret_key;
 	string strAccount("");
 
   if (!ret_key.IsValid()) {
 		ret_key = GetAccountPubKey(wallet, strAccount, false);
     if (!ret_key.IsValid()) { /* fallback. */
-			ret_key = wallet->GenerateNewKey(true);
+			ret_key = wallet->GenerateNewECKey(true);
 			wallet->SetAddressBookName(ret_key.GetID(), strAccount);
     }
 
@@ -235,6 +237,18 @@ static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
 	}
 
   return (ret_key);
+#endif
+
+  static CPubKey pubkey;
+  if (!pubkey.IsValid()) {
+    CAccountCache *account = wallet->GetAccount("");
+    account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+    /* miner fee */
+		wallet->GetAccount("bank");
+    /* cpu miner */
+		wallet->GetAccount("system");
+  }
+  return (pubkey);
 }
 
 static int testnet_block_templ(CIface *iface, CBlock **block_p)
@@ -258,12 +272,12 @@ static int testnet_block_templ(CIface *iface, CBlock **block_p)
   const CPubKey& pubkey = testnet_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
 error(SHERR_INVAL, "testnet_block_templ: error obtaining main pubkey.\n");
-    return (NULL);
+    return (-1);
   }
 
   pblock = testnet_CreateNewBlock(pubkey);
   if (!pblock)
-    return (NULL);
+    return (-1);
 
   pblock->nTime = MAX(median, GetAdjustedTime());
   pblock->nNonce = 0;
@@ -352,15 +366,19 @@ coin_iface_t testnet_coin_iface = {
 	NODE_NETWORK | NODE_BLOOM | NODE_WITNESS,
   TESTNET_MIN_INPUT,
   TESTNET_MAX_BLOCK_SIZE,
+  TESTNET_MAX_BLOCK_SIZE,
   TESTNET_MAX_ORPHAN_TRANSACTIONS,
   TESTNET_MAX_TRANSACTION_WEIGHT,
   TESTNET_MIN_TX_FEE,
+  TESTNET_MIN_RELAY_TX_FEE,
   TESTNET_MIN_RELAY_TX_FEE,
   TESTNET_MAX_TX_FEE,
   TESTNET_MAX_FREE_TX_SIZE,
   TESTNET_MAX_MONEY,
   TESTNET_COINBASE_MATURITY, 
   TESTNET_MAX_SIGOPS,
+	TESTNET_MAX_SCRIPT_SIZE,
+	TESTNET_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(testnet_init),
   COINF(testnet_bind),
   COINF(testnet_term),

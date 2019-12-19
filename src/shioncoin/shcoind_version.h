@@ -1,34 +1,32 @@
-// Copyright (c) 2012 The Bitcoin developers
-// Copyright (c) 2012 Litecoin Developers
-// Copyright (c) 2013 usde Developers
-// Copyright (c) 2013 usde Developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+/*
+ * @copyright
+ *
+ *  Copyright 2014 Neo Natura
+ *
+ *  This file is part of ShionCoin.
+ *  (https://github.com/neonatura/shioncoin)
+ *        
+ *  ShionCoin is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version. 
+ *
+ *  ShionCoin is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with ShionCoin.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  @endcopyright
+ */
+
 #ifndef __SHCOIND_VERSION_H__
 #define __SHCOIND_VERSION_H__
 
 #include <string.h>
-
-//
-// client versioning
-//
-
-#if 0
-// These need to be macro's, as version.cpp's voodoo requires it
-#define CLIENT_VERSION_MAJOR       1
-#define CLIENT_VERSION_MINOR       0
-#define CLIENT_VERSION_REVISION    4
-#define CLIENT_VERSION_BUILD       0
-
-static const int CLIENT_VERSION =
-                           1000000 * CLIENT_VERSION_MAJOR
-                         +   10000 * CLIENT_VERSION_MINOR 
-                         +     100 * CLIENT_VERSION_REVISION
-                         +       1 * CLIENT_VERSION_BUILD;
-#endif
-
-
-
 
 #define DISK_VERSION_MAJOR       SHC_VERSION_MAJOR
 #define DISK_VERSION_MINOR       SHC_VERSION_MINOR
@@ -52,8 +50,6 @@ static const int CLIENT_VERSION =
 
 #define PROTOCOL_VERSION(_iface) \
   ((_iface)->proto_ver)
-//static const int PROTOCOL_VERSION = 1000400;
-
 // earlier versions not supported as of Feb 2012, and are disconnected
 static const int MIN_PROTO_VERSION = 209;
 

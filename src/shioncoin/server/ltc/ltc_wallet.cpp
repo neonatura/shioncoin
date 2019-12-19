@@ -25,7 +25,6 @@
 
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "algobits.h"
@@ -84,13 +83,9 @@ bool ltc_LoadWallet(void)
   bool fFirstRun = true;
   ltcWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(ltcWallet, strAccount, true);
-		//CPubKey newDefaultKey = ltcWallet->GenerateNewKey();
-		ltcWallet->SetDefaultKey(newDefaultKey);
-		ltcWallet->SetAddressBookName(ltcWallet->vchDefaultKey.GetID(), "");
+		ltcWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(ltcWallet);
@@ -641,7 +636,7 @@ bool LTCWallet::CreateAccountTransaction(string strFromAccount, const vector<pai
 
         if (nChange > 0) {
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true); 
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);
@@ -748,18 +743,6 @@ unsigned int LTCWallet::GetTransactionWeight(const CTransaction& tx)
 }
 
 static unsigned int ltc_nBytesPerSigOp = LTC_DEFAULT_BYTES_PER_SIGOP;
-
-unsigned int LTCWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{ 
-  return (std::max(nWeight, nSigOpCost * ltc_nBytesPerSigOp) + LTC_WITNESS_SCALE_FACTOR - 1) / LTC_WITNESS_SCALE_FACTOR; 
-}
-
-
-unsigned int LTCWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(GetTransactionWeight(tx), nSigOpCost));
-}
 
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */
 double LTCWallet::AllowFreeThreshold()

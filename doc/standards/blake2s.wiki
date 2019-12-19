@@ -1,0 +1,252 @@
+'''BLAKE''' is a cryptographic hash function based on Dan Bernstein's ChaCha stream cipher, but a permuted copy of the input block, XORed with round constants, is added before each ChaCha round. Like SHA-2, there are two variants differing in the word size. ChaCha operates on a 4×4 array of words. BLAKE repeatedly combines an 8-word hash value with 16 message words, truncating the ChaCha result to obtain the next hash value. '''BLAKE-256''' and '''BLAKE-224''' use 32-bit words and produce digest sizes of 256 bits and 224 bits, respectively, while '''BLAKE-512''' and '''BLAKE-384''' use 64-bit words and produce digest sizes of 512 bits and 384 bits, respectively.
+
+==History==
+BLAKE was submitted to the NIST hash function competition by Jean-Philippe Aumasson, Luca Henzen, Willi Meier, and Raphael C.-W. Phan. In 2008, there were 51 entries. BLAKE made it to the final round consisting of five candidates but lost to ''Keccak'' in 2012, which was selected for the SHA-3 algorithm.
+
+==Algorithm==
+Like SHA-2, BLAKE comes in two variants: one that uses 32-bit words, used for computing hashes up to 256 bits long, and one that uses 64-bit words, used for computing hashes up to 512 bits long. The core block transformation combines 16 words of input with 16 working variables, but only 8 words (256 or 512 bits) are preserved between blocks.
+
+It uses a table of 16 constant words (the leading 512 or 1024 bits of the fractional part of π), and a table of 10 16-element permutations:
+ σ[0] =  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+ σ[1] = 14 10  4  8  9 15 13  6  1 12  0  2 11  7  5  3
+ σ[2] = 11  8 12  0  5  2 15 13 10 14  3  6  7  1  9  4
+ σ[3] =  7  9  3  1 13 12 11 14  2  6  5 10  4  0 15  8
+ σ[4] =  9  0  5  7  2  4 10 15 14  1 11 12  6  8  3 13
+ σ[5] =  2 12  6 10  0 11  8  3  4 13  7  5 15 14  1  9
+ σ[6] = 12  5  1 15 14 13  4 10  0  7  6  3  9  2  8 11
+ σ[7] = 13 11  7 14 12  1  3  9  5  0 15  4  8  6  2 10
+ σ[8] =  6 15 14  9 11  3  0  8 12  2 13  7  1  4 10  5
+ σ[9] = 10  2  8  4  7  6  1  5 15 11  9 14  3 12 13  0
+
+The core operation, equivalent to ChaCha's quarter round, operates on a 4-word column or diagonal <code>a b c d</code>, which is combined with 2 words of message <code>m[]</code> and two constant words <code>n[]</code>. It is performed 8 times per full round:
+ j ← σ[r%10][2×i]            <span style="color:green">// Index computations</span>
+ k ← σ[r%10][2×i+1]
+ a ← a + b + (m[j] ⊕ n[k])   <span style="color:green">// Step 1 (with input)</span>
+ d ← (d ⊕ a) >>> 16
+ c ← c + d                   <span style="color:green">// Step 2 (no input)</span>
+ b ← (b ⊕ c) >>> 12
+ a ← a + b + (m[k] ⊕ n[j])   <span style="color:green">// Step 3 (with input)</span>
+ d ← (d ⊕ a) >>> 8
+ c ← c + d                   <span style="color:green">// Step 4 (no input)</span>
+ b ← (b ⊕ c) >>> 7
+In the above, <code>r</code> is the round number (0–13), and <code>i</code> varies from 0 to 7.
+
+The differences from the ChaCha quarter-round function are:
+* The addition of the message words has been added.
+* The rotation directions have been reversed.
+
+The 64-bit version (which does not exist in ChaCha) is identical, but the rotation amounts are 32, 25, 16 and 11, respectively, and the number of rounds is increased to 16.
+
+==Tweaks==
+Throughout the NIST hash function competition, entrants are permitted to "tweak" their algorithms to address issues that are discovered. Changes that have been made to BLAKE are: the number of rounds was increased from 10/14 to 14/16. This is to be more conservative about security while still being fast.
+
+==Example digests==
+Hash values of an empty string:
+
+ {{color|green|BLAKE-224("")}} =
+ 7dc5313b1c04512a174bd6503b89607aecbee0903d40a8a569c94eed
+ {{color|green|BLAKE-256("")}} =
+ 716f6e863f744b9ac22c97ec7b76ea5f5908bc5b2f67c61510bfc4751384ea7a
+ {{color|green|BLAKE-384("")}} =
+ c6cbd89c926ab525c242e6621f2f5fa73aa4afe3d9e24aed727faaadd6af38b620bdb623dd2b4788b1c8086984af8706
+ {{color|green|BLAKE-512("")}} =
+ a8cfbbd73726062df0c6864dda65defe58ef0cc52a5625090fa17601e1eecd1b628e94f396ae402a00acc9eab77b4d4c2e852aaaa25a636d80af3fc7913ef5b8
+
+Changing a single bit causes each bit in the output to change with 50% probability, demonstrating an avalanche effect:
+
+ {{color|green|BLAKE-512("The quick brown fox jumps over the lazy dog")}} =
+ 1f7e26f63b6ad25a0896fd978fd050a1766391d2fd0471a77afb975e5034b7ad2d9ccf8dfb47abbbe656e1b82fbc634ba42ce186e8dc5e1ce09a885d41f43451
+ {{color|green|BLAKE-512("The quick brown fox jumps over the lazy do{{color|red|f}}")}} =
+ a701c2a1f9baabd8b1db6b75aee096900276f0b86dc15d247ecc03937b370324a16a4ffc0c3a85cd63229cfa15c15f4ba6d46ae2e849ed6335e9ff43b764198a
+
+==BLAKE2==
+{{Infobox encryption method
+| name           = BLAKE2
+| image          =
+| caption        =
+<!-- General -->
+| designers      = Jean-Philippe Aumasson, Samuel Neves, Zooko Wilcox-O'Hearn, Christian Winnerlein
+| publish date   =
+| series         =
+| derived from   = BLAKE
+| derived to     =
+| related to     =
+| certification  =
+<!-- Detail -->
+| digest size    = up to 64 bytes (BLAKE2b); up to 32 bytes (BLAKE2s); arbitrary (BLAKE2X)
+| structure      =
+| rounds         = 10 or 12
+| speed          = 3.5 cycles per byte|cpb on Core i5 (Ivy Bridge) for BLAKE2b
+| cryptanalysis  =
+}}
+
+'''BLAKE2''' is a cryptographic hash function based on BLAKE, created by Jean-Philippe Aumasson, Samuel Neves, Zooko Wilcox-O'Hearn, and Christian Winnerlein. The design goal was to replace the widely used, but broken, MD5 and SHA-1 algorithms in applications requiring high performance in software. BLAKE2 was announced on December 21, 2012. 
+
+BLAKE2b is faster than MD5, SHA-1, SHA-2, and SHA-3, on 64-bit x64 and ARM architectures. BLAKE2 provides security superior to SHA-2 and similar to that of SHA-3: immunity to length extension, indifferentiability from a random oracle, etc.
+
+BLAKE2 removes addition of constants to message words from BLAKE round function, changes two rotation constants, simplifies padding, adds parameter block that is XOR'ed with initialization vectors, and reduces the number of rounds from 16 to 12 for '''BLAKE2b''' (successor of BLAKE-512), and from 14 to 10 for '''BLAKE2s''' (successor of BLAKE-256).
+
+BLAKE2 supports keying, salting, personalization, and hash tree modes, and can output digests from 1 up to 64 bytes for BLAKE2b, or up to 32 bytes for BLAKE2s. There are also parallel versions designed for increased performance on multi-core processors; '''BLAKE2bp''' (4-way parallel) and '''BLAKE2sp''' (8-way parallel).
+
+'''BLAKE2X''' is a family of extensible-output functions (XOFs). Whereas BLAKE2 is limited to 64-byte digests, BLAKE2X allows for digests of up to 256 GiB. BLAKE2X is itself not an instance of a hash function, and must be based on an actual BLAKE2 instance. An example of a BLAKE2X instance could be '''BLAKE2Xb16MiB''', which would be a BLAKE2X version based on BLAKE2b producing 16,777,216-byte digests (or exactly 16 MB, hence the name of such an instance).
+
+BLAKE2b and BLAKE2s are specified in RFC 7693. Optional features using the parameter block (salting, personalized hashes, tree hashing, et cetera), are not specified, and thus neither is support for BLAKE2bp, BLAKE2sp, or BLAKE2X.
+
+===Initialization vector===
+BLAKE2b uses an initialization vector that is the same as the [https://tools.ietf.org/html/rfc6234#section-6.3 IV used by SHA-512.] These values are obtained by taking the first 64 bits of the fractional parts of the square roots of the first eight prime numbers.
+
+ IV<sub>0</sub> = 0x6a09e667f3bcc908   <span style="color: green">//Frac(sqrt(2))</span>
+ IV<sub>1</sub> = 0xbb67ae8584caa73b   <span style="color: green">//Frac(sqrt(3))</span>
+ IV<sub>2</sub> = 0x3c6ef372fe94f82b   <span style="color: green">//Frac(sqrt(5))</span>
+ IV<sub>3</sub> = 0xa54ff53a5f1d36f1   <span style="color: green">//Frac(sqrt(7))</span>
+ IV<sub>4</sub> = 0x510e527fade682d1   <span style="color: green">//Frac(sqrt(11))</span>
+ IV<sub>5</sub> = 0x9b05688c2b3e6c1f   <span style="color: green">//Frac(sqrt(13))</span>
+ IV<sub>6</sub> = 0x1f83d9abfb41bd6b   <span style="color: green">//Frac(sqrt(17))</span>
+ IV<sub>7</sub> = 0x5be0cd19137e2179   <span style="color: green">//Frac(sqrt(19))</span>
+
+=== BLAKE2b algorithm ===
+Pseudocode for the BLAKE2b algorithm. The BLAKE2b algorithm uses 8-byte (UInt64) words, and 128-byte chunks.
+
+ <span style="color: #004DBB;">'''Algorithm'''</span> BLAKE2b
+    <span style="color: #004DBB;">'''Input:'''</span>
+       M                               <span style="color: green;">''Message to be hashed</span>
+       cbMessageLen: Number, (0..2<sup>128</sup>)  <span style="color: green;">''Length of the message in bytes</span>
+       Key                             <span style="color: green;">''Optional 0..64 byte key</span>
+       cbKeyLen: Number, (0..64)       <span style="color: green;">''Length of optional key in bytes</span>
+       cbHashLen: Number, (1..64)      <span style="color: green;">''Desired hash length in bytes</span>
+    <span style="color: #004DBB;">'''Output:'''</span>
+       Hash                            <span style="color: green;">''Hash of cbHashLen bytes</span>
+ 
+    <span style="color: green;">''Initialize State vector '''h''' with '''IV'''</span>
+    h<sub>0..7</sub> ← IV<sub>0..7</sub>
+ 
+    <span style="color: green;">''Mix key size (cbKeyLen) and desired hash length (cbHashLen) into h<sub>0</sub></span>
+    h<sub>0</sub> ← h<sub>0</sub> xor 0x0101kknn
+          <span style="color: green;">''where '''kk''' is Key Length (in bytes)</span>
+                <span style="color: green;">'''nn''' ''is Desired Hash Length (in bytes)''</span>
+ 
+    <span style="color: green;">''Each time we Compress we record how many bytes have been compressed</span>
+    cBytesCompressed ← 0
+    cBytesRemaining  ← cbMessageLen
+ 
+    <span style="color: green;">''If there was a key supplied (i.e. cbKeyLen > 0) 
+    then pad with trailing zeros to make it 128-bytes (i.e. 16 words) 
+    and prepend it to the message '''M'''</span>
+    <span style="color: #004DBB;">'''if'''</span> (cbKeyLen > 0) <span style="color: #004DBB;">'''then'''</span>
+       M ← Pad(Key, 128) || M
+       cBytesRemaining ← cBytesRemaining + 128
+    <span style="color: #004DBB;">'''end if'''</span>
+ 
+    <span style="color: green;">''Compress whole 128-byte chunks of the message, except the last chunk</span>
+    <span style="color: #004DBB;">'''while'''</span> (cBytesRemaining > 128) <span style="color: #004DBB;">'''do'''</span>
+       chunk ← get next 128 bytes of message '''M'''
+       cBytesCompressed ← cBytesCompressed + 128  <span style="color: green;">''increase count of bytes that have been compressed</span>
+       cBytesRemaining  ← cBytesRemaining  - 128  <span style="color: green;">''decrease count of bytes in '''M''' remaining to be processed</span>
+ 
+       h ← Compress(h, chunk, cBytesCompressed, false)  <span style="color: green;">''false ⇒ this is not the last chunk</span>
+    <span style="color: #004DBB;">'''end while'''</span>
+ 
+    <span style="color: green;">''Compress the final bytes from '''M'''</span>
+    chunk ← get next 128 bytes of message '''M'''  <span style="color: green;">''We will get cBytesRemaining bytes (i.e. 0..128 bytes)</span>
+    cBytesCompressed ← cBytesCompressed+cBytesRemaining  <span style="color: green;">''The actual number of bytes leftover in '''M'''</span>
+    chunk ← Pad(chunk, 128)  <span style="color: green;">''If '''M''' was empty, then we will still compress a final chunk of zeros</span>
+ 
+    h ← Compress(h, chunk, cBytesCompressed, true)  <span style="color: green;">''true ⇒ this is the last chunk</span>
+ 
+    <span style="color: #004DBB;">'''Result'''</span> ← first cbHashLen bytes of little endian state vector h
+ <span style="color: #004DBB;">'''End Algorithm'''</span> BLAKE2b
+
+==== Compress ====
+The '''Compress''' function takes a full 128-byte chunk of the input message and mixes it into the ongoing state array:
+
+ <span style="color: #004DBB;">'''Function'''</span> Compress
+    <span style="color: #004DBB;">'''Input:'''</span>
+       h                      <span style="color: green;">''Persistent state vector</span>
+       chunk                  <span style="color: green;">''128-byte (16 double word) chunk of message to compress''</span>
+       t: Number, 0..2<sup>128</sup>     <span style="color: green;">''Count of bytes that have been fed into the Compression</span>
+       IsLastBlock: Boolean   <span style="color: green;">''Indicates if this is the final round of compression</span>
+    <span style="color: #004DBB;">'''Output:'''</span>
+       h                      <span style="color: green;">''Updated persistent state vector</span>
+ 
+    <span style="color: green;">''Setup local work vector V</span>
+    V<sub>0..7</sub> ← h<sub>0..7</sub>   <span style="color: green;">''First eight items are copied from persistent state vector '''h'''''</span>
+    V<sub>8..15</sub> ← IV<sub>0..7</sub> <span style="color: green;">''Remaining eight items are initialized from the '''IV'''''</span>
+ 
+    <span style="color: green;">''Mix the 128-bit counter '''t''' into V<sub>12</sub>:V<sub>13</sub></span>
+    V<sub>12</sub> ← V<sub>12</sub> <span style="color: #004DBB;">'''xor'''</span> Lo(t)    <span style="color: green;">''Lo 64-bits of UInt128 '''t'''</span>
+    V<sub>13</sub> ← V<sub>13</sub> <span style="color: #004DBB;">'''xor'''</span> Hi(t)    <span style="color: green;">''Hi 64-bits of UInt128 '''t'''</span>
+   
+    <span style="color: green;">''If this is the last block then invert all the bits in V<sub>14</sub></span>
+    <span style="color: #004DBB;">'''if'''</span> IsLastBlock <span style="color: #004DBB;">'''then'''</span>
+       V<sub>14</sub> ← V<sub>14</sub> <span style="color: #004DBB;">'''xor'''</span> 0xFFFFFFFFFFFFFFFF
+ 
+    <span style="color: green;">''Treat each 128-byte message '''chunk''' as sixteen 8-byte (64-bit) words '''m'''</span>
+    m<sub>0..15</sub> ← chunk
+ 
+    <span style="color: green;">''Twelve rounds of cryptographic message mixing</span>
+    <span style="color: #004DBB;">'''for'''</span> i <span style="color: #004DBB;">'''from'''</span> 0 <span style="color: #004DBB;">'''to'''</span> 11 <span style="color: #004DBB;">'''do'''</span>
+       <span style="color: green;">''Select message mixing schedule for this round.
+        BLAKE2b uses 12 rounds, while SIGMA has only 10 entries.</span>
+       S<sub>0..15</sub> ← SIGMA[i <span style="color: #004DBB;">'''mod'''</span> 10]   <span style="color: green;">''Rounds 10 and 11 use SIGMA[0] and SIGMA[1] respectively</span>
+ 
+       Mix(V<sub>0</sub>, V<sub>4</sub>, V<sub>8</sub>,  V<sub>12</sub>, m[S<sub>0</sub>], m[S<sub>1</sub>])
+       Mix(V<sub>1</sub>, V<sub>5</sub>, V<sub>9</sub>,  V<sub>13</sub>, m[S<sub>2</sub>], m[S<sub>3</sub>])
+       Mix(V<sub>2</sub>, V<sub>6</sub>, V<sub>10</sub>, V<sub>14</sub>, m[S<sub>4</sub>], m[S<sub>5</sub>])
+       Mix(V<sub>3</sub>, V<sub>7</sub>, V<sub>11</sub>, V<sub>15</sub>, m[S<sub>6</sub>], m[S<sub>7</sub>])
+ 
+       Mix(V<sub>0</sub>, V<sub>5</sub>, V<sub>10</sub>, V<sub>15</sub>, m[S<sub>8</sub>],  m[S<sub>9</sub>])
+       Mix(V<sub>1</sub>, V<sub>6</sub>, V<sub>11</sub>, V<sub>12</sub>, m[S<sub>10</sub>], m[S<sub>11</sub>])
+       Mix(V<sub>2</sub>, V<sub>7</sub>, V<sub>8</sub>,  V<sub>13</sub>, m[S<sub>12</sub>], m[S<sub>13</sub>])
+       Mix(V<sub>3</sub>, V<sub>4</sub>, V<sub>9</sub>,  V<sub>14</sub>, m[S<sub>14</sub>], m[S<sub>15</sub>])
+    <span style="color: #004DBB;">'''end for'''</span>
+ 
+    <span style="color: green;">''Mix the upper and lower halves of V into ongoing state vector h</span>
+    h<sub>0..7</sub> ← h<sub>0..7</sub> <span style="color: #004DBB;">'''xor'''</span> V<sub>0..7</sub>
+    h<sub>0..7</sub> ← h<sub>0..7</sub> <span style="color: #004DBB;">'''xor'''</span> V<sub>8..15</sub>
+ 
+    '''Result''' ← h
+ <span style="color: #004DBB;">'''End Function'''</span> Compress
+
+==== Mix ====
+The '''Mix''' function is called by the '''Compress''' function, and mixes two 8-byte words from the message into the hash state. In most implementations this function would be written inline, or as an inlined function.
+
+ <span style="color: #004DBB;">'''Function'''</span> Mix
+    <span style="color: #004DBB;">'''Inputs:'''</span>
+         V<sub>a</sub>, V<sub>b</sub>, V<sub>c</sub>, V<sub>d</sub>       <span style="color: green;">''four 8-byte word entries from the work vector V</span>
+         x, y                <span style="color: green;">''two 8-byte word entries from padded message m</span>
+    <span style="color: #004DBB;">'''Output:'''</span>
+         V<sub>a</sub>, V<sub>b</sub>, V<sub>c</sub>, V<sub>d</sub>       <span style="color: green;">''the modified versions of V<sub>a</sub>, V<sub>b</sub>, V<sub>c</sub>, V<sub>d</sub></span>
+ 
+    V<sub>a</sub> ← V<sub>a</sub> + V<sub>b</sub> + x          <span style="color: green;">''with input</span>
+    V<sub>d</sub> ← (V<sub>d</sub> <span style="color: #004DBB;">'''xor'''</span> V<sub>a</sub>) <span style="color: #004DBB;">'''rotateright'''</span> 32
+ 
+    V<sub>c</sub> ← V<sub>c</sub> + V<sub>d</sub>              <span style="color: green;">''no input</span>
+    V<sub>b</sub> ← (V<sub>b</sub> <span style="color: #004DBB;">'''xor'''</span> V<sub>c</sub>) <span style="color: #004DBB;">'''rotateright'''</span> 24
+ 
+    V<sub>a</sub> ← V<sub>a</sub> + V<sub>b</sub> + y          <span style="color: green;">''with input</span>
+    V<sub>d</sub> ← (V<sub>d</sub> <span style="color: #004DBB;">'''xor'''</span> V<sub>a</sub>) <span style="color: #004DBB;">'''rotateright'''</span> 16
+ 
+    V<sub>c</sub> ← V<sub>c</sub> + V<sub>d</sub>              <span style="color: green;">''no input</span>
+    V<sub>b</sub> ← (V<sub>b</sub> <span style="color: #004DBB;">'''xor'''</span> V<sub>c</sub>) <span style="color: #004DBB;">'''rotateright'''</span> 63
+ 
+    '''Result''' ← V<sub>a</sub>, V<sub>b</sub>, V<sub>c</sub>, V<sub>d</sub>
+ <span style="color: #004DBB;">'''End Function'''</span> Mix
+
+===Example digests===
+Hash values of an empty string:
+
+ {{color|green|BLAKE2s-224("")}} =
+ 1fa1291e65248b37b3433475b2a0dd63d54a11ecc4e3e034e7bc1ef4
+ {{color|green|BLAKE2s-256("")}} =
+ 69217a3079908094e11121d042354a7c1f55b6482ca1a51e1b250dfd1ed0eef9
+ {{color|green|BLAKE2b-384("")}} =
+ b32811423377f52d7862286ee1a72ee540524380fda1724a6f25d7978c6fd3244a6caf0498812673c5e05ef583825100
+ {{color|green|BLAKE2b-512("")}} =
+ 786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce
+
+Changing a single bit causes each bit in the output to change with 50% probability, demonstrating an avalanche effect:
+
+ {{color|green|BLAKE2b-512("The quick brown fox jumps over the lazy dog")}} =
+ a8add4bdddfd93e4877d2746e62817b116364a1fa7bc148d95090bc7333b3673f82401cf7aa2e4cb1ecd90296e3f14cb5413f8ed77be73045b13914cdcd6a918
+ {{color|green|BLAKE2b-512("The quick brown fox jumps over the lazy do{{color|red|f}}")}} =
+ ab6b007747d8068c02e25a6008db8a77c218d94f3b40d2291a7dc8a62090a744c082ea27af01521a102e42f480a31e9844053f456b4b41e8aa78bbe5c12957bb

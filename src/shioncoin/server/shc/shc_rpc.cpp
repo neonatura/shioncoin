@@ -25,7 +25,6 @@
 
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
@@ -36,6 +35,7 @@
 #include "rpccontext_proto.h"
 #include "rpcexec_proto.h"
 #include "rpcoffer_proto.h"
+#include "rpcparam_proto.h"
 
 
 using namespace std;
@@ -89,6 +89,18 @@ const RPCOp WALLET_STAMP = {
     "Params: [ <account> The coin account name., <comment> Use the format \"geo:<lat>,<lon>\" to specify a location. ]\n"
     "\n"
     "A single coin reward can be achieved by creating an ident stamp transaction on a location present in the \"spring matrix\". The reward will be given, at most, once per location. A minimum transaction fee will apply and is sub-sequently returned once the transaction has been processed."
+};
+
+const RPCOp WALLET_GETCERT = {
+  &rpc_wallet_getcert, 1, {RPC_ACCOUNT},
+  "Syntax: <address>\n"
+	"Get the default certificate for the given account name."
+};
+
+const RPCOp WALLET_SETCERT = {
+  &rpc_wallet_setcert, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <address> <cert-hash>\n"
+	"Set the default certificate for the given account name."
 };
 
 
@@ -396,7 +408,7 @@ const RPCOp EXEC_NEW = {
 	"\n"
 	" Create a new executable class on the block-chain.\n"
 	"\n"
-	"	Note: See https://shcoins.com/sexe/ for more information on creating SEXE executable classes.\n"
+	"	Note: See https://sharelib.net/sexe/ for more information on creating SEXE executable classes.\n"
 };
 
 const RPCOp EXEC_RUN = {
@@ -549,6 +561,23 @@ const RPCOp OFFER_STATUS = {
   "Summary: List the pending and completed exchanges for an account.\n"
 };
 
+const RPCOp PARAM_LIST = {
+	&rpc_param_list, 0, {RPC_BOOL},
+  "Syntax: [<verbose>]\n"
+	"Summary: List all active dynamic blockchain param transactions."
+};
+
+const RPCOp PARAM_VALUE = {
+	&rpc_param_value, 1, {RPC_STRING},
+	"Summary: Get info about a particular dynamic blockchain parameter mode.\n"
+	"Valid modes are: \"blocksize\" or \"minfee\"."
+};
+
+const RPCOp PARAM_GET = {
+	&rpc_param_get, 1, {RPC_STRING},
+  "Syntax: <param-hash>\n"
+	"Summary: Get info about a particular param transaction."
+};
 
 void shc_RegisterRPCOp(int ifaceIndex)
 {
@@ -619,9 +648,15 @@ void shc_RegisterRPCOp(int ifaceIndex)
 	RegisterRPCOp(ifaceIndex, "offer.list", OFFER_LIST);
 	RegisterRPCOp(ifaceIndex, "offer.status", OFFER_STATUS);
 
+	RegisterRPCOp(ifaceIndex, "param.list", PARAM_LIST);
+	RegisterRPCOp(ifaceIndex, "param.value", PARAM_VALUE);
+	RegisterRPCOp(ifaceIndex, "param.get", PARAM_GET);
+
   RegisterRPCOp(ifaceIndex, "wallet.csend", WALLET_CSEND);
   RegisterRPCOp(ifaceIndex, "wallet.donate", WALLET_DONATE);
+  RegisterRPCOp(ifaceIndex, "wallet.getcert", WALLET_GETCERT);
   RegisterRPCOp(ifaceIndex, "wallet.keyphrase", WALLET_KEYPHRASE);
+  RegisterRPCOp(ifaceIndex, "wallet.setcert", WALLET_SETCERT);
   RegisterRPCOp(ifaceIndex, "wallet.setkeyphrase", WALLET_SETKEYPHRASE);
   RegisterRPCOp(ifaceIndex, "wallet.stamp", WALLET_STAMP);
 

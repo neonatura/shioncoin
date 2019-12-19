@@ -25,7 +25,6 @@
 
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
@@ -89,13 +88,10 @@ bool color_LoadWallet(void)
   bool fFirstRun = true;
   colorWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
+		/* generate default address for system account. */
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(colorWallet, strAccount, true);
-		//CPubKey newDefaultKey = colorWallet->GenerateNewKey();
-		colorWallet->SetDefaultKey(newDefaultKey);
-		colorWallet->SetAddressBookName(colorWallet->vchDefaultKey.GetID(), "");
+		colorWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(colorWallet);
@@ -372,7 +368,7 @@ bool COLORWallet::CreateAccountTransaction(string strFromAccount, const vector<p
 
         if (nChange > 0) {
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);
@@ -530,17 +526,6 @@ unsigned int COLORWallet::GetTransactionWeight(const CTransaction& tx)
     ::GetSerializeSize(tx, SER_NETWORK, COLOR_PROTOCOL_VERSION);
 
   return (nBytes);
-}
-
-unsigned int COLORWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{
-  return (std::max(nWeight, nSigOpCost * color_nBytesPerSigOp) + COLOR_WITNESS_SCALE_FACTOR - 1) / COLOR_WITNESS_SCALE_FACTOR;
-}
-unsigned int COLORWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  unsigned int nWeight = GetTransactionWeight(tx);
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(nWeight, nSigOpCost));
 }
 
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */

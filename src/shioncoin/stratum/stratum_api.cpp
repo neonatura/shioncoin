@@ -30,6 +30,7 @@
 #include "rpc/rpc_proto.h"
 #include "stratum.h"
 #include "wallet.h"
+#include "account.h"
 #include "mnemonic.h"
 #include "txcreator.h"
 #include "chain.h"
@@ -47,6 +48,16 @@ extern altchain_list *GetAltChainTable(int ifaceIndex);
 extern offer_list *GetOfferTable(int ifaceIndex);
 extern bool IsContextName(CIface *iface, string strName);
 extern double print_rpc_difficulty(CBigNum val);
+
+static std::string HexBits(unsigned int nBits)
+{
+	union {
+		int32_t nBits;
+		char cBits[4];
+	} uBits;
+	uBits.nBits = htonl((int32_t)nBits);
+	return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
+}
 
 bool GetOutputsForAccount(CWallet *wallet, string strAccount, vector<CTxDestination>& addr_list)
 {
@@ -186,13 +197,26 @@ static const ApiItems& stratum_api_account_create(int ifaceIndex, string strAcco
 		if (!alt_wallet)
 			continue;
 
+#if 0
 		newKey = GetAccountPubKey(alt_wallet, strAccount, true);
-
 		CKeyID keyId = newKey.GetID();
 		alt_wallet->SetAddressBookName(keyId, strAccount);
 		if (ifaceIndex == idx) {
 			coinAddr = CCoinAddr(ifaceIndex, keyId).ToString();
 			phash = get_private_key_hash(alt_wallet, keyId);
+		}
+#endif
+
+		CPubKey pubkey;
+		CAccountCache *acc = alt_wallet->GetAccount(strAccount);
+		if (!acc->CreateNewPubKey(pubkey, 0))
+			continue;
+		const CKeyID& keyID = pubkey.GetID();
+
+		if (ifaceIndex == idx) {
+			CCoinAddr addrNew(ifaceIndex, keyID);
+			coinAddr = addrNew.ToString();
+			phash = get_private_key_hash(alt_wallet, keyID);
 		}
 	}
 
@@ -220,14 +244,15 @@ static const ApiItems& stratum_api_account_list(int ifaceIndex, string strAccoun
 	nBal = GetAccountBalance(ifaceIndex, strAccount, 1);
 
 	Object entry;
-	entry.push_back(Pair("balance", ValueFromAmount(nUBal / COIN)));
-	entry.push_back(Pair("available", ValueFromAmount(nBal / COIN)));
+	entry.push_back(Pair("balance", ValueFromAmount(nUBal)));
+	entry.push_back(Pair("available", ValueFromAmount(nBal)));
 	entry.push_back(Pair("unconfirmed", ValueFromAmount(nUBal - nBal)));
 	items.push_back(entry);
 
 	return (items);
 }
 
+#if 0
 const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAccount, shjson_t *params)
 {
 	static ApiItems items;
@@ -309,7 +334,61 @@ const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAccount, sh
 
 	return (items);
 }
+#endif
+const ApiItems& stratum_api_account_txlist(int ifaceIndex, string strAccount, shjson_t *params)
+{
+	static ApiItems items;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	CWallet *wallet = GetWallet(ifaceIndex);
+	int64 begin_t = shjson_num(params, "timelimit", 0);
 
+	items.clear();
+
+	vector<CTxDestination> addr_list;
+	GetOutputsForAccount(wallet, strAccount, addr_list);
+
+	for (map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin(); it != wallet->mapWallet.end(); ++it) {
+		CWalletTx* wtx = &((*it).second);
+		int64 tx_time = wtx->GetTxTime();
+
+		if (tx_time < begin_t)
+			continue;
+
+		for (int i = 0; i < wtx->vout.size(); i++) { 
+			CTxOut& out = wtx->vout[i];
+			const CScript& pk = out.scriptPubKey;
+
+			CTxDestination address;
+			if (!ExtractDestination(pk, address))
+				continue;
+
+			if (!IsOutputForAccount(wallet, addr_list, address))
+				continue;
+
+			CCoinAddr c_addr(ifaceIndex, address);
+
+			Object entry = out.ToValue(ifaceIndex);
+//			entry.push_back(Pair("address", c_addr.ToString())); 
+//			entry.push_back(Pair("amount",ValueFromAmount(out.nValue)));
+//			entry.push_back(Pair("hash", wtx->GetWitnessHash().GetHex()));
+			entry.push_back(Pair("n", i));
+//			entry.push_back(Pair("script", out.scriptPubKey.ToString()));
+			entry.push_back(Pair("time", (uint64_t)wtx->GetTxTime()));
+			entry.push_back(Pair("txid", wtx->GetHash().GetHex()));
+
+			items.push_back(entry);
+		}
+	}
+
+	return (items);
+}
+
+
+
+
+
+
+#if 0
 Object GetSendTxObj(CWallet *wallet, CWalletTx& wtx, CScript& scriptPub, tx_cache& inputs)
 {
   int64 nValueOut = 0;
@@ -510,6 +589,179 @@ static const ApiItems& stratum_api_account_tsend(int ifaceIndex, string strAccou
 
   return (items);
 }
+#endif
+
+
+
+
+
+
+Object GetSendTxObj(CWallet *wallet, CWalletTx& wtx, CScript& scriptPub, tx_cache& inputs)
+{
+  int64 nValueOut = 0;
+  int64 nChangeOut = 0;
+  int64 nValueIn = 0;
+  int64 nTxSize = 0;
+  int nInputTotal = 0;
+  int64 nSigTotal = 0;
+	int64 nFee;
+
+	{
+    nInputTotal += wtx.vin.size();
+    nSigTotal += wtx.GetLegacySigOpCount();
+
+    wallet->FillInputs(wtx, inputs);
+    nTxSize += wallet->GetVirtualTransactionSize(wtx);
+  }
+	{
+    BOOST_FOREACH(const CTxIn& txin, wtx.vin) {
+      CTxOut out;
+      if (!wtx.GetOutputFor(txin, inputs, out))
+        continue;
+
+      nValueIn += out.nValue;
+    }
+  }
+
+	{
+    BOOST_FOREACH(const CTxOut& txout, wtx.vout) {
+      if (txout.scriptPubKey == scriptPub) {
+        nValueOut += txout.nValue;
+      } else {
+        nChangeOut += txout.nValue;
+      }
+    }
+  }
+
+  /* calculate fee & new projected balance */
+  nFee = nValueIn - nValueOut - nChangeOut;
+
+  Object ret = wtx.ToValue(wallet->ifaceIndex);
+  ret.push_back(Pair("change-amount", ValueFromAmount(nChangeOut)));
+  ret.push_back(Pair("fee", ValueFromAmount(nFee)));
+  ret.push_back(Pair("input-amount", ValueFromAmount(nValueIn)));
+  ret.push_back(Pair("txinputs", (int)nInputTotal));
+  ret.push_back(Pair("txsigops", (int)nSigTotal));
+  ret.push_back(Pair("txsize", (int)nTxSize));
+  ret.push_back(Pair("amount", ValueFromAmount(nValueOut)));
+//	ret.push_back(Pair("txid", wtx.GetHash().GetHex().c_str()));
+
+	return (ret);
+}
+
+static const ApiItems& stratum_api_account_send(int ifaceIndex, string strAccount, shjson_t *params, string& strError, uint160 hColor = 0)
+{
+	static ApiItems items;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
+  Array ret;
+	double dAmount;
+	double dFee;
+  int64 nAmount;
+  int64 nFee;
+  int64 nBalance;
+  int nMinDepth = 1; /* single confirmation requirement */
+  int nMinConfirmDepth = 1; /* single confirmation requirement */
+	bool found = false;
+	bool fTest = false;
+	bool fBatch = false;
+	int err;
+
+	strError = "";
+	items.clear();
+
+	CCoinAddr address(ifaceIndex);
+	string strDestAddress(shjson_astr(params, "address", ""));
+	if (!GetCoinAddr(wallet, strDestAddress, address)) {
+		strError = string("invalid coin address");
+		return (items);
+	}
+#if 0
+	CCoinAddr address(ifaceIndex, strDestAddress);
+	if (!address.IsValid()) {
+		strError = string("invalid coin address");
+		return (items);
+	}
+#endif
+
+	dAmount = atof(shjson_str(params, "amount", 0));
+  nAmount = roundint64(dAmount * COIN);
+  if (!MoneyRange(ifaceIndex, nAmount)) {
+		strError = string("coin denomination");
+		return (items);
+  }
+
+	dFee = atof(shjson_astr(params, "fee", 0));
+  nFee = roundint64(dAmount * COIN);
+
+  nBalance  = GetAccountBalance(ifaceIndex, strAccount, nMinConfirmDepth);
+  if (nAmount > nBalance) {
+		strError = string("insufficient funds");
+		return (items);
+  }
+
+	fTest = (bool)atoi(shjson_astr(params, "test", ""));
+	fBatch = (bool)atoi(shjson_astr(params, "batch", ""));
+
+	CScript scriptPub;
+	scriptPub.SetDestination(address.Get());
+
+	Object obj;
+	bool ok = false;
+	if (hColor != 0) {
+		CWalletTx wtx;
+		err = update_altchain_tx(iface, strAccount, hColor, address, nAmount, wtx);
+		if (!err) {
+			tx_cache inputs;
+			Object obj = GetSendTxObj(wallet, wtx, scriptPub, inputs);
+//			obj.push_back(Pair("txid", wtx.GetHash().GetHex()));
+			items.push_back(obj);
+		} else {
+			strError = string(sherrstr(err));
+		}
+	} else if (!fBatch) {
+		CTxCreator wtx(wallet, strAccount);
+		wtx.SetMinFee(nFee);
+		wtx.AddOutput(scriptPub, nAmount);
+		if (!fTest) {
+			if (wtx.Send())
+				strError = wtx.GetError();
+		} else /* fTest */ {
+			if (wtx.Generate())
+				strError = wtx.GetError();
+		}
+
+		tx_cache inputs;
+		Object obj = GetSendTxObj(wallet, wtx, scriptPub, inputs);
+//		obj.push_back(Pair("txid", wtx.GetHash().GetHex()));
+		items.push_back(obj);
+	} else /* fBatch */ {
+		CTxBatchCreator b_tx(wallet, strAccount, scriptPub, nAmount); 
+		if (!fTest) {
+			if (b_tx.Send())
+				strError = b_tx.GetError();
+		} else /* fTest */ {
+			if (b_tx.Generate())
+				strError = b_tx.GetError();
+		}
+
+		tx_cache inputs;
+		vector<CWalletTx>& tx_list = b_tx.GetTxList();
+		for (int i = 0; i < tx_list.size(); i++) {
+			Object obj = GetSendTxObj(wallet, tx_list[i], scriptPub, inputs);
+//			obj.push_back(Pair("txid", tx_list[i].GetHash().GetHex()));
+			items.push_back(obj);
+		}
+	}
+
+  return (items);
+}
+
+
+
+
+
+
 
 static CBlockIndex *GetBlockIndexDepth(int ifaceIndex, int depth, uint160 hColor)
 {
@@ -1108,6 +1360,40 @@ static const ApiItems& stratum_api_ident_list(int ifaceIndex, user_t *user, shjs
 	return (items);
 }
 
+static const ApiItems& stratum_api_cert_info(int ifaceIndex, string strAccount, shjson_t *params)
+{
+	static ApiItems items;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	Object ret;
+	cert_list *list;
+
+	list = GetCertTable(ifaceIndex);
+	items.clear();
+
+	int nLocal = 0;
+	BOOST_FOREACH(PAIRTYPE(const uint160, uint256)& r, *list) {
+		const uint256& hTx = r.second;
+		CTransaction tx;
+
+		if (!GetTransaction(iface, hTx, tx, NULL))
+			continue;
+		if (!IsCertAccount(iface, tx, strAccount))
+			continue;
+
+		nLocal++;
+	}
+
+	Object result;
+	result.push_back(Pair("fee", 
+				ValueFromAmount(GetCertOpFee(iface, GetBestHeight(iface)))));
+	result.push_back(Pair("total", (int64_t)list->size()));
+	result.push_back(Pair("local", (int64_t)nLocal));
+	items.push_back(result);
+
+	return (items);
+}
+
+
 static const ApiItems& stratum_api_cert_list(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
 {
 	static ApiItems items;
@@ -1557,6 +1843,8 @@ static const ApiItems& stratum_api_block_mined(int ifaceIndex, user_t *user, shj
 {
 	static ApiItems items;
 
+	if (begin_t == 0)
+		begin_t = (time(NULL) - 86400);
 	items.clear();
 
 	vector<CBlockIndex *> blocks = get_stratum_miner_blocks(ifaceIndex);
@@ -1570,6 +1858,52 @@ static const ApiItems& stratum_api_block_mined(int ifaceIndex, user_t *user, shj
 		obj.push_back(Pair("blockhash", pindex->GetBlockHash().GetHex()));
 		obj.push_back(Pair("time", (uint64_t)pindex->GetBlockTime()));
 		items.push_back(obj);
+	}
+
+	return (items);
+}
+
+static const ApiItems& stratum_api_block_list(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
+{
+	static ApiItems items;
+
+	if (begin_t == 0)
+		begin_t = (time(NULL) - 86400);
+	items.clear();
+
+	CBlockIndex *pindex = GetBestBlockIndex(ifaceIndex);
+	while (pindex && pindex->pprev) {
+		Object obj;
+		obj.push_back(Pair("blockhash", pindex->GetBlockHash().GetHex()));
+		obj.push_back(Pair("merkleroot", pindex->hashMerkleRoot.GetHex()));
+		obj.push_back(Pair("version", (int)pindex->nVersion));
+		obj.push_back(Pair("time", (int)pindex->nTime));
+		obj.push_back(Pair("height", pindex->nHeight));
+		obj.push_back(Pair("bits", HexBits(pindex->nBits)));
+		items.push_back(obj);
+		if (pindex->GetBlockTime() < begin_t)
+			break;
+		pindex = pindex->pprev;
+	}
+
+	return (items);
+}
+
+static const ApiItems& stratum_api_block_get(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
+{
+	static ApiItems items;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+
+	items.clear();
+
+	uint256 hash(string(shjson_astr(params, "blockhash", "")));
+	if (hash == 0)
+		return (items);
+
+	CBlock *block = GetBlockByHash(iface, hash);
+	if (block) {
+		items.push_back(block->ToValue());
+		delete block;
 	}
 
 	return (items);
@@ -1668,10 +2002,18 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 		result = stratum_api_account_unspent(ifaceIndex, strAccount, params, hColor);
 	} else if (0 == strcmp(method, "api.account.send")) {
 		result = stratum_api_account_send(ifaceIndex, strAccount, params, strError, hColor);
+	} else if (0 == strcmp(method, "api.account.tsend")) {
+		shjson_bool_add(params, "test", 1);
+		result = stratum_api_account_send(ifaceIndex, strAccount, params, strError, hColor);
+	} else if (0 == strcmp(method, "api.account.bsend")) {
+		shjson_bool_add(params, "batch", 1);
+		result = stratum_api_account_send(ifaceIndex, strAccount, params, strError, hColor);
+#if 0
 	} else if (0 == strcmp(method, "api.account.bsend")) {
 		result = stratum_api_account_bsend(ifaceIndex, strAccount, params, strError, hColor);
 	} else if (0 == strcmp(method, "api.account.tsend")) {
 		result = stratum_api_account_tsend(ifaceIndex, strAccount, params, strError, hColor);
+#endif
 	} else if (0 == strcmp(method, "api.order.book")) {
 		result = stratum_api_book(ifaceIndex, user, params);
 	} else if (0 == strcmp(method, "api.order.list")) {
@@ -1704,6 +2046,8 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 		result = stratum_api_context_get(ifaceIndex, strAccount, params, strError);
 	} else if (0 == strcmp(method, "api.ident.list")) {
 		result = stratum_api_ident_list(ifaceIndex, user, params, begin_t);
+	} else if (0 == strcmp(method, "api.cert.info")) {
+		result = stratum_api_cert_info(ifaceIndex, strAccount, params);
 	} else if (0 == strcmp(method, "api.cert.list")) {
 		result = stratum_api_cert_list(ifaceIndex, user, params, begin_t);
 	} else if (0 == strcmp(method, "api.license.list")) {
@@ -1738,6 +2082,10 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 		result = stratum_api_faucet_info(ifaceIndex, strAccount, params);
 	} else if (0 == strcmp(method, "api.block.mined")) {
 		result = stratum_api_block_mined(ifaceIndex, user, params, begin_t);
+	} else if (0 == strcmp(method, "api.block.list")) {
+		result = stratum_api_block_list(ifaceIndex, user, params, begin_t);
+	} else if (0 == strcmp(method, "api.block.get")) {
+		result = stratum_api_block_get(ifaceIndex, user, params, begin_t);
 	}
 	if (result.size() == 0 && strError != "") {
 		shjson_t *reply = shjson_init(NULL);
@@ -1812,6 +2160,13 @@ shjson_t *stratum_request_api(int ifaceIndex, user_t *user, char *method, shjson
 	if (!iface || !iface->enabled) {
 		shjson_t *reply = shjson_init(NULL);
 		set_stratum_error(reply, SHERR_OPNOTSUPP, "coin interface");
+		shjson_null_add(reply, "result");
+		return (reply);
+	}
+
+	if (!auth) {
+		shjson_t *reply = shjson_init(NULL);
+		set_stratum_error(reply, ERR_ACCESS, "authorization");
 		shjson_null_add(reply, "result");
 		return (reply);
 	}

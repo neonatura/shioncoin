@@ -30,6 +30,7 @@
 #include "validation.h"
 #include "algobits.h"
 #include "versionbits.h"
+#include "stratum/stratum.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -99,38 +100,45 @@ static bool serv_state(CIface *iface, int flag)
 
 
 
-static void chain_UpdateWalletCoins(int ifaceIndex, const CTransaction& tx)
+static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransaction& tx)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(iface);
   uint256 tx_hash = tx.GetHash();
 
+	/* check for missing wallet tx. */
+	if (wallet->mapWallet.count(tx_hash) == 0) {
+		if (!wallet->HasArchTx(tx_hash) && wallet->IsMine(tx)) {
+			CWalletTx wtx(wallet, tx);
+			wallet->AddTx(tx, block);
+			return;
+		}
+	}
+
+	/* scan tx inputs for missing spends. */
   BOOST_FOREACH(const CTxIn& txin, tx.vin) {
     const uint256& hash = txin.prevout.hash;
     int nOut = txin.prevout.n;
 
-    if (wallet->mapWallet.count(hash) != 0) {
-      vector<uint256> vOuts;
-      CWalletTx& wtx = wallet->mapWallet[hash];
+		if (wallet->mapWallet.count(hash) != 0) {
+			vector<uint256> vOuts;
+			CWalletTx& wtx = wallet->mapWallet[hash];
 
 			/* coin db */
-      if (wtx.ReadCoins(ifaceIndex, vOuts) &&
-          nOut < vOuts.size() && vOuts[nOut].IsNull()) {
-        vOuts[nOut] = tx_hash;
-        if (wtx.WriteCoins(ifaceIndex, vOuts)) {
-          Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
-        }
-      }
+			if (wtx.ReadCoins(ifaceIndex, vOuts) &&
+					nOut < vOuts.size() && vOuts[nOut].IsNull()) {
+				vOuts[nOut] = tx_hash;
+				if (wtx.WriteCoins(ifaceIndex, vOuts)) {
+					Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
+				}
+			}
 
 			/* wallet db */
-			if (!wtx.IsSpent(nOut) && wallet->IsMine(wtx.vout[nOut])) {
+			if (!wtx.IsSpent(nOut)) {// && wallet->IsMine(wtx.vout[nOut])) {
 				wtx.MarkSpent(nOut);
-#if 0
-				wtx.WriteToDisk();
-#endif
 				wallet->AddTx(wtx);
 			}
-    }
+		}
   }
  
 }
@@ -157,10 +165,17 @@ static bool ServiceWalletEvent(int ifaceIndex)
       CBlock *block = GetBlockByHeight(iface, nHeight);
       if (!block) continue;
 
+			bool fCoinbase = false;
+
 			/* check for new wallet tx's */
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
-				if (wallet->mapWallet.count(tx.GetHash()) != 0)
+				const uint256& hTx = tx.GetHash();
+				if (wallet->mapWallet.count(hTx) != 0) {
+					const CWalletTx& wtx = wallet->mapWallet[hTx];
+					if (wtx.IsCoinBase() && wtx.GetBlocksToMaturity(ifaceIndex) > 0)
+						fCoinbase = true;
 					continue;
+				}
 /* opt_bool(OPT_WALLET_REACCEPT */
 
 #if 0
@@ -178,6 +193,10 @@ static bool ServiceWalletEvent(int ifaceIndex)
 							!IsMine(*wallet, address))
 						continue;
 
+					if (tx.IsCoinBase()) {
+						fCoinbase = true;
+					}
+
 #if 0
 					CWalletTx wtx(wallet, tx);
 					wtx.SetMerkleBranch(block);
@@ -191,14 +210,19 @@ static bool ServiceWalletEvent(int ifaceIndex)
 			/* enforce validity on wallet & recent tx's spent chain */
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
 				if (!tx.IsCoinBase())
-					chain_UpdateWalletCoins(ifaceIndex, tx);
+					chain_UpdateWalletCoins(ifaceIndex, block, tx);
       }
+
+			if (fCoinbase) {
+				add_stratum_miner_block(ifaceIndex, 
+						(char *)block->GetHash().GetHex().c_str());
+			}
 
       delete block;
       wallet->nScanHeight = nHeight;
     }
   }
-  Debug("ServiceWalletEvent: scanned blocks %d .. %d", nStartHeight, nHeight);
+  Debug("ServiceWalletEvent: scanned %s blocks %d .. %d", iface->name, nStartHeight, nHeight);
 
   if (nHeight >= nBestHeight) {
     /* service event has completed task. */
@@ -466,17 +490,15 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 	if (chain_IsNodeBusy(pfrom))
 		return (NULL);
 
-	if (ifaceIndex != USDE_COIN_IFACE) { 
-		if (!pfrom->fPreferHeaders) {
-			/* incompatible. */
-			return (NULL);
-		}
+	if (!pfrom->fPreferHeaders) {
+		/* incompatible. */
+		return (NULL);
+	}
 
-		if (!pfrom->fHaveWitness && 
-				IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
-			/* incompatible. */
-			return (NULL);
-		}
+	if (!pfrom->fHaveWitness && 
+			IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
+		/* incompatible. */
+		return (NULL);
 	}
 
 	return (pfrom);
@@ -891,13 +913,7 @@ void ServiceEventState(int ifaceIndex)
   CIface *iface = GetCoinByIndex(ifaceIndex);
 
   if (serv_state(iface, COINF_DL_SCAN)) {
-		if (ifaceIndex == USDE_COIN_IFACE) {
-			if (!ServiceLegacyBlockEvent(iface)) {
-				unset_serv_state(iface, COINF_DL_SCAN);
-			}
-		} else {
-			unset_serv_state(iface, COINF_DL_SCAN);
-		}
+		unset_serv_state(iface, COINF_DL_SCAN);
     return;
   }
 
@@ -1104,9 +1120,7 @@ void event_cycle_chain(int ifaceIndex)
   ServiceEventState(ifaceIndex);
 
 	/* the "block event" continuously runs. */
-	if (ifaceIndex != USDE_COIN_IFACE) {
-		ServiceBlockEvent(ifaceIndex);
-	}
+	ServiceBlockEvent(ifaceIndex);
 
 }
 

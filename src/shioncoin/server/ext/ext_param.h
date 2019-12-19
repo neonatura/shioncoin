@@ -27,10 +27,17 @@
 #define __PARAM_H__
 
 
+#define EXTPARAM_BLOCKSIZE "blocksize"
+
+#define EXTPARAM_MINFEE "minfee"
+
+
 class CParam : public CExtCore
 {
   public:
-		int64_t nValue;
+		static const int MAX_MODE_LENGTH = 135;
+
+		int64 nValue;
 
     CParam()
 		{
@@ -58,14 +65,15 @@ class CParam : public CExtCore
     friend bool operator==(const CParam &a, const CParam &b)
     {
       return (
-          ((CExtCore&) a) == ((CExtCore&) b)
+          ((CExtCore&) a) == ((CExtCore&) b) &&
+					a.nValue == b.nValue
         );
     }
 
-    void Init(const CParam& param)
+    void Init(const CParam& b)
     {
-			CExtCore::Init(param);
-			nValue = 0;
+			CExtCore::Init(b);
+			nValue = b.nValue;
     }
 
     CParam operator=(const CParam &b)
@@ -86,7 +94,7 @@ class CParam : public CExtCore
 			return (GetLabel());
 		}
 
-		int64_t GetValue()
+		int64 GetValue()
 		{
 			return (nValue);
 		}
@@ -99,6 +107,9 @@ class CParam : public CExtCore
 
 };
 
+/* Whether blockchain is capable of processing Param extended transactions. */
+bool HasParamConsensus(CIface *iface, CBlockIndex *pindexPrev = NULL);
+
 /**
  * Verify the integrity of an param transaction.
  */
@@ -109,18 +120,26 @@ bool VerifyParamTx(CTransaction& tx, int& mode);
  */
 bool IsParamTx(const CTransaction& tx);
 
-bool ConnectParamTx(CIface *iface, CTransaction *tx);
+bool ConnectParamTx(CIface *iface, CTransaction *tx, CBlockIndex *pindexPrev);
 
 bool DisconnectParamTx(CIface *iface, CTransaction *tx);
 
-bool GetParamTxConsensus(CIface *iface, string strName, int& nValue);
+bool GetParamTxConsensus(CIface *iface, string strName, int64_t nTime, int& nValue);
+
+bool IsValidParamTxConsensus(string strMode, int64_t nValue, int64_t nCurrent);
+
+bool IsValidParamTxConsensus(CIface *iface, CParam *param, int64_t nCurrent = 0);
+
+void AddParamIfNeccessary(CIface *iface, CWalletTx& wtx);
+
+int64_t GetParamTxValue(CIface *iface, string strName);
 
 /**
- * submit consensus cote on a new block-chain parameter setting. 
+ * submit consensus vote on a new block-chain parameter setting. 
  * @param wtx A pre-initialized wallet transaction.
  * @note Updating a parameter on a transaction will not cause the transaction to be commited.
  */
-int update_param_tx(CIface *iface, string strAccount, string strParam, int64_t valParam, CWalletTx& wtx);
+int update_param_tx(CIface *iface, string strParam, int64_t valParam, CWalletTx& wtx);
 
 
 #endif /* ndef __PARAM_H__ */

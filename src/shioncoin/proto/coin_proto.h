@@ -63,12 +63,11 @@ extern "C" {
 
 #define MAX_BLOCK_SIZE(_iface) \
   ((_iface)->max_block_size)
+#define DEFAULT_MAX_BLOCK_SIZE(_iface) \
+  ((_iface)->def_max_block_size)
 
 #define MAX_BLOCK_WEIGHT(_iface) \
   ((_iface)->max_block_size * 4)
-
-#define MAX_BLOCK_SIZE_GEN(_iface) \
-  ((_iface)->max_block_size / 2)
 
 #define MAX_ORPHAN_TRANSACTIONS(_iface) \
   ((_iface)->max_orphan_tx)
@@ -96,6 +95,11 @@ extern "C" {
  */
 #define MIN_RELAY_TX_FEE(_iface) \
 	(int64)( !(_iface) ? 0 : (_iface)->min_relay_fee )
+#define DEFAULT_MIN_RELAY_TX_FEE(_iface) \
+	(int64)( !(_iface) ? 0 : (_iface)->min_relay_fee )
+
+#define DUST_RELAY_TX_FEE(_iface) \
+	(int64)((_iface)->min_relay_fee * 3)
 
 /**
  * The minimum coin value allowed to be transfered in a single transaction.
@@ -115,9 +119,6 @@ extern "C" {
 
 /** The "ShionCoin" virtual currency. */
 #define SHC_COIN_IFACE 1
-
-/** The "USDE" virtual currency. */
-#define USDE_COIN_IFACE 2
 
 /** The "EMC2" (Einstienium) virtual currency. */
 #define EMC2_COIN_IFACE 3
@@ -173,6 +174,12 @@ typedef int (*coin_f)(struct coin_iface_t * /*iface*/, void * /* arg */);
 #define BASE58_EXT_SECRET_KEY(_iface) \
 	((_iface)->base58_ext_secret_key)
 
+
+#define MAX_SCRIPT_SIZE(_iface) \
+  ((_iface) ? (_iface)->max_script_size : 10000)
+
+#define MAX_SCRIPT_ELEMENT_SIZE(_iface) \
+  ((_iface) ? (_iface)->max_script_element_size : 520)
 
 
 /* shared traits for services that support */
@@ -247,15 +254,19 @@ typedef struct coin_iface_t
   uint64_t services; /* NODE_XXX */
   uint64_t min_input;
   uint64_t max_block_size;
+  uint64_t def_max_block_size;
   uint64_t max_orphan_tx;
   uint64_t max_tx_weight;
   uint64_t min_tx_fee;
   uint64_t min_relay_fee;
+  uint64_t def_min_relay_fee;
   uint64_t max_tx_fee;
   uint64_t max_free_tx_size;
   uint64_t max_money;
   uint64_t coinbase_maturity;
   uint64_t max_sigops;
+	uint64_t max_script_size;
+	uint64_t max_script_element_size;
 
   /* coin operations */
   coin_f op_init;
@@ -354,17 +365,6 @@ coin_iface_t *GetCoin(const char *name);
  * @{
  */
 #include "shc_proto.h"
-/**
- * @}
- */
-
-/**
- * The USDe currency coin service.
- * @ingroup sharecoin
- * @defgroup sharecoin_usde The USDE currency coin service.
- * @{
- */
-#include "usde_proto.h"
 /**
  * @}
  */

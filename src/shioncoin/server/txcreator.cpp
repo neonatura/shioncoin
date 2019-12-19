@@ -26,6 +26,7 @@
 #include "shcoind.h"
 #include "wallet.h"
 #include "walletdb.h"
+#include "account.h"
 #include "crypter.h"
 #include "ui_interface.h"
 #include "base58.h"
@@ -201,10 +202,12 @@ bool CTxCreator::AddOutput(CScript scriptPubKey, int64 nValue, bool fInsert)
     strError = "An invalid coin output value was specified.";
     return (false);
   }
-  if (nValue < 0) { //MIN_INPUT_VALUE(iface)) {
+#if 0
+  if (nValue < MIN_INPUT_VALUE(iface)) {
     strError = "Output value is less than minimum allowed.";
     return (false);
   }
+#endif
 
   if (fInsert) {
     vout.insert(vout.begin(), CTxOut(nValue, scriptPubKey));
@@ -243,9 +246,30 @@ bool CTxCreator::HaveOutput(const CPubKey& pubKey)
 	return (HaveOutput(pubKey.GetID()));
 }
 
-bool CTxCreator::SetChange(const CPubKey& scriptPubKey)
+bool CTxCreator::SetChangeAddr(const CPubKey& scriptPubKey)
 {
   changePubKey = scriptPubKey;
+}
+
+CCoinAddr CTxCreator::GetChangeAddr()
+{
+  CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
+	CCoinAddr changeAddr(pwallet->ifaceIndex);
+	bool fOk = false;
+
+  int ext_idx = IndexOfExtOutput(*this);
+  if (fAccount && (ext_idx == -1) && !changePubKey.IsValid()) {
+		changeAddr = pwallet->GetChangeAddr(strFromAccount);
+		fOk = (changeAddr.IsValid() && !HaveInput(changeAddr.Get()));
+	}
+	if (!fOk) {
+		CPubKey pubkey;
+		if (!pwallet->GetAccount(fAccount ? strFromAccount : "")->CreateNewPubKey(pubkey, CKeyMetadata::META_HD_KEY)) {
+			changeAddr = CCoinAddr(pwallet->ifaceIndex, pubkey.GetID()); 
+		}
+	}
+
+	return (changeAddr);
 }
 
 void CTxCreator::SetMinFee(int64 nMinFeeIn)
@@ -265,19 +289,6 @@ int64 CTxCreator::CalculateFee()
   nFee = pwallet->CalculateFee(*this, nMinFee);
 
   return (nFee);
-}
-
-void CTxCreator::CreateChangeAddr()
-{
-
-	if (!fAccount) {
-		string strAccount("");
-		changePubKey = GetAccountPubKey(pwallet, strAccount, true);
-//		changePubKey = pwallet->GenerateNewKey();
-	} else {
-		changePubKey = GetAccountPubKey(pwallet, strFromAccount, true);
-	}
-
 }
 
 bool CTxCreator::SetLockHeight(uint32_t nHeight)
@@ -375,18 +386,40 @@ static uint32_t txcreator_RecentBlockHeight(CIface *iface)
 	// e.g. high-latency mix networks and some CoinJoin implementations, have
 	// better privacy.
 	if (0 == (shrand() % 10))
-		nLockTime = MAX(0, nLockTime - GetRandInt(100));
+		nLockTime = MAX(0, nLockTime - (shrand() % 100));
 
 	return ((uint32_t)nLockTime);
 }
 
+static void txcreator_AddDummySignature(CIface *iface, const CTransaction& tx, int nOut, CTxIn& in, CTxInWitness& wit)
+{
+	int witnessversion = -1;
+	std::vector<unsigned char> witnessprogram;
+
+	//Solver(scriptPubKey, typeRet, vSolutions);
+	const CScript& scriptPubKey = tx.vout[nOut].scriptPubKey;
+	if (!scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram)) {
+		const cbuff sigDummy(40, '\007');
+		const cbuff sigPub(65, '\007');
+		in.scriptSig << sigDummy << sigPub;
+	} else if (witnessversion == 14) {
+		const cbuff sigDummy(2702, '\007');
+		const cbuff sigPub(1474, '\007');
+		wit.scriptWitness.stack.push_back(sigDummy);
+		wit.scriptWitness.stack.push_back(sigPub);
+	} else {
+		const cbuff sigDummy(40, '\007');
+		const cbuff sigPub(65, '\007');
+		wit.scriptWitness.stack.push_back(sigDummy);
+		wit.scriptWitness.stack.push_back(sigPub);
+	}
+
+}
+
 bool CTxCreator::Generate()
 {
-	const cbuff sigDummy(72, '\000');
-	const cbuff sigPub(64, '\000');
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
   CWallet *wallet = GetWallet(iface);
-	CCoinAddr changeAddr(wallet->ifaceIndex);
   int64 nFee;
   bool ok;
 
@@ -395,41 +428,13 @@ bool CTxCreator::Generate()
     return (false);
   }
 
-  /* establish "coin change" destination address */
-  int ext_idx = IndexOfExtOutput(*this);
-  if (fAccount && (ext_idx == -1) && !changePubKey.IsValid()) {
-		changeAddr = wallet->GetChangeAddr(strFromAccount);
-#if 0
-    CPubKey changePubKey;
-
-    ok = pwallet->GetMergedPubKey(strFromAccount, "change", changePubKey);
-    if (ok && !HaveInput(changePubKey) && !HaveOutput(changePubKey)) {
-      SetChange(changePubKey);
-    }
-#endif
-  }
-	if (!changeAddr.IsValid()) {
-		if (!changePubKey.IsValid())
-			CreateChangeAddr();
-		changeAddr = CCoinAddr(wallet->ifaceIndex, changePubKey.GetID());
-	}
-#if 0
-  if (!changePubKey.IsValid()) {
-    /* pull a reserved key from the pool. */
-    CreateChangeAddr();
-#if 0
-    /* done in Send() instead */
-    if (fAccount)
-      pwallet->SetAddressBookName(changePubKey.GetID(), strFromAccount);
-#endif
-  }
-#endif
-
 	if (isAutoLock() &&
-			pwallet->ifaceIndex != COLOR_COIN_IFACE && 
-			(ext_idx == -1)) {
-		/* auto set lock height to recent height */
-		SetLockHeight(txcreator_RecentBlockHeight(iface));
+			pwallet->ifaceIndex != COLOR_COIN_IFACE) {
+		int ext_idx = IndexOfExtOutput(*this);
+		if	(ext_idx == -1) {
+			/* auto set lock height to recent height */
+			SetLockHeight(txcreator_RecentBlockHeight(iface));
+		}
 	}
 
   vector<COutput> vCoins;
@@ -494,11 +499,15 @@ bool CTxCreator::Generate()
       return (false);
     } 
 
-    CWalletTx t_wtx(wallet);
+		/* create temp which includes any underlying ext-tx */
+    CWalletTx t_wtx(wallet, *this);
+
+		t_wtx.wit.vtxinwit.resize(setCoinsCopy.size());
 
     /* add inputs */
     int nCount = 0;
     nTotCredit = 0;
+		int nOut = 0;
     BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoinsCopy) {
       CWalletTx *wtx = (CWalletTx *)coin.first;
       unsigned int n = coin.second;
@@ -509,7 +518,8 @@ bool CTxCreator::Generate()
       }
 
       CTxIn in = CTxIn(coin.first->GetHash(), coin.second);
-      in.scriptSig << sigDummy << sigPub;
+			txcreator_AddDummySignature(iface, *wtx, n, in, t_wtx.wit.vtxinwit[nOut]);
+			nOut++;
       t_wtx.vin.push_back(in);
 
       nCount++;
@@ -531,14 +541,16 @@ bool CTxCreator::Generate()
     }
 
     int64 nChange = (nTotCredit - nDebit - nFee);
-    if (nChange >= MIN_TX_FEE(iface)) {
+		if (MoneyRange(iface, nChange) &&
+				nChange >= MIN_INPUT_VALUE(iface) &&
+				nChange >= DUST_RELAY_TX_FEE(iface)) {
+			const CCoinAddr& changeAddr = wallet->GetChangeAddr(fAccount ? strFromAccount : "");
       CScript script;
-
       script.SetDestination(changeAddr.Get());
       t_wtx.vout.insert(t_wtx.vout.end(), CTxOut(nChange, script));
     }
 
-    nFee = wallet->CalculateFee(t_wtx, nMinFee);
+    nFee = wallet->CalculateFee(t_wtx, nMinFee, nFeeDepth);
   } while (nDebit + nFee > nTotCredit);
   if (!MoneyRange(iface, nFee)) {
     strError = "The calculated fee is out-of-range.";
@@ -561,10 +573,11 @@ bool CTxCreator::Generate()
 
   /* handle coin change */
   int64 nChange = (nCredit - nDebit - nFee);
-  if (nChange >= MIN_INPUT_VALUE(iface) &&
-      nChange >= MIN_RELAY_TX_FEE(iface)) {
+	if (MoneyRange(iface, nChange) &&
+			nChange >= MIN_INPUT_VALUE(iface) &&
+			nChange >= DUST_RELAY_TX_FEE(iface)) {
+		const CCoinAddr& changeAddr = GetChangeAddr();
     AddOutput(changeAddr.Get(), nChange); 
-    //AddOutput(changePubKey, nChange); 
   }
 
   /* add inputs to transaction */
@@ -758,7 +771,8 @@ bool CTxBatchCreator::CreateBatchTx()
     nTotSelect += wtx->vout[n].nValue; 
   }
 
-  if (nTotSelect < (nTotDebit + MIN_TX_FEE(iface))) {
+//  if (nTotSelect < (nTotDebit + MIN_TX_FEE(iface)))
+  if (nTotSelect < (nTotDebit + MIN_RELAY_TX_FEE(iface))) {
     /* insufficient funds to proceed. */
     strError = "insufficient funds to create transaction.";
     return (error(SHERR_INVAL, "CreateBatchTx: insufficient funds (%f < %f)", (double)nTotSelect/COIN, (double)nTotDebit/COIN));
@@ -779,13 +793,24 @@ bool CTxBatchCreator::CreateBatchTx()
     nIndex++;
     nTotCredit += wtx->vout[n].nValue;
 
+		unsigned int nWeight = pwallet->GetTransactionWeight(*this);
+		nWeight += (1024 * ret_tx.getInputCount()); /* large quasi signature */
+		if (nWeight >= MAX_TRANSACTION_WEIGHT(iface) ||
+				(nWeight/4) >= nMaxTxSize) {
+			break;
+		}
+
+		/*
     int64 nBytes = ::GetSerializeSize(ret_tx, SER_NETWORK, PROTOCOL_VERSION(iface) | SERIALIZE_TRANSACTION_NO_WITNESS);
     nBytes += (146 * ret_tx.vin.size());
     if (nBytes > nMaxTxSize) {
       break;
     }
+		*/
 
-    nFee = ((nBytes / 1000) + 4) * MIN_TX_FEE(iface);
+    nFee = ((nWeight / 4 / 1000) + 4) * MIN_TX_FEE(iface);
+    nFee += MIN_RELAY_TX_FEE(iface);
+		nFee = MAX(nFee, nMinFee);
     if (nFee > nMaxFee) {
       break;
     }
@@ -804,7 +829,8 @@ bool CTxBatchCreator::CreateBatchTx()
  
   nTotDebit = MAX(0, /* sanity */
       MIN(nTotDebit, (nTotCredit - nFee)));
-  if (nTotDebit <= CENT + MIN_TX_FEE(iface)) {
+//  if (nTotDebit <= CENT + MIN_TX_FEE(iface))
+  if (nTotDebit < MIN_INPUT_VALUE(iface)) {
     strError = strprintf(_("The output coin value is too small (%-8.8f)."), (double)nTotDebit/COIN);
     return (false);
   }
@@ -908,10 +934,10 @@ void CTxBatchCreator::SetLimits()
 {
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
 
-  nMaxTxSize = MAX_BLOCK_SIZE(iface) / 50;
+  nMaxTxSize = MAX_BLOCK_SIZE(iface) / 10;
   nMaxSigOp = MAX_BLOCK_SIGOPS(iface) / 50;
   nMaxFee = MIN(MAX_TX_FEE(iface) - CENT, 
-      (nMaxTxSize / 1024) * MIN_TX_FEE(iface));
+      (nMaxTxSize / 1000) * MIN_TX_FEE(iface));
 
 }
 

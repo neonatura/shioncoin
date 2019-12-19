@@ -24,16 +24,15 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <net/if.h>
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "shc/shc_netmsg.h"
-#include "usde/usde_netmsg.h"
 #include "emc2/emc2_netmsg.h"
 #include "ltc/ltc_netmsg.h"
 #include "testnet/testnet_netmsg.h"
@@ -55,7 +54,7 @@
 using namespace std;
 using namespace boost;
 
-
+extern std::string GetClientName(CIface *iface);
 
 void ThreadMessageHandler2(void* parg);
 void ThreadSocketHandler2(void* parg);
@@ -587,30 +586,6 @@ void CNode::copyStats(CNodeStats &stats)
 }
 #undef X
 
-
-
-
-
-
-
-
-
-
-void usde_server_close(int fd, struct sockaddr *addr)
-{
-  NodeList &vNodes = GetNodeList(USDE_COIN_IFACE);
-
-  LOCK(cs_vNodes);
-  vector<CNode*> vNodesCopy = vNodes;
-  BOOST_FOREACH(CNode* pnode, vNodesCopy)
-  {
-    if (pnode->hSocket == fd) {
-      pnode->fDisconnect = true;
-    }
-  }
-
-}
-
 void shc_server_close(int fd, struct sockaddr *addr)
 {
   NodeList &vNodes = GetNodeList(SHC_COIN_IFACE);
@@ -624,120 +599,6 @@ void shc_server_close(int fd, struct sockaddr *addr)
     }
   }
 
-}
-
-void usde_close_free(void)
-{
-  NodeList &vNodes = GetNodeList(USDE_COIN_IFACE);
-
-
-  LOCK(cs_vNodes);
-  vector<CNode*> vNodesCopy = vNodes;
-  list<CNode*> vNodesDisconnected;
-
-  // Disconnect unused nodes
-  BOOST_FOREACH(CNode* pnode, vNodesCopy)
-  {
-    if (pnode->fDisconnect ||
-        (pnode->GetRefCount() <= 0 && pnode->vRecv.empty() && pnode->vSend.empty()))
-    {
-      // remove from vNodes
-      vNodes.erase(remove(vNodes.begin(), vNodes.end(), pnode), vNodes.end());
-
-      // release outbound grant (if any)
-      pnode->grantOutbound.Release();
-
-      pnode->Cleanup();
-
-      // hold in disconnected pool until all refs are released
-      pnode->nReleaseTime = max(pnode->nReleaseTime, GetTime() + 15 * 60);
-      if (pnode->fNetworkNode || pnode->fInbound)
-        pnode->Release();
-      vNodesDisconnected.push_back(pnode);
-    }
-  }
-
-  // Delete disconnected nodes
-  BOOST_FOREACH(CNode* pnode, vNodesDisconnected)
-  {
-    delete pnode;
-  }
-}
-
-void usde_server_accept(int hSocket, struct sockaddr *net_addr)
-{
-  NodeList &vNodes = GetNodeList(USDE_COIN_IFACE);
-#ifdef USE_IPV6
-  struct sockaddr_storage sockaddr;
-#else
-  struct sockaddr sockaddr;
-#endif
-  CAddress addr;
-  int nInbound = 0;
-  bool inBound = false;
-  unet_table_t *t = get_unet_table(hSocket);
-
-  if (t && (t->flag & UNETF_INBOUND))
-    inBound = true;
-
-  addr.SetSockAddr(net_addr);
-
-  if (inBound) {
-    {
-      LOCK(cs_vNodes);
-      BOOST_FOREACH(CNode* pnode, vNodes)
-        if (pnode->fInbound)
-          nInbound++;
-    }
-
-    if (nInbound >= opt_num(OPT_MAX_CONN) - MAX_OUTBOUND_CONNECTIONS)
-    {
-      {
-        LOCK(cs_setservAddNodeAddresses);
-        if (!setservAddNodeAddresses.count(addr)) {
-          unet_close(hSocket, (char *)"inbound limit");
-        }
-      }
-    }
-
-    if (CNode::IsBanned(addr))
-    {
-      unet_close(hSocket, "banned");
-      return;
-    }
-  } else {
-    if (CNode::IsBanned(addr)) {
-      /* force clear ban list due to manual connection initiation. */
-      CNode::ClearBanned();
-    }
-  }
-
-  if (inBound) {
-    Debug("(usde) usde_server_accept: accepted connection '%s'.", 
-        addr.ToString().c_str());
-  } else {
-    Debug("(usde) usde_server_accept: initialized connection '%s'.",
-        addr.ToString().c_str());
-  }
-
-  CNode* pnode = new CNode(USDE_COIN_IFACE, hSocket, addr, 
-      shaddr_print(shaddr(hSocket)), inBound);
-
-  //if (inBound)
-    pnode->AddRef();
-
-  if (!inBound)
-    pnode->fNetworkNode = true;
-
-  {
-    LOCK(cs_vNodes);
-    vNodes.push_back(pnode);
-  }
-
-#if 0
-  /* submit address to shared daemon */
-  shared_addr_submit(shaddr_print(net_addr));
-#endif
 }
 
 void shc_MessageHandler(CIface *iface)
@@ -782,249 +643,6 @@ void shc_MessageHandler(CIface *iface)
 
 
 }
-
-#ifdef USDE_SERVICE
-extern bool usde_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStream& vRecv);
-bool usde_coin_server_recv_msg(CIface *iface, CNode* pfrom)
-{
-  CDataStream& vRecv = pfrom->vRecv;
-  shtime_t ts;
-
-  if (vRecv.empty())
-    return (true);
-
-  CMessageHeader hdr;
-  vRecv >> hdr;
-
-  /* check checksum */
-  string strCommand = hdr.GetCommand();
-  unsigned int nMessageSize = hdr.nMessageSize;
-  if (nMessageSize > MAX_SIZE) {
-    error(SHERR_2BIG, "(usde) ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE", strCommand.c_str(), nMessageSize);
-    return (false);
-  }
-
-  /* verify checksum */
-  uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);
-  unsigned int nChecksum = 0;
-  memcpy(&nChecksum, &hash, sizeof(nChecksum));
-  if (nChecksum != hdr.nChecksum) {
-    error(SHERR_INVAL, "ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
-    return (false);
-  }
-
-  bool fRet = false;
-  try {
-    char *cmd = (char *)strCommand.c_str();
-    {
-//      LOCK(cs_main);
-      fRet = usde_ProcessMessage(iface, pfrom, strCommand, vRecv);
-    }
-  } catch (std::ios_base::failure& e) {
-    if (strstr(e.what(), "end of data"))
-    {
-      // Allow exceptions from underlength message on vRecv
-      error(SHERR_INVAL, "(use) ProcessMessages(%s, %u bytes) : Exception '%s' caught, normally caused by a message being shorter than its stated length\n", strCommand.c_str(), nMessageSize, e.what());
-    }
-    else if (strstr(e.what(), "size too large"))
-    {
-      // Allow exceptions from overlong size
-      error(SHERR_INVAL, "(use) ProcessMessages(%s, %u bytes) : Exception '%s' caught\n", strCommand.c_str(), nMessageSize, e.what());
-    }
-    else
-    {
-      PrintExceptionContinue(&e, "(usde) ProcessMessage");
-    }
-  } catch (std::exception& e) {
-    PrintExceptionContinue(&e, "(usde) ProcessMessage");
-  } catch (...) {
-    PrintExceptionContinue(NULL, "(usde) ProcessMessage");
-  }
-
-  return (fRet);
-}
-int usde_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
-{
-  coinhdr_t hdr;
-  unsigned char *data;
-  int size;
-
-  if (pnode->vSend.size() >= SendBufferSize()) /* wait for output to flush */
-    return (SHERR_AGAIN);
-
-  size = shbuf_size(buff);
-  if (size < SIZEOF_COINHDR_T)
-    return (SHERR_AGAIN);
-
-  data = (unsigned char *)shbuf_data(buff);
-	if (!data)
-		return (SHERR_AGAIN);
-
-  mempcpy(&hdr, data, SIZEOF_COINHDR_T);
-
-  /* verify magic sequence */
-  if (0 != memcmp(hdr.magic, iface->hdr_magic, 4)) {
-    shbuf_clear(buff);
-    return (SHERR_ILSEQ);
-  }
-
-  if (hdr.size > MAX_SIZE) {
-    shbuf_clear(buff);
-    return (SHERR_INVAL);
-  }
-
-  if (size < SIZEOF_COINHDR_T + hdr.size)
-    return (SHERR_AGAIN);
-
-  CDataStream& vRecv = pnode->vRecv;
-
-  /* clear previous contents */
-  vRecv.clear();
-
-  /* transfer to cli buffer */
-  vRecv.resize(sizeof(hdr) + hdr.size);
-  memcpy(&vRecv[0], data, sizeof(hdr) + hdr.size);
-  shbuf_trim(buff, sizeof(hdr) + hdr.size);
-
-  bool fRet = usde_coin_server_recv_msg(iface, pnode);
-  if (!fRet) {
-    error(SHERR_INVAL, "usde_coin_server_recv: usde_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
-  }
-
-  pnode->nLastRecv = GetTime();
-  return (0);
-}
-void usde_MessageHandler(CIface *iface)
-{
-  NodeList &vNodes = GetNodeList(iface);
-  shtime_t ts;
-
-  vector<CNode*> vNodesCopy;
-  {
-    LOCK(cs_vNodes);
-    vNodesCopy = vNodes;
-    BOOST_FOREACH(CNode* pnode, vNodesCopy)
-      pnode->AddRef();
-  }
-
-  // Poll the connected nodes for messages
-  CNode* pnodeTrickle = NULL;
-  if (!vNodesCopy.empty())
-    pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
-  BOOST_FOREACH(CNode* pnode, vNodesCopy)
-  {
-
-    // Send messages
-    timing_init("SendMessages", &ts);
-    {
-      TRY_LOCK(pnode->cs_vSend, lockSend);
-      if (lockSend)
-        usde_SendMessages(iface, pnode, pnode == pnodeTrickle);
-    }
-    timing_term(USDE_COIN_IFACE, "SendMessages", &ts);
-    if (fShutdown)
-      return;
-  }
-
-  {
-    LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodesCopy)
-      pnode->Release();
-  }
-
-
-}
-#endif /* USDE_SERVICE */
-
-void usde_server_timer(void)
-{
-#ifdef USDE_SERVICE
-  static int verify_idx;
-  CIface *iface = GetCoinByIndex(USDE_COIN_IFACE);
-  NodeList &vNodes = GetNodeList(USDE_COIN_IFACE);
-  shtime_t ts;
-  bc_t *bc;
-  int err;
-
-  if (fShutdown)
-    return;
-
-  usde_close_free();
-
-  //
-  // Service each socket
-  {
-    vector<CNode*> vNodesCopy;
-    {
-      LOCK(cs_vNodes);
-      vNodesCopy = vNodes;
-      BOOST_FOREACH(CNode* pnode, vNodesCopy)
-        pnode->AddRef();
-    }
-
-    BOOST_FOREACH(CNode* pnode, vNodesCopy)
-    {
-      if (fShutdown)
-        return;
-
-      shbuf_t *pchBuf = descriptor_rbuff(pnode->hSocket);
-      if (pchBuf) {
-				shbuf_lock(pchBuf);
-				if (shbuf_size(pchBuf) != 0) {
-					TRY_LOCK(pnode->cs_vRecv, lockRecv);
-					if (lockRecv) {
-						err = 0;
-						while (err == 0) {
-							timing_init("recv msg", &ts);
-							err = usde_coin_server_recv(iface, pnode, pchBuf);
-							timing_term(USDE_COIN_IFACE, "recv msg", &ts);
-
-							double diff = shtime_diff(ts, shtime());
-							if (diff >= 0.4)
-								break;
-						}
-						if (err && err != SHERR_AGAIN) {
-							error(err, "usde_coin_server_recv");
-							pnode->CloseSocketDisconnect("usde_coin_server_recv");
-							continue;
-						}
-					}
-				}
-				shbuf_unlock(pchBuf);
-      }
-
-      {
-        LOCK(pnode->cs_vSend);
-        /* transmit pending outgoing data */
-        CDataStream& vSend = pnode->vSend;
-        if (!vSend.empty())
-        {
-          size_t nBytes = vSend.size();
-          int err = unet_write(pnode->hSocket, &vSend[0], nBytes);
-          if (!err) {
-            vSend.erase(vSend.begin(), vSend.begin() + nBytes);
-            pnode->nLastSend = GetTime();
-          }
-        }
-      }
-    }
-
-    {
-      LOCK(cs_vNodes);
-      BOOST_FOREACH(CNode* pnode, vNodesCopy)
-        pnode->Release();
-    }
-  }
-
-  timing_init("MessageHandler", &ts);
-  usde_MessageHandler(iface);
-  timing_term(USDE_COIN_IFACE, "MessageHandler", &ts);
-
-  event_cycle_chain(USDE_COIN_IFACE);
-#endif /* USDE_SERVICE */
-}
-
-
 
 list<CNode*> shc_vNodesDisconnected;
 static void shc_close_free(void)

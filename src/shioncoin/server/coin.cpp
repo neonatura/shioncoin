@@ -554,7 +554,7 @@ bool CTransaction::ConnectInputs(int ifaceIndex, const CBlockIndex* pindexBlock,
   return (ok);
 }
 
-void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight)
+void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight, CBlockIndex *pindexPrev)
 {
   int ifaceIndex = GetCoinIndex(iface);
 	int mode;
@@ -592,8 +592,10 @@ void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight)
 			if (err) {
 				error(err, "CommitContextTx failure");
 			}
+#if 0
 		} else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
 			/* not implemented. */
+#endif
 		} else if (tx.isFlag(CTransaction::TXF_IDENT)) {
 			InsertIdentTable(iface, tx);
 		} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
@@ -623,8 +625,16 @@ void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight)
 			}
 		}
 
+		/* non-exclusive */
+		if (IsParamTx(tx)) {
+			ConnectParamTx(iface, &tx, pindexPrev);
+		}
+
 		/* check for matrix validation notary tx's. */
-		ProcessValidateMatrixNotaryTx(iface, tx);
+		if (tx.vin.size() == 1 && tx.vout.size() == 1 &&
+				tx.vout[0].nValue <= CTxMatrix::MAX_NOTARY_TX_VALUE) {
+			ProcessValidateMatrixNotaryTx(iface, tx);
+		}
 	}
 
 }
@@ -672,7 +682,6 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 		}
 	}
 	if (block->ifaceIndex != EMC2_COIN_IFACE &&
-			block->ifaceIndex != USDE_COIN_IFACE &&
 			block->ifaceIndex != LTC_COIN_IFACE) {
 		/* non-standard */
 		if (fEnforceBIP34) {
@@ -715,8 +724,12 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
   map<uint256, CTransaction> mapTx;
   BOOST_FOREACH(CTransaction& tx, block->vtx) {
     uint256 hashTx = tx.GetHash();
+		bool fOk;
 
-    if (!core_ConnectCoinInputs(block->ifaceIndex, &tx, pindex, mapOutputs, mapTx, nSigOps, nFees, true, false, true, block))
+		timing_init("ConnectBlock/ConnectCoinInput", &ts);
+    fOk = core_ConnectCoinInputs(block->ifaceIndex, &tx, pindex, mapOutputs, mapTx, nSigOps, nFees, true, false, true, block);
+		timing_term(block->ifaceIndex, "ConnectBlock/ConnectCoinInput", &ts);
+    if (!fOk)
       return (false);
   }
   if (nSigOps > MAX_BLOCK_SIGOPS(iface)) /* too many puppies */
@@ -769,7 +782,7 @@ bool core_ConnectBlock(CBlock *block, CBlockIndex* pindex)
 
 	/* handle processing extended tx operations. */
   timing_init("ConnectBlock/ConnectExtTx", &ts);
-	core_ConnectExtTx(iface, block, nHeight);
+	core_ConnectExtTx(iface, block, nHeight, pindex->pprev);
   timing_term(block->ifaceIndex, "ConnectBlock/ConnectExtTx", &ts);
 
 	bolo_connectblock_slave(pindex, *block);
@@ -878,37 +891,45 @@ bool core_DisconnectInputs(int ifaceIndex, CTransaction *tx)
     }
   }
 
-  if (IsCertTx(*tx)) {
-    if (!DisconnectCertificate(iface, *tx)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting certificate tx.");
-    }
-  }
-  if (IsAliasTx(*tx)) {
-    if (!DisconnectAliasTx(iface, *tx)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting alias tx.");
-    }
-  }
-  if (IsContextTx(*tx)) {
-    if (!DisconnectContextTx(iface, *tx)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting context tx.");
-    }
-  }
-
-	int mode;
-	if (IsExecTx(*tx, mode)) {
-		if (!DisconnectExecTx(iface, *tx, mode)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting exec tx [mode %d].", mode);
+	if (ifaceIndex == TEST_COIN_IFACE ||
+			ifaceIndex == TESTNET_COIN_IFACE ||
+			ifaceIndex == SHC_COIN_IFACE) {
+		if (IsCertTx(*tx)) {
+			if (!DisconnectCertificate(iface, *tx)) {
+				error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting certificate tx.");
+			}
 		}
-	}
-
-	if (IsAssetTx(*tx)) {
-		if (!DisconnectAssetTx(iface, *tx)) {
-      error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting asset tx.");
+		if (IsAliasTx(*tx)) {
+			if (!DisconnectAliasTx(iface, *tx)) {
+				error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting alias tx.");
+			}
 		}
-	}
+		if (IsContextTx(*tx)) {
+			if (!DisconnectContextTx(iface, *tx)) {
+				error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting context tx.");
+			}
+		}
 
-	if (IsOfferTx(*tx)) {
-		DisconnectOfferTx(iface, *tx);
+		int mode;
+		if (IsExecTx(*tx, mode)) {
+			if (!DisconnectExecTx(iface, *tx, mode)) {
+				error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting exec tx [mode %d].", mode);
+			}
+		}
+
+		if (IsAssetTx(*tx)) {
+			if (!DisconnectAssetTx(iface, *tx)) {
+				error(SHERR_INVAL, "core_DisconnectInputs: error disconnecting asset tx.");
+			}
+		}
+
+		if (IsOfferTx(*tx)) {
+			DisconnectOfferTx(iface, *tx);
+		}
+
+		if (IsParamTx(*tx)) {
+			DisconnectParamTx(iface, tx);
+		}
 	}
 
 	/* erase from disk/mem wallet tx map */

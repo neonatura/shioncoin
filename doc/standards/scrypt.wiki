@@ -1,28 +1,25 @@
-In [[cryptography]], '''scrypt''' (pronounced "ess crypt"<ref>{{cite web|title=Colin Percival on Twitter|url=https://twitter.com/cperciva/status/734613598383841281}}</ref>) is a password-based [[key derivation function]] created by Colin Percival, originally for the [[Tarsnap]] online backup service.<ref>{{cite web|title=scrypt page on the Tarsnap website|url=http://www.tarsnap.com/scrypt.html|accessdate=21 January 2014}}</ref>  The algorithm was specifically designed to make it costly to perform large-scale [[custom hardware attack]]s by requiring large amounts of memory. In 2016, the scrypt algorithm was published by [[Internet Engineering Task Force|IETF]] as RFC 7914. A simplified version of scrypt is used as a [[proof-of-work]] scheme by a number of [[Cryptocurrency|cryptocurrencies]], first implemented by an anonymous programmer called ArtForz in Tenebrix and followed by Fairbrix and [[Litecoin]] soon after.<ref>{{cite web|url=https://motherboard.vice.com/en_us/article/4x3ywn/beyond-bitcoin-a-guide-to-the-most-promising-cryptocurrencies|title=Beyond Bitcoin: A Guide to the Most Promising Cryptocurrencies|first=|date=|website=|access-date=|author=Alec Liu}}</ref>
-
+In cryptography, '''scrypt''' (pronounced "ess crypt"  The algorithm was specifically designed to make it costly to perform large-scale custom hardware attacks by requiring large amounts of memory. In 2016, the scrypt algorithm was published by IETF as RFC 7914. A simplified version of scrypt is used as a proof-of-work scheme by a number of cryptocurrencies, first implemented by an anonymous programmer called ArtForz in Tenebrix and followed by Fairbrix and Litecoin soon after.
 == Introduction ==
 
-A password-based [[key derivation function]] (password-based KDF) is generally designed to be computationally intensive, so that it takes a relatively long time to compute (say on the order of several hundred milliseconds). Legitimate users only need to perform the function once per operation (e.g., authentication), and so the time required is negligible. However, a brute-force attack would likely need to perform the operation billions of times, at which point the time requirements become significant and, ideally, prohibitive.
+A password-based key derivation function (password-based KDF) is generally designed to be computationally intensive, so that it takes a relatively long time to compute (say on the order of several hundred milliseconds). Legitimate users only need to perform the function once per operation (e.g., authentication), and so the time required is negligible. However, a brute-force attack would likely need to perform the operation billions of times, at which point the time requirements become significant and, ideally, prohibitive.
 
-Previous password-based KDFs (such as the popular [[PBKDF2]] from [[RSA Laboratories]]) have relatively low resource demands, meaning they do not require elaborate hardware or very much memory to perform. They are therefore easily and cheaply implemented in hardware (for instance on an [[Application-specific integrated circuit|ASIC]] or even an [[Field-programmable gate array|FPGA]]). This allows an attacker with sufficient resources to launch a large-scale parallel attack by building hundreds or even thousands of implementations of the algorithm in hardware and having each search a different subset of the key space. This divides the amount of time needed to complete a brute-force attack by the number of implementations available, very possibly bringing it down to a reasonable time frame.
+Previous password-based KDFs (such as the popular PBKDF2 from RSA Laboratories) have relatively low resource demands, meaning they do not require elaborate hardware or very much memory to perform. They are therefore easily and cheaply implemented in hardware (for instance on an ASIC or even an FPGA). This allows an attacker with sufficient resources to launch a large-scale parallel attack by building hundreds or even thousands of implementations of the algorithm in hardware and having each search a different subset of the key space. This divides the amount of time needed to complete a brute-force attack by the number of implementations available, very possibly bringing it down to a reasonable time frame.
 
-The scrypt function is designed to hinder such attempts by raising the resource demands of the algorithm. Specifically, the algorithm is designed to use a large amount of memory compared to other password-based KDFs,<ref>[http://www.tarsnap.com/scrypt/scrypt.pdf Stronger Key Derivation Via Sequential Memory-Hard Functions], 
-Colin Percival</ref> 
-making the size and the cost of a hardware implementation much more expensive, and therefore limiting the amount of parallelism an attacker can use, for a given amount of financial resources.
+The scrypt function is designed to hinder such attempts by raising the resource demands of the algorithm. Specifically, the algorithm is designed to use a large amount of memory compared to other password-based KDFs, making the size and the cost of a hardware implementation much more expensive, and therefore limiting the amount of parallelism an attacker can use, for a given amount of financial resources.
 
 == Overview ==
-The large memory requirements of scrypt come from a large vector of [[pseudorandom]] bit strings that are generated as part of the algorithm. Once the vector is generated, the elements of it are accessed in a pseudo-random order and combined to produce the derived key. A straightforward implementation would need to keep the entire vector in RAM so that it can be accessed as needed.
+The large memory requirements of scrypt come from a large vector of pseudorandom bit strings that are generated as part of the algorithm. Once the vector is generated, the elements of it are accessed in a pseudo-random order and combined to produce the derived key. A straightforward implementation would need to keep the entire vector in RAM so that it can be accessed as needed.
 
 Because the elements of the vector are generated algorithmically, each element could be generated ''on the fly'' as needed, only storing one element in memory at a time and therefore cutting the memory requirements significantly. However, the generation of each element is intended to be computationally expensive, and the elements are expected to be accessed many times throughout the execution of the function. Thus there is a significant trade-off in speed in order to get rid of the large memory requirements.
 
-This sort of [[Space–time tradeoff|time–memory trade-off]] often exists in computer algorithms: speed can be increased at the cost of using more memory, or memory requirements decreased at the cost of performing more operations and taking longer. The idea behind scrypt is to deliberately make this trade-off costly in either direction. Thus an attacker could use an implementation that doesn't require many resources (and can therefore be massively parallelized with limited expense) but runs very slowly, or use an implementation that runs more quickly but has very large memory requirements and is therefore more expensive to parallelize.
+This sort of time–memory trade-off often exists in computer algorithms: speed can be increased at the cost of using more memory, or memory requirements decreased at the cost of performing more operations and taking longer. The idea behind scrypt is to deliberately make this trade-off costly in either direction. Thus an attacker could use an implementation that doesn't require many resources (and can therefore be massively parallelized with limited expense) but runs very slowly, or use an implementation that runs more quickly but has very large memory requirements and is therefore more expensive to parallelize.
 
 == Algorithm ==
 
 The algorithm includes the following parameters:
 
 * Passphrase - The string of characters to be hashed.
-* [[Salt (cryptography)|Salt]] - A string of characters that modifies the hash to protect against [[Rainbow table]] attacks
+* Salt - A string of characters that modifies the hash to protect against Rainbow table attacks
 * N - CPU/memory cost parameter.
 * p - Parallelization parameter; a positive integer satisfying p ≤ (2<sup>32</sup>− 1) * hLen / MFLen.
 * dkLen - Intended output length in octets of the derived key; a positive integer satisfying dkLen ≤ (2<sup>32</sup>− 1) * hLen.
@@ -33,7 +30,7 @@ The algorithm includes the following parameters:
  <span style="color:blue;">'''Function'''</span> scrypt
     <span style="color:blue;">'''Inputs:'''</span>
        Passphrase:                Bytes    <span style="color:green;">string of characters to be hashed</span>
-       Salt:                      Bytes    <span style="color:green;">random [[Salt (cryptography)|salt]]</span>
+       Salt:                      Bytes    <span style="color:green;">random salt</span>
        CostFactor (N):            Integer  <span style="color:green;">CPU/memory cost parameter</span>
        BlockSizeFactor (r):       Integer  <span style="color:green;">blocksize parameter (8 is commonly used)</span>
        ParallelizationFactor (p): Integer  <span style="color:green;">''Parallelization parameter. (1..2<sup>32</sup>-1 * hLen/MFlen)''</span>
@@ -46,7 +43,7 @@ The algorithm includes the following parameters:
  
     <span style="color:green;">Use PBKDF2 to generate initial 128*BlockSizeFactor*p bytes of data (e.g. 128*8*3 = 3072 bytes)</span>
     <span style="color:green;">Treat the result as an array of ''p'' elements, each entry being ''blocksize'' bytes (e.g. 3 elements, each 1024 bytes)</span>
-    [B<sub>0</sub>...B<sub>p−1</sub>] ← [[PBKDF2]]<sub>HMAC-SHA256</sub>(''Passphrase'', ''Salt'', 1, blockSize*ParallelizationFactor)
+    [B<sub>0</sub>...B<sub>p−1</sub>] ← PBKDF2<sub>HMAC-SHA256</sub>(''Passphrase'', ''Salt'', 1, blockSize*ParallelizationFactor)
  
     <span style="color:green;">Mix each block in '''B''' 2<sup>CostFactor</sup> times using '''ROMix''' function (each block can be mixed in parallel)</span>
     <span style="color:blue;">'''for'''</span> i ← 0 <span style="color:blue;">'''to'''</span> p-1 <span style="color:blue;">'''do'''</span>
@@ -94,8 +91,6 @@ Since Iterations equals 2 to the power of N, only the ''first'' Ceiling(N / 8) b
  
      '''return''' ← Y<sub>0</sub>∥Y<sub>2</sub>∥...∥Y<sub>2r−2</sub> ∥ Y<sub>1</sub>∥Y<sub>3</sub>∥...∥Y<sub>2r−1</sub>
 
-Where ''Salsa20/8'' is the 8-round version of [[Salsa20]].
+Where ''Salsa20/8'' is the 8-round version of Salsa20.
 
-== Cryptocurrency uses ==
-Scrypt is used in many cryptocurrencies as a [[proof-of-work]] algorithm. It was first implemented for Tenebrix (released in September 2011) and served as the basis for [[Litecoin]] and [[Dogecoin]], which also adopted its scrypt algorithm.<ref>{{cite book |url=https://books.google.com/books?id=IXmrBQAAQBAJ&pg=PA221 |title=Mastering Bitcoin: Unlocking Digital Cryptocurrencies |pages=221, 223 |author=Andreas M. Antonopoulos |date=3 December 2014 |publisher=O'Reilly Media |isbn=9781491902646 }}</ref><ref>{{cite web | url=https://litecoin.info/History_of_cryptocurrency | title=History of cryptocurrency | accessdate=27 June 2014}}</ref> Mining of [[cryptocurrencies]] that use scrypt is often performed on graphics processing units ([[GPUs]]) since GPUs tend to have significantly more processing power (for some algorithms) compared to the CPU.<ref>{{cite book|url=https://www.amazon.com/Litecoin-Scrypt-Mining-Configurations-Radeon-ebook/dp/B00E2RT1I4|title=Litecoin Scrypt Mining Configurations for Radeon 7950|author=Roman Guelfi-Gibbs|publisher=Amazon Digital Services}}</ref>  This led to shortages of high end GPUs due to the rising price of these currencies in the months of November and December 2013.<ref>{{cite web|url=http://www.extremetech.com/computing/172381-massive-surge-in-litecoin-mining-leads-to-radeon-shortage|author=Joel Hruska|title=Massive surge in Litecoin mining leads to graphics card shortage|date=10 December 2013|publisher=ExtremeTech}}</ref>
 

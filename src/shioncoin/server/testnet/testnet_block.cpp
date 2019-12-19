@@ -24,8 +24,8 @@
  */
 
 #include "shcoind.h"
+#include "wallet.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "testnet_pool.h"
@@ -58,8 +58,8 @@ using namespace boost;
 
 #define TESTNET_DIFFICULTY_EXPIRE_TIME 1200 /* 20min */
 
-uint256 testnet_hashGenesisBlock("0xf4319e4e89b35b5f26ec0363a09d29703402f120cf1bf8e6f535548d5ec3c5cc");
-static uint256 testnet_hashGenesisMerkle("0xd3f4bbe7fe61bda819369b4cd3a828f3ad98d971dda0c20a466a9ce64846c321");
+uint256 testnet_hashGenesisBlock("0x7ca9e6789f516cf1da0fe9568a1416b092d890b895077d662ca0b67863cb69f4");
+static uint256 testnet_hashGenesisMerkle("0xad71b6323586790b84f31141dace10dd0e6c45f97cc98494efe5f934523302cd");
 static CBigNum TESTNET_bnGenesisProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum TESTNET_bnProofOfWorkLimit(~uint256(0) >> 12);
 
@@ -415,6 +415,38 @@ CBlock* testnet_CreateNewBlock(const CPubKey& rkey)
   return pblock.release();
 }
 
+#if 0
+static void create_nonce(TESTNETBlock *block)
+{
+	static unsigned int nNonceIndex = 0x82222222;
+
+	if (!block)
+		return;
+
+	block->nNonce   = ++nNonceIndex;
+	{
+		uint256 hashTarget = CBigNum().SetCompact(block->nBits).getuint256();
+		uint256 thash;
+		char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
+
+		loop
+		{
+			scrypt_1024_1_1_256_sp(BEGIN(block->nVersion), BEGIN(thash), scratchpad);
+			if (thash <= hashTarget)
+				break;
+
+			++block->nNonce;
+			if (block->nNonce == 0)
+			{
+				++block->nTime;
+			}
+		}
+	}
+	nNonceIndex = block->nNonce;
+
+}
+#endif
+
 extern CBlockIndex *CreateBlockIndex(CIface *iface, CBlockHeader& block);
 
 bool testnet_CreateGenesisBlock()
@@ -427,22 +459,21 @@ bool testnet_CreateGenesisBlock()
     return (true); /* already created */
 
   // Genesis block
-  const char* pszTimestamp = "Neo Natura (share-coin) 2016";
+  const char* pszTimestamp = "Neo Natura (shioncoin) 2019";
   CTransaction txNew;
   txNew.vin.resize(1);
   txNew.vout.resize(1);
   txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
   txNew.vout[0].nValue = testnet_GetBlockValue(0, 0);
-  txNew.vout[0].scriptPubKey = CScript() << ParseHex("04a5814813115273a109cff99907ba4a05d951873dae7acb6c973d0c9e7c88911a3dbc9aa600deac241b91707e7b4ffb30ad91c8e56e695a1ddf318592988afe0a") << OP_CHECKSIG;
+  txNew.vout[0].scriptPubKey = CScript() << OP_RETURN << OP_0;
   TESTNETBlock block;
   block.vtx.push_back(txNew);
   block.hashPrevBlock = 0;
   block.hashMerkleRoot = block.BuildMerkleTree();
   block.nVersion = 2;
-  block.nTime    = 1461974400; /* 04/30/16 12:00am */
-  block.nBits    = 0x1e0ffff0;
-  block.nNonce   = 3293840;
-
+  block.nTime = 1569110400; /* 09/22/2019 */
+  block.nBits = 0x1e0ffff0;
+  block.nNonce = 0x82235aa0;
 
   if (block.GetHash() != testnet_hashGenesisBlock) {
     return (error(ERR_INVAL, "testnet_CreateGenesisBlock: !hash"));

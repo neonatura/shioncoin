@@ -27,6 +27,7 @@
 #include "block.h"
 #include "main.h"
 #include "wallet.h"
+#include "account.h"
 #include "coin_proto.h"
 //#include "test/test_netmsg.h"
 #include "test/test_pool.h"
@@ -105,13 +106,14 @@ static int test_block_process(CIface *iface, CBlock *block)
 
 static CPubKey test_GetMainAccountPubKey(CWallet *wallet)
 {
+#if 0
 	static CPubKey ret_key;
 	string strAccount("");
 
 	if (!ret_key.IsValid()) {
 		GetAccountAddress(wallet, strAccount, false);
 
-		ret_key = wallet->GenerateNewKey(true);
+		ret_key = wallet->GenerateNewECKey(true);
 		if (!ret_key.IsValid()) {
 			ret_key = GetAccountPubKey(wallet, strAccount);
 		} else {
@@ -148,6 +150,17 @@ static CPubKey test_GetMainAccountPubKey(CWallet *wallet)
 	}
 
   return (ret_key);
+#endif
+  static CPubKey pubkey;
+  if (!pubkey.IsValid()) {
+    CAccountCache *account = wallet->GetAccount("");
+    account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+    /* miner fee */
+		wallet->GetAccount("bank");
+    /* cpu miner */
+		wallet->GetAccount("system");
+  }
+  return (pubkey);
 }
 
 static int test_block_templ(CIface *iface, CBlock **block_p)
@@ -218,15 +231,19 @@ coin_iface_t test_coin_iface = {
   0,
   TEST_MIN_INPUT,
   TEST_MAX_BLOCK_SIZE,
+  TEST_MAX_BLOCK_SIZE,
   TEST_MAX_ORPHAN_TRANSACTIONS,
   TEST_MAX_TRANSACTION_WEIGHT,
   TEST_MIN_TX_FEE,
+  TEST_MIN_RELAY_TX_FEE,
   TEST_MIN_RELAY_TX_FEE,
   TEST_MAX_TX_FEE,
   TEST_MAX_FREE_TX_SIZE,
   TEST_MAX_MONEY,
   TEST_COINBASE_MATURITY, 
   TEST_MAX_SIGOPS,
+	TEST_MAX_SCRIPT_SIZE,
+	TEST_MAX_SCRIPT_ELEMENT_SIZE,
   COINF(test_init),
   COINF(test_bind),
   COINF(test_term),

@@ -25,7 +25,6 @@
 
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "chain.h"
@@ -75,13 +74,9 @@ bool testnet_LoadWallet(void)
   bool fFirstRun = true;
   testnetWallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(testnetWallet, strAccount, true);
-		//CPubKey newDefaultKey = testnetWallet->GenerateNewKey();
-		testnetWallet->SetDefaultKey(newDefaultKey);
-		testnetWallet->SetAddressBookName(testnetWallet->vchDefaultKey.GetID(), "");
+    testnetWallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(testnetWallet);
@@ -540,7 +535,7 @@ bool TESTNETWallet::CreateAccountTransaction(string strFromAccount, const vector
 
         if (nChange > 0) {
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);
@@ -660,17 +655,6 @@ unsigned int TESTNETWallet::GetTransactionWeight(const CTransaction& tx)
     ::GetSerializeSize(tx, SER_NETWORK, TESTNET_PROTOCOL_VERSION);
 
   return (nBytes);
-}
-
-unsigned int TESTNETWallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{
-  return (std::max(nWeight, nSigOpCost * testnet_nBytesPerSigOp) + TESTNET_WITNESS_SCALE_FACTOR - 1) / TESTNET_WITNESS_SCALE_FACTOR;
-}
-unsigned int TESTNETWallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  unsigned int nWeight = GetTransactionWeight(tx);
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(nWeight, nSigOpCost));
 }
 
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */

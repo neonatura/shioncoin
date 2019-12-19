@@ -80,8 +80,6 @@ void shcoind_poll_msg_queue(void)
       /* shared is notifying about a remote application */
       if (0 == strcmp(app->app_peer.label, "shc")) {
         unet_peer_incr(UNET_SHC, &app->app_peer);
-      } else if (0 == strcmp(app->app_peer.label, "usde")) {
-        unet_peer_incr(UNET_USDE, &app->app_peer);
       } else if (0 == strcmp(app->app_peer.label, "emc2")) {
         unet_peer_incr(UNET_EMC2, &app->app_peer);
       }

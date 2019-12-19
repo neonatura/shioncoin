@@ -41,15 +41,18 @@
 #define ACCADDRF_DERIVE (1 << 1)
 /* always the same address returned */
 #define ACCADDRF_STATIC (1 << 2)
-/* use extended account */
-#define ACCADDRF_STATIC (1 << 2)
+/* permit dilithium signature */
+#define ACCADDRF_DILITHIUM (1 << 3)
+
+
+void GetAddrDestination(int ifaceIndex, const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0);
 
 
 class CAccountCache
 {
 	public:
 		CAccount account;
-		uint256 hChain;
+		uint256 _reserved0_;
 		string strAccount;
 		CCoinAddr vAddr[MAX_ACCADDR];
 
@@ -78,7 +81,7 @@ class CAccountCache
 
 		IMPLEMENT_SERIALIZE(
 				READWRITE(account);
-				READWRITE(hChain);
+				READWRITE(_reserved0_);
 				READWRITE(strAccount);
 #if 0
 				for (unsigned int i = 0; i < MAX_ACCADDR; i++)
@@ -89,7 +92,7 @@ class CAccountCache
 		void SetNull() 
 		{ 
 			account.vchPubKey.SetNull();
-			hChain = 0;
+			_reserved0_ = 0;
 			strAccount.clear();
 			for (unsigned int i = 0; i < MAX_ACCADDR; i++)
 				vAddr[i].SetNull();
@@ -130,19 +133,64 @@ class CAccountCache
 
 		bool IsAddrUsed(const CPubKey& vchPubKey);
 
-		CCoinAddr GetStaticAddr(int type);
+//		CCoinAddr GetStaticAddr(int type);
 
-		CCoinAddr GetDynamicAddr(int type);
+//		CCoinAddr GetDynamicAddr(int type);
 
 		CCoinAddr GetDefaultAddr();
 
+		void SetDefaultAddr(const CPubKey& pubkey);
+
 		CCoinAddr GetAddr(int type);
 
-		void AddAddr(CCoinAddr pubkey, int type);
+		void SetAddr(int type, CCoinAddr pubkey);
 
-		CCoinAddr CreateNewAddr(int type);
+		void ResetAddr(int type);
 
-		CCoinAddr CreateAddr(int type);
+//		CCoinAddr CreateNewAddr(int type);
+
+//		CCoinAddr CreateAddr(int type);
+
+		void UpdateAccount();
+
+		bool GetPrimaryAddr(int type, CTxDestination& addrRet);
+
+		bool GetPrimaryPubKey(int type, CPubKey& pubkeyRet);
+
+		bool CreateNewAddr(CTxDestination& addrRet, int type, int flags);
+
+		bool CreateNewPubKey(CPubKey& addrRet, int flags);
+
+		/**
+		 * When the ACCADDRF_DILITHIUM flag is passed in then only the bech32 Witness v14 address is returned, and otherwise a pubkey, pubkey-script, witness, and bech32 is returned based on blockchain capability.
+		 * @param nFlag ACCADDRF_XX
+		 */
+		void GetAddrDestination(const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0)
+		{
+			::GetAddrDestination(wallet->ifaceIndex, keyid, vDest, nFlag);
+		}
+
+		void SetAddrDestinations(const CKeyID& keyid);
+
+		bool GetMergedPubKey(cbuff tag, CPubKey& pubkey);
+
+		bool GetMergedAddr(cbuff tag, CCoinAddr& addr);
+
+		bool GetMergedPubKey(const char *tag, CPubKey& pubkey)
+		{
+			cbuff tagbuf(tag, tag + strlen(tag));
+			return (GetMergedPubKey(tagbuf, pubkey));
+		}
+
+		bool GetMergedAddr(const char *tag, CCoinAddr& addr)
+		{
+			cbuff tagbuf(tag, tag + strlen(tag));
+			return (GetMergedAddr(tagbuf, addr));
+		}
+
+		bool SetCertHash(const uint160& hCert);
+
+		uint160 GetCertHash() const;
 
 };
 

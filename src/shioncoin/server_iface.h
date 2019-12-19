@@ -105,9 +105,6 @@ const char *stratum_getaddressinfo(int ifaceIndex, const char *addr_hash);
 
 const char *stratum_getaddresssecret(int ifaceIndex, const char *addr_hash, const char *pkey_str);
 
-
-const char *getminingtransactioninfo(int ifaceIndex, unsigned int workId);
-
 const char *stratum_create_account(int ifaceIndex, const char *acc_name);
 
 const char *stratum_create_transaction(int ifaceIndex, char *account, char *pkey_str, char *dest, double amount);
@@ -128,10 +125,6 @@ const int reloadblockfile(const char *path);
 
 void shared_addr_submit(const char *net_addr);
 
-int usde_server_init(void);
-
-void usde_server_term(void);
-
 void shc_server_term(void);
 
 void set_shutdown_timer(void);
@@ -142,17 +135,9 @@ int submitblock(unsigned int workId, unsigned int nTime, unsigned int nNonce, ch
 
 double getdifficulty(int ifaceIndex);
 
-const char *getblocktemplate(int ifaceIndex);
-
 void SetNextDifficulty(int ifaceIndex, unsigned int nBits);
 
 double GetNextDifficulty(int ifaceIndex);
-
-void usde_server_timer(void);
-
-void usde_server_accept(int hSocket, struct sockaddr *net_addr);
-
-void usde_server_close(int fd, struct sockaddr *addr);
 
 void shc_server_timer(void);
 

@@ -28,9 +28,9 @@
 
 
 #define SHC_VERSION_MAJOR 4  
-#define SHC_VERSION_MINOR 0 
-#define SHC_VERSION_REVISION 0
-#define SHC_VERSION_BUILD 2
+#define SHC_VERSION_MINOR 1
+#define SHC_VERSION_REVISION 0 
+#define SHC_VERSION_BUILD 0
 
 /** The default socket port for the SHC coin service. */
 #define SHC_COIN_DAEMON_PORT 24104
@@ -45,6 +45,10 @@
  * The maximum number of signature "script" operations in a single block.
  */
 #define SHC_MAX_SIGOPS 32768
+
+#define SHC_MAX_SCRIPT_SIZE 60624
+
+#define SHC_MAX_SCRIPT_ELEMENT_SIZE 3368
 
 /** The maximum allowed drift time (past/future) for accepting new blocks. */
 #define SHC_MAX_DRIFT_TIME 720 /* 12 minutes */
@@ -64,8 +68,7 @@ static const int SHC_PROTOCOL_VERSION = 2000000;
  */
 #define SHC_MAX_BLOCK_SIZE 4096000
 
-#define SHC_MAX_BLOCK_SIZE_GEN SHC_MAX_BLOCK_SIZE/2
-#define SHC_MAX_TRANSACTION_WEIGHT SHC_MAX_BLOCK_SIZE_GEN/5
+#define SHC_MAX_TRANSACTION_WEIGHT 3280000 /* 820k */ 
 
 #define SHC_MAX_STANDARD_TX_WEIGHT 1600000
 
@@ -79,7 +82,7 @@ static const int SHC_PROTOCOL_VERSION = 2000000;
 /**
  * The minimum "satashi" permitted to be sent in a single transaction.
  */
-static const int64 SHC_MIN_INPUT = 100;
+static const int64 SHC_MIN_INPUT = 1;
 
 /**
  * The transaction fee per 1k of block content.

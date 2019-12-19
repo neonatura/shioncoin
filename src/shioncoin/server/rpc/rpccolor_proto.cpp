@@ -25,8 +25,6 @@
 
 #undef GNULIB_NAMESPACE
 #include "shcoind.h"
-
-#include "init.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
@@ -721,7 +719,7 @@ Value rpc_alt_setkey(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(SHERR_ILSEQ, "private-key");
   }
 
-  CKey key;
+  ECKey key;
   bool fCompressed = true;
   CSecret secret = vchSecret.GetSecret(fCompressed); /* set's fCompressed */
   key.SetSecret(secret, fCompressed);

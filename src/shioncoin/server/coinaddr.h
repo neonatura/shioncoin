@@ -36,6 +36,7 @@
 #define OUTPUT_TYPE_LEGACY 1
 #define OUTPUT_TYPE_P2SH_SEGWIT 2
 #define OUTPUT_TYPE_BECH32 3
+#define OUTPUT_TYPE_DILITHIUM 4
 
 #define ADDR_UNKNOWN 0
 #define ADDR_BASE58 1
@@ -53,9 +54,12 @@ public:
     bool operator()(const CScriptID& id) const;
     bool operator()(const CNoDestination& no) const;
 
-		/* bech32 segwit addr */
+		/* bech32 segwit ecdsa address */
     bool operator()(const WitnessV0KeyHash& id) const;
     bool operator()(const WitnessV0ScriptHash& id) const;
+		/* bech32 segwit dilithium address */
+    bool operator()(const WitnessV14KeyHash& id) const;
+    bool operator()(const WitnessV14ScriptHash& id) const;
     bool operator()(const WitnessUnknown& id) const;
 };
 
@@ -84,6 +88,17 @@ public:
 			SCRIPT_ADDRESS_2G = 55,
 		};
 
+		enum
+		{
+			BASE58_PUBKEY_ADDRESS,
+			BASE58_SCRIPT_ADDRESS,
+			BASE58_SCRIPT_ADDRESS2,
+			BASE58_SECRET_KEY,
+			BASE58_EXT_PUBLIC_KEY,
+			BASE58_EXT_SECRET_KEY,
+			MAX_BASE58_TYPES
+		};
+
 		int nType; /* ADDR_BASE58 | ADDR_BECH32 */
     int ifaceIndex;
 		int64_t nCreateTime; 
@@ -94,7 +109,7 @@ public:
 		{
 			ifaceIndex = 0;
 			nType = 0;
-			nVersion = 0;
+			vchVersion.clear();
 			vchData.clear();
 			nCreateTime = 0;
 			nAccessTime = 0;
@@ -138,7 +153,8 @@ public:
 		{
 			ifaceIndex = 0;
 			nType = 0;
-			nVersion = 0;
+			vchVersion.clear();
+			vchVersion.clear();
 			vchData.clear();
 			nCreateTime = time(NULL);
 			nAccessTime = 0;
@@ -151,6 +167,10 @@ public:
 		bool Set(const WitnessV0KeyHash& id);
 
 		bool Set(const WitnessV0ScriptHash& id);
+
+		bool Set(const WitnessV14KeyHash& id);
+
+		bool Set(const WitnessV14ScriptHash& id);
 
 		bool Set(const WitnessUnknown& id);
 
@@ -187,6 +207,8 @@ bool inline CCoinAddrVisitor::operator()(const CScriptID &id) const      { retur
 bool inline CCoinAddrVisitor::operator()(const CNoDestination &id) const { return false; }
 bool inline CCoinAddrVisitor::operator()(const WitnessV0KeyHash &id) const { return addr->Set(id); }
 bool inline CCoinAddrVisitor::operator()(const WitnessV0ScriptHash &id) const { return addr->Set(id); }
+bool inline CCoinAddrVisitor::operator()(const WitnessV14KeyHash &id) const { return addr->Set(id); }
+bool inline CCoinAddrVisitor::operator()(const WitnessV14ScriptHash &id) const { return addr->Set(id); }
 bool inline CCoinAddrVisitor::operator()(const WitnessUnknown &id) const { return addr->Set(id); }
 
 
@@ -225,24 +247,6 @@ class SHCCoinAddr : public CCoinAddr
 		}
 };
 
-class USDECoinAddr : public CCoinAddr
-{
-  public:
-    USDECoinAddr() : CCoinAddr(USDE_COIN_IFACE)
-    {
-    }
-
-    USDECoinAddr(const CTxDestination &dest) : CCoinAddr(USDE_COIN_IFACE)
-    {
-      Set(dest);
-    }
-
-    USDECoinAddr(const std::string& strAddress) : CCoinAddr(USDE_COIN_IFACE)
-		{
-			SetString(strAddress);
-		}
-};
-
 class COLORCoinAddr : public CCoinAddr
 {
   public:
@@ -261,11 +265,12 @@ class COLORCoinAddr : public CCoinAddr
 };
 
 
-CScript GetScriptForWitness(const CScript& redeemscript);
+CScript GetScriptForWitness(const CScript& redeemscript, int nVer);
 
 bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet);
 
 bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vector<CTxDestination>& addressRet, int& nRequiredRet);
+
 
 
 #endif /* ndef __SERVER__COINADDR_H__ */

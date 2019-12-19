@@ -25,7 +25,6 @@
 
 #include "shcoind.h"
 #include "net.h"
-#include "init.h"
 #include "strlcpy.h"
 #include "ui_interface.h"
 #include "algobits.h"
@@ -85,13 +84,10 @@ bool emc2_LoadWallet(void)
   bool fFirstRun = true;
   emc2Wallet->LoadWallet(fFirstRun);
 
-  if (fFirstRun)
-  {
+  if (fFirstRun) {
+		/* generate default address for system account. */
 		string strAccount("");
-		CPubKey newDefaultKey = GetAccountPubKey(emc2Wallet, strAccount, true);
-		//CPubKey newDefaultKey = emc2Wallet->GenerateNewKey();
-		emc2Wallet->SetDefaultKey(newDefaultKey);
-		emc2Wallet->SetAddressBookName(emc2Wallet->vchDefaultKey.GetID(), "");
+		emc2Wallet->GetAccount(strAccount);
   }
 
   //RegisterWallet(emc2Wallet);
@@ -641,7 +637,7 @@ bool EMC2Wallet::CreateAccountTransaction(string strFromAccount, const vector<pa
 				if (nChange > 0)
 				{
 					CKeyID keyID;
-					CCoinAddr addr = GetAccountAddress(this, strFromAccount, true);
+					CCoinAddr addr = GetAccountAddress(this, strFromAccount);
 					if (addr.GetKeyID(keyID)) {
 						CScript scriptChange;
 						scriptChange.SetDestination(keyID);
@@ -745,20 +741,6 @@ unsigned int EMC2Wallet::GetTransactionWeight(const CTransaction& tx)
     ::GetSerializeSize(tx, SER_NETWORK, EMC2_PROTOCOL_VERSION);
 
   return (nBytes);
-}
-
-static unsigned int emc2_nBytesPerSigOp = EMC2_DEFAULT_BYTES_PER_SIGOP;
-
-unsigned int EMC2Wallet::GetVirtualTransactionSize(int64 nWeight, int64 nSigOpCost)
-{ 
-  return (std::max(nWeight, nSigOpCost * emc2_nBytesPerSigOp) + EMC2_WITNESS_SCALE_FACTOR - 1) / EMC2_WITNESS_SCALE_FACTOR; 
-}
-
-
-unsigned int EMC2Wallet::GetVirtualTransactionSize(const CTransaction& tx)
-{
-  int nSigOpCost = 0;
-  return (GetVirtualTransactionSize(GetTransactionWeight(tx), nSigOpCost));
 }
 
 /** Large (in bytes) low-priority (new, small-coin) transactions require fee. */

@@ -33,15 +33,32 @@ using namespace json_spirit;
 
 #include "block.h"
 #include "wallet.h"
+#include "versionbits.h"
 #include "ext_param.h"
-
-#define EXTPARAM_BLOCKSIZE "blocksize"
-#define EXTPARAM_MINFEE "minfee"
 
 /* The minimum percentage for a parameter setting change. */
 #define MIN_PARAM_CONCENSUS_PERCENT 90.0
 
 #define MIN_PARAM_CONCENSUS_TOTAL 10240
+
+bool HasParamConsensus(CIface *iface, CBlockIndex *pindexPrev)
+{
+	int ifaceIndex = GetCoinIndex(iface);
+
+	if (ifaceIndex != TEST_COIN_IFACE &&
+			ifaceIndex != TESTNET_COIN_IFACE &&
+			ifaceIndex != SHC_COIN_IFACE)
+		return (false);
+
+	if (!pindexPrev)
+		pindexPrev = GetBestBlockIndex(iface);
+	if (!pindexPrev)
+		return (false);
+	if (VersionBitsState(pindexPrev, iface, DEPLOYMENT_PARAM) != THRESHOLD_ACTIVE)
+		return (false);
+
+	return (true);
+}
 
 bool DecodeParamHash(const CScript& script, int& mode, uint160& hash)
 {
@@ -115,12 +132,17 @@ bool IsParamTx(const CTransaction& tx)
 }
 
 /**
- * Verify the integrity of an param transaction.
+ * Verify the integrity of a param transaction.
  */
 bool VerifyParamTx(CTransaction& tx, int& mode)
 {
+	CParam *param;
   uint160 hashParam;
   int nOut;
+
+  param = tx.GetParam();
+	if (!param)
+		return (false);
 
   /* verify hash in pub-script matches param hash */
 	CScript paramScript;
@@ -131,29 +153,43 @@ bool VerifyParamTx(CTransaction& tx, int& mode)
     return (false); /* no param hash in output */
   }
 
-  CParam *param = tx.GetParam();
-	if (!param)
-		return (false);
-
-  if (hashParam != param->GetHash()) {
+	const uint160& phash = param->GetHash();
+  if (hashParam != phash) {
 		/* param hash mismatch */
-    return error(SHERR_INVAL, "VerifyParam: transaction references invalid param hash.");
+    return error(SHERR_INVAL, "VerifyParam: param \"%s\" transaction output references invalid param hash: \"%s\" [param: %s].", phash.GetHex().c_str(), tx.vout[nOut].scriptPubKey.ToString().c_str(), param->ToString().c_str());
   }
 
-	/* label is not [currently] used, but still restricted in size. */
-  if (param->GetLabel().size() > 135)
-    return error(SHERR_INVAL, "VerifyParam: label exceeds 135 characters.");
+	/* verify param ext-tx version is appropriate. */
+	if (param->GetVersion() < 1) {
+    return error(SHERR_INVAL, "VerifyParam: param \"%s\" references invalid version (%d).", phash.GetHex().c_str(), param->GetVersion());
+	}
+	if (param->GetVersion() == 1 && mode != OP_EXT_UPDATE) {
+    return error(SHERR_INVAL, "VerifyParam: param \"%s\" has invalid operation mode (%d).", phash.GetHex().c_str(), mode);
+	}
+
+	/* label is used to indicate param mode. */
+  if (param->GetMode().size() > CParam::MAX_MODE_LENGTH) {
+    return error(SHERR_INVAL, "VerifyParam: param \"%s\" mode exceeds 135 characters (%d).", phash.GetHex().c_str(), param->GetMode().size());
+	}
+
+	if (mode == OP_EXT_UPDATE) {
+		const CTxOut& txout = tx.vout[nOut];
+
+		/* update operation is constrained to promote inclusion of additional outputs. */
+		if (txout.nValue != 0)
+			return (error(ERR_INVAL, "VerifyParam: param \"%s\" has invalid output coin value (%f).", phash.GetHex().c_str()), ((double)txout.nValue/COIN));
+	}
 
   return (true);
 }
 
 Object CParam::ToValue()
 {
-  Object obj;
+  Object obj = CExtCore::ToValue();
 
 	obj.push_back(Pair("hash", GetHash().GetHex()));
-	obj.push_back(Pair("mode", GetMode()));
-	obj.push_back(Pair("value", GetValue()));
+//	obj.push_back(Pair("mode", GetMode()));
+	obj.push_back(Pair("value", (int64_t)GetValue()));
 
   return (obj);
 }
@@ -175,6 +211,20 @@ int64_t GetParamTxDefaultValue(CIface *iface, string strName)
 {
 
 	if (strName == "blocksize") {
+		return (DEFAULT_MAX_BLOCK_SIZE(iface));
+	} 
+
+	if (strName == "minfee") {
+		return (DEFAULT_MIN_RELAY_TX_FEE(iface));
+	}
+
+	return (0);
+}
+
+int64_t GetParamTxValue(CIface *iface, string strName)
+{
+
+	if (strName == "blocksize") {
 		return (MAX_BLOCK_SIZE(iface));
 	} 
 
@@ -185,58 +235,71 @@ int64_t GetParamTxDefaultValue(CIface *iface, string strName)
 	return (0);
 }
 
-bool IsValidParamTxConcensus(CIface *iface, CParam *param, int64_t nDefault)
+bool IsValidParamTxConsensus(string strMode, int64_t nValue, int64_t nCurrent)
 {
 
+	if (nValue == 0)
+		return (false);
+
 	/* Propose an alternate block-size maximum. */
-	if (param->GetMode() == EXTPARAM_BLOCKSIZE) {
-		if (param->nValue != nDefault &&
-				param->nValue != (nDefault * 2) &&
-				param->nValue != (nDefault / 2))
+	if (strMode == EXTPARAM_BLOCKSIZE) {
+		if (nValue != nCurrent &&
+				nValue != (nCurrent * 2) &&
+				nValue != (nCurrent / 2))
 			return (false);
-		if (param->nValue < 4096000 || /* 4m */
-				param->nValue > 131072000) /* 128m */
+		if (nValue < 1024000 || /* 1m */
+				nValue > 131072000) /* 128m */
 			return (false);
 	}
 
 	/* Propose an alternate tx relay fee. */
-	if (param->GetMode() == EXTPARAM_MINFEE) {
-		if (param->nValue != nDefault &&
-				param->nValue != (nDefault / 10) &&
-				param->nValue != (nDefault * 10))
+	if (strMode == EXTPARAM_MINFEE) {
+		if (nValue != nCurrent &&
+				nValue != (nCurrent / 10) &&
+				nValue != (nCurrent * 10))
 			return (false);
-		if (param->nValue < 100 || /* 0.00000100 */
-				param->nValue > 100000000) /* 1.0 */
+		if (nValue < 100 || /* 0.00000100 */
+				nValue >= 100000000) /* 1.0 */
 			return (false);
 	}
 
 	return (true);
 }
 
-bool GetParamTxConsensus(CIface *iface, string strName, int64_t& nValue)
+bool IsValidParamTxConsensus(CIface *iface, CParam *param, int64_t nCurrent)
+{
+	if (!iface || !param)
+		return (false);
+	if (nCurrent == 0)
+		nCurrent = GetParamTxValue(iface, param->GetMode());
+	return (IsValidParamTxConsensus(param->GetMode(), param->GetValue(), nCurrent));
+}
+
+bool GetParamTxConsensus(CIface *iface, string strName, int64_t nTime, int64_t& nValue)
 {
   CWallet *wallet = GetWallet(iface);
 	map<int64_t,unsigned int> mapParam;
 	vector<unsigned int> vDel;
 	unsigned int nTotal;
 
-	if (strName.length() > MAX_SHARE_NAME_LENGTH)
-		return (false);
+	if (strName.size() > CParam::MAX_MODE_LENGTH)
+		return (false); /* invalid */
 
-	int64_t nDefValue = GetParamTxDefaultValue(iface, strName);
-	if (nDefValue == 0)
-		return (error(ERR_INVAL, "(%s) GetParamTxConcensus: unknown parameter \"%s\".", iface->name, strName.c_str()));
+	int64_t nCurrentValue = GetParamTxValue(iface, strName);
+	if (nCurrentValue == 0)
+		return (error(ERR_INVAL, "(%s) GetParamTxConsensus: unknown parameter \"%s\".", iface->name, strName.c_str()));
 
 	nTotal = 0;
 	for (unsigned int i = 0; i < wallet->mapParam.size(); i++) {
 		CParam& param = wallet->mapParam[i];
 		if (param.GetMode() != strName)
 			continue;
-		if (!IsValidParamTxConcensus(iface, &param, nDefValue))
+		if (!IsValidParamTxConsensus(iface, &param, nCurrentValue))
 			continue;
 
-		if (param.IsExpired()) {
-			vDel.insert(vDel.end(), i);
+		if (param.IsExpired(nTime)) {
+			if (param.GetExpireTime() < (GetTime() - 31536000)) /* 1y */
+				vDel.insert(vDel.end(), i);
 			continue;
 		}
 
@@ -246,64 +309,135 @@ bool GetParamTxConsensus(CIface *iface, string strName, int64_t& nValue)
 	if (nTotal < MIN_PARAM_CONCENSUS_TOTAL)
 		return (false); /* not enough tallies */
 
-	/* remove archival tallies */
-	for (unsigned int idx = (vDel.size() - 1); idx >= 0; idx--) {
-		const unsigned int& p_idx = vDel[idx];
-		wallet->mapParam.erase(wallet->mapParam.begin() + p_idx);
-	}
-
 	int64_t nRetValue = 0;
-
 	unsigned int nMax = 0;
-	unsigned int nLastMax = 0;
 	BOOST_FOREACH(const PAIRTYPE(int64_t, unsigned int)& item, mapParam) {
 		if (item.second > nMax) {
-			nLastMax = nMax;
-			nMax = item.second;
 			/* return highest consensus */
+			nMax = item.second;
 			nRetValue = item.first;  
 		}
 	}
-
-	/* consensus must be at least 90% */
-	if ((100.0 / (double)nMax * (double)nLastMax) < MIN_PARAM_CONCENSUS_PERCENT) {
+	if (nRetValue == 0)
 		return (false);
+
+	if (vDel.size() != 0) {
+		/* remove archival tallies */
+		for (unsigned int idx = (vDel.size() - 1); idx >= 0; idx--) {
+			const unsigned int& p_idx = vDel[idx];
+			wallet->mapParam.erase(wallet->mapParam.begin() + p_idx);
+		}
 	}
 
 	/* no consensus to change current default. */
-	if (nRetValue == nDefValue)
+	if (nRetValue == nCurrentValue)
 		return (false);
 
-	if (nRetValue == 0)
-		return (false); /* not permitted */
+	/* consensus must be at least 90% */
+	double dPer = 100.0 / (double)nTotal * (double)nMax;
+	if (dPer < MIN_PARAM_CONCENSUS_PERCENT) {
+		return (false);
+	}
 
 	nValue = nRetValue;
 	return (true);
 }
 
-bool ConnectParamTx(CIface *iface, CTransaction *tx)
+static bool ApplyParam(CIface *iface, string strMode, uint64_t nNewValue)
+{
+
+	if (strMode == EXTPARAM_BLOCKSIZE) {
+		iface->max_block_size = nNewValue;
+	} else if (strMode == EXTPARAM_MINFEE) {
+		iface->min_relay_fee = nNewValue;
+	}
+
+	return (true);
+}
+
+bool ConnectParamTx(CIface *iface, CTransaction *tx, CBlockIndex *pindexPrev)
 {
   CWallet *wallet = GetWallet(iface);
 	CParam *param;
+	int op_mode;
+
+	if (!iface || !tx || !pindexPrev)
+		return (false); /* sanity */
+
+	if (!HasParamConsensus(iface, pindexPrev))
+		return (false);
 
 	param = tx->GetParam();
 	if (!param)
 		return (false);
 
-	wallet->mapParam.insert(wallet->mapParam.begin(), *param);
+	if (!VerifyParamTx(*tx, op_mode))
+		return (error(ERR_INVAL, "ConnectParamTx: unable to verify param."));
+	if (op_mode != OP_EXT_UPDATE)
+		return (true); /* no-op */
 
-	int64_t nNewValue;
-	if (GetParamTxConsensus(iface, param->GetMode(), nNewValue)) {
-Debug("DEBUG: GetParamTxConsensus: success: \"%s\" = %lld", param->GetMode().c_str(), nNewValue);
+	{
+		LOCK(wallet->cs_wallet);
+
+		wallet->mapParam.insert(wallet->mapParam.begin(), *param);
+
+		int64_t nNewValue;
+		const string& strMode = param->GetMode();
+		if (GetParamTxConsensus(iface, strMode, pindexPrev->nTime, nNewValue) &&
+				nNewValue != GetParamTxValue(iface, strMode)) {
+			if (!ApplyParam(iface, strMode, nNewValue)) {
+				return (error(ERR_INVAL, "(%s) ConnectParamTx: error applying new param \"%s\" value \"%llu\".", iface->name, strMode.c_str(), nNewValue));
+			}
+
+			/* record application of param. */
+			uint256 hash = tx->GetHash();
+			wallet->mapParamArch.insert(wallet->mapParamArch.end(), hash);
+
+			Debug("(%s) ConnectParamTx: set \"%s\" to %lld", iface->name, param->GetMode().c_str(), nNewValue);
+		}
 	}
 
 	return (true);
+}
+
+int64_t GetBestParamValue(CIface *iface, string strName)
+{
+  CWallet *wallet = GetWallet(iface);
+
+	{
+		LOCK(wallet->cs_wallet);
+
+		vector<uint256>::reverse_iterator it = wallet->mapParamArch.rbegin();
+		for (; it != wallet->mapParamArch.rend(); ++it) {
+			const uint256& hash = *it;
+			CTransaction tx;
+			if (!GetTransaction(iface, hash, tx, NULL))
+				continue;
+			CParam *param = tx.GetParam();
+			if (!param)
+				continue;
+			if (param->GetMode() != strName)
+				continue;
+
+			/* found last instance registered for mode. */
+			return (param->GetValue());
+		}
+	}
+
+	/* use default */
+	return (GetParamTxDefaultValue(iface, strName));
 }
 
 bool DisconnectParamTx(CIface *iface, CTransaction *tx)
 {
   CWallet *wallet = GetWallet(iface);
 	CParam *param;
+	int op_mode;
+
+	if (!VerifyParamTx(*tx, op_mode))
+		return (false);
+	if (op_mode != OP_EXT_UPDATE)
+		return (true); /* no-op */
 
 	param = tx->GetParam();
 	if (!param)
@@ -316,17 +450,63 @@ bool DisconnectParamTx(CIface *iface, CTransaction *tx)
 	if (wparam.GetHash() != param->GetHash())
 		return (false); /* out of order */
 
+	/* erase from param vector. */
 	wallet->mapParam.erase(wallet->mapParam.begin());
+
+	uint256 hash = tx->GetHash();
+	vector<uint256>& l = wallet->mapParamArch;
+	vector<uint256>::iterator it = std::find(l.begin(), l.end(), hash);
+	if (it != l.end()) {
+		/* erase from arch of applied params. */
+		l.erase(it);
+
+		/* undo param */
+		const string& strName = wparam.GetMode();
+		int64_t nNewValue = GetBestParamValue(iface, strName);
+		if (!ApplyParam(iface, strName, nNewValue)) {
+			return (error(ERR_INVAL, "(%s) DisconnectParamTx: error applying new param \"%s\" value \"%llu\".", iface->name, strName.c_str(), nNewValue));
+		}
+	}
+
 	return (true);
 }
 
-int update_param_tx(CIface *iface, string strAccount, string strParam, int64_t valParam, CWalletTx& wtx)
+void AddParamIfNeccessary(CIface *iface, CWalletTx& wtx)
+{
+	if (!opt_bool(OPT_PARAM_TX)) return; /* not configured to vote on params. */
+	int64_t nBlockSize = (int64_t)opt_num(OPT_BLOCK_SIZE);
+	int64_t nMinFee = (int64_t)opt_num(OPT_MIN_FEE);
+	int err;
+
+	if (!HasParamConsensus(iface))
+		return;
+	
+	if (nBlockSize != GetParamTxValue(iface, EXTPARAM_BLOCKSIZE)) {
+		/* node affinity is towards a different block size. */
+		err = update_param_tx(iface, EXTPARAM_BLOCKSIZE, nBlockSize, wtx);
+		if (!err)
+			return; /* success */
+	}
+
+	if (nMinFee != GetParamTxValue(iface, EXTPARAM_MINFEE)) {
+		/* node affinity is towards a different minimum fee. */
+		err = update_param_tx(iface, EXTPARAM_MINFEE, nMinFee, wtx);
+		if (!err)
+			return; /* success */
+	}
+
+}
+
+int update_param_tx(CIface *iface, string strParam, int64_t valParam, CWalletTx& wtx)
 {
 	CWallet *wallet = GetWallet(iface);
-	int ifaceIndex = GetCoinIndex(iface);
 
 	if (!wallet)
 		return (ERR_INVAL);
+
+	if (!IsValidParamTxConsensus(strParam, valParam,
+				GetParamTxValue(iface, strParam)))
+		return (SHERR_INVAL);
 
 	CParam *param = wtx.UpdateParam(strParam, valParam);
 	if (!param)
@@ -341,9 +521,8 @@ int update_param_tx(CIface *iface, string strAccount, string strParam, int64_t v
 	paramOut.scriptPubKey = scriptPubKey; 
 	wtx.vout.insert(wtx.vout.end(), paramOut);
 
-	Debug("(%s) update_param_tx: strParam(%s) valParam(%lld).",
-			iface->name, strParam.c_str(), (long long)valParam);
-
+	Debug("(%s) PARAM-UPDATE: %s", iface->name, param->ToString().c_str());
 	return (0);
 }
+
 

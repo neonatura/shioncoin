@@ -26,6 +26,7 @@
 #include "shcoind.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include "wallet.h"
+#include "account.h"
 #include "offer.h"
 #include "txcreator.h"
 #include "txmempool.h"
@@ -35,6 +36,13 @@
 
 extern json_spirit::Value ValueFromAmount(int64 amount);
 
+static CPubKey GetAccountPubKey(CWallet *wallet, string strAccount)
+{
+	static CPubKey pubkey;
+	CAccountCache *acc = wallet->GetAccount(strAccount);
+	acc->CreateNewPubKey(pubkey, 0);
+	return (pubkey);
+}
 
 offer_list *GetOfferTable(int ifaceIndex)
 {
@@ -593,12 +601,12 @@ std::string OfferHoldAltCoin(CIface *iface, string strAccount, COffer *offer, in
 	CCoinAddr xferAddr(ifaceIndex);
 	if (ifaceIndex == COLOR_COIN_IFACE) {
 		string strExtAccount = "@" + offer->hashColor.GetHex();
-		xferAddr = GetAccountAddress(wallet, strExtAccount, true);
+		xferAddr = GetAccountAddress(wallet, strExtAccount);
 		if (!xferAddr.IsValid())
 			return string("error generating holding account");
 	} else {
 		string strExtAccount = "@" + strAccount;
-		xferAddr = GetAccountAddress(wallet, strExtAccount, true);
+		xferAddr = GetAccountAddress(wallet, strExtAccount);
 		if (!xferAddr.IsValid())
 			return string("error generating holding account");
 	}
@@ -1140,9 +1148,9 @@ int init_offer_tx(CIface *iface, std::string strAccount, int altIndex, int64 nMi
 	offer->nRate = (int64)(dRate * COIN);
 
 	string strExtAccount = "@" + strAccount;
-	CPubKey extAddr = GetAccountPubKey(wallet, strExtAccount, true);
+	CPubKey extAddr = GetAccountPubKey(wallet, strExtAccount);
 
-	CPubKey payAddr = GetAccountPubKey(wallet, strAccount, true);
+	CPubKey payAddr = GetAccountPubKey(wallet, strAccount);
 	offer->SetPayAddr(payAddr);
 
 	string sXferCoin(alt_iface->name);
@@ -1231,7 +1239,7 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
 		CPubKey xferAddr = GetAltChainAddr(offer->hashColor, strAccount, false);
 		accept->SetXferAddr(xferAddr);
 	} else {
-		CPubKey xferAddr = GetAccountPubKey(alt_wallet, strAccount, true);
+		CPubKey xferAddr = GetAccountPubKey(alt_wallet, strAccount);
 		accept->SetXferAddr(xferAddr);
 	}
 
@@ -1345,7 +1353,7 @@ int generate_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWall
 	CScript scriptFee;
 	scriptFee << OP_EXT_GENERATE << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << offerHash << OP_2DROP;
 	/* send nFeeValue to OP_CHECKALTPROOF */
-	CPubKey retAddr = GetAccountPubKey(wallet, strAccount, true);
+	CPubKey retAddr = GetAccountPubKey(wallet, strAccount);
 	scriptFee += offer_CheckAltProofScript(iface, offer, retAddr);
 	s_wtx.AddOutput(scriptFee, minTxFee);
 
@@ -1421,7 +1429,7 @@ int cancel_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWallet
 			return (ERR_INVAL);
 
 		/* back to user */
-		CPubKey retAddr = GetAccountPubKey(wallet, strAccount, true);
+		CPubKey retAddr = GetAccountPubKey(wallet, strAccount);
 		if (!s_wtx.AddOutput(retAddr, nFeeValue - MIN_TX_FEE(iface)))
 			return (ERR_INVAL);
 
@@ -1465,7 +1473,7 @@ int cancel_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWallet
 			return (ERR_INVAL);
 
 		/* back to user */
-		CPubKey retAddr = GetAccountPubKey(wallet, strAccount, true);
+		CPubKey retAddr = GetAccountPubKey(wallet, strAccount);
 		if (!s_wtx.AddOutput(retAddr, nGenValue - MIN_TX_FEE(iface)))
 			return (ERR_INVAL);
 	}
