@@ -1,12 +1,12 @@
 Name:           shioncoin
-Version:        3.2.4
+Version:        4.1
 Release:        1%{?dist}
 Summary:        The shioncoin virtual currency server.
 
 Group:          System Environment/Libraries
 License:        GPLv3+
 URL:            http://www.shcoins.com/
-Source0:        ftp://ftp.shcoins.com/release/shioncoin/shioncoin-3.2.4.tar.gz
+Source0:        ftp://ftp.shcoins.com/release/shioncoin/shioncoin-4.1.tar.gz
 
 #Requires:       libshare
 Requires:       info 
@@ -53,5 +53,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_docdir}/shioncoin/shcoin_html.tar.gz
 
 %changelog
-* Sat May 04 2019 Neo Natura <support@neo-natura.com> - 3.2.4
+* Wed Dec 18 2019 Neo Natura <support@neo-natura.com> - 4.1 
 - The RPM release version of this package.
