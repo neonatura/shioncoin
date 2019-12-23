@@ -26,7 +26,6 @@
 #ifndef __SHC_BLOCK_H__
 #define __SHC_BLOCK_H__
 
-
 /**
  * @ingroup sharecoin_shc
  * @{
@@ -37,92 +36,65 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <share.h>
 
-
-
-#if 0
-class SHC_CTxMemPool : public CTxMemPool
-{
-
-  public:
-    bool accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs, bool* pfMissingInputs);
-    bool addUnchecked(const uint256& hash, CTransaction &tx);
-    bool remove(CTransaction &tx);
-    void queryHashes(std::vector<uint256>& vtxid);
-
-};
-#endif
-
 class SHCBlock : public CBlock
 {
-public:
-    // header
-    static const int CURRENT_VERSION=4;
-    static SHC_CTxMemPool mempool; 
-    static CBlockIndex *pindexBest;
-    static CBlockIndex *pindexGenesisBlock;
-    static int64 nTimeBestReceived;
+	public:
+		static const int CURRENT_VERSION=4;
+		static SHC_CTxMemPool mempool; 
+		static CBlockIndex *pindexBest;
+		static CBlockIndex *pindexGenesisBlock;
+		static int64 nTimeBestReceived;
 
-    SHCBlock()
-    {
-        ifaceIndex = SHC_COIN_IFACE;
-        SetNull();
-    }
+		SHCBlock()
+		{
+			ifaceIndex = SHC_COIN_IFACE;
+			SetNull();
+		}
 
-    SHCBlock(const CBlock &block)
-    {
-        ifaceIndex = SHC_COIN_IFACE;
-        SetNull();
-        *((CBlock*)this) = block;
-    }
+		SHCBlock(const CBlock &block)
+		{
+			ifaceIndex = SHC_COIN_IFACE;
+			SetNull();
+			*((CBlock*)this) = block;
+		}
 
-    SHCBlock(const CBlockHeader &block)
-    {
+		SHCBlock(const CBlockHeader &block)
+		{
 			ifaceIndex = SHC_COIN_IFACE;
 			SetNull();
 			*((CBlockHeader*)this) = block;
-    }
+		}
 
-    void SetNull()
-    {
-      nVersion = SHCBlock::CURRENT_VERSION;
-      CBlock::SetNull();
-    }
+		void SetNull()
+		{
+			nVersion = SHCBlock::CURRENT_VERSION;
+			CBlock::SetNull();
+		}
 
-    void InvalidChainFound(CBlockIndex* pindexNew);
-    unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast);
-    bool AcceptBlock();
-    bool IsBestChain();
-    CScript GetCoinbaseFlags();
-    bool AddToBlockIndex();
-    bool CheckBlock();
-    bool ReadBlock(uint64_t nHeight);
-    bool ReadArchBlock(uint256 hash);
-    bool IsOrphan();
-    bool Truncate();
-    bool VerifyCheckpoint(int nHeight);
-    uint64_t GetTotalBlocksEstimate();
+		void InvalidChainFound(CBlockIndex* pindexNew);
+		unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast);
+		bool AcceptBlock();
+		bool IsBestChain();
+		CScript GetCoinbaseFlags();
+		bool AddToBlockIndex();
+		bool CheckBlock();
+		bool ReadBlock(uint64_t nHeight);
+		bool ReadArchBlock(uint256 hash);
+		bool IsOrphan();
+		bool Truncate();
+		bool VerifyCheckpoint(int nHeight);
+		uint64_t GetTotalBlocksEstimate();
 
-    int64_t GetBlockWeight();
+		int64_t GetBlockWeight();
 
 		bool CreateCheckpoint(); 
 
 		int GetAlgo() const;
 
-//  protected: bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
-
-#ifdef USE_LEVELDB_COINDB
-    bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);
-    bool ConnectBlock(CTxDB& txdb, CBlockIndex* pindex);
-    bool DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex);
-#else
-    bool SetBestChain(CBlockIndex* pindexNew);
-    bool ConnectBlock(CBlockIndex* pindex);
-    bool DisconnectBlock(CBlockIndex* pindex);
-#endif
-
+		bool SetBestChain(CBlockIndex* pindexNew);
+		bool ConnectBlock(CBlockIndex* pindex);
+		bool DisconnectBlock(CBlockIndex* pindex);
 };
-
-
 
 /**
  * A memory pool where an inventory of pending block transactions are stored.
@@ -179,9 +151,9 @@ bool shc_GetOrphanPrevHash(const uint256& hash, uint256& retPrevHash);
 CBlock *shc_GetOrphanBlock(const uint256& hash);
 uint256 shc_GetOrphanRoot(uint256 hash);
 
-
 /**
  * @}
  */
 
 #endif /* ndef __SHC_BLOCK_H__ */
+

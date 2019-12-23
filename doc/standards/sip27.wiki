@@ -11,10 +11,6 @@
 
 This document specifies proposed changes to the ShionCoin Virtual Currency servic's transaction capabilities in order to provide temporary transfer of SHC coins, a SHC asset, or a SHC license. 
 
-==Copyright==
-
-This SIP is not licensed.
-
 ==Motivation==
 
 Sharecoin implementation currently relies on committed transaction, and therefore does not inherently provide mechanics for dividend distribution of coins or limited time-period transfer of extended transactions.

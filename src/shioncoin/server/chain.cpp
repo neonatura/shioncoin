@@ -429,7 +429,7 @@ static bool chain_IsNodeBusy(CNode *pnode)
 	time_t now;
 
 	now = time(NULL);
-	if (last_t < (now - 15)) {
+	if (last_t < (now - 120)) {
 		last_t = now;
 		return (false);
 	}
@@ -458,6 +458,21 @@ static bool chain_IsNodeBusy(CNode *pnode)
 	}
 
 	last_t = now;
+	return (false);
+}
+
+static bool chain_AreNodesBusy(int ifaceIndex)
+{
+	NodeList &vNodes = GetNodeList(ifaceIndex);
+	CNode *pfrom;
+	int idx;
+
+	for (idx = 0; idx < vNodes.size(); idx++) {
+		pfrom = vNodes[idx];
+		if (chain_IsNodeBusy(pfrom))
+			return (true);
+	}
+
 	return (false);
 }
 
@@ -573,6 +588,7 @@ static bool FindNextBlocksToDownload(CIface *iface, CNode *pfrom, unsigned int c
 	return (true);
 }
 
+#if 0
 bool ServiceLegacyBlockEvent(CIface *iface)
 {
 	int ifaceIndex = GetCoinIndex(iface);
@@ -605,7 +621,7 @@ bool ServiceLegacyBlockEvent(CIface *iface)
     return (false);
   }
 
-  expire_t = time(NULL) - 20;
+  expire_t = time(NULL) - 30;
   if (iface->net_valid < expire_t) { /* done w/ last round */
     if (iface->net_valid < iface->net_invalid) {
       return (false); /* give up */
@@ -631,6 +647,7 @@ bool ServiceLegacyBlockEvent(CIface *iface)
 
   return (true);
 }
+#endif
 
 bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *pfrom)
 {

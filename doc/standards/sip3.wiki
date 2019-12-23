@@ -1,67 +1,70 @@
-<pre>
-  SIP: 3
+<pre class="western">  SIP: 3
   Layer: Core
   Title: Transaction Certification
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2018-12-29
-</pre>
-==Abstract==
+  Created: 2018-12-29</pre>
+==Abstract== 
+This SIP defines a new structure called a "certificate"
+that is committed to blocks as an extended transaction. 
 
-This SIP defines a new structure called a "certificate" that is committed to blocks as an extended transaction.
+The certificate extended transaction provides a means to certify
+credentials. 
 
-The certificate extended transaction provides a means to certify credentials.
+==Motivation== 
+The certification of auxiliary information provides a method to
+track identity association and provide credentials to third-party
+software. 
 
-==Motivation==
+==Specifications== 
+The Certification of a transaction is performed by creating chains
+of extended transactions which utilize an "Ident" structure
+or a "Certificate" structure (see below). 
 
-The certification of auxilliary information provides a method to track identity association and provide credentials to third-party software.
+Several other extended transactions utilize the "Ident"
+or "Certificate" extended transaction structure as a base. 
 
-==Specifications==
+===Structure=== 
+The "Ident" extended structure consists of the
+following; 
 
-The Certification of a transaction is performed by creating chains of extended transactions which utilitize an "Ident" structure or a "Certificate" structure (see below).
+<pre class="western">        {
+                /* A geodetic location. */
+                shgeo_t geo;
+                /* A coin address key. */
+                cbuff vAddr;
+                /* A mode indicator. */
+                unsigned int nType;
+        }</pre>
+The "Certificate" extended structure is a extension of the
+"Ident" structure which includes the following; 
 
-Several other extended transactions utilize the "Ident" or "Certificate" extended transaction structure as a base. 
+<pre class="western">        {
+                /* A reference to a parent record. */
+                uint160 hashIssuer;
+                /* A signature generated from the underlying transaction. */
+                CSign signature;
+                /* A free-form data pay-load. */
+                cbuff vContext;
+                /* The fee charged to derive this certificate. */
+                int64 nFee;
+                /* An attribute modifier. */
+                int nFlag;
+        }</pre>
+===Usage=== 
+An "Ident" by itself can be embedded into a "transfer
+funds" operation as part of a certified send or by "stamping"
+some auxiliary information. 
 
-===Structure===
-The "Ident" extended structure consists of the following;
-<pre>
-	{
-		/* A geodetic location. */
-		shgeo_t geo;
-		/* A coin address key. */
-		cbuff vAddr;
-		/* A mode indicator. */
-		unsigned int nType;
-	}
-</pre>
+The "Certificate" structure is used by certificates,
+licenses, and assets. Typically, a chain authority certificate is
+generated and then derived certificates are assigned for auxiliary
+purposes. 
 
-The "Certificate" extended structure is a extension of the "Ident" structure which includes the following;
-<pre>
-	{
-		/* A reference to a parent record. */
-		uint160 hashIssuer;
-		/* A signature generated from the underlying transaction. */
-		CSign signature;
-		/* A free-form data pay-load. */
-		cbuff vContext;
-		/* The fee charged to derive this certificate. */
-		int64 nFee;
-		/* An attribute modifier. */
-		int nFlag;
-	}
-</pre>
+A license differs, in that, it can be derived from a suitable
+certificate, with a optional fee, without the consent of the owner. 
 
-
-===Usage===
-
-An "Ident" by itself can be embedded into a "transfer funds" operation as part of a certified send or by "stamping" some auxilliary information.
-
-The "Certificate" structure is used by certificates, licenses, and assets. Typically, a chain authority certificate is generated and then derived certificates are assigned for auxilliary purposes. A license differs, in that, it can be derived from a suitable certificate, with a optional fee, without the consent of the owner.
-
-An asset is derived from a certificate, and provides a 4k payload of information referencing a tangible asset.
-
-==Copyright==
-
-This document is placed in the public domain.
+An asset is derived from a certificate, and provides a 4k payload
+of information referencing a tangible asset. 
 

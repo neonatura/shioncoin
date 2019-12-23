@@ -1,44 +1,72 @@
-<pre>
-  SIP: 11
+<pre class="western">  SIP: 11
   Layer: Core
   Title: Coin Exchange Offer
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2019-01-27
-</pre>
+  Created: 2019-01-27</pre>
+==Abstract== 
+This SIP describes a new Offer Extended transaction, and how it is
+used in order to transfer funds between two different block-chains. 
 
-==Abstract==
-This SIP describes a new Offer Extended transaction, and how it is used in order to transfer funds between two different block-chains.
+==Motivation== 
+The purpose of the offer extended transaction is to provide a
+method perform a decentralized exchange of coins from one block-chain
+to another. This functionality is currently only compatible with the
+exchange of SHC coins with the ShionCoin Alternate Colored
+Block-Chain coins. 
 
-==Motivation==
-The purpose of the offer extended transaction is to provide a method perform a decentralized exchange of coins from one block-chain to another.
+==Specification== 
+The Offer Operational Fee, the cost to publish offer transactions,
+is double the minimum transaction fee (0.0002 SHC). Some transactions
+may retain a minimum transaction fee, in addition to the offer
+operational fee, in order to perform a additional action later on in
+the process. An offer extended transaction will expire after 24
+minutes. 
 
-This functionality is currently only compatible with the exchange of SHC coins with the ShionCoin Alternate Colored Block-Chain coins.  
+A new offer is published on the block-chain using a OP_EXT_NEW
+operative. The new offer will include a associated number of SHC
+coins, the color hash of the alt-blockchain coins being converted,
+the rate of the conversion, and the SHC value range that would be
+accepted. An additional "Offer Operation Fee" is also
+required. A secondary party may then perform a OP_EXT_ACTIVATE
+operative in order to accept the offer. 
 
-==Specification==
+The OP_EXT_ACTIVATE extended transaction is sent to a null address
+(OP_RETURN), and a separate transaction is created on the colored
+alternate block-chain whereby the value of the color coins in sent to
+one-self for holding. 
 
-The Offer Operational Fee, the cost to publish offer transactions, is double the minimum transaction fee (0.0002 SHC). Some transactions may retain a minimum transaction fee, in addition to the offer operational fee, in order to perform a additional action later on in the process. 
+The original party can perform a OP_EXT_GENERATE against an accept
+offer in order to complete the exchange. When this occurs, a
+transaction is sent on the ShionCoin blockchain with a IF-ELSE
+script. This conditional script will send coins to the acceptee if a
+pre-determined transaction hash exists on the colored block-chain,
+and otherwise will return the coins once the generate offer
+transaction has expired. 
 
-An offer extended transaction will expire after 24 minutes.
+The OP_EXT_GENERATE script is composed of the following:
+OP_EXT_GENERATE OP_OFFER OP_HASH160 offer_hash OP_2_DROP alt_hash
+color_hash OP_CHECKALTPROOF OP_IF dest_addr OP_CHECKSIG OP_ELSE
+wait_time OP_CHECKLOCKTIMEVERIFY OP_DROP return_addr OP_CHECKSIG
+OP_ENDIF 
+The "offer_hash" is the hash of the OP_EXT_GENERATE's
+offer structure, the "alt_hash" is the tx hash on the
+colored alt-chain which sends coins from the acceptee to the
+originator, the "color_hash" is the hash representing the
+color of the alt-chain, the "dest_addr" is the acceptee's
+coin address on the ShionCoin block-chain, the "wait_time"
+is the time before the generate transaction expires, and the
+"return_addr" is the originator's own address. 
 
-A new offer is published on the block-chain using a OP_EXT_NEW operative. The new offer will include a associated number of SHC coins, the color hash of the alt-blockchain coins being converted, the rate of the conversion, and the SHC value range that would be accepted. An additional "Offer Operation Fee" is also required.
+The node which originated the acceptee's OP_EXT_ACTIVATE offer
+transaction will automatically send the colored alt-coin funds to the
+originator, once a OP_EXT_GENERATE is processed, using pre-determined
+TX contents. The hash for this TX is included as part of the activate
+offer transaction. 
 
-A secondary party may then perform a OP_EXT_ACTIVATE operative in order to accept the offer. The OP_EXT_ACTIVATE extended transaction is sent to a null address (OP_RETURN), and a seperate transaction is created on the colored alternate block-chain whereby the value of the color coins in sent to one-self for holding. 
-
-The original party can perform a OP_EXT_GENERATE against an accept offer in order to complete the exchange. When this occurs, a transaction is sent on the ShionCoin blockchain with a IF-ELSE script. This conditional script will send coins to the acceptee if a pre-determined transaction hash exists on the colored block-chain, and otherwise will return the coins once the generate offer transaction has expired.
-
-
-The OP_EXT_GENERATE script is composed of the following;
-; OP_EXT_GENERATE OP_OFFER OP_HASH160 offer_hash OP_2_DROP alt_hash color_hash OP_CHECKALTPROOF OP_IF dest_addr OP_CHECKSIG OP_ELSE wait_time OP_CHECKLOCKTIMEVERIFY OP_DROP return_addr OP_CHECKSIG OP_ENDIF
-
-The "offer_hash" is the hash of the OP_EXT_GENERATE's offer structure, the "alt_hash" is the tx hash on the colored alt-chain which sends coins from the acceptee to the originator, the "color_hash" is the hash representing the color of the alt-chain, the "dest_addr" is the acceptee's coin address on the ShionCoin block-chain, the "wait_time" is the time before the generate transaction expires, and the "return_addr" is the originator's own address. 
-
-The node which originated the acceptee's OP_EXT_ACTIVATE offer transaction will automatically send the colored alt-coin funds to the originator, once a OP_EXT_GENERATE is processed, using pre-determined TX contents. The hash for this TX is included as part of the activate offer transaction. 
-
-The original sender or the acceptee can cancel the exchange using a OP_EXT_REMOVE transaction. This can be used by the originator or acceptee before a OP_EXT_GENERATE transaction is published, or after a set of transactions has expired due to inaction.
-
-==Copyright==
-This document is placed in the public domain.
-
+The original sender or the acceptee can cancel the exchange using
+a OP_EXT_REMOVE transaction. This can be used by the originator or
+acceptee before a OP_EXT_GENERATE transaction is published, or after
+a set of transactions has expired due to inaction. 
 

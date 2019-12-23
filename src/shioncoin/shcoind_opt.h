@@ -33,6 +33,7 @@ extern "C" {
 
 
 #define OPT_DEBUG "debug"
+#define OPT_NET_DEBUG "net-debug"
 #define OPT_MAX_CONN "net-max"
 #define OPT_PEER_SEED "seed"
 #define OPT_NOTARY "notary"

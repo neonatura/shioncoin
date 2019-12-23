@@ -232,7 +232,6 @@ static bool emc2_LoadBlockIndex()
     pindexBest = GetBestBlockIndex(iface);
     if (!pindexBest)
       return error(SHERR_INVAL, "EMC2TxDB::LoadBlockIndex() : EMC2Block::hashBestChain not found in the block index");
-//fprintf(stderr, "DEBUG: LoadBlockIndex: falling back to highest block height %d\n", pindexBest->nHeight);
     hashBestChain = pindexBest->GetBlockHash();
   }
 

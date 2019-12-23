@@ -45,13 +45,12 @@
 class CMessageHeader
 {
 	public:
-		mutable int ifaceIndex;
 
 		CMessageHeader();
 		CMessageHeader(int ifaceIndex, const char* pszCommand, unsigned int nMessageSizeIn);
 
 		std::string GetCommand() const;
-		bool IsValid() const;
+		bool IsValid(int ifaceIndex) const;
 
 		IMPLEMENT_SERIALIZE
 			(
@@ -61,21 +60,20 @@ class CMessageHeader
 			 READWRITE(nChecksum);
 			)
 
-			// TODO: make private (improves encapsulation)
-	public:
-			enum {
-				MESSAGE_START_SIZE=4,
-				COMMAND_SIZE=12,
-				MESSAGE_SIZE_SIZE=sizeof(int),
-				CHECKSUM_SIZE=sizeof(int),
+		enum {
+			MESSAGE_START_SIZE=4,
+			COMMAND_SIZE=12,
+			MESSAGE_SIZE_SIZE=sizeof(int),
+			CHECKSUM_SIZE=sizeof(int),
 
-				MESSAGE_SIZE_OFFSET=MESSAGE_START_SIZE+COMMAND_SIZE,
-				CHECKSUM_OFFSET=MESSAGE_SIZE_OFFSET+MESSAGE_SIZE_SIZE
-			};
-			char pchMessageStart[MESSAGE_START_SIZE];
-			char pchCommand[COMMAND_SIZE];
-			unsigned int nMessageSize;
-			unsigned int nChecksum;
+			MESSAGE_SIZE_OFFSET=MESSAGE_START_SIZE+COMMAND_SIZE,
+			CHECKSUM_OFFSET=MESSAGE_SIZE_OFFSET+MESSAGE_SIZE_SIZE
+		};
+
+		char pchMessageStart[MESSAGE_START_SIZE];
+		char pchCommand[COMMAND_SIZE];
+		unsigned int nMessageSize;
+		unsigned int nChecksum;
 };
 
 /** nServices flags */

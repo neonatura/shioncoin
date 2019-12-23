@@ -1112,7 +1112,7 @@ bool ltc_ProcessMessages(CIface *iface, CNode* pfrom)
     vector<char> vHeaderSave(vRecv.begin(), vRecv.begin() + nHeaderSize);
     CMessageHeader hdr;
     vRecv >> hdr;
-    if (!hdr.IsValid())
+    if (!hdr.IsValid(LTC_COIN_IFACE))
     {
 //fprintf(stderr, "DEBUG: LTC: PROCESSMESSAGE: ERRORS IN HEADER %s\n", hdr.GetCommand().c_str());
       continue;

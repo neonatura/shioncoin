@@ -1,33 +1,91 @@
-<pre>
-  SIP: 26
+<pre class="western">  SIP: 26
   Layer: Core
   Title: Executable SEXE Class (ref SIP7)
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Extendable
   Type: Standards Track
-  Created: 2018-12-15
-</pre>
-== Abstract ==
-This SIP defines a new Executable Extended Transaction that is used in order to provide smart-contract capabilities.
+  Created: 2018-12-15</pre>
+== Abstract == 
+This SIP defines a new Executable Extended Transaction that is
+used in order to provide smart-contract capabilities. The executable
+extended transaction consists of publishing a SEXE class and
+subsequent calls to methods in that class. A persistent data storage
+mechanism is provided which is synchronized between all nodes. 
 
-The executable extended transaction consists of publishing a SEXE class and sub-sequent calls to methods in that class. A persistent data storage mechanism is provided which is synchronized between all nodes. 
+== Motivation == 
+The executable extended transaction provides the capability to
+create programs which can define rules for a system of operations
+that deliver consistent results among all participants. 
 
-== Motivation ==
-The executable extended transaction provides the capability to create programs which can define rules for a system of operations that deliver consistent results among all participants.
+== Examples == 
+One of the most popular examples of a smart-contract program is
+the Token asset. A token tracks an arbitrary metric that can be
+defined as having a intrinsic value based of the intended purpose of
+it's use. 
 
-== Examples ==
-One of the most popular examples of a smart-contract program is the Token asset. A token tracks an arbitrary metric that can be defined as having a interinsic value based of the intended purpose of it's use. 
+==Specification== 
+The SEXE programming language is based off of the LUA scripting
+language. The libshare run-time suite is used in order to provide the
+development environment. 
 
-==Specification==
-The SEXE programming language is based off of the LUA scripting language. The libshare runtime suite is used in order to provide the development environment. 
+The executable extended transaction consists of the generation of
+a new SEXE class on the blockchain or calling a method from a
+published class. 
 
-The executable extended transaction consists of the generation of a new SEXE class on the blockchain or calling a method from a published class.
+The SEXE class is provided a permanent data storage area in order
+to update variables based on the functions called. 
 
-The SEXE class is provided a permanent data storage area in order to update variables based on the functions called. 
+The SEXE class can require a SHC coin payment in order to perform
+an operation. Class method calls that do not require a change to the
+permanent data storage area do not require a payment. The minimum fee
+for a class call which modifies the data storage area is 0.00001 SHC.
+The maximum size permitted fora SEXE class published on the shioncoin
+blockchain is 780000 bytes.
+When a class calls is received by a node the basic integrity is
+validated. The actual execution of the call will only occur on a 'as
+needed' basis, in that, a user must specifically require the use of a
+SEXE class before any preceding operations are performed. 
 
-The SEXE class can require a SHC coin payment in order to perform an operation. Class method calls that do not require a change to the permanent data storage area do not require a payment. The minimum fee for a class call which modifies the data storage area is 0.00001 SHC. 
+=== Publishing SEXE Class ===
+The extended transaction operation OP_EXT_NEW is used in order to
+publish a new SEXE class onto the blockchain. The underlying payload
+containing the LUA code may be in raw text format or compiled [using
+the “sxc” libshare compiler].
+When publishing a new class, the name of the class must be unique.
+A fee will be charged based on the size of the underlying payload.
+The executable extended transaction will be signed against the
+account’s unique execution sender address.
+The underlying script used for the executable extended
+transaction, when creating a new class, has the following format:
+OP_EXT_NEW &lt;&lt; OP_N(OP_EXEC) &lt;&lt; OP_HASH160 &lt;&lt;
+[EXEC HASH] &lt;&lt; OP_2DROP &lt;&lt; OP_RETURN
+The [EXEC HASH] is the has of the underlying CExec strucuture that
+comprises the payload of the extended transaction (see BIP 7).
+=== Calling a Class Method ===
+A new transaction is generated on the shioncoin blockchain that
+supplies the method and parameters being called. All nodes will
+execute the same method and arguments when this class is being
+referenced. A checksum is supplied in order to ensure that the
+resulting permanent storage area associated with the class has is
+consistent on all server nodes. 
 
-When a class calls is received by a node the basic integrity is validated. The actual execution of the call will only occur on a 'as needed' basis, in that, a user must specifically require the use of a SEXE class before any preceding operations are performed.
+The extended transaction operation OP_EXT_GENERATE is used in
+order to indicate a class method is being called, and is comprised of
+the following format:
+OP_EXT_UPDATE &lt;&lt; OP_N(OP_EXEC) &lt;&lt; OP_HASH160 &lt;&lt;
+[EXEC HASH] &lt;&lt; OP_2DROP &lt;&lt; OP_RETURN
+The node calling the class method must ensure that a high enough
+fee is being provided or an error may be returned. Execution of class
+methods that do not require altering the permanent storage area used
+by the class do not endure any fee, and are not recorded on the
+shioncoin blockchain. 
 
-== Copyright ==
-This document is placed in the public domain.
+The SEXE class identifies each caller by the sending coin address
+that supplies the fee to run the execution. It is therefore necessary
+to use a unique address per account when executing a class method. 
+
+A particular class is not executed on a node until it is needed
+due to a user attempting to call a class method. Pending execution of
+method calls on the blockchain, that have not already been performed,
+are performed in sequence [as they reside on the blockchain] before
+attempting to execute a new class method call.

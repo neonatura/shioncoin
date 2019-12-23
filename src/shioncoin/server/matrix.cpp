@@ -36,20 +36,6 @@
 
 #define VALIDATE_NOTARY_DEPTH 18 /* x3 / notary */
 
-
-#if 0
-void CTxMatrix::ClearCells()
-{
-  int row, col;
-
-  for (row = 0; row < nSize; row++) {
-    for (col = 0; col < nSize; col++) {
-      SetCell(row, col, 0);
-    }
-  }
-}
-#endif
-
 void CTxMatrix::Append(int heightIn, uint256 hash)
 {
   nHeight = heightIn;
@@ -64,15 +50,15 @@ void CTxMatrix::Append(int heightIn, uint256 hash)
 void CTxMatrix::Retract(int heightIn, uint256 hash)
 {
 
-  if (heightIn > nHeight)
-    return;
+	if (heightIn > nHeight)
+		return;
 
-  nHeight = heightIn - 27;
+	nHeight = heightIn - 27;
 
-  int idx = (heightIn / 27) % 9;
-  int row = (idx / 3) % 3;
-  int col = idx % 3;
-  SubCell(row, col, (unsigned int)shcrc(hash.GetRaw(), 32));
+	int idx = (heightIn / 27) % 9;
+	int row = (idx / 3) % 3;
+	int col = idx % 3;
+	SubCell(row, col, (unsigned int)shcrc(hash.GetRaw(), 32));
 }
 
 static unsigned int matrix_GetMinConsensus(int ifaceIndex)
@@ -220,7 +206,7 @@ static uint32_t matrix_GetNotaryLockTime(CIface *iface)
 bool CreateValidateNotaryTx(CIface *iface, const CTransaction& txPrev, int nPrevOut, CTransaction& tx, vector<CPubKey> kSend)
 {
 	CWallet *wallet = GetWallet(iface);
-  int ifaceIndex = GetCoinIndex(iface);
+	int ifaceIndex = GetCoinIndex(iface);
 	int nMinConsensus = matrix_GetMinConsensus(ifaceIndex);
 	const uint256& hPrevTx = txPrev.GetHash();
 	CScript scriptSig;
@@ -254,7 +240,7 @@ bool CreateValidateNotaryTx(CIface *iface, const CTransaction& txPrev, int nPrev
 	scriptReturn.SetNoDestination(); /* null output */
 	CTxOut out(CTxMatrix::MAX_NOTARY_TX_VALUE, scriptReturn);
 	tx.vout.insert(tx.vout.end(), out);
-	
+
 	/* sign */
 	scriptSig << OP_0;
 	for (int i = 0; i < nMinConsensus; i++) {
@@ -277,17 +263,17 @@ bool CreateValidateNotaryTx(CIface *iface, const CTransaction& txPrev, int nPrev
 /* 'zero transactions' penalty. */
 bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward, uint64_t nBestHeight, uint64_t nCheckHeight)
 {
-  int ifaceIndex = GetCoinIndex(iface);
+	int ifaceIndex = GetCoinIndex(iface);
 	CWallet *wallet = GetWallet(iface);
 
-  int64 nFee = MAX(0, MIN(COIN, nReward - (int64)iface->min_tx_fee));
-  if (!MoneyRange(iface, nFee) ||
+	int64 nFee = MAX(0, MIN(COIN, nReward - (int64)iface->min_tx_fee));
+	if (!MoneyRange(iface, nFee) ||
 			nFee < iface->min_tx_fee)
-    return (false); /* reward too small */
+		return (false); /* reward too small */
 
-  CTxMatrix *m = tx.GenerateValidateMatrix(ifaceIndex);
-  if (!m)
-    return (false); /* not applicable */
+	CTxMatrix *m = tx.GenerateValidateMatrix(ifaceIndex);
+	if (!m)
+		return (false); /* not applicable */
 
 	bool fConsensus = false;
 	CScript scriptRedeem;
@@ -300,10 +286,10 @@ bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward
 			hRedeem = GenerateValidateScript(wallet, fConsensus, scriptRedeem, kSend);
 	}
 
-  /* define tx op attributes */
-  uint160 hashMatrix = m->GetHash();
-  CScript scriptMatrix;
-  scriptMatrix << OP_EXT_VALIDATE << CScript::EncodeOP_N(OP_MATRIX) << OP_HASH160 << hashMatrix << OP_2DROP;
+	/* define tx op attributes */
+	uint160 hashMatrix = m->GetHash();
+	CScript scriptMatrix;
+	scriptMatrix << OP_EXT_VALIDATE << CScript::EncodeOP_N(OP_MATRIX) << OP_HASH160 << hashMatrix << OP_2DROP;
 	if (!fConsensus) {
 		/* null destination */
 		scriptMatrix << OP_RETURN << OP_0;
@@ -311,14 +297,12 @@ bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward
 		/* P2SH for multi-sig redeem script. */
 		scriptMatrix << OP_HASH160 << hRedeem << OP_EQUAL;
 	}
-  tx.vout.push_back(CTxOut(nFee, scriptMatrix));
+	tx.vout.push_back(CTxOut(nFee, scriptMatrix));
 
-  /* deduct from reward. */
-  nReward -= nFee;
+	/* deduct from reward. */
+	nReward -= nFee;
 
-//  Debug("BlockGenerateValidateMatrix: validate matrix [hash %s] [consensus %d] proposed: %s\n", hashMatrix.GetHex().c_str(), (int)kSend.size(), m->ToString().c_str());
-
-  return (true);
+	return (true);
 }
 
 static bool ExtractValidateCoinbaseDestination(CWallet *wallet, const CTransaction& tx, CPubKey& pubkey)
@@ -347,7 +331,7 @@ static bool ExtractValidateCoinbaseDestination(CWallet *wallet, const CTransacti
 		pubkey = CPubKey(vSolutions[0]);
 		return (true);
 	}
-	
+
 	return (false);
 }
 
@@ -429,37 +413,37 @@ bool RelayValidateMatrixNotaryTx(CIface *iface, const CTransaction& txMatrix, CT
 
 bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex, bool& fCheck)
 {
-  int ifaceIndex = GetCoinIndex(iface);
+	int ifaceIndex = GetCoinIndex(iface);
 	CWallet *wallet = GetWallet(iface);
-  CTxMatrix matrix;
-  bool fMatrix = false;
-  int mode;
+	CTxMatrix matrix;
+	bool fMatrix = false;
+	int mode;
 
-  if (VerifyMatrixTx(tx, mode) && mode == OP_EXT_VALIDATE) {
+	if (VerifyMatrixTx(tx, mode) && mode == OP_EXT_VALIDATE) {
 
 		if (!pindex)
 			pindex = GetBestBlockIndex(ifaceIndex);
-    CTxMatrix& matrix = *tx.GetMatrix();
-    if (matrix.GetType() == CTxMatrix::M_VALIDATE &&
-        matrix.GetHeight() > wallet->matrixValidate.GetHeight()) {
+		CTxMatrix& matrix = *tx.GetMatrix();
+		if (matrix.GetType() == CTxMatrix::M_VALIDATE &&
+				matrix.GetHeight() > wallet->matrixValidate.GetHeight()) {
 			int nOut;
 			int mode;
 			CScript script;
 			if (!GetExtOutput(tx, OP_MATRIX, mode, nOut, script)) {
-        fCheck = false;
-        error(SHERR_INVAL, "BlockAcceptValidateMatrix: GetExtOutput: invalid matrix received: %s [script \"%s\"]", matrix.ToString().c_str(), script.ToString().c_str());
+				fCheck = false;
+				error(SHERR_INVAL, "BlockAcceptValidateMatrix: GetExtOutput: invalid matrix received: %s [script \"%s\"]", matrix.ToString().c_str(), script.ToString().c_str());
 			} else if (!VerifyValidateMatrixScript(wallet, 0, script)) {
-        fCheck = false;
-        error(SHERR_INVAL, "BlockAcceptValidateMatrix: VerifyValidateMatrixScript: invalid matrix received: %s", matrix.ToString().c_str());
+				fCheck = false;
+				error(SHERR_INVAL, "BlockAcceptValidateMatrix: VerifyValidateMatrixScript: invalid matrix received: %s", matrix.ToString().c_str());
 			} else if (!tx.VerifyValidateMatrix(ifaceIndex, matrix, pindex)) {
-        fCheck = false;
-        error(SHERR_INVAL, "BlockAcceptValidateMatrix: VerifyValidateMatrix: invalid matrix received: %s", matrix.ToString().c_str());
-      } else {
+				fCheck = false;
+				error(SHERR_INVAL, "BlockAcceptValidateMatrix: VerifyValidateMatrix: invalid matrix received: %s", matrix.ToString().c_str());
+			} else {
 				/* validate matrix accepted successfully. */
-        fCheck = true;
+				fCheck = true;
 
-        /* apply new hash to matrix */
-        wallet->matrixValidate = matrix;
+				/* apply new hash to matrix */
+				wallet->matrixValidate = matrix;
 
 				/* track matrix tx */
 				const uint256& hTx = tx.GetHash();
@@ -467,21 +451,18 @@ bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pin
 
 				/* track coinbase destinations. */
 				InsertValidateNotary(wallet, tx);
+			}
 
-				/* print debug. */
-//        Debug("BlockAcceptValidateMatrix: Validate verify success [tx %s] [hash %s]: %s", hTx.GetHex().c_str(), wallet->matrixValidate.ToString().c_str(), matrix.ToString().c_str());
-      }
+			return (true); /* matrix was found */
+		}
+	}
 
-      return (true); /* matrix was found */
-    }
-  }
-
-  return (false); /* no matrix was present */
+	return (false); /* no matrix was present */
 }
 
 void BlockRetractValidateMatrix(CIface *iface, const CTransaction& tx, CBlockIndex *pindex)
 {
-  CWallet *wallet = GetWallet(iface);
+	CWallet *wallet = GetWallet(iface);
 	int nTxOut;
 	int height;
 
@@ -513,7 +494,7 @@ void BlockRetractValidateMatrix(CIface *iface, const CTransaction& tx, CBlockInd
 		if (hPrevTx == tx.GetHash())
 			wallet->mapValidateTx.pop_back();
 	}
-	
+
 	/* remove from notorary list. */
 	wallet->mapValidateNotary.erase(tx.GetHash());
 }
@@ -521,8 +502,8 @@ void BlockRetractValidateMatrix(CIface *iface, const CTransaction& tx, CBlockInd
 /* returns where tx was a valid matrix-notary-tx */
 bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx)
 {
-  CWallet *wallet = GetWallet(iface);
-  int ifaceIndex = GetCoinIndex(iface);
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
 	CBlockIndex *pindex;
 	CBlock *pblock;
 
@@ -749,242 +730,209 @@ void UpdateValidateNotaryTx(CIface *iface, CTransaction& tx, const CScript& scri
 
 }
 
-
-#if 0
-void LargeMatrix::compress(CTxMatrix& matrixIn)
-{
-  int row, col;
-  int n_row, n_col;
-  double deg;
-
-  matrixIn.ClearCells();
-
-  deg = nSize / matrixIn.nSize; 
-  for (row = 0; row < nSize; row++) {
-    for (col = 0; col < nSize; col++) {
-      n_row = (row / deg); 
-      n_col = (col / deg); 
-      matrixIn.AddCell(n_row, n_col, GetCell(row, col)); 
-    }
-  }
-
-}
-#endif
-
 /* NOT IMPLEMENTED */
 shgeo_t *GetMatrixOrigin(CTransaction& tx)
 {
-  static shgeo_t geo;
-memset(&geo, 0, sizeof(geo));
-return (&geo);
+	static shgeo_t geo;
+	memset(&geo, 0, sizeof(geo));
+	return (&geo);
 }
 
 bool BlockGenerateSpringMatrix(CIface *iface, CTransaction& tx, int64& nReward)
 {
-  int ifaceIndex = GetCoinIndex(iface);
+	int ifaceIndex = GetCoinIndex(iface);
 
-  int64 nFee = MAX(0, MIN(COIN, nReward - iface->min_tx_fee));
-  if (nFee < iface->min_tx_fee)
-    return (false); /* reward too small */
+	int64 nFee = MAX(0, MIN(COIN, nReward - iface->min_tx_fee));
+	if (nFee < iface->min_tx_fee)
+		return (false); /* reward too small */
 
 
-  CIdent ident;
-  CTxMatrix *m = tx.GenerateSpringMatrix(ifaceIndex, ident);
-  if (!m)
-    return (false); /* not applicable */
+	CIdent ident;
+	CTxMatrix *m = tx.GenerateSpringMatrix(ifaceIndex, ident);
+	if (!m)
+		return (false); /* not applicable */
 
-  uint160 hashMatrix = m->GetHash();
-  int64 min_tx = (int64)iface->min_tx_fee;
+	uint160 hashMatrix = m->GetHash();
+	int64 min_tx = (int64)iface->min_tx_fee;
 
-  CScript scriptPubKeyOrig;
-  CCoinAddr addr(ifaceIndex, stringFromVch(ident.vAddr));
-  scriptPubKeyOrig.SetDestination(addr.Get());
+	CScript scriptPubKeyOrig;
+	CCoinAddr addr(ifaceIndex, stringFromVch(ident.vAddr));
+	scriptPubKeyOrig.SetDestination(addr.Get());
 
-  CScript scriptMatrix;
-  scriptMatrix << OP_EXT_PAY << CScript::EncodeOP_N(OP_MATRIX) << OP_HASH160 << hashMatrix << OP_2DROP;
-  scriptMatrix += scriptPubKeyOrig;
+	CScript scriptMatrix;
+	scriptMatrix << OP_EXT_PAY << CScript::EncodeOP_N(OP_MATRIX) << OP_HASH160 << hashMatrix << OP_2DROP;
+	scriptMatrix += scriptPubKeyOrig;
 
-  tx.vout.push_back(CTxOut(nFee, scriptMatrix));
+	tx.vout.push_back(CTxOut(nFee, scriptMatrix));
 
-  /* deduct from reward. */
-  nReward -= nFee;
+	/* deduct from reward. */
+	nReward -= nFee;
 
-  Debug("BlockGenerateSpringMatrix: (matrix hash %s) proposed: %s\n", hashMatrix.GetHex().c_str(), m->ToString().c_str());
+	Debug("BlockGenerateSpringMatrix: (matrix hash %s) proposed: %s\n", hashMatrix.GetHex().c_str(), m->ToString().c_str());
 
-  return (true);
+	return (true);
 }
 
 bool BlockAcceptSpringMatrix(CIface *iface, CTransaction& tx, bool& fCheck)
 {
-  CWallet *wallet = GetWallet(iface);
-  int ifaceIndex = GetCoinIndex(iface);
-  bool fMatrix = false;
-  shnum_t lat, lon;
-  int mode = -1;;
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	bool fMatrix = false;
+	shnum_t lat, lon;
+	int mode = -1;;
 
-  lat = lon = 0;
-  if (VerifyMatrixTx(tx, mode) && mode == OP_EXT_PAY) {
-    CBlockIndex *pindex = GetBestBlockIndex(ifaceIndex);
-    CTxMatrix& matrix = *tx.GetMatrix();
-    if (matrix.GetType() == CTxMatrix::M_SPRING) {
-      if (!tx.VerifySpringMatrix(ifaceIndex, matrix, &lat, &lon)) {
-        fCheck = false;
-        Debug("BlockAcceptSpringMatrix: Spring verify failure: (new %s) lat(%f) lon(%f)\n", matrix.ToString().c_str(), lat, lon);
-      } else {
-        fCheck = true;
-        /* remove claim location from spring matrix */
-        spring_loc_claim(lat, lon);
-        /* erase pending ident tx */
-        wallet->mapIdent.erase(matrix.hRef);
-Debug("BlockAcceptSpringMatrix: Spring verify success: lat(%Lf) lon(%Lf)\n", lat, lon);
-        Debug("BlockAcceptSpringMatrix: Spring verify success: (new %s) lat(%Lf) lon(%Lf)\n", matrix.ToString().c_str(), lat, lon);
-      }
-      return (true); /* matrix was found */
-    }
-  }
+	lat = lon = 0;
+	if (VerifyMatrixTx(tx, mode) && mode == OP_EXT_PAY) {
+		CBlockIndex *pindex = GetBestBlockIndex(ifaceIndex);
+		CTxMatrix& matrix = *tx.GetMatrix();
+		if (matrix.GetType() == CTxMatrix::M_SPRING) {
+			if (!tx.VerifySpringMatrix(ifaceIndex, matrix, &lat, &lon)) {
+				fCheck = false;
+				Debug("BlockAcceptSpringMatrix: Spring verify failure: (new %s) lat(%f) lon(%f)\n", matrix.ToString().c_str(), lat, lon);
+			} else {
+				fCheck = true;
+				/* remove claim location from spring matrix */
+				spring_loc_claim(lat, lon);
+				/* erase pending ident tx */
+				wallet->mapIdent.erase(matrix.hRef);
+				Debug("BlockAcceptSpringMatrix: Spring verify success: lat(%Lf) lon(%Lf)\n", lat, lon);
+				Debug("BlockAcceptSpringMatrix: Spring verify success: (new %s) lat(%Lf) lon(%Lf)\n", matrix.ToString().c_str(), lat, lon);
+			}
+			return (true); /* matrix was found */
+		}
+	}
 
-  return (false); /* no matrix was present */
+	return (false); /* no matrix was present */
 }
 
 CTxMatrix *CTransaction::GenerateSpringMatrix(int ifaceIndex, CIdent& ident)
 {
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  shnum_t lat, lon;
-  int height;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	shnum_t lat, lon;
+	int height;
 
-  if (!iface || !iface->enabled)
-    return (NULL);
+	if (!iface || !iface->enabled)
+		return (NULL);
 
-  if (nFlag & CTransaction::TXF_MATRIX)
-    return (NULL);
+	if (nFlag & CTransaction::TXF_MATRIX)
+		return (NULL);
 
-  CWallet *wallet = GetWallet(iface);
-  if (!wallet)
-    return (NULL);
+	CWallet *wallet = GetWallet(iface);
+	if (!wallet)
+		return (NULL);
 
-  if (wallet->mapIdent.size() == 0)
-    return (NULL);
+	if (wallet->mapIdent.size() == 0)
+		return (NULL);
 
-  const uint160& hashIdent = wallet->mapIdent.begin()->first;
+	const uint160& hashIdent = wallet->mapIdent.begin()->first;
 
-  CTransaction tx;
-  bool hasIdent = GetTxOfIdent(iface, hashIdent, tx);
-  if (!hasIdent) {
-    wallet->mapIdent.erase(hashIdent); /* invalido */
-    return (NULL);
-  }
-  ident = (CIdent&)tx.certificate;
+	CTransaction tx;
+	bool hasIdent = GetTxOfIdent(iface, hashIdent, tx);
+	if (!hasIdent) {
+		wallet->mapIdent.erase(hashIdent); /* invalido */
+		return (NULL);
+	}
+	ident = (CIdent&)tx.certificate;
 
-  shgeo_loc(&ident.geo, &lat, &lon, NULL);
-  if (!is_spring_loc(lat, lon)) {
-    wallet->mapIdent.erase(hashIdent); /* invalido */
-    return (NULL);
-  }
+	shgeo_loc(&ident.geo, &lat, &lon, NULL);
+	if (!is_spring_loc(lat, lon)) {
+		wallet->mapIdent.erase(hashIdent); /* invalido */
+		return (NULL);
+	}
 
-  nFlag |= CTransaction::TXF_MATRIX;
+	nFlag |= CTransaction::TXF_MATRIX;
 
-  matrix = CTxMatrix();
-  spring_matrix_compress(matrix.vData);
-  matrix.nType = CTxMatrix::M_SPRING;
-  matrix.nHeight = GetBestHeight(iface) + 1; 
-  matrix.hRef = hashIdent;
- 
-  return (&matrix);
+	matrix = CTxMatrix();
+	spring_matrix_compress(matrix.vData);
+	matrix.nType = CTxMatrix::M_SPRING;
+	matrix.nHeight = GetBestHeight(iface) + 1; 
+	matrix.hRef = hashIdent;
+
+	return (&matrix);
 }
 
 bool CTransaction::VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, shnum_t *lat_p, shnum_t *lon_p)
 {
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  
-  CTransaction tx;
-  if (!GetTxOfIdent(iface, matrix.hRef, tx))
-    return error(SHERR_INVAL, "VerifySpringMatrix: invalid ident tx.");
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+
+	CTransaction tx;
+	if (!GetTxOfIdent(iface, matrix.hRef, tx))
+		return error(SHERR_INVAL, "VerifySpringMatrix: invalid ident tx.");
 
 	CCert *cert = tx.GetCertificate();
 	if (!cert)
 		return (error(SHERR_INVAL, "VerifySptringMatrix: invalid reference hash"));
 
-  CIdent& ident = (CIdent&)(*cert);
+	CIdent& ident = (CIdent&)(*cert);
 
-  shgeo_loc(&ident.geo, lat_p, lon_p, NULL);
-  if (!is_spring_loc(*lat_p, *lon_p))
-    return error(SHERR_INVAL, "VerifySpringMatrix: invalid spring location.");
+	shgeo_loc(&ident.geo, lat_p, lon_p, NULL);
+	if (!is_spring_loc(*lat_p, *lon_p))
+		return error(SHERR_INVAL, "VerifySpringMatrix: invalid spring location.");
 
-  CTxMatrix cmp_matrix;
-  spring_matrix_compress(cmp_matrix.vData);
-  cmp_matrix.nType = matrix.nType;
-  cmp_matrix.nHeight = matrix.nHeight; 
-  cmp_matrix.hRef = matrix.hRef;
+	CTxMatrix cmp_matrix;
+	spring_matrix_compress(cmp_matrix.vData);
+	cmp_matrix.nType = matrix.nType;
+	cmp_matrix.nHeight = matrix.nHeight; 
+	cmp_matrix.hRef = matrix.hRef;
 
-  bool ret = (cmp_matrix == matrix);
-  if (!ret)
-    return error(SHERR_INVAL, "VerifySpringMatrix: matrix integrity failure.");
+	bool ret = (cmp_matrix == matrix);
+	if (!ret)
+		return error(SHERR_INVAL, "VerifySpringMatrix: matrix integrity failure.");
 
-  return (true);
+	return (true);
 }
 
 
 void BlockRetractSpringMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex)
 {
-//  int ifaceIndex = GetCoinIndex(iface);
-  const CTxMatrix& matrix = tx.matrix;
+	const CTxMatrix& matrix = tx.matrix;
 
-  if (pindex->nHeight != matrix.nHeight)
-    return;
+	if (pindex->nHeight != matrix.nHeight)
+		return;
 
-#if 0
-  matrixIn->Retract(matrix.nHeight, tx.GetHash());
-#endif
+	CTransaction id_tx;
+	if (!GetTxOfIdent(iface, matrix.hRef, id_tx))
+		return;
 
-  CTransaction id_tx;
-  if (!GetTxOfIdent(iface, matrix.hRef, id_tx))
-    return;
-
-#if 0
-  if (id_tx.IsInMempool(ifaceIndex))
-    return;
-#endif
-
-  /* re-establish location bits in spring matrix. */
-  CIdent& ident = (CIdent&)id_tx.certificate;
-  shnum_t lat, lon;
-  shgeo_loc(&ident.geo, &lat, &lon, NULL);
-  spring_loc_set(lat, lon);
+	/* re-establish location bits in spring matrix. */
+	CIdent& ident = (CIdent&)id_tx.certificate;
+	shnum_t lat, lon;
+	shgeo_loc(&ident.geo, &lat, &lon, NULL);
+	spring_loc_set(lat, lon);
 }
-
 
 Object CTxMatrix::ToValue()
 {
-  Object obj;
-  char buf[2048];
-  int row;
-  int col;
+	Object obj;
+	char buf[2048];
+	int row;
+	int col;
 
-  obj.push_back(Pair("hash", GetHash().GetHex()));
-  obj.push_back(Pair("type", (int)nType));
-  obj.push_back(Pair("ref", hRef.GetHex()));
-  if (nHeight != 0)
-    obj.push_back(Pair("height", (int)nHeight));
+	obj.push_back(Pair("hash", GetHash().GetHex()));
+	obj.push_back(Pair("type", (int)nType));
+	obj.push_back(Pair("ref", hRef.GetHex()));
+	if (nHeight != 0)
+		obj.push_back(Pair("height", (int)nHeight));
 
-  memset(buf, 0, sizeof(buf));
-  for (row = 0; row < 3; row++) {
-    if (row != 0) strcat(buf, " ");
-    strcat(buf, "(");
-    for (col = 0; col < 3; col++) {
-      if (col != 0) strcat(buf, " "); 
-      sprintf(buf+strlen(buf), "%-8.8x", GetCell(row, col));
-    }
-    strcat(buf, ")");
-  }
-  string strMatrix(buf);
-  obj.push_back(Pair("data", strMatrix));
+	memset(buf, 0, sizeof(buf));
+	for (row = 0; row < 3; row++) {
+		if (row != 0) strcat(buf, " ");
+		strcat(buf, "(");
+		for (col = 0; col < 3; col++) {
+			if (col != 0) strcat(buf, " "); 
+			sprintf(buf+strlen(buf), "%-8.8x", GetCell(row, col));
+		}
+		strcat(buf, ")");
+	}
+	string strMatrix(buf);
+	obj.push_back(Pair("data", strMatrix));
 
-  return obj;
+	return obj;
 }
 
 std::string CTxMatrix::ToString()
 {
-  return (write_string(Value(ToValue()), false));
+	return (write_string(Value(ToValue()), false));
 }
 
 
@@ -992,31 +940,30 @@ int cpp_validate_render_fractal(int ifaceIndex, char *img_path, double zoom, dou
 {
 	CWallet *wallet = GetWallet(ifaceIndex);
 	CTxMatrix *matrix = &wallet->matrixValidate;
-  uint32_t m_seed;
-  double seed;
-  int y, x;
+	uint32_t m_seed;
+	double seed;
+	int y, x;
 
-  m_seed = 0;
-  for (y = 0; y < 3; y++) {
-    for (x = 0; x < 3; x++) {
-      m_seed += matrix->vData[y][x];
-    }
-  }
-  seed = (double)m_seed;
+	m_seed = 0;
+	for (y = 0; y < 3; y++) {
+		for (x = 0; x < 3; x++) {
+			m_seed += matrix->vData[y][x];
+		}
+	}
+	seed = (double)m_seed;
 
-  return (fractal_render(img_path, seed, zoom, span, x_of, y_of));
+	return (fractal_render(img_path, seed, zoom, span, x_of, y_of));
 }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-int validate_render_fractal(int ifaceIndex, char *img_path, double zoom, double span, double x_of, double y_of)
-{
-	return (cpp_validate_render_fractal(ifaceIndex, img_path, zoom, span, x_of, y_of));
-}
+	int validate_render_fractal(int ifaceIndex, char *img_path, double zoom, double span, double x_of, double y_of)
+	{
+		return (cpp_validate_render_fractal(ifaceIndex, img_path, zoom, span, x_of, y_of));
+	}
 #ifdef __cplusplus
 }
 #endif
-
 
 

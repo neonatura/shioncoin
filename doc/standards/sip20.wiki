@@ -1,60 +1,103 @@
-<pre>
-  SIP: 20
+<pre class="western">  SIP: 20
   Layer: Core
   Title: The Validation Matrix 
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2018-10-13
-</pre>
+  Created: 2018-10-13</pre>
+==Abstract== 
+This SIP describes the specific usage of the Matrix extended
+transaction type for the purposes of blockchain validation with the
+ShionCoin scripting system. 
 
-==Abstract==
+==Motivation== 
+The purpose of the Validation Matrix is two-fold; one purpose is
+to provide an additional redundant mechanism to ensure the
+blockchain's validity, and second to supply a method for a consensus
+of nodes to generate a dynamic checkpoint on the blockchain. 
 
-This SIP describes the specific usage of the Matrix extended transaction type for the purposes of blockchain validation with the ShionCoin scripting system.
+==Specification== 
+Every 27 blocks a "validation matrix" is required to be
+generated on the block-chain in the case where there are no other
+transactions in the block being submitted other than the coinbase.
+The matrix is encapsulated in the coinbase using a matrix extended
+transaction, and has a coin output of one coin. The other-wise total
+reward of the coinbase is reduced by a single coin. 
 
-==Motivation==
+The numeric information in the "validation matrix" is
+composed of a running hash split into 9 cells which is directly based
+on the preceding block-chain. The validation matrix acts as a
+redundant security measure in order to ensure that the block-chain is
+viewed in a consistent manner between all nodes. 
 
-The purpose of the Validation Matrix is two-fold; one purpose is to provide an additional redudant mechanism to ensure the blockchain's validitity, and second to supply a method for a consensus of nodes to generate a dynamic checkpoint on the blockchain.
+Note that the validation matrix does not provide in itself
+anything more than an additional checksum mechanism to the existing
+block-chain. 
 
-==Specification==
+In addition to providing a supplemental level of integrity to the
+block-chain in the form of a "redundant merkle hash", the
+validation matrix is also used to initiate a sequence of events that
+potentially lead to a new dynamic checkpoint being established. This
+is performed by a consensus vote led by active participants (referred
+to as notaries) on the block-chain. Each node which generates a
+"validation matrix" becomes a candidate to become a
+"notary". 
 
-Every 27 blocks a "validation matrix" is required to be generated on the block-chain in the case where there are no other transactions in the block being submitted other than the coinbase. The matrix is encapsulated in the coinbase using a matrix extended transaction, and has a coin output of one coin. The other-wise total reward of the coinbase is reduced by a single coin.
+When enough notaries are available the validation matrix which use
+a multi-sig output which contains the pubkeys from all participating
+notary nodes. A "notary transaction" has a single input;
+the latest validation matrix transaction. It is signed by each node
+(in order) until the transaction is finalized and complete. Once, and
+if, completed, a dynamic checkpoint will be made for the block which
+contained the "validation matrix" transaction. 
 
-The numeric information in the "validation matrix" is composed of a running hash split into 9 cells which is directly based on the preceeding block-chain. The validation matrix acts as a redundant security measure in order to ensure that the block-chain is viewed in a consistent manner between all nodes. Note that the validation matrix does not provide in itself anything more than an additional checksum mechanism to the existing block-chain. 
+Note that only the last validation matrix block on the block-chain
+will be considered as a potential checkpoint. The output of the
+notary transaction is a "null return" which will result in
+the original coin being transformed back into a claimable miner
+transaction fee (less a small amount for additional ensued
+transaction fees). 
 
-In addition to providing a supplemental level of integrity to the block-chain in the form of a "redundant merkle hash", the validation matrix is also used to initiate a sequence of events that potentially lead to a new dynamic checkpoint being established. This is performed by a consensus vote led by active partipants (referred to as notaries) on the block-chain. 
+== Dynamic Checkpoints == 
+Dynamic checkpoints, in essence, are similar to the delayed
+proof-of-work (dPOW) concept. 
 
-Each node which generates a "validation matrix" becomes a candidate to become a "notary". When enough notaries are available the validation matrix which use a multi-sig output which contains the pubkeys from all participating notary nodes. 
+The dynamic checkpoints are intended as a way to provide
+resilience, and therefore extra security, for the integrity of the
+block-chain. By providing additional "agreed upon"
+checkpoints dynamically it becomes more difficult to maliciously
+alter or otherwise by performing a "51% attack". 
 
-A "notary transaction" has a single input; the latest validation matrix transaction. It is signed by each node (in order) until the transaction is finalized and complete. Once, and if, completed, a dynamic checkpoint will be made for the block which contained the "validation matrix" transaction. Note that only the last validation matrix block on the block-chain will be considered as a potential checkpoint.
+The output of a validation matrix coinbase transaction can either
+be OP_RETURN or a multi-sig redeem script which includes a minimum
+consensus of notary pubkey addresses. 
 
-The output of the notary transaction is a "null return" which will result in the original coin being transformed back into a claimable miner transaction fee (less a small amount for additional ensued transaction fees).
+Here is an example of a notary transaction: 
 
+<pre class="western">        {
+                "txid":"f51d4c04a6ab1483a6562960140d1eee83a0f8d7ff91b4e68375c952c1a5bcb0",
+                "vin":[{"txid":"2788f12789b27c9167b56a34c696dc117bb5939d00b70a3474aae451cbed3962","vout":0,"scriptSig":"0 3045022100bba304fb584f1ace2f101fd7ada1d36475da8f3ad9178e99029a020614e3208202204e9ae644ea6a6d5d184097f4ce4ba6a17cf92201936aa37d15637f8ee32d0fd601","sequence":4294967295}],
+                "vout":[{"value":0.00000000,"n":0,"scriptpubkey":"OP_RETURN","reqSigs":1,"type":"return"}]
+        }</pre>
+An incomplete "notary transaction" is submitted and each
+node with a public signature included in the transaction's multi-sig
+redeem script will sign the transaction, and then submit it again.
+This is done in the order of the pubkeys listed in the multi-sig
+redeem script. 
 
-== Dynamic Checkpoints ==
+At no point will a incomplete "notary tx" be added to
+the transaction memory pool and the "input sequence" to a
+non-final value until all signatures have been squired. Nodes which
+do not have a public key address listed in the multi-sig redeem
+script will still relay the transaction even if it's incomplete. 
 
-Dynamic checkpoints, in essence, are similar to the delayed proof-of-work (dPOW) concept. The dynamic checkpoints are intended as a way to provide resiliance, and therefore extra security, for the integrity of the block-chain. By providing additional "agreed upon" checkpoints dynamically it becomes more difficult to maliciously alter or otherwise by performing a "51% attack".
+In order to avoid redundancy, a node will only sign the "notary
+tx" if it's own public is the next in line that has not been
+signed pertaining to the multi-sig pubkey order. 
 
-The output of a validation matrix coinbase transaction can either be OP_RETURN or a multi-sig redeem script which includes a minimum consensus of notary pubkey addresses.
-
-Here is an example of a notary transaction:
-<pre>
-	{
-		"txid":"f51d4c04a6ab1483a6562960140d1eee83a0f8d7ff91b4e68375c952c1a5bcb0",
-		"vin":[{"txid":"2788f12789b27c9167b56a34c696dc117bb5939d00b70a3474aae451cbed3962","vout":0,"scriptSig":"0 3045022100bba304fb584f1ace2f101fd7ada1d36475da8f3ad9178e99029a020614e3208202204e9ae644ea6a6d5d184097f4ce4ba6a17cf92201936aa37d15637f8ee32d0fd601","sequence":4294967295}],
-		"vout":[{"value":0.00000000,"n":0,"scriptpubkey":"OP_RETURN","reqSigs":1,"type":"return"}]
-	}
-</pre>
-
-An incomplete "notary tx" is submitted and each node with a public signature included in the transaction's multi-sig redeem script will sign the transaction, and then submit it again. This is done in the order of the pubkeys listed in the multi-sig redeem script. 
-
-At no point will a incomplete "notary tx" be added to the transaction memory pool and the "input sequence" to a non-final value until all signatures have been squired. Nodes which do not have a public key address listed in the multi-sig redeem script will still relay the transaction even if it's incomplete. In order to avoid redundancy, a node will only sign the "notary tx" if it's own public is the next in line that has not been signed pertaining to the multi-sig pubkey order.
-
-At this point, a new checkpoint will be established for the block containing the validate matrix transaction providing the following three criteria are met:
-# The "notary tx" references the latest Validation Matrix established,
-# the "notary tx" has a single input containing a Validation Matrix transaction, and
-# the "notary tx" has a single output OP_RETURN and a coin value of zero (0).
-
-==Copyright==
-This document is placed in the public domain.
-
+At this point, a new checkpoint will be established for the block
+containing the validate matrix transaction providing the following
+three criteria are met: 
+# The "notary tx" references the latest Validation Matrix established, 
+# the "notary tx" has a single input containing a Validation Matrix transaction, and 
+# the "notary tx" has a single output OP_RETURN and a coin value of zero (0). 

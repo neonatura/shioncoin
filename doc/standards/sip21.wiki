@@ -1,38 +1,50 @@
-<pre>
-  SIP: 21
+<pre class="western">  SIP: 21
   Layer: Core
   Title: The Spring Matrix 
-  Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2018-12-29
-</pre>
-==Abstract==
+  Created: 2018-12-29</pre>
+==Abstract== 
+This SIP describes a pre-compiled bitvector matrix which
+encapsulates a set of locations, and how to access it's components.
+The Spring Matrix is composed of over one million public
+latitude/longitude geodetic locations. These locations are stored as
+bitvectors in a set of cells comprising the matrix. All operations
+against the matrix consist of removing bitvector values, and
+therefore no new information will ever be generated. 
 
-This SIP describes a pre-compiled bitvector matrix which encapsulates a set of locations, and how to access it's components.
+==Motivation== 
+The purpose of the Spring Matrix is to provide a low yielding
+reward for the identification of a particular geodetic location
+currently present in the Spring Matrix. All of the locations in the
+Spring Matrix have been predefined. Claiming a location will remove
+the bitvector values associated with it's latitude and longitude
+permanently from the Spring Matrix. The degree of hardness naturally
+increases as a smaller pool of places become available to claim. A
+single coin is rewarded for successfully identifying a location in
+the Spring Matrix. This value is arbitrarily low in order to avoid
+interfering with the economics of the mining ecosystem. 
 
-The Spring Matrix is composed of over one million public latitude/longitude geodetic locations. These locations are stored as bitvectors in a set of cells comprsing the matrix. 
+==Specification== 
+The act of claiming a reward is performed by generating a
+"identification stamp". The location being claimed has no
+relevance to the physical location of the user claiming it, although
+additional constraints can be applied (i.e. for VR / geocaching
+applications) if desired. 
 
-All operations against the matrix consist of removing bitvector values, and therefore no new information will ever be generated.
+When a location is "claimed" by an identification stamp
+transaction, the underlying bitvector value is removed from the
+Spring Matrix. 
 
-==Motivation==
+The removal of a bitvector will prevent the same location from
+being claimed multiple times, and may also prohibit other locations
+that rely on aspects of the bitvector from being claimed as well. 
 
-The purpose of the Spring Matrix is to provide a low yielding reward for the identification of a particular geodetic location currently present in the Spring Matrix. 
+When a identification transaction is received containing a
+particular geodetic location, and that geodetic location is currently
+present in the Spring Matrix, then the next block will deduct a
+single coin from the block reward and generate a supplemental
+transaction containing a single coin output to the coin address
+specified in the identification transaction. 
 
-All of the locations in the Spring Matrix have been predefined. 
-
-Claiming a location will remove the bitvector values associated with it's latitude and longitude permanently from the Spring Matrix. The degree of hardness naturally increases as a smaller pool of places become available to claim.
-
-A single coin is rewarded for successfully identifying a location in the Spring Matrix. This value is arbitrarily low in order to avoid interfering with the economics of the mining ecosystem. 
-
-==Specification==
-
-The act of claiming a reward is performed by generating a "identification stamp". The location being claimed has no relevance to the physical location of the user claiming it, although additional constraints can be applied (i.e. for VR / geocaching applications) if desired.
-
-When a location is "claimed" by an identification stamp transaction, the underlying bitvector value is removed from the Spring Matrix. The removal of a bitvector will prevent the same location from being claimed multiple times, and may also prohibit other locations that rely on aspects of the bitvector from being claimed as well.  
-
-When a identification transaction is received containing a particular geodetic location, and that geodetic location is currently present in the Spring Matrix, then the next block will deduct a single coin from the block reward and generate a supplemental transaction containing a single coin output to the coin address specified in the identification transaction.
-
-== Copyright ==
-
-This document is placed in the public domain.

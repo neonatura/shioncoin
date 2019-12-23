@@ -598,8 +598,6 @@ vector<CBlockIndex *> get_stratum_miner_blocks(int ifaceIndex)
 	return (vRet);
 }
 
-<<<<<<< HEAD
-=======
 int stratum_miner_extranonce_subscribe(CIface *iface, user_t *user, shjson_t *param, shjson_t **reply_p)
 {
 	user->flags |= USER_EXTRANONCE;
@@ -644,7 +642,6 @@ int stratum_miner_get_transactions(CIface *iface, user_t *user, shjson_t *param,
 	*reply_p = reply;
 	return (0);
 }
->>>>>>> v4.1
 
 #ifdef __cplusplus
 }

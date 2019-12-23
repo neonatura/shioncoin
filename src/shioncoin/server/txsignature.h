@@ -34,7 +34,6 @@
 
 class CTransaction;
 
-
 /** Signature hash types/flags */
 enum 
 {
@@ -52,38 +51,37 @@ enum
   SIGVERSION_WITNESS_V14 = 15
 };
 
-
 class CSignature
 {
-  protected:
-    int ifaceIndex;
+	protected:
+		int ifaceIndex;
 
-  public:
-    int nHashType; 
-    tx_cache mapInputs;
-    CTransaction *tx;
-    int nTxIn;
+	public:
+		int nHashType; 
+		tx_cache mapInputs;
+		CTransaction *tx;
+		int nTxIn;
 
-    CSignature(int ifaceIndexIn, CTransaction *txIn, unsigned int nIn, int nHashTypeIn=SIGHASH_ALL)
-    {
-      ifaceIndex = ifaceIndexIn;
-      tx = txIn;
-      nTxIn = nIn;
-      nHashType = nHashTypeIn;
-    }
+		CSignature(int ifaceIndexIn, CTransaction *txIn, unsigned int nIn, int nHashTypeIn=SIGHASH_ALL)
+		{
+			ifaceIndex = ifaceIndexIn;
+			tx = txIn;
+			nTxIn = nIn;
+			nHashType = nHashTypeIn;
+		}
 
-    bool SignatureHash(CScript scriptCode, int sigver, uint256& hashRet);
+		bool SignatureHash(CScript scriptCode, int sigver, uint256& hashRet);
 
-    bool CheckSig(cbuff vchSig, cbuff vchPubKey, CScript scriptCode, int sigver);
+		bool CheckSig(cbuff vchSig, cbuff vchPubKey, CScript scriptCode, int sigver);
 
-    bool SignSignature(const CScript& fromPubKey);
+		bool SignSignature(const CScript& fromPubKey);
 
-    bool SignSignature(const CTransaction& txFrom);
+		bool SignSignature(const CTransaction& txFrom);
 
-    bool CreateSignature(cbuff& vchSig, const CKeyID& address, const CScript& scriptCode, int sigversion);
+		bool CreateSignature(cbuff& vchSig, const CKeyID& address, const CScript& scriptCode, int sigversion);
 
-    /* in older "common scrypt coin source common" this is known as Solver(). In newer common code, this is known as "SignStep()" */
-    bool SignAddress(const CScript& scriptPubKey, cstack_t& ret, txnouttype& whichTypeRet, int sigversion);
+		/* in older "common scrypt coin source common" this is known as Solver(). In newer common code, this is known as "SignStep()" */
+		bool SignAddress(const CScript& scriptPubKey, cstack_t& ret, txnouttype& whichTypeRet, int sigversion);
 
 		CIface *GetIface()
 		{
@@ -91,8 +89,5 @@ class CSignature
 		}
 };
 
-
-
 #endif /* ndef __SERVER__TXSIGNATURE_H__ */
-
 

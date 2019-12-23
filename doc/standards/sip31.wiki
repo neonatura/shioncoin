@@ -1,58 +1,125 @@
-<pre>
-  SIP: 31
+<pre class="western">  SIP: 31
   Layer: Consensus (soft fork)
   Title: BOLO Checkpoint on external blockchain
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Proposed
   Type: Standards Track
-  Created: 2018-11-26
-</pre>
+  Created: 2018-11-26</pre>
+==Abstract== 
+This SIP describes a method to establish a new dynamic checkpoint
+on the ShionCoin blockchain by creating a "notarized
+transaction" on an external blockchain. The external blockchain
+intended for use is litecoin. In other words, the "BOLO"
+system notarizes blocks on the ShionCoin blockchain by creating a
+special transaction on the litecoin blockchain. 
 
-==Abstract==
+==Motivation== 
+A notarized transaction, or a transaction signed by independant
+users who participate in the ShionCoin ecosystem, provides a method
+to create a consensus about a particular blockchain and a means to
+declare it as the official branch. This is only possible if at least
+11 participants are in agreement about the current blockchain
+hierarchy. The block utilized for a potential checkpoint consensus is
+the block associated with notarized transaction created by SIP30, and
+in turn adds an additional layer of security. 
 
-This SIP describes a method to establish a new dynamic checkpoint on the ShionCoin blockchain by creating a "notorized transaction" on an external blockchain. The external blockchain intended for use is litecoin.
+==Specification== 
+The transactions created on the external blockchain are associated
+with the following output script. 
 
-In other words, the "BOLO" system notorizes blocks on the ShionCoin blockchain by creating a special transaction on the Litecoin blockchain.
+"Bolo" Notarization Output Script: 
 
-==Motivation==
+OP_RETURN &lt;&lt; OP_11 &lt;&lt; OP_1 &lt;&lt; OP_11 &lt;&lt;
+OP_HASH160 &lt;&lt; OP_HASH256 &lt;&lt; OP_HASH256 &lt;&lt; &lt;&lt;
+OP_0 
 
-A notorized transaction, or a transaction signed by independant users who participate in the ShionCoin ecosystem, provides a method to create a concensus about a particular blockchain and a means to declare it as the official branch. This is only possible if at least 11 participants are in agreement about the current blockchain hierarchy.
+The notarization script references the coin interface (literally
+Hash160("shc")) as the OP_HASH160. 
 
-The block utilized for a potential checkpoint concensus is the block associated with notorized transaction created by SIP30, and in turn adds an additional layer of security.
+The first OP_HASH256 is the hash of the SHC block that is being
+notarized. 
 
-==Specification==
+The second OP_HASH256 is a merkle hash of the last 1000 blocks
+prior to the notarized block. 
 
-The transactions created on the external blockchain are associated with the following output script.
+The height is a 4-byte "integer" of the block's height. 
 
-"Bolo" Notorization Output Script:
-	OP_RETURN << OP_11 << OP_1 << OP_11 << OP_HASH160 << OP_HASH256 << OP_HASH256 << <height> << OP_0
+The ShionCoin bolo interface will attempt to notarize any blocks
+that have a OP_RETURN OP_0" output script suffix and have a coin
+value equal to or less than 1 coin. This includes both no-output
+matrix validation coinbase txs, notarized dynamic checkpoints txs, or
+other arbitrary transactions. Validation matrix dynamic checkpoints
+are created on the ShionCoin blockchain by several nodes providing a
+multi-sig transaction verifying a validation matrix. 
 
-The notorization script references the coin interface (literally Hash160("shc")) as the OP_HASH160. The first OP_HASH256 is the hash of the SHC block that is being notarized. The second OP_HASH256 is a merkle hash of the last 1000 blocks prior to the notarized block. The height is a 4-byte "integer" of the block's height.
+When a bolo notary tx references a validation matrix notary tx, it
+will in effect provides three layers of security in order to
+establish blockchain integrity. Refer to SIP30 for more information
+on dynamic checkpoints generated from validation matrix transactions.
+After every 1000 blocks the block-chain is scanned for the first
+null-output transaction as described above. Once the block height has
+reached an offset of 20 blocks each participating node will submit a
+transaction on the LTC blockchain that can be considered a proposal
+to generate a notary transaction using the combined outputs. A bolo
+litecoin transaction requires that at least eleven (11) nodes to be
+in agreement with the proposed notary height and it's preceding 1000
+blocks of transactions 
 
-The ShionCoin bolo interface will attempt to notorize any blocks that have a OP_RETURN OP_0" output script suffix and have a coin value equal to or less than 1 coin. This includes both no-output matrix validation coinbase txs, notarized dynamic checkpoints txs, or other arbitrary transactions. 
+A notarized bolo transaction will not over-ride a locally
+established dynamic checkpoint when the bolo transaction references
+the same or lower height. Participating notaries publish a "bolo
+proposal tx" on the litecoin block-chain. The first output
+contains a 0.00001 coin output value to themselves. A second output
+is a CScript ID of the final notarization output script with a zero
+coin value. The potential notary endures tx fee to initiate the
+transaction, and, for example, with a fee of 0.0001 ltc a total of
+0.00011 LTC would be spent for the proposal tx submitted. 
 
-Validation matrix dynamic checkpoints are created on the ShionCoin blockchain by several nodes providing a multi-sig transaction verifying a validation matrix. When a bolo notary tx references a validation matrix notary tx, it will in effect provides three layers of security in order to establish blockchain integrity. Refer to SIP30 for more information on dynamic checkpoints generated from validation matrix transactions.
+A tx which includes all potential notaries is submitted, with a
+lock time of 20 blocks, until at least eleven participants have
+provided a signature for the transaction. The transaction will fail
+after the lock time period if not enough signatures are gathered. A
+transaction will not be committed to the blockchain until it's "lock
+time" has elapsed. A final notarized transaction consists of the
+described notary proposal outputs (which each contain 0.00001 ltc). 
 
-After every 1000 blocks the block-chain is scanned for the first null-output transaction as described above. Once the block height has reached an offset of 20 blocks each participating node will submit a transaction on the LTC blockchain that can be considered a proposal to generate a notary transaction using the combined outputs.
+When available notaries with eleven or more signatures has been
+gathered, the final transaction is committed with the original lock
+time and a "final sequence" marked for all inputs. A single
+output is the full notarization output script with a zero coin value.
 
-A bolo litecoin transaction requires that at least eleven (11) nodes to be in agreement with the proposed notary height and it's preceeding 1000 blocks of transactions A noterized bolo transaction will not over-ride a locally established dynamic checkpoint when the bolo transaction references the same or lower height. 
+When the final notarized transaction is committed to the external
+blockchain, a new dynamic checkpoint will be created on the shioncoin
+blockchain for the block height of the original SHC block being
+notarized. The individual inputs comprise the tx fee in order to
+publish the transaction. For example, a transaction comprising of
+eleven notaries would generate a 0.00011 LTC paid fee. 
 
-Participating notaries publish a "bolo proposal tx" on the litecoin block-chain. The first output contains a 0.00001 coin output value to themselves. A second output is a CScript ID of the final notorization output script with a zero coin value. The potential notary endures tx fee to initiate the transaction, and, for example, with a fee of 0.0001 ltc a total of 0.00011 LTC would be spent for the proposal tx submitted.
+The external blockchain transaction is composed of a
+SIGHASH_ANYONECANPAY input type. This is done in order to allow for
+"signatures to be gathered" as nodes relay the notary
+transaction with more compiled inputs. The inputs are sorted in a
+manner so that the same transaction will be submitted regardless of
+origin node [where all nodes see the same information]. Non-signed
+inputs of participants are included until at least eleven signed
+inputs are acquired. Only active participants which have already
+committed a notary proposal on the external blockchain are considered
+for inclusion in the final notarized transaction. 
 
-A tx which includes all potential notaries is submitted, with a lock time of 20 blocks, until at least eleven participants have provided a signature for the tx. The tx will fail after the lock time period if not enough signatures are gathered. A transaction cannot be commited to the blockchain until it's "lock time" has elapsed.
+==Rationale== 
+This SIP provides a supplemental layer of verification derived
+from the capabilities provided in SIP30; which itself derives from
+the verification capabilities provided in SIP20. This intentional
+"chained" design provides a robust method of verification
+and integrity. 
 
-A final notarized transaction consists of the described notary proposal outputs (which each contain 0.00001 ltc). When available notaries with eleven or more signatures has been gathered, the final transaction is commited with the original lock time and a "final sequence" marked for all inputs. A single output is the full notorization output script with a zero coin value.
-
-When the final notarized transaction is commited to the external blockchain, a new dynamic checkpoint will be created on the shioncoin blockchain for the block height of the original SHC block being notorized. The individual inputs comprise the tx fee in order to publish the transaction. For example, a transaction comprising of eleven notaries would generate a 0.00011 LTC paid fee.
-
-The external blockchain transaction is composed of a SIGHASH_ANYONECANPAY input type. This is done in order to allow for "signatures to be gathered" as nodes relay the notary transaction with more compiled inputs. The inputs are sorted in a manner so that the same transaction will be submitted regardless of origin node [where all nodes see the same information]. Non-signed inputs of participants are included until at least eleven signed inputs are aquired. Only active participants which have already commited a notary proposal on the external blockchain are considered for inclusion in the final notarized tx. 
-
-==Rationale==
-
-This BIP provides a supplemental layer of verification derived from the capabilities provided in SIP30; which itself derives from the verification capabilities provided in SIP20. This intentional "chained" design provides a robust method of verification and integrity.
-
-
-==Backwards Compatibility==
-
-The transactions described in this SIP are an optional implementation, and are expected to be available to the user as a configuration option which is disabled by default. This "notary participant" option, when enabled, will both generate the initial proposal transactions on the external blockchain and the sub-sequent signing process. No participation is required and none will be taken without available funds in the litecoin service for the "bank" account name.
+==Backwards Compatibility== 
+The transactions described in this SIP are an optional
+implementation, and are expected to be available to the user as a
+configuration option which is disabled by default. This "notary
+participant" option, when enabled, will both generate the
+initial proposal transactions on the external blockchain and the
+subsequent signing process. No participation is required and none
+will be taken without available funds in the litecoin service for the
+"bank" account name. 
 

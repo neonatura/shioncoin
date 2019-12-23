@@ -343,6 +343,7 @@ public:
     bool fHaveWitness;
     bool fPreferHeaders;
     CSemaphoreGrant grantOutbound;
+
 protected:
     int nRefCount;
 
@@ -350,6 +351,8 @@ protected:
     // Key is ip address, value is banned-until-time
     static std::map<CNetAddr, int64> setBanned;
     static CCriticalSection cs_setBanned;
+
+		bool fNetDebug;
 
 public:
     int nMisbehavior;
@@ -430,6 +433,8 @@ public:
 
 				pindexLastHeader = NULL;
 				pindexLastBlock = NULL;
+
+				fNetDebug = opt_bool(OPT_NET_DEBUG);
 
         // Be shy and don't send version until we hear
         if (!fInbound)
@@ -571,14 +576,14 @@ public:
 
 
     void BeginMessage(const char* pszCommand)
-    {
-        ENTER_CRITICAL_SECTION(cs_vSend);
-        if (nHeaderStart != -1)
-            AbortMessage();
-        nHeaderStart = vSend.size();
-        vSend << CMessageHeader(ifaceIndex, pszCommand, 0);
-        nMessageStart = vSend.size();
-    }
+		{
+			ENTER_CRITICAL_SECTION(cs_vSend);
+			if (nHeaderStart != -1)
+				AbortMessage();
+			nHeaderStart = vSend.size();
+			vSend << CMessageHeader(ifaceIndex, pszCommand, 0);
+			nMessageStart = vSend.size();
+		}
 
     void AbortMessage()
     {
@@ -592,33 +597,37 @@ public:
     }
 
     void EndMessage()
-    {
-        if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
-        {
-            //printf("dropmessages DROPPING SEND MESSAGE\n");
-            AbortMessage();
-            return;
-        }
+		{
+#if 0
+			if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
+			{
+				//printf("dropmessages DROPPING SEND MESSAGE\n");
+				AbortMessage();
+				return;
+			}
+#endif
 
-        if (nHeaderStart < 0)
-            return;
+			if (nHeaderStart < 0)
+				return;
 
-        // Set the size
-        unsigned int nSize = vSend.size() - nMessageStart;
-        memcpy((char*)&vSend[nHeaderStart] + CMessageHeader::MESSAGE_SIZE_OFFSET, &nSize, sizeof(nSize));
+			// Set the size
+			unsigned int nSize = vSend.size() - nMessageStart;
+			memcpy((char*)&vSend[nHeaderStart] + CMessageHeader::MESSAGE_SIZE_OFFSET, &nSize, sizeof(nSize));
 
-        // Set the checksum
-        uint256 hash = Hash(vSend.begin() + nMessageStart, vSend.end());
-        unsigned int nChecksum = 0;
-        memcpy(&nChecksum, &hash, sizeof(nChecksum));
-        assert(nMessageStart - nHeaderStart >= CMessageHeader::CHECKSUM_OFFSET + sizeof(nChecksum));
-        memcpy((char*)&vSend[nHeaderStart] + CMessageHeader::CHECKSUM_OFFSET, &nChecksum, sizeof(nChecksum));
+			// Set the checksum
+			uint256 hash = Hash(vSend.begin() + nMessageStart, vSend.end());
+			unsigned int nChecksum = 0;
+			memcpy(&nChecksum, &hash, sizeof(nChecksum));
+			assert(nMessageStart - nHeaderStart >= CMessageHeader::CHECKSUM_OFFSET + sizeof(nChecksum));
+			memcpy((char*)&vSend[nHeaderStart] + CMessageHeader::CHECKSUM_OFFSET, &nChecksum, sizeof(nChecksum));
 
+			if (fNetDebug)
+				shcoind_netlog(this, (CMessageHeader *)&vSend[nHeaderStart]);
 
-        nHeaderStart = -1;
-        nMessageStart = -1;
-        LEAVE_CRITICAL_SECTION(cs_vSend);
-    }
+			nHeaderStart = -1;
+			nMessageStart = -1;
+			LEAVE_CRITICAL_SECTION(cs_vSend);
+		}
 
     void EndMessageAbortIfEmpty()
     {

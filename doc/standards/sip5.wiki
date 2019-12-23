@@ -1,34 +1,37 @@
-<pre>
-  SIP: 5 
+<pre class="western">  SIP: 5 
   Layer: Core
   Title: Certificate (Extended Transaction)
-	Author: Neo Natura < support@neo-natura.com >
+        Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2019-01-26
-</pre>
-==Abstract==
+  Created: 2019-01-26</pre>
+==Abstract== 
+This SIP defines a new transaction called the &quot;Certificate
+Extended Transaction&quot;. 
 
-This SIP defines a new transaction called the "Certificate Extended Transaction". This extended transaction is used in order to generate certification certificates which contain digital signatures referencing their previous chain (parent) transaction. A root-level certificate will have no previous certificate in the chain.
+This extended transaction is used in order to generate
+certification certificates which contain digital signatures
+referencing their previous chain (parent) transaction. A root-level
+certificate will have no previous certificate in the chain. 
 
-==Specifications==
-
-A certificate contains a title of up to 135 characters, an coin address of the creator, an optional parent chain certificate hash, and an optional fee.
+==Specifications== 
+A certificate contains a title of up to 135 characters, an coin
+address of the creator, an optional parent chain certificate hash,
+and an optional fee. 
 
 Certificates cost about 6.5 SHC and go down in cost over time. 
 
-A certificate will include the geodetic location of the node which generated the transaction unless the node is configured otherwise.
+A certificate will include the geodetic location of the node which
+generated the transaction unless the node is configured otherwise. 
 
-A certificate is signed against the creator's coin address.
+A certificate is signed against the creator's coin address. A
+certificate may be flagged to allow derivatives to be created from
+itself. 
 
-A certificate may be flagged to allow derivatives to be created from itself.
+==Reserved Use== 
+The certificate extended transaction is modeled in a manner as to
+be compatible with generic digital certificate chains. 
 
-==Reserved Use==
+Additional extensions may be provided at a later date which affect
+the version, type, and flag variables. 
 
-The certificate extended transaction is modelled in a manner as to be compatible with generic digital certificate chains.
-
-Additional extensions may be provided at a later date which affect the version, type, and flag variables.
-
-==Copyright==
-
-This document is placed in the public domain.

@@ -182,19 +182,6 @@ bool color_IsOrphanBlock(const uint256& hash)
     return (true);
   }
 
-#if 0
-  pindex = GetBlockIndexByHash(COLOR_COIN_IFACE, hash);
-  if (pindex) {
-    if (GetBestHeight(COLOR_COIN_IFACE) >= pindex->nHeight &&
-        block.ReadFromDisk(pindex))
-      return (false); /* present in block-chain */
-  }
-
-  if (!block.ReadArchBlock(hash))
-    return (false); /* no record in archive db */
-  return (true);
-#endif
-
   return (false); 
 }
 
@@ -693,13 +680,6 @@ bool COLORBlock::CheckBlock()
     return (trust(-80, "(color) CheckBlock: block weight (%d) > max (%d)", weight, MAX_BLOCK_WEIGHT(iface)));
   }
 
-
-#if 0
-  if (vtx[0].GetValueOut() > color_GetBlockValue(nHeight, nFees)) {
-    return (false);
-  }
-#endif
-
   if (vtx.empty() || !vtx[0].IsCoinBase())
     return error(SHERR_INVAL, "CheckBlock() : first tx is not coinbase");
 
@@ -860,26 +840,6 @@ bool COLORBlock::AcceptBlock()
 		return(error(SHERR_INVAL, "(color) AcceptBlock: block index table lookup error."));
 	}
 
-#if 0
-	/* do some more tests */
-	BOOST_FOREACH(CTransaction& tx, vtx) {
-		/* verify input signatures. */
-		if (!core_ConnectCoinInputs(COLOR_COIN_IFACE, &tx, pindex, mapOutputs, mapTx, nSigOps, nFees, true, false, true, this)) {
-			return (error(ERR_INVAL, "(color) AcceptBlock: ConnectCoinInputs error"));
-		}
-	}
-	if (nSigOps > MAX_BLOCK_SIGOPS(iface)) {
-		return error(SHERR_INVAL, 
-				"(color) AcceptBlock: too many sigops (%d)", nSigOps);
-	}
-	if (vtx[0].GetValueOut() >
-			alt_wallet->GetBlockValue(pindex->nHeight, nFees)) {
-		return (error(SHERR_INVAL, 
-					"(color) AcceptBlock: coinbaseValueOut(%f) > BlockValue(%f) @ height %d [fee %llu]", 
-					((double)vtx[0].GetValueOut()/(double)COIN), ((double)alt_wallet->GetBlockValue(pindex->nHeight, nFees)/(double)COIN), pindex->nHeight, (unsigned long long)nFees));
-	}
-#endif
-
 	/* permanently establish block. */
 	uint64_t nTotalHeight = (uint64_t)color_GetTotalBlocks();
 	if (!WriteBlock(nTotalHeight)) {
@@ -897,20 +857,6 @@ bool COLORBlock::AcceptBlock()
 			wtx.SetMerkleBranch(this);
 			wtx.BindWallet(alt_wallet);
 			alt_wallet->AddToWallet(wtx);
-
-#if 0
-			/* color_wallet.dat -- market spent */
-			BOOST_FOREACH(const CTxIn& txin, wtx.vin)
-			{
-				if (alt_wallet->mapWallet.count(txin.prevout.hash) == 0)
-					continue;
-
-				CWalletTx &coin = alt_wallet->mapWallet[txin.prevout.hash];
-				coin.BindWallet(alt_wallet);
-				coin.MarkSpent(txin.prevout.n);
-				coin.WriteToDisk();
-			}
-#endif
 
 			Debug("(color) AcceptBlock: new wallet transaction \"%s\".", 
 					hTx.GetHex().c_str());
@@ -1089,28 +1035,9 @@ bool COLORBlock::SetBestChain(CBlockIndex* pindexNew)
   shtime_t ts;
   bool ret;
 
-#if 0
-  if (COLORBlock::pindexGenesisBlock == NULL && hash == color_hashGenesisBlock)
-  {
-    COLORBlock::pindexGenesisBlock = pindexNew;
-  } else {
-    ret = core_CommitBlock(this, pindexNew); 
-    if (!ret)
-      return (false);
-  }
-#endif
 	ret = core_CommitBlock(this, pindexNew); 
 	if (!ret)
 		return (false);
-
-#if 0
-  // Update best block in wallet (so we can detect restored wallets)
-  bool fIsInitialDownload = IsInitialBlockDownload(COLOR_COIN_IFACE);
-  if (!fIsInitialDownload) {
-    const CBlockLocator locator(COLOR_COIN_IFACE, pindexNew);
-    COLOR_SetBestChain(locator);
-  }
-#endif
 
   // New best block
   wallet->bnBestChainWork = pindexNew->bnChainWork;

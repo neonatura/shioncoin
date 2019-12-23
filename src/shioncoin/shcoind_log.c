@@ -105,3 +105,64 @@ void timing_term(int ifaceIndex, char *tag, shtime_t *stamp_p)
 
 }
 
+void f_shcoind_log_net(const char *iface, const char *addr, const char *tag, size_t size, const char *src_fname, long src_line)
+{
+	static shbuf_t *buff;
+	static FILE *net_fl;
+	static time_t last_t;
+	char fname[PATH_MAX+1];
+	char origin[256];
+	char *date_str;
+	char buf[256];
+	size_t len;
+	time_t now;
+
+	if (!buff)
+		buff = shbuf_init();
+
+	now = time(NULL);
+	strftime(buf, sizeof(buf)-1, "[%D %T] ", localtime(&now));
+	shbuf_catstr(buff, buf);
+	shbuf_catstr(buff, iface);
+	shbuf_catstr(buff, " ");
+
+	if (addr) {
+		shbuf_catstr(buff, (char *)addr);
+		shbuf_catstr(buff, ": ");
+	}
+	if (tag) {
+		shbuf_catstr(buff, (char *)tag);
+		shbuf_catstr(buff, " ");
+	}
+	sprintf(buf, "%ub", (unsigned int)size);
+	shbuf_catstr(buff, (char *)buf);
+
+#if 0
+	if (src_fname && src_line) {
+		char *ptr = strrchr(src_fname, '/');
+		if (!ptr)
+			strncpy(fname, src_fname, sizeof(fname)-1);
+		else
+			strncpy(fname, ptr+1, sizeof(fname)-1);
+
+		sprintf(origin, "(%s:%ld)", fname, src_line);
+		shbuf_catstr(buff, origin);
+	}
+#endif
+
+	if (!net_fl) {
+		char path[PATH_MAX+1];
+		sprintf(path, "%snet.log", shlog_path("shcoind"));
+		net_fl = fopen(path, "ab");
+	}
+	if (net_fl)
+		fprintf(net_fl, "%s\n", shbuf_data(buff));
+
+	if (last_t != now) {
+		fflush(net_fl);
+		last_t = now;
+	}
+
+	shbuf_clear(buff);
+}
+

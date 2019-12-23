@@ -63,9 +63,7 @@ static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS =
 
 
 
-//map<uint256, CBlockIndex*> tableBlockIndex[MAX_COIN_IFACE];
 blkidx_t tableBlockIndex[MAX_COIN_IFACE];
-//vector <bc_t *> vBlockChain;
 
 extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex = NULL);
 extern std::string HexBits(unsigned int nBits);
@@ -133,62 +131,6 @@ json_spirit::Value ValueFromAmount(int64 amount)
 	return (double)amount / (double)COIN;
 }
 
-
-#if 0
-bool BlockChainErase(CIface *iface, size_t nHeight)
-{
-  bc_t *bc = GetBlockChain(iface);
-  int err;
-
-#if 0
-  err = bc_purge(bc, nHeight);
-  if (err)
-    return error(err, "TruncateBlockChain[%s]: error truncating @ height %d.", iface->name, nHeight);
-#endif
-  int idx;
-  int bestHeight = bc_idx_next(bc) - 1;
-  for (idx = bestHeight; idx >= nHeight; idx--) {
-    err = bc_idx_clear(bc, idx);
-    if (err)
-      return error(err, "BlockChainErase: error clearing height %d.", (int)nHeight);
-  }
-
-  return (true);
-}
-#endif
-
-#if 0
-bool BlockTxChainErase(uint256 hash)
-{
-return (true);
-}
-
-bool BlockChainErase(CIface *iface, size_t nHeight)
-{
-  bc_t *bc = GetBlockChain(iface);
-  int bestHeight;
-  int err;
-  int idx;
-
-  bestHeight = bc_idx_next(bc) - 1;
-  if (nHeight < 0 || nHeight > bestHeight)
-    return (true);
-
-  CBlock *block = GetBlockByHeight(nHeight);
-  if (block) {
-    BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-      BlockTxChainErase(tx.GetHash());
-    }
-  }
-
-  err = bc_idx_clear(bc, nHeight);
-  if (err)
-    return error(err, "BlockChainErase: error clearing height %d.", (int)nHeight);
-
-  return (true);
-}
-#endif
-
 void FreeBlockTable(CIface *iface)
 {
   blkidx_t *blockIndex;
@@ -247,40 +189,6 @@ void CloseBlockChains(void)
   }
 }
 
-#if 0
-bc_t *GetBlockChain(char *name)
-{
-  bc_t *bc;
-
-  for(vector<bc_t *>::iterator it = vBlockChain.begin(); it != vBlockChain.end(); ++it) {
-    bc = *it;
-    if (0 == strcmp(bc_name(bc), name))
-      return (bc);
-  }
-
-  bc_open(name, &bc);
-  vBlockChain.push_back(bc);
-
-  return (bc);
-}
-
-/**
- * Closes all open block record databases.
- */
-void CloseBlockChains(void)
-{
-  bc_t *bc;
-
-  for(vector<bc_t *>::iterator it = vBlockChain.begin(); it != vBlockChain.end(); ++it) {
-    bc_t *bc = *it;
-    bc_close(bc);
-  }
-  vBlockChain.clear();
-
-}
-#endif
-
-
 int64 GetInitialBlockValue(int nHeight, int64 nFees)
 {
   int64 nSubsidy = 4000 * COIN;
@@ -302,7 +210,7 @@ int64 GetInitialBlockValue(int nHeight, int64 nFees)
     nSubsidy = 5000 * COIN; //5k
   }
 
-  //limit first blocks to protect against instamine.
+  /* limit first blocks to protect against instamine. */
   if (nHeight < 2){
     nSubsidy = 24000000 * COIN; // 1.5%
   }else if(nHeight < 500)
@@ -318,109 +226,6 @@ int64 GetInitialBlockValue(int nHeight, int64 nFees)
 
   return (nSubsidy + nFees);
 }
-
-#if 0
-int64 GetBlockValue(int nHeight, int64 nFees)
-{
-  int64 nSubsidy = 4000 * COIN;
-  int base = nHeight;
-
-  if (nHeight < 107500) {
-    return (GetInitialBlockValue(nHeight, nFees));
-  }
-
-#if CLIENT_VERSION_REVISION > 4
-  if (nHeight >= 1675248) {
-    /* transition from 1.6bil cap to 1.6tril cap. */
-    base /= 9;
-  }
-#endif
-
-  nSubsidy >>= (base / 139604);
-
-#if CLIENT_VERSION_REVISION > 4
-  if (nHeight >= 1675248) {
-    /* balance flux of reward. reduces max coin cap to 320bil */
-    nSubsidy /= 5;
-  }
-#endif
-
-  return nSubsidy + nFees;
-}
-#endif
-
-
-
-
-
-
-#if 0
-typedef map<uint256,int> tx_index_table_t;
-static tx_index_table_t tx_index_table[MAX_COIN_IFACE];
-
-tx_index_table_t *GetTxIndexTable(int ifaceIndex)
-{
-
-  if (ifaceIndex < 0 || ifaceIndex >= MAX_COIN_IFACE)
-    return (NULL);
-
-  return (&tx_index_table[ifaceIndex]);
-}
-
-int GetTxIndex(int ifaceIndex, uint256 txHash, int *txPos)
-{
-  tx_index_table_t *table;
-
-  table = GetTxIndexTable(ifaceIndex);
-  if (!table)
-    return (SHERR_INVAL);
-
-  tx_index_table_t::iterator mi = table->find(txHash);
-  if (mi == table->end())
-    return (SHERR_NOENT);
-
-  *txPos = (*table)[txHash];
-  return (0);
-}
-
-int SetTxIndex(int ifaceIndex, uint256 txHash, int txPos)
-{
-  tx_index_table_t *table;
-
-  table = GetTxIndexTable(ifaceIndex);
-  if (!table)
-    return (SHERR_INVAL);
-
-  (*table)[txHash] = txPos;
-  return (0);
-}
-
-void EraseTxIndex(int ifaceIndex, uint256 txHash)
-{
-  tx_index_table_t *table;
-
-  table = GetTxIndexTable(ifaceIndex);
-  if (!table)
-    return;
-
-  table->erase(txHash);
-}
-
-int GetTxIndexCount(int ifaceIndex)
-{
-  tx_index_table_t *table;
-
-  table = GetTxIndexTable(ifaceIndex);
-  if (!table)
-    return (0);
-
-  return ((int)table->size());
-}
-#endif
-
-
-
-
 
 const CTransaction *CBlock::GetTx(uint256 hash)
 {
@@ -458,11 +263,6 @@ bool CTransaction::WriteTx(int ifaceIndex, uint64_t blockHeight)
       }
       free(data);
 
-#if 0
-      err = bc_idx_clear(bc, txPos);
-      if (err)
-        return error(err, "WriteTx; error clearing invalid previous hash tx [tx-idx-size %d] [tx-pos %d].", (int)data_len, (int)txPos);
-#endif
     } else {
 
     /* force re-open */
@@ -473,12 +273,6 @@ bool CTransaction::WriteTx(int ifaceIndex, uint64_t blockHeight)
       return (false);
     }
   }
-#if 0
-  if (0 == bc_idx_find(bc, hash.GetRaw(), NULL, NULL)) {
-    /* transaction reference exists */
-    return (true);
-  }
-#endif
 
   /* reference block height */
   err = bc_append(bc, hash.GetRaw(), &blockHeight, sizeof(blockHeight));
@@ -487,11 +281,6 @@ bool CTransaction::WriteTx(int ifaceIndex, uint64_t blockHeight)
     unet_log(ifaceIndex, errbuf);
     return (false);
   }
-
-#if 0
-  /* set cache entry */
-  SetTxIndex(ifaceIndex, hash, err); 
-#endif
 
   return (true);
 }
@@ -803,16 +592,6 @@ bool CTransaction::ClientConnectInputs(int ifaceIndex)
       if (!VerifySignature(ifaceIndex, txPrev, *this, i, true, 0))
         return error(SHERR_INVAL, "ConnectInputs() : VerifySignature failed");
 
-      ///// this is redundant with the mempool.mapNextTx stuff,
-      ///// not sure which I want to get rid of
-      ///// this has to go away now that posNext is gone
-      // // Check for conflicts
-      // if (!txPrev.vout[prevout.n].posNext.IsNull())
-      //     return error("ConnectInputs() : prev tx already used");
-      //
-      // // Flag outpoints as used
-      // txPrev.vout[prevout.n].posNext = posThisTx;
-
       nValueIn += txPrev.vout[prevout.n].nValue;
 
       if (!MoneyRange(ifaceIndex, txPrev.vout[prevout.n].nValue) || 
@@ -990,7 +769,7 @@ bool CBlock::ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions)
 
   err = bc_find(bc, pindex->GetBlockHash().GetRaw(), &nHeight);
   if (err)
-    return false;//error(err, "bc_find '%s' [height %d]", pindex->GetBlockHash().GetHex().c_str(), pindex->nHeight);
+    return false;
 
   return (ReadBlock(nHeight));
 }
@@ -1071,12 +850,6 @@ bool CTransaction::CheckTransaction(int ifaceIndex)
 				return (ERR_2BIG, "(%s) CTransaction.CheckTransaction: input script is invalid: %s", iface->name, txin.scriptSig.ToString().c_str());
 			if (txin.scriptSig.size() > MAX_SCRIPT_SIZE(iface))
 				return (ERR_2BIG, "(%s) CTransaction.CheckTransaction: input script <%d bytes> exceeds maximum length (%d).", iface->name, (int)txin.scriptSig.size(), MAX_SCRIPT_SIZE(iface));
-#if 0 
-      if (!VerifyTxHash(iface, txin.prevout.hash)) {
-        print();
-        return error(SHERR_INVAL, "(core) CheckTransaction: unknown prevout hash '%s'", txin.prevout.hash.GetHex().c_str());
-      }
-#endif
     }
   }
 
@@ -1228,24 +1001,6 @@ bool CBlock::WriteArchBlock()
 
 bool VerifyTxHash(CIface *iface, uint256 hashTx)
 {
-#if 0
-  bc_t *bc = GetBlockTxChain(iface);
-	unsigned char *data;
-	size_t data_len;
-	int txPos;
-  int err;
-
-  err = bc_idx_find(bc, hashTx.GetRaw(), NULL, &txPos);
-  if (err)
-    return (false);
-
-	err = bc_get(bc, txPos, &data, &data_len);
-	free(data);
-	if (err)
-		return (false);
-
-  return (true);
-#endif
 	CTransaction tmp_tx;
 	return (GetTransaction(iface, hashTx, tmp_tx, NULL)); 
 }
@@ -1268,10 +1023,6 @@ bool CTransaction::EraseTx(int ifaceIndex)
     return error(err, "CTransaction::EraseTx: error clearing tx pos %d.", posTx);
 
   bc_table_reset(bc, hash.GetRaw());
-#if 0
-  /* clear cache entry */
-  EraseTxIndex(ifaceIndex, hash);
-#endif
  
   Debug("CTransaction::EraseTx: cleared tx '%s'.", GetHash().GetHex().c_str());
   return (true);
@@ -1296,28 +1047,6 @@ extern int ProcessExecTx(CIface *iface, CNode *pfrom, CTransaction& tx);
 
 bool CTransaction::IsStandard() const
 {
-
-#if 0
-  if (!isFlag(CTransaction::TX_VERSION) &&
-      !isFlag(CTransaction::TX_VERSION_2)) {
-    return error(SHERR_INVAL, "version flag not set (%d) [CTransaction::IsStandard]", nFlag);
-  }
-
-  BOOST_FOREACH(const CTxIn& txin, vin)
-  {
-
-
-    // Biggest 'standard' txin is a 3-signature 3-of-3 CHECKMULTISIG
-    // pay-to-script-hash, which is 3 ~80-byte signatures, 3
-    // ~65-byte public keys, plus a few script ops.
-    if (txin.scriptSig.size() > 500) {
-      return error(SHERR_INVAL, "script-sig size > 500 [CTransaction::IsStandard]");
-    }
-    if (!txin.scriptSig.IsPushOnly()) {
-      return error(SHERR_INVAL, "script-sig is push-only [CTransaction::IsStandard]");
-    }
-  }
-#endif
 
   BOOST_FOREACH(const CTxOut& txout, vout) {
     if (!::IsStandard(txout.scriptPubKey)) {
@@ -1460,7 +1189,7 @@ CCert *CTransaction::CreateLicense(CCert *cert)
     return (NULL); /* already in use */
   
   nFlag |= CTransaction::TXF_LICENSE;
-  CLicense license;//(*cert);
+  CLicense license;
 
   license.nFlag |= SHCERT_CERT_CHAIN;
   license.nFlag &= ~SHCERT_CERT_SIGN;
@@ -1776,7 +1505,6 @@ void CBlockHeader::reject(CValidateState *state, int err_code, string err_text)
 {
 	if (!state->peer) return;
 	const uint256& hash = GetHash();
-//	trust(-10, "block \"%s\": %s", hash.GetHex().c_str(), err_text.c_str()); 
 	state->hash = hash;
 	state->nTrust -= 10;
 	state->nError = err_code;
@@ -1790,7 +1518,6 @@ void CTransaction::reject(CValidateState *state, int err_code, string err_text)
 {
 	if (!state->peer) return;
 	const uint256& hash = GetHash();
-//	trust(-10, "tx \"%s\": %s", hash.GetHex().c_str(), err_text.c_str()); 
 	state->nTrust -= 10;
 	state->hash = hash;
 	state->nError = err_code;
@@ -1835,11 +1562,6 @@ Object CTransactionCore::ToValue(int ifaceIndex)
   Object obj;
 
   obj.push_back(Pair("version", GetVersion())); 
-#if 0
-        (nFlag == 1 || isFlag(CTransaction::TX_VERSION)) ? 1 : 
-        (nFlag == 2 || isFlag(CTransaction::TX_VERSION_2)) ? 2 : 0));
-  obj.push_back(Pair("flag", (int)GetFlags()));
-#endif
 
   if (nLockTime != 0) {
     if ((int64)nLockTime < (int64)LOCKTIME_THRESHOLD) {
@@ -1961,11 +1683,6 @@ Object CTransaction::ToValue(int ifaceIndex)
 		if (flags & TXF_MATRIX) {
 			obj.push_back(Pair("matrix", matrix.ToValue()));
 		}
-#if 0
-		if (flags & TXF_CHANNEL) {
-			obj.push_back(Pair("channel", channel.ToValue()));
-		}
-#endif
 		if (flags & TXF_CONTEXT) {
 			CContext ctx(certificate);
 			obj.push_back(Pair("context", ctx.ToValue()));
@@ -1977,12 +1694,6 @@ Object CTransaction::ToValue(int ifaceIndex)
 			}
 		}
 	}
-
-#if 0 /* redundant */
-	CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION(iface));
-	ssTx << *this;
-	obj.push_back(Pair("hex", HexStr(ssTx.begin(), ssTx.end())));
-#endif
 
   return (obj);
 }
@@ -2010,7 +1721,6 @@ Object CBlockHeader::ToValue()
 	sprintf(buf, "%x", nVersion);
 
   obj.push_back(Pair("blockhash", hash.GetHex()));
-//  obj.push_back(Pair("size", (int)::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION(iface))));
   obj.push_back(Pair("version", string(buf)));
   obj.push_back(Pair("merkleroot", hashMerkleRoot.GetHex()));
   obj.push_back(Pair("time", (boost::int64_t)GetBlockTime()));
@@ -2044,7 +1754,6 @@ Object CBlock::ToValue(bool fVerbose)
 
 	obj.push_back(Pair("pow", GetAlgoNameStr(GetAlgo()))); 
 
-//  obj.push_back(Pair("size", (int)::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)));
   obj.push_back(Pair("weight", (int)GetBlockWeight()));
 
   Array txs;
@@ -2109,79 +1818,6 @@ int CTransaction::GetDepthInMainChain(int ifaceIndex, CBlockIndex* &pindexRet) c
   return pindexBest->nHeight - pindex->nHeight + 1;
 }
 
-
-#if 0
-CChannel *CTransaction::CreateChannel(CCoinAddr& src_addr, CCoinAddr& dest_addr, int64 nValue)
-{
-
-	/* not implemented */
-#if 0
-  if (isFlag(CTransaction::TXF_CHANNEL))
-    return (NULL); /* already established */
-
-  nFlag |= CTransaction::TXF_CHANNEL;
-
-  CKeyID lcl_pubkey;
-  if (!src_addr.GetKeyID(lcl_pubkey))
-    return (NULL);
-
-  CKeyID rem_pubkey;
-  if (!dest_addr.GetKeyID(rem_pubkey))
-    return (NULL);
-
-  channel.SetNull();
-  channel.GetOrigin()->addr = lcl_pubkey;
-  channel.GetPeer()->addr = rem_pubkey;
-  channel.SetOriginValue(nValue);
-#endif
-
-  return (&channel);
-}
-CChannel *CTransaction::ActivateChannel(const CChannel& channelIn, int64 nValue)
-{
-
-  if (isFlag(CTransaction::TXF_CHANNEL))
-    return (NULL); /* already established */
-
-  nFlag |= CTransaction::TXF_CHANNEL;
-
-  channel.Init(channelIn);
-  channel.SetPeerValue(nValue);
-
-  return (&channel);
-}
-CChannel *CTransaction::PayChannel(const CChannel& channelIn)
-{
-  if (isFlag(CTransaction::TXF_CHANNEL))
-    return (NULL); /* already established */
-
-  nFlag |= CTransaction::TXF_CHANNEL;
-
-  channel.Init(channelIn);
-  channel.GetOrigin()->hdpubkey.clear();
-  channel.GetPeer()->hdpubkey.clear();
-
-  return (&channel);
-}
-CChannel *CTransaction::GenerateChannel(const CChannel& channelIn)
-{
-
-  if (isFlag(CTransaction::TXF_CHANNEL))
-    return (NULL); /* already established */
-
-  nFlag |= CTransaction::TXF_CHANNEL;
-
-  channel.Init(channelIn);
-
-  return (&channel);
-}
-CChannel *CTransaction::RemoveChannel(const CChannel& channelIn)
-{
-
-  return (&channel);
-}
-#endif
-
 CExec *CTransaction::CreateExec()
 {
 	CExec *exec;
@@ -2222,41 +1858,8 @@ CExecCheckpoint *CTransaction::UpdateExec(const CExec& execIn)
   return (cp);
 }
 
-#if 0
-CExec *CTransaction::ActivateExec(const CExec& execIn)
-{
-  CExec *exec;
-
-  if (nFlag & CTransaction::TXF_EXEC)
-    return (NULL);
-
-  nFlag |= CTransaction::TXF_EXEC;
-
-  exec = (CExec *)&certificate;
-  exec->Init(execIn);
-
-  return (exec);
-}
-#endif
-
 CExec *CTransaction::TransferExec(const CExec& execIn)
 {
-#if 0
-  CExec *exec;
-
-  if (nFlag & CTransaction::TXF_EXEC)
-    return (NULL);
-
-  nFlag |= CTransaction::TXF_EXEC;
-
-  exec = GetExec();
-  exec->Init(execIn);
-
-	/* identical executable stack */
-	exec->vContext = execIn.vContext;
-
-  return (exec);
-#endif
 	return (NULL);
 }
 
@@ -2277,24 +1880,6 @@ CExecCall *CTransaction::GenerateExec(const CExec& execIn)
 
   return (call);
 }
-
-#if 0
-CExec *CTransaction::RemoveExec(const CExec& execIn)
-{
-  CExec *exec;
-
-  if (nFlag & CTransaction::TXF_EXEC)
-    return (NULL);
-
-  nFlag |= CTransaction::TXF_EXEC;
-
-  exec = (CExec *)&certificate;
-  exec->Init(execIn);
-
-  return (exec);
-
-}
-#endif
 
 CContext *CTransaction::CreateContext()
 {
@@ -2346,22 +1931,6 @@ static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *tip, CBlockIndex 
   vConnect.clear();
   vDisconnect.clear();
 
-#if 0
-	if (tip) {
-		CBlockIndex *t_tip = tip;
-
-		/* ensure new pindex is relevant to chain */
-		while (t_tip &&
-				t_tip->GetBlockHash() != pindexNew->GetBlockHash()) {
-			if (t_tip->GetBlockHash() == pbest->GetBlockHash())
-				return (false); /* is not in download chain */
-			t_tip = t_tip->pprev;
-		}
-		if (!t_tip)
-			return (false); /* not in chain */
-	}
-#endif
-
   while (pfork && pfork != plonger)
   {   
     while (plonger->nHeight > pfork->nHeight) {
@@ -2369,14 +1938,6 @@ static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *tip, CBlockIndex 
       if (!plonger)
         return (false);
     }
-#if 0
-		if (plonger != pindexNew && 
-				!(plonger->nStatus & BLOCK_HAVE_DATA) &&
-				!(plonger->nStatus & BLOCK_HAVE_UNDO)) {
-			/* we do not have the block data to connect this chain. */
-			return (error(ERR_INVAL, "GetCommitBranches: warning: cannot connect reorg chain due to missing block data for \"%s\".", plonger->GetBlockHash().GetHex().c_str(), plonger->nHeight));
-		}
-#endif
     if (pfork == plonger) {
 			/* progress until we have reached a fork that is on the current chain. */
 			break;
@@ -2417,117 +1978,6 @@ ValidIndexSet *GetValidIndexSet(int ifaceIndex)
 
   return (&setBlockIndexValid[ifaceIndex]);
 }
-
-#if 0
-/* determine chain with greatest chain work */
-bool core_ConnectBestBlock(int ifaceIndex, CBlock *block, CBlockIndex *pindexNew)
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  ValidIndexSet *setValid = GetValidIndexSet(ifaceIndex);
-  CBlockIndex *pindexBest;
-  bool ret_val = true;
-
-  pindexBest = GetBestBlockIndex(ifaceIndex);
-  if (!pindexBest) {
-    /* nothing to compare to */
-    return (block->SetBestChain(pindexNew));
-  } 
-
-  while (true) {
-    /* calculate 'best' known work */
-    CBlockIndex *pindexNewBest;
-    {
-      std::set<CBlockIndex*,CBlockIndexWorkComparator>::reverse_iterator it = setValid->rbegin();
-      if (it == setValid->rend()) {
-        goto bail;
-      }
-      pindexNewBest = *it;
-    }
-
-    if (pindexNewBest == pindexBest ||
-        pindexNewBest->bnChainWork == pindexBest->bnChainWork) {
-      goto bail;
-    }
-
-    /* traverse candidate's ancestry */
-    CBlockIndex *pindexTest = pindexNewBest;
-    std::vector<CBlockIndex*> vAttach;
-    while (true) {
-      if ((pindexTest->nStatus & BLOCK_FAILED_VALID) ||
-          (pindexTest->nStatus & BLOCK_FAILED_CHILD)) {
-        CBlockIndex *pindexFailed = pindexNewBest;
-
-        while (pindexTest != pindexFailed) {
-          pindexFailed->nStatus |= BLOCK_FAILED_CHILD;
-          setValid->erase(pindexFailed);
-          //pblocktree->WriteBlockIndex(CDiskBlockIndex(pindexFailed));
-          pindexFailed = pindexFailed->pprev;
-        }
-
-        //InvalidChainFound(pindexNewBest);
-        error(SHERR_INVAL, "(core) ConnectBestBlock: InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s status(%u)",
-            pindexNewBest->GetBlockHash().ToString().substr(0,20).c_str(),
-            pindexNewBest->nHeight,
-            pindexNewBest->bnChainWork.ToString().c_str(),
-            DateTimeStrFormat("%x %H:%M:%S", pindexNewBest->GetBlockTime()).c_str(), pindexTest->nStatus);
-        break;
-      }
-
-      if (pindexTest->bnChainWork > pindexBest->bnChainWork) {
-        vAttach.push_back(pindexTest);
-      }
-
-      if (pindexTest->pprev == NULL || /* beginning of alt chain */
-          pindexTest->pnext != NULL) { /* end of alt chain */
-        uint256 cur_hash = block->GetHash();
-
-        /* validate chain */
-        reverse(vAttach.begin(), vAttach.end());
-        BOOST_FOREACH(CBlockIndex *pindexSwitch, vAttach) {
-          const uint256& t_hash = pindexSwitch->GetBlockHash();
-          CBlock *t_block = NULL;
-          bool ok;
-
-          if (t_hash == cur_hash) {
-            t_block = block;
-          } else {
-            t_block = GetBlockByHash(iface, t_hash);
-            if (!t_block)
-              t_block = GetArchBlockByHash(iface, t_hash); /* orphan */
-            if (!t_block) {
-              ret_val = false;
-              error(SHERR_NOENT, "core_ConnectBestBlock: unknown block hash '%s'.", t_hash);
-              goto bail;
-            }
-          }
-
-          ok = t_block->SetBestChain(pindexSwitch);
-          if (t_hash != cur_hash)
-            delete t_block;
-          if (!ok) {
-            ret_val = false;
-            error(SHERR_INVAL, "core_ConnectBestBlock: error setting best chain [hash %s] [height %u]", pindexSwitch->GetBlockHash().GetHex().c_str(), pindexSwitch->nHeight);
-            goto bail;
-          }
-        }
-
-        if (pindexNewBest->GetBlockHash() != pindexNew->GetBlockHash()) 
-            block->WriteArchBlock();
-
-        return (true);
-      }
-
-      pindexTest = pindexTest->pprev;
-    } /* while(true */
-
-  } /* while(true) */
-
-bail:
-  block->WriteArchBlock();
-  return (ret_val);
-}
-#endif
-
 
 int BackupBlockChain(CIface *iface, unsigned int maxHeight)
 {
@@ -2675,7 +2125,6 @@ void core_UpdateUncommittedBlockStructures(CIface *iface, CBlock *block, const C
 
 bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock *block, CBlockIndex *pindexPrev)
 {
-  // std::vector<unsigned char> commitment;
   int commitpos = GetWitnessCommitmentIndex(*block);
   std::vector<unsigned char> ret(32, 0x00);
 
@@ -2694,18 +2143,14 @@ bool core_GenerateCoinbaseCommitment(CIface *iface, CBlock *block, CBlockIndex *
       out.scriptPubKey[4] = 0xa9;
       out.scriptPubKey[5] = 0xed;
 
-//      CHash256().Write(witnessroot.begin(), 32).Write(&ret[0], 32).Finalize(witnessroot.begin());
       hashCommit = Hash(witnessroot.begin(), witnessroot.end(), ret.begin(), ret.end());
       memcpy(&out.scriptPubKey[6], hashCommit.begin(), 32);
       
-      //      commitment = std::vector<unsigned char>(out.scriptPubKey.begin(), out.scriptPubKey.end());
       const_cast<std::vector<CTxOut>*>(&block->vtx[0].vout)->push_back(out);   
-      //      block.vtx[0].UpdateHash();
     }
   }
 
   core_UpdateUncommittedBlockStructures(iface, block, pindexPrev);
-  // return commitment;
 
   return (false);
 }
@@ -2742,17 +2187,6 @@ bool core_CheckBlockWitness(CIface *iface, CBlock *pblock, CBlockIndex *pindexPr
   if (IsWitnessEnabled(iface, pindexPrev)) {
     int commitpos = GetWitnessCommitmentIndex(*pblock);
     if (commitpos != -1) {
-
-#if 0
-			if (GetCoinIndex(iface) == EMC2_COIN_IFACE) {
-				const CTransaction& commit_tx = pblock->vtx[0];
-				if (commit_tx.wit.vtxinwit.size() == 0) {
-					/* non-standard -- fill in missing witness block structure */
-					core_UpdateUncommittedBlockStructures(iface, pblock, pindexPrev);
-				}
-			}
-#endif
-
       /* The malleation check is ignored; as the transaction tree itself already does not permit it, it is impossible to trigger in the witness tree. */
       if (pblock->vtx[0].wit.vtxinwit.size() != 1 || 
           pblock->vtx[0].wit.vtxinwit[0].scriptWitness.stack.size() != 1 || 
@@ -2764,7 +2198,6 @@ bool core_CheckBlockWitness(CIface *iface, CBlock *pblock, CBlockIndex *pindexPr
       uint256 hashWitness = BlockWitnessMerkleRoot(*pblock, &malleated);
       const cbuff& stack = pblock->vtx[0].wit.vtxinwit[0].scriptWitness.stack[0];
       hashWitness = Hash(hashWitness.begin(), hashWitness.end(), stack.begin(), stack.end());
-//      CHash256().Write(hashWitness.begin(), 32).Write(&block.vtx[0].wit.vtxinwit[0].scriptWitness.stack[0][0], 32).Finalize(hashWitness.begin());
       if (memcmp(hashWitness.begin(), &pblock->vtx[0].vout[commitpos].scriptPubKey[6], 32)) {
         return (error(SHERR_INVAL, "core_CheckBlockWitness: witness commitment hash validation error: \"%s\".", pblock->vtx[0].ToString(GetCoinIndex(iface)).c_str()));
       }
@@ -2797,7 +2230,6 @@ static size_t WitnessSigOps(int witversion, const std::vector<unsigned char>& wi
     }
   }
 
-  // Future flags may be implemented here.
   return 0;
 }   
 
@@ -2808,7 +2240,6 @@ size_t CountWitnessSigOps(const CScript& scriptSig, const CScript& scriptPubKey,
 
   if (flags && !(flags & SCRIPT_VERIFY_WITNESS))
     return 0;
-//  assert((flags & SCRIPT_VERIFY_P2SH) != 0);
 
   int witnessversion;
   std::vector<unsigned char> witnessprogram;
@@ -2965,7 +2396,7 @@ bool core_DisconnectBlock(CBlockIndex* pindex, CBlock *pblock)
 	pindex->nStatus &= ~BLOCK_HAVE_DATA;
   Debug("DisconnectBlock[%s]: disconnect block '%s' (height %d).", iface->name, pindex->GetBlockHash().GetHex().c_str(), (int)pindex->nHeight);
 
-  // Disconnect in reverse order
+  /* disconnect in reverse order. */
   for (int i = pblock->vtx.size()-1; i >= 0; i--)
     if (!pblock->vtx[i].DisconnectInputs(pblock->ifaceIndex))
       return false;
@@ -3122,12 +2553,6 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
       if (tx.IsCoinBase())
         continue;
 
-#if 0
-	/* TODO: */
-	CPoolTx ptx(tx);
-	pool->AddActiveTx(ptx);
-#endif
-
       pool->AddTx(tx);
     }
   }
@@ -3139,11 +2564,6 @@ bool core_CommitBlock(CBlock *pblock, CBlockIndex *pindexNew)
   }
 
 fin:
-#if 0
-  if (!fValid) {
-		pblock->InvalidChainFound(pindexNew);
-	}
-#endif
 	if (!fValid && pindexFail) {
 		error(SHERR_INVAL, "(%s) core_CommitBlock: invalid chain block=%s  height=%d  work=%s  date=%s\n",
 				iface->name, pindexFail->GetBlockHash().GetHex().c_str(),
@@ -3209,10 +2629,6 @@ void CTransaction::Init(const CTransaction& tx)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_CERTIFICATE)
 		certificate = tx.certificate;
-#if 0
-	else if (this->nFlag & TXF_CHANNEL)
-		channel = tx.channel;
-#endif
 	else if (this->nFlag & TXF_CONTEXT)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_IDENT)
@@ -3288,7 +2704,6 @@ std::pair<int, int64_t> CalculateSequenceLocks(const CTransaction &tx, int flags
 
 	if (prevHeights->size() != tx.vin.size())
 		return std::make_pair(nMinHeight, nMinTime); /* invalid param */
-//	assert(prevHeights->size() == tx.vin.size());
 
 
 	// tx.nVersion is signed integer so requires cast to unsigned otherwise
@@ -3364,7 +2779,6 @@ bool CheckSequenceLocks(CIface *iface, const CTransaction &tx, int flags)
 
 	if (!tip)
 		return (false); /* invalid state */
-//	assert(tip != nullptr);
 
 	CBlockIndex index;
 	index.pprev = tip;
@@ -3397,14 +2811,6 @@ bool CheckSequenceLocks(CIface *iface, const CTransaction &tx, int flags)
 		}
  
 		prevheights[txinIndex] = nHeight;
-#if 0
-		if (coin.nHeight == MEMPOOL_HEIGHT) {
-			// Assume all mempool transaction confirm in the next block
-			prevheights[txinIndex] = tip->nHeight + 1;
-		} else {
-			prevheights[txinIndex] = coin.nHeight;
-		}
-#endif
 	}
 
 	lockPair = CalculateSequenceLocks(tx, flags, &prevheights, index);
@@ -3426,8 +2832,6 @@ CBlockIndex* LastCommonAncestor(CBlockIndex* pa, CBlockIndex* pb)
 		pb = pb->pprev;
 	}
 
-	// Eventually all chain branches meet at the genesis block.
-	//	assert(pa == pb);
 	return pa;
 } 
 

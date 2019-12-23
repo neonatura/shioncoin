@@ -1,132 +1,135 @@
-<pre>
-  SIP: 1
+<pre class="western">  SIP: 1
   Layer: Core
   Title: Extended Transactions
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2018-10-10
-</pre>
+  Created: 2018-10-10</pre>
+==Abstract== 
+This SIP describes a new "extended" transaction type for
+the ShionCoin scripting system, and defines additional validation
+rules that apply only to the new transactions. 
 
-==Abstract==
+==Motivation== 
+The purpose of extended transactions is to embed auxiliary
+information into a transaction as a store of information. 
 
-This SIP describes a new "extended" transaction type for the ShionCoin scripting system, and defines additional validation rules that apply only to the new transactions.
+==Specification== 
+A extended transaction type that is relayed and included in mined
+blocks is defined as: 
 
-==Motivation==
-
-The purpose of extended transactions is to embed auxilliary information into a transaction as a store of information.
-
-==Specification==
-
-A extended transaction type that is relayed and included in mined blocks is defined as:
-<pre>
-Format: [EXTMODE] [EXTOP] OP_HASH160 [EXTHASH] OP_2DROP
+<pre class="western">Format: [EXTMODE] [EXTOP] OP_HASH160 [EXTHASH] OP_2DROP
 The EXTMODE is a OP_EXT_XXXX script mode as defined below.
 The EXTOP is a extended transaction operation type as defined below.
-The EXTHASH is a SHA256+RIPEMD160 hash of the extended transaction data.
-</pre>
+The EXTHASH is a SHA256+RIPEMD160 hash of the extended transaction data.</pre>
+This script is intended to be used as a prefix and if no additional
+script is included then a OP_RETURN is appended. Extended
+transactions can be chains be including a previous extended operation
+transaction as an input for a new transaction. 
 
-This script is intended to be used as a prefix and if no additional script is included then a OP_RETURN is appended.
+The contents of an extended transaction's data layer is not
+verified for integrity in order to be allowed onto the block-chain. 
 
-Extended transactions can be chains be including a previous extended operation transaction as an input for a new transaction.
+Operational Modes: 
 
-The contents of an extended transaction's data layer is not verified for integrity in order to be allowed onto the block-chain. 
+All extended transaction operations use the same pool of modes: 
 
-Operational Modes:
+<pre class="western">        OP_EXT_NEW  0xf0
+        OP_EXT_ACTIVATE  0xf1
+        OP_EXT_UPDATE  0xf2
+        OP_EXT_REMOVE  0xf3
+        OP_EXT_GENERATE  0xf4
+        OP_EXT_TRANSFER  0xf5
+        OP_EXT_PAY  0xf6
+        OP_EXT_VALIDATE  0xf7</pre>
+==Extended Operations== 
+The extended operation codes range from interpreted as small
+integers with a range of 0 - 15. 
 
-All extended transaction operations use the same pool of modes:
+Here is a list of the established operations: 
 
-<pre>
-	OP_EXT_NEW  0xf0
-	OP_EXT_ACTIVATE  0xf1
-	OP_EXT_UPDATE  0xf2
-	OP_EXT_REMOVE  0xf3
-	OP_EXT_GENERATE  0xf4
-	OP_EXT_TRANSFER  0xf5
-	OP_EXT_PAY  0xf6
-	OP_EXT_VALIDATE  0xf7
-</pre>
+<pre class="western">        OP_ALTCHAIN  0x04
+                Used to deploy SIP22 (colored alternate blockchain). 
+        OP_CONTEXT  0x05
+                Used to deploy SIP10 (auxiliary context).
+        OP_EXEC  0x06
+                Used to deploy SIP26 (executable SEXE classes).
+        OP_MATRIX  0x09
+                Used to deploy SIP20 and SIP21 (verification and spring matrix).
+        OP_ALIAS  0x0a
+                Used to deploy SIP6 (public coin address aliases)
+        OP_OFFER  0x0b
+                Used to deploy SIP11 (coin exchange offer)
+        OP_IDENT  0x0c
+                Used to deploy SIP8 and SIP21 (identification stamps)
+        OP_CERT  0x0d
+                Used to deploy SIP5 (certification).
+        OP_LICENSE  0x0e
+                Used to deploy SIP24 (certified license).
+        OP_ASSET  0x0f
+                Used to deploy SIP25 (certified asset).</pre>
+==Typical Usage== 
+Extended transactions typically occur as a series of transactions
+complimenting the underlying extended transaction modes. 
 
-==Extended Operations==
+The first transaction will fund the operation, the subsequent
+transactions will use the input of the preceding transaction to
+create a chain, and finally a terminating transaction will release
+the funds as a miner transaction fee. Please keep in mind this is a
+general guideline and is not intended to be implied as a requirement.
 
-The extended operation codes range from interpreted as small integers with a range of 0 - 15. 
+Here is an example of a small chain of extended transactions: 
 
-Here is a list of the established operations:
-<pre>
-	OP_ALTCHAIN  0x04
-		Used to deploy SIP22 (colored alternate blockchain). 
-	OP_CONTEXT  0x05
-		Used to deploy SIP10 (auxilliary context).
-	OP_EXEC  0x06
-		Used to deploy SIP26 (executable SEXE classes).
-	OP_MATRIX  0x09
-		Used to deploy SIP20 and SIP21 (verification and spring matrix).
-	OP_ALIAS  0x0a
-		Used to deploy SIP6 (public coin address aliases)
-	OP_OFFER  0x0b
-		Used to deploy SIP11 (coin exchange offer)
-	OP_IDENT  0x0c
-		Used to deploy SIP8 and SIP21 (identification stamps)
-	OP_CERT  0x0d
-		Used to deploy SIP5 (certification).
-	OP_LICENSE  0x0e
-		Used to deploy SIP24 (certified license).
-	OP_ASSET  0x0f
-		Used to deploy SIP25 (certified asset).
-</pre>
+An extended operation is funded from a regular account. 
 
-==Typical Usage==
-
-Extended transactions typically occur as a series of transactions complimenting the underlying extended transaction modes. The first transaction will fund the operation, the sub-sequent transactions will use the input of the preceding transaction to create a chain, and finally a terminating transaction will release the funds as a miner transaction fee. Please keep in mind this is a general guideline and is not intended to be implied as a requirement.
-
-Here is an example of a small chain of extended transactions:
-
-An extended operation is funded from a regular account.
-<pre>
-tx {
+<pre class="western">tx {
   hash: 1,
   vout:{
     script: OP_EXT_NEW [EXTMODE] OP_HASH160 [EXTHASH] OP_2DROP [EXTADDR],
     nValue: 1.0
   }
-}
-</pre>
+}</pre>
+The preceding extended operation transaction is used as an input to
+create the subsequent transactions. Additional "regular account"
+funding may be necessary. 
 
-The preceding extended operation transaction is used as an input to create the sub-sequent transactions. Additional "regular account" funding may be necessary.
-<pre>
-tx {
+<pre class="western">tx {
   hash: 2,
   vin: { hash: 1},
   vout: {
     script: OP_EXT_UPDATE [EXTMODE] OP_HASH160 [EXTHASH] OP_2DROP [EXTADDR],
     nValue: 0.9998 
   }
-}
-</pre>
+}</pre>
+The preceding extended operation transaction is used as an input to
+create the subsequent transactions. Additional "regular account"
+funding may be necessary. 
 
-The preceding extended operation transaction is used as an input to create the sub-sequent transactions. Additional "regular account" funding may be necessary.
-<pre>
-tx {
+<pre class="western">tx {
   hash: 3,
   vin: { hash: 2},
   vout: {
     script: OP_EXT_REMOVE [EXTMODE] OP_HASH160 [EXTHASH] OP_2DROP OP_RETURN
     nValue: 0.0001
   }
-}
-</pre>
+}</pre>
+The reasoning here is to provide a clear chain of events that can be
+identified on the block-chain. 
 
-The reasoning here is to provide a clear chain of events that can be identified on the block-chain. 
+The terminating operation, if there is one, sends the remainder of
+the operational funds to the originating account, burns the coins,
+and/or submits the funds as a transaction fee in the form of a miner
+reward. 
 
-The terminating operation, if there is one, sends the remainder of the operational funds to the originating account, burns the coins, and/or submits the funds as a transaction fee for miner reward. In most cases this ensures that the operation cannot be directly chained onto a sub-sequent extended operation -- thereby solidifying the intent of termination.
+In most cases this ensures that the operation can be linked to a
+subsequent extended operation -- thereby solidifying the intent of
+termination. Similar to regular fund transfer transactions, extended
+operations are capable of being "rolled back" in the event
+of a chain re-organization. 
 
-Similar to regular fund transfer transactions, extended operations are capable of being "rolled back" in the event of a chain re-organization.
-
-==Backwards Compatibility==
-
-Extended transactions can still be decoded by a traditional scrypt coin service by not unserializing the extended transaction data layer.
-
-The script sequence used is designed to be compatible with common scrypt based protocols.
-
-
+==Backwards Compatibility== 
+Extended transactions can still be decoded by a traditional scrypt
+coin service by not unserializing the extended transaction data
+layer. The script sequence used is designed to be compatible with
+common scrypt based protocols. 
 

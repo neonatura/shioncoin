@@ -1,70 +1,62 @@
-<pre>
-  SIP: 10
+<pre class="western">  SIP: 10
   Layer: Core
   Title: Coin Address Alias (Extended Transaction)
-  Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standard Track
-  Created: 2018-12-29
-</pre>
+  Created: 2018-12-29</pre>
+==Abstract== 
+This document introduces the ability to associate a coin address
+with a common label. 
 
-==Abstract==
-This document introduces the ability to associate a string based label which a data payload.
+==Motivation== 
+The Alias Extended Transaction provides the ability to create an
+alias between a label (textual string) and a virtual currency coin
+address destination. 
 
-==Motivation==
-The Context Extended Transaction provides the ability to create a definition for abstract contextually information. This information may be associated with a person, place, or time-frame. 
+==Specification== 
+The alias extended transaction is used in order to register and
+update public coin address aliases. The alias extended transaction is
+composed of three different parts. A string based label with a
+maximum of 135 characters, a variable sized coin address, and the
+type of coin address being referenced. 
 
+The current proposed implementation includes a single type which
+indicates a coin address in it's final string based representation. 
 
-The context name typically includes a colon-ized prefix (i.e. "url: http://domain.com") and the data content is typically in JSON format.
+In other words, no internal information about the address is
+retained with this type that the coin address is composed of, such as
+a public key. This type supports pubkey compressed, witness, bech32,
+and dilithium address formats. A new alias is created using the
+OP_EXT_ACTIVATE opcode. 
 
-==Specification==
-A context extended transaction is based on top of a standard shioncoin extended transaction structure.
+An alias is updated using the OP_EXT_UPDATE opcode. An alias may
+be removed with the OP_EXT_REMOVE. Only the original creator may
+perform a valid OP_ExT_UPDATE or OP_EXT_REMOVE operation. 
 
-The context name is stored as a 160-bit hash digest of a label defined for it. In addition, a small summary title is stored. It is expected to know the name before-hand in order to retrieve the value associated with it.
+A context will expire after 12 years. Subsequent updates reset
+this time-span, and provide a means to retain ownership past the
+initial lifetime. 
 
-A new context is created using the OP_EXT_NEW opcode. A context is updated using the OP_EXT_UPDATE opcode. 
+=== Transaction Fee === 
+The transaction coin fee of creating or updating a context can be
+derived via the following formula where nHeight is the associated
+block height: 
 
-The maximum size of the data payload is 4MB. 
+<pre class="western">{
+        double base = ((nHeight+1) / 10240) + 1;
+        double nRes = 5000 / base * COIN;
+        double nDif = 4750 /base * COIN;
+        int64 nFee = (int64)(nRes - nDif);
+        nFee = MAX(MIN_TX_FEE(iface), nFee); 
+        nFee = MIN(MAX_TX_FEE(iface), nFee);
+        return (nFee);
+}</pre>
+==Client Usage== 
+The RPC console program will interpret all coin destinations which
+are prefixed with a ampersand as an alias. 
 
-A context will expire after 2 years after it has been created or updated. 
-
-The name of the context is typically in a URI format indicating the group of information and a particular entity of that group. 
-
-The value of the context is typically in JSON and tends to use "common names" for variables in order to provide compatibility between applications. File formats containing gzip, bz1, rar, jpeg, zip, xz, shz, gif, png, and windows executable data is prohibited.
-
-=== Transaction Fee ===
-The transaction coin fee of creating or updating a context can be derived via the following formula where nSize is the size of the data payload and nHeight is the associated block height:
-<pre>
-{
-  double base = ((nHeight+1) / 10240) + 1;
-  double nRes = 5200 / base * COIN;
-  double nDif = 5000 /base * COIN;
-  int64 nFee = (int64)(nRes - nDif);
-  double nFact;
-
-  nFact = 4096 / (double)MIN(4096, MAX(32, nSize));
-  nFee = (int64)((double)nFee / nFact);
-  /* floor */
-  nFee /= 100000;
-  nFee *= 100000;
-  nFee = MAX(100000, nFee);
-  nFee = MIN(100000000000, nFee);
-  return (nFee / COIN);
-}
-</pre>
-
-A context is signed with "secp160r1" ECDSA using a private key derived from the content's name hash and a message composed of the data payload. This signature is provided for integrity purposes only.
-
-
-==Examples==
-A description of a geodetic location can be provided using the name format "geo:< lat >,< lon >" with a JSON payload consisting of the following variables:
-<pre>
-"name"     A common name of the location.
-"code"     A "place type" code (i.e. "AREA").
-"country"  The country code associated with this location.
-"summary"  A description of the location.
-</pre>
-
-===Copyright===
-This document is placed in the public domain.
+For example: shc wallet.send &quot;&quot; @neonatura 0.1
+Individual client interfaces may deploy custom methods of supplying
+public alias references. 
 

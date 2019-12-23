@@ -26,7 +26,6 @@
 #ifndef __SHC_POOL_H__
 #define __SHC_POOL_H__
 
-
 /**
  * @ingroup sharecoin_shc
  * @{
@@ -39,33 +38,34 @@
 
 #include "txmempool.h"
 
-
-
 class SHC_CTxMemPool : public CPool
 {
 
-  public:
+	public:
+		bool revert(CTransaction &tx) ;
 
-    bool revert(CTransaction &tx) ;
-//    bool VerifyAccept(CTransaction &tx) ;
-    int64_t GetSoftWeight() ;
-    int64_t GetSoftSigOpCost() ;
-    bool VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs) ;
-    bool AcceptTx(CTransaction& tx);
-    int64 CalculateSoftFee(CTransaction& tx);
-    int64 IsFreeRelay(CTransaction& tx, tx_cache& mapInputs);
+		int64_t GetSoftWeight() ;
+
+		int64_t GetSoftSigOpCost() ;
+
+		bool VerifyCoinStandards(CTransaction& tx, tx_cache& mapInputs) ;
+
+		bool AcceptTx(CTransaction& tx);
+
+		int64 CalculateSoftFee(CTransaction& tx);
+
+		int64 IsFreeRelay(CTransaction& tx, tx_cache& mapInputs);
 
 		double CalculateFeePriority(CPoolTx *ptx);
 
 		void EnforceCoinStandards(CTransaction& tx);
 
-    SHC_CTxMemPool() : CPool(SHC_COIN_IFACE) { };
+		SHC_CTxMemPool() : CPool(SHC_COIN_IFACE) { };
 };
-
-
 
 /**
  * @}
  */
 
 #endif /* ndef __SHC_POOL_H__ */
+

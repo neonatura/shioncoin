@@ -1,27 +1,63 @@
-<pre>
-  SIP: 25
+<pre class="western">  SIP: 25
   Layer: Core
   Title: Certified Asset
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2019-01-26
-</pre>
+  Created: 2019-01-26</pre>
+==Abstract== 
+This SIP defines a new transaction called a &quot;Asset&quot;. A
+asset is derived from an already established certificate. 
 
-==Abstract==
+== Motivation ==
+The asset extended transaction allows for additional notations to
+be appended to a certificate. These notations typically reference a
+code of some arbitrary context. This functionality provides for a
+method to associate additional attributes to the underlying meaning
+of the certificate. 
 
-This SIP defines a new transaction called a "Asset". A asset is derived from an already established certificate.
+==Specifications== 
+An asset contains a title of up to 135 characters, an coin address
+of the creator, a parent chain certificate hash, and a data payload.
+Up to 135 characters may be used for the payload. 
 
-==Specifications==
-An asset contains a title of up to 135 characters, an coin address of the creator, a parent chain certificate hash, and a data payload. 
+An asset will include the geodetic location of the node which
+generated the transaction unless the node is configured otherwise.
+Assets provide a method to attach auxiliary information to a
+certificate. The asset may itself be a reference (such as a barcode)
+or contain authority/proprietary information by itself. 
 
-Asset transaction initially cost around 8 SHC and goes down over time. 
+An asset will expire when the underlying certificate expires
+(which is after 48 years). 
 
-An asset will include the geodetic location of the node which generated the transaction unless the node is configured otherwise.
+=== Asset Fee ===
+Asset transaction initially cost around 8 SHC and goes down over
+time. 
 
-Assets provide a method to attach auxiliary information to a certificate. The asset may itself be a reference (such as a barcode) or contain authority/proprietary information by itself. Up to 4095 characters may be used for the payload.
+=== Asset Creation ===
+The extended transaction format is:<br/>
+OP_EXT_NEW &lt;&lt;
+OP_N(OP_ASSET) &lt;&lt; OP_HASH160 &lt;&lt; [ASSET HASH] &lt;&lt;
+OP_2DROP
+Where [ASSET HASH] is the hash of the underlying asset extended
+transaction payload.
+The certificate being referenced by the asset need only exist, and
+does not need to be owned by the asset creator.
+=== Asset Update ===
+The extended transaction format is:<br/>
+OP_EXT_UPDATE &lt;&lt;
+OP_N(OP_ASSET) &lt;&lt; OP_HASH160 &lt;&lt; [ASSET HASH] &lt;&lt;
+OP_2DROP
+Where [ASSET HASH] is the hash of the underlying asset extended
+transaction payload.
+You must be the creator of the asset in order to update it. Only
+the asset’s payload may be updated. 
 
-An asset will expire when the underlying certificate expires (which is after 48 years).
-
-==Copyright==
-This document is placed in the public domain.
+=== Asset Removal ===
+The extended transaction format is:<br/>
+OP_EXT_REMOVE &lt;&lt;
+OP_N(OP_ASSET) &lt;&lt; OP_HASH160 &lt;&lt; [ASSET HASH] &lt;&lt;
+OP_2DROP
+Where [ASSET HASH] is the hash of the underlying asset extended
+transaction payload.
+You must be the creator of the asset in order to remove it.

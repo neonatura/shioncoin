@@ -1,35 +1,27 @@
-<pre>
-  SIP: 2
+<pre class="western">  SIP: 2
   Layer: Core
   Title: Matrix (Extended Transaction)
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2018-12-29
-</pre>
-==Abstract==
+  Created: 2018-12-29</pre>
+==Abstract== 
+This SIP defines a new structure called a "matrix" that
+is committed to blocks as an extended transaction. 
 
-This SIP defines a new structure called a "matrix" that is committed to blocks as an extended transaction.
+==Motivation== 
+The matrix extended transaction is used to store a set of numbers
+computed with a arbitrary algorithm. 
 
-==Motivation==
+==Implementation== 
+The matrix extended transaction uses the core extended transaction
+structure with the addition of the following variables: 
 
-The matrix extended transaction is used to store a set of numbers computed with a arbitrary algorythm.
-
-==Implementation==
-
-The matrix extended transaction uses the core extended transaction structure with the addition of the following variables:
-<pre>
-nType (uint32)
+<pre class="western">nType (uint32)
   The type of matrix.
 nHeight (uint32)
   An associated block height.
 hRef (uint16)
   Reserved.
 vData (uint32[3][3])
-  The payload contents of the matrix.
-</pre>
-
-== Copyright ==
-
-This document is placed in the public domain.
-
+  The payload contents of the matrix.</pre>

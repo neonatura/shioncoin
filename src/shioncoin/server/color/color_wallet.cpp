@@ -72,19 +72,6 @@ bool color_LoadWallet(void)
   const char* pszP2SH = "/P2SH/";
   COLOR_COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
 
-#if 0
-  if (!bitdb.Open(GetDataDir()))
-  {
-    fprintf(stderr, "error: unable to open data directory.\n");
-    return (-1);
-  }
-
-  if (!LoadBlockIndex(iface)) {
-    fprintf(stderr, "error: unable to open load block index.\n");
-    return (-1);
-  }
-#endif
-
   bool fFirstRun = true;
   colorWallet->LoadWallet(fFirstRun);
 
@@ -93,33 +80,6 @@ bool color_LoadWallet(void)
 		string strAccount("");
 		colorWallet->GetAccount(strAccount);
   }
-
-  //RegisterWallet(colorWallet);
-
-#if 0
-  CBlockIndex *pindexRescan = GetBestBlockIndex(COLOR_COIN_IFACE);
-  if (GetBoolArg("-rescan")) {
-    pindexRescan = COLORBlock::pindexGenesisBlock;
-	} else {
-		LOCK(cs_wallet);
-
-    CWalletDB walletdb("color_wallet.dat");
-    CBlockLocator locator(GetCoinIndex(iface));
-    if (walletdb.ReadBestBlock(locator))
-      pindexRescan = locator.GetBlockIndex();
-		walletdb.Close();
-  }
-  CBlockIndex *pindexBest = GetBestBlockIndex(COLOR_COIN_IFACE);
-  if (pindexBest != pindexRescan && pindexBest && pindexRescan && pindexBest->nHeight > pindexRescan->nHeight)
-  {
-    int64 nStart;
-
-    Debug("(color) LoadWallet: Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
-    nStart = GetTimeMillis();
-    colorWallet->ScanForWalletTransactions(pindexRescan, true);
-//    printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
-  }
-#endif
 
   // Add wallet transactions that aren't already in a block to mapTransactions
   colorWallet->ReacceptWalletTransactions();
@@ -152,60 +112,6 @@ void COLORWallet::RelayWalletTransaction(CWalletTx& wtx)
 
 void COLORWallet::ResendWalletTransactions()
 {
-#if 0
-  CIface *iface = GetCoinByIndex(COLOR_COIN_IFACE);
-  CTxMemPool *pool = GetTxMemPool(iface);
-  // Do this infrequently and randomly to avoid giving away
-  // that these are our transactions.
-  static int64 nNextTime;
-  if (GetTime() < nNextTime)
-    return;
-//  bool fFirst = (nNextTime == 0);
-  nNextTime = GetTime() + GetRand(30 * 60);
-//  if (fFirst) return;
-
-  // Only do it if there's been a new block since last time
-  static int64 nLastTime;
-  if (COLORBlock::nTimeBestReceived < nLastTime)
-    return;
-  nLastTime = GetTime();
-
-  // Rebroadcast any of our txes that aren't in a block yet
-  {
-    LOCK(cs_wallet);
-    // Sort them in chronological order
-    multimap<unsigned int, CWalletTx*> mapSorted;
-int total = 0;
-    BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, mapWallet)
-    {
-
-      CWalletTx& wtx = item.second;
-
-      if (wtx.IsCoinBase())
-        continue;
-      if (wtx.vin.empty())
-        continue;
-      const uint256& tx_hash = item.first;
-      if (!pool->exists(tx_hash))
-        continue;
-      if (wtx.GetDepthInMainChain(COLOR_COIN_IFACE) != 0)
-        continue;
-total++;
-
-      // Don't rebroadcast until it's had plenty of time that
-      // it should have gotten in already by now.
-      if (mapSorted.size() < 16 ||
-          COLORBlock::nTimeBestReceived - (int64)wtx.nTimeReceived > 5 * 60)
-        mapSorted.insert(make_pair(wtx.nTimeReceived, &wtx));
-    }
-    BOOST_FOREACH(PAIRTYPE(const unsigned int, CWalletTx*)& item, mapSorted)
-    {
-      CWalletTx& wtx = *item.second;
-//      wtx.RelayWalletTransaction(txdb);
-      RelayWalletTransaction(wtx);
-    }
-  }
-#endif
 }
 
 void COLORWallet::ReacceptWalletTransactions()
@@ -265,38 +171,7 @@ bool COLORWallet::CommitTransaction(CWalletTx& wtxNew)
   {
     LOCK2(cs_main, cs_wallet);
     Debug("(color) CommitTransaction: \"%s\".", wtxNew.ToString(COLOR_COIN_IFACE).c_str());
-    {
-      // This is only to keep the database open to defeat the auto-flush for the
-      // duration of this scope.  This is the only place where this optimization
-      // maybe makes sense; please don't do it anywhere else.
-//      CWalletDB* pwalletdb = new CWalletDB(strWalletFile,"r");
-
-      // Add tx to wallet, because if it has change it's also ours,
-      // otherwise just for transaction history.
-      AddToWallet(wtxNew);
-
-#if 0
-      // Mark old coins as spent
-      set<CWalletTx*> setCoins;
-      BOOST_FOREACH(const CTxIn& txin, wtxNew.vin)
-      {
-        CWalletTx &coin = mapWallet[txin.prevout.hash];
-        coin.BindWallet(this);
-        coin.MarkSpent(txin.prevout.n);
-        coin.WriteToDisk();
-        //NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
-      }
-#endif
-
-//			delete pwalletdb;
-    }
-
-#if 0
-// Track how many getdata requests our transaction gets
-mapRequestCount[wtxNew.GetHash()] = 0;
-RelayWalletTransaction(wtxNew);
-#endif
-
+		AddToWallet(wtxNew);
   }
 
   STAT_TX_SUBMITS(iface)++;
@@ -388,37 +263,12 @@ bool COLORWallet::CreateAccountTransaction(string strFromAccount, const vector<p
           CSignature sig(COLOR_COIN_IFACE, &wtxNew, nIn);
           const CWalletTx *s_wtx = coin.first;
           if (!sig.SignSignature(*s_wtx)) {
-
-#if 0
-            /* failing signing against prevout. mark as spent to prohibit further attempts to use this output. */
-            s_wtx->MarkSpent(nIn);
-#endif
-
             strError = strprintf(_("An error occurred signing the transaction [input tx \"%s\", output #%d]."), s_wtx->GetHash().GetHex().c_str(), nIn);
             return false;
           }
 
           nIn++;
         }
-#if 0
-        // Sign
-        int nIn = 0;
-        BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins) {
-          const CWalletTx *s_wtx = coin.first;
-          if (!SignSignature(*this, *s_wtx, wtxNew, nIn)) {
-
-#if 0
-            /* failing signing against prevout. mark as spent to prohibit further attempts to use this output. */
-            s_wtx->MarkSpent(nIn);
-#endif
-
-            strError = strprintf(_("An error occurred signing the transaction [input tx \"%s\", output #%d]."), s_wtx->GetHash().GetHex().c_str(), nIn);
-            return false;
-          }
-          nIn++;
-        }
-#endif
-
         /* Ensure transaction does not breach a defined size limitation. */
         unsigned int nWeight = GetTransactionWeight(wtxNew);
         if (nWeight >= MAX_TRANSACTION_WEIGHT(iface)) {
@@ -430,10 +280,6 @@ bool COLORWallet::CreateAccountTransaction(string strFromAccount, const vector<p
 
         // Check that enough fee is included
         int64 nPayFee = nTransactionFee * (1 + (int64)nBytes / 1000);
-#if 0
-        bool fAllowFree = AllowFree(dPriority);
-        int64 nMinFee = wtxNew.GetMinFee(COLOR_COIN_IFACE, 1, fAllowFree, GMF_SEND);
-#endif
         int64 nMinFee = CalculateFee(wtxNew); 
 
         if (nFeeRet < max(nPayFee, nMinFee))

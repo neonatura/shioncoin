@@ -1,3 +1,4 @@
+This document contains a series of "shioncoin internet protocols" (SIP) which describe the behaviour of the shioncoin virtual currency computer software program.
 
 == Summary ==
 
@@ -34,6 +35,4 @@ A "License Transaction" is derived from a certificate, and is intended to consti
 An "Exec Transaction" is used in order to publish and run methods against SEXE classes. Publishing and processing SEXE classes provides a method to create smart contracts which, among other things, are capable of managing tokens and event registration. The SEXE source code is based on lua, and is provided as part of the the libshare software suite.
 
 The "Offer Transaction" is used in order to transfer coins between one virtual currency block-chain and another. For example, an individual offers to exchange two colored alt-coins for one SHC coin. Another individual can then accept the offer with an exchange between block-chains ultimately occuring. The offer transaction utilizes a OP_CHECKALTPROOF opcode as part of the transaction signature in order to ensure that the exchange occurs safely.
-
-Lightning network facilities for ShionCoin are provide by a Lightning Node service available at https://github.com/neonatura/shioncoin-lnd.
 

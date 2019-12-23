@@ -148,19 +148,6 @@ bool shc_IsOrphanBlock(const uint256& hash)
     return (true);
   }
 
-#if 0
-  pindex = GetBlockIndexByHash(SHC_COIN_IFACE, hash);
-  if (pindex) {
-    if (GetBestHeight(SHC_COIN_IFACE) >= pindex->nHeight &&
-        block.ReadFromDisk(pindex))
-      return (false); /* present in block-chain */
-  }
-
-  if (!block.ReadArchBlock(hash))
-    return (false); /* no record in archive db */
-  return (true);
-#endif
-
   return (false); 
 }
 
@@ -356,39 +343,6 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
   return pblock.release();
 }
 
-#if 0
-static void create_nonce(SHCBlock *block)
-{
-	static unsigned int nNonceIndex = 0xE2222222;
-
-	if (!block)
-		return;
-
-	block->nNonce   = ++nNonceIndex;
-	{
-		uint256 hashTarget = CBigNum().SetCompact(block->nBits).getuint256();
-		uint256 thash;
-		char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
-
-		loop
-		{
-			scrypt_1024_1_1_256_sp(BEGIN(block->nVersion), BEGIN(thash), scratchpad);
-			if (thash <= hashTarget)
-				break;
-
-			++block->nNonce;
-			if (block->nNonce == 0)
-			{
-				++block->nTime;
-			}
-		}
-	}
-	nNonceIndex = block->nNonce;
-
-fprintf(stderr, "DEBUG: NONCE: %x\n", block->nNonce);
-}
-#endif
-
 bool shc_CreateGenesisBlock()
 {
 	CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
@@ -450,32 +404,6 @@ static void shc_EraseFromWallets(uint256 hash)
   pwallet->EraseFromWallet(hash);
 }
 
-
-
-#if 0
-// minimum amount of work that could possibly be required nTime after
-// minimum work required was nBase
-//
-static unsigned int shc_ComputeMinWork(unsigned int nBase, int64 nTime)
-{
-  static int64 nTargetTimespan = 2 * 60 * 60;
-  static int64 nTargetSpacing = 60;
-
-  CBigNum bnResult;
-  bnResult.SetCompact(nBase);
-  while (nTime > 0 && bnResult < SHC_bnProofOfWorkLimit)
-  {
-    // Maximum 136% adjustment...
-    bnResult = (bnResult * 75) / 55; 
-    // ... in best-case exactly 4-times-normal target time
-    nTime -= nTargetTimespan*4;
-  }
-  if (bnResult > SHC_bnProofOfWorkLimit)
-    bnResult = SHC_bnProofOfWorkLimit;
-  return bnResult.GetCompact();
-}
-#endif
-
 bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
   CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
@@ -492,24 +420,6 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
 		Debug("(shc) ProcessBlock: warning: invalid genesis block \"%s\" submitted by \"%s\".", hash.GetHex().c_str(), (pfrom?pfrom->addr.ToString().c_str():"<local>"));
 		return (false);
 	}
-
-#if 0
-  if (blockIndex->count(hash)) {
-    return Debug("(shc) ProcessBlock: already have block %s", hash.GetHex().c_str());
-  }
-  if (pindexBest && 
-      pblock->hashPrevBlock != pindexBest->GetBlockHash() &&
-      shc_IsOrphanBlock(hash)) {
-    return Debug("(shc) ProcessBlock: already have block (orphan) %s", hash.ToString().c_str());
-  }
-#endif
-
-#if 0 /* redundant */
-  // Preliminary checks
-  if (!pblock->CheckBlock()) {
-    return error(SHERR_INVAL, "ProcessBlock() : CheckBlock FAILED");
-  }
-#endif
 
   /*
    * SHC: If previous hash and it is unknown.
@@ -532,30 +442,11 @@ bool shc_ProcessBlock(CNode* pfrom, CBlock* pblock)
     return true;
   }
 
-#if 0 /* redundant */
-  if (!pblock->CheckTransactionInputs(SHC_COIN_IFACE)) {
-    Debug("(shc) ProcessBlock: invalid input transaction [prev %s].", pblock->hashPrevBlock.GetHex().c_str());
-    return (true);
-  }
-#endif
-
   /* store to disk */
   if (!pblock->AcceptBlock()) {
     iface->net_invalid = time(NULL);
     return error(SHERR_IO, "SHCBlock::AcceptBlock: error adding block '%s'.", pblock->GetHash().GetHex().c_str());
   }
-
-#if 0
-  uint256 nextHash;
-  while (shc_GetOrphanNextHash(hash, nextHash)) {
-    hash = nextHash;
-    CBlock *block = shc_GetOrphanBlock(hash);
-    if (!block || !block->AcceptBlock())
-      break;
-    shc_RemoveOrphanBlock(hash);
-    STAT_BLOCK_ORPHAN(iface)--;
-  }
-#endif
 
   ServiceBlockEventUpdate(SHC_COIN_IFACE);
 
@@ -601,13 +492,6 @@ bool SHCBlock::CheckBlock()
   if (weight > MAX_BLOCK_WEIGHT(iface)) {
     return (trust(-80, "(shc) CheckBlock: block weight (%d) > max (%d)", weight, MAX_BLOCK_WEIGHT(iface)));
   }
-
-
-#if 0
-  if (vtx[0].GetValueOut() > shc_GetBlockValue(nHeight, nFees)) {
-    return (false);
-  }
-#endif
 
   if (vtx.empty() || !vtx[0].IsCoinBase())
     return error(SHERR_INVAL, "CheckBlock() : first tx is not coinbase");
@@ -688,36 +572,6 @@ void SHCBlock::InvalidChainFound(CBlockIndex* pindexNew)
 
 }
 
-#ifdef USE_LEVELDB_TXDB
-bool shc_SetBestChainInner(CBlock *block, CTxDB& txdb, CBlockIndex *pindexNew)
-{
-  uint256 hash = block->GetHash();
-  bc_t *bc = GetBlockChain(GetCoinByIndex(SHC_COIN_IFACE));
-
-
-  // Adding to current best branch
-  if (!block->ConnectBlock(txdb, pindexNew) || !txdb.WriteHashBestChain(hash))
-  {
-/* truncate block-chain to failed block height. */
-// bc_truncate(bc, pindexNew->nHeight);
-    txdb.TxnAbort();
-    block->InvalidChainFound(pindexNew);
-    return false;
-  }
-  if (!txdb.TxnCommit())
-    return error(SHERR_IO, "SetBestChain() : TxnCommit failed");
-
-  // Add to current best branch
-  pindexNew->pprev->pnext = pindexNew;
-
-  // Delete redundant memory transactions
-  BOOST_FOREACH(CTransaction& tx, block->vtx)
-    SHCBlock::mempool.CommitTx(tx);
-
-  return true;
-}
-#endif
-
 // notify wallets about a new best chain
 void static SHC_SetBestChain(const CBlockLocator& loc)
 {
@@ -758,34 +612,6 @@ bool SHCBlock::AcceptBlock()
   }
 
 	/* redundant */
-#if 0
-	int nHeight = (pindexPrev ? (pindexPrev->nHeight+1) : 0);
-	if (iface->BIP34Height != -1 && nHeight >= iface->BIP34Height) {
-		/* check for obsolete blocks. */
-		if (nVersion < 2)
-			return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP34].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
-
-		/* verify height inclusion. */
-		CScript expect = CScript() << nHeight;
-		if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
-				!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
-			return error(SHERR_INVAL, "(%s) AcceptBlock: submit block \"%s\" has invalid commit height (next block height is %u).", iface->name, GetHash().GetHex().c_str(), nHeight);
-	}
-	if (iface->BIP66Height != -1 && nVersion < 3 && 
-			nHeight >= iface->BIP66Height) {
-		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP66].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
-	}
-	if (iface->BIP65Height != -1 && nVersion < 4 && 
-			nHeight >= iface->BIP65Height) {
-		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [BIP65].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
-	}
-	if (nVersion < VERSIONBITS_TOP_BITS &&
-			IsWitnessEnabled(iface, pindexPrev)) {
-		return (error(SHERR_INVAL, "(%s) AcceptBlock: rejecting obsolete block (ver: %u) (hash: %s) [segwit].", iface->name, (unsigned int)nVersion, GetHash().GetHex().c_str()));
-	}
-#endif
-
-
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;
     if (mode == OP_EXT_VALIDATE) {
@@ -846,14 +672,6 @@ int ifaceIndex = SHC_COIN_IFACE;
   }
   free(sBlockData);
 
-
-#if 0
-  if (!CheckBlock()) {
-    unet_log(ifaceIndex, "CBlock::ReadBlock: block validation failure.");
-    return (false);
-  }
-#endif
-
   return (true);
 }
 
@@ -900,81 +718,11 @@ bool SHCBlock::IsOrphan()
   return (shc_IsOrphanBlock(GetHash()));
 }
 
-#ifdef USE_LEVELDB_COINDB
-bool shc_Truncate(uint256 hash)
-{
-  blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
-  CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
-	CWallet *wallet = GetWallet(SHC_COIN_IFACE);
-  CBlockIndex *pBestIndex;
-  CBlockIndex *cur_index;
-  CBlockIndex *pindex;
-	bcpos_t nMaxHeight;
-	bcpos_t nHeight;
-  int err;
-
-  if (!blockIndex || !blockIndex->count(hash))
-    return error(SHERR_INVAL, "Erase: block not found in block-index.");
-
-  cur_index = (*blockIndex)[hash];
-  if (!cur_index)
-    return error(SHERR_INVAL, "Erase: block not found in block-index.");
-
-  pBestIndex = GetBestBlockIndex(iface);
-  if (!pBestIndex)
-    return error(SHERR_INVAL, "Erase: no block-chain established.");
-  if (cur_index->nHeight > pBestIndex->nHeight)
-    return error(SHERR_INVAL, "Erase: height is not valid.");
-
-  bc_t *bc = GetBlockChain(iface);
-  unsigned int nMinHeight = MAX(1, cur_index->nHeight);
-
-	nMaxHeight = 0;
-	(void)bc_idx_next(bc, &nMaxHeight);
-	nMaxHeight = MAX(1, nMaxHeight) - 1;
-
-  SHCTxDB txdb; /* OPEN */
-
-  for (nHeight = nMaxHeight; nHeight > nMinHeight; nHeight--) {
-    SHCBlock block;
-    if (block.ReadBlock(nHeight)) {
-      uint256 t_hash = block.GetHash();
-      if (hash == cur_index->GetBlockHash())
-        break; /* bad */
-      if (blockIndex->count(t_hash) != 0)
-        block.DisconnectBlock(txdb, (*blockIndex)[t_hash]);
-      bc_table_reset(bc, t_hash.GetRaw());
-    }
-  }
-  for (nHeight = nMaxHeight; nHeight > nMinHeight; nHeight--) {
-    bc_clear(bc, nHeight);
-  }  
-
-  SetBestBlockIndex(iface, cur_index);
-  bool ret = txdb.WriteHashBestChain(cur_index->GetBlockHash());
-
-  txdb.Close(); /* CLOSE */
-
-  if (!ret)
-    return error(SHERR_INVAL, "Truncate: WriteHashBestChain '%s' failed", hash.GetHex().c_str());
-
-  cur_index->pnext = NULL;
-	wallet->bnBestChainWork = cur_index->bnChainWork;
-  InitServiceBlockEvent(SHC_COIN_IFACE, cur_index->nHeight + 1);
-
-  return (true);
-}
-bool SHCBlock::Truncate()
-{
-  return (shc_Truncate(GetHash()));
-}
-#else
 bool SHCBlock::Truncate()
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   return (core_Truncate(iface, GetHash()));
 }
-#endif
 
 bool SHCBlock::VerifyCheckpoint(int nHeight)
 {
@@ -991,16 +739,6 @@ bool SHCBlock::VerifyCheckpoint(int nHeight)
 			int64 deltaTime = nTime - checkpoint->nTime;
 			if (deltaTime < 0)
 				return (ERR_INVAL, "(shc) VerifyCheckpoint: unknown chain (time) [hash %s].", GetHash().GetHex().c_str());
-
-#if 0
-			CBigNum bnNewBlock;
-			bnNewBlock.SetCompact(nBits);
-			CBigNum bnRequired;
-			bnRequired.SetCompact(checkpoint->nBits);
-			if (bnNewBlock > bnRequired) {
-				return error(SHERR_INVAL, "(shc) VerifyCheckpoint: unknown chain (pow) [hash %s].", GetHash().GetHex().c_str());
-			}
-#endif
 		}
 	}
 

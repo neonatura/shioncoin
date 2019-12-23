@@ -47,6 +47,8 @@ static shmap_t *_proc_option_table;
 static opt_t _option_table[] = {
 	{ OPT_DEBUG, OPT_TYPE_BOOL, 0, NULL,
 		"Verbose logging information." },
+	{ OPT_NET_DEBUG, OPT_TYPE_BOOL, 0, NULL,
+		"Verbose network command logging." },
 	{ OPT_MAX_CONN, OPT_TYPE_NUM, 300, NULL,
 		"The maximum number of socket connections allowed for all services." }, 
 	{ OPT_PEER_SEED, OPT_TYPE_NUM, 1, NULL, 

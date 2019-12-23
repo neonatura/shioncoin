@@ -34,7 +34,6 @@
 #include "coin.h"
 #include "account.h"
 
-
 /* use segwit program, if available. */
 #define ACCADDRF_WITNESS (1 << 0)
 /* derived via hdkey, if available. */
@@ -44,9 +43,7 @@
 /* permit dilithium signature */
 #define ACCADDRF_DILITHIUM (1 << 3)
 
-
 void GetAddrDestination(int ifaceIndex, const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0);
-
 
 class CAccountCache
 {
@@ -83,20 +80,16 @@ class CAccountCache
 				READWRITE(account);
 				READWRITE(_reserved0_);
 				READWRITE(strAccount);
-#if 0
-				for (unsigned int i = 0; i < MAX_ACCADDR; i++)
-					READWRITE(vAddr[i]);
-#endif
-		)
+				)
 
-		void SetNull() 
-		{ 
-			account.vchPubKey.SetNull();
-			_reserved0_ = 0;
-			strAccount.clear();
-			for (unsigned int i = 0; i < MAX_ACCADDR; i++)
-				vAddr[i].SetNull();
-		}
+			void SetNull() 
+			{ 
+				account.vchPubKey.SetNull();
+				_reserved0_ = 0;
+				strAccount.clear();
+				for (unsigned int i = 0; i < MAX_ACCADDR; i++)
+					vAddr[i].SetNull();
+			}
 
 		bool IsNull() const { 
 			return (!account.vchPubKey.IsValid());
@@ -110,32 +103,9 @@ class CAccountCache
 					);
 		}
 
-
-#if 0
-		bool GetFlags(int type)
-		{
-			return (vAddr[type].nFlag);
-		}
-
-		void SetFlag(int type, int flag)
-		{
-			vAddr[type].nFlag |= flag;
-		}
-
-		void UnsetFlag(int type, int flag)
-		{
-			vAddr[type].nFlag &= ~flag;
-		}
-#endif
-
-
 		bool IsAddrUsed(const CCoinAddr& vchPubKey);
 
 		bool IsAddrUsed(const CPubKey& vchPubKey);
-
-//		CCoinAddr GetStaticAddr(int type);
-
-//		CCoinAddr GetDynamicAddr(int type);
 
 		CCoinAddr GetDefaultAddr();
 
@@ -146,10 +116,6 @@ class CAccountCache
 		void SetAddr(int type, CCoinAddr pubkey);
 
 		void ResetAddr(int type);
-
-//		CCoinAddr CreateNewAddr(int type);
-
-//		CCoinAddr CreateAddr(int type);
 
 		void UpdateAccount();
 
@@ -194,6 +160,5 @@ class CAccountCache
 
 };
 
-
-
 #endif /* ndef __SERVER__ACCOUNT_H__ */
+

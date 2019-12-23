@@ -107,11 +107,6 @@ static bool color_FillBlockIndex()
 
 		pindexNew->nStatus |= BLOCK_HAVE_DATA;
 
-#if 0
-    if (pindexNew->pprev)
-      pindexNew->BuildSkip();
-#endif
-
     if (!pindexNew->CheckIndex())
       return error(SHERR_INVAL, "LoadBlockIndex() : CheckIndex failed at height %d", pindexNew->nHeight);
 
@@ -259,20 +254,6 @@ static bool color_LoadBlockIndex()
   maxHeight++;
   sprintf(errbuf, "COLOR::LoadBlockIndex: Verified %-3.3f%% of %d total blocks: %d total invalid blocks found.", (double)(100 / (double)maxHeight * (double)total), maxHeight, invalid);
   unet_log(COLOR_COIN_IFACE, errbuf);
-
-#if 0
-  /* (extensive) validate block chain */
-  nValidateCheckDepth = MIN(maxHeight-1, nValidateCheckDepth);
-  InitServiceValidateEvent(wallet, maxHeight - nValidateCheckDepth);
-  sprintf(errbuf, "COLOR::LoadBlockIndex: Initiated block-chain validation of %d total blocks (%-3.3f%%).", nValidateCheckDepth, (100 / (double)maxHeight * (double)nValidateCheckDepth));
-  unet_log(COLOR_COIN_IFACE, errbuf);
-
-  /* validate wallet transactions */
-  nWalletCheckDepth = MIN(maxHeight-1, nWalletCheckDepth);
-  InitServiceWalletEvent(wallet, maxHeight - nWalletCheckDepth);
-  sprintf(errbuf, "COLOR::LoadBlockIndex: Initiated wallet validation of %d total blocks (%-3.3f%%).", nWalletCheckDepth, (100 / (double)maxHeight * (double)nWalletCheckDepth));
-  unet_log(COLOR_COIN_IFACE, errbuf);
-#endif
 
   return true;
 }

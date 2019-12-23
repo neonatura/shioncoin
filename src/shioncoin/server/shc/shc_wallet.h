@@ -31,7 +31,6 @@
  * @{
  */
 
-
 extern CScript SHC_COINBASE_FLAGS;
 
 class SHCWallet : public CWallet
@@ -40,21 +39,22 @@ class SHCWallet : public CWallet
     SHCWallet() : CWallet(SHC_COIN_IFACE, "shc_wallet.dat") { };  
 
     void RelayWalletTransaction(CWalletTx& wtx);
+
     void ResendWalletTransactions();
+
     void ReacceptWalletTransactions();
+
     int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
+
     int64 GetTxFee(CTransaction tx);
+
     bool CommitTransaction(CWalletTx& wtxNew);
 
-#if 0
-    bool CreateTransaction(const std::vector<std::pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet);
-    bool CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet);
-#endif
     void AddSupportingTransactions(CWalletTx& wtx);
 
     bool CreateAccountTransaction(string strFromAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, string& strError, int64& nFeeRet);
-    bool CreateAccountTransaction(string strFromAccount, CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, string& strError, int64& nFeeRet);
 
+    bool CreateAccountTransaction(string strFromAccount, CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, string& strError, int64& nFeeRet);
 
     bool UnacceptWalletTransaction(const CTransaction& tx);
 
@@ -71,16 +71,13 @@ class SHCWallet : public CWallet
 		bool IsAlgoSupported(int alg, CBlockIndex *pindexPrev = NULL, uint160 hColor = 0);
 };
 
-
 extern SHCWallet *shcWallet;
 
-
 bool shc_LoadWallet(void);
-
 
 /**
  * @}
  */
 
-
 #endif /* ndef __SHC_WALLET_H__ */
+

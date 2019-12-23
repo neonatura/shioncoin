@@ -26,7 +26,6 @@
 #ifndef __SERVER__VALIDATION_H__
 #define __SERVER__VALIDATION_H__
 
-
 bool CheckBlockHeader(CBlockHeader *pblock);
 
 bool ContextualCheckBlockHeader(CIface *iface, const CBlockHeader& block, CBlockIndex *pindexPrev);
@@ -45,5 +44,5 @@ bool ProcessNewBlockHeaders(CIface *iface, std::vector<CBlockHeader>& headers, C
 
 bool core_AcceptBlock(CBlock *pblock, CBlockIndex *pindexPrev);
 
-
 #endif /* ndef __SERVER__VALIDATION_H__ */
+

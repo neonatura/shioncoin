@@ -1040,7 +1040,7 @@ bool testnet_ProcessMessages(CIface *iface, CNode* pfrom)
     vector<char> vHeaderSave(vRecv.begin(), vRecv.begin() + nHeaderSize);
     CMessageHeader hdr;
     vRecv >> hdr;
-    if (!hdr.IsValid())
+    if (!hdr.IsValid(TESTNET_COIN_IFACE))
     {
       printf("\n\nPROCESSMESSAGE: ERRORS IN HEADER %s\n\n\n", hdr.GetCommand().c_str());
       continue;

@@ -1,122 +1,153 @@
-<pre>
-  BIP: 22
+<pre class="western">  SIP: 22
   Layer: Core
   Title: Alternate Blockchain (Extended Transaction)
-  Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2018-10-07
-</pre>
-==Abstract==
+  Created: 2018-10-07</pre>
+==Abstract== 
+The Colored Alternate Blockchain provides a method of providing
+supplemental block-chains embedded into the main ShionCoin blockchain
+which can have their own custom parameters. Each alternate blockchain
+is assigned a unique 128-bit RGBA color code derived from the label
+of the chain. Sending funds and generating new blocks are mined in a
+similar fashion to regular blocks, but have a reduced minimum
+difficulty in order to accommodate CPU mining. 
 
-The Colored Alternate Blockchain provides a method of providing supplemental block-chains embedded into the main ShionCoin blockchain which can have their own custom parameters.
+== Motivation == 
+The colored alternate block-chain is intended to provide a sub-set
+of individual chained blocks which can be used for an alternate
+purpose or capability then the primary ShionCoin Blockchain. 
 
-Each alternate blockchain is assigned a unique 128-bit RGBA color code dervied from the label of the chain.
+== Implementation == 
+Each colored block-chain has a unique genesis block and a
+subsequent set of chained blocks. The blocks contain transactions in
+a typical fashion and structure. The transactions may embed an
+additional payload, depending on their version, which can be used for
+extension or auxiliary purposes. When a chain is created it can have
+custom parameters applied to it in relation to how it behaves. See
+"Blockchain Parameters" below for more information. 
 
-Sending funds and generating new blocks are mined in a similar fashion to regular blocks, but have a reduced minimum difficulty in order to accomodate CPU mining. 
+The "alternate block" structure is composed of the
+typical "version", "previous block hash", "merkle
+root hash", "time", "difficulty bits", and
+"nonce". The "alternate transaction structure is
+composed of the typical "version", "inputs",
+"outputs", and "lock time". In addition, the
+alternate transaction structure will serialize an additional unsigned
+character vector when the transaction version is higher than one (1).
+The AltChain Extended Transaction, use to encapsulate color
+alt-chains on the ShionCoin blockchain, is composed of a flag
+bitvector, the hash of the colored chain, a alternate block
+structure, and a set of alternate transactions. 
 
-== Motivation ==
+A OP_EXT_NEW operative is performed in order to establish a new
+colored alt-chain. The alternate block will include a single coinbase
+which has optional blockchain parameters and a single output to null
+(OP_RETURN) with the initial reward value. The genesis block will
+always have a difficulty of (~uint256 &gt;&gt; 12). The script for
+the extended transaction output is "OP_EXT_NEW OP_ALTCHAIN hash
+OP_2DROP OP_RETURN 0". 
 
-The colored alternate block-chain is intended to provide a sub-set of individual chained blocks which can be used for an alternate purpose or capability then the primary ShionCoin Blockchain. 
+Subsequent blocks on the alt-chain use the OP_EXT_UPDATE script
+operative. The script for the extended transaction output is
+"OP_EXT_UPDATE OP_ALTCHAIN hash OP_2DROP OP_RETURN 0". 
 
-== Implementation ==
+An alternate chain extended transaction fee of 0.001 SHC is
+applied to both the OP_EXT_NEW and OP_EXT_UPDATE outputs. Since the
+output is null (OP_RETURN), the SHC coins are burned in the process. 
 
-Each colored block-chain has a unique genesis block and a sub-sequent set of chained blocks. The blocks contain transactions in a typical fashion and structure. The transactions may embed an additional payload, depending on their version, which can be used for extension or auxiliary purposes. 
+=== Blockchain Parameters === 
+The parameters for a block-chain are stored in a coinbase output
+of the genesis block for the alt-chain. 
 
-When a chain is created it can have custom parameters applied to it in relation to how it behaves. See "Blockchain Parameters" below for more information.
+The format of the script is "OP_RETURN OP_0 [ ].." with
+a prefix of "OP_RETURN OP_0" and a sequence of small number
+pairs which represent the parameter mode and value. 
 
-The "alternate block" structure is composed of the typical "version", "previous block hash", "merkle root hash", "time", "difficulty bits", and "nonce".
+Here is a table of the parameters and there corresponding values. 
 
-The "alternate transaction structure is composed of the typical "version", "inputs", "outputs", and "lock time". In addition, the alternate transaction structure will serialize an additional unsigned character vector when the transaction version is higher than one (1). 
-
-The AltChain Extended Transaction, use to encapsulate color alt-chains on the ShionCoin blockchain, is composed of a flag bitvector, the hash of the colored chain, a alternate block structure, and a set of alternate transactions. 
-
-A OP_EXT_NEW operative is performed in order to establish a new colored alt-chain. The alternate block will include a single coinbase which has optional blockchain parameters and a single output to null (OP_RETURN) with the initial reward value. The genesis block will always have a difficulty of (~uint256 >> 12).
-
-The script for the extended transaction output is "OP_EXT_NEW OP_ALTCHAIN hash OP_2DROP OP_RETURN 0".
-
-Subsequent blocks on the alt-chain use the OP_EXT_UPDATE script operative.  
-
-The script for the extended transaction output is "OP_EXT_UPDATE OP_ALTCHAIN hash OP_2DROP OP_RETURN 0".
-
-An alternate chain extended transaction fee of 0.001 SHC is applied to both the OP_EXT_NEW and OP_EXT_UPDATE outputs. Since the output is null (OP_RETURN), the SHC coins are burned in the process.
-
-=== Blockchain Parameters ===
-
-The parameters for a block-chain are stored in a coinbase output of the genesis block for the alt-chain.
-
-The format of the script is "OP_RETURN OP_0 [<OP_1-OP_15> <OP_1-OP-15>].." with a prefix of "OP_RETURN OP_0" and a sequence of small number pairs which represent the parameter mode and value. 
-
-Here is a table of the parameters and there corrosponding values.
-
-<pre>
-01 DIFFICULTY
+<pre class="western">01 DIFFICULTY
 The minimum mining difficulty to generate a new block.
-note: Genesis Block is always >> 12
+note: Genesis Block is always &gt;&gt; 12
 note: A value less than "4" is recommended for CPU mining.
-	X = (~uint256 >> (X+10))
-	1 = (~uint256 >> 11)
-	2 = (~uint256 >> 12) (etc)
-	15 = (~uint256 >> 25)
+        X = (~uint256 &gt;&gt; (X+10))
+        1 = (~uint256 &gt;&gt; 11)
+        2 = (~uint256 &gt;&gt; 12) (etc)
+        15 = (~uint256 &gt;&gt; 25)
 02 BLOCKTARGET (seconds)
 The target time-span in between new block generation.
-	1 = 60
-	2 = 120 (etc)
-	15 = <15 minutes>
+        1 = 60
+        2 = 120 (etc)
+        15 = &lt;15 minutes&gt;
 03 MATURITY (blocks)
 The number of blocks before a coinbase is spendable.
 note: The maximum allowed value for this mode is "8".
-	1 = 60
-	2 = 120 (etc)
-	8 = 480
+        1 = 60
+        2 = 120 (etc)
+        8 = 480
 04 REWARDBASE
 The base coin value of new block rewards. This is halved based on the REWARDHALF parameter.
 note: The maximum allowed value for this mode is "10".
-	X = (2 ^ X)
-	1 = 1 COIN
-	2 = 2 (etc)
-	3 = 4
-	4 = 8
-	5 = 16
-	6 = 32
-	7 = 64
-	8 = 128
-	9 = 256
-	10 = 512
+        X = (2 ^ X)
+        1 = 1 COIN
+        2 = 2 (etc)
+        3 = 4
+        4 = 8
+        5 = 16
+        6 = 32
+        7 = 64
+        8 = 128
+        9 = 256
+        10 = 512
 05 REWARDHALF
 The number of blocks before the REWARDBASE is halved.
-	X = (1000 * X)
-	1 = 1000
-	12 = 12000
-	15 = 15000
+        X = (1000 * X)
+        1 = 1000
+        12 = 12000
+        15 = 15000
 06 TXFEE
 The minimum tx-fee to enforce for transactions.
 note: The maximum allowed value for this mode is "8".
-	X = (10 ^ X)/COIN
-  	0 = 0
-	1 = 10 (0.0000001)
-	2 = 100 (0.000001)
-	3 = 1000 (0.00001000)
-  	4 = 10000 (etc)
-	5 = 100000 (0.001)
-	6 = 1000000 (0.01)
-	7 = 10000000 (0.1)
-	8 = 100000000 (1)
-</pre>
-== Usage ==
-Blocks generated on the colored alt-chains are created using a CPU miner by the server node. In addition, specialty (specific color) nodes can be created which provide access to stratum facilities.
+        X = (10 ^ X)/COIN
+        0 = 0
+        1 = 10 (0.0000001)
+        2 = 100 (0.000001)
+        3 = 1000 (0.00001000)
+        4 = 10000 (etc)
+        5 = 100000 (0.001)
+        6 = 1000000 (0.01)
+        7 = 10000000 (0.1)
+        8 = 100000000 (1)</pre>
+== Usage == 
 
-Sending a transaction on an alt-chain typically consists of creating a block along with the transaction. The transactions are still pooled in the event of a chain reorganization.
+Blocks generated on the colored alt-chains are created using a CPU
+miner by the server node. In addition, specialty (specific color)
+nodes can be created which provide access to stratum facilities.
+Sending a transaction on an alt-chain typically consists of creating
+a block along with the transaction. The transactions are still pooled
+in the event of a chain reorganization. 
 
-A transaction will typically provide a funds transfer to another individual, a funds transfer to several individuals, or submitting a data payload.
+A transaction will typically provide a funds transfer to another
+individual, a funds transfer to several individuals, or submitting a
+data payload. 
 
-Transactions containing a data payload are meant to be specific to the particular color of the alt-chain. By proving a custom set of standards to the data content published, a rule set can be enforced on the underlying data permitted to provide a common method of processing the data.
+Transactions containing a data payload are meant to be specific to
+the particular color of the alt-chain. By proving a custom set of
+standards to the data content published, a rule set can be enforced
+on the underlying data permitted to provide a common method of
+processing the data. 
 
-== Examples ==
-Here is an example output script of a alternate blockchain extended transaction which contains a genesis block for a colored altchain with block-chain parameters defined as having a difficulty of "~uint256 >> 12" and and block target of 120 blocks:
-;	OP_RETURN OP_0 OP_1 OP_2 OP_2 OP_2
-The "OP_1 OP_2" pair indicates a difficulty of "(~uint256 >> 12)" and the "OP_2 OP_2" pair indicates a block target of 120 seconds.
+== Examples == 
+Here is an example output script of a alternate blockchain
+extended transaction which contains a genesis block for a colored
+altchain with block-chain parameters defined as having a difficulty
+of "~uint256 &gt;&gt; 12" and and block target of 120
+blocks: 
 
-== Copyright ==
+OP_RETURN OP_0 OP_1 OP_2 OP_2 OP_2 
 
-This document is placed in the public domain.
+The "OP_1 OP_2" pair indicates a difficulty of
+"(~uint256 &gt;&gt; 12)" and the "OP_2 OP_2" pair
+indicates a block target of 120 seconds. 
+

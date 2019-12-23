@@ -47,10 +47,7 @@
 
 #include <boost/array.hpp>
 #include <share.h>
-
-
 #include "rpccert_proto.h"
-
 
 using namespace std;
 using namespace boost;
@@ -59,8 +56,6 @@ static const unsigned int MAX_INV_SZ = 50000;
 
 /** Maximum number of headers to announce when relaying blocks with headers message.*/
 static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
-
-
 
 extern CMedianFilter<int> cPeerBlockCounts;
 extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
@@ -74,58 +69,46 @@ extern vector <CAddress> GetAddresses(CIface *iface, int max_peer);
 template<size_t Limit>
 class LimitedString
 {
-  protected:
-    std::string& string;
+	protected:
+		std::string& string;
 
-  public:
-    LimitedString(std::string& string) : string(string) {}
+	public:
+		LimitedString(std::string& string) : string(string) {}
 
-    template<typename Stream>
-      void Unserialize(Stream& s, int, int=0)
-      {
-        size_t size = ReadCompactSize(s);
-        if (size > Limit) {
-          throw std::ios_base::failure("String length limit exceeded");
-        }
-        string.resize(size);
-        if (size != 0)
-          s.read((char*)&string[0], size);
-      }
+		template<typename Stream>
+			void Unserialize(Stream& s, int, int=0)
+			{
+				size_t size = ReadCompactSize(s);
+				if (size > Limit) {
+					throw std::ios_base::failure("String length limit exceeded");
+				}
+				string.resize(size);
+				if (size != 0)
+					s.read((char*)&string[0], size);
+			}
 
-    template<typename Stream>
-      void Serialize(Stream& s, int, int=0) const
-      {
-        WriteCompactSize(s, string.size());
-        if (!string.empty())
-          s.write((char*)&string[0], string.size());
-      }
+		template<typename Stream>
+			void Serialize(Stream& s, int, int=0) const
+			{
+				WriteCompactSize(s, string.size());
+				if (!string.empty())
+					s.write((char*)&string[0], string.size());
+			}
 
-    unsigned int GetSerializeSize(int, int=0) const
-    {
-      return GetSizeOfCompactSize(string.size()) + string.size();
-    }
+		unsigned int GetSerializeSize(int, int=0) const
+		{
+			return GetSizeOfCompactSize(string.size()) + string.size();
+		}
 };
 
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// dispatching functions
-//
-
-// These functions dispatch to one or all registered wallets
-
 extern CBlockIndex *shc_GetLastCheckpoint();
-
 
 void shc_RelayTransaction(const CTransaction& tx, const uint256& hash)
 {
   RelayMessage(CInv(SHC_COIN_IFACE, MSG_TX, hash), (CTransaction)tx);
 }
 
-
-// notify wallets about an incoming inventory (for request counts)
+/* notify wallets about an incoming inventory (for request counts). */
 void static Inventory(const uint256& hash)
 {
   CWallet *pwallet = GetWallet(SHC_COIN_IFACE);
@@ -140,18 +123,6 @@ void static ResendWalletTransactions()
   CWallet *wallet = GetWallet(SHC_COIN_IFACE);
   wallet->ResendWalletTransactions();
 }
-
-
-
-
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Messages
-//
-
 
 static bool shc_AlreadyHave(CIface *iface, const CInv& inv)
 {
@@ -182,10 +153,7 @@ static bool shc_AlreadyHave(CIface *iface, const CInv& inv)
 	return true;
 }
 
-
-
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
-
 
 static void shc_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *locator, uint256 hashStop)
 {
@@ -206,12 +174,8 @@ static void shc_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *lo
 			pindex = pindex->pnext;
 	}
 	if (!pindex) {
-//		Debug("(shc) ProcessGetHeaders: unable to locate headers for \"%s\".", pfrom->addr.ToString().c_str());
 		return;
 	}
-
-//	CBlockIndex* pcheckpoint = shc_GetLastCheckpoint();
-//	if (pcheckpoint->nHeight > pindex->nHeight) 
 
 	vector<SHCBlock> vHeaders;
 	int nLimit = 2000;
@@ -241,7 +205,6 @@ static void shc_ProcessGetHeaders(CIface *iface, CNode *pfrom, CBlockLocator *lo
 // The message start string is designed to be unlikely to occur in normal data.
 // The characters are rarely used upper ascii, not valid as UTF-8, and produce
 // a large 4-byte int at any alignment.
-
 bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStream& vRecv)
 {
   NodeList &vNodes = GetNodeList(iface);
@@ -251,17 +214,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
   int ifaceIndex = GetCoinIndex(iface);
   char errbuf[256];
   shtime_t ts;
-
-#if 0
-  RandAddSeedPerfmon();
-  if (fDebug)
-    printf("received: %s (%d bytes)\n", strCommand.c_str(), vRecv.size());
-  if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
-  {
-    printf("dropmessagestest DROPPING RECV MESSAGE\n");
-    return true;
-  }
-#endif
 
   if (strCommand == "version")
   {
@@ -347,26 +299,8 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
         }
       }
 
-#if 0
-      if (pfrom->fOneShot || pfrom->nVersion >= CADDR_TIME_VERSION || (int)vNodes.size() < 2) {
-        pfrom->PushMessage("getaddr");
-        pfrom->fGetAddr = true;
-      }
-#endif
     }
 
-#if 0
-    // Ask the first connected node for block updates
-    static int nAskedForBlocks = 0;
-    if (!pfrom->fClient && !pfrom->fOneShot &&
-        (pfrom->nVersion < NOBLKS_VERSION_START ||
-         pfrom->nVersion >= NOBLKS_VERSION_END) &&
-        (nAskedForBlocks < 1 || vNodes.size() <= 1))
-    {
-      nAskedForBlocks++;
-      pfrom->PushGetBlocks(GetBestBlockIndex(SHC_COIN_IFACE), uint256(0));
-    }
-#endif
     CBlockIndex *pindexBest = GetBestBlockIndex(SHC_COIN_IFACE);
     if (pindexBest) {
 			int nMaxHeight = MIN(pindexBest->nHeight + 2000, pfrom->nStartingHeight);
@@ -471,11 +405,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
     BOOST_FOREACH(const CAddress &addr, vAddr) {
       AddPeerAddress(iface, addr.ToStringIP().c_str(), addr.GetPort());
     }
-
-#if 0
-    if (vAddr.size() < 1000)
-      pfrom->fGetAddr = false;
-#endif
   }
 
   else if (strCommand == "inv")
@@ -547,7 +476,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 				} else if (inv.type == MSG_BLOCK && shc_IsOrphanBlock(inv.hash)) {
           Debug("(shc) ProcessMessage[inv]: received known orphan \"%s\", requesting blocks.", inv.hash.GetHex().c_str());
           pfrom->PushGetBlocks(GetBestBlockIndex(SHC_COIN_IFACE), shc_GetOrphanRoot(inv.hash));
-//          ServiceBlockEventUpdate(SHC_COIN_IFACE);
         } else if (nInv == nLastBlock) {
 
           // In case we are on a very long side-chain, it is possible that we already have
@@ -648,20 +576,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
           pfrom->PushTx(tx);
         }
       }
-#if 0
-      else if (inv.IsKnownType())
-      {
-        // Send stream from relay memory
-        {
-          LOCK(cs_mapRelay);
-          map<CInv, CDataStream>::iterator mi = mapRelay.find(inv);
-          if (mi != mapRelay.end()) {
-            string cmd = inv.GetCommand();
-            pfrom->PushMessage(cmd.c_str(), (*mi).second);
-          }
-        }
-      }
-#endif
 
       // Track requests for our stuff
       Inventory(inv.hash);
@@ -724,69 +638,7 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
       RelayMessage(inv, vMsg);
       mapAlreadyAskedFor.erase(inv);
     }
-#if 0
-    vector<uint256> vWorkQueue;
-    vector<uint256> vEraseQueue;
-    bool fMissingInputs = false;
-    SHCTxDB txdb;
-    if (tx.AcceptToMemoryPool(txdb, true, &fMissingInputs)) {
-      SyncWithWallets(iface, tx); /* newer scrypt-coins skip this step */
-
-      shc_RelayTransaction(tx, inv.hash);
-//      RelayMessage(inv, vMsg);
-
-      mapAlreadyAskedFor.erase(inv);
-      vWorkQueue.push_back(inv.hash);
-      vEraseQueue.push_back(inv.hash);
-
-      // Recursively process any orphan transactions that depended on this one
-      for (unsigned int i = 0; i < vWorkQueue.size(); i++)
-      {
-        uint256 hashPrev = vWorkQueue[i];
-        for (map<uint256, CDataStream*>::iterator mi = SHC_mapOrphanTransactionsByPrev[hashPrev].begin();
-            mi != SHC_mapOrphanTransactionsByPrev[hashPrev].end();
-            ++mi)
-        {
-          const CDataStream& vMsg = *((*mi).second);
-          CTransaction tx;
-          CDataStream(vMsg) >> tx;
-          CInv inv(ifaceIndex, MSG_TX, tx.GetHash());
-          bool fMissingInputs2 = false;
-
-          if (tx.AcceptToMemoryPool(txdb, true, &fMissingInputs2))
-          {
-            printf("   accepted orphan tx %s\n", inv.hash.ToString().substr(0,10).c_str());
-            SyncWithWallets(iface, tx);
-
-            shc_RelayTransaction(tx, inv.hash);
-//            RelayMessage(inv, vMsg);
-
-            mapAlreadyAskedFor.erase(inv);
-            vWorkQueue.push_back(inv.hash);
-            vEraseQueue.push_back(inv.hash);
-          }
-          else if (!fMissingInputs2)
-          {
-            // invalid orphan
-            vEraseQueue.push_back(inv.hash);
-            printf("   removed invalid orphan tx %s\n", inv.hash.ToString().substr(0,10).c_str());
-          }
-        }
-      }
-
-      BOOST_FOREACH(uint256 hash, vEraseQueue)
-        EraseOrphanTx(hash);
-    }
-    else if (fMissingInputs)
-    {
-      shc_AddOrphanTx(vMsg);
-
-      // DoS prevention: do not allow SHC_mapOrphanTransactions to grow unbounded
-    }
-    txdb.Close();
-#endif
   }
-
 
   else if (strCommand == "block")
   {
@@ -798,11 +650,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 
     if (ProcessBlock(pfrom, &block))
       mapAlreadyAskedFor.erase(inv);
-#if 0
-    if (block.nDoS) {
-      pfrom->Misbehaving(block.nDoS);
-    }
-#endif
   }
 
 
@@ -824,55 +671,6 @@ bool shc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
 		pfrom->vAddrToSend.insert(pfrom->vAddrToSend.begin(), addrLocal);
 		Debug("(shc) ProcessMessage[getaddr]: sending %d addresses to node \"%s\".", pfrom->vAddrToSend.size(), pfrom->addr.ToString().c_str());
   }
-
-#if 0
-  else if (strCommand == "checkorder")
-  {
-    uint256 hashReply;
-    vRecv >> hashReply;
-
-    if (!GetBoolArg("-allowreceivebyip"))
-    {
-      pfrom->PushMessage("reply", hashReply, (int)2, string(""));
-      return true;
-    }
-
-    CWalletTx order;
-    vRecv >> order;
-
-    /// we have a chance to check the order here
-
-    // Keep giving the same key to the same ip until they use it
-    if (!mapReuseKey.count(pfrom->addr)) {
-//      wallet->GetKeyFromPool(mapReuseKey[pfrom->addr], true);
-			string strAccount("");
-			mapReuseKey[pfrom->addr] = GetAccountPubKey(wallet, strAccount, true);
-		}
-
-    // Send back approval of order and pubkey to use
-    CScript scriptPubKey;
-    scriptPubKey << mapReuseKey[pfrom->addr] << OP_CHECKSIG;
-    pfrom->PushMessage("reply", hashReply, (int)0, scriptPubKey);
-  }
-  else if (strCommand == "reply")
-  {
-    uint256 hashReply;
-    vRecv >> hashReply;
-
-    CRequestTracker tracker;
-    {
-      LOCK(pfrom->cs_mapRequests);
-      map<uint256, CRequestTracker>::iterator mi = pfrom->mapRequests.find(hashReply);
-      if (mi != pfrom->mapRequests.end())
-      {
-        tracker = (*mi).second;
-        pfrom->mapRequests.erase(mi);
-      }
-    }
-    if (!tracker.IsNull())
-      tracker.fn(tracker.param1, vRecv);
-  }
-#endif
 
   /* exclusively used by bloom filter supported coin services, but does not require they have a bloom filter enabled for node. */
   else if (strCommand == "mempool")
@@ -1149,7 +947,7 @@ bool shc_ProcessMessages(CIface *iface, CNode* pfrom)
     vector<char> vHeaderSave(vRecv.begin(), vRecv.begin() + nHeaderSize);
     CMessageHeader hdr;
     vRecv >> hdr;
-    if (!hdr.IsValid())
+    if (!hdr.IsValid(SHC_COIN_IFACE))
     {
       printf("\n\nPROCESSMESSAGE: ERRORS IN HEADER %s\n\n\n", hdr.GetCommand().c_str());
       continue;
@@ -1303,11 +1101,6 @@ bool shc_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
 			// add all to the inv queue.
 			LOCK(pto->cs_inventory);
 			std::vector<SHCBlock> vHeaders;
-#if 0
-			bool fRevertToInv = ((!pto->fPreferHeaders &&
-						(!pto->fPreferHeaderAndIDs || pto->vBlockHashesToAnnounce.size() > 1)) ||
-					pto->vBlockHashesToAnnounce.size() > MAX_BLOCKS_TO_ANNOUNCE);
-#endif
 			bool fRevertToInv = !pto->fPreferHeaders ||
 				(pto->vBlockHashesToAnnounce.size() > MAX_BLOCKS_TO_ANNOUNCE);
 			const CBlockIndex *pBestIndex = NULL; // last header queued for delivery
@@ -1364,38 +1157,6 @@ bool shc_SendMessages(CIface *iface, CNode* pto, bool fSendTrickle)
 				}
 			}
 			if (!fRevertToInv && !vHeaders.empty()) {
-#if 0
-				if (vHeaders.size() == 1 && pto->fPreferHeaderAndIDs) {
-					// We only send up to 1 block as header-and-ids, as otherwise
-					// probably means we're doing an initial-ish-sync or they're slow
-					LogPrint(BCLog::NET, "%s sending header-and-ids %s to peer=%d\n", __func__,
-							vHeaders.front().GetHash().ToString(), pto->GetId());
-
-					int nSendFlags = pto->fWantsCmpctWitness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
-
-					bool fGotBlockFromCache = false;
-					{
-						LOCK(cs_most_recent_block);
-						if (most_recent_block_hash == pBestIndex->GetBlockHash()) {
-							if (pto->fWantsCmpctWitness || !fWitnessesPresentInMostRecentCompactBlock)
-								connman->PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, *most_recent_compact_block));
-							else {
-								CBlockHeaderAndShortTxIDs cmpctblock(*most_recent_block, pto->fWantsCmpctWitness);
-								connman->PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
-							}
-							fGotBlockFromCache = true;
-						}
-					}
-					if (!fGotBlockFromCache) {
-						CBlock block;
-						bool ret = ReadBlockFromDisk(block, pBestIndex, consensusParams);
-						assert(ret);
-						CBlockHeaderAndShortTxIDs cmpctblock(block, pto->fWantsCmpctWitness);
-						connman->PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
-					}
-					pto->pindexBestHeaderSend = pBestIndex;
-				} else 
-#endif
 				if (pto->fPreferHeaders) {
 					if (vHeaders.size() > 1) {
 						Debug("(shc) SendMessages: %u headers [range (%s, %s)] to peer \"%s\".",

@@ -1,52 +1,56 @@
-<pre>
-  SIP: 8 
+<pre class="western">  SIP: 8 
   Layer: Core
   Title: Ident (Extended Transaction)
-  Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2018-12-29
-</pre>
-==Abstract==
-This SIP defines a new "Ident" extended transaction. 
+  Created: 2018-12-29</pre>
+==Abstract== 
+This SIP defines a new "Ident" extended transaction. The
+ident extended transaction is used in order to certify the
+originating sender of funds or other auxiliary information. 
 
-The ident extended transaction is used in order to certify the originating sender of funds or other auxilliary information.
+==Motivation== 
+The ident extended transaction is intended to provide a method for
+third-party application to verify the originating identify of funds
+being sent. 
 
-==Motivation==
-The ident extended transaction is intended to provide a method for third-party application to verify the originating identify of funds being sent. 
+In addition, the transaction may be used in order to "stamp"
+auxiliary information onto the block-chain. This can include general
+information or something more specialized like a geodetic address. 
 
-In addition, the transaction may be used in order to "stamp" auxiliary information onto the block-chain. This can include general information or something more specialized like a geodetic address.
+==Specifications== 
+The Certification of a transaction is performed by creating chains
+of extended transactions which utilize an "Ident" structure
+or a "Certificate" structure (see below). Several other
+extended transactions utilize the "Ident" or "Certificate"
+extended transaction structure as a base. 
 
-==Specifications==
+===Ident Structure=== 
+The "Ident" extended structure consists of the
+following; 
 
-The Certification of a transaction is performed by creating chains of extended transactions which utilize an "Ident" structure or a "Certificate" structure (see below).
+<pre class="western">        {
+                /* A geodetic location. */
+                shgeo_t geo;
+                /* A coin address key. */
+                cbuff vAddr;
+                /* A mode indicator. */
+                unsigned int nType;
+        }</pre>
+===Usage=== 
+A "Certified Funds Transfer" is comprised of a regular
+fund send transaction with the addition of a "Ident"
+extended transaction. 
 
-Several other extended transactions utilize the "Ident" or "Certificate" extended transaction structure as a base. 
+The ident extended transaction optionally tracks the geodetic
+location of the originating node server, and a payload of textual
+information up to 135 characters. 
 
-===Structure===
-The "Ident" extended structure consists of the following;
-<pre>
-	{
-		/* A geodetic location. */
-		shgeo_t geo;
-		/* A coin address key. */
-		cbuff vAddr;
-		/* A mode indicator. */
-		unsigned int nType;
-	}
-</pre>
+An ident transaction can specify a geodetic location by using the
+format "geo:latitude,longitude" where latitude and
+longitude are in decimal degrees format. 
 
+See SIP21 for additional usage of ident extended transactions
+utilizing geodetic locations. 
 
-===Usage===
-
-A "Certified Funds Transfer" is comprised of a regular fund send transaction with the addition of a "Ident" extended transaction.
-
-The ident extended transaction optionally tracks the geodetic location of the originating node server, and a payload of textual information up to 135 characters.
-
-An ident transaction can specify a geodetic location by using the format "geo:latitude,longitude" where latitude and longitude are in decimal degrees format.
-
-See SIP21 for additional usage of ident extended transactions utilizing geodetic locations. 
-
-==Copyright==
-
-This document is placed in the public domain.

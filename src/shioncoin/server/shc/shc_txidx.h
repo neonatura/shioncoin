@@ -31,39 +31,6 @@
  * @{
  */
 
-
-#ifdef USE_LEVELDB_COINDB
-
-class SHCTxDB : public CTxDB
-{
-  public:
-    SHCTxDB(const char *fileMode = "r+") : CTxDB("shc_tx.dat", SHC_COIN_IFACE, fileMode) { }
-  private:
-    SHCTxDB(const SHCTxDB&);
-    void operator=(const SHCTxDB&);
-  public:
-#if 0
-    bool ReadTxIndex(uint256 hash, CTxIndex& txindex);
-    bool UpdateTxIndex(uint256 hash, const CTxIndex& txindex);
-    bool AddTxIndex(const CTransaction& tx, const CDiskTxPos& pos, int nHeight);
-    bool EraseTxIndex(const CTransaction& tx);
-    bool ContainsTx(uint256 hash);
-#endif
-
-    bool ReadDiskTx(uint256 hash, CTransaction& tx, CTxIndex& txindex);
-    bool ReadDiskTx(uint256 hash, CTransaction& tx);
-    bool ReadDiskTx(COutPoint outpoint, CTransaction& tx, CTxIndex& txindex);
-    bool ReadDiskTx(COutPoint outpoint, CTransaction& tx);
-
-    bool LoadBlockIndex();
-
-  private:
-    bool LoadBlockIndexGuts();
-};
-
-#endif
-
-
 static bool IsChainFile(std::string strFile)
 {
     if (strFile == "shc_tx.dat")
@@ -76,9 +43,9 @@ bool shc_InitBlockIndex();
 
 bool shc_RestoreBlockIndex();
 
-
 /**
  * @}
  */
 
 #endif /* ndef __SHC_TXIDX_H__ */
+

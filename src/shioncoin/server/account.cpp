@@ -59,34 +59,6 @@ static int _account_address_flags[MAX_ACCADDR] = {
 #define IS_ACCOUNT(type, flag) \
 	(_account_address_flags[(type)] & (flag))
 
-#if 0
-static bool CAccountCache_GenerateAddress(CWallet *wallet, const string& strAccount, CPubKey& pubkey, const char *tag)
-{
-	ECKey pkey;
-
-	if (!wallet->GetECKey(pubkey.GetID(), pkey))
-		return (false);
-
-	cbuff tagbuff(tag, tag + strlen(tag));
-	ECKey key;
-	pkey.MergeKey(key, tagbuff);
-
-	CPubKey mrg_pubkey = key.GetPubKey();
-	if (!mrg_pubkey.IsValid())
-		return (false);
-
-	if (!wallet->HaveKey(mrg_pubkey.GetID())) {
-		/* add key to address book */
-		if (!wallet->AddKey(key))
-			return (false);
-
-		wallet->SetAddressBookName(mrg_pubkey.GetID(), strAccount);
-	}
-
-	pubkey = mrg_pubkey; 
-	return (true);
-}
-#endif
 
 static const char *GetPubKeyTag(int type)
 {
@@ -148,40 +120,6 @@ void GetAddrDestination(int ifaceIndex, const CKeyID& keyid, vector<CTxDestinati
 	}
 
 }
-
-#if 0
-CCoinAddr CAccountCache::CreateAddr(int type)
-{
-	CCoinAddr addr(wallet->ifaceIndex, CNoDestination());
-
-	if (!wallet)
-		return (addr);
-
-	CPubKey pubkey;
-	wallet->GetMergedPubKey(strAccount, GetPubKeyTag(type), pubkey);
-
-	addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
-	SetAddr(type, addr);
-
-	return (addr);
-}
-#endif
-
-#if 0
-CCoinAddr CAccountCache::CreateNewAddr(int type)
-{
-	CCoinAddr addr(wallet->ifaceIndex, CNoDestination());
-
-	if (!wallet)
-		return (addr);
-
-	CPubKey pubkey = GetAccountPubKey(wallet, strAccount, true);
-	addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
-	AddAddr(addr, type);
-
-	return (addr);
-}
-#endif
 
 void CAccountCache::SetAddr(int type, CCoinAddr addr)
 {
@@ -245,54 +183,6 @@ CCoinAddr CAccountCache::GetAddr(int type)
 
 
 	return (addr);
-
-
-#if 0
-	bool fOk = false;
-	bool fWitness = true;
-	addr = vAddr[type];
-	if (addr.IsValid()) {
-		vAddr[type].nAccessTime = time(NULL);
-		if (IS_ACCOUNT(type, ACCADDRF_STATIC))
-			return (addr);
-		fOk = true;
-		fWitness = false;
-	} else {
-		CPubKey pubkey = wallet->GetPrimaryPubKey(strAccount);
-		fOk = CAccountCache_GenerateAddress(wallet, strAccount, pubkey, _pubkey_tag_table[type]);
-		if (fOk) {
-			/* an address unique for mode has been generated. */
-			addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
-		}
-	}
-
-	if (!fOk || (!IS_ACCOUNT(type, ACCADDRF_STATIC) && IsAddrUsed(addr))) {
-		/* create new address. */
-		CPubKey pubkey = GetAccountPubKey(wallet, strAccount, true);
-		if (pubkey.IsValid()) {
-			addr = CCoinAddr(wallet->ifaceIndex, pubkey.GetID());
-			fOk = true;
-		}
-	}
-
-	if (!addr.IsValid()) {
-		error(ERR_INVAL, "CAccountCache.GetAddr: error generating coin address.");
-		return (addr);
-	}
-
-	if (fWitness &&
-			IS_ACCOUNT(type, ACCADDRF_WITNESS) &&
-			IsWitnessEnabled(iface, GetBestBlockIndex(iface))) {
-		CTxDestination result = addr.GetWitness();
-		wallet->SetAddressBookName(result, strAccount);
-		addr = CCoinAddr(wallet->ifaceIndex, result); 
-	}
-
-	/* retain */
-	vAddr[type] = addr;
-	vAddr[type].nAccessTime = time(NULL);
-	return (addr);
-#endif
 }
 
 CCoinAddr CAccountCache::GetDefaultAddr()
@@ -319,39 +209,6 @@ void CAccountCache::SetDefaultAddr(const CPubKey& pubkey)
 	}
 
 }
-
-
-#if 0
-CCoinAddr CAccountCache::GetDynamicAddr(int type)
-{
-	CCoinAddr addr;
-
-	if (type >= 0 && type < MAX_ACCADDR)
-		addr = vAddr[type];
-
-	if (!addr.IsValid()) {
-		addr = CreateAddr(ACCADDR_CHANGE);
-	} else if (IsAddrUsed(addr)) {
-		addr = CreateNewAddr(type);
-	}
-	
-	return (addr);
-}
-
-CCoinAddr CAccountCache::GetStaticAddr(int type)
-{
-	CCoinAddr addr;
-
-	if (type >= 0 && type < MAX_ACCADDR)
-		addr = vAddr[type];
-
-	if (!addr.IsValid()) {
-		addr = GetDefaultAddr();
-	}
-
-	return (addr);
-}
-#endif
 
 bool CAccountCache::IsAddrUsed(const CCoinAddr& addr)
 {
@@ -434,41 +291,6 @@ bool CAccountCache::IsAddrUsed(const CPubKey& vchPubKey)
 
 	return (bKeyUsed);
 }
-
-//bool CAccountCache::CreateHDKey(const CPubKey& vchPubKey)
-
-
-#if 0
-CPubKey CAccountCache::GetMasterPubKey()
-{
-	CPubKey pubkey = account.vchPubKey;
-	bool bValid;
-	
-	bValid = pubkey.IsValid();
-	if (!bValid) {
-		LOCK(wallet->cs_wallet);
-
-		/* load from wallet */
-		CWalletDB walletdb(wallet->strWalletFile);
-		walletdb.ReadAccount(strAccount, account);
-		bValid = account.vchPubKey.IsValid();
-		walletdb.Close();
-	}
-	if (!bValid) {
-		account.vchPubKey = wallet->GenerateNewKey(true);
-		{
-			LOCK(wallet->cs_wallet);
-
-			/* save to wallet */
-			CWalletDB walletdb(wallet->strWalletFile);
-			walletdb.WriteAccount(strAccount, account);
-			walletdb.Close();
-		}
-	}
-
-	return (account.vchPubKey);
-}
-#endif
 
 void CAccountCache::UpdateAccount()
 {
@@ -724,5 +546,4 @@ uint160 CAccountCache::GetCertHash() const
 {
 	return (account.hCert);
 }
-
 

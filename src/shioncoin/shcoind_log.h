@@ -43,11 +43,17 @@ extern "C" {
 #define shcoind_info(_tag, _text) \
   (f_shcoind_log(SHERR_INFO, _tag, _text, __FILE__, __LINE__))
 
+#define shcoind_netlog(_node, _cmd) \
+	(f_shcoind_log_net(GetCoinByIndex( \
+			(_node)->ifaceIndex)->name, (_node)->addr.ToString().c_str(), \
+			(_cmd)->pchCommand, (_cmd)->nMessageSize, __FILE__, __LINE__))
 
 void f_shcoind_log(int err_code, const char *tag, const char *text, const char *src_fname, long src_line);
 
+void f_shcoind_log_net(const char *iface, const char *addr, const char *tag, size_t size, const char *src_fname, long src_line);
 
 void timing_init(char *tag, shtime_t *stamp_p);
+
 void timing_term(int ifaceIndex, char *tag, shtime_t *stamp_p);
 
 

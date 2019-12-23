@@ -84,13 +84,6 @@ bool SHC_CTxMemPool::revert(CTransaction &tx)
   return (tx.DisconnectInputs(SHC_COIN_IFACE));
 }
 
-#if 0
-bool SHC_CTxMemPool::VerifyAccept(CTransaction &tx)
-{
-return (false);
-}
-#endif
-
 int64_t SHC_CTxMemPool::GetSoftWeight()
 {
   return (SHC_MAX_STANDARD_TX_WEIGHT);
@@ -165,7 +158,6 @@ void SHC_CTxMemPool::EnforceCoinStandards(CTransaction& tx)
 
 }
 
-
 bool SHC_CTxMemPool::AcceptTx(CTransaction& tx)
 {
 
@@ -175,7 +167,6 @@ bool SHC_CTxMemPool::AcceptTx(CTransaction& tx)
 
   return true;
 }
-
 
 static int64 shc_CalculateSoftFee(CTransaction& tx)
 {
@@ -200,7 +191,6 @@ static int64 shc_CalculateSoftFee(CTransaction& tx)
 
   return (nFee);
 }
-
 
 int64 SHC_CTxMemPool::CalculateSoftFee(CTransaction& tx)
 {
@@ -241,15 +231,8 @@ double SHC_CTxMemPool::CalculateFeePriority(CPoolTx *ptx)
 		}
 	}
 
-
-	/* DEBUG: TODO: EXEC.. */
+	/* NOTE: EXEC.. */
 
 	return (dFeePrio);
+}
 
-}
-#if 0
-bool SHC_CTxMemPool::AcceptNonfinalTx(CPoolTx *ptx)
-{
-	return (true);
-}
-#endif

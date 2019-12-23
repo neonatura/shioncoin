@@ -58,8 +58,8 @@ CMessageHeader::CMessageHeader()
 
 CMessageHeader::CMessageHeader(int ifaceIndexIn, const char* pszCommand, unsigned int nMessageSizeIn)
 {
-  ifaceIndex = ifaceIndexIn;
-  CIface *iface = GetCoinByIndex(ifaceIndex);
+//  ifaceIndex = ifaceIndexIn;
+  CIface *iface = GetCoinByIndex(ifaceIndexIn);
   if (iface) {
     memcpy(pchMessageStart, iface->hdr_magic, sizeof(pchMessageStart));
   } else {
@@ -78,7 +78,7 @@ std::string CMessageHeader::GetCommand() const
         return std::string(pchCommand, pchCommand + COMMAND_SIZE);
 }
 
-bool CMessageHeader::IsValid() const
+bool CMessageHeader::IsValid(int ifaceIndex) const
 {
 
   CIface *iface = GetCoinByIndex(ifaceIndex);

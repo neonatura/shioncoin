@@ -26,12 +26,7 @@
 #ifndef __SERVER__COIN_H__
 #define __SERVER__COIN_H__
 
-
 typedef int64 CAmount;
-
-
-
-
 
 bool core_VerifyCoinInputs(int ifaceIndex, CTransaction& tx, unsigned int nIn, CTxOut& prev);
 
@@ -67,9 +62,5 @@ CIface *GetCoinByHash(uint160 hash);
 
 uint160 GetCoinHash(string name);
 
-
 #endif /* ndef __SERVER_COIN_H__ */
-
-
-
 

@@ -26,7 +26,6 @@
 #ifndef __SERVER__BLOCK_H__
 #define __SERVER__BLOCK_H__
 
-//#include "shcoind.h"
 #include <boost/foreach.hpp>
 #include <vector>
 
@@ -89,7 +88,8 @@ enum GetMinFee_mode
     GMF_SEND,
 };
 
-static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
+/* Tue Nov  5 00:53:20 1985 UTC */
+static const unsigned int LOCKTIME_THRESHOLD = 500000000; 
 
 inline bool MoneyRange(CIface *iface, int64 nValue) 
 { 
@@ -126,14 +126,6 @@ public:
         nBlockPos = nBlockPosIn;
         nTxPos = nTxPosIn;
     }
-#if 0
-    CDiskTxPos(uint256 hash, uint256 tx_hash)
-    {
-      SetNull();
-hashBlock = hash;
-hashTx = tx_hash;
-    }
-#endif
 
     IMPLEMENT_SERIALIZE( READWRITE(FLATDATA(*this)); )
     void SetNull() { nFile = (unsigned int) -1; nBlockPos = 0; nTxPos = 0; }
@@ -144,10 +136,6 @@ hashTx = tx_hash;
         return (a.nFile     == b.nFile &&
                 a.nBlockPos == b.nBlockPos &&
                 a.nTxPos    == b.nTxPos);
-#if 0
-        return (a.hashBlock == b.hashBlock &&
-                a.hashTx    == b.hashTx);
-#endif
     }
 
     friend bool operator!=(const CDiskTxPos& a, const CDiskTxPos& b)
@@ -221,7 +209,6 @@ public:
     {
         return !(a == b);
     }
-//    int GetDepthInMainChain() const;
  
 };
 typedef std::map<uint256, std::pair<CTxIndex, CTransaction> > MapPrevTx;
@@ -460,11 +447,10 @@ typedef std::map<uint256, CBlockIndex*> blkidx_t;
 
 struct CScriptWitness
 {
-    // Note that this encodes the data elements being pushed, rather than
-    // encoding them as a CScript that pushes them.
+    /* Note that this encodes the data elements being pushed, rather than encoding them as a CScript that pushes them. */
     cstack_t stack;
     
-    // Some compilers complain without a default constructor
+    /* some compilers complain without a default constructor. */
     CScriptWitness() { }
 
     bool IsNull() const { return stack.empty(); }
@@ -540,9 +526,6 @@ class CTransactionCore
     static const int TXF_ASSET = (1 << 9);
     static const int TXF_IDENT = (1 << 10);
     static const int TXF_MATRIX = (1 << 11);
-#if 0
-    static const int TXF_CHANNEL = (1 << 12);
-#endif
     static const int TXF_EXEC = (1 << 13);
     static const int TXF_CONTEXT = (1 << 14);
     static const int TXF_ALTCHAIN = (1 << 15);
@@ -564,7 +547,6 @@ class CTransactionCore
     (
 
         READWRITE(this->nFlag);
-//        nVersion = 1;//this->nVersion;
 
         if (fRead) {
           unsigned char flag = 0;
@@ -583,7 +565,6 @@ class CTransactionCore
           if ((flag & 1) && !(nVersion & SERIALIZE_TRANSACTION_NO_WITNESS)) {
             flag ^= 1;
             const_cast<CTxWitness*>(&wit)->vtxinwit.resize(vin.size());
-            //wit.vtxinwit.resize(vin.size());
             READWRITE(wit);
           }
 
@@ -604,7 +585,6 @@ class CTransactionCore
           READWRITE(vout);
           if (flag & 1) {
             const_cast<CTxWitness*>(&wit)->vtxinwit.resize(vin.size());
-            //wit.vtxinwit.resize(vin.size());
             READWRITE(wit);
           }
         }
@@ -667,7 +647,6 @@ class CTransactionCore
 			return (a.nFlag  == b.nFlag &&
 					a.vin       == b.vin &&
 					a.vout      == b.vout &&
-//					a.wit.vtxinwit == b.wit.vtxinwit &&
 					a.nLockTime == b.nLockTime);
 		}
 
@@ -689,9 +668,6 @@ class CTransaction : public CTransactionCore
     CAlias alias;
     COffer offer;
     CTxMatrix matrix;
-#if 0
-    CChannel channel;
-#endif
 		CExecCore exec;
 		CAltChain altchain;
 		CParam param; 
@@ -705,18 +681,6 @@ class CTransaction : public CTransactionCore
       SetNull();
       Init(tx);
     }
-
-#if 0
-		CTransaction(const CTransactionCore& tx)
-		{
-      SetNull();
-			nFlag = tx.nFlag;
-			vin = tx.vin;
-			vout = tx.vout;
-			wit = tx.wit;
-			nLockTime = tx.nLockTime;
-		}
-#endif
 
 		CTransaction(const CAltTx& tx)
 		{
@@ -748,10 +712,6 @@ class CTransaction : public CTransactionCore
         READWRITE(offer);
       if (this->nFlag & TXF_MATRIX)
         READWRITE(matrix);
-#if 0
-      if (this->nFlag & TXF_CHANNEL)
-        READWRITE(channel);
-#endif
 
       if (this->nFlag & TXF_ALTCHAIN)
         READWRITE(altchain);
@@ -770,9 +730,6 @@ class CTransaction : public CTransactionCore
 			alias.SetNull();
       offer.SetNull();
       matrix.SetNull();
-#if 0
-      channel.SetNull();
-#endif
 			exec.SetNull();
 			altchain.SetNull();
 			param.SetNull();
@@ -863,10 +820,6 @@ class CTransaction : public CTransactionCore
         BOOST_FOREACH(const CTxOut& txout, vout)
         {
             nValueOut += txout.nValue;
-#if 0
-            if (!MoneyRange(iface, txout.nValue) || !MoneyRange(iface, nValueOut))
-                throw std::runtime_error("CTransaction::GetValueOut() : value out of range");
-#endif
         }
         return nValueOut;
     }
@@ -882,58 +835,6 @@ class CTransaction : public CTransactionCore
     int64 GetValueIn(const MapPrevTx& mapInputs);
 
     int64 GetValueIn(tx_cache& mapInputs);
-
-#if 0
-    int64 GetMinFee(int ifaceIndex, unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const
-    {
-      CIface *iface = GetCoinByIndex(ifaceIndex);
-      if (!iface)
-        return (0);
-
-      // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
-      //int64 nBaseFee = (mode == GMF_RELAY) ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
-      int64 nBaseFee = (mode == GMF_RELAY) ? iface->min_relay_tx_fee : iface->min_tx_fee;
-
-      unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION(iface));
-      unsigned int nNewBlockSize = nBlockSize + nBytes;
-      int64 nMinFee = (1 + (int64)nBytes / 1000) * nBaseFee;
-
-      if (fAllowFree)
-      {
-        if (nBlockSize == 1)
-        {
-          // Transactions under 10K are free
-          // (about 4500bc if made of 50bc inputs)
-          if (nBytes < 10000)
-            nMinFee = 0;
-        }
-        else
-        {
-          // Free transaction area
-          if (nNewBlockSize < 27000)
-            nMinFee = 0;
-        }
-      }
-
-      // To limit dust spam, add MIN_TX_FEE/MIN_RELAY_TX_FEE for any output that is less than 0.01
-      BOOST_FOREACH(const CTxOut& txout, vout)
-        if (txout.nValue < CENT)
-          nMinFee += nBaseFee;
-
-      // Raise the price as the block approaches full
-      if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN(iface)/2)
-      {
-        if (nNewBlockSize >= MAX_BLOCK_SIZE_GEN(iface))
-          return (iface->max_money);
-        nMinFee *= MAX_BLOCK_SIZE_GEN(iface) / (MAX_BLOCK_SIZE_GEN(iface) - nNewBlockSize);
-      }
-
-      if (!MoneyRange(iface, nMinFee))
-        nMinFee = iface->max_money;
-      return nMinFee;
-    }
-#endif
-
 
     bool ReadTx(int ifaceIndex, uint256 txHash);
 
@@ -1078,38 +979,11 @@ class CTransaction : public CTransactionCore
 
     bool VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, shnum_t *lat_p, shnum_t *lon_p);
 
-
-#if 0
-    /**
-     * @param lcl_addr The local coin-addr to pay to.
-     * @param rem_addr The remote coin-addr to pay to.
-     * @param nValue The local contributed channel funding.
-     */
-    CChannel *CreateChannel(CCoinAddr& lcl_addr, CCoinAddr& rem_addr, int64 nValue);
-
-    /**
-     * Complete a funding transaction.
-     * @param nValue The local contributed channel funding.
-     */
-    CChannel *ActivateChannel(const CChannel& channelIn, int64 nValue);
-
-    /**
-     * @param nValue The amount to pay via the channel to a coin addr.
-     */
-    CChannel *PayChannel(const CChannel& channelIn);
-
-    CChannel *GenerateChannel(const CChannel& channelIn);
-
-    CChannel *RemoveChannel(const CChannel& channelIn);
-#endif
-
-
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
         return (a.nFlag  == b.nFlag &&
                 a.vin       == b.vin &&
                 a.vout      == b.vout &&
-//                a.wit.vtxinwit == b.wit.vtxinwit &&
                 a.nLockTime == b.nLockTime);
     }
 
@@ -1118,32 +992,10 @@ class CTransaction : public CTransactionCore
         return !(a == b);
     }
 
-#if 0
-    std::string ToString() const
-    {
-        std::string str;
-        str += strprintf("CTransaction(hash=%s, flag=%d, vin.size=%d, vout.size=%d, nLockTime=%d)\n",
-            GetHash().ToString().substr(0,10).c_str(),
-            nFlag,
-            vin.size(),
-            vout.size(),
-            nLockTime);
-        for (unsigned int i = 0; i < vin.size(); i++)
-            str += "    " + vin[i].ToString() + "\n";
-        for (unsigned int i = 0; i < vout.size(); i++)
-            str += "    " + vout[i].ToString() + "\n";
-        return str;
-    }
-#endif
-
     void print(int ifaceIndex)
     {
       shcoind_log(ToString(ifaceIndex).c_str());
     }
-
-
-
-
 
     bool ClientConnectInputs(int ifaceIndex);
 
@@ -1312,9 +1164,6 @@ class CBlock : public CBlockHeader
 {
   public:
     std::vector<CTransaction> vtx;
-#if 0
-    mutable std::vector<uint256> vMerkleTree; /* mem only */
-#endif
     mutable CNode *originPeer;
 		uint160 hColor;
 
@@ -1346,9 +1195,6 @@ class CBlock : public CBlockHeader
     {
       CBlockHeader::SetNull();
       vtx.clear();
-#if 0
-      vMerkleTree.clear();
-#endif
       originPeer = NULL;
     }
 
@@ -1362,17 +1208,6 @@ class CBlock : public CBlockHeader
      * @see CBlockHeader.nMerkleRoot
      */
     uint256 BuildMerkleTree() const;
-
-#if 0
-    std::vector<uint256> GetMerkleBranch(int nIndex) const;
-#endif
-
-#if 0
-    /**
-     * Verify a block's merkle root hash.
-     */
-    uint256 CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
-#endif
 
     void UpdateTime(const CBlockIndex* pindexPrev);
 
@@ -1450,25 +1285,6 @@ class CBlock : public CBlockHeader
     void print()
     {
       shcoind_log(ToString().c_str());
-#if 0
-      fprintf(stderr, "CBlock(iface=%d, hash=%s, PoW=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%lu)\n",
-          ifaceIndex, GetHash().GetHex().c_str(),
-          GetPoWHash().ToString().substr(0,20).c_str(),
-          nVersion,
-          hashPrevBlock.GetHex().c_str(),
-          hashMerkleRoot.GetHex().c_str(),
-          nTime, nBits, nNonce,
-          vtx.size());
-      for (unsigned int i = 0; i < vtx.size(); i++)
-      {
-        fprintf(stderr, "\t");
-        vtx[i].print();
-      }
-      fprintf(stderr, "  vMerkleTree:");
-      for (unsigned int i = 0; i < vMerkleTree.size(); i++)
-        fprintf(stderr, " %s", vMerkleTree[i].GetHex().c_str());
-      fprintf(stderr, "\n");
-#endif
     }
 
     virtual bool Truncate() = 0;
@@ -1577,25 +1393,22 @@ class CBlockIndex
     /* block index of a predecessor of this block. */
     CBlockIndex *pskip;
 
-    //    unsigned int nFile;
-    //    unsigned int nBlockPos;
     int nHeight;
 
 		/* verification status of this block. see "enum BlockStatus". */
     int nStatus;
 
-		// This value will be non-zero only if and only if transactions for this block and all its parents are available.
-		unsigned int nChainTx; // change to 64-bit type when necessary; won't happen before 2030
+		/* this value will be non-zero only if and only if transactions for this block and all its parents are available. */
+		unsigned int nChainTx;
 
     CBigNum bnChainWork;
 
-    // block header
+		/* block header */
     int nVersion;
     uint256 hashMerkleRoot;
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
-
 
     CBlockIndex()
     {
@@ -1603,8 +1416,6 @@ class CBlockIndex
       pprev = NULL;
       pnext = NULL;
       pskip = NULL;
-      //       nFile = 0;
-      //        nBlockPos = 0;
       nHeight = 0;
       nStatus = 0;
       bnChainWork = 0;
@@ -1616,32 +1427,11 @@ class CBlockIndex
       nNonce         = 0;
     }
 
-#if 0
-    CBlockIndex(unsigned int nFileIn, unsigned int nBlockPosIn, CBlock& block)
-    {
-      phashBlock = NULL;
-      pprev = NULL;
-      pnext = NULL;
-      nFile = nFileIn;
-      nBlockPos = nBlockPosIn;
-      nHeight = 0;
-      bnChainWork = 0;
-
-      nVersion       = block.nVersion;
-      hashMerkleRoot = block.hashMerkleRoot;
-      nTime          = block.nTime;
-      nBits          = block.nBits;
-      nNonce         = block.nNonce;
-    }
-#endif
-
     CBlockIndex(CBlockHeader& block)
     {
       phashBlock = NULL;
       pprev = NULL;
       pnext = NULL;
-      //        nFile = nFileIn;
-      //       nBlockPos = nBlockPosIn;
       nHeight = 0;
       nStatus = 0;
       bnChainWork = 0;
@@ -1678,12 +1468,11 @@ class CBlockIndex
 
     CBigNum GetBlockWork(bool fUseAlgo = true) const;
 
-    //bool IsInMainChain() const;
     bool IsInMainChain(int ifaceIndex) const;
 
     bool CheckIndex() const
     {
-      return true; // CheckProofOfWork(GetBlockHash(), nBits);
+      return (true);
     }
 
     enum { nMedianTimeSpan=11 };
@@ -1722,7 +1511,6 @@ class CBlockIndex
 
     bool IsValid(int nUpTo = BLOCK_VALID_TRANSACTIONS) const
     {
-//        assert(!(nUpTo & ~BLOCK_VALID_MASK)); // Only validity flags allowed.
         if (nStatus & BLOCK_FAILED_MASK)
             return false;
         return ((nStatus & BLOCK_VALID_MASK) >= nUpTo);
@@ -1732,7 +1520,6 @@ class CBlockIndex
     //! Returns true if the validity was changed.
     bool RaiseValidity(int nUpTo)
     {
-//        assert(!(nUpTo & ~BLOCK_VALID_MASK)); // Only validity flags allowed.
         if (nStatus & BLOCK_FAILED_MASK)
             return false;
         if ((nStatus & BLOCK_VALID_MASK) < nUpTo) {
@@ -1818,13 +1605,9 @@ public:
             READWRITE(nVersion);
 
         READWRITE(hashNext);
-/*
-        READWRITE(nFile);
-        READWRITE(nBlockPos);
-*/
         READWRITE(nHeight);
 
-        // block header
+        /* block header */
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
@@ -1876,7 +1659,8 @@ struct CBlockIndexWorkComparator
         if (pa->GetBlockHash() < pb->GetBlockHash()) return false;
         if (pa->GetBlockHash() > pb->GetBlockHash()) return true;
 
-        return false; // identical blocks
+				/* identical */
+        return false;
     }   
 };      
 

@@ -1,27 +1,31 @@
-<pre>
-  SIP: 23
+<pre class="western">  SIP: 23
   Layer: Core
   Title: Certified Coin Transfer
-	Author: Neo Natura < support@neo-natura.com >
+  Author: Neo Natura &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
-  Created: 2019-01-27
-</pre>
+  Created: 2019-01-27</pre>
+==Abstract== 
+This SIP defines a method of sending a coin payment with a
+verifiable return address. 
 
-==Abstract==
-This SIP defines a method of sending a coin payment with a verifiable return address.
+==Motivation== 
+The ident extended transaction is intended to provide a method for
+third-party application to verify the originating identify of funds
+being sent. 
 
-==Motivation==
-The ident extended transaction is intended to provide a method for third-party application to verify the originating identify of funds being sent. 
+==Specifications== 
+A certified coin transfer is performed in the same manner as a
+regular coin transfer, except that it includes a reference to a
+certificate that was created by the sender. 
 
-==Specifications==
-A certified coin transfer is performed in the same manner as a regular coin transfer, except that it includes a reference to a certificate that was created by the sender.  
+The output script for the payee destination is prefixed with the
+following: 
 
-The output script for the payee destination is prefixed with the following;
-; OP_EXT_PAY OP_IDENT OP_HASH160 hashIdent OP_2DROP
+OP_EXT_PAY OP_N(OP_IDENT) OP_HASH160 [IDENT HASH] OP_2DROP 
 
-===Usage===
-A "Certified Funds Transfer" is comprised of a regular fund send transaction with the addition of a "Ident" extended transaction.
+===Usage=== 
+A &quot;Certified Funds Transfer&quot; is comprised of a regular
+fund send transaction with the addition of a &quot;Ident&quot;
+extended transaction. 
 
-==Copyright==
-This document is placed in the public domain.
