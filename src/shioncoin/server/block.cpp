@@ -629,11 +629,20 @@ bool IsInitialBlockDownload(int ifaceIndex)
 			ifaceIndex == TESTNET_COIN_IFACE)
 		return (false);
 
-  CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
-  if (pindexBest == NULL)
-    return true;
+	CBlockIndex *pindexBest = GetBestBlockIndex(ifaceIndex);
+	if (pindexBest == NULL)
+		return (true);
 
-	return ( pindexBest->GetBlockTime() < (GetTime() - MAX_BLOCK_DOWNLOAD_TIME) );
+	CWallet *wallet = GetWallet(ifaceIndex);
+	if (!wallet || !wallet->pindexBestHeader)
+		return (false);
+
+	if (wallet->pindexBestHeader->nTime > pindexBest->nTime &&
+			(wallet->pindexBestHeader->nTime - pindexBest->nTime) > MAX_BLOCK_DOWNLOAD_TIME) {
+		return (true);
+	}
+
+	return (false);
 }
 
 uint256 GetBestBlockChain(CIface *iface)
