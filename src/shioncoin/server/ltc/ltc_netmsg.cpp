@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "chain.h"
 #include "validation.h"
 #include "ltc_pool.h"
@@ -243,16 +242,6 @@ bool ltc_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataStr
   int ifaceIndex = GetCoinIndex(iface);
   char errbuf[256];
   shtime_t ts;
-
-#if 0
-  Debug("LTC:ProcessMessage: received '%s' (%d bytes from %s)\n", strCommand.c_str(), vRecv.size(), pfrom->addr.ToString().c_str());
-  RandAddSeedPerfmon();
-  if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
-  {
-    printf("dropmessagestest DROPPING RECV MESSAGE\n");
-    return true;
-  }
-#endif
 
   if (strCommand == "version")
   {

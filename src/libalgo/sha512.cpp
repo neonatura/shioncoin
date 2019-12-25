@@ -23,8 +23,7 @@
  *  @endcopyright
  */  
 
-#include <algo/sha512.h>
-//#include <crypto/common.h>
+#include "sha512.h"
 #include <string.h>
 
 void static inline WriteBE64(unsigned char* ptr, uint64_t x)

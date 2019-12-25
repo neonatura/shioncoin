@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "ltc_pool.h"
 #include "ltc_block.h"
 #include "ltc_txidx.h"
@@ -662,6 +661,7 @@ bool ltc_CheckProofOfWork(uint256 hash, unsigned int nBits)
 bool LTCBlock::CheckBlock()
 {
   CIface *iface = GetCoinByIndex(LTC_COIN_IFACE);
+	bool ok;
 
   if (vtx.empty()) {
     return (trust(-100, "(ltc) CheckBlock: block submitted with zero transactions"));
@@ -676,10 +676,10 @@ bool LTCBlock::CheckBlock()
     return (trust(-100, "(ltc) ChecKBlock: first transaction is not coin base"));
   }
 
-  // Check proof of work matches claimed amount
-  if (!ltc_CheckProofOfWork(GetPoWHash(), nBits)) {
-    return (trust(-50, "(ltc) CheckBlock: proof of work failed"));
-  }
+	/* verify difficulty match proof-of-work hash. */
+	ok = ltc_CheckProofOfWork(GetPoWHash(), nBits);
+	if (!ok)
+		return error(SHERR_INVAL, "CheckBlock() : proof of work failed");
 
   // Check timestamp
   if (GetBlockTime() > GetAdjustedTime() + LTC_MAX_DRIFT_TIME) {

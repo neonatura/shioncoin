@@ -27,6 +27,9 @@
 #define __SERVER__SERIALIZE_H__
 
 #include "allocators.h"
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
+#include <boost/tuple/tuple_io.hpp>
 
 class CScript;
 class CDataStream;

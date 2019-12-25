@@ -5,12 +5,15 @@ TESTS = test_shcoind
 check_PROGRAMS = test_shcoind
 
 AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/libjsonspirit \
 	-I$(top_srcdir)/src/secp256k1/include \
 	-I$(top_srcdir)/src/libdi3 \
+	-I$(top_srcdir)/src/libalgo \
+	-I$(top_srcdir)/src/libfractal \
+	-I$(top_srcdir)/src/libcoin \
 	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include \
 	-I$(top_srcdir)/src/share-lib \
 	-I$(srcdir)/proto \
-	-I$(srcdir)/fractal \
 	-I$(srcdir)/server \
 	-I$(srcdir)/server/ext \
 	-I$(srcdir)/server/blockchain \
@@ -139,13 +142,11 @@ common_includes = \
 	$(top_srcdir)/src/share-lib/delta/xdelta3.h \
 	$(top_srcdir)/src/share-lib/net/shnet.h \
 	unet/unet.h \
-	server/bech32.h \
 	server/coin.h \
 	server/validation.h \
 	server/chain.h \
 	server/global.h \
 	server/allocators.h \
-	server/bignum.h \
 	server/rpcalias_proto.h \
 	server/rpccert_proto.h \
 	server/rpccontext_proto.h \
@@ -159,39 +160,14 @@ common_includes = \
 	server/dikey.h \
 	server/keystore.h \
 	server/mruset.h \
-	server/netbase.h \
 	server/net.h \
 	server/txsignature.h \
 	server/versionbits.h \
 	server/algobits.h \
-	server/protocol.h \
 	server/script.h \
-	server/algo/blake2.h \
-	server/algo/blake2s.h \
-	server/algo/keccak.h \
-	server/algo/qubit.h \
-	server/algo/scrypt.h \
-	server/algo/sha512.h \
-	server/algo/hmac_sha512.h \
-	server/algo/sph_blake.h \
-	server/algo/sph_bmw.h \
-	server/algo/sph_cubehash.h \
-	server/algo/sph_echo.h \
-	server/algo/sph_groestl.h \
-	server/algo/sph_jh.h \
-	server/algo/sph_keccak.h \
-	server/algo/sph_luffa.h \
-	server/algo/sph_shavite.h \
-	server/algo/sph_simd.h \
-	server/algo/sph_skein.h \
-	server/algo/sph_types.h \
-	server/algo/x11.h \
 	server/serialize.h \
 	server/strlcpy.h \
-	server/sync.h \
 	server/ui_interface.h \
-	server/uint256.h \
-	server/util.h \
 	server/version.h \
 	server/walletdb.h \
 	server/wallet.h \
@@ -227,9 +203,9 @@ common_sources = \
 	unet/unet_event.c \
 	unet/unet_local.c \
 	server/mnemonic.cpp \
-	server/netbase.cpp \
 	server/version.cpp \
-	server/util.cpp
+	server/util.cpp \
+	server/util.h
 
 testnet_sources = \
 	server/testnet/testnet_netmsg.cpp \
@@ -260,8 +236,6 @@ server_sources = \
 	$(blockchain_sources) \
 	$(proto_sources) \
 	server/txfeerate.cpp \
-	fractal/fractal.c \
-	fractal/fractal_bmp.c \
 	server/bolo/bolo_validation03.cpp \
 	server/bolo/bolo_validation03.h \
 	server/test/test_wallet.cpp \
@@ -344,7 +318,6 @@ server_sources = \
 	server/checkpoints.h \
 	server/txmempool.cpp \
 	server/txmempool.h \
-	server/bech32.cpp \
 	server/coin.cpp \
 	server/validation.cpp \
 	server/chain.cpp \
@@ -362,35 +335,11 @@ server_sources = \
 	server/keystore.cpp \
 	server/main.cpp \
 	server/script.cpp \
-	server/sync.cpp \
 	server/walletdb.cpp \
 	server/wallet.cpp \
 	server/wallettx.cpp \
 	server/account.cpp \
 	server/txcreator.cpp \
-	server/algo/blake2.c \
-	server/algo/blake2s.c \
-	server/algo/groestl.c \
-	server/algo/keccak.c \
-	server/algo/qubit.c \
-	server/algo/scrypt.c \
-	server/algo/sha512.cpp \
-	server/algo/hmac_sha512.cpp \
-	server/algo/skein.c \
-	server/algo/sph_blake.c \
-	server/algo/sph_bmw.c \
-	server/algo/sph_cubehash.c \
-	server/algo/sph_echo.c \
-	server/algo/sph_groestl.c \
-	server/algo/sph_jh.c \
-	server/algo/sph_keccak.c \
-	server/algo/sph_luffa.c \
-	server/algo/sph_shavite.c \
-	server/algo/sph_simd.c \
-	server/algo/sph_skein.c \
-	server/algo/x11.c \
-	server/addrman.h \
-	server/addrman.cpp \
 	server/base58.h \
 	server/base58.cpp \
 	server/coinaddr.h \
@@ -426,7 +375,10 @@ endif
 shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
 	$(top_builddir)/src/libcrypto/libcrypto.a \
-	$(top_builddir)/src/libdi3/libdi3.a
+	$(top_builddir)/src/libalgo/libalgo.a \
+	$(top_builddir)/src/libfractal/libfractal.a \
+	$(top_builddir)/src/libdi3/libdi3.a \
+	$(top_builddir)/src/libcoin/libcoin.a
 if STATIC_LIBSHARE
 shcoind_LDADD += \
 	$(LIBSHARE)/src/share-lib/libshare.a \
@@ -469,7 +421,10 @@ test_shcoind_SOURCES = \
 test_shcoind_LDADD = \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
 	$(top_builddir)/src/libcrypto/libcrypto.a \
-	$(top_builddir)/src/libdi3/libdi3.a
+	$(top_builddir)/src/libalgo/libalgo.a \
+	$(top_builddir)/src/libfractal/libfractal.a \
+	$(top_builddir)/src/libdi3/libdi3.a \
+	$(top_builddir)/src/libcoin/libcoin.a
 test_shcoind_CFLAGS = -g -O0 -DTEST_SHCOIND
 test_shcoind_CXXFLAGS = -g -O0 -DTEST_SHCOIND
 if STATIC_LIBSHARE

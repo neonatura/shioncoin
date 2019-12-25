@@ -31,7 +31,6 @@
 #include "key.h"
 #include "keystore.h"
 #include "script.h"
-#include "ui_interface.h"
 #include "coin.h"
 #include "checkpoints.h"
 

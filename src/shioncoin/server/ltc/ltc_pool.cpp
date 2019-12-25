@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "txmempool.h"
 #include "txfeerate.h"
 #include "ltc_pool.h"

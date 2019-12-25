@@ -27,18 +27,13 @@
 #define __SERVER__RPCCONTEXT_PROTO_H__
 
 
-#if 0
-#include "shcoind.h"
-#include "coin_proto.h"
-#endif
-
 #include <string>
 #include <list>
 #include <map>
 
-#include "json/json_spirit_reader_template.h"
-#include "json/json_spirit_writer_template.h"
-#include "json/json_spirit_utils.h"
+#include "json_spirit_reader_template.h"
+#include "json_spirit_writer_template.h"
+#include "json_spirit_utils.h"
 
 
 

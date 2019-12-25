@@ -24,14 +24,12 @@
  */  
 
 #include "shcoind.h"
-#include "ui_interface.h"
 #include "base58.h"
 
 #include <boost/lexical_cast.hpp>
 
 #define printf OutputDebugStringF
 
-using namespace json_spirit;
 using namespace std;
 
 static bool fHelp = false;

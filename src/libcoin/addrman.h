@@ -32,7 +32,7 @@
 
 #include "netbase.h"
 #include "protocol.h"
-#include "util.h"
+//#include "util.h"
 #include "sync.h"
 
 

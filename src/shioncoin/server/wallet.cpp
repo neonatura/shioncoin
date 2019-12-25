@@ -28,7 +28,6 @@
 #include "wallettx.h"
 #include "walletdb.h"
 #include "crypter.h"
-#include "ui_interface.h"
 #include "base58.h"
 #include "chain.h"
 #include "txsignature.h"

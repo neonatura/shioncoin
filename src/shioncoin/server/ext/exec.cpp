@@ -25,8 +25,8 @@
 
 #include "shcoind.h"
 #include "sexe.h"
-#include "json/json_spirit_reader_template.h"
-#include "json/json_spirit_writer_template.h"
+#include "json_spirit_reader_template.h"
+#include "json_spirit_writer_template.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include "wallet.h"
 #include "block.h"

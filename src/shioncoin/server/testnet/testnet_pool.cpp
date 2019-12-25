@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "testnet_pool.h"
 #include "testnet_block.h"
 #include "testnet_wallet.h"

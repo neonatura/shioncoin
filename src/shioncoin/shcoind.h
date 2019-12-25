@@ -89,19 +89,7 @@ extern shbuf_t *server_msg_buff;
 
 #ifdef __cplusplus
 
-/* standard c++ runtime */
-#include <cstdio>
-#include <cassert>
-#include <limits>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <set>
-#include <list>
-#include <map>
-#include <db_cxx.h>
-#include <stdarg.h>
-
+#include "common.h"
 
 /* boost c++ runtime */
 #include <boost/algorithm/string.hpp>

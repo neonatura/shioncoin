@@ -28,7 +28,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "emc2_pool.h"
 #include "emc2_block.h"
 #include "emc2_txidx.h"

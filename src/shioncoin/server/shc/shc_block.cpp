@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "shc_pool.h"
 #include "shc_block.h"
 #include "shc_wallet.h"
@@ -461,13 +460,13 @@ CBlockIndex *shc_GetLastCheckpoint()
 	return (wallet->checkpoints->GetLastCheckpoint());
 }
 
-bool shc_CheckProofOfWork(uint256 hash, unsigned int nBits)
+bool shc_CheckProofOfWork(uint256 hash, unsigned int nBits, const CBigNum& bnProofOfWorkLimit)
 {
   CBigNum bnTarget;
   bnTarget.SetCompact(nBits);
 
   // Check range
-  if (bnTarget <= 0 || bnTarget > SHC_bnProofOfWorkLimit)
+  if (bnTarget <= 0 || bnTarget > bnProofOfWorkLimit)
     return error(SHERR_INVAL, "CheckProofOfWork() : nBits below minimum work");
 
   // Check proof of work matches claimed amount
@@ -483,6 +482,7 @@ bool shc_CheckProofOfWork(uint256 hash, unsigned int nBits)
 bool SHCBlock::CheckBlock()
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
+	bool ok;
 
   if (vtx.empty()) { 
     return (trust(-80, "(shc) CheckBlock: block submitted with zero transactions"));
@@ -496,8 +496,13 @@ bool SHCBlock::CheckBlock()
   if (vtx.empty() || !vtx[0].IsCoinBase())
     return error(SHERR_INVAL, "CheckBlock() : first tx is not coinbase");
 
-  // Check proof of work matches claimed amount
-  if (!shc_CheckProofOfWork(GetPoWHash(), nBits)) {
+	/* verify difficulty match proof-of-work hash. */
+	if (GetHash() == shc_hashGenesisBlock) { /* genesis block */
+		ok = shc_CheckProofOfWork(GetPoWHash(), nBits, SHC_bnGenesisProofOfWorkLimit);
+	} else {
+		ok = shc_CheckProofOfWork(GetPoWHash(), nBits, SHC_bnProofOfWorkLimit);
+	}
+  if (!ok) {
     return error(SHERR_INVAL, "CheckBlock() : proof of work failed");
   }
 
@@ -588,6 +593,8 @@ bool SHCBlock::IsBestChain()
 }
 
 
+bool BlockVerifyValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex);
+
 bool SHCBlock::AcceptBlock()
 {
   blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
@@ -615,10 +622,14 @@ bool SHCBlock::AcceptBlock()
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;
     if (mode == OP_EXT_VALIDATE) {
+#if 0
 			bool fValMatrix = false;
 			fValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], NULL, fCheck);
 			if (fValMatrix && !fCheck)
 				return error(SHERR_ILSEQ, "(shc) AcceptBlock: ValidateMatrix verification failure.");
+#endif
+			if (!BlockVerifyValidateMatrix(iface, vtx[0], NULL))
+				return (false);
     } else if (mode == OP_EXT_PAY) {
       bool fHasSprMatrix = BlockAcceptSpringMatrix(iface, vtx[0], fCheck);
       if (fHasSprMatrix && !fCheck)

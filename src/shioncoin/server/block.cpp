@@ -34,12 +34,12 @@
 #include "coin.h"
 #include "wallet.h"
 #include "algobits.h"
-#include "algo/keccak.h"
-#include "algo/x11.h"
-#include "algo/blake2.h"
-#include "algo/qubit.h"
-#include "algo/groestl.h"
-#include "algo/skein.h"
+#include "keccak.h"
+#include "x11.h"
+#include "blake2.h"
+#include "qubit.h"
+#include "groestl.h"
+#include "skein.h"
 #include "bolo/bolo_validation03.h"
 
 using namespace std;

@@ -28,7 +28,6 @@
 #include "account.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "test_pool.h"
 #include "test_block.h"
 #include "test_txidx.h"
@@ -594,6 +593,7 @@ bool test_ProcessBlock(CNode* pfrom, CBlock* pblock)
   return true;
 }
 
+#if 0
 bool test_CheckProofOfWork(uint256 hash, unsigned int nBits, int alg)
 {
   CBigNum TEST_bnTarget;
@@ -614,6 +614,23 @@ bool test_CheckProofOfWork(uint256 hash, unsigned int nBits, int alg)
 
   return true;
 }
+#endif
+bool test_CheckProofOfWork(uint256 hash, unsigned int nBits, const CBigNum& bnProofOfWorkLimit)
+{
+  CBigNum bnTarget;
+  bnTarget.SetCompact(nBits);
+
+  // Check range
+  if (bnTarget <= 0 || bnTarget > bnProofOfWorkLimit)
+    return error(SHERR_INVAL, "CheckProofOfWork() : nBits below minimum work");
+
+  // Check proof of work matches claimed amount
+  if (hash > bnTarget.getuint256())
+    return error(SHERR_INVAL, "CheckProofOfWork() : hash doesn't match nBits");
+
+  return true;
+}
+
 
 /**
  * @note These are checks that are independent of context that can be verified before saving an orphan block.
@@ -621,6 +638,7 @@ bool test_CheckProofOfWork(uint256 hash, unsigned int nBits, int alg)
 bool TESTBlock::CheckBlock()
 {
   CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+	bool ok;
 
   if (vtx.empty()) {
     return (trust(-100, "(test) CheckBlock: block submitted with zero transactions"));
@@ -636,12 +654,17 @@ bool TESTBlock::CheckBlock()
   }
 
   if (!vtx[0].IsCoinBase())
-    return error(SHERR_INVAL, "(test) CheckBlock: first tx is not coinbase.");
+		return error(SHERR_INVAL, "(test) CheckBlock: first tx is not coinbase.");
 
-  // Check proof of work matches claimed amount
-  if (!test_CheckProofOfWork(GetPoWHash(), nBits, GetAlgo())) {
-    return error(SHERR_INVAL, "(test) CheckBlock : proof of work failed");
-  }
+	/* verify difficulty match proof-of-work hash. */
+	if (GetHash() == test_hashGenesisBlock) { /* genesis block */
+		ok = test_CheckProofOfWork(GetPoWHash(), nBits, TEST_bnGenesisProofOfWorkLimit);
+	} else {
+		ok = test_CheckProofOfWork(GetPoWHash(), nBits, TEST_bnProofOfWorkLimit);
+	}
+	if (!ok) {
+		return error(SHERR_INVAL, "CheckBlock() : proof of work failed");
+	}
 
   // Check timestamp
   if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
@@ -877,6 +900,8 @@ bool TESTBlock::IsBestChain()
   return (pindexBest && GetHash() == pindexBest->GetBlockHash());
 }
 
+bool BlockVerifyValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex);
+
 bool TESTBlock::AcceptBlock()
 {
   blkidx_t *blockIndex = GetBlockTable(TEST_COIN_IFACE);
@@ -931,9 +956,13 @@ bool TESTBlock::AcceptBlock()
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;
     if (mode == OP_EXT_VALIDATE) {
+#if 0
       bool fHasValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], NULL, fCheck);
       if (fHasValMatrix && !fCheck)
         return error(SHERR_ILSEQ, "AcceptBlock: test_Validate failure");
+#endif
+			if (!BlockVerifyValidateMatrix(iface, vtx[0], NULL))
+				return (false); 
     } else if (mode == OP_EXT_PAY) {
       bool fHasSprMatrix = BlockAcceptSpringMatrix(iface, vtx[0], fCheck);
       if (fHasSprMatrix && !fCheck)

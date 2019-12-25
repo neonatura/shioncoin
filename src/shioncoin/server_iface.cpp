@@ -31,7 +31,6 @@
 #include "shcoind.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "shc/shc_netmsg.h"
 #include "emc2/emc2_netmsg.h"
 #include "ltc/ltc_netmsg.h"
@@ -794,8 +793,6 @@ int shc_coin_server_recv(CIface *iface, CNode *pnode, shbuf_t *buff)
   if (!fRet) {
     error(SHERR_INVAL, "shc_coin_server_recv: shc_coin_server_recv_msg ret'd %s <%u bytes> [%s]\n", fRet ? "true" : "false", hdr.size, hdr.cmd); 
   }
-
-	Debug("(shc) coin_server_recv: received <%u bytes> \"%s\" request from \"%s\".", hdr.size, hdr.cmd, pnode->addr.ToString().c_str());
 
   pnode->nLastRecv = GetTime();
   return (0);
@@ -2410,3 +2407,48 @@ bool CNode::HasHeader(CBlockIndex *pindex)
 		return true;
 	return false;
 }
+
+void CNode::PushTx(const CTransaction& tx, int flags)
+{
+	static const char *pszCommand = "tx";
+
+	CDataStream ss(SER_NETWORK, flags);
+	ss.reserve(1024);
+	ss << tx;
+
+	try
+	{
+		BeginMessage(pszCommand);
+		vSend << ss;
+		EndMessage();
+	}
+	catch (...)
+	{
+		AbortMessage();
+		throw;
+	}
+
+}
+
+void CNode::PushBlock(const CBlock& block, int nFlag)
+{
+	static const char *pszCommand = "block";
+
+	CDataStream ss(SER_GETHASH, nFlag);
+	ss.reserve(4096);
+	ss << block;
+
+	try
+	{
+		BeginMessage(pszCommand);
+		vSend << ss;
+		EndMessage();
+	}
+	catch (...)
+	{
+		AbortMessage();
+		throw;
+	}
+
+}
+

@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "emc2_pool.h"
 #include "emc2_block.h"
 #include "emc2_txidx.h"
@@ -790,13 +789,13 @@ pblock->print();
   return true;
 }
 
-bool emc2_CheckProofOfWork(uint256 hash, unsigned int nBits)
+bool emc2_CheckProofOfWork(uint256 hash, unsigned int nBits, const CBigNum& bnProofOfWorkLimit)
 {
   CBigNum bnTarget;
   bnTarget.SetCompact(nBits);
 
   /* Check range */
-  if (bnTarget <= 0 || bnTarget > emc2_bnProofOfWorkLimit)
+  if (bnTarget <= 0 || bnTarget > bnProofOfWorkLimit)
     return error(SHERR_INVAL, "CheckProofOfWork() : nBits below minimum work");
 
   /* Check proof of work matches claimed amount */
@@ -812,6 +811,7 @@ bool emc2_CheckProofOfWork(uint256 hash, unsigned int nBits)
 bool EMC2Block::CheckBlock()
 {
   CIface *iface = GetCoinByIndex(EMC2_COIN_IFACE);
+	bool ok;
 
   if (vtx.empty()) {
     return (trust(-100, "(emc2) CheckBlock: block submitted with zero transactions"));
@@ -825,6 +825,16 @@ bool EMC2Block::CheckBlock()
   if (!vtx[0].IsCoinBase()) {
     return (trust(-100, "(emc2) ChecKBlock: first transaction is not coin base"));
   }
+
+	/* verify difficulty match proof-of-work hash. */
+	if (GetHash() == emc2_hashGenesisBlock) { /* genesis block */
+		ok = emc2_CheckProofOfWork(GetPoWHash(), nBits, EMC2_bnGenesisProofOfWorkLimit);
+	} else {
+		ok = emc2_CheckProofOfWork(GetPoWHash(), nBits, EMC2_bnProofOfWorkLimit);
+	}
+	if (!ok) {
+		return error(SHERR_INVAL, "CheckBlock() : proof of work failed");
+	}
 
   // Check proof of work matches claimed amount
   if (!emc2_CheckProofOfWork(GetPoWHash(), nBits)) {

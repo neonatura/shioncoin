@@ -23,10 +23,8 @@
  *  @endcopyright
  */  
 
-#include "shcoind.h"
-#include "main.h"
+#include "common.h"
 #include "sync.h"
-#include "util.h"
 #include <boost/foreach.hpp>
 
 #ifdef DEBUG_LOCKCONTENTION

@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "shc_pool.h"
 #include "shc_block.h"
 #include "shc_txidx.h"
@@ -162,7 +161,7 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
 				int nMode;
 				if (VerifyMatrixTx(tx, nMode)) {
 					if (nMode == OP_EXT_VALIDATE) {
-						BlockAcceptValidateMatrix(iface, tx, pindexNew, fCheck);
+						BlockAcceptValidateMatrix(iface, tx, lastIndex, fCheck);
 					} else if (nMode == OP_EXT_PAY) {
 						vSpring.push_back(pindexNew);
 					}

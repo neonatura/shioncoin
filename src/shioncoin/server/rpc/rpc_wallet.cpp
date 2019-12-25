@@ -32,7 +32,6 @@ using namespace std;
 #include "db.h"
 #include "walletdb.h"
 #include "net.h"
-#include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
 #include "addrman.h"

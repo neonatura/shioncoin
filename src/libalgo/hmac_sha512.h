@@ -26,7 +26,7 @@
 #ifndef ALGO___HMAC_SHA512_H
 #define ALGO___HMAC_SHA512_H
 
-#include <algo/sha512.h>
+#include "sha512.h"
 
 #include <stdint.h>
 #include <stdlib.h>

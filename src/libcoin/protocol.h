@@ -33,7 +33,7 @@
 #include "serialize.h"
 #include "netbase.h"
 #include <string>
-#include "../proto.h"
+//#include "../proto.h"
 #include "uint256.h"
 
 /** Message header.

@@ -410,12 +410,51 @@ bool RelayValidateMatrixNotaryTx(CIface *iface, const CTransaction& txMatrix, CT
 	return (true);
 }
 
+/* verifies the integrity of the transaction in relation to the validate matrix. if no validate matrix exists, then the integrity is ok.
+ */
+bool BlockVerifyValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex)
+{
+	int ifaceIndex = GetCoinIndex(iface);
+	CWallet *wallet = GetWallet(iface);
+	bool fMatrix = false;
+	int mode;
+
+	if (!VerifyMatrixTx(tx, mode))
+		return (true); /* n/a */
+	if (mode != OP_EXT_VALIDATE)
+		return (true); /* n/a */
+
+	if (!pindex)
+		pindex = GetBestBlockIndex(ifaceIndex);
+	CTxMatrix& matrix = *tx.GetMatrix();
+	if (matrix.GetType() != CTxMatrix::M_VALIDATE ||
+			matrix.GetHeight() <= wallet->matrixValidate.GetHeight())
+		return (true); /* n/a */
+
+	{
+		int nOut;
+		int mode;
+		CScript script;
+		if (!GetExtOutput(tx, OP_MATRIX, mode, nOut, script)) {
+			return (error(SHERR_INVAL, "BlockVerifyValidateMatrix: GetExtOutput: invalid matrix received: %s [script \"%s\"]", matrix.ToString().c_str(), script.ToString().c_str()));
+		}
+
+		if (!VerifyValidateMatrixScript(wallet, 0, script)) {
+			return (error(SHERR_INVAL, "BlockVerifyValidateMatrix: VerifyValidateMatrixScript: invalid matrix received: %s", matrix.ToString().c_str()));
+		}
+
+		if (!tx.VerifyValidateMatrix(ifaceIndex, matrix, pindex)) {
+			return (error(SHERR_INVAL, "BlockVerifyValidateMatrix: VerifyValidateMatrix: invalid matrix received: %s", matrix.ToString().c_str()));
+		}
+	}
+
+	return (true); /* validate matrix was found */
+}
 
 bool BlockAcceptValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex, bool& fCheck)
 {
 	int ifaceIndex = GetCoinIndex(iface);
 	CWallet *wallet = GetWallet(iface);
-	CTxMatrix matrix;
 	bool fMatrix = false;
 	int mode;
 

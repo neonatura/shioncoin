@@ -28,7 +28,6 @@
 #include "main.h"
 #include "db.h"
 #include "net.h"
-#include "ui_interface.h"
 #include "block.h"
 #include "script.h"
 #include "txsignature.h"

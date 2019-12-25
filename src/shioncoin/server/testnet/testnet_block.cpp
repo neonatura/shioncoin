@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "testnet_pool.h"
 #include "testnet_block.h"
 #include "testnet_wallet.h"
@@ -600,13 +599,13 @@ bool testnet_ProcessBlock(CNode* pfrom, CBlock* pblock)
 }
 
 
-bool testnet_CheckProofOfWork(uint256 hash, unsigned int nBits)
+bool testnet_CheckProofOfWork(uint256 hash, unsigned int nBits, const CBigNum& bnProofOfWorkLimit)
 {
   CBigNum bnTarget;
   bnTarget.SetCompact(nBits);
 
   // Check range
-  if (bnTarget <= 0 || bnTarget > TESTNET_bnProofOfWorkLimit)
+  if (bnTarget <= 0 || bnTarget > bnProofOfWorkLimit)
     return error(SHERR_INVAL, "CheckProofOfWork() : nBits below minimum work");
 
   // Check proof of work matches claimed amount
@@ -622,6 +621,7 @@ bool testnet_CheckProofOfWork(uint256 hash, unsigned int nBits)
 bool TESTNETBlock::CheckBlock()
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
+	bool ok;
 
   if (vtx.empty()) { 
     return (trust(-80, "(testnet) CheckBlock: block submitted with zero transactions"));
@@ -634,12 +634,17 @@ bool TESTNETBlock::CheckBlock()
 
 
   if (vtx.empty() || !vtx[0].IsCoinBase())
-    return error(SHERR_INVAL, "CheckBlock() : first tx is not coinbase");
+		return error(SHERR_INVAL, "CheckBlock() : first tx is not coinbase");
 
-  // Check proof of work matches claimed amount
-  if (!testnet_CheckProofOfWork(GetPoWHash(), nBits)) {
-    return error(SHERR_INVAL, "CheckBlock() : proof of work failed");
-  }
+	/* verify difficulty match proof-of-work hash. */
+	if (GetHash() == testnet_hashGenesisBlock) { /* genesis block */
+		ok = testnet_CheckProofOfWork(GetPoWHash(), nBits, TESTNET_bnGenesisProofOfWorkLimit);
+	} else {
+		ok = testnet_CheckProofOfWork(GetPoWHash(), nBits, TESTNET_bnProofOfWorkLimit);
+	}
+	if (!ok) {
+		return error(SHERR_INVAL, "CheckBlock() : proof of work failed");
+	}
 
   // Check timestamp
   if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
@@ -727,6 +732,9 @@ bool TESTNETBlock::IsBestChain()
 }
 
 
+bool BlockVerifyValidateMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex);
+
+
 bool TESTNETBlock::AcceptBlock()
 {
   blkidx_t *blockIndex = GetBlockTable(TESTNET_COIN_IFACE);
@@ -781,10 +789,14 @@ bool TESTNETBlock::AcceptBlock()
   if (vtx.size() != 0 && VerifyMatrixTx(vtx[0], mode)) {
     bool fCheck = false;
     if (mode == OP_EXT_VALIDATE) {
+#if 0
       bool fValMatrix = false;
       fValMatrix = BlockAcceptValidateMatrix(iface, vtx[0], NULL, fCheck);
       if (fValMatrix && !fCheck)
         return error(SHERR_ILSEQ, "(testnet) AcceptBlock: ValidateMatrix verification failure.");
+#endif
+			if (!BlockVerifyValidateMatrix(iface, vtx[0], NULL))
+				return (false); 
     } else if (mode == OP_EXT_PAY) {
       bool fHasSprMatrix = BlockAcceptSpringMatrix(iface, vtx[0], fCheck);
       if (fHasSprMatrix && !fCheck)

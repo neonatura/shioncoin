@@ -33,7 +33,6 @@ using namespace std;
 #include "db.h"
 #include "walletdb.h"
 #include "net.h"
-#include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
 #include "addrman.h"
@@ -1509,6 +1508,7 @@ static void CopyNodeStats(CIface *iface, std::vector<CNodeStats>& vstats)
   }
 }
 
+#if 0
 Value rpc_peer_importdat(CIface *iface, const Array& params, bool fStratum)
 {
 
@@ -1547,7 +1547,7 @@ Value rpc_peer_importdat(CIface *iface, const Array& params, bool fStratum)
   vector<CAddress> vAddr = addrman.GetAddr();
 
   unet_bind_t *bind = unet_bind_table(ifaceIndex);
-  if (bind) {// && bind->peer_db) {
+  if (bind) {
     BOOST_FOREACH(const CAddress &addr, vAddr) {
       sprintf(addr_str, "%s %d", addr.ToStringIP().c_str(), addr.GetPort());
       peer = shpeer_init(iface->name, addr_str);
@@ -1564,6 +1564,7 @@ Value rpc_peer_importdat(CIface *iface, const Array& params, bool fStratum)
 
   return (result);
 }
+#endif
 
 Value rpc_peer_export(CIface *iface, const Array& params, bool fStratum)
 {

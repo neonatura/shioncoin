@@ -33,7 +33,6 @@ using namespace std;
 #include "db.h"
 #include "walletdb.h"
 #include "net.h"
-#include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
 #include "addrman.h"
@@ -635,11 +634,13 @@ const RPCOp PEER_IMPORT = {
   "Syntax: <path>\n"
   "Export entire database of network peers in JSON format."
 };
+#if 0
 const RPCOp PEER_IMPORTDAT = {
   &rpc_peer_importdat, 1, {RPC_STRING}, 
   "Syntax: <path>\n"
   "Import a legacy 'peers.dat' datafile."
 };
+#endif
 const RPCOp PEER_LIST = {
   &rpc_peer_list, 0, {}, 
   "Statistical and runtime information on network peers."
@@ -1037,7 +1038,9 @@ void RegisterRPCOpDefaults(int ifaceIndex)
 
   RegisterRPCOp(ifaceIndex, "peer.import", PEER_IMPORT);
 
+#if 0
   RegisterRPCOp(ifaceIndex, "peer.importdat", PEER_IMPORTDAT);
+#endif
 
   RegisterRPCOp(ifaceIndex, "peer.info", PEER_INFO);
 

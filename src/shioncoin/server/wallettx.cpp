@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "walletdb.h"
 #include "crypter.h"
-#include "ui_interface.h"
 #include "base58.h"
 #include "chain.h"
 #include "txsignature.h"
@@ -179,101 +178,8 @@ bool CWallet::AddTx(const CTransaction& tx, const CBlock* pblock)
 
 bool CWallet::AddTx(const CWalletTx& wtxIn)
 {
-#if 0
-
-//	if (IsFromMe(wtxIn) || IsMine(wtxIn)) 
-	{
-		const uint256& hash = wtxIn.GetHash();
-
-		{
-			LOCK(cs_wallet);
-
-			pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
-			CWalletTx& wtx = (*ret.first).second;
-			wtx.BindWallet(this);
-			bool fInsertedNew = ret.second;
-			if (fInsertedNew)
-				wtx.nTimeReceived = GetAdjustedTime();
-
-			bool fUpdated = false;
-			if (!fInsertedNew) { // Merge
-				if (wtxIn.hashBlock != 0 && wtxIn.hashBlock != wtx.hashBlock) {
-					wtx.hashBlock = wtxIn.hashBlock;
-					fUpdated = true;
-				}
-				if (wtxIn.nIndex != -1 && (wtxIn.vMerkleBranch != wtx.vMerkleBranch || wtxIn.nIndex != wtx.nIndex)) {
-					wtx.vMerkleBranch = wtxIn.vMerkleBranch;
-					wtx.nIndex = wtxIn.nIndex;
-					fUpdated = true;
-				}
-				if (wtxIn.strFromAccount != wtx.strFromAccount) {
-					wtx.strFromAccount = wtxIn.strFromAccount;
-					fUpdated = true;
-				}
-				if (wtxIn.hColor != 0 && wtx.hColor == 0) {
-					wtx.hColor = wtxIn.hColor;
-					fUpdated = true;
-				}
-				if (wtxIn.fFromMe && wtxIn.fFromMe != wtx.fFromMe) {
-					wtx.fFromMe = wtxIn.fFromMe;
-					fUpdated = true;
-				}
-				fUpdated |= wtx.UpdateSpent(wtxIn.vfSpent);
-			}
-
-			Debug("AddToWallet %s  %s%s\n", wtxIn.GetHash().GetHex().c_str(), (fInsertedNew ? "new" : ""), (fUpdated ? "update" : ""));
-
-#if 0
-			pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
-			CWalletTx& wtx = (*ret.first).second;
-			bool fInsertedNew = ret.second;
-
-			wtx.BindWallet(this);
-			if (fInsertedNew)
-				wtx.nTimeReceived = GetAdjustedTime();
-
-			if (!fInsertedNew)
-				fUpdate = wallet_MergeTx(this, hash, wtxIn, wtx);
-#endif
-
-#if 0
-			/* check whether all outputs have been spent. */
-			bool fArch = true;
-			unsigned int idx;
-			for (idx = 0; idx < wtx.vout.size(); idx++) {
-				if (!wtx.IsSpent(idx)) {
-					fArch = false;
-					break;
-				}
-			}
-#endif
-			bool fArch = false;
-			if (!fArch) {
-				if (fInsertedNew || fUpdated) {
-					WriteWalletTx(wtx);
-				}
-			} else {
-				/* remove from active */
-				if (mapWallet.erase(hash))
-					EraseWalletTx(hash);
-				/* write to arch */
-				WriteArchTx(wtx);
-			}
-
-			WalletUpdateSpent(wtx);
-		}
-	}
-
-	return (true);
-#endif
 
   uint256 hash = wtxIn.GetHash();
-#if 0
-	if (HasArchTx(hash)) {
-		CWalletTx& wtx = GetTx(hash);
-		EraseWalletTx(hash); /* redundant */
-	}
-#endif
 
 	{
     LOCK(cs_wallet);

@@ -385,8 +385,24 @@ bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex*
 	if (!iface || !iface->enabled)
 		return (false);
 
-	if (tx->IsCoinBase())
+	if (tx->IsCoinBase()) {
+		if (ifaceIndex == TEST_COIN_IFACE ||
+				ifaceIndex == TESTNET_COIN_IFACE ||
+				ifaceIndex == SHC_COIN_IFACE) {
+			CWallet *wallet = GetWallet(iface);
+			bool fCheck = true;
+
+			/* The validate matrix transaction is verified in AcceptBlock and applied as part of the coin connect process. */
+			if (BlockAcceptValidateMatrix(iface, *tx, pindexBlock->pprev, fCheck)) {
+				if (!fCheck)
+					return (false);
+				Debug("BlockAcceptValidateMatrix: accepted validate matrix (tx %s): %s", tx->GetHash().GetHex().c_str(), wallet->matrixValidate.ToString().c_str());
+			}
+		}
+
+		/* coinbase is already verified. */
 		return (true);
+	}
 
 	int nVerifyFlags = GetBlockScriptFlags(iface, pindexBlock);
 

@@ -31,7 +31,6 @@
 
 #include "serialize.h"
 #include "compat.h"
-#include "../proto.h"
 
 #ifdef WIN32
 // In MSVC, this is defined as a macro, undefine it to prevent a compile and link error
@@ -169,7 +168,7 @@ bool LookupNumeric(const char *pszName, CService& addr, int portDefault = 0);
 bool ConnectSocket(const CService &addr, unsigned int& hSocketRet, int nTimeout = nConnectTimeout);
 bool ConnectSocketByName(CService &addr, unsigned int& hSocketRet, const char *pszDest, int portDefault = 0, int nTimeout = nConnectTimeout);
 
-void AddPeerAddress(CIface *iface, const char *hostname, int port);
+//void AddPeerAddress(CIface *iface, const char *hostname, int port);
 
 #endif /* ndef __SERVER__NETBASE_H__ */
 

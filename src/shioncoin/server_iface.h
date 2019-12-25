@@ -193,10 +193,14 @@ unsigned int GetSiteExtraNonce();
 const char *GetSiteExtraNonceHex();
 
 
+#ifdef __cplusplus
+}
+#endif
 
 
 #ifdef __cplusplus
-}
+#include "proto/coin_proto.h"
+void AddPeerAddress(CIface *iface, const char *hostname, int port);
 #endif
 
 

@@ -27,8 +27,7 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "shcoind.h"
-#include "main.h"
+#include "common.h"
 #include "addrman.h"
 
 using namespace std;
@@ -601,57 +600,6 @@ bool CAddrDB::Write(const CAddrMan& addr)
         return error(SHERR_IO, "CAddrman::Write() : Rename-into-place failed");
 
 #endif
-    return true;
-}
-
-bool CAddrDB::Read(CAddrMan& addr)
-{
-    // open input file, and associate with CAutoFile
-    FILE *file = fopen(pathAddr.string().c_str(), "rb");
-    CAutoFile filein = CAutoFile(file, SER_DISK, CLIENT_VERSION);
-    if (!filein)
-        return error(SHERR_IO, "CAddrman::Read() : open failed");
-
-    // use file size to size memory buffer
-    int fileSize = GetFilesize(filein);
-    int dataSize = fileSize - sizeof(uint256);
-    vector<unsigned char> vchData;
-    vchData.resize(dataSize);
-    uint256 hashIn;
-
-    // read data and checksum from file
-    try {
-        filein.read((char *)&vchData[0], dataSize);
-        filein >> hashIn;
-    }
-    catch (std::exception &e) {
-        return error(SHERR_IO, "CAddrman::Read() 2 : I/O error or stream data corrupted");
-    }
-    filein.fclose();
-
-    CDataStream ssPeers(vchData, SER_DISK, CLIENT_VERSION);
-
-    // verify stored checksum matches input data
-    uint256 hashTmp = Hash(ssPeers.begin(), ssPeers.end());
-    if (hashIn != hashTmp)
-        return error(SHERR_IO, "CAddrman::Read() : checksum mismatch; data corrupted");
-
-    // de-serialize address data
-    unsigned char pchMsgTmp[4];
-    try {
-        ssPeers >> FLATDATA(pchMsgTmp);
-        ssPeers >> addr;
-    }
-    catch (std::exception &e) {
-        return error(SHERR_IO, "CAddrman::Read() : I/O error or stream data corrupted");
-    }
-
-#if 0
-    // finally, verify the network matches ours
-    if (memcmp(pchMsgTmp, pchMessageStart, sizeof(pchMsgTmp)))
-        return error(SHERR_IO, "CAddrman::Read() : invalid network magic  number");
-#endif
-
     return true;
 }
 

@@ -470,5 +470,5 @@ fi
 #AM_CONDITIONAL(ENABLE_WALLET, [test "x$enable_wallet" != "xno"])
 #AM_CONDITIONAL([ENABLE_WALLET], 1, [Define to share-wallet functionality.])
 
-AC_OUTPUT(Makefile depend/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/libdi3/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile)
+AC_OUTPUT(Makefile depend/Makefile src/libjsonspirit/Makefile src/libalgo/Makefile src/libfractal/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/libcoin/Makefile src/libdi3/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile)
 

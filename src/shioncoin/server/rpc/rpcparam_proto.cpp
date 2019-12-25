@@ -25,7 +25,6 @@
 
 #undef GNULIB_NAMESPACE
 #include "shcoind.h"
-#include "ui_interface.h"
 #include "base58.h"
 #include "../server_iface.h" /* BLKERR_XXX */
 #include "addrman.h"
@@ -38,7 +37,6 @@
 
 using namespace std;
 using namespace boost;
-using namespace json_spirit;
 
 Value rpc_param_list(CIface *iface, const Array& params, bool fStratum)
 {

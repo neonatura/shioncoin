@@ -28,7 +28,7 @@
 #include <map>
 #include "key.h"
 #include "eckey.h"
-#include "algo/hmac_sha512.h"
+#include "hmac_sha512.h"
 
 static secp256k1_context* secp256k1_context_sign = NULL;
 static secp256k1_context* secp256k1_context_verify = NULL;

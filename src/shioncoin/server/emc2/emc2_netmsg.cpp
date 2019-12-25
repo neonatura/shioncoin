@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "chain.h"
 #include "validation.h"
 #include "emc2_pool.h"
@@ -253,16 +252,6 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
   int ifaceIndex = GetCoinIndex(iface);
   char errbuf[256];
   shtime_t ts;
-
-#if 0
-  Debug("EMC2:ProcessMessage: received '%s' (%d bytes from %s)\n", strCommand.c_str(), vRecv.size(), pfrom->addr.ToString().c_str());
-  RandAddSeedPerfmon();
-  if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
-  {
-    printf("dropmessagestest DROPPING RECV MESSAGE\n");
-    return true;
-  }
-#endif
 
   if (strCommand == "version")
   {

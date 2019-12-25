@@ -1,3 +1,66 @@
+2019-12-23  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v4.1
+
+	v4.1
+
+2019-12-22  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v4.1
+
+	v4.1
+
+2019-12-18  Brian Burrell  <bburrell.brian@gmail.com>
+
+	Merge branch 'v4.1'
+	Conflicts:
+		build-aux/rpmbuild/SPECS/shioncoin.spec
+		debian/changelog
+		debian/copyright
+		debian/files
+		src/shioncoin/proto/shc_proto.h
+		src/shioncoin/server/block_merkle.cpp
+		src/shioncoin/server/txmempool.cpp
+		src/shioncoin/stratum/stratum_miner.cpp
+		src/shioncoin/stratum/stratum_miner.h
+		src/shioncoin/stratum/stratum_task.c
+
+	v4.1
+
+	v4.1
+
+2019-10-10  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum
+
+2019-09-30  Brian Burrell  <bburrell.brian@gmail.com>
+
+	wallet.csend (rpc)
+	The certified send transaction has been combined into a single transaction and output. The "ident certificate", which references a certificate hash owned by the sender, is embedded into the transaction. The output identifying the extended transaction also includes the destination address of the underlying coin transfer.
+
+	core_CommitBlock
+
+	CTxMatrix::MAX_NOTARY_TX_VALUE
+
+2019-09-28  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP12
+
+2019-09-24  Brian Burrell  <bburrell.brian@gmail.com>
+
+	testnet reset
+
+	stratum mining.extranonce.subscribe
+
+2019-09-22  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP33
+	Provides coin service interface for SIP33 Dilithium signature support.
+
+2019-09-14  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CAccount
+
 2019-09-09  Brian Burrell  <bburrell.brian@gmail.com>
 
 	SIP33
@@ -15,7 +78,15 @@
 
 2019-08-30  Brian Burrell  <bburrell.brian@gmail.com>
 
+	SIP32
+
 	BIP32
+
+2019-08-28  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v4.0.0.2
+
+	v4.0.0.2 SIP32 stratum
 
 2019-08-27  Brian Burrell  <bburrell.brian@gmail.com>
 
@@ -38,6 +109,9 @@
 	v4.1
 	build/release file update
 
+	v4.0.0.1
+	fixed issue with handling of txmempool resolve conflict.
+
 	stratum
 
 	draft wiki pages for new PoW algorythms
@@ -49,6 +123,10 @@
 	stratum
 
 2019-07-27  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v4.0
+
+	stratum miner reward fix (introduced in SIP32)
 
 	removed USDE emulation service
 

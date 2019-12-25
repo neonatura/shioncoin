@@ -33,10 +33,10 @@
 
 /* shioncoin common includes */
 #include "server/shlib.h"
-#include "server/bignum.h"
-#include "server/sync.h"
-#include "server/uint256.h"
-#include "server/serialize.h"
+#include "bignum.h"
+#include "sync.h"
+#include "uint256.h"
+#include "serialize.h"
 #include "server/block.h"
 #include "server/txidx.h"
 #include "server/global.h"

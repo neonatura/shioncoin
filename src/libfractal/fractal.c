@@ -24,9 +24,16 @@
  */  
 
 #include <math.h>
+#include <string.h>
 #include <libgen.h>
-#include "shcoind.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/param.h>
 #include "fractal.h"
+
+typedef long double shnum_t;
 
 int fractal_render(char *img_path, double in_seed, double zoom, double span, double x_of, double y_of)
 {

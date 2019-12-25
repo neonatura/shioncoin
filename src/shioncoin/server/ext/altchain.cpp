@@ -24,8 +24,8 @@
  */  
 
 #include "shcoind.h"
-#include "json/json_spirit_reader_template.h"
-#include "json/json_spirit_writer_template.h"
+#include "json_spirit_reader_template.h"
+#include "json_spirit_writer_template.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
 
 using namespace std;

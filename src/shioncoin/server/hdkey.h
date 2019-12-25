@@ -26,9 +26,9 @@
 #ifndef __SERVER__HDKEY_H__
 #define __SERVER__HDKEY_H__
 
-#include "json/json_spirit_reader_template.h"
-#include "json/json_spirit_writer_template.h"
-#include "json/json_spirit_value.h"
+#include "json_spirit_reader_template.h"
+#include "json_spirit_writer_template.h"
+#include "json_spirit_value.h"
 
 class HDPubKey : public CPubKey
 {

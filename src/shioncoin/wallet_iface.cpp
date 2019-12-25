@@ -27,7 +27,6 @@
 #include "db.h"
 #include "net.h"
 #include "util.h"
-#include "ui_interface.h"
 #include "rpc_proto.h"
 #include "txcreator.h"
 #include "account.h"
@@ -43,7 +42,6 @@
 
 using namespace std;
 using namespace boost;
-using namespace json_spirit;
 
 
 extern Value ValueFromAmount(int64 amount);

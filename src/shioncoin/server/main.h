@@ -41,7 +41,7 @@ extern "C"
 #include "net.h"
 #include "key.h"
 #include "script.h"
-#include "algo/scrypt.h"
+#include "scrypt.h"
 #include "shcoind.h"
 #include "block.h"
 

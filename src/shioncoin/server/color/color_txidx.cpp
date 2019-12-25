@@ -27,7 +27,6 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "color_pool.h"
 #include "color_block.h"
 #include "color_txidx.h"

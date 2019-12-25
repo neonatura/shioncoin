@@ -27,7 +27,6 @@
 #include "block.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "ui_interface.h"
 #include "chain.h"
 #include "shc_pool.h"
 #include "shc_block.h"

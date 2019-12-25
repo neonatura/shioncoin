@@ -23,10 +23,8 @@
  *  @endcopyright
  */  
 
-#include "shcoind.h"
-#include "main.h"
+#include "common.h"
 #include "netbase.h"
-#include "util.h"
 #include "strlcpy.h"
 
 #ifdef HAVE_FCNTL_H
@@ -48,6 +46,12 @@ static proxyType proxyInfo[NET_MAX];
 static proxyType nameproxyInfo;
 int nConnectTimeout = 5000;
 bool fNameLookup = false;
+
+extern "C" {
+	extern void descriptor_release(int fd);
+}
+
+#define closesocket(_sk)      descriptor_release(_sk)
 
 static const unsigned char pchIPv4[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
 
@@ -1191,49 +1195,5 @@ void CService::print() const
 void CService::SetPort(unsigned short portIn)
 {
     port = portIn;
-}
-
-void CNode::PushTx(const CTransaction& tx, int flags)
-{
-	static const char *pszCommand = "tx";
-
-	CDataStream ss(SER_NETWORK, flags);
-	ss.reserve(1024);
-	ss << tx;
-
-	try
-	{
-		BeginMessage(pszCommand);
-		vSend << ss;
-		EndMessage();
-	}
-	catch (...)
-	{
-		AbortMessage();
-		throw;
-	}
-
-}
-
-void CNode::PushBlock(const CBlock& block, int nFlag)
-{
-	static const char *pszCommand = "block";
-
-	CDataStream ss(SER_GETHASH, nFlag);
-	ss.reserve(4096);
-	ss << block;
-
-	try
-	{
-		BeginMessage(pszCommand);
-		vSend << ss;
-		EndMessage();
-	}
-	catch (...)
-	{
-		AbortMessage();
-		throw;
-	}
-
 }
 
