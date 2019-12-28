@@ -2,9 +2,9 @@
 /*
  * @copyright
  *
- *  Copyright 2014 Neo Natura
+ *  Copyright 2014 Brian Burrell
  *
- *  This file is part of ShionCoin.
+ *  This file is part of Shioncoin.
  *  (https://github.com/neonatura/shioncoin)
  *        
  *  ShionCoin is free software: you can redistribute it and/or modify
@@ -89,9 +89,11 @@ bool CCheckpoints::AddCheckpoint(CBlockIndex *pindex)
   hNotaryHeight = height;
 	hNotaryBlock = hash;
 
-	/* debug */
-	CIface *iface = GetCoinByIndex(ifaceIndex);
-	if (iface) Debug("(%s) AddCheckpoint: new dynamic checkpoint (height %d): %s",iface->name, height, hash.GetHex().c_str());
+	CBlockIndex *l_pindex = GetLastCheckpoint();
+	if (!l_pindex || l_pindex->nHeight < height) { /* debug */
+		CIface *iface = GetCoinByIndex(ifaceIndex);
+		if (iface) Debug("(%s) AddCheckpoint: new dynamic checkpoint (height %d): %s",iface->name, height, hash.GetHex().c_str());
+	}
 
 	return (true);
 }

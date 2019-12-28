@@ -1,13 +1,13 @@
 <pre class="western">  SIP: 1
   Layer: Core
   Title: Extended Transactions
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
   Created: 2018-10-10</pre>
 ==Abstract== 
 This SIP describes a new "extended" transaction type for
-the ShionCoin scripting system, and defines additional validation
+the Shioncoin scripting system, and defines additional validation
 rules that apply only to the new transactions. 
 
 ==Motivation== 

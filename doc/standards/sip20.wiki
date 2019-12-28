@@ -1,14 +1,14 @@
 <pre class="western">  SIP: 20
   Layer: Core
   Title: The Validation Matrix 
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
   Created: 2018-10-13</pre>
 ==Abstract== 
 This SIP describes the specific usage of the Matrix extended
 transaction type for the purposes of blockchain validation with the
-ShionCoin scripting system. 
+Shioncoin scripting system. 
 
 ==Motivation== 
 The purpose of the Validation Matrix is two-fold; one purpose is

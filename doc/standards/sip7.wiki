@@ -1,14 +1,14 @@
 <pre class="western">  SIP: 7 
   Layer: Core
   Title: Executable (Extended Transaction)
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
   Created: 2018-12-29</pre>
 == Abstract == 
 This proposal introduces the ability to create executable calls
-based on applications published to the ShionCoin block-chain. See
-SIP26 for a more comprehensive guide on the how a ShionCoin node
+based on applications published to the Shioncoin block-chain. See
+SIP26 for a more comprehensive guide on the how a Shioncoin node
 processes application calls. 
 
 == Motivation == 
@@ -48,7 +48,7 @@ structure:
 }</pre>
 An executable transaction is composed of either a OP_EXT_NEW or a
 OP_EXT_GENERATE operation. A OP_EXT_NEW operation publishes a new set
-of executable code to the ShionCoin block-chain. 
+of executable code to the Shioncoin block-chain. 
 
 The executable code may be in text or binary format. Published
 executable code will expire after 48 years. 

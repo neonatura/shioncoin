@@ -2,7 +2,7 @@
 @echo off
 
 set PKG=shioncoin
-set VER=4.1
+set VER=4.0
 
 set SDK="C:\Program Files (x86)\Windows Kits\10\App Certification Kit\"
 set WIX="C:\program files (x86)\wix toolset v3.11\bin"

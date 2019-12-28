@@ -1,49 +1,195 @@
-# The shcoind (ShionCoin) service configuration file.
-# Required Path: ~/shc/shc.conf
 
-# String		name=<string>
-# Number    name=<number>
-# Boolean   name=<0|1>
-
+#
 # Verbose logging information.
-debug=0
+# Default: 0 (false)
+#debug=0
 
-# The maximum number of socket connections.
-net-max=300
+#
+# Verbose network command logging.
+# Default: 0 (false)
+#net-debug=0
 
+#
+# The maximum number of socket connections allowed for all services.
+# Default: 300
+#net-max=300
+
+#
+# Whether to auto-seed the core node peers.
+# Default: 1
+#seed=1
+
+#
+# Whether to participate in notary transactions.
+# Default: 1 (true)
+#notary=1
+
+#
 # Administrative RPC commands.
-admin=0
+# Default: 0 (false)
+#admin=0
 
+#
+# Allow no-fee transactions (<= 512b).
+# Default: 0 (false)
+#free-relay=0
+
+#
 # The number of seconds to ban a node for suspicious activity.
-ban-span=21600
+# Default: 21600
+#ban-span=21600
 
+#
 # The amount of suspicious behaviour before banning a node.
-ban-threshold=1000
+# Default: 1000
+#ban-threshold=1000
 
+#
+# The preferred maximum block size.
+# Default: 4096000
+#block-size=4096000
+
+#
+# The preferred minimum relay tx fee in shionoshis.
+# Default: 1000
+#min-fee=1000
+
+#
 # The port to accept incoming SHC service connections.
-shc-port=24104
+# Default: 24104
+#shc-port=24104
 
+#
+# Generate bech32 style coin addresses when supported.
+# Default: 0 (false)
+#bech32=0
+
+#
 # The built-in stratum miner service.
-stratum=1
+# Default: 1 (true)
+#stratum=1
 
+#
 # The socket port to listen for stratum connections.
-stratum-port=9448
+# Default: 9448
+#stratum-port=9448
 
+#
 # The maximum number of seconds between "getwork" notifications.
-stratum-work-cycle=15
+# Default: 12
+#stratum-work-cycle=12
 
+#
 # The RPC command service.
-rpc=1
+# Default: 1 (true)
+#rpc=1
 
+#
 # The socket port to listen for RPC commands.
-rpc-port=9447
+# Default: 9447
+#rpc-port=9447
 
+#
 # The IP Address of the ethernet device to bind the RPC service to or a literal star "*" to allow any incoming network connection.
-rpc-host=127.0.0.1
+# Default: 127.0.0.1
+#rpc-host=127.0.0.1
 
+#
 # The ShionCoin Testnet service.
-testnet=0
+# Default: 0 (false)
+#testnet=0
 
+#
 # The socket port to listen for testnet connections.
-testnet-port=26104
+# Default: 26104
+#testnet-port=26104
 
+#
+# Provide a stratum mining service for the SHA256D PoW algorthm.
+# Default: 0 (false)
+#stratum-sha256d=0
+
+#
+# The socket port to listen for stratum SHA256D connections.
+# Default: 9450
+#stratum-sha256d-port=9450
+
+#
+# Provide a stratum mining service for the KECCAK PoW algorthm.
+# Default: 0 (false)
+#stratum-keccak=0
+
+#
+# The socket port to listen for stratum KECCAK connections.
+# Default: 9452
+#stratum-keccak-port=9452
+
+#
+# Provide a stratum mining service for the X11 PoW algorthm.
+# Default: 0 (false)
+#stratum-x11=0
+
+#
+# The socket port to listen for stratum X11 connections.
+# Default: 9454
+#stratum-x11-port=9454
+
+#
+# Provide a stratum mining service for the BLAKE2S PoW algorthm.
+# Default: 0 (false)
+#stratum-blake2s=0
+
+#
+# The socket port to listen for stratum BLAKE2S connections.
+# Default: 9456
+#stratum-blake2s-port=9456
+
+#
+# Provide a stratum mining service for the QUBIT PoW algorthm.
+# Default: 0 (false)
+#stratum-qubit=0
+
+#
+# The socket port to listen for stratum QUBIT connections.
+# Default: 9458
+#stratum-qubit-port=9458
+
+#
+# Provide a stratum mining service for the GROESTL PoW algorthm.
+# Default: 0 (false)
+#stratum-groestl=0
+
+#
+# The socket port to listen for stratum GROESTL connections.
+# Default: 9460
+#stratum-groestl-port=9460
+
+#
+# Provide a stratum mining service for the SKEIN PoW algorthm.
+# Default: 0 (false)
+#stratum-skein=0
+
+#
+# The socket port to listen for stratum SKEIN connections.
+# Default: 9462
+#stratum-skein-port=9462
+
+#
+# Provide a stratum mining service for the TESTNET coin interface.
+# Default: 0 (false)
+#stratum-testnet=0
+
+#
+# Derive new wallet keys using a hierarhchically deterministic algorythm.
+# Default: 1 (true)
+#hdkey=1
+
+#
+# Use the Dilithium signing algorythm for new coin addresses.
+# Default: 0 (false)
+#dilithium=0
+
+#
+# Embed consensus-based blockchain paramater extended transactions.
+# Default: 0 (false)
+#param-tx=0

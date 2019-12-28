@@ -1,7 +1,7 @@
 <pre class="western">  SIP: 5 
   Layer: Core
   Title: Certificate (Extended Transaction)
-        Author: Neo Natura &lt; support@neo-natura.com &gt;
+        Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
   Created: 2019-01-26</pre>

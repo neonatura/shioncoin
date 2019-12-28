@@ -2,7 +2,7 @@
 /*
  * @copyright
  *
- *  Copyright 2014 Neo Natura
+ *  Copyright 2014 Brian Burrell
  *
  *  This file is part of ShionCoin.
  *  (https://github.com/neonatura/shioncoin)
@@ -34,7 +34,7 @@ void shcon_tool_version(char *prog_name)
   fprintf(stdout,
       "%s version %s\n"
       "\n"
-      "Copyright 2013 Neo Natura\n"
+      "Copyright 2013 Brian Burrell\n"
       "Licensed under the GNU GENERAL PUBLIC LICENSE Version 3\n",
       prog_name,
       get_libshare_version());

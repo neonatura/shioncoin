@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#  Copyright 2013 Neo Natura
+#  Copyright 2013 Brian Burrell
 #
 #  This file is part of ShionCoin.
 #  (https://github.com/neonatura/shioncoin)

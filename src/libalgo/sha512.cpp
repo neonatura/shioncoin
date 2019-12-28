@@ -2,7 +2,7 @@
 /*
  * @copyright
  *
- *  Copyright 2019 Neo Natura
+ *  Copyright 2019 Brian Burrell
  *
  *  This file is part of ShionCoin.
  *  (https://github.com/neonatura/shioncoin)
@@ -25,6 +25,7 @@
 
 #include "sha512.h"
 #include <string.h>
+#include <endian.h>
 
 void static inline WriteBE64(unsigned char* ptr, uint64_t x)
 {

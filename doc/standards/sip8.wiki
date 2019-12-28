@@ -1,7 +1,7 @@
 <pre class="western">  SIP: 8 
   Layer: Core
   Title: Ident (Extended Transaction)
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
   Created: 2018-12-29</pre>

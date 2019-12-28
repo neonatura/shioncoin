@@ -22606,7 +22606,7 @@ fi
 #AM_CONDITIONAL(ENABLE_WALLET, [test "x$enable_wallet" != "xno"])
 #AM_CONDITIONAL([ENABLE_WALLET], 1, [Define to share-wallet functionality.])
 
-ac_config_files="$ac_config_files Makefile depend/Makefile src/libjsonspirit/Makefile src/libalgo/Makefile src/libfractal/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/libcoin/Makefile src/libdi3/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile"
+ac_config_files="$ac_config_files Makefile depend/Makefile src/libalgo/Makefile src/libfractal/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/libcoin/Makefile src/libdi3/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -23955,7 +23955,6 @@ do
     "doc/doxygen.conf") CONFIG_FILES="$CONFIG_FILES doc/doxygen.conf" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "depend/Makefile") CONFIG_FILES="$CONFIG_FILES depend/Makefile" ;;
-    "src/libjsonspirit/Makefile") CONFIG_FILES="$CONFIG_FILES src/libjsonspirit/Makefile" ;;
     "src/libalgo/Makefile") CONFIG_FILES="$CONFIG_FILES src/libalgo/Makefile" ;;
     "src/libfractal/Makefile") CONFIG_FILES="$CONFIG_FILES src/libfractal/Makefile" ;;
     "src/secp256k1/Makefile") CONFIG_FILES="$CONFIG_FILES src/secp256k1/Makefile" ;;

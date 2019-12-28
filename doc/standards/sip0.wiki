@@ -2,11 +2,11 @@ This document contains a series of "shioncoin internet protocols" (SIP) which de
 
 == Summary ==
 
-The official coin ticker symbol of this software is "SHC". The ShionCoin (SHC) Virtual Currency is Scrypt based (LTC compatible). The public source code of the software is written in a combination of the C and C++ programming language. A command-line utility is provided in order to access the ShionCoin (SHC) currency service.
+The official coin ticker symbol of this software is "SHC". The Shioncoin (SHC) Virtual Currency is Scrypt based (LTC compatible). The public source code of the software is written in a combination of the C and C++ programming language. A command-line utility is provided in order to access the Shioncoin (SHC) currency service.
 
-The ShionCoin virtual currency is compatible with the generic "scrypt coin service" capabilities. All BIP protocol specifications implemented by the litecoin virtual currency are candidates as standards for use by the ShionCoin virtual currency service. Several newer BIP standards, including BIP34, BIP65, BIP66, BIP68, and BIP141, have been implemented. While protocol specification compatibility is emphasized, the contents of shioncoin extended transaction structures are not compatible with other scrypt-based currency blockchains. 
+The Shioncoin virtual currency is compatible with the generic "scrypt coin service" capabilities. All BIP protocol specifications implemented by the litecoin virtual currency are candidates as standards for use by the Shioncoin virtual currency service. Several newer BIP standards, including BIP34, BIP65, BIP66, BIP68, and BIP141, have been implemented. While protocol specification compatibility is emphasized, the contents of shioncoin extended transaction structures are not compatible with other scrypt-based currency blockchains. 
 
-The majority of the disk databases utilitized by the ShionCoin (SHC) virtual currency are in form of a "mapped file". A mapped file is buffered in the operating system's own disk buffer for expediency.
+The majority of the disk databases utilitized by the Shioncoin (SHC) virtual currency are in form of a "mapped file". A mapped file is buffered in the operating system's own disk buffer for expediency.
 
 As of 2019, the block-chain has around 100,000 blocks generated. The memory foot-print of the virtual currency serivce is currently around one-hundred megabytes (100M) of memory, and grows to around one gigabyte (1G) at about 2 million blocks. The developmental version of the software https://github.com/briburrell/shioncoin_3.x_devel has been available since 2013, and the software was publically released at the beginning of 2018. A maximum of half a billion coins will be generated. The reward mechanism is designed to provide a block generation incentive over a prolonged period of time.
 
@@ -20,7 +20,7 @@ The spring matrix contains a pre-calculated bitvector map of over one million pu
 
 The "Alias Transaction" is used in order to create labels which reference a coin address. Aliased coin addresses provide a means to supply a public name for transaction operations. You can specify an alias name with the command-line coin by prefixing a "@" symbol (i.e. "wallet.send account-name @alias-name 1").
 
-The "Alt Chain" transaction is used to manage the ShionCoin colored alternate block-chains. Each individual chain is identified by a 128-bit color code. The block difficulty is arbitrarily low, by default. in order to provide a method to submit transactions as a full block. Block-chain parameters, such as the difficulty, minimum transaction fee, and block rewards can be configured when a new chain is generated.
+The "Alt Chain" transaction is used to manage the Shioncoin colored alternate block-chains. Each individual chain is identified by a 128-bit color code. The block difficulty is arbitrarily low, by default. in order to provide a method to submit transactions as a full block. Block-chain parameters, such as the difficulty, minimum transaction fee, and block rewards can be configured when a new chain is generated.
 
 The "Context Transaction" is used to store auxilliary information. This information may be associated with a person, place, or time-frame. The name of the context is hashed; meaning you must know the name before-hand in order to retrieve it. Context transactions expire after two years after being created or updated. The context name typically includes a colon-ized prefix (i.e. "url: http://domain.com") and the data content is typically in JSON format.
 
@@ -30,7 +30,7 @@ The "Certificate Transaction" is used in order to create a certified chain of tr
 
 An "Asset Transaction" is also derived from a certificate, and is intended to constitute some sort of authoritive ownership over an undisclosed concept or property.
 
-A "License Transaction" is derived from a certificate, and is intended to constitute some sort of authoritive licensing grant to authorize some action. For example, the light DRM supplied in the libshare software suite is compatible with licenses generated on the ShionCoin (SHC) block-chain.
+A "License Transaction" is derived from a certificate, and is intended to constitute some sort of authoritive licensing grant to authorize some action. For example, the light DRM supplied in the libshare software suite is compatible with licenses generated on the Shioncoin (SHC) block-chain.
 
 An "Exec Transaction" is used in order to publish and run methods against SEXE classes. Publishing and processing SEXE classes provides a method to create smart contracts which, among other things, are capable of managing tokens and event registration. The SEXE source code is based on lua, and is provided as part of the the libshare software suite.
 

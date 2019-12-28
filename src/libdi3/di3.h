@@ -1,4 +1,4 @@
-/* Copyright 2019 Neo Natura */
+/* Copyright 2019 Brian Burrell */
 
 #ifndef __DI3_H__
 #define __DI3_H__

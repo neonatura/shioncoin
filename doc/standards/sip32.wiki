@@ -1,21 +1,21 @@
 <pre class="western">  SIP: 32
   Layer: Consensus (soft fork)
   Title: SIP32 Multiple PoW Algorythm
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Proposed
   Type: Standards Track
   Created: 2019-04-20</pre>
 ==Abstract== 
 The SIP introduces a method to allow for additional PoW algorithms
-to be performed on the ShionCoin blockchain. 
+to be performed on the Shioncoin blockchain. 
 
 ==Motivation== 
 Currently, only scrypt based mining hardware may be used in order
-to commit blocks to the ShionCoin blockchain. By allowing for
+to commit blocks to the Shioncoin blockchain. By allowing for
 multiple PoW algorithms to be used on the same blockchain, the burden
 of having to purchase specific mining equipment is lessened in favor
 of a more flexible software design. In addition, optional support for
-particular PoW algorithms on the ShionCoin colored alt-chains
+particular PoW algorithms on the Shioncoin colored alt-chains
 provides a means to further personalize their attributes. The
 algorithms that have been initially selected are based on either
 simplicity of design (for ASIC compatibility), SHA-3 competitiveness
@@ -55,7 +55,7 @@ All difficulties displayed through stratum or RPC are still shown in
 comparison to scrypt. 
 
 The block's "nBits" (compacted minimum difficulty) will
-reference the underlying PoW algorithm used. ShionCoin uses the
+reference the underlying PoW algorithm used. Shioncoin uses the
 Kimoto Gravity Well to determine the difficulty rate of newly
 generated blocks. When the difficulty of the next block is computed,
 the first block processed will be the last block in the chain that

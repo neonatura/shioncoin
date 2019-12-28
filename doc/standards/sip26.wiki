@@ -1,7 +1,7 @@
 <pre class="western">  SIP: 26
   Layer: Core
   Title: Executable SEXE Class (ref SIP7)
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Extendable
   Type: Standards Track
   Created: 2018-12-15</pre>

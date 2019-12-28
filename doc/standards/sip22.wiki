@@ -1,13 +1,13 @@
 <pre class="western">  SIP: 22
   Layer: Core
   Title: Alternate Blockchain (Extended Transaction)
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
   Created: 2018-10-07</pre>
 ==Abstract== 
 The Colored Alternate Blockchain provides a method of providing
-supplemental block-chains embedded into the main ShionCoin blockchain
+supplemental block-chains embedded into the main Shioncoin blockchain
 which can have their own custom parameters. Each alternate blockchain
 is assigned a unique 128-bit RGBA color code derived from the label
 of the chain. Sending funds and generating new blocks are mined in a
@@ -17,7 +17,7 @@ difficulty in order to accommodate CPU mining.
 == Motivation == 
 The colored alternate block-chain is intended to provide a sub-set
 of individual chained blocks which can be used for an alternate
-purpose or capability then the primary ShionCoin Blockchain. 
+purpose or capability then the primary Shioncoin Blockchain. 
 
 == Implementation == 
 Each colored block-chain has a unique genesis block and a
@@ -37,7 +37,7 @@ composed of the typical "version", "inputs",
 alternate transaction structure will serialize an additional unsigned
 character vector when the transaction version is higher than one (1).
 The AltChain Extended Transaction, use to encapsulate color
-alt-chains on the ShionCoin blockchain, is composed of a flag
+alt-chains on the Shioncoin blockchain, is composed of a flag
 bitvector, the hash of the colored chain, a alternate block
 structure, and a set of alternate transactions. 
 

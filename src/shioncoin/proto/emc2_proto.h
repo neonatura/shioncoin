@@ -2,9 +2,9 @@
 /*
  * @copyright
  *
- *  Copyright 2014 Neo Natura
+ *  Copyright 2014 Brian Burrell
  *
- *  This file is part of ShionCoin.
+ *  This file is part of Shioncoin.
  *  (https://github.com/neonatura/shioncoin)
  * 
  *  ShionCoin is free software: you can redistribute it and/or modify

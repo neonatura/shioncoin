@@ -1,4 +1,4 @@
-/* Copyright 2019 Neo Natura */
+/* Copyright 2019 Brian Burrell */
 
 #include "di3.h"
 

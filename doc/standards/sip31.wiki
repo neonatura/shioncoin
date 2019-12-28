@@ -1,21 +1,21 @@
 <pre class="western">  SIP: 31
   Layer: Consensus (soft fork)
   Title: BOLO Checkpoint on external blockchain
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Proposed
   Type: Standards Track
   Created: 2018-11-26</pre>
 ==Abstract== 
 This SIP describes a method to establish a new dynamic checkpoint
-on the ShionCoin blockchain by creating a "notarized
+on the Shioncoin blockchain by creating a "notarized
 transaction" on an external blockchain. The external blockchain
 intended for use is litecoin. In other words, the "BOLO"
-system notarizes blocks on the ShionCoin blockchain by creating a
+system notarizes blocks on the Shioncoin blockchain by creating a
 special transaction on the litecoin blockchain. 
 
 ==Motivation== 
 A notarized transaction, or a transaction signed by independant
-users who participate in the ShionCoin ecosystem, provides a method
+users who participate in the Shioncoin ecosystem, provides a method
 to create a consensus about a particular blockchain and a means to
 declare it as the official branch. This is only possible if at least
 11 participants are in agreement about the current blockchain
@@ -44,12 +44,12 @@ prior to the notarized block.
 
 The height is a 4-byte "integer" of the block's height. 
 
-The ShionCoin bolo interface will attempt to notarize any blocks
+The Shioncoin bolo interface will attempt to notarize any blocks
 that have a OP_RETURN OP_0" output script suffix and have a coin
 value equal to or less than 1 coin. This includes both no-output
 matrix validation coinbase txs, notarized dynamic checkpoints txs, or
 other arbitrary transactions. Validation matrix dynamic checkpoints
-are created on the ShionCoin blockchain by several nodes providing a
+are created on the Shioncoin blockchain by several nodes providing a
 multi-sig transaction verifying a validation matrix. 
 
 When a bolo notary tx references a validation matrix notary tx, it

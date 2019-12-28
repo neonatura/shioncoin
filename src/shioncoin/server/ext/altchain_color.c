@@ -1,4 +1,4 @@
-/* Copyright 2018 Neo Natura */
+/* Copyright 2018 Brian Burrell */
 
 #include <stdio.h>
 #include <string.h>

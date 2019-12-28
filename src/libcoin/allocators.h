@@ -2,7 +2,7 @@
 /*
  * @copyright
  *
- *  Copyright 2016 Neo Natura
+ *  Copyright 2016 Brian Burrell
  *
  *  This file is part of ShionCoin.
  *  (https://github.com/neonatura/shioncoin)

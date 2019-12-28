@@ -1,7 +1,7 @@
 <pre class="western">  SIP: 33
   Layer: Consensus (soft fork)
   Title: Dilithium Coin Address Signature
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Proposed
   Type: Standards Track
   Created: 2019-08-30</pre>

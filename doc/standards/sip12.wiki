@@ -1,7 +1,7 @@
 <pre class="western">  SIP: 12
   Layer: Core
   Title: Dynamic Blockchain Parameters
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Extensionable
   Type: Standards Track
   Created: 2018-12-15</pre>

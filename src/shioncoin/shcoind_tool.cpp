@@ -2,9 +2,9 @@
 /*
  * @copyright
  *
- *  Copyright 2014 Neo Natura
+ *  Copyright 2014 Brian Burrell
  *
- *  This file is part of ShionCoin.
+ *  This file is part of Shioncoin.
  *  (https://github.com/neonatura/shioncoin)
  *        
  *  ShionCoin is free software: you can redistribute it and/or modify
@@ -51,7 +51,7 @@ void shcoind_tool_version(char *prog_name)
   fprintf(stdout,
       "%s version %s\n"
       "\n"
-      "Copyright 2013 Neo Natura\n" 
+      "Copyright 2013 Brian Burrell\n" 
       "Licensed under the GNU GENERAL PUBLIC LICENSE Version 3\n"
       "This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit. (http://www.openssl.org/)\n",
       prog_name,

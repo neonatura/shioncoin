@@ -1,7 +1,7 @@
 <pre class="western">  SIP: 11
   Layer: Core
   Title: Coin Exchange Offer
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Standards Track
   Created: 2019-01-27</pre>
@@ -13,7 +13,7 @@ used in order to transfer funds between two different block-chains.
 The purpose of the offer extended transaction is to provide a
 method perform a decentralized exchange of coins from one block-chain
 to another. This functionality is currently only compatible with the
-exchange of SHC coins with the ShionCoin Alternate Colored
+exchange of SHC coins with the Shioncoin Alternate Colored
 Block-Chain coins. 
 
 ==Specification== 
@@ -39,7 +39,7 @@ one-self for holding.
 
 The original party can perform a OP_EXT_GENERATE against an accept
 offer in order to complete the exchange. When this occurs, a
-transaction is sent on the ShionCoin blockchain with a IF-ELSE
+transaction is sent on the Shioncoin blockchain with a IF-ELSE
 script. This conditional script will send coins to the acceptee if a
 pre-determined transaction hash exists on the colored block-chain,
 and otherwise will return the coins once the generate offer
@@ -55,7 +55,7 @@ offer structure, the "alt_hash" is the tx hash on the
 colored alt-chain which sends coins from the acceptee to the
 originator, the "color_hash" is the hash representing the
 color of the alt-chain, the "dest_addr" is the acceptee's
-coin address on the ShionCoin block-chain, the "wait_time"
+coin address on the Shioncoin block-chain, the "wait_time"
 is the time before the generate transaction expires, and the
 "return_addr" is the originator's own address. 
 

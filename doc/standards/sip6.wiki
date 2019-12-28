@@ -1,16 +1,16 @@
 <pre class="western">  SIP: 6
   Layer: Core
   Title: Coin Address Alias (Extended Transaction)
-  Author: Neo Natura &lt; support@neo-natura.com &gt;
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
   Status: Final
   Type: Informational
   Created: 2018-12-29</pre>
 == Abstract == 
 This document introduces the ability to associate a string based
-label which references a ShionCoin coin address. 
+label which references a Shioncoin coin address. 
 
 == Motivation == 
-Having a string based alias for a ShionCoin coin address provides
+Having a string based alias for a Shioncoin coin address provides
 a means to supply a human-digestible label to what is otherwise an
 arbitrary code. 
 
@@ -26,7 +26,7 @@ alias name prepended by an ampersand (@).
 == Specification == 
 The alias extended transaction structure is an extension of the
 &quot;Ident&quot; certificate structure. The alias transaction
-provides a label of up to 135 characters which references a ShionCoin
+provides a label of up to 135 characters which references a Shioncoin
 coin address. 
 
 The alias is defined as having a &quot;type&quot; which indicates

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
 	xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-    <Product Id="*" UpgradeCode="11a01e81-7586-4fc3-ae5e-7e14a1a7c045" Version="3.2.3" Language="1033" Name="ShionCoin Virtual Currency" Manufacturer="Neo Natura">
+    <Product Id="*" UpgradeCode="11a01e81-7586-4fc3-ae5e-7e14a1a7c045" Version="4.1" Language="1033" Name="ShionCoin Virtual Currency" Manufacturer="Neo Natura">
         <Package InstallerVersion="300" Compressed="yes"/>
 				<WixVariable Id="Manufacturer" Value="Neo Natura"/>
 				<MajorUpgrade AllowDowngrades="no" AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." />
