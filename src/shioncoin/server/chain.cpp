@@ -100,46 +100,59 @@ static bool serv_state(CIface *iface, int flag)
 
 
 
-static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransaction& tx)
+static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransaction& tx, bool& fCoinBase)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(iface);
   uint256 tx_hash = tx.GetHash();
 
-	/* check for missing wallet tx. */
 	if (wallet->mapWallet.count(tx_hash) == 0) {
-		if (!wallet->HasArchTx(tx_hash) && wallet->IsMine(tx)) {
-			CWalletTx wtx(wallet, tx);
-			wallet->AddTx(tx, block);
+		if (wallet->HasArchTx(tx_hash))
 			return;
+
+		if (wallet->IsMine(tx)) { /* found missing wallet tx. */
+			CWalletTx wtx(wallet, tx);
+			wallet->InitSpent(wtx);
+			wtx.SetMerkleBranch(block);
+			wallet->AddTx(wtx);
+
+			if (wtx.IsCoinBase() &&
+					wtx.GetBlocksToMaturity(ifaceIndex) > 0)
+				fCoinBase = true;
 		}
+	} else {
+		CWalletTx& wtx = wallet->mapWallet[tx_hash];
+//		wallet->InitSpent(wtx);
+		if (wtx.IsCoinBase() && wallet->IsMine(wtx) &&
+				wtx.GetBlocksToMaturity(ifaceIndex) > 0)
+			fCoinBase = true;
 	}
 
 	/* scan tx inputs for missing spends. */
-  BOOST_FOREACH(const CTxIn& txin, tx.vin) {
-    const uint256& hash = txin.prevout.hash;
-    int nOut = txin.prevout.n;
+	BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+		const uint256& hash = txin.prevout.hash;
+		int nOut = txin.prevout.n;
 
 		if (wallet->mapWallet.count(hash) != 0) {
 			vector<uint256> vOuts;
 			CWalletTx& wtx = wallet->mapWallet[hash];
+			bool fCoins;
+			bool fUpdate;
 
-			/* coin db */
-			if (wtx.ReadCoins(ifaceIndex, vOuts) &&
+			if (!wtx.IsSpent(nOut)) {
+				Debug("(%s) core_UpdateCoins: updated wtx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
+				wtx.MarkSpent(nOut);
+			}
+
+			if (wtx.ReadCoins(ifaceIndex, vOuts) && /* coin db */
 					nOut < vOuts.size() && vOuts[nOut].IsNull()) {
 				vOuts[nOut] = tx_hash;
 				if (wtx.WriteCoins(ifaceIndex, vOuts)) {
 					Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
 				}
 			}
-
-			/* wallet db */
-			if (!wtx.IsSpent(nOut)) {// && wallet->IsMine(wtx.vout[nOut])) {
-				wtx.MarkSpent(nOut);
-				wallet->AddTx(wtx);
-			}
 		}
-  }
+	}
  
 }
 
@@ -165,8 +178,9 @@ static bool ServiceWalletEvent(int ifaceIndex)
       CBlock *block = GetBlockByHeight(iface, nHeight);
       if (!block) continue;
 
-			bool fCoinbase = false;
 
+#if 0
+			bool fCoinbase = false;
 			/* check for new wallet tx's */
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
 				const uint256& hTx = tx.GetHash();
@@ -206,14 +220,15 @@ static bool ServiceWalletEvent(int ifaceIndex)
 					break;
 				}
       }
+#endif
 
-			/* enforce validity on wallet & recent tx's spent chain */
+			/* enforce validity on wallet & tx's spent chain */
+			bool fCoinBase = false;
       BOOST_FOREACH(const CTransaction& tx, block->vtx) {
-				if (!tx.IsCoinBase())
-					chain_UpdateWalletCoins(ifaceIndex, block, tx);
+				chain_UpdateWalletCoins(ifaceIndex, block, tx, fCoinBase);
       }
 
-			if (fCoinbase) {
+			if (fCoinBase) {
 				add_stratum_miner_block(ifaceIndex, 
 						(char *)block->GetHash().GetHex().c_str());
 			}

@@ -162,7 +162,6 @@ _TEST(sip6_di_aliastx)
 	/* update */
 	CWalletTx mod_wtx;
 	err = update_alias_addr_tx(iface, "test", addr, mod_wtx);
-if (err != 0) fprintf(stderr, "DEBUG: TEST: update_alias_addr_tx err %d\n", err);
 	_TRUE(0 == err);
 	_TRUE(mod_wtx.CheckTransaction(TEST_COIN_IFACE) == true); /* .. */
 	_TRUE(VerifyAlias(mod_wtx) == true);

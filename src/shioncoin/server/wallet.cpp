@@ -1311,7 +1311,6 @@ bool CreateTransactionWithInputTx(CIface *iface, string strAccount, const vector
 
 			// Fill vtxPrev by copying from previous transactions vtxPrev
 			pwalletMain->AddSupportingTransactions(wtxNew);
-			wtxNew.fTimeReceivedIsTxTime = true;
 			break;
 		}
 
@@ -1675,7 +1674,6 @@ bool CreateMoneyTx(CIface *iface, CWalletTx& wtxNew, vector<COutput>& vecRecv, v
 		}
 
 		wallet->AddSupportingTransactions(wtxNew);
-		wtxNew.fTimeReceivedIsTxTime = true;
 	}
 
 	return (true);
@@ -1986,27 +1984,32 @@ void core_ReacceptWalletTransactions(CWallet *wallet)
 	min_pindex = NULL;
 
 	vector<uint256> vErase;
-	BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, wallet->mapWallet) {
-		const uint256& tx_hash = item.first;
-		CWalletTx& wtx = item.second;
-		vector<uint256> vOuts;
 
-		if (wtx.IsCoinBase())
+	std::map<uint256, CWalletTx>::iterator it = wallet->mapWallet.begin();
+	for (; it != wallet->mapWallet.end(); it++) {
+		const uint256& tx_hash = it->first;
+		CWalletTx *wtx = &it->second;
+
+		if (!wtx->hashBlock.IsNull()) {
+			continue; /* already commited to blockchain. */
+		}
+
+		if (wtx->IsCoinBase())
 			continue; /* not applicable */
 
 		/* need to be careful here to still add supporting tx's */
-		for (i = 0; i < wtx.vfSpent.size(); i++) {
-			if (wtx.vfSpent[i])
+		for (i = 0; i < wtx->vfSpent.size(); i++) {
+			if (wtx->vfSpent[i])
 				break;
 		}
-		if (i != wtx.vfSpent.size())
+		if (i != wtx->vfSpent.size())
 			continue; /* already [at least partially] spent. */
 
 		pindex = GetBlockIndexByTx(iface, tx_hash);
 		if (!pindex) {
 			/* reaccept into mempool. */
-			if (!wtx.AcceptWalletTransaction()) {
-				Debug("(%s) ReacceptWalletTransactions: warning: unresolvable tx \"%s\".", iface->name, wtx.GetHash().GetHex().c_str());
+			if (!wtx->AcceptWalletTransaction()) {
+				Debug("(%s) ReacceptWalletTransactions: warning: unresolvable tx \"%s\".", iface->name, wtx->GetHash().GetHex().c_str());
 				vErase.push_back(tx_hash);
 			}
 		} else {
@@ -2427,5 +2430,23 @@ bool CWalletTx::IsConfirmed() const
 		}
 	}
 	return true;
+}
+
+
+void CWallet::InitSpent(CWalletTx& wtx)
+{
+	vector<uint256> vout; /* out */
+	int i;
+
+	if (!wtx.ReadCoins(ifaceIndex, vout))
+		return;
+
+	wtx.vfSpent.resize(vout.size());
+	for (i = 0; i < vout.size(); i++) {
+		if (vout[i].IsNull())
+			wtx.vfSpent[i] = false;
+		else
+			wtx.vfSpent[i] = true;
+	}
 }
 

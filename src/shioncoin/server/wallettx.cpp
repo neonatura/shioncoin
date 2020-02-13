@@ -115,8 +115,10 @@ void CWallet::WalletUpdateSpent(const CTransaction &tx)
 			if (fArch) {
 				WriteArchTx(wtx);
 				EraseWalletTx(hash);
+#if 0
 			} else {
 				WriteWalletTx(wtx);
+#endif
 			}
 		}
 	}

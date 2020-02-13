@@ -841,7 +841,7 @@ _TEST(matrixtx)
   _TRUE(err == 0);
 
 
-/* DEBUG: TODO: free blockindex's for valgrind mem check */
+/* TODO: free blockindex's for valgrind mem check */
 
   /* ensure that block processing does not fail past x3 Validate matrix */
   for (idx = 0; idx < 108; idx++) { /* 27 * 3 = 81 */

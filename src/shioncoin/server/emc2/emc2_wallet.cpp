@@ -496,8 +496,6 @@ bool EMC2Wallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
 
         // Fill vtxPrev by copying from previous transactions vtxPrev
         wtxNew.AddSupportingTransactions();
-        wtxNew.fTimeReceivedIsTxTime = true;
-
         break;
       }
     }

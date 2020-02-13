@@ -830,7 +830,7 @@ Object CAlias::ToValue(int ifaceIndex)
 {
   Object obj = CIdent::ToValue();
 
-/* DEBUG: TODO: custimize CIDent::TOValue */
+/* TODO: custimize CIDent::TOValue */
   if (GetType() == ALIAS_COINADDR) {
     obj.push_back(Pair("type-name", "coinaddr"));
 

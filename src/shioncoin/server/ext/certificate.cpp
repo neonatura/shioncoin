@@ -1836,7 +1836,7 @@ bool CCert::VerifySignature()
 bool CCert::IsSignatureOwner(string strAccount)
 {
 //  bool IsLocalCert(CIface *iface, const CTxOut& txout) 
-/* DEBUG: TODO: */
+/* TODO: */
 return (false);
 }
 

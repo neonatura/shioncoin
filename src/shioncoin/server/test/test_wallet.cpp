@@ -505,8 +505,6 @@ wtxNew.print(TEST_COIN_IFACE);
 
         // Fill vtxPrev by copying from previous transactions vtxPrev
         wtxNew.AddSupportingTransactions();
-        wtxNew.fTimeReceivedIsTxTime = true;
-
         break;
       }
     }
@@ -696,8 +694,6 @@ bool TESTWallet::CreateAccountTransaction(string strFromAccount, const vector<pa
 
         // Fill vtxPrev by copying from previous transactions vtxPrev
         wtxNew.AddSupportingTransactions();
-        wtxNew.fTimeReceivedIsTxTime = true;
-
         break;
       }
     }

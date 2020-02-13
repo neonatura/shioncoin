@@ -442,6 +442,8 @@ class CWallet : public CBasicKeyStore
 
 		const cbuff& Base58Prefix(int type) const;
 
+		void InitSpent(CWalletTx& wtx);
+
 		virtual bool IsAlgoSupported(int alg, CBlockIndex *pindexPrev = NULL, uint160 hColor = 0) = 0;
 
 };
@@ -458,10 +460,9 @@ class CWalletTx : public CMerkleTx
 		std::vector<CMerkleTx> vtxPrev;
 		std::map<std::string, std::string> mapValue;
 		std::vector<std::pair<std::string, std::string> > vOrderForm;
-		unsigned int fTimeReceivedIsTxTime;
+		unsigned int nTimeUnused; // time committed to a block.
 		unsigned int nTimeReceived;  // time received by this node
 		char fFromMe;
-		char fCommit; /* committed to a block */
 		std::string strFromAccount;
 		std::vector<char> vfSpent; // which outputs are already spent
 		uint160 hColor; /* COLOR_COIN_IFACE */
@@ -512,7 +513,7 @@ class CWalletTx : public CMerkleTx
 			vtxPrev.clear();
 			mapValue.clear();
 			vOrderForm.clear();
-			fTimeReceivedIsTxTime = false;
+			nTimeUnused = 0;
 			nTimeReceived = 0;
 			fFromMe = false;
 			strFromAccount.clear();
@@ -537,25 +538,31 @@ class CWalletTx : public CMerkleTx
 
 			 if (!fRead)
 			 {
-			 pthis->mapValue["fromaccount"] = pthis->strFromAccount;
-			 if (pthis->hColor != 0)
-				 pthis->mapValue["color"] = pthis->hColor.GetHex();
+				 pthis->mapValue["fromaccount"] = pthis->strFromAccount;
+				 if (pthis->hColor != 0)
+					 pthis->mapValue["color"] = pthis->hColor.GetHex();
 
-			 std::string str;
-			 BOOST_FOREACH(char f, vfSpent)
-			 {
-			 str += (f ? '1' : '0');
-			 if (f)
-			 fSpent = true;
-			 }
-			 pthis->mapValue["spent"] = str;
+#if 0
+				 std::string str;
+#endif
+				 BOOST_FOREACH(char f, vfSpent)
+				 {
+#if 0
+					 str += (f ? '1' : '0');
+#endif
+					 if (f)
+						 fSpent = true;
+				 }
+#if 0
+				 pthis->mapValue["spent"] = str;
+#endif
 			 }
 
 			 nSerSize += SerReadWrite(s, *(CMerkleTx*)this, nType, nVersion,ser_action);
 			 READWRITE(vtxPrev);
 			 READWRITE(mapValue);
 			 READWRITE(vOrderForm);
-			 READWRITE(fTimeReceivedIsTxTime);
+			 READWRITE(nTimeUnused);
 			 READWRITE(nTimeReceived);
 			 READWRITE(fFromMe);
 			 READWRITE(fSpent);
@@ -566,17 +573,22 @@ class CWalletTx : public CMerkleTx
 				 if (pthis->mapValue.count("color") != 0)
 					 pthis->hColor = uint160(pthis->mapValue["color"]);
 
+#if 0
 				 if (mapValue.count("spent"))
 					 BOOST_FOREACH(char c, pthis->mapValue["spent"])
 						 pthis->vfSpent.push_back(c != '0');
 				 else
+#endif
 					 pthis->vfSpent.assign(vout.size(), fSpent);
 			 }
 
 			 pthis->mapValue.erase("fromaccount");
 			 pthis->mapValue.erase("color");
 			 pthis->mapValue.erase("version");
+#if 0
 			 pthis->mapValue.erase("spent");
+#endif
+			 pthis->mapValue.erase("commit");
 			 )
 
 				 // marks certain txout's as spent

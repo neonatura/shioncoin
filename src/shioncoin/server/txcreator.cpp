@@ -671,7 +671,6 @@ bool CTxCreator::Send()
 
   /* fill vtxPrev by copying from previous transactions vtxPrev */
   pwallet->AddSupportingTransactions(*this);
-  fTimeReceivedIsTxTime = true;
 
   if (!pwallet->CommitTransaction(*this)) {
     strError = "An error occurred while commiting the transaction.";
@@ -916,7 +915,7 @@ bool CTxBatchCreator::Send()
   BOOST_FOREACH(CWalletTx& wtx, vTxList) {
     /* fill vtxPrev by copying from previous transactions vtxPrev */
     pwallet->AddSupportingTransactions(wtx);
-    wtx.fTimeReceivedIsTxTime = true;
+//    wtx.fTimeReceivedIsTxTime = true;
     if (pwallet->CommitTransaction(wtx)) {
       vCommitList.push_back(wtx);
     }

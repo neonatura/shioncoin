@@ -329,17 +329,15 @@ _TEST(coinaddr)
   {
     CCoinAddr e_addr(EMC2_COIN_IFACE, "EKnqTC9XEuucZEhD3miDGnbJxBptcxhByA");
     _TRUE(e_addr.IsValid());
-//fprintf(stderr, "DEBUG: TEST: coinaddr: '%s' has nVersion '%d'\n", "EKnqTC9XEuucZEhD3miDGnbJxBptcxhByA", e_addr.GetVersion());
   }
 
   {
     CCoinAddr s_addr(TEST_COIN_IFACE, "GSje1VrcG7uT55sL41sze9aL5qM7GaN5Bf");
     _TRUE(s_addr.IsValid());
-//fprintf(stderr, "DEBUG: TEST: coinaddr: '%s' has nVersion '%d'\n", "GSje1VrcG7uT55sL41sze9aL5qM7GaN5Bf", s_addr.GetVersion());
   }
 
 #if 0
-	/* DEBUG: TODO: re-introduce code; may be adding un-retrievable pubkey */
+	/* TODO: re-introduce code; may be adding un-retrievable pubkey */
   {
     CKey skey;
     skey.MakeNewKey(true);
@@ -356,7 +354,6 @@ _TEST(coinaddr)
     bool fRet;
     fRet = GetCoinAddr(wallet, s_addr, strAccount);
     _TRUE(fRet);
-//fprintf(stderr, "DEBUG: fRet = %s\n", (fRet ? "true" : "false"));
   }
 #endif
 
