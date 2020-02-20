@@ -1863,6 +1863,8 @@ static const ApiItems& stratum_api_block_mined(int ifaceIndex, user_t *user, shj
 	return (items);
 }
 
+extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex);
+
 static const ApiItems& stratum_api_block_list(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
 {
 	static ApiItems items;
@@ -1880,6 +1882,8 @@ static const ApiItems& stratum_api_block_list(int ifaceIndex, user_t *user, shjs
 		obj.push_back(Pair("time", (int)pindex->nTime));
 		obj.push_back(Pair("height", pindex->nHeight));
 		obj.push_back(Pair("bits", HexBits(pindex->nBits)));
+		obj.push_back(Pair("difficulty", GetDifficulty(ifaceIndex, pindex)));
+
 		items.push_back(obj);
 		if (pindex->GetBlockTime() < begin_t)
 			break;
