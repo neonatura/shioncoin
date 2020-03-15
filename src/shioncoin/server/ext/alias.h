@@ -148,10 +148,9 @@ bool DisconnectAliasTx(CIface *iface, CTransaction& tx);
 bool IsValidAliasName(CIface *iface, string label);
 
 
+int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx, bool fTest = false);
 
-int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx);
-
-int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx);
+int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx, bool fTest = false);
 
 int remove_alias_addr_tx(CIface *iface, string strAccount, string strTitle, CWalletTx& wtx);
 

@@ -459,6 +459,13 @@ if test "x$enable_stratum" != "xno" ; then
   AC_DEFINE_UNQUOTED([STRATUM_SERVICE], 1, [Define to enable stratum service.])
 fi
 
+AC_ARG_ENABLE([shapi],
+  AS_HELP_STRING([--disable-shapi], [Disable shapi service.]))
+AM_CONDITIONAL(SHAPI_SERVICE, [test "x$enable_shapi" != "xno"])
+if test "x$enable_shapi" != "xno" ; then
+  AC_DEFINE_UNQUOTED([SHAPI_SERVICE], 1, [Define to enable shapi service.])
+fi
+
 AC_ARG_ENABLE([rpc],
   AS_HELP_STRING([--disable-rpc], [Disable RPC service.]))
 AM_CONDITIONAL(RPC_SERVICE, [test "x$enable_rpc" != "xno"])

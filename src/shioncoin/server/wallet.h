@@ -244,10 +244,12 @@ class CWallet : public CBasicKeyStore
 		int64 GetBalance() const;
 		int64 GetUnconfirmedBalance() const;
 		int64 GetImmatureBalance();
-		std::string SendMoneyToDestination(string strAccount, const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
 
+#if 0
+		std::string SendMoneyToDestination(string strAccount, const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
 		string SendMoney(string strFromAccount, CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee = false);
 		string SendMoney(string stringFromAccount, const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
+#endif
 
 		bool IsMine(const CTxIn& txin);
 
@@ -915,10 +917,14 @@ int IndexOfExtOutput(const CTransaction& tx);
 
 CCoinAddr GetAccountAddress(CWallet *wallet, string strAccount);
 
+#if 0
+bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee = 0);
+bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee);
+#endif
+
 /** 
  * Send coins with the inclusion of a specific input transaction.
  */
-bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee = 0);
 bool GetCoinAddr(CWallet *wallet, CCoinAddr& addrAccount, string& strAccount);
 
 bool GetCoinAddr(CWallet *wallet, string strAddress, CCoinAddr& addrAccount);
@@ -956,7 +962,6 @@ void core_ReacceptWalletTransactions(CWallet *wallet);
 
 bool CreateTransactionWithInputTx(CIface *iface, string strAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxIn, int nTxOut, CWalletTx& wtxNew, int64 nTxFee);
 
-bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee);
 
 bool IsAccountValid(CIface *iface, std::string strAccount);
 

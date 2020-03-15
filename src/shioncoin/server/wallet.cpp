@@ -873,6 +873,7 @@ bool CWallet::SelectAccountCoins(string strAccount, int64 nTargetValue, set<pair
 	return (SelectCoins_Avg(nTargetValue, vCoins, setCoinsRet, nValueRet));  
 }
 
+#if 0
 string CWallet::SendMoneyToDestination(string strAccount, const CTxDestination& address, int64 nValue, CWalletTx& wtxNew, bool fAskFee)
 {
 	// Check amount
@@ -887,8 +888,6 @@ string CWallet::SendMoneyToDestination(string strAccount, const CTxDestination& 
 
 	return SendMoney(strAccount, scriptPubKey, nValue, wtxNew, fAskFee);
 }
-
-
 string CWallet::SendMoney(string strFromAccount, CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee)
 {
 	int64 nFeeRequired;
@@ -925,9 +924,6 @@ string CWallet::SendMoney(string strFromAccount, CScript scriptPubKey, int64 nVa
 
 	return "";
 }
-
-
-
 string CWallet::SendMoney(string strFromAccount, const CTxDestination& address, int64 nValue, CWalletTx& wtxNew, bool fAskFee)
 {
 	// Check amount
@@ -942,7 +938,7 @@ string CWallet::SendMoney(string strFromAccount, const CTxDestination& address, 
 
 	return SendMoney(strFromAccount, scriptPubKey, nValue, wtxNew, fAskFee);
 }
-
+#endif
 
 
 
@@ -1342,6 +1338,7 @@ int IndexOfExtOutput(const CTransaction& tx)
 	return (idx);
 }
 
+#if 0
 /** Commit a transaction with includes a specific input tx. */
 bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWalletTx& wtxNew, const CScript& scriptPubKey, vector<pair<CScript, int64> > vecSend, int64 txFee)
 {
@@ -1371,7 +1368,7 @@ bool SendMoneyWithExtTx(CIface *iface, string strAccount, CWalletTx& wtxIn, CWal
 
 	return (true);
 }
-
+#endif
 
 bool GetCoinAddr(CWallet *wallet, CCoinAddr& addrAccount, string& strAccount)
 {

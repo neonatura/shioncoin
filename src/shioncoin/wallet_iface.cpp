@@ -640,6 +640,7 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
     return (-6);
   }
 
+#if 0
   CWalletTx wtx;
   wtx.strFromAccount = strMainAccount;
   wtx.mapValue["comment"] = strComment;
@@ -648,6 +649,13 @@ int c_setblockreward(int ifaceIndex, const char *accountName, double dAmount)
     //throw JSONRPCError(-4, strError);
     return (-4);
   }
+#endif
+
+	CTxCreator s_wtx(pwalletMain, strMainAccount);  
+	if (!s_wtx.AddOutput(address.Get(), nAmount))
+		return (ERR_INVAL);
+	if (!s_wtx.Send())
+		return (ERR_CANCELED);
 
   return (0);
 }
@@ -849,13 +857,24 @@ static int c_wallet_account_transfer(int ifaceIndex, const char *sourceAccountNa
     return (-5);
   }
 
+	CTxCreator s_wtx(pwalletMain, strMainAccount);  
+#if 0
   CWalletTx wtx;
   wtx.strFromAccount = strMainAccount;
   wtx.mapValue["comment"] = strComment;
-  string strError = pwalletMain->SendMoneyToDestination(strMainAccount, address.Get(), nAmount, wtx);
+#endif
+
+	if (!s_wtx.AddOutput(address.Get(), nAmount))
+		return (ERR_INVAL);
+	if (!s_wtx.Send()) {
+		return (ERR_CANCELED);
+	}
+#if 0
+  string strError = pwalletMain->SendMoneyToDestination(strMainAccount, address.Get(), nAmount, s_wtx);
   if (strError != "") {
     return (-4);
   }
+#endif
 
   return (0);
 }

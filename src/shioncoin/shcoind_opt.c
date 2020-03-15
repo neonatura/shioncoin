@@ -87,6 +87,16 @@ static opt_t _option_table[] = {
 		"The maximum number of seconds between \"getwork\" notifications." },
 #endif
 
+	/* the stratum service provides a service for mining hardware to connect to in order to generate new blocks. */
+#ifdef SHAPI_SERVICE
+	{ OPT_SERV_SHAPI, OPT_TYPE_BOOL, 1, NULL,
+		"The built-in shapi account management service." },
+	{ OPT_SHAPI_PORT, OPT_TYPE_NUM, 9449, NULL, 
+		"The socket port to listen for SHAPI connections." },
+	{ OPT_SHAPI_HOST, OPT_TYPE_STR, 0, "127.0.0.1",
+		"The IP Address of the ethernet device to bind the SHAPI service to or a literal star \"*\" to allow any incoming network connection." },
+#endif
+
 	/* unless compiled with "--disable-rpc"; the RPC service provides a method to perform RPC commands against a virtual coin service. each virtual service is provided with it's own executable for communication. */
 #ifdef RPC_SERVICE
 	{ OPT_SERV_RPC, OPT_TYPE_BOOL, 1, NULL,

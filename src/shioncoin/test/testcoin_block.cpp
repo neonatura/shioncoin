@@ -469,23 +469,16 @@ _TEST(cointx)
 
   string strExtAccount = "*" + strAccount;
   CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount);
-
-  CWalletTx wtx;
-  wtx.SetNull();
-	strAccount = "";
-  wtx.strFromAccount = strAccount;
-
   int64 nFee = 18 * COIN;
 
   /* send to extended tx storage account */
   CScript scriptPubKey;
   scriptPubKey.SetDestination(extAddr.Get());
-
   for (idx = 0; idx < 3; idx++) {
-    string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
-    _TRUE(strError == "");
-
-    _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
+		CTxCreator s_wtx(wallet, strAccount);
+		_TRUE(s_wtx.AddOutput(scriptPubKey, nFee));
+		_TRUE(s_wtx.Send());
+    _TRUE(s_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
   }
 
 	/* erase all arch wallet-tx's to simulate a startup scenerio. */
@@ -1422,18 +1415,18 @@ _TEST(segwit)
 
   iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
   iface->vDeployments[DEPLOYMENT_CSV].nStartTime = time(NULL);
-  iface->vDeployments[DEPLOYMENT_CSV].nTimeout = time(NULL) + 120;
+  iface->vDeployments[DEPLOYMENT_CSV].nTimeout = time(NULL) + 240;
 
   iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
   iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = time(NULL);
-  iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = time(NULL) + 120;
+  iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = time(NULL) + 240;
 
   iface->vDeployments[DEPLOYMENT_PARAM].bit = 6;
   iface->vDeployments[DEPLOYMENT_PARAM].nStartTime = time(NULL);
-  iface->vDeployments[DEPLOYMENT_PARAM].nTimeout = time(NULL) + 120;
+  iface->vDeployments[DEPLOYMENT_PARAM].nTimeout = time(NULL) + 240;
 
   /* create some blocks */
-  for (i = 0; i < 1024; i++) { 
+  for (i = 0; i < 2048; i++) { 
     CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
 
     blocks[i] = test_GenerateBlock();

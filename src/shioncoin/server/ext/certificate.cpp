@@ -933,6 +933,7 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
+  CCert *cert;
 
   if(strTitle.length() == 0)
     return (SHERR_INVAL);
@@ -954,12 +955,9 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
   if (!extAddr.IsValid())
     return (SHERR_INVAL);
 
-  CCert *cert;
-
   /* embed cert content into transaction */
-  wtx.SetNull();
-  cert = wtx.CreateCert(ifaceIndex, strTitle.c_str(), addr, hexSeed, nLicenseFee);
-  wtx.strFromAccount = strAccount; /* originating account for payment */
+	CTxCreator s_wtx(wallet, strAccount);
+  cert = s_wtx.CreateCert(ifaceIndex, strTitle.c_str(), addr, hexSeed, nLicenseFee);
 
   int64 nFee = GetCertOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
@@ -967,30 +965,32 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
     return (ERR_FEE);
   }
 
+  uint160 certHash = cert->GetHash();
+
   /* send to extended tx storage account */
   CScript scriptPubKeyOrig;
-  uint160 certHash = cert->GetHash();
-  CScript scriptPubKey;
-
   scriptPubKeyOrig.SetDestination(extAddr.Get());
+
+  CScript scriptPubKey;
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_CERT) << OP_HASH160 << certHash << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
+	s_wtx.AddOutput(scriptPubKey, nFee);
 
   /* send certificate transaction */
-  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
-  if (strError != "") {
-    error(ifaceIndex, strError.c_str());
-    return (SHERR_INVAL);
+	if (!s_wtx.Send()) {
+    error(ifaceIndex, s_wtx.GetError().c_str());
+    return (SHERR_CANCELED);
   }
 
 #if 0
   /* add as direct const reference */
   const uint160& mapHash = cert->GetHash();
-  wallet->mapCert[certHash] = wtx.GetHash();
+  wallet->mapCert[certHash] = s_wtx.GetHash();
   wallet->mapCertLabel[cert->GetLabel()] = certHash;
 #endif
 
-  Debug("SENT:CERTNEW : title=%s, certhash=%s, tx=%s\n", strTitle.c_str(), cert->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
+	wtx = (CWalletTx)s_wtx;
+  Debug("SENT:CERTNEW : title=%s, certhash=%s, tx=%s\n", strTitle.c_str(), cert->GetHash().ToString().c_str(), s_wtx.GetHash().GetHex().c_str());
 
   return (0);
 }
@@ -999,6 +999,7 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
+  CCert *cert;
 
   if(strTitle.length() == 0)
     return (SHERR_INVAL);
@@ -1047,13 +1048,10 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
   if (!addr.IsValid())
     return (SHERR_INVAL);
 
-  CCert *cert;
 
   /* embed cert content into transaction */
-  wtx.SetNull();
-  cert = wtx.DeriveCert(ifaceIndex, strTitle.c_str(), addr, chain, hexSeed, nLicenseFee);
-  wtx.strFromAccount = strAccount; /* originating account for payment */
- 
+	CTxCreator s_wtx(wallet, strAccount);
+  cert = s_wtx.DeriveCert(ifaceIndex, strTitle.c_str(), addr, chain, hexSeed, nLicenseFee);
   cert->tExpire = chain->tExpire;
 
   int64 nFee = GetCertOpFee(iface, GetBestHeight(iface));
@@ -1062,23 +1060,25 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
     return (ERR_FEE);
   }
 
+  uint160 certHash = cert->GetHash();
+
   /* send to extended tx storage account */
   CScript scriptPubKeyOrig;
-  uint160 certHash = cert->GetHash();
-  CScript scriptPubKey;
-
   scriptPubKeyOrig.SetDestination(extAddr.Get());
+
+  CScript scriptPubKey;
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_CERT) << OP_HASH160 << certHash << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
+	s_wtx.AddOutput(scriptPubKey, nFee);
 
   /* send certificate transaction */
-  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
-  if (strError != "") {
-    error(ifaceIndex, strError.c_str());
+	if (!s_wtx.Send()) {
+    error(ifaceIndex, s_wtx.GetError().c_str());
     return (SHERR_INVAL);
   }
 
-  Debug("SENT:CERTDERIVE : title=%s, certhash=%s, tx=%s\n", strTitle.c_str(), cert->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
+	wtx = (CWalletTx)s_wtx;
+  Debug("SENT:CERTDERIVE : title=%s, certhash=%s, tx=%s\n", strTitle.c_str(), cert->GetHash().ToString().c_str(), s_wtx.GetHash().GetHex().c_str());
 
   return (0);
 }
@@ -1127,10 +1127,7 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
     return (error(SHERR_INVAL, "error generating ext account addr"));
 
   /* intermediate tx */
-
-  /* embed cert content into transaction */
-  CWalletTx int_wtx;
-  int_wtx.strFromAccount = strAccount; /* originating account for payment */
+	CTxCreator int_wtx(wallet, strAccount);
 
   int64 nCertFee = (int64)cert->nFee;
   int64 nFee = ((int64)iface->min_tx_fee * 2) + nCertFee;
@@ -1142,9 +1139,10 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
   /* create a single [known] input to derive license from */
   CScript scriptPubKeyDest;
   scriptPubKeyDest.SetDestination(extAddr.Get());
-  string certStrError = wallet->SendMoney(strAccount, scriptPubKeyDest, nFee, int_wtx, false);
-  if (certStrError != "") {
-    error(ifaceIndex, certStrError.c_str());
+	int_wtx.AddOutput(scriptPubKeyDest, nFee);
+
+	if (!int_wtx.Send()) {
+    error(ifaceIndex, int_wtx.GetError().c_str());
     return (SHERR_CANCELED);
   }
 
@@ -1162,39 +1160,43 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
 //  CReserveKey rkey(wallet);
 
   /* initialize wallet transaction */
-  wtx.SetNull();
-  wtx.strFromAccount = strAccount;
+	CTxCreator s_wtx(wallet, strAccount);
 
   /* initialize license */
-  CCert *lic = wtx.CreateLicense(&tx.certificate);
+  CCert *lic = s_wtx.CreateLicense(&tx.certificate);
   if (!lic)
     return (SHERR_INVAL);
   lic->tExpire = cert->tExpire;
   lic->SetLabel(cert->GetLabel()); /* inherit title from cert */
   uint160 licHash = lic->GetHash();
 
-  /* add licensing payment, when required */
-  if (nCertFee >= (int64)iface->min_tx_fee) {
-    CScript scriptPubKeyFee;
-    scriptPubKeyFee.SetDestination(certAddr.Get());
-    vecSend.push_back(make_pair(scriptPubKeyFee, nCertFee));
-    nRetFee -= nCertFee;
-  }
+	/* the intermediate tx previously created. */
+	s_wtx.AddInput((CWalletTx *)&int_wtx, nOut);
 
   /* declare ext tx */
   CScript scriptPubKey;
   scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_LICENSE) << OP_HASH160 << licHash << OP_2DROP << OP_RETURN;
-  vecSend.push_back(make_pair(scriptPubKey, (int64)iface->min_tx_fee));
+	/* the license fee tx */
+	s_wtx.AddOutput(scriptPubKey, (int64)iface->min_tx_fee, true);
+
+  /* add licensing payment, when required */
+  if (nCertFee >= (int64)iface->min_tx_fee) {
+		/* this will appear first in vtx list */
+    CScript scriptPubKeyFee;
+    scriptPubKeyFee.SetDestination(certAddr.Get());
+		s_wtx.AddOutput(scriptPubKeyFee, nCertFee, true);
+//    nRetFee -= nCertFee;
+  }
+
 
   /* ship 'er off */
-  if (!CreateTransactionWithInputTx(iface, strAccount,
-        vecSend, int_wtx, nOut, wtx, nRetFee) ||
-      !wallet->CommitTransaction(wtx)) {
+	if (!s_wtx.Send()) {
     error(SHERR_CANCELED, "error paying certificate owner the license fee.");
     return (SHERR_CANCELED);
   }
 
-  Debug("SENT:LICENSENEW : lichash=%s, tx=%s\n", lic->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
+	wtx = (CWalletTx)s_wtx;
+  Debug("SENT:LICENSENEW : lichash=%s, tx=%s\n", lic->GetHash().ToString().c_str(), s_wtx.GetHash().GetHex().c_str());
 
   return (0);
 }
@@ -1540,9 +1542,9 @@ int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_IDENT) << OP_HASH160 << hashIdent << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
 //  string strError = wallet->SendMoney(scriptPubKey, nValue, t_wtx, false);
-  int64 nFeeRequired;
 
 #if 0
+  int64 nFeeRequired = 0;
   if (!wallet->CreateTransaction(scriptPubKey, nValue, t_wtx, rkey, nFeeRequired)) {
     return (SHERR_CANCELED);
 }
@@ -1560,7 +1562,9 @@ int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint
   CTxCreator s_wtx(wallet, strAccount);
 
   /* deduct intermediate tx fee */
+#if 0
   nFee -= nFeeRequired;
+#endif
   nFee = MAX(iface->min_tx_fee, nFee);
 
   /* send from intermediate as tx fee */

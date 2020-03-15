@@ -1,3 +1,11 @@
+2020-02-19  Brian Burrell  <bburrell.brian@gmail.com>
+
+	stratum GetDifficulty
+
+2020-02-12  Brian Burrell  <bburrell.brian@gmail.com>
+
+	CWalletTx fSpent
+
 2019-12-27  Brian Burrell  <bburrell.brian@gmail.com>
 
 	v4.1

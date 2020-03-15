@@ -98,6 +98,8 @@ shbuf_t *descriptor_wbuff(int fd);
  */
 int get_max_descriptors(void);
 
+int get_total_descriptor_claimed(void);
+
 
 #ifdef __cplusplus
 }

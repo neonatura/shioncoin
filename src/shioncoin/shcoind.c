@@ -26,6 +26,7 @@
 #include "shcoind.h"
 #include <signal.h>
 #include "stratum/stratum.h"
+#include "shapi/shapi.h"
 
 shpeer_t *server_peer;
 int server_msgq;
@@ -340,6 +341,17 @@ int shcoind_main(int argc, char *argv[])
 				raise(SIGTERM);
 			}
 		}
+  }
+#endif
+
+#ifdef SHAPI_SERVICE
+  if (opt_bool(OPT_SERV_SHAPI)) {
+    /* initialize SHAPI service */
+    err = shapi_init();
+    if (err) {
+			unet_log(UNET_SHAPI, "critical: error binding SHAPI port.");
+      raise(SIGTERM);
+    }
   }
 #endif
 

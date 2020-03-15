@@ -134,9 +134,9 @@ CContext *GetContextByHash(CIface *iface, uint160 hashName, CTransaction& ctx_tx
 CContext *GetContextByName(CIface *iface, string strName, CTransaction& ctx_tx);
 
 
-int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fAddr = false);
+int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fAddr = false, bool fTest = false);
 
-int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fAddr = false);
+int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fAddr = false, bool fTest = false);
 
 /**
  * Verify that the context payload has a valid value.

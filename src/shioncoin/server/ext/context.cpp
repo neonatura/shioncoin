@@ -555,6 +555,7 @@ bool DisconnectContextTx(CIface *iface, CTransaction& tx)
     wallet->mapContext.erase(hContext);
   }
 
+	return (true);
 }
 
 
@@ -812,7 +813,7 @@ void share_geo_save(CContext *ctx, string label)
 
 }
 
-int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fAddr)
+int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fAddr, bool fTest)
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
@@ -849,11 +850,10 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
     return (SHERR_NOTUNIQ);
   }
 
-  wtx.SetNull();
-  wtx.strFromAccount = strAccount; /* originating account for payment */
+	CTxCreator s_wtx(wallet, strAccount);
 
   /* embed ctx content into transaction */
-  ctx = wtx.CreateContext();
+  ctx = s_wtx.CreateContext();
   if (!ctx) {
     error(SHERR_INVAL, "init_ctx_tx: error initializing context transaction.");
     return (SHERR_INVAL);
@@ -882,32 +882,36 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
 
   uint160 hContext = ctx->GetHash();
 
+  CScript destPubKey;
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
+  destPubKey.SetDestination(extAddr.Get());
 
   CScript scriptPubKey;
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_CONTEXT) << OP_HASH160 << hContext << OP_2DROP;
-
-	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
-  CScript destPubKey;
-  destPubKey.SetDestination(extAddr.Get());
   scriptPubKey += destPubKey;
-
-  // send transaction
-  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
-  if (strError != "") {
-    error(ifaceIndex, "init_ctx_tx: %s", strError.c_str());
+	if (!s_wtx.AddOutput(scriptPubKey, nFee, true))
     return (SHERR_INVAL);
-  }
 
-  Debug("SENT:CONTEXTNEW : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), wtx.GetHash().GetHex().c_str());
+	if (!fTest) {
+		/* commit transaction. */
+		if (!s_wtx.Send())
+			return (SHERR_CANCELED);
 
-  if (GetCoinIndex(iface) == SHC_COIN_IFACE) {
-    share_geo_save(ctx, strName);
-  }
+		Debug("SENT:CONTEXTNEW : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), s_wtx.GetHash().GetHex().c_str());
+
+		if (GetCoinIndex(iface) == SHC_COIN_IFACE) {
+			share_geo_save(ctx, strName);
+		}
+	} else {
+		if (!s_wtx.Generate())
+			return (SHERR_CANCELED);
+	}
+	wtx = (CWalletTx)s_wtx;
 
   return (0);
 }
 
-int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fAddr)
+int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fAddr, bool fTest)
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
@@ -990,15 +994,20 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
 	if (!s_wtx.AddExtTx(&wtxIn, scriptPubKey))
     return (SHERR_INVAL);
 
-	/* commit transaction. */
-	if (!s_wtx.Send())
-    return (SHERR_CANCELED);
+	if (!fTest) {
+		/* commit transaction. */
+		if (!s_wtx.Send())
+			return (SHERR_CANCELED);
 
+		Debug("SENT:CONTEXTUPDATE : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), s_wtx.GetHash().GetHex().c_str());
+
+		if (GetCoinIndex(iface) == SHC_COIN_IFACE)
+			share_geo_save(ctx, strName);
+	} else {
+		if (!s_wtx.Generate())
+			return (SHERR_CANCELED);
+	}
 	wtx = (CWalletTx)s_wtx;
-  Debug("SENT:CONTEXTUPDATE : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), wtx.GetHash().GetHex().c_str());
-
-  if (GetCoinIndex(iface) == SHC_COIN_IFACE)
-    share_geo_save(ctx, strName);
 
   return (0);
 }

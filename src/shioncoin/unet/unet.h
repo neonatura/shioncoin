@@ -53,7 +53,7 @@ extern "C" {
 #define UNET_STRATUM 13
 
 /* stratum through encrypted-stream-layer */
-#define UNET_STRATUM_ESL 14
+#define UNET_SHAPI 14
 
 /* ssl-rpc via localhost connection */
 #define UNET_RPC 15
@@ -70,13 +70,12 @@ extern "C" {
 /* maximum number of unet services */
 #define MAX_UNET_MODES 32
 
-
 #define UNETF_SHUTDOWN DF_SHUTDOWN
 #define UNETF_PEER_SCAN DF_PEER_SCAN
 #define UNETF_INBOUND DF_INBOUND
 #define UNETF_LISTEN DF_LISTEN
 #define UNETF_SYNC DF_SYNC
-
+#define UNETF_ESL DF_ESL
 
 #define UNDEFINED_SOCKET 0
 #define UNDEFINED_TIME SHTIME_UNDEFINED
@@ -213,6 +212,7 @@ unet_bind_t *unet_bind_table(int mode);
 
 int unet_bind(int mode, int port, char *host);
 
+int unet_bind_esl(int mode, int port, char *host);
 
 
 

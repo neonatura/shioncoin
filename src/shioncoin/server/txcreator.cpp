@@ -247,7 +247,8 @@ bool CTxCreator::HaveOutput(const CPubKey& pubKey)
 
 bool CTxCreator::SetChangeAddr(const CPubKey& scriptPubKey)
 {
-  changePubKey = scriptPubKey;
+	changePubKey = scriptPubKey;
+	return (true);
 }
 
 CCoinAddr CTxCreator::GetChangeAddr()

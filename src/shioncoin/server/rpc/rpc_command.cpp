@@ -358,7 +358,7 @@ Value rpc_sys_info(CIface *iface, const Array& params, bool fStratum)
 			flag_str += "BIP66 ";
 		if (flags & SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)
 			flag_str += "BIP68 ";
-		if (IsWitnessEnabled(iface, pindexBest))
+		if (flags & SCRIPT_VERIFY_WITNESS)
 			flag_str += "BIP141 ";
 		if (HasParamConsensus(iface, pindexBest))
 			flag_str += "SIP12 ";
@@ -447,6 +447,53 @@ Value rpc_sys_config(CIface *iface, const Array& params, bool fStratum)
   add_sys_config_opt_bool(obj, OPT_SERV_STRATUM);
   add_sys_config_opt_num(obj, OPT_STRATUM_PORT);
 #endif
+
+	add_sys_config_opt_bool(obj, OPT_HDKEY);
+	add_sys_config_opt_bool(obj, OPT_DILITHIUM);
+	add_sys_config_opt_bool(obj, OPT_PARAM_TX);
+
+#ifdef TESTNET_SERVIE
+	add_sys_config_opt_bool(obj, OPT_SERV_TESTNET);	
+	add_sys_config_opt_num(obj, OPT_TESTNET_PORT);	
+	add_sys_config_opt_bool(obj, OPT_STRATUM_TESTNET);
+#endif
+
+#ifdef USE_ALGO_SHA256D
+	add_sys_config_opt_bool(obj, OPT_STRATUM_SHA256D);	
+	add_sys_config_opt_num(obj, OPT_STRATUM_SHA256D_PORT);	
+#endif
+
+#ifdef USE_ALGO_KECCAK
+	add_sys_config_opt_bool(obj, OPT_STRATUM_KECCAK);	
+	add_sys_config_opt_num(obj, OPT_STRATUM_KECCAK_PORT);	
+#endif
+
+#ifdef USE_ALGO_X11
+	add_sys_config_opt_bool(obj, OPT_STRATUM_X11);	
+	add_sys_config_opt_num(obj, OPT_STRATUM_X11_PORT);	
+#endif
+
+#ifdef USE_ALGO_BLAKE2S
+	add_sys_config_opt_bool(obj, OPT_STRATUM_BLAKE2S);	
+	add_sys_config_opt_num(obj, OPT_STRATUM_BLAKE2S_PORT);	
+#endif
+
+#ifdef USE_ALGO_QUBIT
+	add_sys_config_opt_bool(obj, OPT_STRATUM_QUBIT);	
+	add_sys_config_opt_num(obj, OPT_STRATUM_QUBIT_PORT);	
+#endif
+
+#ifdef USE_ALGO_GROESTL
+	add_sys_config_opt_bool(obj, OPT_STRATUM_GROESTL);	
+	add_sys_config_opt_num(obj, OPT_STRATUM_GROESTL_PORT);	
+#endif
+
+#ifdef USE_ALGO_SKEIN
+	add_sys_config_opt_bool(obj, OPT_STRATUM_SKEIN);	
+	add_sys_config_opt_num(obj, OPT_STRATUM_SKEIN_PORT);	
+#endif
+
+
 
   return obj;
 }
