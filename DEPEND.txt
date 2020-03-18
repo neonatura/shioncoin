@@ -1,12 +1,16 @@
 
-The c++ boost shared library is required. To be specific, the "system", "filesystem", "program_options", and "thread" boost libraries. The "shcoind" and "shcoin" programs are the only sharelib program that link against boost libraries. To install on linux run 'yum install libboost*' or 'apt-get install libboost*'.
+The c++ boost shared library is required. To be specific, the "system", "filesystem", "program_options", and "thread" boost libraries. The "shcoind" and "shcoin" programs are the only sharelib program that link against boost libraries. To install on linux run 'yum install boost-devel' or 'apt-get install libboost*'.
 
 The GMP library is required.  In order to install the GMP library;
 Run "yum install gmp-devel" on CentOS.
 Run "apt-get install libgmp-dev" on Ubuntu.
 Run "pacman -S libgmp-devel" from MSYS2 64-bit.
 
-libdb (i.e. db_cxx) is required.
-Run "apt-get install libdb-*-devel" on OpenSUSE.
+The "libdb-cxx-devel" package is required:
+	Run "apt-get install libdb-*-devel" on OpenSUSE.
+	Run "yum install epel-release; yum config-manager --set-enabled PowerTools; yum install libdb-cxx-devel" on CentOS 8.
+
+The "ncurses-devel" package is required.
+
 
 

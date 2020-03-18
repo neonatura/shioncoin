@@ -98,6 +98,30 @@ static bool serv_state(CIface *iface, int flag)
 }
 #endif
 
+static void chain_VerifyValidOutputs(int ifaceIndex, const uint256& tx_hash, CWalletTx& wtx)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+	vector<uint256> vOuts;
+	bool fUpdated = false;
+
+	/* ensure spent references are valid tx's. */
+	if (!wtx.ReadCoins(ifaceIndex, vOuts))
+		return;
+
+	for (unsigned int i = 0; i < vOuts.size(); i++) {
+		if (vOuts[i].IsNull())
+			continue;
+
+		if (!VerifyTxHash(iface, vOuts[i])) {
+			Debug("(%s) core_UpdateCoins: reset spend on tx (out #%d) \"%s\" [unknown tx \"%s\"].", iface->name, i, tx_hash.GetHex().c_str(), vOuts[i].GetHex().c_str());
+			vOuts[i].SetNull();
+			fUpdated = true;	
+		}
+	}
+
+	if (fUpdated)
+		wtx.WriteCoins(ifaceIndex, vOuts);
+}
 
 
 static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransaction& tx, bool& fCoinBase)
@@ -107,8 +131,14 @@ static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransa
   uint256 tx_hash = tx.GetHash();
 
 	if (wallet->mapWallet.count(tx_hash) == 0) {
-		if (wallet->HasArchTx(tx_hash))
-			return;
+//		if (wallet->HasArchTx(tx_hash))
+		{
+			CWalletTx wtx(wallet);
+			if (wallet->ReadArchTx(tx_hash, wtx)) {
+				chain_VerifyValidOutputs(ifaceIndex, tx_hash, wtx);
+				return;
+			}
+		}
 
 		if (wallet->IsMine(tx)) { /* found missing wallet tx. */
 			CWalletTx wtx(wallet, tx);
@@ -126,6 +156,7 @@ static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransa
 		if (wtx.IsCoinBase() && wallet->IsMine(wtx) &&
 				wtx.GetBlocksToMaturity(ifaceIndex) > 0)
 			fCoinBase = true;
+		chain_VerifyValidOutputs(ifaceIndex, tx_hash, wtx);
 	}
 
 	/* scan tx inputs for missing spends. */
@@ -145,11 +176,13 @@ static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransa
 			}
 
 			if (wtx.ReadCoins(ifaceIndex, vOuts) && /* coin db */
-					nOut < vOuts.size() && vOuts[nOut].IsNull()) {
-				vOuts[nOut] = tx_hash;
-				if (wtx.WriteCoins(ifaceIndex, vOuts)) {
-					Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
-				}
+					nOut < vOuts.size()) {
+				if (vOuts[nOut] != tx_hash) {
+					vOuts[nOut] = tx_hash;
+					if (wtx.WriteCoins(ifaceIndex, vOuts)) {
+						Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
+					}
+				} 
 			}
 		}
 	}
