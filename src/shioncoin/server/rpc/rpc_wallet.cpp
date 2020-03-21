@@ -357,7 +357,7 @@ Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum)
 	if (!address.GetKeyID(keyID))
 		throw JSONRPCError(-3, "Address does not refer to a key");
 	CSecret vchSecret;
-	bool fCompressed;
+	bool fCompressed = true;
 	if (!pwalletMain->GetSecret(keyID, vchSecret, fCompressed))
 		throw JSONRPCError(-4,"Private key for address " + strAddress + " is not known");
 	return CCoinSecret(ifaceIndex, vchSecret, fCompressed).ToString();

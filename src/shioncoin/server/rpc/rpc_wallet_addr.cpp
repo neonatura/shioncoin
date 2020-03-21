@@ -901,17 +901,19 @@ Value rpc_wallet_setkey(CIface *iface, const Array& params, bool fStratum)
 	CCoinSecret vchSecret;
 	string strSecret = params[0].get_str();
 	string strLabel = AccountFromValue(params[1]);
-	/* TODO: arg for nCreateTime limit? */
+	int64 nCreateTime = 0;
+
 	string strType;
-	if (params.size() == 3)
+	if (params.size() >= 3)
 		strType = params[2].get_str();
+	if (params.size() >= 4)
+		nCreateTime = params[3].get_int();
 
 	bool fGood = vchSecret.SetString(strSecret);
 	if (!fGood) {
 		/* invalid private key 'string' for particular coin interface. */
 		throw JSONRPCError(SHERR_ILSEQ, "private-key");
 	}
-
 	CAccountCache *acc = wallet->GetAccount(strLabel);
 	if (!acc)
 		throw JSONRPCError(SHERR_INVAL, "invalid account");
@@ -923,8 +925,7 @@ Value rpc_wallet_setkey(CIface *iface, const Array& params, bool fStratum)
 		LOCK2(cs_main, wallet->cs_wallet);
 
 		if (secret.size() == 96) { /* DILITHIUM */
-			DIKey key;
-			key.SetSecret(secret);
+			DIKey key(secret);
 			const CPubKey& pubkey = key.GetPubKey();
 			vchAddress = pubkey.GetID();
 			if (wallet->HaveKey(vchAddress))
@@ -934,8 +935,7 @@ Value rpc_wallet_setkey(CIface *iface, const Array& params, bool fStratum)
 			if (strType == "default")
 				acc->SetDefaultAddr(pubkey);
 		} else /* ECDSA */ {
-			ECKey key;
-			key.SetSecret(secret);
+			ECKey key(secret, fCompressed);
 			const CPubKey& pubkey = key.GetPubKey();
 			vchAddress = pubkey.GetID();
 			if (wallet->HaveKey(vchAddress))
