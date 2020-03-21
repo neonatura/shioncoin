@@ -74,7 +74,7 @@ static opt_t _option_table[] = {
 	{ OPT_SHC_PORT, OPT_TYPE_NUM, 24104, NULL,
 		"The port to accept incoming SHC service connections." },
 
-	{ OPT_BECH32, OPT_TYPE_BOOL, 0, NULL,
+	{ OPT_BECH32, OPT_TYPE_BOOL, 1, NULL,
 		"Generate bech32 style coin addresses when supported." },
 
 	/* the stratum service provides a service for mining hardware to connect to in order to generate new blocks. */
@@ -189,7 +189,7 @@ static opt_t _option_table[] = {
 	{ OPT_DILITHIUM, OPT_TYPE_BOOL, 0, NULL,
 		"Use the Dilithium signing algorythm for new coin addresses." },
 
-	{ OPT_PARAM_TX, OPT_TYPE_BOOL, 0, NULL,
+	{ OPT_PARAM_TX, OPT_TYPE_BOOL, 1, NULL,
 		"Embed consensus-based blockchain paramater extended transactions." },
 
 	/* end of the line */
