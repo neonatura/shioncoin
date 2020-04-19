@@ -30,10 +30,21 @@ static shmap_t *_shcon_option_table;
 
 int shcon_opt_init(void)
 {
+	char path[PATH_MAX+1];
 
   OPT_LIST = shmap_init();
   if (!OPT_LIST)
     return (SHERR_NOMEM);
+
+	sprintf(path, "%sshc.conf", get_shioncoin_path());
+	shcon_opt_load(path);
+
+#ifdef WINDOWS
+	sprintf(path, "%s\\.shc\\shc.conf", getenv("HOMEPATH"));
+#else
+	sprintf(path, "%s/.shc/shc.conf", getenv("HOME"));
+#endif
+	shcon_opt_load(path);
 
   return (0);
 }
@@ -109,3 +120,35 @@ const char *opt_iface(void)
   return (opt_str(OPT_IFACE));
 }
 
+void shcon_opt_load(char *path)
+{
+	char name[256];
+	char *tok, *val;
+  char *data;
+  char *line;
+  size_t data_len;
+  int err;
+
+	err = shfs_read_mem(path, &data, &data_len);
+	if (err)
+		return (err);
+
+	line = strtok(data, "\r\n");
+	while (line) {
+		if (!*line) goto next;
+		if (*line == '#') goto next;
+
+		tok = line;
+		val = strchr(line, '=');
+		if (!val) goto next;
+		*val++ = '\000';
+
+		memset(name, 0, sizeof(name));
+		snprintf(name, sizeof(name)-1, "shcoind.%s", tok);
+		opt_str_set(name, val);
+
+next:
+		line = strtok(NULL, "\r\n");
+	}
+
+}

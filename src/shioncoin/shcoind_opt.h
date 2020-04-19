@@ -51,7 +51,7 @@ extern "C" {
 #define OPT_SERV_RPC "rpc"
 #define OPT_RPC_PORT "rpc-port"
 #define OPT_RPC_HOST "rpc-host"
-#define OPT_RPC_MAP "rpc-map"
+#define OPT_RPC_KEY "rpc-key"
 #define OPT_SERV_TESTNET "testnet"
 #define OPT_TESTNET_PORT "testnet-port"
 #define OPT_SERV_EMC2 "emc2"

@@ -105,6 +105,8 @@ static opt_t _option_table[] = {
 		"The socket port to listen for RPC commands." }, 
 	{ OPT_RPC_HOST, OPT_TYPE_STR, 0, "127.0.0.1",
 		"The IP Address of the ethernet device to bind the RPC service to or a literal star \"*\" to allow any incoming network connection." },
+	{ OPT_RPC_KEY, OPT_TYPE_STR, 0, "",
+		"A 28-byte hex key for authenticating RPC service requests." },
 #endif
 
 	/* The shioncoin testnet service. */
@@ -213,14 +215,11 @@ static const char *opt_home_dir(void)
 #endif
 
 		if (!homedir) {
-			/* a env. var that the shioncoin MSI installer creates based on the user who installs it. */
-			homedir = getenv("SHCOIND_HOME");
-			if (!homedir)
 #ifdef WINDOWS
 			/* kick back to windows set env. var. note that this is probably not defined for a 'system account'. */
-				homedir = getenv("HOMEPATH");
+			homedir = getenv("HOMEPATH");
 #else
-				homedir = getenv("HOME");
+			homedir = getenv("HOME");
 #endif
 		}
 		if (homedir) {
@@ -268,9 +267,8 @@ void opt_print(void)
 }
 
 /** Write out the defaults to "shc.conf". */ 
-static void write_default_shc_conf_file(void)
+static void write_default_shc_conf_file(char *path)
 {
-	char path[PATH_MAX+1];
 	const char *data;
 	size_t data_len;
 	int err;
@@ -279,21 +277,13 @@ static void write_default_shc_conf_file(void)
 	if (!data)
 		return;
 
-#ifdef WINDOWS
-	sprintf(path, "%s\\.shc\\", opt_home_dir());
-#else
-	sprintf(path, "%s/.shc/", opt_home_dir());
-#endif
-	mkdir(path, 0777);
-	strcat(path, "shc.conf");
 	data_len = strlen(data);
 	(void)shfs_write_mem(path, data, data_len);
 
 }
 
-static void opt_set_defaults_datfile(void)
+static int opt_set_defaults_datfile(char *path)
 {
-	char path[PATH_MAX+1];
 	char *tok, *val;
 	char *data;
 	char *line;
@@ -301,17 +291,9 @@ static void opt_set_defaults_datfile(void)
 	int idx;
 	int err;
 
-#ifdef WINDOWS
-	sprintf(path, "%s\\.shc\\shc.conf", opt_home_dir());
-#else
-	sprintf(path, "%s/.shc/shc.conf", opt_home_dir());
-#endif
 	err = shfs_read_mem(path, &data, &data_len);
-	if (err) {
-		/* try to write a default config file. */
-		write_default_shc_conf_file();
-		return;
-	}
+	if (err)
+		return (err);
 
 	line = strtok(data, "\r\n");
 	while (line) {
@@ -344,6 +326,7 @@ next:
 		line = strtok(NULL, "\r\n");
 	}
 
+	return (0);
 }
 
 static void opt_set_defaults_system(void)
@@ -419,9 +402,23 @@ static void opt_set_environment_settings(void)
 
 }
 
+static void opt_set_default_rpc_key(void)
+{
+	shkey_t *key;
+	
+	if (*opt_str(OPT_RPC_KEY))
+		return;
+
+	key = shkey_uniq();
+	opt_str_set(OPT_RPC_KEY, shkey_hex(key));
+	shkey_free(&key);
+}
+
 static void opt_set_defaults(void)
 {
+	char path[PATH_MAX+1];
 	int idx;
+	int err;
 
 	/* hard-coded configurable defaults */
 	for (idx = 0; _option_table[idx].opt_type != OPT_TYPE_NULL; idx++) {
@@ -441,8 +438,21 @@ static void opt_set_defaults(void)
 	/* libshare configuration settings */
 	opt_set_defaults_system();
 
-	/* "~/.shc/shc.conf" datafile */
-	opt_set_defaults_datfile();
+	opt_set_default_rpc_key();
+
+	/* "<data dir>/shc.conf" datafile */
+	sprintf(path, "%sshc.conf", get_shioncoin_path());
+	err = opt_set_defaults_datfile(path);
+	if (err)
+		write_default_shc_conf_file(path);
+
+	/* secondary "~/.shc/shc.conf" datafile */
+#ifdef WINDOWS
+	sprintf(path, "%s\\.shc\\shc.conf", opt_home_dir());
+#else
+	sprintf(path, "%s/.shc/shc.conf", opt_home_dir());
+#endif
+	opt_set_defaults_datfile(path);
 
 	/* environment settings */
 	opt_set_environment_settings();
@@ -611,24 +621,26 @@ const char *opt_config_default_print(void)
 			case OPT_TYPE_BOOL:
 				sprintf(buf, 
 						"\n"
-						"#\n"
-						"# %s\n",
+						"## Name: \"%s\"\n"
+						"## %s\n",
+						_option_table[idx].opt_name,
 						_option_table[idx].opt_desc);
 				if (_option_table[idx].opt_def) {
-					sprintf(buf+strlen(buf), "# Default: 1 (true)\n#%s=1\n",
+					sprintf(buf+strlen(buf), "## Default: 1 (true)\n#%s=1\n",
 							_option_table[idx].opt_name);
 				} else {
-					sprintf(buf+strlen(buf), "# Default: 0 (false)\n#%s=0\n",
+					sprintf(buf+strlen(buf), "## Default: 0 (false)\n#%s=0\n",
 							_option_table[idx].opt_name);
 				}
 				break;
 			case OPT_TYPE_NUM:
 				sprintf(buf,
 						"\n"
-						"#\n"
-						"# %s\n"
-						"# Default: %d\n"
+						"## Name: \"%s\"\n"
+						"## %s\n"
+						"## Default: %d\n"
 						"#%s=%d\n",
+						_option_table[idx].opt_name,
 						_option_table[idx].opt_desc,
 						_option_table[idx].opt_def,
 						_option_table[idx].opt_name, 
@@ -637,14 +649,26 @@ const char *opt_config_default_print(void)
 			case OPT_TYPE_STR:
 				sprintf(buf, 
 						"\n"
-						"#\n"
-						"# %s\n"
-						"# Default: %s\n"
-						"#%s=%s\n", 
-						_option_table[idx].opt_desc,
-						_option_table[idx].opt_strdef,
-						_option_table[idx].opt_name, 
-						_option_table[idx].opt_strdef);
+						"## Name: \"%s\"\n"
+						"## %s\n",
+						_option_table[idx].opt_name,
+						_option_table[idx].opt_desc);
+				if (_option_table[idx].opt_strdef &&
+						*_option_table[idx].opt_strdef) {
+					sprintf(buf+strlen(buf), "## Default: %s\n",
+							_option_table[idx].opt_strdef);
+				}
+				if (_option_table[idx].opt_strdef &&
+						0 == strcmp(_option_table[idx].opt_strdef, 
+							opt_str(_option_table[idx].opt_name))) {
+					sprintf(buf+strlen(buf), "#%s=%s\n", 
+							_option_table[idx].opt_name,
+							_option_table[idx].opt_strdef);
+				} else {
+					sprintf(buf+strlen(buf), "%s=%s\n", 
+							_option_table[idx].opt_name, 
+							opt_str(_option_table[idx].opt_name));
+				}
 				break;
 		}
 		shbuf_catstr(ret_buff, buf); 

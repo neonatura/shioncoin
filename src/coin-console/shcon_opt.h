@@ -42,7 +42,7 @@
 
 #define OPT_PROMPT "shcon.prompt"
 
-#define OPT_PASS "shcon.password"
+#define OPT_PASS "shcoind.rpc-key"
 
 
 int shcon_opt_init(void);

@@ -61,8 +61,11 @@ shkey_t *key_dat_pass(char *host)
 
 	/* may be over-written by command-line argument. */
 	key_str = opt_str(OPT_PASS);
-	if (key_str && *key_str)
-		return (shkey_gen(key_str));
+	if (key_str && *key_str) {
+		key = shkey_hexgen(key_str);
+		if (key)
+			return (key);
+	}
 
   if (!host) {
 		host = opt_str(OPT_HOSTNAME);
