@@ -689,7 +689,7 @@ const char *get_shioncoin_path(void)
 		if (!str)
 			str = "C:\\ProgramData";
 
-		sprintf(ret_path, "%s\\shioncoin\\", str);
+		sprintf(ret_path, "%s\\ShionCoin\\", str);
 		mkdir(ret_path, 0777);
 #else
 		strcpy(ret_path, "/var/lib/shioncoin/");
