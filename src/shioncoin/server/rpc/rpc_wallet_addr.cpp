@@ -191,10 +191,12 @@ void rpcwallet_GetVerboseAddr(CWallet *wallet, CAccountCache *acc, CTxDestinatio
 		}
 	}
 
+	/* report address queried upon */
+	ent.push_back(Pair("address", addr.ToString()));
+
 	if (!addr.GetKeyID(keyid))  {
 		CScriptID scriptID;
 
-		ent.push_back(Pair("address", addr.ToString()));
 		if (addr.GetScriptID(scriptID)) {
 			CScript script;
 
@@ -215,15 +217,10 @@ void rpcwallet_GetVerboseAddr(CWallet *wallet, CAccountCache *acc, CTxDestinatio
 			}
 		}
 
-		return;
+		/* attempt to derive an underlying keyid */
+		if (!ExtractDestinationKey(wallet, addr.Get(), keyid))
+			return;
 	}
-
-#if 0
-	const CPubKey& pubkeyDefault = wallet->GetPrimaryPubKey(strAccount);
-	const CKeyID& keyidDefault = pubkeyDefault.GetID();
-	if (keyidDefault == keyid)
-		ent.push_back(Pair("default", true));
-#endif
 
 	CKey *key = wallet->GetKey(keyid);
 	if (key) {
@@ -246,7 +243,6 @@ void rpcwallet_GetVerboseAddr(CWallet *wallet, CAccountCache *acc, CTxDestinatio
 	}
 
 	if (!fDilithium) {
-		ent.push_back(Pair("address", addr.ToString()));
 		ent.push_back(Pair("algorithm", string("ecdsa")));
 	} else {
 		ent.push_back(Pair("algorithm", string("dilithium")));
@@ -262,8 +258,8 @@ void rpcwallet_GetVerboseAddr(CWallet *wallet, CAccountCache *acc, CTxDestinatio
 		acc->GetAddrDestination(keyid, vDest, (fDilithium ? ACCADDRF_DILITHIUM : 0));
 		BOOST_FOREACH(const CTxDestination& destTmp, vDest) {
 			if (destTmp == dest) continue; /* already reported on. */
-			CCoinAddr addr(wallet->ifaceIndex, destTmp);
-			addr_list.push_back(addr.ToString());
+			CCoinAddr t_addr(wallet->ifaceIndex, destTmp);
+			addr_list.push_back(t_addr.ToString());
 		}
 		if (addr_list.size() != 0)
 			ent.push_back(Pair("alias", addr_list));
@@ -345,6 +341,30 @@ Value rpc_wallet_addrlist(CIface *iface, const Array& params, bool fStratum)
 	{
 		const string& strName = item.second;
 		if (strName == strAccount) {
+			CCoinAddr addr(ifaceIndex, item.first);
+			CKeyID keyid;
+			if (ExtractDestinationKey(wallet, addr.Get(), keyid)) {
+				CPubKey pubkey;
+				if (wallet->GetPubKey(keyid, pubkey)) {
+					if (pubkey.IsDilithium()) {
+						CKeyID t_keyid;
+						CScript subscript;
+						CScriptID scriptID;
+						if (addr.GetKeyID(t_keyid)) {
+							/* skip un-usable dilithium addresses. */
+							continue;
+						} else if (addr.GetScriptID(scriptID) &&
+								wallet->GetCScript(scriptID, subscript)) {
+							int witnessversion;
+							std::vector<unsigned char> witprog;
+							if (!subscript.IsWitnessProgram(witnessversion, witprog)) {
+								/* skip un-usable dilithium addresses. */
+								continue;
+							}
+						}
+					}
+				}
+			}
 			vAddr.push_back(item.first);
 		}
 	}
@@ -932,8 +952,13 @@ Value rpc_wallet_setkey(CIface *iface, const Array& params, bool fStratum)
 				throw JSONRPCError(SHERR_NOTUNIQ, "Address already exists in wallet.");
 			if (!wallet->AddKey(key))
 				throw JSONRPCError(ERR_INVAL, "error generating address");
-			if (strType == "default")
+			if (strType == "default") {
 				acc->SetDefaultAddr(pubkey);
+			}
+			{
+				CKeyID keyid = pubkey.GetID();
+				acc->SetAddrDestinations(keyid);
+			}
 		} else /* ECDSA */ {
 			ECKey key(secret, fCompressed);
 			const CPubKey& pubkey = key.GetPubKey();
@@ -942,8 +967,14 @@ Value rpc_wallet_setkey(CIface *iface, const Array& params, bool fStratum)
 				throw JSONRPCError(SHERR_NOTUNIQ, "Address already exists in wallet.");
 			if (!wallet->AddKey(key))
 				throw JSONRPCError(ERR_INVAL, "error generating address");
-			if (strType == "default")
+			if (strType == "default") {
 				acc->SetDefaultAddr(pubkey);
+			}
+			{
+				CKeyID keyid = pubkey.GetID();
+				acc->SetAddrDestinations(keyid);
+			}
+
 		}
 
 		wallet->MarkDirty();

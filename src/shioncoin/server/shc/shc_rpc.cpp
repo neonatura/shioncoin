@@ -55,7 +55,7 @@ const RPCOp WALLET_DONATE = {
   "Summary: Donate coins as a block transaction fee identified by the specified certificate.\n"
   "Params: [ <account> The coin account name., <value> The coin value to donate, <cert-hash> The associated certificate's hash. ]\n"
   "\n"
-  "Donated coins are added to the upcoming block reward. Donations may be optionally associated with a certificate. The maximum donation value in a single transaction is 500 coins."
+  "Donated coins are added to the upcoming block reward. Donations may be optionally associated with a certificate. The maximum donation value in a single transaction is 1000 coins."
 };
 
 const RPCOp WALLET_KEYPHRASE = {

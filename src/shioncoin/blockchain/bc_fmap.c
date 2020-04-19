@@ -295,11 +295,12 @@ void bc_map_free(bc_map_t *map)
 static void _bc_map_close(bc_map_t *map)
 {
 
+  bc_map_free(map);
+
   if (map->fd) {
     descriptor_release(map->fd); /* close() */
     map->fd = 0;
   }
-  bc_map_free(map);
 
 }
 

@@ -52,6 +52,7 @@ extern double print_rpc_difficulty(CBigNum val);
 extern unsigned int GetDailyTxRate(CIface *iface); /* rpc_command.cpp */
 extern double GetAverageBlockSpan(CIface *iface);
 extern Value GetNetworkHashPS(int ifaceIndex, int lookup); /* rpc_parse.cpp */ 
+extern void rpcwallet_GetVerboseAddr(CWallet *wallet, CAccountCache *acc, CTxDestination dest, Object& ent);
 
 static std::string HexBits(unsigned int nBits)
 {
@@ -860,26 +861,62 @@ static const ApiItems& shapi_api_account_addr(int ifaceIndex, string strAccount,
 	static ApiItems items;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(ifaceIndex);
+	CAccountCache *account = wallet->GetAccount(strAccount);
+	int64 now = (int64)time(NULL);
+	CCoinAddr addr;
+
+	items.clear();
+
+	Object result;
+
+	addr = account->GetAddr(ACCADDR_HDKEY);
+	result.push_back(Pair("primary", addr.ToString()));
+
+	addr = account->GetAddr(ACCADDR_RECV);
+	result.push_back(Pair("receive", addr.ToString()));
+
+	addr = account->GetAddr(ACCADDR_CHANGE);
+	result.push_back(Pair("change", addr.ToString()));
+
+	addr = account->GetAddr(ACCADDR_EXEC);
+	result.push_back(Pair("exec", addr.ToString()));
+
+	addr = account->GetAddr(ACCADDR_MINER);
+	result.push_back(Pair("miner", addr.ToString()));
+
+	bool fWitness = IsWitnessEnabled(iface, GetBestBlockIndex(iface));
+	bool fBech32 = opt_bool(OPT_BECH32);
+	bool fDilithium = opt_bool(OPT_DILITHIUM);
+	if (fWitness && fBech32)
+		result.push_back(Pair("bech32", true));
+	else
+		result.push_back(Pair("bech32", false));
+	if (fWitness && fDilithium)
+		result.push_back(Pair("dilithium", true));
+	else
+		result.push_back(Pair("dilithium", false));
+	
+	items.push_back(result);
+
+  return (items);
+}
+
+static const ApiItems& shapi_api_account_addrlist(int ifaceIndex, string strAccount, shjson_t *params)
+{
+	static ApiItems items;
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(ifaceIndex);
+	CAccountCache *acc = wallet->GetAccount(strAccount);
 	int64 now = (int64)time(NULL);
 
 	items.clear();
 	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook) {
-		const CCoinAddr& address = CCoinAddr(ifaceIndex, item.first);
 		const string& strName = item.second;
-		CSecret vchSecret;
-		CKeyID keyID;
-		uint256 pkey;
-		bool fCompressed;
-
 		if (strName != strAccount)
 			continue;
 
 		Object result;
-		result.push_back(Pair("address", address.ToString()));
-		if (address.GetKeyID(keyID)) {
-			result.push_back(Pair("pubkey", HexStr(keyID.begin(), keyID.end())));
-		}
-
+		rpcwallet_GetVerboseAddr(wallet, acc, item.first, result);
 		items.push_back(result);
 	}
 
@@ -1993,10 +2030,13 @@ static const ApiItems& shapi_api_block_list(int ifaceIndex, shapi_t *user, shjso
 
 	CBlockIndex *pindex = GetBestBlockIndex(ifaceIndex);
 	while (pindex && pindex->pprev) {
+		char buf[256];
 		Object obj;
+
+		sprintf(buf, "%x", pindex->nVersion);
 		obj.push_back(Pair("blockhash", pindex->GetBlockHash().GetHex()));
 		obj.push_back(Pair("merkleroot", pindex->hashMerkleRoot.GetHex()));
-		obj.push_back(Pair("version", (int)pindex->nVersion));
+		obj.push_back(Pair("version", string(buf)));
 		obj.push_back(Pair("time", (int)pindex->nTime));
 		obj.push_back(Pair("height", pindex->nHeight));
 		obj.push_back(Pair("bits", HexBits(pindex->nBits)));
@@ -2015,8 +2055,12 @@ static const ApiItems& shapi_api_block_get(int ifaceIndex, shapi_t *user, shjson
 {
 	static ApiItems items;
 	CIface *iface = GetCoinByIndex(ifaceIndex);
+	bool fVerbose = false;
 
 	items.clear();
+
+	if (0 == strcmp(shjson_astr(params, "verbose", ""), "1"))
+		fVerbose = true;
 
 	uint256 hash(string(shjson_astr(params, "blockhash", "")));
 	if (hash == 0)
@@ -2024,7 +2068,7 @@ static const ApiItems& shapi_api_block_get(int ifaceIndex, shapi_t *user, shjson
 
 	CBlock *block = GetBlockByHash(iface, hash);
 	if (block) {
-		items.push_back(block->ToValue());
+		items.push_back(block->ToValue(fVerbose));
 		delete block;
 	}
 
@@ -2178,6 +2222,8 @@ shjson_t *shapi_request_api_list(int ifaceIndex, shapi_t *user, string strAccoun
 		result = shapi_api_account_txlist(ifaceIndex, strAccount, params);
 	} else if (0 == strcmp(method, "api.account.addr")) {
 		result = shapi_api_account_addr(ifaceIndex, strAccount, params);
+	} else if (0 == strcmp(method, "api.account.addrlist")) {
+		result = shapi_api_account_addrlist(ifaceIndex, strAccount, params);
 	} else if (0 == strcmp(method, "api.account.secret")) {
 		result = shapi_api_account_secret(ifaceIndex, strAccount, params);
 	} else if (0 == strcmp(method, "api.account.unspent")) {
