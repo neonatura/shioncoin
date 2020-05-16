@@ -152,3 +152,27 @@ next:
 	}
 
 }
+
+const char *get_shioncoin_path(void)
+{
+	static char ret_path[PATH_MAX+1];
+
+	if (!*ret_path) {
+#ifdef WINDOWS
+		char *str;
+
+		str = getenv("ProgramData");
+		if (!str)
+			str = "C:\\ProgramData";
+
+		sprintf(ret_path, "%s\\shioncoin\\", str);
+		mkdir(ret_path, 0777);
+#else
+		strcpy(ret_path, "/var/lib/shioncoin/");
+		mkdir(ret_path, 0777);
+#endif
+	}
+
+	return (ret_path);
+}
+

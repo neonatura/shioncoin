@@ -869,6 +869,8 @@ static const ApiItems& shapi_api_account_addr(int ifaceIndex, string strAccount,
 
 	Object result;
 
+	result.push_back(Pair("account", account->strAccount));
+
 	addr = account->GetAddr(ACCADDR_HDKEY);
 	result.push_back(Pair("primary", addr.ToString()));
 
@@ -1402,7 +1404,7 @@ static const ApiItems& shapi_api_context_set(int ifaceIndex, string strAccount, 
 
 	cbuff vchValue(strValue.begin(), strValue.end());
 	if (!IsContextName(iface, strName)) {
-		err = init_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, false, fTest);
+		err = init_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, fTest);
 		if (err) {
 			strError = string(error_str(err));
 			return (items);
@@ -1424,7 +1426,7 @@ static const ApiItems& shapi_api_context_set(int ifaceIndex, string strAccount, 
 			return (items);
 		}
 
-		err = update_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, false, fTest);
+		err = update_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, fTest);
 		if (err) {
 			strError = string(error_str(err));
 			return (items);
@@ -1474,6 +1476,35 @@ static const ApiItems& shapi_api_context_get(int ifaceIndex, string strAccount, 
 	Object obj = ctx->ToValue();
 	obj.push_back(Pair("txid", tx.GetHash().GetHex()));
 	items.push_back(obj);
+
+	return (items);
+}
+
+static const ApiItems& shapi_api_context_setid(int ifaceIndex, string strAccount, shjson_t *params, string& strError)
+{
+	static ApiItems items;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	string strLiteralId = string(shjson_astr(params, "id", ""));
+	bool fTest = (bool)atoi(shjson_astr(params, "test", ""));
+	map<string,string> mapParam;
+	int err;
+
+	mapParam["id"] = strLiteralId;
+	mapParam["password"] = string(shjson_astr(params, "password", ""));
+	mapParam["birthdate"] = string(shjson_astr(params, "birthdate", ""));
+	mapParam["name"] = string(shjson_astr(params, "name", ""));
+	mapParam["country"] = string(shjson_astr(params, "country", ""));
+	mapParam["nickname"] = string(shjson_astr(params, "nickname", ""));
+	mapParam["website"] = string(shjson_astr(params, "website", ""));
+	mapParam["zipcode"] = string(shjson_astr(params, "zipcode", ""));
+	mapParam["zoneinfo"] = string(shjson_astr(params, "zoneinfo", ""));
+
+  CWalletTx wtx;
+  err = create_shionid_tx(iface, wtx, strAccount, mapParam, fTest);
+  if (err) {
+		strError = string(error_str(err));
+		return (items);
+	}
 
 	return (items);
 }
@@ -2276,6 +2307,8 @@ shjson_t *shapi_request_api_list(int ifaceIndex, shapi_t *user, string strAccoun
 		result = shapi_api_context_set(ifaceIndex, strAccount, params, strError);
 	} else if (0 == strcmp(method, "api.context.get")) {
 		result = shapi_api_context_get(ifaceIndex, strAccount, params, strError);
+	} else if (0 == strcmp(method, "api.context.setid")) {
+		result = shapi_api_context_setid(ifaceIndex, strAccount, params, strError);
 	} else if (0 == strcmp(method, "api.ident.list")) {
 		result = shapi_api_ident_list(ifaceIndex, user, params, begin_t);
 	} else if (0 == strcmp(method, "api.cert.info")) {

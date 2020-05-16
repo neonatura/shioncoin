@@ -27,10 +27,10 @@
  * online backup system.
  */
 
-#include "scrypt.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include "scrypt.h"
 #include <openssl/sha.h>
 
 static inline uint32_t be32dec(const void *pp)
@@ -139,9 +139,7 @@ HMAC_SHA256_Final(unsigned char digest[32], HMAC_SHA256_CTX *ctx)
  * Compute PBKDF2(passwd, salt, c, dkLen) using HMAC-SHA256 as the PRF, and
  * write the output to buf.  The value dkLen must be at most 32 * (2^32 - 1).
  */
-static void
-PBKDF2_SHA256(const uint8_t *passwd, size_t passwdlen, const uint8_t *salt,
-    size_t saltlen, uint64_t c, uint8_t *buf, size_t dkLen)
+void PBKDF2_SHA256(const unsigned char *passwd, size_t passwdlen, const unsigned char *salt, size_t saltlen, uint64_t c, unsigned char *buf, size_t dkLen)
 {
 	HMAC_SHA256_CTX PShctx, hctx;
 	size_t i;

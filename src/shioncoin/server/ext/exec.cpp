@@ -2450,7 +2450,7 @@ int generate_exec_tx(CIface *iface, string strAccount, string strClass, int64 nF
 
 //fprintf(stderr, "DEBUG: generate_exec_tx: CONTEXT[%s]: %s\n", node->string, text);
 					err = init_ctx_tx(iface, ctx_tx, strAccount,
-							strName, vchFromString(string(text)), NULL, true);
+							strName, vchFromString(string(text))); //	, NULL, true);
 					free(text);
 					if (err) {
 						error(err, "generate_exec_tx: error initializing context \"%s\"", strName.c_str());

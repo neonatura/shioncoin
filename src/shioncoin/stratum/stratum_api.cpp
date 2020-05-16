@@ -1362,7 +1362,7 @@ static const ApiItems& stratum_api_context_set(int ifaceIndex, string strAccount
 
 	cbuff vchValue(strValue.begin(), strValue.end());
 	if (!IsContextName(iface, strName)) {
-		err = init_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, false, fTest);
+		err = init_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, fTest);
 		if (err) {
 			strError = string(error_str(err));
 			return (items);
@@ -1384,7 +1384,7 @@ static const ApiItems& stratum_api_context_set(int ifaceIndex, string strAccount
 			return (items);
 		}
 
-		err = update_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, false, fTest);
+		err = update_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, fTest);
 		if (err) {
 			strError = string(error_str(err));
 			return (items);

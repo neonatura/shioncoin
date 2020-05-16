@@ -126,11 +126,10 @@ bool CTxCreator::HaveInput(const CPubKey& pubKey)
 /**
  * @param scriptPubKey The destination script receiving the extended input reference.
  */
-bool CTxCreator::AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxFee)
+bool CTxCreator::AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxFee, int64 nValue)
 {
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
   int64 nTxValue;
-  int64 nValue;
   int nTxOut;
 
   nTxOut = IndexOfExtOutput(*tx);
@@ -140,13 +139,10 @@ bool CTxCreator::AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxF
   }
 
 	int64 nHoldFee = ((MIN_TX_FEE(iface) * 2) + MIN_RELAY_TX_FEE(iface));
+	nHoldFee = MAX(nHoldFee, nTxFee);
 
   /* value left from previous extended transaction. */
-  nTxValue = tx->vout[nTxOut].nValue;
-  nTxFee = MAX(0, MIN(nTxValue - nHoldFee, nTxFee));
-  nTxFee = MAX(nTxFee, nHoldFee);
-  nValue = nTxValue - nTxFee;
-
+	nValue = MAX(nValue, MAX(0, tx->vout[nTxOut].nValue - nHoldFee));
   if (!MoneyRange(iface, nValue)) {
     strError = "Too large of a transaction fee was required.";
     return (false);

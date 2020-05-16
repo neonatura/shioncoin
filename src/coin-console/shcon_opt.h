@@ -68,5 +68,7 @@ void opt_bool_set(char *opt_name, int b);
 /** The current coin interface being utilized. */
 const char *opt_iface(void);
 
+const char *get_shioncoin_path(void);
+
 
 #endif /* ndef __SHCON_OPT_H__ */

@@ -134,14 +134,22 @@ CContext *GetContextByHash(CIface *iface, uint160 hashName, CTransaction& ctx_tx
 CContext *GetContextByName(CIface *iface, string strName, CTransaction& ctx_tx);
 
 
-int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fAddr = false, bool fTest = false);
+int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fTest = false);
 
-int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fAddr = false, bool fTest = false);
+int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fTest = false);
 
 /**
  * Verify that the context payload has a valid value.
  */
 int ctx_context_verify(cbuff vchValue);
+
+/**
+ * Generate a ShionID.
+ * @param mapParam A list of ID parameters including the required "id" option specifying an email address. A "password" will automatically be encypted using sha256.
+ */
+int create_shionid_tx(CIface *iface, CWalletTx& wtx, string strAccount, map<string,string> mapParam, bool fTest = false);
+
+string create_shionid_id(string strEmail);
 
 
 #endif /* ndef __CONTEXT_H__ */
