@@ -1,0 +1,132 @@
+.TH "The libshare memory buffer pool allocation utilities." 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+The libshare memory buffer pool allocation utilities. \- 
+.PP
+Memory Buffer Pools.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshpool_t\fP"
+.br
+.RI "\fIA memory pool. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshpool_t\fP \fBshpool_t\fP"
+.br
+.RI "\fIA memory pool. \fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshpool_t\fP * \fBshpool_init\fP (void)"
+.br
+.RI "\fIInitializes a new memory pool instance. \fP"
+.ti -1c
+.RI "size_t \fBshpool_size\fP (\fBshpool_t\fP *pool)"
+.br
+.RI "\fICalculates the number of avaiable \fBshbuf_t\fP memory buffer contained in the \fBshpool_t\fP memory pool. \fP"
+.ti -1c
+.RI "void \fBshpool_grow\fP (\fBshpool_t\fP *pool)"
+.br
+.RI "\fIIncreases the size of the memory pool. \fP"
+.ti -1c
+.RI "\fBshbuf_t\fP * \fBshpool_get\fP (\fBshpool_t\fP *pool)"
+.br
+.RI "\fIGet's the next available memory buffer from a pool. \fP"
+.ti -1c
+.RI "\fBshbuf_t\fP * \fBshpool_get_index\fP (\fBshpool_t\fP *pool, int index)"
+.br
+.RI "\fIGet's a specific \fBshbuf_t\fP memory buffer by index number. \fP"
+.ti -1c
+.RI "void \fBshpool_put\fP (\fBshpool_t\fP *pool, \fBshbuf_t\fP *buff)"
+.br
+.RI "\fIPut's a memory buffer into a pool. \fP"
+.ti -1c
+.RI "void \fBshpool_free\fP (\fBshpool_t\fP **pool_p)"
+.br
+.RI "\fIFree's the resources associated with a memory pool. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Memory Buffer Pools. 
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef struct \fBshpool_t\fP \fBshpool_t\fP"
+.PP
+A memory pool. 
+.PP
+Definition at line 343 of file shmem.h.
+.SH "Function Documentation"
+.PP 
+.SS "void shpool_free (\fBshpool_t\fP ** pool_p)"
+.PP
+Free's the resources associated with a memory pool. \fBParameters:\fP
+.RS 4
+\fIpool_p\fP A reference to an allocated \fBpool_t\fP memory pool. 
+.RE
+.PP
+
+.SS "\fBshbuf_t\fP* shpool_get (\fBshpool_t\fP * pool)"
+.PP
+Get's the next available memory buffer from a pool. \fBSee also:\fP
+.RS 4
+\fBshpool_put()\fP 
+.RE
+.PP
+
+.SS "\fBshbuf_t\fP* shpool_get_index (\fBshpool_t\fP * pool, int index)"
+.PP
+Get's a specific \fBshbuf_t\fP memory buffer by index number. \fBParameters:\fP
+.RS 4
+\fIindex\fP The index number of the memory buffer. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The \fBshbuf_t\fP memory buffer associated with the index or NULL if none exist. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshpool_size()\fP; 
+.RE
+.PP
+
+.SS "void shpool_grow (\fBshpool_t\fP * pool)"
+.PP
+Increases the size of the memory pool. \fBBug\fP
+.RS 4
+smaller incremental reallocs have been known to fail in glibc 
+.RE
+.PP
+
+.SS "\fBshpool_t\fP* shpool_init (void)"
+.PP
+Initializes a new memory pool instance. \fBReturns:\fP
+.RS 4
+A \fBshpool_t\fP memory pool of \fBshbuf_t\fP memory buffers. 
+.RE
+.PP
+
+.SS "void shpool_put (\fBshpool_t\fP * pool, \fBshbuf_t\fP * buff)"
+.PP
+Put's a memory buffer into a pool. 
+.SS "size_t shpool_size (\fBshpool_t\fP * pool)"
+.PP
+Calculates the number of avaiable \fBshbuf_t\fP memory buffer contained in the \fBshpool_t\fP memory pool. \fBSee also:\fP
+.RS 4
+\fBshpool_get_index()\fP 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

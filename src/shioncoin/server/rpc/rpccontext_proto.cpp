@@ -34,6 +34,7 @@
 #include "context.h"
 #include "spring.h"
 #include "rpc_proto.h"
+#include "scrypt.h"
 
 using namespace std;
 using namespace boost;
@@ -47,11 +48,43 @@ extern string AccountFromValue(const Value& value);
 bool FormatGeoContext(CIface *iface, string& strGeo, shnum_t& lat, shnum_t& lon);
 
 
+template<typename T>
+void RPCConvertTo(string strJSON, Value& value)
+{
+  if (value.type() == str_type)
+  {
+    // reinterpret string as unquoted json value
+    Value value2;
+//    string strJSON = value.get_str();
+    if (!read_string(strJSON, value2))
+      throw runtime_error(string("Error parsing JSON:")+strJSON);
+    value = value2.get_value<T>();
+  }
+  else
+  {
+    value = value.get_value<T>();
+  }
+}
+
+
 static bool is_numeric(const std::string& s)
 {
     return( strspn( s.c_str(), "0123456789" ) == s.size() );
 }
 
+static void _split_token(string tok, string& mode_str, string& val)
+{
+  string delim("=");
+
+  mode_str = "";
+  val = "";
+
+  if (tok.find(delim) == string::npos)
+    return;
+
+  mode_str = tok.substr(0, tok.find(delim));
+  val = tok.substr(tok.find(delim) + 1);
+}
 
 Value rpc_ctx_fee(CIface *iface, const Array& params, bool fStratum)
 {
@@ -335,14 +368,14 @@ Value rpc_ctx_getid(CIface *iface, const Array& params, bool fStratum)
     throw runtime_error("invalid parmeters");
 
   CTransaction tx;
-  strId = "id:" + params[0].get_str();
+	strId = create_shionid_id(params[0].get_str());
   ctx = GetContextByName(iface, strId, tx);
   if (!ctx)
-    throw JSONRPCError(-5, string("unknown id"));
+    throw JSONRPCError(ERR_NOENT, string("unknown id"));
 
   Value val;
   if (!read_string(stringFromVch(ctx->vContext), val))
-    throw JSONRPCError(-5, string("invalid json format"));
+    throw JSONRPCError(ERR_INVAL, string("invalid json format"));
 
   return (val);
 }
@@ -352,124 +385,57 @@ Value rpc_ctx_setid(CIface *iface, const Array& params, bool fStratum)
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
   string strAccount = AccountFromValue(params[0]);
-  string strName;
+	map<string,string> mapParam;
   string strEmail;
-  string strCountry;
-  string strZip;
-  string strUrl;
-  string strGeo;
   string strId;
+  string strGeo;
+	string name;
+	string val;
   char buf[256];
   int err;
 
   if (params.size() < 3)
     throw runtime_error("invalid parameters");
 
-  string strLiteralId = params[1].get_str();
-  strId = "id:" + strLiteralId;
+  mapParam["id"] = params[1].get_str();
+  mapParam["password"] = params[2].get_str();
 
-  if (params.size() > 2) {
-    strName = params[2].get_str();
-    if (strName.size() > 135)
-      throw JSONRPCError(-5, string("real name exceeds 135 character maximum"));
-  }
-  if (params.size() > 3) {
-    strEmail = params[3].get_str();
-    if (strEmail.size() > 135)
-      throw JSONRPCError(-5, string("email exceeds 135 character maximum"));
-  }
-  if (params.size() > 4)
-    strCountry = params[4].get_str();
-  if (params.size() > 5)
-    strGeo = params[5].get_str();
-  if (params.size() > 6) {
-    strUrl = params[6].get_str();
-    if (strUrl.size() > 135)
-      throw JSONRPCError(-5, string("url exceeds 135 character maximum"));
-  }
+	for (int i = 3; i < params.size(); i++) {
+		_split_token(params[i].get_str(), name, val);
 
-  if (strCountry.size() > 5)
-    throw JSONRPCError(-5, string("invalid country code"));
+		if (name.size() < 5 || name.size() > 32)
+			throw JSONRPCError(ERR_INVAL, 
+					string("invalid parameter name length"));
 
-  shgeo_t *geo = NULL;
-  shgeo_t loc;
-  memset(&loc, 0, sizeof(loc));
+		if (val.size() > 135)
+			throw JSONRPCError(ERR_INVAL, 
+					string("parameter value exceeds 135 character maximum"));
 
-  shnum_t lat = 0;
-  shnum_t lon = 0;
-  if (strGeo.size() != 0) {
-    if (strGeo.size() == 5 && is_numeric(strGeo)) {
-      /* zip-code */
-      strZip = strGeo;
+		if (name == "id" ||
+				name == "password" ||
+				name == "crypted_password")
+			continue;
 
-      err = shgeodb_place(strGeo.c_str(), &loc);
-      if (err) {
-        /* unknown .. keep zipcode but bail on lat/lon assoc. */
-        strGeo = string();
-      } else {
-        shgeo_loc(&loc, &lat, &lon, NULL);
-        sprintf(buf, "geo:%-5.5Lf,%-5.5Lf", lat, lon);
-        strGeo = string(buf);
-      }
-    }
-  }
-  if (strGeo.size() != 0) {
-    if (!FormatGeoContext(iface, strGeo, lat, lon))
-      throw JSONRPCError(-5, string("invalid location"));
-
-    /* set context geo-location */
-    shgeo_set(&loc, lat, lon, 0);
-    geo = &loc;
-  }
-
-  CCoinAddr addr(ifaceIndex);
-  if (!wallet->GetMergedAddress(strAccount, "context", addr))
-    throw JSONRPCError(-5, string("invalid account name"));
-
-#if 0
-  if (strName.length() == 0) {
-    const char *def_name = shpref_get(SHPREF_USER_NAME, "");
-    strName = string(def_name);
-  }
-  if (strEmail.length() == 0) {
-    const char *def_email = shpref_get(SHPREF_USER_EMAIL, "");
-    strEmail = string(def_email);
-  }
-#endif
-
-  if (strLiteralId.size() > 135)
-    strLiteralId.resize(135);
-
-  Object obj;
-  obj.push_back(Pair("id", strLiteralId));
-  obj.push_back(Pair("name", strName));
-  obj.push_back(Pair("email", strEmail));
-  obj.push_back(Pair("country", strCountry));
-  if (strUrl.size() != 0)
-    obj.push_back(Pair("weblog", strUrl));
-  if (strZip.size() != 0)
-    obj.push_back(Pair("zipcode", strZip));
-  obj.push_back(Pair("sharecoin", addr.ToString()));
-
-  if (geo) {
-    sprintf(buf, "%-5.5Lf,%-5.5Lf", lat, lon);
-    obj.push_back(Pair("geo", string(buf)));
-  }
-
-  string jsonValue = write_string(Value(obj), false);
-  cbuff vchValue = vchFromString(jsonValue);
-  if (vchValue.size() > 4096)
-    throw JSONRPCError(-5, string("context too large"));
+		mapParam[name] = val;
+		//obj.push_back(Pair(name, val));
+	}
 
   CWalletTx wtx;
-  err = init_ctx_tx(iface, wtx, strAccount, strId, vchValue, geo, true);
+  err = create_shionid_tx(iface, wtx, strAccount, mapParam, false);
   if (err)
     throw JSONRPCError(err, string(sherrstr(err)));
 
   CContext *ctx = (CContext *)&wtx.certificate;
+
+	Value obj;
+	const cbuff& val_b = ctx->vContext;
+	string strJson(val_b.begin(), val_b.end());
+	read_string(strJson, obj);
+
   Object ret_obj = ctx->ToValue();
+  ret_obj.push_back(Pair("id", mapParam["id"]));
   ret_obj.push_back(Pair("txhash", wtx.GetHash().GetHex()));
-  ret_obj.push_back(Pair("id", obj));
+  ret_obj.push_back(Pair("value", obj));
 
   return (ret_obj);
 }

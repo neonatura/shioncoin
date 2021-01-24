@@ -1,0 +1,57 @@
+.TH "Libshare_fsfile" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsfile \- 
+.PP
+File I/O access routines.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_write\fP (\fBshfs_ino_t\fP *file, \fBshbuf_t\fP *buff)"
+.br
+.RI "\fIWrite auxillary data to a sharefs file inode. \fP"
+.ti -1c
+.RI "int \fBshfs_read\fP (\fBshfs_ino_t\fP *file, \fBshbuf_t\fP *buff)"
+.br
+.RI "\fIObtain file data content. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_file_find\fP (\fBshfs_t\fP *tree, char *path)"
+.br
+.ti -1c
+.RI "int \fBshfs_file_pipe\fP (\fBshfs_ino_t\fP *file, int fd)"
+.br
+.ti -1c
+.RI "int \fBshfs_file_notify\fP (\fBshfs_ino_t\fP *file)"
+.br
+.ti -1c
+.RI "int \fBshfs_file_copy\fP (\fBshfs_ino_t\fP *src_file, \fBshfs_ino_t\fP *dest_file)"
+.br
+.ti -1c
+.RI "int \fBshfs_file_remove\fP (\fBshfs_ino_t\fP *file)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+File I/O access routines. 
+.SH "Function Documentation"
+.PP 
+.SS "int shfs_read (\fBshfs_ino_t\fP * file, \fBshbuf_t\fP * buff)"
+.PP
+Obtain file data content. An SHERR_NOENT error occurs if file format is not set. 
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "int shfs_write (\fBshfs_ino_t\fP * file, \fBshbuf_t\fP * buff)"
+.PP
+Write auxillary data to a sharefs file inode. 
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

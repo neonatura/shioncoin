@@ -973,7 +973,7 @@ bool testnet_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDat
       ss << ": hash " << hash.ToString();
 
       if (strMsg == "tx") {
-        /* DEBUG: TODO: pool.DecrPriority(hash) */
+        /* TODO: pool.DecrPriority(hash) */
       }
     }
     error(SHERR_REMOTE, ss.str().c_str());
@@ -1066,7 +1066,6 @@ bool testnet_ProcessMessages(CIface *iface, CNode* pfrom)
     memcpy(&nChecksum, &hash, sizeof(nChecksum));
     if (nChecksum != hdr.nChecksum)
     {
-//fprintf(stderr, "DEBUG: ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n", strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
       continue;
     }
 

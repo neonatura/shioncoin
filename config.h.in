@@ -206,9 +206,6 @@
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
 
-/* Define if you have the libshare library installed */
-#undef HAVE_LIBSHARE
-
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
@@ -477,8 +474,7 @@
 /* Define for the Linux operating system. */
 #undef LINUX
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define for the m68k architecture. */
@@ -536,6 +532,9 @@
 
 /* Define for the SH64 architecture. */
 #undef SH64
+
+/* Define to enable shapi service. */
+#undef SHAPI_SERVICE
 
 /* Define for the SPARC architecture. */
 #undef SPARC

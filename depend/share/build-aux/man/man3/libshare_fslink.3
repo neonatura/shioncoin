@@ -1,0 +1,89 @@
+.TH "Libshare_fslink" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fslink \- 
+.PP
+Directory container inode management.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshfs_dirent_t\fP"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshfs_dirent_t\fP \fBshfs_dirent_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_link\fP (\fBshfs_ino_t\fP *parent, \fBshfs_ino_t\fP *inode)"
+.br
+.RI "\fILink a child inode inside a parent's directory listing. \fP"
+.ti -1c
+.RI "int \fBshfs_link_find\fP (\fBshfs_ino_t\fP *parent, \fBshkey_t\fP *key, \fBshfs_block_t\fP *ret_blk)"
+.br
+.RI "\fIFind an inode in it's parent using it's key name. \fP"
+.ti -1c
+.RI "int \fBshfs_link_count\fP (\fBshfs_ino_t\fP *parent)"
+.br
+.RI "\fIObtain the number of inode's contained by a parent. \fP"
+.ti -1c
+.RI "int \fBshfs_list\fP (\fBshfs_ino_t\fP *parent, \fBshfs_dirent_t\fP **dirent_p)"
+.br
+.RI "\fIObtain a list of inode's contained by the parent. \fP"
+.ti -1c
+.RI "void \fBshfs_list_free\fP (\fBshfs_dirent_t\fP **ent_p)"
+.br
+.RI "\fIFrees a list of directory entries. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Directory container inode management. 
+.SH "Function Documentation"
+.PP 
+.SS "int shfs_link (\fBshfs_ino_t\fP * parent, \fBshfs_ino_t\fP * inode)"
+.PP
+Link a child inode inside a parent's directory listing. \fBNote:\fP
+.RS 4
+The birth timestamp and token key is assigned on link. 
+.RE
+.PP
+
+.SS "int shfs_link_count (\fBshfs_ino_t\fP * parent)"
+.PP
+Obtain the number of inode's contained by a parent. 
+.SS "int shfs_link_find (\fBshfs_ino_t\fP * parent, \fBshkey_t\fP * key, \fBshfs_block_t\fP * ret_blk)"
+.PP
+Find an inode in it's parent using it's key name. 
+.SS "int shfs_list (\fBshfs_ino_t\fP * parent, \fBshfs_dirent_t\fP ** dirent_p)"
+.PP
+Obtain a list of inode's contained by the parent. \fBParameters:\fP
+.RS 4
+\fIparent\fP The inode to list the contents of. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+The number of directory entries returned or a negative libshare error code. 
+.RE
+.PP
+
+.SS "void shfs_list_free (\fBshfs_dirent_t\fP ** ent_p)"
+.PP
+Frees a list of directory entries. \fBParameters:\fP
+.RS 4
+\fIent_p\fP A reference to the array of entries. 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

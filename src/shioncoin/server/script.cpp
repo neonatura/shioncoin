@@ -2629,6 +2629,7 @@ public:
     bool operator()(const WitnessUnknown& id) const {
 			script->clear();
 			*script << CScript::EncodeOP_N(id.version) << std::vector<unsigned char>(id.program, id.program + id.length);
+			return true;
     }
 };
 

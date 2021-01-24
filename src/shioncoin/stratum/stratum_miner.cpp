@@ -359,6 +359,7 @@ int c_processblock(CBlock* pblock)
     return (0);
   }
 
+#if 0
   // Check for duplicate
   uint256 hash = pblock->GetHash();
   if (GetBlockIndexByHash(pblock->ifaceIndex, hash) || pblock->IsOrphan())
@@ -369,6 +370,7 @@ int c_processblock(CBlock* pblock)
     shcoind_log("c_processblock: !CheckBlock()");
     return (BLKERR_CHECKPOINT);
   }
+#endif
 
   if (pblock->hashPrevBlock != bestIndex->GetBlockHash()) {
     return (BLKERR_INVALID_JOB); /* work not up-to-date */
@@ -377,11 +379,17 @@ int c_processblock(CBlock* pblock)
     return (BLKERR_INVALID_BLOCK);
   }
 
+#if 0
   // Store to disk
   if (!pblock->AcceptBlock()) {
     shcoind_log("c_processblock: !AcceptBlock()");
     return (BLKERR_INVALID_BLOCK);
   }
+#endif
+	if (!ProcessBlock(NULL, pblock)) {
+    shcoind_log("ProcessBlock failure");
+    return (BLKERR_INVALID_BLOCK);
+	}
 
   /* stats */
   STAT_BLOCK_SUBMITS(iface)++;

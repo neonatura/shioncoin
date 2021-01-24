@@ -1,0 +1,131 @@
+.TH "Libshare_sysshadow" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_sysshadow \- 
+.PP
+Shadow password file management.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshpam_shadow_file\fP (\fBshfs_t\fP **fs_p)"
+.br
+.RI "\fIObtain the default file on a sharefs partition for storing credentials. \fP"
+.ti -1c
+.RI "int \fBshpam_shadow_create\fP (\fBshfs_ino_t\fP *file, uint64_t uid, \fBshadow_t\fP *ret_shadow)"
+.br
+.RI "\fICreate a new shadow file credential. \fP"
+.ti -1c
+.RI "int \fBshpam_shadow_load\fP (\fBshfs_ino_t\fP *file, uint64_t uid, \fBshadow_t\fP *shadow)"
+.br
+.RI "\fILoad an existing shadow file credential. \fP"
+.ti -1c
+.RI "int \fBshpam_shadow_store\fP (\fBshfs_ino_t\fP *file, \fBshadow_t\fP *shadow)"
+.br
+.RI "\fIUpdate an existing shadow file credential. \fP"
+.ti -1c
+.RI "int \fBshpam_shadow_remove\fP (\fBshfs_ino_t\fP *file, uint64_t uid, \fBshkey_t\fP *sess_key)"
+.br
+.RI "\fIRemove a credential from a shadow file. \fP"
+.ti -1c
+.RI "int \fBshpam_pshadow_create\fP (\fBshfs_ino_t\fP *file, \fBshseed_t\fP *seed)"
+.br
+.RI "\fICreate a new shadow password entry. \fP"
+.ti -1c
+.RI "int \fBshpam_pshadow_new\fP (\fBshfs_ino_t\fP *file, char *username, char *passphrase)"
+.br
+.RI "\fIGenerate a new shadow password entry from a username and passphrase. \fP"
+.ti -1c
+.RI "int \fBshpam_pshadow_load\fP (\fBshfs_ino_t\fP *file, uint64_t uid, \fBshseed_t\fP *ret_seed)"
+.br
+.RI "\fILoad a pre-existing shadow password entry into memory. \fP"
+.ti -1c
+.RI "int \fBshpam_pshadow_store\fP (\fBshfs_ino_t\fP *file, \fBshseed_t\fP *seed)"
+.br
+.RI "\fIUpdate a shadow password entry. \fP"
+.ti -1c
+.RI "int \fBshpam_pshadow_set\fP (\fBshfs_ino_t\fP *file, \fBshseed_t\fP *seed, \fBshkey_t\fP *sess_key)"
+.br
+.RI "\fISet a new password key for an existing shadow password entry. \fP"
+.ti -1c
+.RI "int \fBshpam_pshadow_remove\fP (\fBshfs_ino_t\fP *file, uint64_t rem_uid)"
+.br
+.RI "\fIRemove a shadow password entry. \fP"
+.ti -1c
+.RI "int \fBshpam_shadow_session_new\fP (\fBshfs_ino_t\fP *file, char *acc_name, char *passphrase)"
+.br
+.ti -1c
+.RI "int \fBshpam_shadow_session\fP (\fBshfs_ino_t\fP *file, \fBshseed_t\fP *seed, \fBshkey_t\fP **sess_p, \fBshtime_t\fP *expire_p)"
+.br
+.RI "\fIGenerate a new identity session. \fP"
+.ti -1c
+.RI "int \fBshpam_shadow_session_verify\fP (\fBshfs_ino_t\fP *file, uint64_t uid, \fBshkey_t\fP *sess_key)"
+.br
+.ti -1c
+.RI "int \fBshpam_shadow_session_set\fP (\fBshfs_ino_t\fP *file, uint64_t uid, \fBshkey_t\fP *id_key, uint64_t sess_stamp, \fBshkey_t\fP *sess_key)"
+.br
+.RI "\fISet a new session key to an account identity. \fP"
+.ti -1c
+.RI "int \fBshpam_shadow_session_expire\fP (\fBshfs_ino_t\fP *file, uint64_t uid, \fBshkey_t\fP *sess_key)"
+.br
+.RI "\fIExpire the current identity session. \fP"
+.ti -1c
+.RI "int \fBshpam_shadow_login\fP (\fBshfs_ino_t\fP *file, char *acc_name, char *acc_pass, \fBshkey_t\fP **sess_key_p)"
+.br
+.RI "\fIValidate a username and passphrase and retrieve a session key. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Shadow password file management. 
+.SH "Function Documentation"
+.PP 
+.SS "int shpam_pshadow_create (\fBshfs_ino_t\fP * file, \fBshseed_t\fP * seed)"
+.PP
+Create a new shadow password entry. 
+.SS "int shpam_pshadow_load (\fBshfs_ino_t\fP * file, uint64_t uid, \fBshseed_t\fP * ret_seed)"
+.PP
+Load a pre-existing shadow password entry into memory. 
+.SS "int shpam_pshadow_new (\fBshfs_ino_t\fP * file, char * username, char * passphrase)"
+.PP
+Generate a new shadow password entry from a username and passphrase. 
+.SS "int shpam_pshadow_remove (\fBshfs_ino_t\fP * file, uint64_t rem_uid)"
+.PP
+Remove a shadow password entry. 
+.SS "int shpam_pshadow_set (\fBshfs_ino_t\fP * file, \fBshseed_t\fP * seed, \fBshkey_t\fP * sess_key)"
+.PP
+Set a new password key for an existing shadow password entry. 
+.SS "int shpam_pshadow_store (\fBshfs_ino_t\fP * file, \fBshseed_t\fP * seed)"
+.PP
+Update a shadow password entry. 
+.SS "int shpam_shadow_create (\fBshfs_ino_t\fP * file, uint64_t uid, \fBshadow_t\fP * ret_shadow)"
+.PP
+Create a new shadow file credential. 
+.SS "\fBshfs_ino_t\fP* shpam_shadow_file (\fBshfs_t\fP ** fs_p)"
+.PP
+Obtain the default file on a sharefs partition for storing credentials. 
+.SS "int shpam_shadow_load (\fBshfs_ino_t\fP * file, uint64_t uid, \fBshadow_t\fP * shadow)"
+.PP
+Load an existing shadow file credential. 
+.SS "int shpam_shadow_login (\fBshfs_ino_t\fP * file, char * acc_name, char * acc_pass, \fBshkey_t\fP ** sess_key_p)"
+.PP
+Validate a username and passphrase and retrieve a session key. 
+.SS "int shpam_shadow_remove (\fBshfs_ino_t\fP * file, uint64_t uid, \fBshkey_t\fP * sess_key)"
+.PP
+Remove a credential from a shadow file. 
+.SS "int shpam_shadow_session (\fBshfs_ino_t\fP * file, \fBshseed_t\fP * seed, \fBshkey_t\fP ** sess_p, \fBshtime_t\fP * expire_p)"
+.PP
+Generate a new identity session. 
+.SS "int shpam_shadow_session_expire (\fBshfs_ino_t\fP * file, uint64_t uid, \fBshkey_t\fP * sess_key)"
+.PP
+Expire the current identity session. 
+.SS "int shpam_shadow_session_set (\fBshfs_ino_t\fP * file, uint64_t uid, \fBshkey_t\fP * id_key, uint64_t sess_stamp, \fBshkey_t\fP * sess_key)"
+.PP
+Set a new session key to an account identity. 
+.SS "int shpam_shadow_store (\fBshfs_ino_t\fP * file, \fBshadow_t\fP * shadow)"
+.PP
+Update an existing shadow file credential. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

@@ -1,0 +1,219 @@
+#!/bin/bash
+
+#  Copyright 2013 Brian Burrell 
+#
+#  This file is part of the Share Library.
+#  (https://github.com/neonatura/share)
+#        
+#  The Share Library is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version. 
+#
+#  The Share Library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with The Share Library.  If not, see <http://www.gnu.org/licenses/>.
+
+[ ! -e $HOME/.rcs.func ] || . $HOME/.rcs.func
+
+#	architecture
+	# find lex/yacc files
+echo -n Finding yacc templates..
+MKDEPYACC=`ls -1U *.y`
+echo -n Finding lex templates..
+MKDEPLEX=`ls -1U *.l`
+	# find dirs
+ls -1Up|grep "/"|cut -d"/" -f1>.mkdirs
+cat < /dev/null > .mk
+	# set down some commons
+make -v|while read a; do echo "# $a" >> .mk; done
+[ "$OSRELEASE" ] || OSRELEASE=`cat /proc/sys/kernel/osrelease`
+echo "# `echo $HOSTNAME|cut -d\".\" -f1` is a `uname -m` with `uname -s` $OSRELEASE" >> .mk
+if [ "$RCSVERROOT" ] && [ "$RCSVERNAME" ] && [ "$RCSVERMAJ" ] ; then
+ BASEDIR="/$RCSVERROOT/$RCSVERNAME/$RCSVERMAJ"
+fi
+[ "`uname -s|grep Linux`" = "" ] || OBJDIR="LINUX"
+[ "`uname -s|grep AIX`"   = "" ] || OBJDIR="AIX4"
+[ "`uname -s|grep SunOS`" = "" ] || OBJDIR="SUN"
+ELFOUT=`grep "main(" *.c -l|head -n 1|cut -d. -f1` 
+INC="-I. -I../ -I$BASEDIR/include -I$BASEDIR/proto"
+if [ ! -e make.opt ] ; then
+  make -v|while read a; do echo "# $a" >> make.opt; done
+  echo >> make.opt
+  echo -e "CC = gcc" >> make.opt
+  echo -e "SHARED = no" >> make.opt
+  echo -e "DEBUGGING = yes" >> make.opt
+  echo "" >> make.opt
+  echo "YACC = bison -y" >> make.opt
+  echo "LEX = flex" >> make.opt
+  echo "LIB_MAKE = ar cr" >> make.opt
+  echo "LIBOUT = `basename $PWD`" >> make.opt
+  echo >> make.opt
+  echo "WARN = yes" >> make.opt
+  echo "OPTIMIZE = no" >> make.opt
+  echo "STRIPBIN = no" >> make.opt
+  echo >> make.opt
+  echo -e "INCLUDES = $INC $INCLUDES" >> make.opt
+  echo -n "LIBS = " >> make.opt
+  echo >> make.opt
+  echo "ELFOUT = $ELFOUT" >> make.opt
+  echo "BASEDIR = $BASEDIR" >> make.opt
+  echo "OBJDIR = $OBJDIR" >> make.opt
+  if [ "$RCSVERROOT" ] && [ "$RCSVERNAME" ] ; then
+   echo "BINDIR = /$RCSVERROOT/$RCSVERNAME/bin" >> make.opt
+  else
+   echo -e "BINDIR = \$(OBJDIR)" >> make.opt
+  fi
+  echo >> make.opt
+fi
+echo "include make.opt" >> .mk
+	# handle extensive warning make.opt option
+echo -e "ifeq (\"\$(WARN)\",\"yes\")" >> .mk
+echo -e " WARN_CFLAGS = -Winline -Wnested-externs -Wredundant-decls "\
+"-Wwrite-strings -Wcast-align -Wcast-qual -Wshadow" >> .mk
+echo -e "else\n WARN_CFLAGS =\nendif" >> .mk
+# handle shared library make.opt option
+echo -e "ifeq (\"\$(SHARED)\",\"yes\")" >> .mk
+echo -e "SHARED_CFLAGS=-fPIC" >> .mk 
+echo -e "DEBUGGING=yes" >> .mk
+echo -e "OPTIMIZE=no" >> .mk
+echo -e "else" >> .mk
+echo -e "SHARED_CFLAGS=" >> .mk 
+echo -e "endif" >> .mk
+	# handle debugging make.opt option
+echo -e "ifeq (\"\$(DEBUGGING)\",\"yes\")" >> .mk
+echo -e " DEBUG_CFLAGS = -g" >> .mk 
+echo -e "else\n DEBUG_CFLAGS =\nendif" >> .mk
+	# handle optimize make.opt option
+echo -e "ifeq (\"\$(OPTIMIZE)\",\"yes\")" >> .mk 
+echo -e " OPT_CFLAGS = -fexpensive-optimizations -ffast-math "\
+"-fomit-frame-pointer -fstrength-reduce -fthread-jumps -funroll-loops" >> .mk
+echo -e "else\n OPT_CFLAGS =\nendif" >> .mk
+	# handle strip make.opt option
+echo -e "ifeq (\"\$(STRIPBIN)\",\"yes\")" >> .mk
+echo " STRIP = strip" >> .mk
+echo -e "else\n STRIP = echo\nendif" >> .mk
+
+
+	# gather options into one variable
+echo "CCOPTS = \$(WARN_CFLAGS) \$(DEBUG_CFLAGS) \$(OPT_CFLAGS) \$(SHARED_CFLAGS)" >> .mk
+#echo -n "LIBS =" >> .mk
+#cat .mkls | while read c; do \
+# gcc $c.c >& .$c.gcc;grep ": undefined reference"\ .$c.gcc| \
+# cut -c56-80|cut -d"'" -f1; \
+#done | sort | uniq | while read a; do \
+# grep "$a " $HOME/.libmap|cut -d"/" -f2-200; \
+#done | sort | uniq | while read a; do 
+# echo -n " /$a" >> .mk; \
+#done
+echo >> .mk
+
+# run mkdep on all directories found
+ls -1Up|grep "/"|cut -d"/" -f1>.mkdirs
+cat .mkdirs|while read a; do \
+ if [ "$a" != "" ] ; then \
+  cd $a;\
+  [ "$a" != "$OBJDIR" ] && ls *.c && $0;\
+  cd ..;\
+ fi;\
+done
+echo -n Making dependencies for $PWD.
+
+
+echo -n .;#	linked objs
+ls -1U *.c | cut -d. -f1 > .mkls
+cat < /dev/null > .mk.objs
+echo -n "OBJS =" >> .mk
+cat .mkls | while read a; do \
+ echo -en " \$(OBJDIR)/$a.o" >> .mk; \
+ echo "$a" >> .mk.objs
+done
+cat .mkdirs | while read a; do \
+ if [ -e "$a/.mk.objs" ] ; then \
+  cat $a/.mk.objs | while read b; do \
+   echo -en " $a/\$(OBJDIR)/$b.o" >> .mk; \
+  done; \
+ fi; \
+done
+[ ! "$MKDEPYACC" ] || echo -en " \$(OBJDIR)/y.tab.o" >> .mk
+[ ! "$MKDEPLEX" ] || echo -en " \$(OBJDIR)/lex.yy.o" >> .mk
+echo >> .mk
+
+echo -n .;#	includes
+echo -e "\ndefault:\n\tmkdir -p \$(OBJDIR)" >> .mk
+cat .mkdirs | while read a; do [ ! -s $a/.mk ] ||\
+ echo -e "\t\$(MAKE) -C $a -f .mk" >> .mk; done
+cat .mkls | while read a; do \
+ [ ! -e "$a.c" ] || echo -e "\t\$(MAKE) -f .mk \$(OBJDIR)/$a.o" >> .mk; \
+done
+echo -n .
+if [ "$MKDEPYACC" ] ; then
+ echo -e "\t\$(MAKE) -f .mk \$(OBJDIR)/y.tab.c y.tab.h" >> .mk
+ echo -e "\t\$(MAKE) -f .mk \$(OBJDIR)/y.tab.o" >> .mk
+ # lex needs yacc
+ if [ "$MKDEPLEX" ] ; then
+  echo -e "\t\$(MAKE) -f .mk \$(OBJDIR)/lex.yy.c" >> .mk
+  echo -e "\t\$(MAKE) -f .mk \$(OBJDIR)/lex.yy.o" >> .mk
+ fi
+fi
+#[ ! "$ELFDIR" ] || echo -e "\t\$(MAKE) -f .mk \$(OBJDIR)/$ELFDIR.a" >> .mk
+
+# Static Library
+#if [ "$LIBOUT" != "" ] ; then
+  echo -e "\t\$(MAKE) -f .mk \$(OBJDIR)/lib\$(LIBOUT).a" >> .mk
+#fi
+
+
+if [ "$ELFOUT" != "" ] ; then
+  echo -e "\t\$(MAKE) -f .mk \$(BINDIR)/\$(ELFOUT)" >> .mk
+ echo -e "\$(BINDIR)/\$(ELFOUT): \$(OBJS)" >> .mk
+ echo -e "\t\$(CC) \$(CCOPTS) \$(INCLUDES) -o \$(BINDIR)/\$(ELFOUT) \$(OBJS) \$(LIBS)" >> .mk
+ echo -e "\t\$(STRIP) \$(BINDIR)/\$(ELFOUT)" >> .mk
+fi
+#[ ! "$ELFDIR" ] || echo -e "\$(OBJDIR)/$ELFDIR.a: \$(OBJS)\n\tar cr \$(OBJDIR)/$ELFDIR.a \$(OBJS)" >> .mk
+if [ "$MKDEPYACC" ] ; then
+ echo "\$(OBJDIR)/y.tab.c y.tab.h: $MKDEPYACC" >> .mk
+ echo -e "\t\$(YACC) -d $MKDEPYACC" >> .mk
+ echo -e "\tmv y.tab.c \$(OBJDIR)" >> .mk
+ echo "\$(OBJDIR)/y.tab.o: \$(OBJDIR)/y.tab.c y.tab.h" >> .mk
+ echo -e "\t\$(CC) \$(CCOPTS) -c -o \$(OBJDIR)/y.tab.o \$(INCLUDES) \$(OBJDIR)/y.tab.c" >> .mk
+ #lex needs yacc
+ if [ "$MKDEPLEX" ] ; then
+  echo "\$(OBJDIR)/lex.yy.c: $MKDEPLEX" >> .mk
+  echo -e "\t\$(LEX) $MKDEPLEX" >> .mk
+  echo -e "\tmv lex.yy.c \$(OBJDIR)" >> .mk
+  echo "\$(OBJDIR)/lex.yy.o: \$(OBJDIR)/lex.yy.c y.tab.h" >> .mk
+  echo -e "\t\$(CC) \$(CCOPTS) -c -o \$(OBJDIR)/lex.yy.o \$(INCLUDES) \$(OBJDIR)/lex.yy.c" >> .mk
+ fi
+fi
+cat .mkls | while read a; do [ ! -e "$a.c" ] || (\
+ echo -n "\$(OBJDIR)/" >> .mk; \
+ gcc -M $a.c $INC $INCLUDES >> .mk; \
+ echo -e "\t\$(CC) \$(CCOPTS) -c -o \$(OBJDIR)/$a.o \$(INCLUDES) $a.c" >> .mk\
+); done
+rm .mkls >& /dev/null
+
+# Static Library
+echo -e "\$(OBJDIR)/lib\$(LIBOUT).a: \$(OBJS)" >> .mk
+echo -e "\t\$(LIB_MAKE) \$(OBJDIR)/lib\$(LIBOUT)-debug.a \$(OBJS)" >> .mk
+echo -e "\tobjcopy --only-keep-debug \"\$(OBJDIR)/lib\$(LIBOUT)-debug.a\" \"\$(OBJDIR)/lib\${LIBOUT}.debug\"" >> .mk
+echo -e "\tcp \"\$(OBJDIR)/lib\$(LIBOUT)-debug.a\" \"\$(OBJDIR)/lib\$(LIBOUT).a\"" >> .mk
+echo -e "\tstrip \"\$(OBJDIR)/lib\$(LIBOUT).a\"" >> .mk
+echo -e "\tobjcopy --add-gnu-debuglink=\"\$(OBJDIR)/lib\$(LIBOUT).debug\" \"\$(OBJDIR)/lib\$(LIBOUT).a\"" >> .mk
+
+# Shared Library
+echo -e "\$(OBJDIR)/lib\$(LIBOUT).so: \$(OBJS)" >> .mk
+echo -e "\t\$(CC) -shared -o \$(OBJDIR)/lib\$(LIBOUT).so \$(OBJS) \$(LIBS)" >> .mk
+
+# clean directive
+echo -ne "clean:\n\trm -rf \$(OBJDIR)" >> .mk
+ls -1Up|grep /|while read a; do \
+ [ ! -s $a/.mk ] || echo -n " $a\$(OBJDIR)" >> .mk; done
+echo " \$(BINDIR)/\$(ELFOUT)" >> .mk
+echo .
+
+

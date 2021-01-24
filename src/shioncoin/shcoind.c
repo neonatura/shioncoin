@@ -26,6 +26,7 @@
 #include "shcoind.h"
 #include <signal.h>
 #include "stratum/stratum.h"
+#include "shapi/shapi.h"
 
 shpeer_t *server_peer;
 int server_msgq;
@@ -39,6 +40,7 @@ extern bc_t *GetBlockChain(CIface *iface);
 extern void opt_print(void);
 extern void server_shutdown(void);
 extern void TERM_SECP256K1(void);
+extern void shcoind_log_net_free(void);
 
 void shcoind_term(void)
 {
@@ -58,6 +60,9 @@ void shcoind_term(void)
 
   /* de-allocation options */
   opt_term();
+
+	shcoind_log_net_free();
+	shlog_free();
 
 }
 
@@ -209,7 +214,7 @@ int shcoind_main(int argc, char *argv[])
   INIT_SECP256K1();
 
   /* initialize libshare */
-  server_peer = shapp_init("shcoind", "127.0.0.1:9448", 0);
+  server_peer = shapp_init(PACKAGE_NAME, "127.0.0.1:9448", 0);
   server_msgq = shmsgget(NULL); /* shared server msg-queue */
   server_msg_buff = shbuf_init();
 
@@ -340,6 +345,17 @@ int shcoind_main(int argc, char *argv[])
 				raise(SIGTERM);
 			}
 		}
+  }
+#endif
+
+#ifdef SHAPI_SERVICE
+  if (opt_bool(OPT_SERV_SHAPI)) {
+    /* initialize SHAPI service */
+    err = shapi_init();
+    if (err) {
+			unet_log(UNET_SHAPI, "critical: error binding SHAPI port.");
+      raise(SIGTERM);
+    }
   }
 #endif
 

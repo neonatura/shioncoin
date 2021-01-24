@@ -343,8 +343,6 @@ bool SHCWallet::CreateAccountTransaction(string strFromAccount, const vector<pai
 
 				// Fill vtxPrev by copying from previous transactions vtxPrev
 				wtxNew.AddSupportingTransactions();
-				wtxNew.fTimeReceivedIsTxTime = true;
-
 				break;
 			}
 		}

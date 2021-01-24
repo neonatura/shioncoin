@@ -45,6 +45,10 @@ extern shpeer_t *shcoind_peer(void);
 }
 #endif
 
+static bool is_numeric(const std::string& s)
+{
+    return( strspn( s.c_str(), "0123456789" ) == s.size() );
+}
 
 
 #if 0
@@ -256,7 +260,6 @@ CScript RemoveContextScriptPrefix(const CScript& scriptIn)
 
 int64 GetContextOpFee(CIface *iface, int nHeight, int nSize) 
 {
-	if (GetCoinIndex(iface) == TESTNET_COIN_IFACE) return ((int64)COIN);
   double base = ((nHeight+1) / 10240) + 1;
   double nRes = 5200 / base * COIN;
   double nDif = 5000 /base * COIN;
@@ -555,6 +558,7 @@ bool DisconnectContextTx(CIface *iface, CTransaction& tx)
     wallet->mapContext.erase(hContext);
   }
 
+	return (true);
 }
 
 
@@ -666,11 +670,20 @@ bool CContext::SetValue(string name, cbuff value)
   /* set context value */
   vContext = value;
 
+#if 0
   {
     char buf[256];
     uint64_t crc = shcrc(vContext.data(), vContext.size());
     sprintf(buf, "%s %-24.24s (%s)",
         hashIssuer.GetHex().c_str(), name.c_str(), shcrcstr(crc)); 
+    string sLabel(buf);
+    SetLabel(sLabel);
+  }
+#endif
+  {
+    char buf[256];
+		memset(buf, 0, sizeof(buf));
+		strncpy(buf, name.c_str(), MAX_SHARE_NAME_LENGTH-1);
     string sLabel(buf);
     SetLabel(sLabel);
   }
@@ -812,7 +825,18 @@ void share_geo_save(CContext *ctx, string label)
 
 }
 
-int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fAddr)
+string create_shionid_id(string strEmail)
+{
+	string strId;
+
+	uint256 hash;
+	SHA256((unsigned char *)strEmail.c_str(), strEmail.size(), (unsigned char *)&hash); /* single SHA256 hash */
+	strId = "id:" + EncodeBase64((unsigned char *)&hash, sizeof(hash));
+
+	return (strId);
+}
+
+int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fTest)
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
@@ -849,11 +873,10 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
     return (SHERR_NOTUNIQ);
   }
 
-  wtx.SetNull();
-  wtx.strFromAccount = strAccount; /* originating account for payment */
+	CTxCreator s_wtx(wallet, strAccount);
 
   /* embed ctx content into transaction */
-  ctx = wtx.CreateContext();
+  ctx = s_wtx.CreateContext();
   if (!ctx) {
     error(SHERR_INVAL, "init_ctx_tx: error initializing context transaction.");
     return (SHERR_INVAL);
@@ -863,12 +886,14 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
     memcpy(&ctx->geo, loc, sizeof(shgeo_t));
   }
 
+#if 0
   if (fAddr) {
     CCoinAddr addr(ifaceIndex);
     if (wallet->GetMergedAddress(strAccount, "context", addr)) {
       ctx->vAddr = vchFromString(addr.ToString());
     }
   }
+#endif
 
   if (!ctx->SetValue(strName, vchValue)) {
     error(SHERR_INVAL, "init_ctx_tx: error setting context value.");
@@ -882,32 +907,36 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
 
   uint160 hContext = ctx->GetHash();
 
+  CScript destPubKey;
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
+  destPubKey.SetDestination(extAddr.Get());
 
   CScript scriptPubKey;
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_CONTEXT) << OP_HASH160 << hContext << OP_2DROP;
-
-	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
-  CScript destPubKey;
-  destPubKey.SetDestination(extAddr.Get());
   scriptPubKey += destPubKey;
-
-  // send transaction
-  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
-  if (strError != "") {
-    error(ifaceIndex, "init_ctx_tx: %s", strError.c_str());
+	if (!s_wtx.AddOutput(scriptPubKey, nFee, true))
     return (SHERR_INVAL);
-  }
 
-  Debug("SENT:CONTEXTNEW : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), wtx.GetHash().GetHex().c_str());
+	if (!fTest) {
+		/* commit transaction. */
+		if (!s_wtx.Send())
+			return (SHERR_CANCELED);
 
-  if (GetCoinIndex(iface) == SHC_COIN_IFACE) {
-    share_geo_save(ctx, strName);
-  }
+		Debug("SENT:CONTEXTNEW : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), s_wtx.GetHash().GetHex().c_str());
+
+		if (GetCoinIndex(iface) == SHC_COIN_IFACE) {
+			share_geo_save(ctx, strName);
+		}
+	} else {
+		if (!s_wtx.Generate())
+			return (SHERR_CANCELED);
+	}
+	wtx = (CWalletTx)s_wtx;
 
   return (0);
 }
 
-int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fAddr)
+int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fTest)
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
@@ -940,9 +969,9 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
   if (nOut == -1)
     return (SHERR_INVAL);
 
-  int64 nFee = GetContextOpFee(iface, GetBestHeight(iface), vchValue.size());
+  int64 nValue = GetContextOpFee(iface, GetBestHeight(iface), vchValue.size());
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nFee)
+  if (bal < nValue)
     return (ERR_FEE);
 
   if (!wallet->HasTx(wtxInHash))
@@ -953,7 +982,7 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
 	CTxCreator s_wtx(wallet, strAccount);
   ctx = s_wtx.CreateContext();
   if (!ctx) {
-    error(SHERR_INVAL, "init_ctx_tx: error initializing context transaction.");
+    error(SHERR_INVAL, "update_ctx_tx: error initializing context transaction.");
     return (SHERR_INVAL);
   }
 
@@ -961,20 +990,22 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
     memcpy(&ctx->geo, loc, sizeof(shgeo_t));
   }
 
+#if 0
   if (fAddr) {
     CCoinAddr addr(ifaceIndex);
     if (wallet->GetMergedAddress(strAccount, "context", addr)) {
       ctx->vAddr = vchFromString(addr.ToString());
     }
   }
+#endif
 
   if (!ctx->SetValue(strName, vchValue)) {
-    error(SHERR_INVAL, "init_ctx_tx: error setting context value.");
+    error(SHERR_INVAL, "update_ctx_tx: error setting context value.");
     return (SHERR_INVAL);
   }
 
   if (!ctx->Sign(ifaceIndex)) {
-    error(SHERR_INVAL, "init_ctx_tx: error signing context.");
+    error(SHERR_INVAL, "update_ctx_tx: error signing context.");
     return (SHERR_INVAL);
   }
 
@@ -987,26 +1018,150 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
   CScript scriptPubKey;
   scriptPubKey << OP_EXT_UPDATE << CScript::EncodeOP_N(OP_CONTEXT) << OP_HASH160 << hContext << OP_2DROP;
   scriptPubKey += destPubKey;
-	if (!s_wtx.AddExtTx(&wtxIn, scriptPubKey))
+	if (!s_wtx.AddExtTx(&wtxIn, scriptPubKey, 0, nValue))
     return (SHERR_INVAL);
 
-	/* commit transaction. */
-	if (!s_wtx.Send())
-    return (SHERR_CANCELED);
+	if (!fTest) {
+		/* commit transaction. */
+		if (!s_wtx.Send())
+			return (SHERR_CANCELED);
 
+		Debug("SENT:CONTEXTUPDATE : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), s_wtx.GetHash().GetHex().c_str());
+
+		if (GetCoinIndex(iface) == SHC_COIN_IFACE)
+			share_geo_save(ctx, strName);
+	} else {
+		if (!s_wtx.Generate())
+			return (SHERR_CANCELED);
+	}
 	wtx = (CWalletTx)s_wtx;
-  Debug("SENT:CONTEXTUPDATE : title=%s, ctxhash=%s, tx=%s\n", ctx->GetLabel().c_str(), hContext.GetHex().c_str(), wtx.GetHash().GetHex().c_str());
-
-  if (GetCoinIndex(iface) == SHC_COIN_IFACE)
-    share_geo_save(ctx, strName);
 
   return (0);
 }
 
+int create_shionid_tx(CIface *iface, CWalletTx& wtx, string strAccount, map<string,string> mapParam, bool fTest)
+{
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	shjson_t *node;
+	string strGeo;
+	string strId;
+	int err;
 
+	if (mapParam.count("id") == 0)
+		return (ERR_INVAL);
 
+	strId = create_shionid_id(mapParam["id"]);
 
+	node = shjson_init(NULL);
+	if (!node)
+		return (ERR_NOMEM);
 
+	if (mapParam.count("password") != 0) {
+		string strPassphrase = mapParam["password"];
 
+		/* PBKDF2_SHA256 */
+		unsigned char cr_salt[64];
+		unsigned char cr_pass[64];
 
+		memset(cr_salt, 0, sizeof(cr_salt));
+		memset(cr_pass, 0, sizeof(cr_pass));
+
+		for (int i = 0; i < 24; i++)
+			cr_salt[i] = rand() % 256;
+
+		string salt = EncodeBase64(cr_salt, 24);
+		PBKDF2_SHA256((const unsigned char *)strPassphrase.c_str(), strPassphrase.size(),
+				(const unsigned char *)salt.c_str(), salt.size(),
+				1000, cr_pass, 24);
+
+		char *param_label = "crypted_password";
+		string val = "sha256:1000:" + salt + ":" + EncodeBase64(cr_pass, 24);
+		shjson_str_add(node, param_label, (char *)val.c_str());
+	}
+
+	strGeo = "";
+	if (mapParam.count("geo") != 0)
+		strGeo = mapParam["geo"];
+	shgeo_t *geo = NULL;
+	shnum_t lat = 0;
+	shnum_t lon = 0;
+	{
+		shgeo_t loc;
+		memset(&loc, 0, sizeof(loc));
+
+		if (strGeo.size() != 0) {
+			if (strGeo.size() == 5 && is_numeric(strGeo)) {
+				/* zip-code */
+				mapParam["zipcode"] = strGeo;
+
+				err = shgeodb_place(strGeo.c_str(), &loc);
+				if (err) {
+					/* unknown .. keep zipcode but bail on lat/lon assoc. */
+					strGeo = string();
+				} else {
+					char buf[256];
+					shgeo_loc(&loc, &lat, &lon, NULL);
+					sprintf(buf, "geo:%-5.5Lf,%-5.5Lf", lat, lon);
+					strGeo = string(buf);
+				}
+			}
+		}
+		if (strGeo.size() != 0) {
+			if (!FormatGeoContext(iface, strGeo, lat, lon)) {
+				strGeo = "";
+			} else {
+				/* set context geo-location */
+				shgeo_set(&loc, lat, lon, 0);
+				geo = &loc;
+			}
+		}
+	}
+	if (geo) {
+		char buf[256];
+		sprintf(buf, "%-5.5Lf,%-5.5Lf", lat, lon);
+		mapParam["geo"] = string(buf);
+	} else {
+		if (mapParam.size() != 0 || strGeo.size() != 0)
+			mapParam["geo"] = strGeo;
+	}
+
+	if (ifaceIndex == SHC_COIN_IFACE || 
+			ifaceIndex == TESTNET_COIN_IFACE) {
+		/* tag on a shioncoin address for receiving funds. */
+		CCoinAddr addr = wallet->GetRecvAddr(strAccount);
+		mapParam["shioncoin"] = addr.ToString();
+	}
+
+	map<string,string>::const_iterator it = mapParam.begin();
+	for (; (it != mapParam.end()); it++) {
+		const string& name = it->first;
+		const string& value = it->second;
+
+		if (name == "id" ||
+				name == "password")
+			continue; /* skip context name */
+
+		if (name.size() < 5 || name.size() > 32 || value.size() > 135)
+			continue; /* soft error "invalid parameter name length" */
+
+		shjson_str_add(node, (char *)name.c_str(), (char *)value.c_str());
+	}
+
+	string strValue = shjson_print(node);
+	cbuff vchValue(strValue.begin(), strValue.end());
+	shjson_free(&node);
+
+	if (!IsContextName(iface, strId)) { 
+		err = init_ctx_tx(iface, wtx, strAccount, 
+				strId, vchValue, geo, fTest);
+	} else {
+		err = update_ctx_tx(iface, wtx, strAccount, 
+				strId, vchValue, geo, fTest);
+	}
+	if (err)
+		return (err);
+
+	return (0);
+}
 

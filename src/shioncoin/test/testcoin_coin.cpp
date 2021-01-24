@@ -5,6 +5,7 @@
 #include "init.h"
 #include "wallet.h"
 #include "walletdb.h"
+#include "txcreator.h"
 #include "test/test_pool.h"
 #include "test/test_block.h"
 
@@ -329,17 +330,15 @@ _TEST(coinaddr)
   {
     CCoinAddr e_addr(EMC2_COIN_IFACE, "EKnqTC9XEuucZEhD3miDGnbJxBptcxhByA");
     _TRUE(e_addr.IsValid());
-//fprintf(stderr, "DEBUG: TEST: coinaddr: '%s' has nVersion '%d'\n", "EKnqTC9XEuucZEhD3miDGnbJxBptcxhByA", e_addr.GetVersion());
   }
 
   {
     CCoinAddr s_addr(TEST_COIN_IFACE, "GSje1VrcG7uT55sL41sze9aL5qM7GaN5Bf");
     _TRUE(s_addr.IsValid());
-//fprintf(stderr, "DEBUG: TEST: coinaddr: '%s' has nVersion '%d'\n", "GSje1VrcG7uT55sL41sze9aL5qM7GaN5Bf", s_addr.GetVersion());
   }
 
 #if 0
-	/* DEBUG: TODO: re-introduce code; may be adding un-retrievable pubkey */
+	/* TODO: re-introduce code; may be adding un-retrievable pubkey */
   {
     CKey skey;
     skey.MakeNewKey(true);
@@ -356,7 +355,6 @@ _TEST(coinaddr)
     bool fRet;
     fRet = GetCoinAddr(wallet, s_addr, strAccount);
     _TRUE(fRet);
-//fprintf(stderr, "DEBUG: fRet = %s\n", (fRet ? "true" : "false"));
   }
 #endif
 
@@ -446,28 +444,25 @@ _TEST(coin_spendall)
   int64 nValue;
   int64 bal;
 
-  CWalletTx wtx;
-  wtx.SetNull();
-  wtx.strFromAccount = strFromAcc;
 
   bal = GetAccountBalance(TEST_COIN_IFACE, strFromAcc, 1);
   CCoinAddr addrTo = GetAccountAddress(wallet, strToAcc);
   nValue = bal - COIN;
 
   scriptPubKey.SetDestination(addrTo.Get());
-  strError = wallet->SendMoney(strFromAcc, scriptPubKey, nValue, wtx);
-//if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall: %s\n", strError.c_str()); } 
-  _TRUE(strError == "");
-  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
+	CTxCreator s_wtx(wallet, strFromAcc);
+	_TRUE(s_wtx.AddOutput(scriptPubKey, nValue));
+	_TRUE(s_wtx.Send());
+  _TRUE(s_wtx.CheckTransaction(TEST_COIN_IFACE));
 
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
+  _TRUE(s_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
   {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+  _TRUE(s_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 
 }
 
@@ -481,28 +476,23 @@ _TEST(coin_spendall_segwit)
   int64 nValue;
   int64 bal;
 
-  CWalletTx wtx;
-  wtx.SetNull();
-  wtx.strFromAccount = strFromAcc;
-
   bal = GetAccountBalance(TEST_COIN_IFACE, strFromAcc, 1);
   CCoinAddr addrTo = GetAccountAddress(wallet, strToAcc);
   nValue = bal - COIN;
 
-  scriptPubKey.SetDestination(addrTo.Get());
-  strError = wallet->SendMoney(strFromAcc, scriptPubKey, nValue, wtx);
-//if (strError != "") { fprintf(stderr, "DEBUG: coin_spendall_segwit: %s\n", strError.c_str()); } 
-  _TRUE(strError == "");
+	CTxCreator s_wtx(wallet, strFromAcc);
+	_TRUE(s_wtx.AddOutput(addrTo.Get(), nValue));
+	_TRUE(s_wtx.Send());
 
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
+  _TRUE(s_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
   for (int i = 0; i < 2; i++) {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
-  _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-  _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
+  _TRUE(s_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+  _TRUE(s_wtx.CheckTransaction(TEST_COIN_IFACE));
 
 }
 

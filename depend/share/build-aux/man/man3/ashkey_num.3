@@ -1,0 +1,284 @@
+.TH "Utility functions to generate unique checksums of data." 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Utility functions to generate unique checksums of data. \- 
+.PP
+Key token generator.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshkey_t\fP"
+.br
+.RI "\fIA key used to represent a hash code of an object. \fP"
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHKEY_WORDS\fP   6"
+.br
+.RI "\fIThe number of 'word size' segments the key code is composed of. \fP"
+.ti -1c
+.RI "#define \fBashkey_blank\fP()   ((\fBshkey_t\fP *)&_shkey_blank)"
+.br
+.RI "\fIGenerates a blank \fBshkey_t\fP key token. \fP"
+.ti -1c
+.RI "#define \fBshkey_is_blank\fP(_key)   (0 == memcmp((_key), &_shkey_blank, sizeof(\fBshkey_t\fP)))"
+.br
+.RI "\fIDetermines whether a \fBshkey_t\fP has been initialized. \fP"
+.ti -1c
+.RI "#define \fBshkey_crc\fP(_key)   ((_key) ? shcrc((_key), sizeof(\fBshkey_t\fP)) : 0)"
+.br
+.RI "\fIA 64-bit numeric representation of a \fBshkey_t\fP. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshkey_t\fP \fBshkey_t\fP"
+.br
+.RI "\fIA key used to represent a hash code of an object. \fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshkey_bin\fP (char *data, size_t data_len)"
+.br
+.RI "\fIGenerates a unique 192-bit key from a segment of data. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshkey_str\fP (char *kvalue)"
+.br
+.RI "\fICreate a \fC\fBshkey_t\fP\fP hashmap key reference from \fCkvalue\fP \fIkvalue\fP The string to generate into a \fC\fBshkey_t\fP\fP. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshkey_num\fP (long kvalue)"
+.br
+.RI "\fICreate a \fC\fBshkey_t\fP\fP hashmap key reference from a number. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshkey_uniq\fP (void)"
+.br
+.RI "\fICreate a unique \fC\fBshkey_t\fP\fP hashmap key reference. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBashkey_uniq\fP (void)"
+.br
+.ti -1c
+.RI "void \fBshkey_free\fP (\fBshkey_t\fP **key_p)"
+.br
+.ti -1c
+.RI "int \fBshrand\fP (void)"
+.br
+.ti -1c
+.RI "const char * \fBshkey_print\fP (\fBshkey_t\fP *key)"
+.br
+.RI "\fIA ascii string representation of a libshare key. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBashkey_str\fP (char *name)"
+.br
+.RI "\fIGenerates a \fBshkey_t\fP from a string that does not need to be freed. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBashkey_num\fP (long num)"
+.br
+.RI "\fIGenerates a \fBshkey_t\fP from a number that does not need to be freed. \fP"
+.ti -1c
+.RI "int \fBshkey_cmp\fP (\fBshkey_t\fP *key_1, \fBshkey_t\fP *key_2)"
+.br
+.RI "\fICompare two \fBshkek_t\fP key tokens. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshkey_clone\fP (\fBshkey_t\fP *key)"
+.br
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshkey_cert\fP (\fBshkey_t\fP *key, uint64_t crc, \fBshtime_t\fP stamp)"
+.br
+.RI "\fICreates a certificate's signature key based off content attributes. \fP"
+.ti -1c
+.RI "int \fBshkey_verify\fP (\fBshkey_t\fP *sig, uint64_t crc, \fBshkey_t\fP *key, \fBshtime_t\fP stamp)"
+.br
+.RI "\fIVerifies whether content attributes match a generated certificate signature key. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshkey_gen\fP (char *hex_str)"
+.br
+.RI "\fIConverts a hex string into a binary key. \fP"
+.ti -1c
+.RI "const char * \fBshkey_hex\fP (\fBshkey_t\fP *key)"
+.br
+.RI "\fIA string hexadecimal representation of a libshare key. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshkey_hexgen\fP (char *hex_str)"
+.br
+.RI "\fIGenerate a libshare key from a 48-character long hexadecimal string. \fP"
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBshkey_t\fP \fB_shkey_blank\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Key token generator. 
+.SH "Define Documentation"
+.PP 
+.SS "#define ashkey_blank()   ((\fBshkey_t\fP *)&_shkey_blank)"
+.PP
+Generates a blank \fBshkey_t\fP key token. \fBReturns:\fP
+.RS 4
+A statically allocated blank key token. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Do not free the returned value. 
+.RE
+.PP
+
+.PP
+Definition at line 275 of file shmem.h.
+.SS "#define shkey_crc(_key)   ((_key) ? shcrc((_key), sizeof(\fBshkey_t\fP)) : 0)"
+.PP
+A 64-bit numeric representation of a \fBshkey_t\fP. 
+.PP
+Definition at line 291 of file shmem.h.
+.SS "#define shkey_is_blank(_key)   (0 == memcmp((_key), &_shkey_blank, sizeof(\fBshkey_t\fP)))"
+.PP
+Determines whether a \fBshkey_t\fP has been initialized. \fBReturns:\fP
+.RS 4
+FALSE is key is not blank, and TRUE is the key is blank. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+It is possible to generate keys which equal a blank key, for example a key generated from a zero-length data segment. This macro should be utilitized only when it is known that the key being compared against has a unique value. 
+.RE
+.PP
+
+.PP
+Definition at line 283 of file shmem.h.
+.SS "#define SHKEY_WORDS   6"
+.PP
+The number of 'word size' segments the key code is composed of. 
+.PP
+Definition at line 192 of file shmem.h.
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef struct \fBshkey_t\fP \fBshkey_t\fP"
+.PP
+A key used to represent a hash code of an object. 
+.PP
+Definition at line 187 of file shmem.h.
+.SH "Function Documentation"
+.PP 
+.SS "\fBshkey_t\fP* ashkey_num (long num)"
+.PP
+Generates a \fBshkey_t\fP from a number that does not need to be freed. \fBSee also:\fP
+.RS 4
+shkey_free() 
+.RE
+.PP
+\fBBug\fP
+.RS 4
+psuedo thread-safe 
+.RE
+.PP
+
+.SS "\fBshkey_t\fP* ashkey_str (char * name)"
+.PP
+Generates a \fBshkey_t\fP from a string that does not need to be freed. \fBSee also:\fP
+.RS 4
+shkey_free() 
+.RE
+.PP
+\fBBug\fP
+.RS 4
+psuedo thread-safe 
+.RE
+.PP
+
+.SS "\fBshkey_t\fP* shkey_bin (char * data, size_t data_len)"
+.PP
+Generates a unique 192-bit key from a segment of data. \fBNote:\fP
+.RS 4
+Algorythm is a combination of adler32 and sha256. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "\fBshkey_t\fP* shkey_cert (\fBshkey_t\fP * key, uint64_t crc, \fBshtime_t\fP stamp)"
+.PP
+Creates a certificate's signature key based off content attributes. 
+.SS "int shkey_cmp (\fBshkey_t\fP * key_1, \fBshkey_t\fP * key_2)"
+.PP
+Compare two \fBshkek_t\fP key tokens. \fBReturns:\fP
+.RS 4
+A zero is both keys are identical and a -1 if the keys are unique. 
+.RE
+.PP
+
+.SS "\fBshkey_t\fP* shkey_gen (char * hex_str)"
+.PP
+Converts a hex string into a binary key. 
+.SS "const char* shkey_hex (\fBshkey_t\fP * key)"
+.PP
+A string hexadecimal representation of a libshare key. \fBNote:\fP
+.RS 4
+The string returned will be 48 characters long. 
+.RE
+.PP
+
+.SS "\fBshkey_t\fP* shkey_hexgen (char * hex_str)"
+.PP
+Generate a libshare key from a 48-character long hexadecimal string. 
+.SS "\fBshkey_t\fP* shkey_num (long kvalue)"
+.PP
+Create a \fC\fBshkey_t\fP\fP hashmap key reference from a number. \fIkvalue\fP The number to generate into a \fC\fBshkey_t\fP\fP 
+.PP
+\fBReturns:\fP
+.RS 4
+A statically allocated version of  
+.RE
+.PP
+
+.SS "const char* shkey_print (\fBshkey_t\fP * key)"
+.PP
+A ascii string representation of a libshare key. \fBNote:\fP
+.RS 4
+The string returned will be 36 characters long in a format similar to base64. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "\fBshkey_t\fP* shkey_str (char * kvalue)"
+.PP
+Create a \fC\fBshkey_t\fP\fP hashmap key reference from \fCkvalue\fP \fIkvalue\fP The string to generate into a \fC\fBshkey_t\fP\fP. \fBReturns:\fP
+.RS 4
+A \fC\fBshkey_t\fP\fP referencing a kvalue 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "\fBshkey_t\fP* shkey_uniq (void)"
+.PP
+Create a unique \fC\fBshkey_t\fP\fP hashmap key reference. \fBReturns:\fP
+.RS 4
+A \fC\fBshkey_t\fP\fP containing a unique key value. 
+.RE
+.PP
+
+.SS "int shkey_verify (\fBshkey_t\fP * sig, uint64_t crc, \fBshkey_t\fP * key, \fBshtime_t\fP stamp)"
+.PP
+Verifies whether content attributes match a generated certificate signature key. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

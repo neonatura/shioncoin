@@ -454,8 +454,6 @@ bool TESTNETWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSe
 
         // Fill vtxPrev by copying from previous transactions vtxPrev
         wtxNew.AddSupportingTransactions();
-        wtxNew.fTimeReceivedIsTxTime = true;
-
         break;
       }
     }
@@ -610,8 +608,6 @@ bool TESTNETWallet::CreateAccountTransaction(string strFromAccount, const vector
 
         // Fill vtxPrev by copying from previous transactions vtxPrev
         wtxNew.AddSupportingTransactions();
-        wtxNew.fTimeReceivedIsTxTime = true;
-
         break;
       }
     }

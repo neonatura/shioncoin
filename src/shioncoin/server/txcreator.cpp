@@ -126,11 +126,10 @@ bool CTxCreator::HaveInput(const CPubKey& pubKey)
 /**
  * @param scriptPubKey The destination script receiving the extended input reference.
  */
-bool CTxCreator::AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxFee)
+bool CTxCreator::AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxFee, int64 nValue)
 {
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
   int64 nTxValue;
-  int64 nValue;
   int nTxOut;
 
   nTxOut = IndexOfExtOutput(*tx);
@@ -140,13 +139,10 @@ bool CTxCreator::AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxF
   }
 
 	int64 nHoldFee = ((MIN_TX_FEE(iface) * 2) + MIN_RELAY_TX_FEE(iface));
+	nHoldFee = MAX(nHoldFee, nTxFee);
 
   /* value left from previous extended transaction. */
-  nTxValue = tx->vout[nTxOut].nValue;
-  nTxFee = MAX(0, MIN(nTxValue - nHoldFee, nTxFee));
-  nTxFee = MAX(nTxFee, nHoldFee);
-  nValue = nTxValue - nTxFee;
-
+	nValue = MAX(nValue, MAX(0, tx->vout[nTxOut].nValue - nHoldFee));
   if (!MoneyRange(iface, nValue)) {
     strError = "Too large of a transaction fee was required.";
     return (false);
@@ -247,7 +243,8 @@ bool CTxCreator::HaveOutput(const CPubKey& pubKey)
 
 bool CTxCreator::SetChangeAddr(const CPubKey& scriptPubKey)
 {
-  changePubKey = scriptPubKey;
+	changePubKey = scriptPubKey;
+	return (true);
 }
 
 CCoinAddr CTxCreator::GetChangeAddr()
@@ -671,7 +668,6 @@ bool CTxCreator::Send()
 
   /* fill vtxPrev by copying from previous transactions vtxPrev */
   pwallet->AddSupportingTransactions(*this);
-  fTimeReceivedIsTxTime = true;
 
   if (!pwallet->CommitTransaction(*this)) {
     strError = "An error occurred while commiting the transaction.";
@@ -916,7 +912,7 @@ bool CTxBatchCreator::Send()
   BOOST_FOREACH(CWalletTx& wtx, vTxList) {
     /* fill vtxPrev by copying from previous transactions vtxPrev */
     pwallet->AddSupportingTransactions(wtx);
-    wtx.fTimeReceivedIsTxTime = true;
+//    wtx.fTimeReceivedIsTxTime = true;
     if (pwallet->CommitTransaction(wtx)) {
       vCommitList.push_back(wtx);
     }

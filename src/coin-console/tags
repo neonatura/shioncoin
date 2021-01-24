@@ -1,0 +1,1069 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+ALL_OBJECTS	cdk/cdkscreen.c	/^ALL_OBJECTS;$/;"	t	typeref:struct:_all_objects	file:
+ALL_SCREENS	cdk/cdkscreen.c	/^ALL_SCREENS;$/;"	t	typeref:struct:_all_screens	file:
+AvailableWidth	cdk/radio.c	20;"	d	file:
+AvailableWidth	cdk/scroll.c	25;"	d	file:
+AvailableWidth	cdk/selection.c	20;"	d	file:
+BOT_C_BOX	cdk/matrix.c	41;"	d	file:
+BS	shcon_stream.c	36;"	d	file:
+Beep	cdk/cdk.c	/^void Beep (void)$/;"	f
+ByteReverse	shcon_mine.c	/^static inline uint32_t ByteReverse(uint32_t value)$/;"	f	file:
+CDKDEBUG	cdk/debug.c	/^FILE *CDKDEBUG;$/;"	v
+CDKEntryCallBack	cdk/entry.c	/^static void CDKEntryCallBack (CDKENTRY *entry, chtype character)$/;"	f	file:
+CDKMatrixCallBack	cdk/matrix.c	/^static void CDKMatrixCallBack (CDKMATRIX *matrix, chtype input)$/;"	f	file:
+CDKMentryCallBack	cdk/mentry.c	/^static void CDKMentryCallBack (CDKMENTRY *mentry, chtype character)$/;"	f	file:
+CDKTemplateCallBack	cdk/template.c	/^static void CDKTemplateCallBack (CDKTEMPLATE *cdktemplate, chtype input)$/;"	f	file:
+CDKVersion	cdk/version.c	/^const char *CDKVersion (void)$/;"	f
+CDKallocStrings	cdk/cdk.c	/^unsigned CDKallocStrings (char ***list, char *item, unsigned length, unsigned used)$/;"	f
+CDKcountStrings	cdk/cdk.c	/^unsigned CDKcountStrings (CDK_CSTRING2 list)$/;"	f
+CDKfreeChtypes	cdk/cdk.c	/^void CDKfreeChtypes (chtype **list)$/;"	f
+CDKfreeStrings	cdk/cdk.c	/^void CDKfreeStrings (char **list)$/;"	f
+CDKgetDirectoryContents	cdk/cdk.c	/^int CDKgetDirectoryContents (const char *directory, char ***list)$/;"	f
+CDKparamNumber	cdk/cdk_params.c	/^int CDKparamNumber (CDK_PARAMS * params, int option)$/;"	f
+CDKparamNumber2	cdk/cdk_params.c	/^int CDKparamNumber2 (CDK_PARAMS * params, int option, int missing)$/;"	f
+CDKparamString	cdk/cdk_params.c	/^char *CDKparamString (CDK_PARAMS * params, int option)$/;"	f
+CDKparamString2	cdk/cdk_params.c	/^char *CDKparamString2 (CDK_PARAMS * params, int option, const char *missing)$/;"	f
+CDKparamValue	cdk/cdk_params.c	/^int CDKparamValue (CDK_PARAMS * params, int option, int missing)$/;"	f
+CDKparseParams	cdk/cdk_params.c	/^void CDKparseParams (int argc,$/;"	f
+CDKparsePosition	cdk/cdk_params.c	/^int CDKparsePosition (const char *string)$/;"	f
+CDKparseSize	cdk/cdk_params.c	/^static int CDKparseSize (char *string, int fullSize)$/;"	f	file:
+CDKreadFile	cdk/cdk.c	/^int CDKreadFile (const char *filename, char ***array)$/;"	f
+CDKsplitString	cdk/cdk.c	/^char **CDKsplitString (const char *string, int separator)$/;"	f
+CurMatrixCell	cdk/matrix.c	27;"	d	file:
+CurMatrixInfo	cdk/matrix.c	30;"	d	file:
+DEFAULT_COMMAND_WAIT	net/net.h	31;"	d
+DEFAULT_RPC_PORT	net/net_conn.c	29;"	d	file:
+DOWN	cdk/viewer.c	12;"	d	file:
+Decrement	cdk/gen-scale.c	392;"	d	file:
+Decrement	cdk/gen-slider.c	413;"	d	file:
+DigitOf	cdk/cdk.c	307;"	d	file:
+FIELD_ACCOUNT	shcon_gui.c	95;"	d	file:
+FIELD_ADDRESS	shcon_gui.c	96;"	d	file:
+FIELD_AMOUNT	shcon_gui.c	97;"	d	file:
+FIELD_NULL	shcon_gui.c	91;"	d	file:
+FIELD_NUMBER	shcon_gui.c	92;"	d	file:
+FIELD_PATH	shcon_gui.c	98;"	d	file:
+FIELD_REAL	shcon_gui.c	93;"	d	file:
+FIELD_STRING	shcon_gui.c	94;"	d	file:
+FOPEN_FMT	cdk/viewer.c	361;"	d	file:
+GPasteBuffer	cdk/cdk.c	/^char *GPasteBuffer = 0;$/;"	v
+Increment	cdk/gen-scale.c	393;"	d	file:
+Increment	cdk/gen-slider.c	414;"	d	file:
+KEY_MAX	cdk/binding.c	16;"	d	file:
+LF	shcon_stream.c	37;"	d	file:
+LFT_B_BOX	cdk/matrix.c	55;"	d	file:
+LFT_M_BOX	cdk/matrix.c	51;"	d	file:
+LFT_R_BOX	cdk/matrix.c	43;"	d	file:
+LFT_T_BOX	cdk/matrix.c	47;"	d	file:
+L_MARKER	cdk/cdk.c	9;"	d	file:
+MAXHISTORY	shcon_gui.c	38;"	d	file:
+MAX_ARGS	shcon_gui.c	566;"	d	file:
+MAX_ARGS	shcon_stream.c	62;"	d	file:
+MAX_CYCLE_NONCE	shcon_mine.c	31;"	d	file:
+MAX_MENU	shcon_gui.c	89;"	d	file:
+MAX_MENU_LABELS	shcon_gui.c	100;"	d	file:
+MAX_PAIR	cdk/cdk.c	353;"	d	file:
+MENU_ADMIN	shcon_gui.c	87;"	d	file:
+MENU_FILE	shcon_gui.c	84;"	d	file:
+MENU_HELP	shcon_gui.c	88;"	d	file:
+MENU_SYSTEM	shcon_gui.c	86;"	d	file:
+MENU_WALLET	shcon_gui.c	85;"	d	file:
+MID_B_BOX	cdk/matrix.c	56;"	d	file:
+MID_C_BOX	cdk/matrix.c	40;"	d	file:
+MID_M_BOX	cdk/matrix.c	52;"	d	file:
+MID_R_BOX	cdk/matrix.c	44;"	d	file:
+MID_T_BOX	cdk/matrix.c	48;"	d	file:
+MIXED	cdk/gen-scale.c	/^CDK<UPPER> *newCDK<MIXED> (CDKSCREEN *cdkscreen,$/;"	f
+MIXED	cdk/gen-scale.c	/^static int _injectCDK<MIXED> (CDKOBJS *object, chtype input)$/;"	f	file:
+MIXED	cdk/gen-scale.c	/^static void _destroyCDK<MIXED> (CDKOBJS *object)$/;"	f	file:
+MIXED	cdk/gen-scale.c	/^static void _drawCDK<MIXED> (CDKOBJS *object, boolean Box)$/;"	f	file:
+MIXED	cdk/gen-scale.c	/^static void _eraseCDK<MIXED> (CDKOBJS *object)$/;"	f	file:
+MIXED	cdk/gen-scale.c	/^static void _focusCDK<MIXED> (CDKOBJS *object)$/;"	f	file:
+MIXED	cdk/gen-scale.c	/^static void _moveCDK<MIXED> (CDKOBJS *object,$/;"	f	file:
+MIXED	cdk/gen-scale.c	/^static void _setBKattr<MIXED> (CDKOBJS *object, chtype attrib)$/;"	f	file:
+MIXED	cdk/gen-scale.c	/^static void _unfocusCDK<MIXED> (CDKOBJS *object)$/;"	f	file:
+MIXED	cdk/gen-slider.c	/^CDK<UPPER> *newCDK<MIXED> (CDKSCREEN *cdkscreen,$/;"	f
+MIXED	cdk/gen-slider.c	/^static int _injectCDK<MIXED> (CDKOBJS *object, chtype input)$/;"	f	file:
+MIXED	cdk/gen-slider.c	/^static void _destroyCDK<MIXED> (CDKOBJS *object)$/;"	f	file:
+MIXED	cdk/gen-slider.c	/^static void _drawCDK<MIXED> (CDKOBJS *object, boolean Box)$/;"	f	file:
+MIXED	cdk/gen-slider.c	/^static void _eraseCDK<MIXED> (CDKOBJS *object)$/;"	f	file:
+MIXED	cdk/gen-slider.c	/^static void _focusCDK<MIXED> (CDKOBJS *object)$/;"	f	file:
+MIXED	cdk/gen-slider.c	/^static void _moveCDK<MIXED> (CDKOBJS *object,$/;"	f	file:
+MIXED	cdk/gen-slider.c	/^static void _setBKattr<MIXED> (CDKOBJS *object, chtype attrib)$/;"	f	file:
+MIXED	cdk/gen-slider.c	/^static void _unfocusCDK<MIXED> (CDKOBJS *object)$/;"	f	file:
+MyBox	cdk/matrix.c	59;"	d	file:
+NCURSES_NOMACROS	cdk/marquee.c	1;"	d	file:
+NUMBER_FMT	cdk/scroll.c	20;"	d	file:
+NUMBER_LEN	cdk/scroll.c	21;"	d	file:
+OPTION_OFF	cdk/cdk_params.c	12;"	d	file:
+OPTION_ON	cdk/cdk_params.c	11;"	d	file:
+OPT_HOSTNAME	shcon_opt.h	41;"	d
+OPT_IFACE	shcon_opt.h	31;"	d
+OPT_LIST	shcon_opt.c	29;"	d	file:
+OPT_OUTPUT	shcon_opt.h	37;"	d
+OPT_PORT	shcon_opt.h	39;"	d
+OPT_PROMPT	shcon_opt.h	43;"	d
+OPT_QUIET	shcon_opt.h	33;"	d
+OPT_RPC_HOST	shcon_opt.h	45;"	d
+OPT_RPC_PASS	shcon_opt.h	51;"	d
+OPT_RPC_PORT	shcon_opt.h	47;"	d
+OPT_RPC_USER	shcon_opt.h	49;"	d
+OPT_VERBOSE	shcon_opt.h	35;"	d
+ObjOf	cdk/position.c	10;"	d	file:
+ObjOf	cdk/position.c	9;"	d	file:
+PatternNotFound	cdk/viewer.c	/^static void PatternNotFound (CDKVIEWER *viewer, char *pattern)$/;"	f	file:
+RGT_B_BOX	cdk/matrix.c	57;"	d	file:
+RGT_M_BOX	cdk/matrix.c	53;"	d	file:
+RGT_R_BOX	cdk/matrix.c	45;"	d	file:
+RGT_T_BOX	cdk/matrix.c	49;"	d	file:
+RPC_AUTH_FREQ	key/key.h	31;"	d
+RUN_EXEC	shcon_stream.c	34;"	d	file:
+RUN_IDLE	shcon_gui.c	34;"	d	file:
+RUN_IDLE	shcon_stream.c	32;"	d	file:
+RUN_NONE	shcon_gui.c	33;"	d	file:
+RUN_NONE	shcon_stream.c	31;"	d	file:
+RUN_PROMPT	shcon_stream.c	33;"	d	file:
+R_MARKER	cdk/cdk.c	10;"	d	file:
+RestoreFocus	cdk/alphalist.c	279;"	d	file:
+RestoreFocus	cdk/fselect.c	315;"	d	file:
+SCANF_FMT	cdk/gen-scale.c	348;"	d	file:
+SCANF_FMT	cdk/gen-scale.c	352;"	d	file:
+SCANF_FMT	cdk/gen-slider.c	365;"	d	file:
+SCANF_FMT	cdk/gen-slider.c	369;"	d	file:
+SCREENPOS	cdk/radio.c	27;"	d	file:
+SCREENPOS	cdk/scroll.c	32;"	d	file:
+SCREENPOS	cdk/selection.c	27;"	d	file:
+SCREEN_YPOS	cdk/scroll.c	553;"	d	file:
+SCREEN_YPOS	cdk/scroll.c	554;"	d	file:
+SHARE_ATTEMPT	shcon_mine.c	/^uint64_t SHARE_ATTEMPT;$/;"	v
+SHARE_COUNT	shcon_mine.c	/^uint64_t SHARE_COUNT;$/;"	v
+SHARE_FOUND	shcon_mine.c	/^uint64_t SHARE_FOUND;$/;"	v
+SHARE_LAST	shcon_mine.c	/^time_t SHARE_LAST;$/;"	v
+SHARE_MAX	shcon_mine.c	/^double SHARE_MAX;$/;"	v
+SHARE_TOTAL	shcon_mine.c	/^double SHARE_TOTAL;$/;"	v
+SHCON_MAX_ARGS	shcon.c	28;"	d	file:
+SHERR_PROTO	net/net.c	71;"	d	file:
+SKBUF	net/net_conn.c	32;"	d	file:
+SKBUF	net/net_read.c	29;"	d	file:
+SaveFocus	cdk/alphalist.c	274;"	d	file:
+SaveFocus	cdk/fselect.c	310;"	d	file:
+SearchDirection	cdk/viewer.c	/^static int SearchDirection = DOWN;$/;"	v	file:
+SearchPattern	cdk/viewer.c	/^static char *SearchPattern = 0;$/;"	v	file:
+TITLELINES	cdk/menu.c	9;"	d	file:
+TITLE_LM	cdk/graph.c	11;"	d	file:
+TOP_C_BOX	cdk/matrix.c	39;"	d	file:
+TRACE	cdk/fselect.c	1;"	d	file:
+UP	cdk/viewer.c	13;"	d	file:
+WHOLE_BOX	cdk/matrix.c	37;"	d	file:
+WidestItem	cdk/radio.c	25;"	d	file:
+WidestItem	cdk/scroll.c	30;"	d	file:
+WidestItem	cdk/selection.c	25;"	d	file:
+XCursesProgramName	shcon_gui.c	/^char *XCursesProgramName = "coin-console";$/;"	v
+XXXCB	shcon_gui.c	/^static int XXXCB (EObjectType cdktype GCC_UNUSED,$/;"	f	file:
+YEAR2INDEX	cdk/calendar.c	9;"	d	file:
+__COIN_CONSOLE__COMMAND_H__	command/command.h	27;"	d
+__COIN_CONSOLE__NET_H__	net/net.h	27;"	d
+__COIN_CONSOLE__SHCON_GUI_H__	shcon_gui.h	27;"	d
+__COIN_CONSOLE__SHCON_MINE_H__	shcon_mine.h	27;"	d
+__COIN_CONSOLE__SHCON_STREAM_H__	shcon_stream.h	27;"	d
+__COIN_CONSOLE__SHCON_TERM_H__	shcon_term.h	27;"	d
+__KEY__KEY_H__	key/key.h	28;"	d
+__SHCON_H__	shcon.h	27;"	d
+__SHCON_INIT_H__	shcon_init.h	27;"	d
+__SHCON_LOG_H__	shcon_log.h	27;"	d
+__SHCON_OPT_H__	shcon_opt.h	27;"	d
+__USE_W32_SOCKETS	shcon.h	31;"	d
+_admin_menu_table	shcon_gui.c	/^static const menu_t _admin_menu_table[] = $/;"	v	file:
+_all_objects	cdk/cdkscreen.c	/^typedef struct _all_objects$/;"	s	file:
+_all_screens	cdk/cdkscreen.c	/^typedef struct _all_screens$/;"	s	file:
+_client_socket	net/net.c	/^static int _client_socket;$/;"	v	file:
+_destroyCDKAlphalist	cdk/alphalist.c	/^static void _destroyCDKAlphalist (CDKOBJS *object)$/;"	f	file:
+_destroyCDKButton	cdk/button.c	/^static void _destroyCDKButton (CDKOBJS *object)$/;"	f	file:
+_destroyCDKButtonbox	cdk/buttonbox.c	/^static void _destroyCDKButtonbox (CDKOBJS *object)$/;"	f	file:
+_destroyCDKCalendar	cdk/calendar.c	/^static void _destroyCDKCalendar (CDKOBJS *object)$/;"	f	file:
+_destroyCDKDialog	cdk/dialog.c	/^static void _destroyCDKDialog (CDKOBJS *object)$/;"	f	file:
+_destroyCDKEntry	cdk/entry.c	/^static void _destroyCDKEntry (CDKOBJS *object)$/;"	f	file:
+_destroyCDKFselect	cdk/fselect.c	/^static void _destroyCDKFselect (CDKOBJS *object)$/;"	f	file:
+_destroyCDKGraph	cdk/graph.c	/^static void _destroyCDKGraph (CDKOBJS *object)$/;"	f	file:
+_destroyCDKHistogram	cdk/histogram.c	/^static void _destroyCDKHistogram (CDKOBJS *object)$/;"	f	file:
+_destroyCDKItemlist	cdk/itemlist.c	/^static void _destroyCDKItemlist (CDKOBJS *object)$/;"	f	file:
+_destroyCDKLabel	cdk/label.c	/^static void _destroyCDKLabel (CDKOBJS *object)$/;"	f	file:
+_destroyCDKMarquee	cdk/marquee.c	/^static void _destroyCDKMarquee (CDKOBJS *object)$/;"	f	file:
+_destroyCDKMatrix	cdk/matrix.c	/^static void _destroyCDKMatrix (CDKOBJS *object)$/;"	f	file:
+_destroyCDKMentry	cdk/mentry.c	/^static void _destroyCDKMentry (CDKOBJS *object)$/;"	f	file:
+_destroyCDKMenu	cdk/menu.c	/^static void _destroyCDKMenu (CDKOBJS *object)$/;"	f	file:
+_destroyCDKObject	cdk/cdkscreen.c	/^void _destroyCDKObject (CDKOBJS *obj)$/;"	f
+_destroyCDKRadio	cdk/radio.c	/^static void _destroyCDKRadio (CDKOBJS *object)$/;"	f	file:
+_destroyCDKScroll	cdk/scroll.c	/^static void _destroyCDKScroll (CDKOBJS *object)$/;"	f	file:
+_destroyCDKSelection	cdk/selection.c	/^static void _destroyCDKSelection (CDKOBJS *object)$/;"	f	file:
+_destroyCDKSwindow	cdk/swindow.c	/^static void _destroyCDKSwindow (CDKOBJS *object)$/;"	f	file:
+_destroyCDKTemplate	cdk/template.c	/^static void _destroyCDKTemplate (CDKOBJS *object)$/;"	f	file:
+_destroyCDKViewer	cdk/viewer.c	/^static void _destroyCDKViewer (CDKOBJS *object)$/;"	f	file:
+_drawCDKAlphalist	cdk/alphalist.c	/^static void _drawCDKAlphalist (CDKOBJS *obj, boolean Box GCC_UNUSED)$/;"	f	file:
+_drawCDKButton	cdk/button.c	/^static void _drawCDKButton (CDKOBJS *object, boolean Box GCC_UNUSED)$/;"	f	file:
+_drawCDKButtonbox	cdk/buttonbox.c	/^static void _drawCDKButtonbox (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKCalendar	cdk/calendar.c	/^static void _drawCDKCalendar (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKDialog	cdk/dialog.c	/^static void _drawCDKDialog (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKEntry	cdk/entry.c	/^static void _drawCDKEntry (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKFselect	cdk/fselect.c	/^static void _drawCDKFselect (CDKOBJS *object, boolean Box GCC_UNUSED)$/;"	f	file:
+_drawCDKGraph	cdk/graph.c	/^static void _drawCDKGraph (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKHistogram	cdk/histogram.c	/^static void _drawCDKHistogram (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKItemlist	cdk/itemlist.c	/^static void _drawCDKItemlist (CDKOBJS *object, int Box)$/;"	f	file:
+_drawCDKLabel	cdk/label.c	/^static void _drawCDKLabel (CDKOBJS *object, boolean Box GCC_UNUSED)$/;"	f	file:
+_drawCDKMarquee	cdk/marquee.c	/^static void _drawCDKMarquee (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKMatrix	cdk/matrix.c	/^static void _drawCDKMatrix (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKMentry	cdk/mentry.c	/^static void _drawCDKMentry (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKMenu	cdk/menu.c	/^static void _drawCDKMenu (CDKOBJS *object, boolean Box GCC_UNUSED)$/;"	f	file:
+_drawCDKRadio	cdk/radio.c	/^static void _drawCDKRadio (CDKOBJS *object, boolean Box GCC_UNUSED)$/;"	f	file:
+_drawCDKScroll	cdk/scroll.c	/^static void _drawCDKScroll (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKSelection	cdk/selection.c	/^static void _drawCDKSelection (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKSwindow	cdk/swindow.c	/^static void _drawCDKSwindow (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKTemplate	cdk/template.c	/^static void _drawCDKTemplate (CDKOBJS *object, boolean Box)$/;"	f	file:
+_drawCDKViewer	cdk/viewer.c	/^static void _drawCDKViewer (CDKOBJS *object, boolean Box)$/;"	f	file:
+_eraseCDKAlphalist	cdk/alphalist.c	/^static void _eraseCDKAlphalist (CDKOBJS *object)$/;"	f	file:
+_eraseCDKButton	cdk/button.c	/^static void _eraseCDKButton (CDKOBJS *object)$/;"	f	file:
+_eraseCDKButtonbox	cdk/buttonbox.c	/^static void _eraseCDKButtonbox (CDKOBJS *object)$/;"	f	file:
+_eraseCDKCalendar	cdk/calendar.c	/^static void _eraseCDKCalendar (CDKOBJS *object)$/;"	f	file:
+_eraseCDKDialog	cdk/dialog.c	/^static void _eraseCDKDialog (CDKOBJS *object)$/;"	f	file:
+_eraseCDKEntry	cdk/entry.c	/^static void _eraseCDKEntry (CDKOBJS *object)$/;"	f	file:
+_eraseCDKFselect	cdk/fselect.c	/^static void _eraseCDKFselect (CDKOBJS *object)$/;"	f	file:
+_eraseCDKGraph	cdk/graph.c	/^static void _eraseCDKGraph (CDKOBJS *object)$/;"	f	file:
+_eraseCDKHistogram	cdk/histogram.c	/^static void _eraseCDKHistogram (CDKOBJS *object)$/;"	f	file:
+_eraseCDKItemlist	cdk/itemlist.c	/^static void _eraseCDKItemlist (CDKOBJS *object)$/;"	f	file:
+_eraseCDKLabel	cdk/label.c	/^static void _eraseCDKLabel (CDKOBJS *object)$/;"	f	file:
+_eraseCDKMarquee	cdk/marquee.c	/^static void _eraseCDKMarquee (CDKOBJS *object)$/;"	f	file:
+_eraseCDKMatrix	cdk/matrix.c	/^static void _eraseCDKMatrix (CDKOBJS *object)$/;"	f	file:
+_eraseCDKMentry	cdk/mentry.c	/^static void _eraseCDKMentry (CDKOBJS *object)$/;"	f	file:
+_eraseCDKMenu	cdk/menu.c	/^static void _eraseCDKMenu (CDKOBJS *object)$/;"	f	file:
+_eraseCDKRadio	cdk/radio.c	/^static void _eraseCDKRadio (CDKOBJS *object)$/;"	f	file:
+_eraseCDKScroll	cdk/scroll.c	/^static void _eraseCDKScroll (CDKOBJS *object)$/;"	f	file:
+_eraseCDKSelection	cdk/selection.c	/^static void _eraseCDKSelection (CDKOBJS *object)$/;"	f	file:
+_eraseCDKSwindow	cdk/swindow.c	/^static void _eraseCDKSwindow (CDKOBJS *object)$/;"	f	file:
+_eraseCDKTemplate	cdk/template.c	/^static void _eraseCDKTemplate (CDKOBJS *object)$/;"	f	file:
+_eraseCDKViewer	cdk/viewer.c	/^static void _eraseCDKViewer (CDKOBJS *object)$/;"	f	file:
+_file_menu_table	shcon_gui.c	/^static const menu_t _file_menu_table[] = $/;"	v	file:
+_focusCDKAlphalist	cdk/alphalist.c	/^static void _focusCDKAlphalist (CDKOBJS *object)$/;"	f	file:
+_focusCDKButton	cdk/button.c	/^static void _focusCDKButton (CDKOBJS *object)$/;"	f	file:
+_focusCDKButtonbox	cdk/buttonbox.c	/^static void _focusCDKButtonbox (CDKOBJS *object)$/;"	f	file:
+_focusCDKCalendar	cdk/calendar.c	/^static void _focusCDKCalendar (CDKOBJS *object)$/;"	f	file:
+_focusCDKDialog	cdk/dialog.c	/^static void _focusCDKDialog (CDKOBJS *object)$/;"	f	file:
+_focusCDKEntry	cdk/entry.c	/^static void _focusCDKEntry (CDKOBJS *object)$/;"	f	file:
+_focusCDKFselect	cdk/fselect.c	/^static void _focusCDKFselect (CDKOBJS *object)$/;"	f	file:
+_focusCDKItemlist	cdk/itemlist.c	/^static void _focusCDKItemlist (CDKOBJS *object)$/;"	f	file:
+_focusCDKMatrix	cdk/matrix.c	/^static void _focusCDKMatrix (CDKOBJS *object)$/;"	f	file:
+_focusCDKMentry	cdk/mentry.c	/^static void _focusCDKMentry (CDKOBJS *object)$/;"	f	file:
+_focusCDKMenu	cdk/menu.c	/^static void _focusCDKMenu (CDKOBJS *object)$/;"	f	file:
+_focusCDKRadio	cdk/radio.c	/^static void _focusCDKRadio (CDKOBJS *object)$/;"	f	file:
+_focusCDKScroll	cdk/scroll.c	/^static void _focusCDKScroll (CDKOBJS *object)$/;"	f	file:
+_focusCDKSelection	cdk/selection.c	/^static void _focusCDKSelection (CDKOBJS *object)$/;"	f	file:
+_focusCDKSwindow	cdk/swindow.c	/^static void _focusCDKSwindow (CDKOBJS *object)$/;"	f	file:
+_focusCDKTemplate	cdk/template.c	/^static void _focusCDKTemplate (CDKOBJS *object)$/;"	f	file:
+_help_menu_table	shcon_gui.c	/^static const menu_t _help_menu_table[] = $/;"	v	file:
+_injectCDKAlphalist	cdk/alphalist.c	/^static int _injectCDKAlphalist (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKButton	cdk/button.c	/^static int _injectCDKButton (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKButtonbox	cdk/buttonbox.c	/^static int _injectCDKButtonbox (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKCalendar	cdk/calendar.c	/^static int _injectCDKCalendar (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKDialog	cdk/dialog.c	/^static int _injectCDKDialog (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKEntry	cdk/entry.c	/^static int _injectCDKEntry (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKFselect	cdk/fselect.c	/^static int _injectCDKFselect (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKItemlist	cdk/itemlist.c	/^static int _injectCDKItemlist (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKMatrix	cdk/matrix.c	/^static int _injectCDKMatrix (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKMentry	cdk/mentry.c	/^static int _injectCDKMentry (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKMenu	cdk/menu.c	/^static int _injectCDKMenu (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKRadio	cdk/radio.c	/^static int _injectCDKRadio (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKScroll	cdk/scroll.c	/^static int _injectCDKScroll (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKSelection	cdk/selection.c	/^static int _injectCDKSelection (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKSwindow	cdk/swindow.c	/^static int _injectCDKSwindow (CDKOBJS *object, chtype input)$/;"	f	file:
+_injectCDKTemplate	cdk/template.c	/^static int _injectCDKTemplate (CDKOBJS *object, chtype input)$/;"	f	file:
+_input_buffer	shcon_stream.c	/^static char _input_buffer[10240];$/;"	v	file:
+_menu_labels	shcon_gui.c	/^static const char *_menu_labels[MAX_MENU] = {$/;"	v	file:
+_menu_table	shcon_gui.c	/^static const menu_t *_menu_table[MAX_MENU] = {$/;"	v	file:
+_moveCDKAlphalist	cdk/alphalist.c	/^static void _moveCDKAlphalist (CDKOBJS *object,$/;"	f	file:
+_moveCDKButton	cdk/button.c	/^static void _moveCDKButton (CDKOBJS *object,$/;"	f	file:
+_moveCDKButtonbox	cdk/buttonbox.c	/^static void _moveCDKButtonbox (CDKOBJS *object,$/;"	f	file:
+_moveCDKCalendar	cdk/calendar.c	/^static void _moveCDKCalendar (CDKOBJS *object,$/;"	f	file:
+_moveCDKDialog	cdk/dialog.c	/^static void _moveCDKDialog (CDKOBJS *object,$/;"	f	file:
+_moveCDKEntry	cdk/entry.c	/^static void _moveCDKEntry (CDKOBJS *object,$/;"	f	file:
+_moveCDKFselect	cdk/fselect.c	/^static void _moveCDKFselect (CDKOBJS *object,$/;"	f	file:
+_moveCDKGraph	cdk/graph.c	/^static void _moveCDKGraph (CDKOBJS *object,$/;"	f	file:
+_moveCDKHistogram	cdk/histogram.c	/^static void _moveCDKHistogram (CDKOBJS *object,$/;"	f	file:
+_moveCDKItemlist	cdk/itemlist.c	/^static void _moveCDKItemlist (CDKOBJS *object,$/;"	f	file:
+_moveCDKLabel	cdk/label.c	/^static void _moveCDKLabel (CDKOBJS *object,$/;"	f	file:
+_moveCDKMarquee	cdk/marquee.c	/^static void _moveCDKMarquee (CDKOBJS *object,$/;"	f	file:
+_moveCDKMatrix	cdk/matrix.c	/^static void _moveCDKMatrix (CDKOBJS *object,$/;"	f	file:
+_moveCDKMentry	cdk/mentry.c	/^static void _moveCDKMentry (CDKOBJS *object,$/;"	f	file:
+_moveCDKMenu	cdk/menu.c	/^static void _moveCDKMenu (CDKOBJS *object,$/;"	f	file:
+_moveCDKRadio	cdk/radio.c	/^static void _moveCDKRadio (CDKOBJS *object,$/;"	f	file:
+_moveCDKScroll	cdk/scroll.c	/^static void _moveCDKScroll (CDKOBJS *object,$/;"	f	file:
+_moveCDKSelection	cdk/selection.c	/^static void _moveCDKSelection (CDKOBJS *object,$/;"	f	file:
+_moveCDKSwindow	cdk/swindow.c	/^static void _moveCDKSwindow (CDKOBJS *object,$/;"	f	file:
+_moveCDKTemplate	cdk/template.c	/^static void _moveCDKTemplate (CDKOBJS *object,$/;"	f	file:
+_moveCDKViewer	cdk/viewer.c	/^static void _moveCDKViewer (CDKOBJS *object, int xplace, int yplace, boolean$/;"	f	file:
+_net_t	shcon_gui.c	/^static time_t _net_t;$/;"	v	file:
+_newCDKObject	cdk/cdkscreen.c	/^void *_newCDKObject (unsigned size, const CDKFUNCS * funcs)$/;"	f
+_server_menu_table	shcon_gui.c	/^static const menu_t _server_menu_table[] = $/;"	v	file:
+_setBKattrAlphalist	cdk/alphalist.c	/^static void _setBKattrAlphalist (CDKOBJS *obj, chtype attrib)$/;"	f	file:
+_setBKattrButton	cdk/button.c	/^static void _setBKattrButton (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrButtonbox	cdk/buttonbox.c	/^static void _setBKattrButtonbox (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrCalendar	cdk/calendar.c	/^static void _setBKattrCalendar (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrDialog	cdk/dialog.c	/^static void _setBKattrDialog (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrEntry	cdk/entry.c	/^static void _setBKattrEntry (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrFselect	cdk/fselect.c	/^static void _setBKattrFselect (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrGraph	cdk/graph.c	/^static void _setBKattrGraph (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrHistogram	cdk/histogram.c	/^static void _setBKattrHistogram (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrItemlist	cdk/itemlist.c	/^static void _setBKattrItemlist (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrLabel	cdk/label.c	/^static void _setBKattrLabel (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrMarquee	cdk/marquee.c	/^static void _setBKattrMarquee (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrMatrix	cdk/matrix.c	/^static void _setBKattrMatrix (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrMentry	cdk/mentry.c	/^static void _setBKattrMentry (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrMenu	cdk/menu.c	/^static void _setBKattrMenu (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrRadio	cdk/radio.c	/^static void _setBKattrRadio (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrScroll	cdk/scroll.c	/^static void _setBKattrScroll (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrSelection	cdk/selection.c	/^static void _setBKattrSelection (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrSwindow	cdk/swindow.c	/^static void _setBKattrSwindow (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrTemplate	cdk/template.c	/^static void _setBKattrTemplate (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setBKattrViewer	cdk/viewer.c	/^static void _setBKattrViewer (CDKOBJS *object, chtype attrib)$/;"	f	file:
+_setMyBXattr	cdk/alphalist.c	/^static void _setMyBXattr (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyBXattr	cdk/fselect.c	/^static void _setMyBXattr (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyHZchar	cdk/alphalist.c	/^static void _setMyHZchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyHZchar	cdk/fselect.c	/^static void _setMyHZchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyLLchar	cdk/alphalist.c	/^static void _setMyLLchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyLLchar	cdk/fselect.c	/^static void _setMyLLchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyLRchar	cdk/alphalist.c	/^static void _setMyLRchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyLRchar	cdk/fselect.c	/^static void _setMyLRchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyULchar	cdk/alphalist.c	/^static void _setMyULchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyULchar	cdk/fselect.c	/^static void _setMyULchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyURchar	cdk/alphalist.c	/^static void _setMyURchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyURchar	cdk/fselect.c	/^static void _setMyURchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyVTchar	cdk/alphalist.c	/^static void _setMyVTchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_setMyVTchar	cdk/fselect.c	/^static void _setMyVTchar (CDKOBJS *object, chtype character)$/;"	f	file:
+_shcon_fout	shcon.c	/^FILE *_shcon_fout;$/;"	v
+_shcon_log_fout	shcon_log.c	/^static FILE *_shcon_log_fout;$/;"	v	file:
+_shcon_option_table	shcon_opt.c	/^static shmap_t *_shcon_option_table;$/;"	v	file:
+_socket_buffer	net/net_conn.c	/^static unsigned char _socket_buffer[65536];$/;"	v	file:
+_socket_buffer	net/net_read.c	/^static unsigned char _socket_buffer[65536];$/;"	v	file:
+_unfocusCDKAlphalist	cdk/alphalist.c	/^static void _unfocusCDKAlphalist (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKButton	cdk/button.c	/^static void _unfocusCDKButton (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKButtonbox	cdk/buttonbox.c	/^static void _unfocusCDKButtonbox (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKCalendar	cdk/calendar.c	/^static void _unfocusCDKCalendar (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKDialog	cdk/dialog.c	/^static void _unfocusCDKDialog (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKEntry	cdk/entry.c	/^static void _unfocusCDKEntry (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKFselect	cdk/fselect.c	/^static void _unfocusCDKFselect (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKItemlist	cdk/itemlist.c	/^static void _unfocusCDKItemlist (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKMatrix	cdk/matrix.c	/^static void _unfocusCDKMatrix (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKMentry	cdk/mentry.c	/^static void _unfocusCDKMentry (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKRadio	cdk/radio.c	/^static void _unfocusCDKRadio (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKScroll	cdk/scroll.c	/^static void _unfocusCDKScroll (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKSelection	cdk/selection.c	/^static void _unfocusCDKSelection (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKSwindow	cdk/swindow.c	/^static void _unfocusCDKSwindow (CDKOBJS *object)$/;"	f	file:
+_unfocusCDKTemplate	cdk/template.c	/^static void _unfocusCDKTemplate (CDKOBJS *object)$/;"	f	file:
+_wallet_menu_table	shcon_gui.c	/^static const menu_t _wallet_menu_table[] = $/;"	v	file:
+account_balance	shcon_gui.c	/^static double account_balance;$/;"	v	file:
+account_table	shcon_gui.c	/^static char **account_table;$/;"	v	file:
+acrossSubmenus	cdk/menu.c	/^static void acrossSubmenus (CDKMENU *menu, int step)$/;"	f	file:
+activateCDKAlphalist	cdk/alphalist.c	/^char *activateCDKAlphalist (CDKALPHALIST *alphalist, chtype *actions)$/;"	f
+activateCDKButton	cdk/button.c	/^int activateCDKButton (CDKBUTTON *button, chtype *actions)$/;"	f
+activateCDKButtonbox	cdk/buttonbox.c	/^int activateCDKButtonbox (CDKBUTTONBOX *buttonbox, chtype *actions)$/;"	f
+activateCDKCalendar	cdk/calendar.c	/^time_t activateCDKCalendar (CDKCALENDAR *calendar, chtype *actions)$/;"	f
+activateCDKDialog	cdk/dialog.c	/^int activateCDKDialog (CDKDIALOG *dialog, chtype *actions)$/;"	f
+activateCDKEntry	cdk/entry.c	/^char *activateCDKEntry (CDKENTRY *entry, chtype *actions)$/;"	f
+activateCDKFselect	cdk/fselect.c	/^char *activateCDKFselect (CDKFSELECT *fselect, chtype *actions)$/;"	f
+activateCDKGraph	cdk/graph.c	/^void activateCDKGraph (CDKGRAPH *widget, chtype *actions GCC_UNUSED)$/;"	f
+activateCDKHistogram	cdk/histogram.c	/^void activateCDKHistogram (CDKHISTOGRAM *widget, chtype *actions GCC_UNUSED)$/;"	f
+activateCDKItemlist	cdk/itemlist.c	/^int activateCDKItemlist (CDKITEMLIST *itemlist, chtype *actions)$/;"	f
+activateCDKLabel	cdk/label.c	/^void activateCDKLabel (CDKLABEL *label, chtype *actions GCC_UNUSED)$/;"	f
+activateCDKMarquee	cdk/marquee.c	/^int activateCDKMarquee (CDKMARQUEE *widget,$/;"	f
+activateCDKMatrix	cdk/matrix.c	/^int activateCDKMatrix (CDKMATRIX *matrix, chtype *actions)$/;"	f
+activateCDKMentry	cdk/mentry.c	/^char *activateCDKMentry (CDKMENTRY *mentry, chtype *actions)$/;"	f
+activateCDKMenu	cdk/menu.c	/^int activateCDKMenu (CDKMENU *menu, chtype *actions)$/;"	f
+activateCDKRadio	cdk/radio.c	/^int activateCDKRadio (CDKRADIO *radio, chtype *actions)$/;"	f
+activateCDKScroll	cdk/scroll.c	/^int activateCDKScroll (CDKSCROLL *scrollp, chtype *actions)$/;"	f
+activateCDKSelection	cdk/selection.c	/^int activateCDKSelection (CDKSELECTION *selection, chtype *actions)$/;"	f
+activateCDKSwindow	cdk/swindow.c	/^void activateCDKSwindow (CDKSWINDOW *swindow, chtype *actions)$/;"	f
+activateCDKTemplate	cdk/template.c	/^char *activateCDKTemplate (CDKTEMPLATE *cdktemplate, chtype *actions)$/;"	f
+activateCDKViewer	cdk/viewer.c	/^int activateCDKViewer (CDKVIEWER *widget, chtype *actions GCC_UNUSED)$/;"	f
+activateMenuCB	shcon_gui.c	/^static int activateMenuCB(EObjectType cdktype GCC_UNUSED, void *object, void *clientData, chtype key GCC_UNUSED)$/;"	f	file:
+addCDKScrollItem	cdk/scroll.c	/^void addCDKScrollItem (CDKSCROLL *scrollp, const char *item)$/;"	f
+addCDKSwindow	cdk/swindow.c	/^void addCDKSwindow (CDKSWINDOW *swindow, const char *list, int insertPos)$/;"	f
+adjustAlphalistCB	cdk/alphalist.c	/^static int adjustAlphalistCB (EObjectType objectType GCC_UNUSED, void$/;"	f	file:
+adjustCDKTemplateCursor	cdk/template.c	/^static void adjustCDKTemplateCursor (CDKTEMPLATE *cdktemplate, int direction)$/;"	f	file:
+alignxy	cdk/cdk.c	/^void alignxy (WINDOW *window, int *xpos, int *ypos, int boxWidth, int boxHeight)$/;"	f
+all_objects	cdk/cdkscreen.c	/^static ALL_OBJECTS *all_objects;$/;"	v	file:
+all_screens	cdk/cdkscreen.c	/^static ALL_SCREENS *all_screens;$/;"	v	file:
+allocListArrays	cdk/scroll.c	/^static boolean allocListArrays (CDKSCROLL *scrollp,$/;"	f	file:
+allocListItem	cdk/scroll.c	/^static boolean allocListItem (CDKSCROLL *scrollp,$/;"	f	file:
+attrbox	cdk/draw.c	/^void attrbox (WINDOW *win,$/;"	f
+baseName	cdk/cdk.c	/^char *baseName (char *pathname)$/;"	f
+bindCDKObject	cdk/binding.c	/^void bindCDKObject (EObjectType cdktype,$/;"	f
+bindableObject	cdk/binding.c	/^static CDKOBJS *bindableObject (EObjectType * cdktype, void *object)$/;"	f	file:
+block_t	shcon_mine.c	/^typedef struct block_t$/;"	s	file:
+block_t	shcon_mine.c	/^} block_t;$/;"	t	typeref:struct:block_t	file:
+boxWindow	cdk/draw.c	/^void boxWindow (WINDOW *window, chtype attr)$/;"	f
+cdkscreen	shcon_gui.c	/^static CDKSCREEN *cdkscreen;$/;"	v	file:
+ceilCDK	cdk/cdk.c	/^int ceilCDK (double value)$/;"	f
+char2Chtype	cdk/cdk.c	/^chtype *char2Chtype (const char *string, int *to, int *align)$/;"	f
+char2DisplayType	cdk/cdk_display.c	/^EDisplayType char2DisplayType (const char *string)$/;"	f
+checkCDKObjectBind	cdk/binding.c	/^int checkCDKObjectBind (EObjectType cdktype, void *object, chtype key)$/;"	f
+checkForLink	cdk/cdk.c	/^int checkForLink (const char *line, char *filename)$/;"	f
+checkMenuKey	cdk/traverse.c	/^static boolean checkMenuKey (int keyCode, int functionKey)$/;"	f	file:
+chlen	cdk/cdk.c	/^int chlen (const chtype *string)$/;"	f
+chstrncpy	cdk/cdk.c	/^void chstrncpy (char *dest, const chtype *src, int maxcount)$/;"	f
+chtype2Char	cdk/cdk.c	/^char *chtype2Char (const chtype *string)$/;"	f
+chtype2String	cdk/cdk.c	/^char *chtype2String (const chtype *string)$/;"	f
+cleanCDKEntry	cdk/entry.c	/^void cleanCDKEntry (CDKENTRY *entry)$/;"	f
+cleanCDKMatrix	cdk/matrix.c	/^void cleanCDKMatrix (CDKMATRIX *matrix)$/;"	f
+cleanCDKMatrixCell	cdk/matrix.c	/^void cleanCDKMatrixCell (CDKMATRIX *matrix, int row, int col)$/;"	f
+cleanCDKMentry	cdk/mentry.c	/^void cleanCDKMentry (CDKMENTRY *mentry)$/;"	f
+cleanCDKObjectBindings	cdk/binding.c	/^void cleanCDKObjectBindings (EObjectType cdktype, void *object)$/;"	f
+cleanCDKSwindow	cdk/swindow.c	/^void cleanCDKSwindow (CDKSWINDOW *swindow)$/;"	f
+cleanCDKTemplate	cdk/template.c	/^void cleanCDKTemplate (CDKTEMPLATE *cdktemplate)$/;"	f
+cleanCDKViewer	cdk/viewer.c	/^void cleanCDKViewer (CDKVIEWER *viewer)$/;"	f
+cleanCdkTitle	cdk/cdk_objs.c	/^void cleanCdkTitle (CDKOBJS *obj)$/;"	f
+cleanChar	cdk/cdk.c	/^void cleanChar (char *s, int len, char character)$/;"	f
+cleanChtype	cdk/cdk.c	/^void cleanChtype (chtype *s, int len, chtype character)$/;"	f
+cleanUpMenu	cdk/menu.c	/^static void cleanUpMenu (CDKMENU *menu)$/;"	f	file:
+cmpStrChstr	cdk/cdk.c	/^int cmpStrChstr (const char *str, const chtype *chstr)$/;"	f
+command	shcon_gui.c	/^	const char *command;$/;"	m	struct:menu_t	file:
+command	shcon_gui.c	/^   char *command[MAXHISTORY];$/;"	m	struct:history_st	file:
+commandEntry	shcon_gui.c	/^static CDKENTRY *commandEntry;$/;"	v	file:
+commandFieldWidth	shcon_gui.c	/^static int commandFieldWidth        = 0;$/;"	v	file:
+commandOutput	shcon_gui.c	/^static CDKSWINDOW *commandOutput;$/;"	v	file:
+command_print	command/command_print.c	/^void command_print(FILE *out, shjson_t *j)$/;"	f
+command_print_error	command/command_print.c	/^void command_print_error(FILE *out, int err_code, char *tag)$/;"	f
+command_print_r	command/command_print.c	/^void command_print_r(FILE *out, shjson_t *j)$/;"	f
+command_print_result	command/command_print.c	/^void command_print_result(FILE *out, shjson_t *j)$/;"	f
+comparSort	cdk/cdk.c	/^static int comparSort (const void *a, const void *b)$/;"	f	file:
+completeFilenameCB	cdk/fselect.c	/^static int completeFilenameCB (EObjectType objectType GCC_UNUSED,$/;"	f	file:
+completeWordCB	cdk/alphalist.c	/^static int completeWordCB (EObjectType objectType GCC_UNUSED, void *object GCC_UNUSED,$/;"	f	file:
+connected	shcon_gui.c	/^static int connected;$/;"	v	file:
+contentToPath	cdk/fselect.c	/^static char *contentToPath (CDKFSELECT *fselect, char *content)$/;"	f	file:
+convert	shcon_gui.c	/^static chtype *convert              = 0;$/;"	v	file:
+copyChar	cdk/cdk.c	/^char *copyChar (const char *original)$/;"	f
+copyCharList	cdk/cdk.c	/^char **copyCharList (const char **list)$/;"	f
+copyChtype	cdk/cdk.c	/^chtype *copyChtype (const chtype *original)$/;"	f
+copyChtypeList	cdk/cdk.c	/^chtype **copyChtypeList (const chtype **list)$/;"	f
+count	shcon_gui.c	/^   int count;$/;"	m	struct:history_st	file:
+countChar	cdk/cdk.c	/^static unsigned countChar (const char *string, int separator)$/;"	f	file:
+createCDKScrollItemList	cdk/scroll.c	/^static int createCDKScrollItemList (CDKSCROLL *scrollp,$/;"	f	file:
+createFieldWin	cdk/itemlist.c	/^static int createFieldWin (CDKITEMLIST *itemlist, int ypos, int xpos)$/;"	f	file:
+createList	cdk/alphalist.c	/^static int createList (CDKALPHALIST *alphalist, CDK_CSTRING *list, int listSize)$/;"	f	file:
+createList	cdk/fselect.c	/^static int createList (CDKFSELECT *widget, CDK_CSTRING2 list, int listSize)$/;"	f	file:
+createList	cdk/itemlist.c	/^static int createList (CDKITEMLIST *itemlist, CDK_CSTRING2 item, int count)$/;"	f	file:
+createList	cdk/radio.c	/^static int createList (CDKRADIO *radio, CDK_CSTRING2 list, int listSize, int boxWidth)$/;"	f	file:
+createList	cdk/selection.c	/^static int createList (CDKSELECTION *selection, CDK_CSTRING2 list, int listSize)$/;"	f	file:
+createList	cdk/swindow.c	/^static int createList (CDKSWINDOW *swindow, int listSize)$/;"	f	file:
+createList	cdk/viewer.c	/^static int createList (CDKVIEWER *swindow, int listSize)$/;"	f	file:
+current	shcon_gui.c	/^   int current;$/;"	m	struct:history_st	file:
+daysOfTheMonth	cdk/calendar.c	/^static int daysOfTheMonth[] =$/;"	v	file:
+deactivateCDKMarquee	cdk/marquee.c	/^void deactivateCDKMarquee (CDKMARQUEE *widget)$/;"	f
+decodeAttribute	cdk/cdk.c	/^static unsigned decodeAttribute (char *string,$/;"	f	file:
+decrementCalendarDay	cdk/calendar.c	/^static void decrementCalendarDay (CDKCALENDAR *calendar, int adjust)$/;"	f	file:
+decrementCalendarMonth	cdk/calendar.c	/^static void decrementCalendarMonth (CDKCALENDAR *calendar, int adjust)$/;"	f	file:
+decrementCalendarYear	cdk/calendar.c	/^static void decrementCalendarYear (CDKCALENDAR *calendar, int adjust)$/;"	f	file:
+deleteCDKScrollItem	cdk/scroll.c	/^void deleteCDKScrollItem (CDKSCROLL *scrollp, int position)$/;"	f
+deleteCursesWindow	cdk/cdk.c	/^void deleteCursesWindow (WINDOW *window)$/;"	f
+deleteFileCB	cdk/fselect.c	/^void deleteFileCB (EObjectType objectType GCC_UNUSED, void *object, void *clientData)$/;"	f
+destroyCDKScreen	cdk/cdkscreen.c	/^void destroyCDKScreen (CDKSCREEN *screen)$/;"	f
+destroyCDKScreenObjects	cdk/cdkscreen.c	/^void destroyCDKScreenObjects (CDKSCREEN *cdkscreen)$/;"	f
+destroyInfo	cdk/alphalist.c	/^static void destroyInfo (CDKALPHALIST *widget)$/;"	f	file:
+destroyInfo	cdk/fselect.c	/^static void destroyInfo (CDKFSELECT *widget)$/;"	f	file:
+destroyInfo	cdk/itemlist.c	/^static void destroyInfo (CDKITEMLIST *widget)$/;"	f	file:
+destroyInfo	cdk/radio.c	/^static void destroyInfo (CDKRADIO *widget)$/;"	f	file:
+destroyInfo	cdk/selection.c	/^static void destroyInfo (CDKSELECTION *widget)$/;"	f	file:
+destroyInfo	cdk/swindow.c	/^static void destroyInfo (CDKSWINDOW *swindow)$/;"	f	file:
+destroyInfo	cdk/viewer.c	/^static void destroyInfo (CDKVIEWER *viewer)$/;"	f	file:
+dirName	cdk/cdk.c	/^char *dirName (char *pathname)$/;"	f
+discardWin	cdk/marquee.c	/^static void discardWin (WINDOW **winp)$/;"	f	file:
+displayFileInfoCB	cdk/fselect.c	/^static int displayFileInfoCB (EObjectType objectType GCC_UNUSED,$/;"	f	file:
+drawCDKButtonText	cdk/button.c	/^static void drawCDKButtonText (CDKBUTTON *button)$/;"	f	file:
+drawCDKButtonboxButtons	cdk/buttonbox.c	/^void drawCDKButtonboxButtons (CDKBUTTONBOX *buttonbox)$/;"	f
+drawCDKCalendarField	cdk/calendar.c	/^static void drawCDKCalendarField (CDKCALENDAR *calendar)$/;"	f	file:
+drawCDKDialogButtons	cdk/dialog.c	/^void drawCDKDialogButtons (CDKDIALOG *dialog)$/;"	f
+drawCDKEntryField	cdk/entry.c	/^static void drawCDKEntryField (CDKENTRY *entry)$/;"	f	file:
+drawCDKItemlistField	cdk/itemlist.c	/^void drawCDKItemlistField (CDKITEMLIST *itemlist, boolean highlight)$/;"	f
+drawCDKMatrixCell	cdk/matrix.c	/^static void drawCDKMatrixCell (CDKMATRIX *matrix,$/;"	f	file:
+drawCDKMentryField	cdk/mentry.c	/^void drawCDKMentryField (CDKMENTRY *mentry)$/;"	f
+drawCDKMenuSubwin	cdk/menu.c	/^void drawCDKMenuSubwin (CDKMENU *menu)$/;"	f
+drawCDKRadioList	cdk/radio.c	/^static void drawCDKRadioList (CDKRADIO *radio, boolean Box)$/;"	f	file:
+drawCDKScreen	cdk/cdkscreen.c	/^void drawCDKScreen (CDKSCREEN *cdkscreen)$/;"	f
+drawCDKScrollCurrent	cdk/scroll.c	/^static void drawCDKScrollCurrent (CDKSCROLL *s)$/;"	f	file:
+drawCDKScrollList	cdk/scroll.c	/^static void drawCDKScrollList (CDKSCROLL *scrollp, boolean Box)$/;"	f	file:
+drawCDKSelectionList	cdk/selection.c	/^static void drawCDKSelectionList (CDKSELECTION *selection, boolean Box GCC_UNUSED)$/;"	f	file:
+drawCDKSwindowList	cdk/swindow.c	/^static void drawCDKSwindowList (CDKSWINDOW *swindow, boolean Box GCC_UNUSED)$/;"	f	file:
+drawCDKTemplateField	cdk/template.c	/^static void drawCDKTemplateField (CDKTEMPLATE *cdktemplate)$/;"	f	file:
+drawCDKViewerButtons	cdk/viewer.c	/^static void drawCDKViewerButtons (CDKVIEWER *viewer)$/;"	f	file:
+drawCDKViewerInfo	cdk/viewer.c	/^static void drawCDKViewerInfo (CDKVIEWER *viewer)$/;"	f	file:
+drawCdkTitle	cdk/cdk_objs.c	/^void drawCdkTitle (WINDOW *win, CDKOBJS *obj)$/;"	f
+drawCurCDKMatrixCell	cdk/matrix.c	/^static void drawCurCDKMatrixCell (CDKMATRIX *matrix)$/;"	f	file:
+drawEachCDKMatrixCell	cdk/matrix.c	/^static void drawEachCDKMatrixCell (CDKMATRIX *matrix)$/;"	f	file:
+drawEachColTitle	cdk/matrix.c	/^static void drawEachColTitle (CDKMATRIX *matrix)$/;"	f	file:
+drawEachRowTitle	cdk/matrix.c	/^static void drawEachRowTitle (CDKMATRIX *matrix)$/;"	f	file:
+drawItem	cdk/menu.c	/^static void drawItem (CDKMENU *menu, int item, int offset)$/;"	f	file:
+drawLine	cdk/draw.c	/^void drawLine (WINDOW *window, int startx, int starty, int endx, int endy, chtype line)$/;"	f
+drawMyScroller	cdk/alphalist.c	/^static void drawMyScroller (CDKALPHALIST *widget)$/;"	f	file:
+drawMyScroller	cdk/fselect.c	/^static void drawMyScroller (CDKFSELECT *widget)$/;"	f	file:
+drawObjBox	cdk/draw.c	/^void drawObjBox (WINDOW *win, CDKOBJS *object)$/;"	f
+drawOldCDKMatrixCell	cdk/matrix.c	/^static void drawOldCDKMatrixCell (CDKMATRIX *matrix)$/;"	f	file:
+drawShadow	cdk/draw.c	/^void drawShadow (WINDOW *shadowWin)$/;"	f
+drawTitle	cdk/menu.c	/^static void drawTitle (CDKMENU *menu, int item)$/;"	f	file:
+dumpCDKSwindow	cdk/swindow.c	/^int dumpCDKSwindow (CDKSWINDOW *swindow, const char *filename)$/;"	f
+emptyString	cdk/matrix.c	25;"	d	file:
+encodeAttribute	cdk/cdk.c	/^static int encodeAttribute (const char *string, int from, chtype *mask)$/;"	f	file:
+endCDK	cdk/cdkscreen.c	/^void endCDK (void)$/;"	f
+eraseCDKMenuSubwin	cdk/menu.c	/^void eraseCDKMenuSubwin (CDKMENU *menu)$/;"	f
+eraseCDKScreen	cdk/cdkscreen.c	/^void eraseCDKScreen (CDKSCREEN *cdkscreen)$/;"	f
+eraseCursesWindow	cdk/cdk.c	/^void eraseCursesWindow (WINDOW *window)$/;"	f
+errorMessage	cdk/fselect.c	/^static char *errorMessage (const char *format)$/;"	f	file:
+execCDKSwindow	cdk/swindow.c	/^int execCDKSwindow (CDKSWINDOW *swindow, const char *command, int insertPos)$/;"	f
+exitCancelCDKScreen	cdk/traverse.c	/^void exitCancelCDKScreen (CDKSCREEN *screen)$/;"	f
+exitCancelCDKScreenOf	cdk/traverse.c	/^void exitCancelCDKScreenOf (CDKOBJS *obj)$/;"	f
+exitOKCDKScreen	cdk/traverse.c	/^void exitOKCDKScreen (CDKSCREEN *screen)$/;"	f
+exitOKCDKScreenOf	cdk/traverse.c	/^void exitOKCDKScreenOf (CDKOBJS *obj)$/;"	f
+expandTilde	cdk/fselect.c	/^static char *expandTilde (const char *filename)$/;"	f	file:
+filterByDisplayType	cdk/cdk_display.c	/^int filterByDisplayType (EDisplayType type, chtype input)$/;"	f
+fixCursorPosition	cdk/radio.c	/^static void fixCursorPosition (CDKRADIO *widget)$/;"	f	file:
+fixCursorPosition	cdk/scroll.c	/^static void fixCursorPosition (CDKSCROLL *widget)$/;"	f	file:
+fixCursorPosition	cdk/selection.c	/^static void fixCursorPosition (CDKSELECTION *selection)$/;"	f	file:
+floorCDK	cdk/cdk.c	/^int floorCDK (double value)$/;"	f
+form	shcon_gui.c	/^static CDKENTRY *form;$/;"	v	file:
+format1Date	cdk/fselect.c	/^static char *format1Date (const char *format, time_t value)$/;"	f	file:
+format1Number	cdk/fselect.c	/^static char *format1Number (const char *format, long value)$/;"	f	file:
+format1StrVal	cdk/fselect.c	/^static char *format1StrVal (const char *format, const char *string, int value)$/;"	f	file:
+format1String	cdk/fselect.c	/^static char *format1String (const char *format, const char *string)$/;"	f	file:
+format3String	cdk/fselect.c	/^static char *format3String (const char *format,$/;"	f	file:
+freeChar	cdk/cdk.c	/^void freeChar (char *string)$/;"	f
+freeCharList	cdk/cdk.c	/^void freeCharList (char **list, unsigned size)$/;"	f
+freeChtype	cdk/cdk.c	/^void freeChtype (chtype *string)$/;"	f
+freeChtypeList	cdk/cdk.c	/^void freeChtypeList (chtype **list, unsigned size)$/;"	f
+freeLine	cdk/swindow.c	/^static void freeLine (CDKSWINDOW *swindow, int x)$/;"	f	file:
+freeLine	cdk/viewer.c	/^static void freeLine (CDKVIEWER *viewer, int x)$/;"	f	file:
+fselectAdjustScrollCB	cdk/fselect.c	/^static int fselectAdjustScrollCB (EObjectType objectType GCC_UNUSED,$/;"	f	file:
+func	shcon_gui.c	/^	menu_f func;$/;"	m	struct:menu_t	file:
+getAndStorePattern	cdk/viewer.c	/^static void getAndStorePattern (CDKSCREEN *screen)$/;"	f	file:
+getCDKAlphalistBox	cdk/alphalist.c	/^boolean getCDKAlphalistBox (CDKALPHALIST *alphalist)$/;"	f
+getCDKAlphalistContents	cdk/alphalist.c	/^char **getCDKAlphalistContents (CDKALPHALIST *widget, int *size)$/;"	f
+getCDKAlphalistCurrentItem	cdk/alphalist.c	/^int getCDKAlphalistCurrentItem (CDKALPHALIST *widget)$/;"	f
+getCDKAlphalistFillerChar	cdk/alphalist.c	/^chtype getCDKAlphalistFillerChar (CDKALPHALIST *alphalist)$/;"	f
+getCDKAlphalistHighlight	cdk/alphalist.c	/^chtype getCDKAlphalistHighlight (CDKALPHALIST *alphalist)$/;"	f
+getCDKButtonBox	cdk/button.c	/^boolean getCDKButtonBox (CDKBUTTON *button)$/;"	f
+getCDKButtonMessage	cdk/button.c	/^chtype *getCDKButtonMessage (CDKBUTTON *button)$/;"	f
+getCDKButtonboxBox	cdk/buttonbox.c	/^boolean getCDKButtonboxBox (CDKBUTTONBOX *buttonbox)$/;"	f
+getCDKButtonboxButtonCount	cdk/buttonbox.c	/^int getCDKButtonboxButtonCount (CDKBUTTONBOX *buttonbox)$/;"	f
+getCDKButtonboxCurrentButton	cdk/buttonbox.c	/^int getCDKButtonboxCurrentButton (CDKBUTTONBOX *buttonbox)$/;"	f
+getCDKButtonboxHighlight	cdk/buttonbox.c	/^chtype getCDKButtonboxHighlight (CDKBUTTONBOX *buttonbox)$/;"	f
+getCDKCalendarBox	cdk/calendar.c	/^boolean getCDKCalendarBox (CDKCALENDAR *calendar)$/;"	f
+getCDKCalendarDate	cdk/calendar.c	/^void getCDKCalendarDate (CDKCALENDAR *calendar, int *day, int *month, int *year)$/;"	f
+getCDKCalendarDayAttribute	cdk/calendar.c	/^chtype getCDKCalendarDayAttribute (CDKCALENDAR *calendar)$/;"	f
+getCDKCalendarHighlight	cdk/calendar.c	/^chtype getCDKCalendarHighlight (CDKCALENDAR *calendar)$/;"	f
+getCDKCalendarMarker	cdk/calendar.c	/^chtype getCDKCalendarMarker (CDKCALENDAR *calendar, int day, int month, int year)$/;"	f
+getCDKCalendarMonthAttribute	cdk/calendar.c	/^chtype getCDKCalendarMonthAttribute (CDKCALENDAR *calendar)$/;"	f
+getCDKCalendarYearAttribute	cdk/calendar.c	/^chtype getCDKCalendarYearAttribute (CDKCALENDAR *calendar)$/;"	f
+getCDKDialogBox	cdk/dialog.c	/^boolean getCDKDialogBox (CDKDIALOG *dialog)$/;"	f
+getCDKDialogHighlight	cdk/dialog.c	/^chtype getCDKDialogHighlight (CDKDIALOG *dialog)$/;"	f
+getCDKDialogSeparator	cdk/dialog.c	/^boolean getCDKDialogSeparator (CDKDIALOG *dialog)$/;"	f
+getCDKEntryBox	cdk/entry.c	/^boolean getCDKEntryBox (CDKENTRY *entry)$/;"	f
+getCDKEntryFillerChar	cdk/entry.c	/^chtype getCDKEntryFillerChar (CDKENTRY *entry)$/;"	f
+getCDKEntryHiddenChar	cdk/entry.c	/^chtype getCDKEntryHiddenChar (CDKENTRY *entry)$/;"	f
+getCDKEntryMax	cdk/entry.c	/^int getCDKEntryMax (CDKENTRY *entry)$/;"	f
+getCDKEntryMin	cdk/entry.c	/^int getCDKEntryMin (CDKENTRY *entry)$/;"	f
+getCDKEntryValue	cdk/entry.c	/^char *getCDKEntryValue (CDKENTRY *entry)$/;"	f
+getCDKFocusCurrent	cdk/traverse.c	/^CDKOBJS *getCDKFocusCurrent (CDKSCREEN *screen)$/;"	f
+getCDKFselectBox	cdk/fselect.c	/^boolean getCDKFselectBox (CDKFSELECT *fselect)$/;"	f
+getCDKFselectContents	cdk/fselect.c	/^char **getCDKFselectContents (CDKFSELECT *widget,$/;"	f
+getCDKFselectCurrentItem	cdk/fselect.c	/^int getCDKFselectCurrentItem (CDKFSELECT *widget)$/;"	f
+getCDKFselectDirAttribute	cdk/fselect.c	/^char *getCDKFselectDirAttribute (CDKFSELECT *fselect)$/;"	f
+getCDKFselectDirContents	cdk/fselect.c	/^char **getCDKFselectDirContents (CDKFSELECT *fselect, int *count)$/;"	f
+getCDKFselectDirectory	cdk/fselect.c	/^char *getCDKFselectDirectory (CDKFSELECT *fselect)$/;"	f
+getCDKFselectFileAttribute	cdk/fselect.c	/^char *getCDKFselectFileAttribute (CDKFSELECT *fselect)$/;"	f
+getCDKFselectFillerChar	cdk/fselect.c	/^chtype getCDKFselectFillerChar (CDKFSELECT *fselect)$/;"	f
+getCDKFselectHighlight	cdk/fselect.c	/^chtype getCDKFselectHighlight (CDKFSELECT *fselect)$/;"	f
+getCDKFselectLinkAttribute	cdk/fselect.c	/^char *getCDKFselectLinkAttribute (CDKFSELECT *fselect)$/;"	f
+getCDKFselectSocketAttribute	cdk/fselect.c	/^char *getCDKFselectSocketAttribute (CDKFSELECT *fselect)$/;"	f
+getCDKGraphBox	cdk/graph.c	/^boolean getCDKGraphBox (CDKGRAPH *widget)$/;"	f
+getCDKGraphCharacter	cdk/graph.c	/^chtype getCDKGraphCharacter (CDKGRAPH *widget, int Index)$/;"	f
+getCDKGraphCharacters	cdk/graph.c	/^chtype *getCDKGraphCharacters (CDKGRAPH *widget)$/;"	f
+getCDKGraphDisplayType	cdk/graph.c	/^EGraphDisplayType getCDKGraphDisplayType (CDKGRAPH *widget)$/;"	f
+getCDKGraphValue	cdk/graph.c	/^int getCDKGraphValue (CDKGRAPH *widget, int Index)$/;"	f
+getCDKGraphValues	cdk/graph.c	/^int *getCDKGraphValues (CDKGRAPH *widget, int *size)$/;"	f
+getCDKHistogramBox	cdk/histogram.c	/^boolean getCDKHistogramBox (CDKHISTOGRAM *widget)$/;"	f
+getCDKHistogramFillerChar	cdk/histogram.c	/^chtype getCDKHistogramFillerChar (CDKHISTOGRAM *widget)$/;"	f
+getCDKHistogramHighValue	cdk/histogram.c	/^int getCDKHistogramHighValue (CDKHISTOGRAM *widget)$/;"	f
+getCDKHistogramLowValue	cdk/histogram.c	/^int getCDKHistogramLowValue (CDKHISTOGRAM *widget)$/;"	f
+getCDKHistogramStatsAttr	cdk/histogram.c	/^chtype getCDKHistogramStatsAttr (CDKHISTOGRAM *widget)$/;"	f
+getCDKHistogramStatsPos	cdk/histogram.c	/^int getCDKHistogramStatsPos (CDKHISTOGRAM *widget)$/;"	f
+getCDKHistogramValue	cdk/histogram.c	/^int getCDKHistogramValue (CDKHISTOGRAM *widget)$/;"	f
+getCDKHistogramViewType	cdk/histogram.c	/^EHistogramDisplayType getCDKHistogramViewType (CDKHISTOGRAM *widget)$/;"	f
+getCDKItemlistBox	cdk/itemlist.c	/^boolean getCDKItemlistBox (CDKITEMLIST *itemlist)$/;"	f
+getCDKItemlistCurrentItem	cdk/itemlist.c	/^int getCDKItemlistCurrentItem (CDKITEMLIST *itemlist)$/;"	f
+getCDKItemlistDefaultItem	cdk/itemlist.c	/^int getCDKItemlistDefaultItem (CDKITEMLIST *itemlist)$/;"	f
+getCDKItemlistValues	cdk/itemlist.c	/^chtype **getCDKItemlistValues (CDKITEMLIST *itemlist, int *size)$/;"	f
+getCDKLabelBox	cdk/label.c	/^boolean getCDKLabelBox (CDKLABEL *label)$/;"	f
+getCDKLabelMessage	cdk/label.c	/^chtype **getCDKLabelMessage (CDKLABEL *label, int *size)$/;"	f
+getCDKMarqueeBox	cdk/marquee.c	/^boolean getCDKMarqueeBox (CDKMARQUEE *widget)$/;"	f
+getCDKMatrixBox	cdk/matrix.c	/^boolean getCDKMatrixBox (CDKMATRIX *matrix)$/;"	f
+getCDKMatrixCell	cdk/matrix.c	/^char *getCDKMatrixCell (CDKMATRIX *matrix, int row, int col)$/;"	f
+getCDKMatrixCol	cdk/matrix.c	/^int getCDKMatrixCol (CDKMATRIX *matrix)$/;"	f
+getCDKMatrixRow	cdk/matrix.c	/^int getCDKMatrixRow (CDKMATRIX *matrix)$/;"	f
+getCDKMentryBox	cdk/mentry.c	/^boolean getCDKMentryBox (CDKMENTRY *mentry)$/;"	f
+getCDKMentryFillerChar	cdk/mentry.c	/^chtype getCDKMentryFillerChar (CDKMENTRY *mentry)$/;"	f
+getCDKMentryHiddenChar	cdk/mentry.c	/^chtype getCDKMentryHiddenChar (CDKMENTRY *mentry)$/;"	f
+getCDKMentryMin	cdk/mentry.c	/^int getCDKMentryMin (CDKMENTRY *mentry)$/;"	f
+getCDKMentryValue	cdk/mentry.c	/^char *getCDKMentryValue (CDKMENTRY *mentry)$/;"	f
+getCDKMenuCurrentItem	cdk/menu.c	/^void getCDKMenuCurrentItem (CDKMENU *menu, int *menuItem, int *subMenuItem)$/;"	f
+getCDKMenuSubTitleHighlight	cdk/menu.c	/^chtype getCDKMenuSubTitleHighlight (CDKMENU *menu)$/;"	f
+getCDKMenuTitleHighlight	cdk/menu.c	/^chtype getCDKMenuTitleHighlight (CDKMENU *menu)$/;"	f
+getCDKRadioBox	cdk/radio.c	/^boolean getCDKRadioBox (CDKRADIO *radio)$/;"	f
+getCDKRadioChoiceCharacter	cdk/radio.c	/^chtype getCDKRadioChoiceCharacter (CDKRADIO *radio)$/;"	f
+getCDKRadioCurrentItem	cdk/radio.c	/^int getCDKRadioCurrentItem (CDKRADIO *radio)$/;"	f
+getCDKRadioHighlight	cdk/radio.c	/^chtype getCDKRadioHighlight (CDKRADIO *radio)$/;"	f
+getCDKRadioItems	cdk/radio.c	/^int getCDKRadioItems (CDKRADIO *radio, char **list)$/;"	f
+getCDKRadioLeftBrace	cdk/radio.c	/^chtype getCDKRadioLeftBrace (CDKRADIO *radio)$/;"	f
+getCDKRadioRightBrace	cdk/radio.c	/^chtype getCDKRadioRightBrace (CDKRADIO *radio)$/;"	f
+getCDKRadioSelectedItem	cdk/radio.c	/^int getCDKRadioSelectedItem (CDKRADIO *radio)$/;"	f
+getCDKScrollBox	cdk/scroll.c	/^boolean getCDKScrollBox (CDKSCROLL *scrollp)$/;"	f
+getCDKScrollCurrent	cdk/scroll.c	/^int getCDKScrollCurrent (CDKSCROLL *scrollp)$/;"	f
+getCDKScrollCurrentItem	cdk/scroll.c	/^int getCDKScrollCurrentItem (CDKSCROLL *widget)$/;"	f
+getCDKScrollCurrentTop	cdk/scroll.c	/^int getCDKScrollCurrentTop (CDKSCROLL *widget)$/;"	f
+getCDKScrollHighlight	cdk/scroll.c	/^chtype getCDKScrollHighlight (CDKSCROLL *scrollp, chtype highlight GCC_UNUSED)$/;"	f
+getCDKScrollItems	cdk/scroll.c	/^int getCDKScrollItems (CDKSCROLL *scrollp, char **list)$/;"	f
+getCDKSelectionBox	cdk/selection.c	/^boolean getCDKSelectionBox (CDKSELECTION *selection)$/;"	f
+getCDKSelectionChoice	cdk/selection.c	/^int getCDKSelectionChoice (CDKSELECTION *selection, int Index)$/;"	f
+getCDKSelectionChoices	cdk/selection.c	/^int *getCDKSelectionChoices (CDKSELECTION *selection)$/;"	f
+getCDKSelectionCurrent	cdk/selection.c	/^int getCDKSelectionCurrent (CDKSELECTION *selection)$/;"	f
+getCDKSelectionHighlight	cdk/selection.c	/^chtype getCDKSelectionHighlight (CDKSELECTION *selection)$/;"	f
+getCDKSelectionItems	cdk/selection.c	/^int getCDKSelectionItems (CDKSELECTION *selection, char **list)$/;"	f
+getCDKSelectionMode	cdk/selection.c	/^int getCDKSelectionMode (CDKSELECTION *selection, int Index)$/;"	f
+getCDKSelectionModes	cdk/selection.c	/^int *getCDKSelectionModes (CDKSELECTION *selection)$/;"	f
+getCDKSelectionTitle	cdk/selection.c	/^char *getCDKSelectionTitle (CDKSELECTION *selection GCC_UNUSED)$/;"	f
+getCDKSwindowBox	cdk/swindow.c	/^boolean getCDKSwindowBox (CDKSWINDOW *swindow)$/;"	f
+getCDKSwindowContents	cdk/swindow.c	/^chtype **getCDKSwindowContents (CDKSWINDOW *swindow, int *size)$/;"	f
+getCDKTemplateBox	cdk/template.c	/^boolean getCDKTemplateBox (CDKTEMPLATE *cdktemplate)$/;"	f
+getCDKTemplateMin	cdk/template.c	/^int getCDKTemplateMin (CDKTEMPLATE *cdktemplate)$/;"	f
+getCDKTemplateValue	cdk/template.c	/^char *getCDKTemplateValue (CDKTEMPLATE *cdktemplate)$/;"	f
+getCDKViewerBox	cdk/viewer.c	/^boolean getCDKViewerBox (CDKVIEWER *viewer)$/;"	f
+getCDKViewerHighlight	cdk/viewer.c	/^chtype getCDKViewerHighlight (CDKVIEWER *viewer)$/;"	f
+getCDKViewerInfo	cdk/viewer.c	/^chtype **getCDKViewerInfo (CDKVIEWER *viewer, int *size)$/;"	f
+getCDKViewerInfoLine	cdk/viewer.c	/^boolean getCDKViewerInfoLine (CDKVIEWER *viewer)$/;"	f
+getCDKViewerTitle	cdk/viewer.c	/^chtype **getCDKViewerTitle (CDKVIEWER *viewer)$/;"	f
+getCurrentTime	cdk/calendar.c	/^static time_t getCurrentTime (CDKCALENDAR *calendar)$/;"	f	file:
+getCursorPos	cdk/mentry.c	/^static int getCursorPos (CDKMENTRY *mentry)$/;"	f	file:
+getDirectoryContents	cdk/cdk_compat.c	/^int getDirectoryContents (char *directory, char **list, int maxListSize)$/;"	f
+getFocusIndex	cdk/traverse.c	/^static int getFocusIndex (CDKSCREEN *screen)$/;"	f	file:
+getListIndex	cdk/get_index.c	/^int getListIndex (CDKSCREEN *screen,$/;"	f
+getMonthLength	cdk/calendar.c	/^static int getMonthLength (int year, int month)$/;"	f	file:
+getMonthStartWeekday	cdk/calendar.c	/^static int getMonthStartWeekday (int year, int month)$/;"	f	file:
+getString	cdk/get_string.c	/^char *getString (CDKSCREEN *screen,$/;"	f
+getbegx	cdk/cdk.c	/^int getbegx (WINDOW *win)$/;"	f
+getbegy	cdk/cdk.c	/^int getbegy (WINDOW *win)$/;"	f
+getcCDKBind	cdk/binding.c	/^int getcCDKBind (EObjectType cdktype GCC_UNUSED,$/;"	f
+getcCDKObject	cdk/binding.c	/^int getcCDKObject (CDKOBJS *obj)$/;"	f
+getchCDKObject	cdk/binding.c	/^int getchCDKObject (CDKOBJS *obj, boolean *functionKey)$/;"	f
+getmaxx	cdk/cdk.c	/^int getmaxx (WINDOW *win)$/;"	f
+getmaxy	cdk/cdk.c	/^int getmaxy (WINDOW *win)$/;"	f
+handleMenu	cdk/traverse.c	/^static CDKOBJS *handleMenu (CDKSCREEN *screen, CDKOBJS *menu, CDKOBJS *oldobj)$/;"	f	file:
+handle_KEY_LEFT	cdk/mentry.c	/^static bool handle_KEY_LEFT (CDKMENTRY *mentry, bool *moved, bool *redraw)$/;"	f	file:
+has_input	shcon_stream.c	/^int has_input(FILE *stream)$/;"	f
+hashMerkleRoot	shcon_mine.c	/^	uint256 hashMerkleRoot;$/;"	m	struct:block_t	file:
+hashPrevBlock	shcon_mine.c	/^	uint256 hashPrevBlock;$/;"	m	struct:block_t	file:
+help	shcon_gui.c	/^void help(CDKENTRY *entry)$/;"	f
+highlightCDKMatrixCell	cdk/matrix.c	/^static void highlightCDKMatrixCell (CDKMATRIX *matrix)$/;"	f	file:
+history	shcon_gui.c	/^static struct history_st history;$/;"	v	typeref:struct:history_st	file:
+historyDownCB	shcon_gui.c	/^static int historyDownCB (EObjectType cdktype GCC_UNUSED, void *object,$/;"	f	file:
+historyUpCB	shcon_gui.c	/^static int historyUpCB (EObjectType cdktype GCC_UNUSED, void *object,$/;"	f	file:
+history_st	shcon_gui.c	/^struct history_st$/;"	s	file:
+incrementCalendarDay	cdk/calendar.c	/^static void incrementCalendarDay (CDKCALENDAR *calendar, int adjust)$/;"	f	file:
+incrementCalendarMonth	cdk/calendar.c	/^static void incrementCalendarMonth (CDKCALENDAR *calendar, int adjust)$/;"	f	file:
+incrementCalendarYear	cdk/calendar.c	/^static void incrementCalendarYear (CDKCALENDAR *calendar, int adjust)$/;"	f	file:
+infoBox	shcon_gui.c	/^static CDKLABEL *infoBox    = 0;$/;"	v	file:
+initCDKColor	cdk/draw.c	/^void initCDKColor (void)$/;"	f
+initCDKScreen	cdk/cdkscreen.c	/^CDKSCREEN *initCDKScreen (WINDOW *window)$/;"	f
+injectMyScroller	cdk/alphalist.c	/^static void injectMyScroller (CDKALPHALIST *widget, chtype key)$/;"	f	file:
+injectMyScroller	cdk/fselect.c	/^static void injectMyScroller (CDKFSELECT *widget, chtype key)$/;"	f	file:
+insertCDKScrollItem	cdk/scroll.c	/^void insertCDKScrollItem (CDKSCROLL *scrollp, const char *item)$/;"	f
+insertListItem	cdk/scroll.c	/^static boolean insertListItem (CDKSCROLL *scrollp, int item)$/;"	f	file:
+intlen	cdk/cdk.c	/^int intlen (int value)$/;"	f
+isCDKObjectBind	cdk/binding.c	/^bool isCDKObjectBind (EObjectType cdktype, void *object, chtype key)$/;"	f
+isHiddenDisplayType	cdk/cdk_display.c	/^boolean isHiddenDisplayType (EDisplayType type)$/;"	f
+isLeapYear	cdk/calendar.c	/^static int isLeapYear (int year)$/;"	f	file:
+isPlateChar	cdk/template.c	16;"	d	file:
+is_numeric_string	command/command.c	/^static int is_numeric_string(char *str)$/;"	f	file:
+jumpToCell	cdk/matrix.c	/^int jumpToCell (CDKMATRIX *matrix, int row, int col)$/;"	f
+jumpToLine	cdk/viewer.c	/^static int jumpToLine (CDKVIEWER *viewer)$/;"	f	file:
+jumpToLineCDKSwindow	cdk/swindow.c	/^void jumpToLineCDKSwindow (CDKSWINDOW *swindow, int line)$/;"	f
+jumpWindowCB	shcon_gui.c	/^static int jumpWindowCB (EObjectType cdktype GCC_UNUSED, void *object,$/;"	f	file:
+justifyString	cdk/cdk.c	/^int justifyString (int boxWidth, int mesgLength, int justify)$/;"	f
+key_auth_append	key/key_auth.c	/^int key_auth_append(shjson_t *j)$/;"	f
+key_auth_hex	key/key_auth.c	/^const char *key_auth_hex(shkey_t *auth_key)$/;"	f
+key_auth_pin	key/key_auth.c	/^unsigned int key_auth_pin(shkey_t *auth_key)$/;"	f
+key_dat_pass	key/key_dat.c	/^shkey_t *key_dat_pass(char *host)$/;"	f
+labels	shcon_gui.c	/^	const char *labels[MAX_MENU_LABELS];$/;"	m	struct:menu_t	file:
+layoutWidget	cdk/marquee.c	/^static void layoutWidget (CDKMARQUEE *widget,$/;"	f	file:
+lenCharList	cdk/cdk.c	/^int lenCharList (const char **list)$/;"	f
+lenChtypeList	cdk/cdk.c	/^int lenChtypeList (const chtype **list)$/;"	f
+limitFocusIndex	cdk/traverse.c	9;"	d	file:
+link	cdk/cdkscreen.c	/^   struct _all_objects *link;$/;"	m	struct:_all_objects	typeref:struct:_all_objects::_all_objects	file:
+link	cdk/cdkscreen.c	/^   struct _all_screens *link;$/;"	m	struct:_all_screens	typeref:struct:_all_screens::_all_screens	file:
+listHistoryCB	shcon_gui.c	/^static int listHistoryCB (EObjectType cdktype GCC_UNUSED, void *object,$/;"	f	file:
+loadCDKSwindowInformation	cdk/swindow.c	/^void loadCDKSwindowInformation (CDKSWINDOW *swindow)$/;"	f
+lowerCDKObject	cdk/cdkscreen.c	/^void lowerCDKObject (EObjectType cdktype, void *object)$/;"	f
+main	shcon.c	/^int main(int argc, char *argv[])$/;"	f
+make_pathname	cdk/fselect.c	/^static char *make_pathname (const char *directory, const char *filename)$/;"	f	file:
+maxViewSize	cdk/radio.c	/^static int maxViewSize (CDKRADIO *widget)$/;"	f	file:
+maxViewSize	cdk/scroll.c	/^static int maxViewSize (CDKSCROLL *scrollp)$/;"	f	file:
+maxViewSize	cdk/selection.c	/^static int maxViewSize (CDKSELECTION *widget)$/;"	f	file:
+maximumFieldWidth	cdk/itemlist.c	/^static int maximumFieldWidth (CDKITEMLIST *itemlist)$/;"	f	file:
+menu	shcon_gui.c	/^static CDKMENU *menu;$/;"	v	file:
+menu_command_cb	shcon_gui.c	/^void menu_command_cb(const menu_t *item)$/;"	f
+menu_f	shcon_gui.c	/^typedef void (*menu_f)(const struct menu_t *);$/;"	t	file:
+menu_t	shcon_gui.c	/^typedef struct menu_t$/;"	s	file:
+menu_t	shcon_gui.c	/^} menu_t;$/;"	t	typeref:struct:menu_t	file:
+mineWindow	shcon_gui.c	/^static CDKSWINDOW *mineWindow;$/;"	v	file:
+mineWindowInitCB	shcon_gui.c	/^static int mineWindowInitCB (EObjectType cdktype GCC_UNUSED, void *object, void *clientData, chtype key GCC_UNUSED)$/;"	f	file:
+mineWindowTermCB	shcon_gui.c	/^static int mineWindowTermCB (EObjectType cdktype GCC_UNUSED, void *object, void *clientData, chtype key GCC_UNUSED)$/;"	f	file:
+mixCDKTemplate	cdk/template.c	/^char *mixCDKTemplate (CDKTEMPLATE *cdktemplate)$/;"	f
+mode2Char	cdk/cdk.c	/^int mode2Char (char *string, mode_t mode)$/;"	f
+mode2Filetype	cdk/cdk.c	/^int mode2Filetype (mode_t mode)$/;"	f
+monthsOfTheYear	cdk/calendar.c	/^static const char *monthsOfTheYear[] =$/;"	v	file:
+moveCursesWindow	cdk/cdk.c	/^void moveCursesWindow (WINDOW *window, int xdiff, int ydiff)$/;"	f
+moveToCDKMatrixCell	cdk/matrix.c	/^int moveToCDKMatrixCell (CDKMATRIX *matrix, int newrow, int newcol)$/;"	f
+nBits	shcon_mine.c	/^	uint32_t nBits;$/;"	m	struct:block_t	file:
+nNonce	shcon_mine.c	/^	uint32_t nNonce;$/;"	m	struct:block_t	file:
+nTime	shcon_mine.c	/^	uint32_t nTime;$/;"	m	struct:block_t	file:
+nVersion	shcon_mine.c	/^	int32_t nVersion;$/;"	m	struct:block_t	file:
+net_close	net/net_conn.c	/^void net_close(int sk)$/;"	f
+net_conn	net/net_conn.c	/^int net_conn(void)$/;"	f
+net_json_recv	net/net.c	/^int net_json_recv(shjson_t **json_p)$/;"	f
+net_json_send	net/net.c	/^int net_json_send(shjson_t *j)$/;"	f
+net_read	net/net_read.c	/^int net_read(int sk, shbuf_t *buff)$/;"	f
+net_read_lim	net/net_read.c	/^int net_read_lim(int sk, shbuf_t *buff, double wait)$/;"	f
+net_readline	net/net_read.c	/^int net_readline(int sk, shbuf_t *buff)$/;"	f
+net_readline_lim	net/net_read.c	/^int net_readline_lim(int sk, shbuf_t *buff, double wait)$/;"	f
+net_write	net/net_write.c	/^int net_write(int sk, shbuf_t *buff)$/;"	f
+net_write_lim	net/net_write.c	/^int net_write_lim(int sk, shbuf_t *buff, double wait)$/;"	f
+newCDKAlphalist	cdk/alphalist.c	/^CDKALPHALIST *newCDKAlphalist (CDKSCREEN *cdkscreen,$/;"	f
+newCDKButton	cdk/button.c	/^CDKBUTTON *newCDKButton (CDKSCREEN *cdkscreen,$/;"	f
+newCDKButtonbox	cdk/buttonbox.c	/^CDKBUTTONBOX *newCDKButtonbox (CDKSCREEN *cdkscreen,$/;"	f
+newCDKCalendar	cdk/calendar.c	/^CDKCALENDAR *newCDKCalendar (CDKSCREEN *cdkscreen,$/;"	f
+newCDKDialog	cdk/dialog.c	/^CDKDIALOG *newCDKDialog (CDKSCREEN *cdkscreen,$/;"	f
+newCDKEntry	cdk/entry.c	/^CDKENTRY *newCDKEntry (CDKSCREEN *cdkscreen,$/;"	f
+newCDKFselect	cdk/fselect.c	/^CDKFSELECT *newCDKFselect (CDKSCREEN *cdkscreen,$/;"	f
+newCDKGraph	cdk/graph.c	/^CDKGRAPH *newCDKGraph (CDKSCREEN *cdkscreen,$/;"	f
+newCDKHistogram	cdk/histogram.c	/^CDKHISTOGRAM *newCDKHistogram (CDKSCREEN *cdkscreen,$/;"	f
+newCDKItemlist	cdk/itemlist.c	/^CDKITEMLIST *newCDKItemlist (CDKSCREEN *cdkscreen,$/;"	f
+newCDKLabel	cdk/label.c	/^CDKLABEL *newCDKLabel (CDKSCREEN *cdkscreen,$/;"	f
+newCDKMarquee	cdk/marquee.c	/^CDKMARQUEE *newCDKMarquee (CDKSCREEN *cdkscreen,$/;"	f
+newCDKMatrix	cdk/matrix.c	/^CDKMATRIX *newCDKMatrix (CDKSCREEN *cdkscreen,$/;"	f
+newCDKMentry	cdk/mentry.c	/^CDKMENTRY *newCDKMentry (CDKSCREEN *cdkscreen,$/;"	f
+newCDKMenu	cdk/menu.c	/^CDKMENU *newCDKMenu (CDKSCREEN *cdkscreen,$/;"	f
+newCDKRadio	cdk/radio.c	/^CDKRADIO *newCDKRadio (CDKSCREEN *cdkscreen,$/;"	f
+newCDKScroll	cdk/scroll.c	/^CDKSCROLL *newCDKScroll (CDKSCREEN *cdkscreen,$/;"	f
+newCDKSelection	cdk/selection.c	/^CDKSELECTION *newCDKSelection (CDKSCREEN *cdkscreen,$/;"	f
+newCDKSwindow	cdk/swindow.c	/^CDKSWINDOW *newCDKSwindow (CDKSCREEN *cdkscreen,$/;"	f
+newCDKTemplate	cdk/template.c	/^CDKTEMPLATE *newCDKTemplate (CDKSCREEN *cdkscreen,$/;"	f
+newCDKViewer	cdk/viewer.c	/^CDKVIEWER *newCDKViewer (CDKSCREEN *cdkscreen,$/;"	f
+object	cdk/cdkscreen.c	/^   CDKOBJS *object;$/;"	m	struct:_all_objects	file:
+opt_bool	shcon_opt.c	/^int opt_bool(char *opt_name)$/;"	f
+opt_bool_set	shcon_opt.c	/^void opt_bool_set(char *opt_name, int b)$/;"	f
+opt_fnum	shcon_opt.c	/^double opt_fnum(char *opt_name)$/;"	f
+opt_fnum_set	shcon_opt.c	/^void opt_fnum_set(char *opt_name, double num)$/;"	f
+opt_iface	shcon_opt.c	/^const char *opt_iface(void)$/;"	f
+opt_num	shcon_opt.c	/^int opt_num(char *opt_name)$/;"	f
+opt_num_set	shcon_opt.c	/^void opt_num_set(char *opt_name, int num)$/;"	f
+opt_str	shcon_opt.c	/^const char *opt_str(char *opt_name)$/;"	f
+opt_str_set	shcon_opt.c	/^void opt_str_set(char *opt_name, char *opt_value)$/;"	f
+padd	shcon_mine.c	/^	uint8_t padd[48];$/;"	m	struct:block_t	file:
+popUpLabel	cdk/viewer.c	/^static void popUpLabel (CDKVIEWER *viewer, CDK_CSTRING2 mesg)$/;"	f	file:
+popupDialog	cdk/popup_dialog.c	/^int popupDialog (CDKSCREEN *screen, CDK_CSTRING2 mesg, int mesgCount, CDK_CSTRING2 buttons, int buttonCount)$/;"	f
+popupLabel	cdk/popup_label.c	/^void popupLabel (CDKSCREEN *screen, CDK_CSTRING2 mesg, int count)$/;"	f
+popupLabelAttrib	cdk/popup_label.c	/^void popupLabelAttrib (CDKSCREEN *screen, CDK_CSTRING2 mesg, int count, chtype attrib)$/;"	f
+positionCDKButton	cdk/button.c	/^void positionCDKButton (CDKBUTTON *button)$/;"	f
+positionCDKObject	cdk/position.c	/^void positionCDKObject (CDKOBJS *obj, WINDOW *win)$/;"	f
+preProcessEntryField	cdk/alphalist.c	/^static int preProcessEntryField (EObjectType cdktype GCC_UNUSED, void$/;"	f	file:
+prompt	shcon_gui.c	/^static const char *prompt           = "<\/B\/24> > ";$/;"	v	file:
+promptLen	shcon_gui.c	/^static int promptLen                = 0;$/;"	v	file:
+raiseCDKObject	cdk/cdkscreen.c	/^void raiseCDKObject (EObjectType cdktype, void *object)$/;"	f
+reRegisterCDKObject	cdk/cdkscreen.c	/^void reRegisterCDKObject (EObjectType cdktype, void *object)$/;"	f
+readFile	cdk/cdk_compat.c	/^int readFile (char *filename, char **array, int maxlines)$/;"	f
+redrawTitles	cdk/matrix.c	/^static void redrawTitles (CDKMATRIX *matrix, int rowTitles, int colTitles)$/;"	f	file:
+refreshCDKScreen	cdk/cdkscreen.c	/^void refreshCDKScreen (CDKSCREEN *cdkscreen)$/;"	f
+refreshCDKWindow	cdk/cdkscreen.c	/^void refreshCDKWindow (WINDOW *win)$/;"	f
+refreshDataCDKScreen	cdk/traverse.c	/^static void refreshDataCDKScreen (CDKSCREEN *screen)$/;"	f	file:
+registerCDKObject	cdk/cdkscreen.c	/^void registerCDKObject (CDKSCREEN *screen, EObjectType cdktype, void *object)$/;"	f
+removeCDKCalendarMarker	cdk/calendar.c	/^void removeCDKCalendarMarker (CDKCALENDAR *calendar, int day, int month, int year)$/;"	f
+removeChar	cdk/gen-scale.c	/^static bool removeChar (char *string, int col)$/;"	f	file:
+removeChar	cdk/gen-slider.c	/^static bool removeChar (char *string, int col)$/;"	f	file:
+resequence	cdk/scroll.c	/^static void resequence (CDKSCROLL *scrollp)$/;"	f	file:
+resetCDKScreen	cdk/traverse.c	/^void resetCDKScreen (CDKSCREEN *screen)$/;"	f
+resetCDKScreenOf	cdk/traverse.c	/^void resetCDKScreenOf (CDKOBJS *obj)$/;"	f
+run_state	shcon_gui.c	/^static int run_state;$/;"	v	file:
+run_state	shcon_stream.c	/^static int run_state;$/;"	v	file:
+saveCDKSwindowInformation	cdk/swindow.c	/^void saveCDKSwindowInformation (CDKSWINDOW *swindow)$/;"	f
+saveDataCDKScreen	cdk/traverse.c	/^static void saveDataCDKScreen (CDKSCREEN *screen)$/;"	f	file:
+screen	cdk/cdkscreen.c	/^   CDKSCREEN *screen;$/;"	m	struct:_all_screens	file:
+scroller_FixCursorPosition	cdk/scroller.c	/^void scroller_FixCursorPosition (CDKSCROLLER *scroller)$/;"	f
+scroller_KEY_DOWN	cdk/scroller.c	/^void scroller_KEY_DOWN (CDKSCROLLER *scroller)$/;"	f
+scroller_KEY_END	cdk/scroller.c	/^void scroller_KEY_END (CDKSCROLLER *scroller)$/;"	f
+scroller_KEY_HOME	cdk/scroller.c	/^void scroller_KEY_HOME (CDKSCROLLER *scroller)$/;"	f
+scroller_KEY_LEFT	cdk/scroller.c	/^void scroller_KEY_LEFT (CDKSCROLLER *scroller)$/;"	f
+scroller_KEY_NPAGE	cdk/scroller.c	/^void scroller_KEY_NPAGE (CDKSCROLLER *scroller)$/;"	f
+scroller_KEY_PPAGE	cdk/scroller.c	/^void scroller_KEY_PPAGE (CDKSCROLLER *scroller)$/;"	f
+scroller_KEY_RIGHT	cdk/scroller.c	/^void scroller_KEY_RIGHT (CDKSCROLLER *scroller)$/;"	f
+scroller_KEY_UP	cdk/scroller.c	/^void scroller_KEY_UP (CDKSCROLLER *scroller)$/;"	f
+scroller_MaxViewSize	cdk/scroller.c	/^int scroller_MaxViewSize (CDKSCROLLER *scroller)$/;"	f
+scroller_SetPosition	cdk/scroller.c	/^void scroller_SetPosition (CDKSCROLLER *scroller, int item)$/;"	f
+scroller_SetViewSize	cdk/scroller.c	/^void scroller_SetViewSize (CDKSCROLLER *scroller, int size)$/;"	f
+searchForWord	cdk/viewer.c	/^static int searchForWord (CDKVIEWER *viewer, char *pattern, int direction)$/;"	f	file:
+searchList	cdk/cdk.c	/^int searchList (CDK_CSTRING2 list, int listSize, const char *pattern)$/;"	f
+selectFile	cdk/select_file.c	/^char *selectFile (CDKSCREEN *screen, const char *title)$/;"	f
+selectItem	cdk/menu.c	/^static void selectItem (CDKMENU *menu, int item, int offset)$/;"	f	file:
+setCDKAlphalist	cdk/alphalist.c	/^void setCDKAlphalist (CDKALPHALIST *alphalist,$/;"	f
+setCDKAlphalistBox	cdk/alphalist.c	/^void setCDKAlphalistBox (CDKALPHALIST *alphalist, boolean Box)$/;"	f
+setCDKAlphalistContents	cdk/alphalist.c	/^void setCDKAlphalistContents (CDKALPHALIST *widget, CDK_CSTRING *list, int listSize)$/;"	f
+setCDKAlphalistCurrentItem	cdk/alphalist.c	/^void setCDKAlphalistCurrentItem (CDKALPHALIST *widget, int item)$/;"	f
+setCDKAlphalistFillerChar	cdk/alphalist.c	/^void setCDKAlphalistFillerChar (CDKALPHALIST *alphalist, chtype fillerCharacter)$/;"	f
+setCDKAlphalistHighlight	cdk/alphalist.c	/^void setCDKAlphalistHighlight (CDKALPHALIST *alphalist, chtype highlight)$/;"	f
+setCDKAlphalistPostProcess	cdk/alphalist.c	/^void setCDKAlphalistPostProcess (CDKALPHALIST *alphalist,$/;"	f
+setCDKAlphalistPreProcess	cdk/alphalist.c	/^void setCDKAlphalistPreProcess (CDKALPHALIST *alphalist,$/;"	f
+setCDKButton	cdk/button.c	/^void setCDKButton (CDKBUTTON *button, const char *mesg, boolean Box)$/;"	f
+setCDKButtonBox	cdk/button.c	/^void setCDKButtonBox (CDKBUTTON *button, boolean Box)$/;"	f
+setCDKButtonMessage	cdk/button.c	/^void setCDKButtonMessage (CDKBUTTON *button, const char *info)$/;"	f
+setCDKButtonbox	cdk/buttonbox.c	/^void setCDKButtonbox (CDKBUTTONBOX *buttonbox, chtype highlight, boolean Box)$/;"	f
+setCDKButtonboxBox	cdk/buttonbox.c	/^void setCDKButtonboxBox (CDKBUTTONBOX *buttonbox, boolean Box)$/;"	f
+setCDKButtonboxCurrentButton	cdk/buttonbox.c	/^void setCDKButtonboxCurrentButton (CDKBUTTONBOX *buttonbox, int button)$/;"	f
+setCDKButtonboxHighlight	cdk/buttonbox.c	/^void setCDKButtonboxHighlight (CDKBUTTONBOX *buttonbox, chtype highlight)$/;"	f
+setCDKCalendar	cdk/calendar.c	/^void setCDKCalendar (CDKCALENDAR *calendar,$/;"	f
+setCDKCalendarBox	cdk/calendar.c	/^void setCDKCalendarBox (CDKCALENDAR *calendar, boolean Box)$/;"	f
+setCDKCalendarDate	cdk/calendar.c	/^void setCDKCalendarDate (CDKCALENDAR *calendar, int day, int month, int year)$/;"	f
+setCDKCalendarDayAttribute	cdk/calendar.c	/^void setCDKCalendarDayAttribute (CDKCALENDAR *calendar, chtype attribute)$/;"	f
+setCDKCalendarDaysNames	cdk/calendar.c	/^void setCDKCalendarDaysNames (CDKCALENDAR *calendar, const char *days)$/;"	f
+setCDKCalendarHighlight	cdk/calendar.c	/^void setCDKCalendarHighlight (CDKCALENDAR *calendar, chtype highlight)$/;"	f
+setCDKCalendarMarker	cdk/calendar.c	/^void setCDKCalendarMarker (CDKCALENDAR *calendar,$/;"	f
+setCDKCalendarMonthAttribute	cdk/calendar.c	/^void setCDKCalendarMonthAttribute (CDKCALENDAR *calendar, chtype attribute)$/;"	f
+setCDKCalendarMonthsNames	cdk/calendar.c	/^void setCDKCalendarMonthsNames (CDKCALENDAR *calendar, CDK_CSTRING2 months)$/;"	f
+setCDKCalendarYearAttribute	cdk/calendar.c	/^void setCDKCalendarYearAttribute (CDKCALENDAR *calendar, chtype attribute)$/;"	f
+setCDKDialog	cdk/dialog.c	/^void setCDKDialog (CDKDIALOG *dialog, chtype highlight, boolean separator, boolean Box)$/;"	f
+setCDKDialogBox	cdk/dialog.c	/^void setCDKDialogBox (CDKDIALOG *dialog, boolean Box)$/;"	f
+setCDKDialogHighlight	cdk/dialog.c	/^void setCDKDialogHighlight (CDKDIALOG *dialog, chtype highlight)$/;"	f
+setCDKDialogSeparator	cdk/dialog.c	/^void setCDKDialogSeparator (CDKDIALOG *dialog, boolean separator)$/;"	f
+setCDKEntry	cdk/entry.c	/^void setCDKEntry (CDKENTRY *entry,$/;"	f
+setCDKEntryBox	cdk/entry.c	/^void setCDKEntryBox (CDKENTRY *entry, boolean Box)$/;"	f
+setCDKEntryCB	cdk/entry.c	/^void setCDKEntryCB (CDKENTRY *entry, ENTRYCB callback)$/;"	f
+setCDKEntryFillerChar	cdk/entry.c	/^void setCDKEntryFillerChar (CDKENTRY *entry, chtype fillerCharacter)$/;"	f
+setCDKEntryHiddenChar	cdk/entry.c	/^void setCDKEntryHiddenChar (CDKENTRY *entry, chtype hiddenCharacter)$/;"	f
+setCDKEntryHighlight	cdk/entry.c	/^void setCDKEntryHighlight (CDKENTRY *entry, chtype highlight, boolean cursor)$/;"	f
+setCDKEntryMax	cdk/entry.c	/^void setCDKEntryMax (CDKENTRY *entry, int max)$/;"	f
+setCDKEntryMin	cdk/entry.c	/^void setCDKEntryMin (CDKENTRY *entry, int min)$/;"	f
+setCDKEntryValue	cdk/entry.c	/^void setCDKEntryValue (CDKENTRY *entry, const char *newValue)$/;"	f
+setCDKFocusCurrent	cdk/traverse.c	/^CDKOBJS *setCDKFocusCurrent (CDKSCREEN *screen, CDKOBJS *newobj)$/;"	f
+setCDKFocusFirst	cdk/traverse.c	/^CDKOBJS *setCDKFocusFirst (CDKSCREEN *screen)$/;"	f
+setCDKFocusLast	cdk/traverse.c	/^CDKOBJS *setCDKFocusLast (CDKSCREEN *screen)$/;"	f
+setCDKFocusNext	cdk/traverse.c	/^CDKOBJS *setCDKFocusNext (CDKSCREEN *screen)$/;"	f
+setCDKFocusPrevious	cdk/traverse.c	/^CDKOBJS *setCDKFocusPrevious (CDKSCREEN *screen)$/;"	f
+setCDKFselect	cdk/fselect.c	/^void setCDKFselect (CDKFSELECT *fselect,$/;"	f
+setCDKFselectBox	cdk/fselect.c	/^void setCDKFselectBox (CDKFSELECT *fselect, boolean Box)$/;"	f
+setCDKFselectContents	cdk/fselect.c	/^void setCDKFselectContents (CDKFSELECT *widget,$/;"	f
+setCDKFselectCurrentItem	cdk/fselect.c	/^void setCDKFselectCurrentItem (CDKFSELECT *widget,$/;"	f
+setCDKFselectDirAttribute	cdk/fselect.c	/^void setCDKFselectDirAttribute (CDKFSELECT *fselect, const char *attribute)$/;"	f
+setCDKFselectDirContents	cdk/fselect.c	/^int setCDKFselectDirContents (CDKFSELECT *fselect)$/;"	f
+setCDKFselectDirectory	cdk/fselect.c	/^int setCDKFselectDirectory (CDKFSELECT *fselect, const char *directory)$/;"	f
+setCDKFselectFileAttribute	cdk/fselect.c	/^void setCDKFselectFileAttribute (CDKFSELECT *fselect, const char *attribute)$/;"	f
+setCDKFselectFillerChar	cdk/fselect.c	/^void setCDKFselectFillerChar (CDKFSELECT *fselect, chtype filler)$/;"	f
+setCDKFselectHighlight	cdk/fselect.c	/^void setCDKFselectHighlight (CDKFSELECT *fselect, chtype highlight)$/;"	f
+setCDKFselectLinkAttribute	cdk/fselect.c	/^void setCDKFselectLinkAttribute (CDKFSELECT *fselect, const char *attribute)$/;"	f
+setCDKFselectPostProcess	cdk/fselect.c	/^void setCDKFselectPostProcess (CDKFSELECT *fselect, PROCESSFN callback, void *data)$/;"	f
+setCDKFselectPreProcess	cdk/fselect.c	/^void setCDKFselectPreProcess (CDKFSELECT *fselect, PROCESSFN callback, void *data)$/;"	f
+setCDKFselectSocketAttribute	cdk/fselect.c	/^void setCDKFselectSocketAttribute (CDKFSELECT *fselect, const char *attribute)$/;"	f
+setCDKGraph	cdk/graph.c	/^int setCDKGraph (CDKGRAPH *widget,$/;"	f
+setCDKGraphBox	cdk/graph.c	/^void setCDKGraphBox (CDKGRAPH *widget, boolean Box)$/;"	f
+setCDKGraphCharacter	cdk/graph.c	/^int setCDKGraphCharacter (CDKGRAPH *widget, int Index, const char *character)$/;"	f
+setCDKGraphCharacters	cdk/graph.c	/^int setCDKGraphCharacters (CDKGRAPH *widget, const char *characters)$/;"	f
+setCDKGraphDisplayType	cdk/graph.c	/^void setCDKGraphDisplayType (CDKGRAPH *widget, EGraphDisplayType type)$/;"	f
+setCDKGraphValue	cdk/graph.c	/^int setCDKGraphValue (CDKGRAPH *widget, int Index, int value, boolean startAtZero)$/;"	f
+setCDKGraphValues	cdk/graph.c	/^int setCDKGraphValues (CDKGRAPH *widget, int *values, int count, boolean startAtZero)$/;"	f
+setCDKHistogram	cdk/histogram.c	/^void setCDKHistogram (CDKHISTOGRAM *widget,$/;"	f
+setCDKHistogramBox	cdk/histogram.c	/^void setCDKHistogramBox (CDKHISTOGRAM *widget, boolean Box)$/;"	f
+setCDKHistogramDisplayType	cdk/histogram.c	/^void setCDKHistogramDisplayType (CDKHISTOGRAM *widget, EHistogramDisplayType viewType)$/;"	f
+setCDKHistogramFillerChar	cdk/histogram.c	/^void setCDKHistogramFillerChar (CDKHISTOGRAM *widget, chtype character)$/;"	f
+setCDKHistogramStatsAttr	cdk/histogram.c	/^void setCDKHistogramStatsAttr (CDKHISTOGRAM *widget, chtype statsAttr)$/;"	f
+setCDKHistogramStatsPos	cdk/histogram.c	/^void setCDKHistogramStatsPos (CDKHISTOGRAM *widget, int statsPos)$/;"	f
+setCDKHistogramValue	cdk/histogram.c	/^void setCDKHistogramValue (CDKHISTOGRAM *widget, int low, int high, int value)$/;"	f
+setCDKItemlist	cdk/itemlist.c	/^void setCDKItemlist (CDKITEMLIST *itemlist,$/;"	f
+setCDKItemlistBox	cdk/itemlist.c	/^void setCDKItemlistBox (CDKITEMLIST *itemlist, boolean Box)$/;"	f
+setCDKItemlistCurrentItem	cdk/itemlist.c	/^void setCDKItemlistCurrentItem (CDKITEMLIST *itemlist, int currentItem)$/;"	f
+setCDKItemlistDefaultItem	cdk/itemlist.c	/^void setCDKItemlistDefaultItem (CDKITEMLIST *itemlist, int defaultItem)$/;"	f
+setCDKItemlistValues	cdk/itemlist.c	/^void setCDKItemlistValues (CDKITEMLIST *itemlist, CDK_CSTRING2 item, int$/;"	f
+setCDKLabel	cdk/label.c	/^void setCDKLabel (CDKLABEL *label, CDK_CSTRING2 mesg, int lines, boolean Box)$/;"	f
+setCDKLabelBox	cdk/label.c	/^void setCDKLabelBox (CDKLABEL *label, boolean Box)$/;"	f
+setCDKLabelMessage	cdk/label.c	/^void setCDKLabelMessage (CDKLABEL *label, CDK_CSTRING2 info, int infoSize)$/;"	f
+setCDKMarqueeBox	cdk/marquee.c	/^void setCDKMarqueeBox (CDKMARQUEE *widget, boolean Box)$/;"	f
+setCDKMatrixBox	cdk/matrix.c	/^void setCDKMatrixBox (CDKMATRIX *matrix, boolean Box)$/;"	f
+setCDKMatrixCB	cdk/matrix.c	/^void setCDKMatrixCB (CDKMATRIX *widget, MATRIXCB callback)$/;"	f
+setCDKMatrixCell	cdk/matrix.c	/^int setCDKMatrixCell (CDKMATRIX *matrix, int row, int col, const char *value)$/;"	f
+setCDKMatrixCells	cdk/matrix.c	/^void setCDKMatrixCells (CDKMATRIX *matrix,$/;"	f
+setCDKMentry	cdk/mentry.c	/^void setCDKMentry (CDKMENTRY *mentry, const char *value, int min, boolean Box)$/;"	f
+setCDKMentryBox	cdk/mentry.c	/^void setCDKMentryBox (CDKMENTRY *mentry, boolean Box)$/;"	f
+setCDKMentryCB	cdk/mentry.c	/^void setCDKMentryCB (CDKMENTRY *mentry, MENTRYCB callback)$/;"	f
+setCDKMentryFillerChar	cdk/mentry.c	/^void setCDKMentryFillerChar (CDKMENTRY *mentry, chtype filler)$/;"	f
+setCDKMentryHiddenChar	cdk/mentry.c	/^void setCDKMentryHiddenChar (CDKMENTRY *mentry, chtype character)$/;"	f
+setCDKMentryMin	cdk/mentry.c	/^void setCDKMentryMin (CDKMENTRY *mentry, int min)$/;"	f
+setCDKMentryValue	cdk/mentry.c	/^void setCDKMentryValue (CDKMENTRY *mentry, const char *newValue)$/;"	f
+setCDKMenu	cdk/menu.c	/^void setCDKMenu (CDKMENU *menu,$/;"	f
+setCDKMenuCurrentItem	cdk/menu.c	/^void setCDKMenuCurrentItem (CDKMENU *menu, int menuitem, int submenuitem)$/;"	f
+setCDKMenuSubTitleHighlight	cdk/menu.c	/^void setCDKMenuSubTitleHighlight (CDKMENU *menu, chtype highlight)$/;"	f
+setCDKMenuTitleHighlight	cdk/menu.c	/^void setCDKMenuTitleHighlight (CDKMENU *menu, chtype highlight)$/;"	f
+setCDKObjectBackgroundColor	cdk/cdk_objs.c	/^void setCDKObjectBackgroundColor (CDKOBJS *obj, const char *color)$/;"	f
+setCDKObjectPostProcess	cdk/cdk_objs.c	/^void setCDKObjectPostProcess (CDKOBJS *obj, PROCESSFN fn, void *data)$/;"	f
+setCDKObjectPreProcess	cdk/cdk_objs.c	/^void setCDKObjectPreProcess (CDKOBJS *obj, PROCESSFN fn, void *data)$/;"	f
+setCDKRadio	cdk/radio.c	/^void setCDKRadio (CDKRADIO *radio, chtype highlight, chtype choiceChar, int Box)$/;"	f
+setCDKRadioBox	cdk/radio.c	/^void setCDKRadioBox (CDKRADIO *radio, boolean Box)$/;"	f
+setCDKRadioChoiceCharacter	cdk/radio.c	/^void setCDKRadioChoiceCharacter (CDKRADIO *radio, chtype character)$/;"	f
+setCDKRadioCurrentItem	cdk/radio.c	/^void setCDKRadioCurrentItem (CDKRADIO *radio, int item)$/;"	f
+setCDKRadioHighlight	cdk/radio.c	/^void setCDKRadioHighlight (CDKRADIO *radio, chtype highlight)$/;"	f
+setCDKRadioItems	cdk/radio.c	/^void setCDKRadioItems (CDKRADIO *radio, CDK_CSTRING2 list, int listSize)$/;"	f
+setCDKRadioLeftBrace	cdk/radio.c	/^void setCDKRadioLeftBrace (CDKRADIO *radio, chtype character)$/;"	f
+setCDKRadioRightBrace	cdk/radio.c	/^void setCDKRadioRightBrace (CDKRADIO *radio, chtype character)$/;"	f
+setCDKRadioSelectedItem	cdk/radio.c	/^void setCDKRadioSelectedItem (CDKRADIO *radio, int item)$/;"	f
+setCDKScroll	cdk/scroll.c	/^void setCDKScroll (CDKSCROLL *scrollp,$/;"	f
+setCDKScrollBox	cdk/scroll.c	/^void setCDKScrollBox (CDKSCROLL *scrollp, boolean Box)$/;"	f
+setCDKScrollCurrent	cdk/scroll.c	/^void setCDKScrollCurrent (CDKSCROLL *scrollp, int item)$/;"	f
+setCDKScrollCurrentItem	cdk/scroll.c	/^void setCDKScrollCurrentItem (CDKSCROLL *widget, int item)$/;"	f
+setCDKScrollCurrentTop	cdk/scroll.c	/^void setCDKScrollCurrentTop (CDKSCROLL *widget, int item)$/;"	f
+setCDKScrollHighlight	cdk/scroll.c	/^void setCDKScrollHighlight (CDKSCROLL *scrollp, chtype highlight)$/;"	f
+setCDKScrollItems	cdk/scroll.c	/^void setCDKScrollItems (CDKSCROLL *scrollp, CDK_CSTRING2 list, int listSize, boolean numbers)$/;"	f
+setCDKScrollPosition	cdk/scroll.c	/^void setCDKScrollPosition (CDKSCROLL *scrollp, int item)$/;"	f
+setCDKSelection	cdk/selection.c	/^void setCDKSelection (CDKSELECTION *selection,$/;"	f
+setCDKSelectionBox	cdk/selection.c	/^void setCDKSelectionBox (CDKSELECTION *selection, boolean Box)$/;"	f
+setCDKSelectionChoice	cdk/selection.c	/^void setCDKSelectionChoice (CDKSELECTION *selection, int Index, int choice)$/;"	f
+setCDKSelectionChoices	cdk/selection.c	/^void setCDKSelectionChoices (CDKSELECTION *selection, int *choices)$/;"	f
+setCDKSelectionCurrent	cdk/selection.c	/^void setCDKSelectionCurrent (CDKSELECTION *selection, int item)$/;"	f
+setCDKSelectionHighlight	cdk/selection.c	/^void setCDKSelectionHighlight (CDKSELECTION *selection, chtype highlight)$/;"	f
+setCDKSelectionItems	cdk/selection.c	/^void setCDKSelectionItems (CDKSELECTION *selection, CDK_CSTRING2 list, int listSize)$/;"	f
+setCDKSelectionMode	cdk/selection.c	/^void setCDKSelectionMode (CDKSELECTION *selection, int Index, int mode)$/;"	f
+setCDKSelectionModes	cdk/selection.c	/^void setCDKSelectionModes (CDKSELECTION *selection, int *modes)$/;"	f
+setCDKSelectionTitle	cdk/selection.c	/^void setCDKSelectionTitle (CDKSELECTION *selection, const char *title)$/;"	f
+setCDKSwindow	cdk/swindow.c	/^void setCDKSwindow (CDKSWINDOW *swindow, CDK_CSTRING2 list, int lines, boolean Box)$/;"	f
+setCDKSwindowBox	cdk/swindow.c	/^void setCDKSwindowBox (CDKSWINDOW *swindow, boolean Box)$/;"	f
+setCDKSwindowContents	cdk/swindow.c	/^void setCDKSwindowContents (CDKSWINDOW *swindow, CDK_CSTRING2 list, int listSize)$/;"	f
+setCDKTemplate	cdk/template.c	/^void setCDKTemplate (CDKTEMPLATE *cdktemplate, const char *newValue, boolean Box)$/;"	f
+setCDKTemplateBox	cdk/template.c	/^void setCDKTemplateBox (CDKTEMPLATE *cdktemplate, boolean Box)$/;"	f
+setCDKTemplateCB	cdk/template.c	/^void setCDKTemplateCB (CDKTEMPLATE *cdktemplate, TEMPLATECB callback)$/;"	f
+setCDKTemplateMin	cdk/template.c	/^void setCDKTemplateMin (CDKTEMPLATE *cdktemplate, int min)$/;"	f
+setCDKTemplateValue	cdk/template.c	/^void setCDKTemplateValue (CDKTEMPLATE *cdktemplate, const char *newValue)$/;"	f
+setCDKViewer	cdk/viewer.c	/^int setCDKViewer (CDKVIEWER *viewer,$/;"	f
+setCDKViewerBox	cdk/viewer.c	/^void setCDKViewerBox (CDKVIEWER *viewer, boolean Box)$/;"	f
+setCDKViewerHighlight	cdk/viewer.c	/^void setCDKViewerHighlight (CDKVIEWER *viewer, chtype buttonHighlight)$/;"	f
+setCDKViewerInfo	cdk/viewer.c	/^int setCDKViewerInfo (CDKVIEWER *viewer, CDK_CSTRING2 list, int listSize, boolean interpret)$/;"	f
+setCDKViewerInfoLine	cdk/viewer.c	/^void setCDKViewerInfoLine (CDKVIEWER *viewer, boolean showLineInfo)$/;"	f
+setCDKViewerTitle	cdk/viewer.c	/^void setCDKViewerTitle (CDKVIEWER *viewer, const char *title)$/;"	f
+setCdkBXattr	cdk/cdk_objs.c	/^void setCdkBXattr (CDKOBJS *obj, chtype ch)$/;"	f
+setCdkExitType	cdk/cdk_objs.c	/^void setCdkExitType (CDKOBJS *obj, EExitType *type, chtype ch)$/;"	f
+setCdkHZchar	cdk/cdk_objs.c	/^void setCdkHZchar (CDKOBJS *obj, chtype ch)$/;"	f
+setCdkLLchar	cdk/cdk_objs.c	/^void setCdkLLchar (CDKOBJS *obj, chtype ch)$/;"	f
+setCdkLRchar	cdk/cdk_objs.c	/^void setCdkLRchar (CDKOBJS *obj, chtype ch)$/;"	f
+setCdkTitle	cdk/cdk_objs.c	/^int setCdkTitle (CDKOBJS *obj, const char *title, int boxWidth)$/;"	f
+setCdkULchar	cdk/cdk_objs.c	/^void setCdkULchar (CDKOBJS *obj, chtype ch)$/;"	f
+setCdkURchar	cdk/cdk_objs.c	/^void setCdkURchar (CDKOBJS *obj, chtype ch)$/;"	f
+setCdkVTchar	cdk/cdk_objs.c	/^void setCdkVTchar (CDKOBJS *obj, chtype ch)$/;"	f
+setCurPos	cdk/mentry.c	/^static bool setCurPos (CDKMENTRY *widget, int row, int col)$/;"	f	file:
+setFocus	cdk/traverse.c	/^static void setFocus (CDKOBJS *obj)$/;"	f	file:
+setFocusIndex	cdk/traverse.c	/^static void setFocusIndex (CDKSCREEN *screen, int value)$/;"	f	file:
+setPWD	cdk/fselect.c	/^static void setPWD (CDKFSELECT *fselect)$/;"	f	file:
+setPositionToEnd	cdk/entry.c	/^static void setPositionToEnd (CDKENTRY *entry)$/;"	f	file:
+setScales	cdk/graph.c	/^static void setScales (CDKGRAPH *widget)$/;"	f	file:
+setScreenIndex	cdk/cdkscreen.c	/^static void setScreenIndex (CDKSCREEN *screen, int number, CDKOBJS *obj)$/;"	f	file:
+setTopRow	cdk/mentry.c	/^static bool setTopRow (CDKMENTRY *widget, int row)$/;"	f	file:
+setViewSize	cdk/radio.c	/^static void setViewSize (CDKRADIO *widget, int listSize)$/;"	f	file:
+setViewSize	cdk/scroll.c	/^static void setViewSize (CDKSCROLL *scrollp, int listSize)$/;"	f	file:
+setViewSize	cdk/selection.c	/^static void setViewSize (CDKSELECTION *widget, int listSize)$/;"	f	file:
+setWidgetDimension	cdk/cdk.c	/^int setWidgetDimension (int parentDim, int proposedDim, int adjustment)$/;"	f
+setupLine	cdk/swindow.c	/^static void setupLine (CDKSWINDOW *swindow, const char *list, int x)$/;"	f	file:
+setupLine	cdk/viewer.c	/^static void setupLine (CDKVIEWER *viewer, boolean interpret, const char$/;"	f	file:
+shcon_command	command/command.c	/^int shcon_command(char **args, int arg_nr, shjson_t **resp_p)$/;"	f
+shcon_command_recv	command/command.c	/^int shcon_command_recv(shjson_t **resp_p)$/;"	f
+shcon_command_send	command/command.c	/^int shcon_command_send(char **args, int arg_nr)$/;"	f
+shcon_gui_command_init	shcon_gui.c	/^static int shcon_gui_command_init(void)$/;"	f	file:
+shcon_gui_command_run	shcon_gui.c	/^int shcon_gui_command_run(char *command)$/;"	f
+shcon_gui_cycle	shcon_gui.c	/^void shcon_gui_cycle(void)$/;"	f
+shcon_gui_exec	shcon_gui.c	/^int shcon_gui_exec(char *text, shjson_t **resp_p)$/;"	f
+shcon_gui_form_init	shcon_gui.c	/^static char *shcon_gui_form_init(const menu_t *item)$/;"	f	file:
+shcon_gui_init	shcon_gui.c	/^int shcon_gui_init(void)$/;"	f
+shcon_gui_menu_init	shcon_gui.c	/^static int shcon_gui_menu_init(void)$/;"	f	file:
+shcon_gui_menu_run	shcon_gui.c	/^void shcon_gui_menu_run(CDKMENU *menu, char *focusItem)$/;"	f
+shcon_gui_mine_run	shcon_gui.c	/^static int shcon_gui_mine_run(double *diff_p)$/;"	f	file:
+shcon_gui_mine_status	shcon_gui.c	/^void shcon_gui_mine_status(int found, double diff)$/;"	f
+shcon_gui_net_init	shcon_gui.c	/^int shcon_gui_net_init(void)$/;"	f
+shcon_gui_netstate	shcon_gui.c	/^void shcon_gui_netstate(shjson_t *resp)$/;"	f
+shcon_gui_print	shcon_gui.c	/^void shcon_gui_print(const char *text)$/;"	f
+shcon_gui_print_error	shcon_gui.c	/^void shcon_gui_print_error(int err_code, char *tag)$/;"	f
+shcon_gui_print_json	shcon_gui.c	/^void shcon_gui_print_json(shjson_t *j)$/;"	f
+shcon_gui_print_result	shcon_gui.c	/^void shcon_gui_print_result(shjson_t *j)$/;"	f
+shcon_gui_println	shcon_gui.c	/^void shcon_gui_println(const char *text)$/;"	f
+shcon_gui_run	shcon_gui.c	/^int shcon_gui_run(void)$/;"	f
+shcon_info	shcon_log.c	/^int shcon_info(const char *format, ...)$/;"	f
+shcon_init	shcon_init.c	/^int shcon_init(void)$/;"	f
+shcon_key_init	key/key.c	/^int shcon_key_init(void)$/;"	f
+shcon_key_term	key/key.c	/^void shcon_key_term(void)$/;"	f
+shcon_log	shcon_log.c	/^int shcon_log(int err_code, const char *format, ...)$/;"	f
+shcon_log_init	shcon_log.c	/^int shcon_log_init(void)$/;"	f
+shcon_log_timestamp	shcon_log.c	/^const char *shcon_log_timestamp(void)$/;"	f
+shcon_mine_run	shcon_mine.c	/^int shcon_mine_run(char *raw_hex, char *ret_hex, double *diff_p)$/;"	f
+shcon_net_init	net/net.c	/^int shcon_net_init(void)$/;"	f
+shcon_net_term	net/net.c	/^void shcon_net_term(void)$/;"	f
+shcon_opt_init	shcon_opt.c	/^int shcon_opt_init(void)$/;"	f
+shcon_opt_term	shcon_opt.c	/^void shcon_opt_term(void)$/;"	f
+shcon_stream_cycle	shcon_stream.c	/^void shcon_stream_cycle(FILE *stream)$/;"	f
+shcon_stream_exec	shcon_stream.c	/^int shcon_stream_exec(char *text, shjson_t **resp_p)$/;"	f
+shcon_stream_idle	shcon_stream.c	/^void shcon_stream_idle(void)$/;"	f
+shcon_stream_print	shcon_stream.c	/^void shcon_stream_print(char *text)$/;"	f
+shcon_term	shcon_term.c	/^void shcon_term(void)$/;"	f
+shcon_tool_usage	shcon.c	/^void shcon_tool_usage(char *prog_name)$/;"	f
+shcon_tool_version	shcon.c	/^void shcon_tool_version(char *prog_name)$/;"	f
+showMessage2	cdk/swindow.c	/^static void showMessage2 (CDKSWINDOW *swindow,$/;"	f	file:
+sortList	cdk/cdk.c	/^void sortList (CDK_CSTRING *list, int length)$/;"	f
+splitString	cdk/cdk_compat.c	/^int splitString (char *string, char **items, char splitChar)$/;"	f
+split_str	shcon_gui.c	/^static char **split_str(char *text)$/;"	f	file:
+startCDKDebug	cdk/debug.c	/^FILE *startCDKDebug (const char *filename)$/;"	f
+stopCDKDebug	cdk/debug.c	/^void stopCDKDebug (FILE * fd)$/;"	f
+stripWhiteSpace	cdk/cdk.c	/^void stripWhiteSpace (EStripType stripType, char *string)$/;"	f
+swab256	shcon_mine.c	/^static void swab256(void *dest_p, const void *src_p)$/;"	f	file:
+swapCDKIndices	cdk/cdkscreen.c	/^static void swapCDKIndices (CDKSCREEN *screen, int n1, int n2)$/;"	f	file:
+switchFocus	cdk/traverse.c	/^static CDKOBJS *switchFocus (CDKOBJS *newobj, CDKOBJS *oldobj)$/;"	f	file:
+title	shcon_gui.c	/^	const char *title;$/;"	m	struct:menu_t	file:
+traverseCDKOnce	cdk/traverse.c	/^void traverseCDKOnce (CDKSCREEN *screen,$/;"	f
+traverseCDKScreen	cdk/traverse.c	/^int traverseCDKScreen (CDKSCREEN *screen)$/;"	f
+trim1Char	cdk/fselect.c	/^static char *trim1Char (char *source)$/;"	f	file:
+trimCDKSwindow	cdk/swindow.c	/^void trimCDKSwindow (CDKSWINDOW *swindow, int begin, int end)$/;"	f
+types	shcon_gui.c	/^	const int types[MAX_MENU_LABELS];$/;"	m	struct:menu_t	file:
+uc	shcon_gui.c	/^static char *uc(char *word)$/;"	f	file:
+uint256	shcon_mine.c	/^typedef unsigned char uint256[32];$/;"	t	file:
+unbindCDKObject	cdk/binding.c	/^void unbindCDKObject (EObjectType cdktype, void *object, chtype key)$/;"	f
+unmixCDKTemplate	cdk/template.c	/^char *unmixCDKTemplate (CDKTEMPLATE *cdktemplate, const char *info)$/;"	f
+unregisterCDKObject	cdk/cdkscreen.c	/^void unregisterCDKObject (EObjectType cdktype, void *object)$/;"	f
+unsetFocus	cdk/traverse.c	/^static void unsetFocus (CDKOBJS *obj)$/;"	f	file:
+updateFieldWidth	cdk/itemlist.c	/^static void updateFieldWidth (CDKITEMLIST *itemlist)$/;"	f	file:
+updateViewWidth	cdk/radio.c	21;"	d	file:
+updateViewWidth	cdk/scroll.c	26;"	d	file:
+updateViewWidth	cdk/selection.c	21;"	d	file:
+usage	cdk/cdk_params.c	/^static void usage (char **argv,$/;"	f	file:
+validCDKObject	cdk/cdkscreen.c	/^bool validCDKObject (CDKOBJS *obj)$/;"	f
+validIndex	cdk/cdkscreen.c	309;"	d	file:
+validObjType	cdk/cdkscreen.c	/^static boolean validObjType (CDKOBJS *obj, EObjectType type)$/;"	f	file:
+validTemplate	cdk/template.c	/^static boolean validTemplate (CDKTEMPLATE *cdktemplate, char *input)$/;"	f	file:
+verifyCalendarDate	cdk/calendar.c	/^static void verifyCalendarDate (CDKCALENDAR *calendar)$/;"	f	file:
+viewFile	cdk/view_file.c	/^int viewFile (CDKSCREEN *screen,$/;"	f
+viewHistoryCB	shcon_gui.c	/^static int viewHistoryCB (EObjectType cdktype GCC_UNUSED, void *object,$/;"	f	file:
+viewInfo	cdk/view_info.c	/^int viewInfo (CDKSCREEN *screen,$/;"	f
+waitCDKLabel	cdk/label.c	/^char waitCDKLabel (CDKLABEL *label, char key)$/;"	f
+withinSubmenu	cdk/menu.c	/^static void withinSubmenu (CDKMENU *menu, int step)$/;"	f	file:
+wrapped	cdk/menu.c	/^static int wrapped (int within, int limit)$/;"	f	file:
+writeBlanks	cdk/draw.c	/^void writeBlanks (WINDOW *window, int xpos, int ypos, int align, int start, int end)$/;"	f
+writeCDKDebugMessage	cdk/debug.c	/^void writeCDKDebugMessage (FILE * fd,$/;"	f
+writeChar	cdk/draw.c	/^void writeChar (WINDOW *window,$/;"	f
+writeCharAttrib	cdk/draw.c	/^void writeCharAttrib (WINDOW *window,$/;"	f
+writeChtype	cdk/draw.c	/^void writeChtype (WINDOW *window,$/;"	f
+writeChtypeAttrib	cdk/draw.c	/^void writeChtypeAttrib (WINDOW *window,$/;"	f

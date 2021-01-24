@@ -1,0 +1,40 @@
+v2.27 Share Library Suite
+--
+Base support for synchronizing between computers on the share-fs has been introduced. More robust flexibilty has been provided for uri specification and handling local-filesystem references.
+
+# shattr +s test://share/
+# echo share > /tmp/file.txt
+# shcp file://tmp/file.txt test://share/
+# shls -l test://share/
+[Dir "share" @ test@127.0.0.1]
+  {ib+VuspOmqG} f+s------       6 09/21/16 19:44 file.txt
+
+ECDSA, sha512, and other digest algorythms have been introduced in both proprietary and generic forms.
+{
+  static char msg[256];
+  shkey_t *priv_key = shecdsa_key_priv(NULL); /* random private key. */
+  shkey_t *pub_key = shecdsa_key_pub(priv_key); /* public key */
+  char sig_r[256], sig_s[256];
+
+  shecdsa_sign(priv_key, sig_r, sig_s, msg, sizeof(msg));
+  (0 == shecdsa_verify(pub_key, sig_r, sig_s, msg, sizeof(msg)));
+}
+
+The core transactions available to the share daemon have been introduced. These include operational modes, account management, time synchronization, file transmission, ledger accounting, licensing, sexe bytecode components, monetary actions, and generic external-context references. The share daemon now performs a sequence of initialization steps for initial authorization.
+
+A stream based set of functions have been introduced to read and write from basic share-fs files.
+{
+  const char *path = "test_file_stream";
+  struct shfs_ino_buf_t stream;
+  char buf[256];
+
+  memset(buf, 0, sizeof(buf));
+  memset(&stream, 0, sizeof(stream));
+  shfs_stream_open(&stream, path, NULL);
+  shfs_stream_write(&stream, path, strlen(path));
+  shfs_stream_setpos(&stream, 0);
+  (0 == shfs_stream_read(&stream, buf, strlen(path)) && 0 == strcmp(buf, path));
+  shfs_stream_close(&stream);
+}
+
+A network peer tracking database has been intregrated in order to track the frequency of uptime for remote hosts.

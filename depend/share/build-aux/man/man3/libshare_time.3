@@ -1,0 +1,196 @@
+.TH "Libshare_time" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_time \- 
+.PP
+Time operations are performed in order to store and compare timestamps in the sharefs file system and for network operations.  
+
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHTIME_EPOCH\fP   946684800"
+.br
+.ti -1c
+.RI "#define \fBshtime_value\fP(_stamp)   (ntohll(_stamp) & 0xFFFFFFFFFFFFFF)"
+.br
+.RI "\fIObtain 60-bit time-stamp value in local machine-byte order. \fP"
+.ti -1c
+.RI "#define \fBshtime_prec_set\fP(_stamp, _prec)   (*((char *)&(_stamp)) = (char)(_prec % 2))"
+.br
+.RI "\fISet the precision attribute of a share time-stamp. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef uint64_t \fBshtime_t\fP"
+.br
+.RI "\fIThe libshare representation of a particular time. \fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshtime_prec\fP (\fBshtime_t\fP stamp)"
+.br
+.RI "\fIthe degree of precision of the time-stamp. \fP"
+.ti -1c
+.RI "double \fBshtimef\fP (\fBshtime_t\fP stamp)"
+.br
+.RI "\fIGenerate a float-point precision representation of the specified time. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBshtime\fP (void)"
+.br
+.RI "\fIGenerate a 64bit representation integral of the current time with millisecond precision. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBshtimeu\fP (time_t unix_t)"
+.br
+.RI "\fIGenerate a 64bit 'libshare time-stamp' given a unix epoch value. \fP"
+.ti -1c
+.RI "int \fBshtimems\fP (\fBshtime_t\fP t)"
+.br
+.RI "\fIObtain the milliseconds portion of the time specified. \fP"
+.ti -1c
+.RI "char * \fBshctime\fP (\fBshtime_t\fP t)"
+.br
+.RI "\fIDisplay full ISO 8601 format of date and time. \fP"
+.ti -1c
+.RI "time_t \fBshutime\fP (\fBshtime_t\fP t)"
+.br
+.RI "\fIConvert a share library timestamp into a unix timestamp. \fP"
+.ti -1c
+.RI "char * \fBshstrtime\fP (\fBshtime_t\fP t, char *fmt)"
+.br
+.RI "\fIConvert a libshare time-stamp into a string format. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBshtime_adj\fP (\fBshtime_t\fP stamp, double secs)"
+.br
+.RI "\fIAdjust a libshare time-stamp by a degree of seconds. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBshgettime\fP (struct timeval *tv)"
+.br
+.RI "\fIconvert a timeval into a libshare time-stamp \fP"
+.ti -1c
+.RI "int \fBshtime_after\fP (\fBshtime_t\fP stamp, \fBshtime_t\fP cmp_stamp)"
+.br
+.RI "\fItest whether a time is more recent than another time. \fP"
+.ti -1c
+.RI "int \fBshtime_before\fP (\fBshtime_t\fP stamp, \fBshtime_t\fP cmp_stamp)"
+.br
+.RI "\fItest whether a time is previous than another time. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBshmktime\fP (struct tm *tm)"
+.br
+.RI "\fIconvert a tm into a libshare time-stamp. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Time operations are performed in order to store and compare timestamps in the sharefs file system and for network operations. 
+.SH "Define Documentation"
+.PP 
+.SS "#define shtime_prec_set(_stamp, _prec)   (*((char *)&(_stamp)) = (char)(_prec % 2))"
+.PP
+Set the precision attribute of a share time-stamp. \fBNote:\fP
+.RS 4
+precision is defined in first 4bits. 
+.RE
+.PP
+
+.PP
+Definition at line 50 of file shtime.h.
+.SS "#define shtime_value(_stamp)   (ntohll(_stamp) & 0xFFFFFFFFFFFFFF)"
+.PP
+Obtain 60-bit time-stamp value in local machine-byte order. 
+.PP
+Definition at line 43 of file shtime.h.
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef uint64_t \fBshtime_t\fP"
+.PP
+The libshare representation of a particular time. \fBNote:\fP
+.RS 4
+Content is stored in network byte order. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.PP
+Definition at line 57 of file shtime.h.
+.SH "Function Documentation"
+.PP 
+.SS "char* shctime (\fBshtime_t\fP t)"
+.PP
+Display full ISO 8601 format of date and time. 
+.SS "\fBshtime_t\fP shgettime (struct timeval * tv)"
+.PP
+convert a timeval into a libshare time-stamp 
+.SS "\fBshtime_t\fP shmktime (struct tm * tm)"
+.PP
+convert a tm into a libshare time-stamp. 
+.SS "char* shstrtime (\fBshtime_t\fP t, char * fmt)"
+.PP
+Convert a libshare time-stamp into a string format. \fBParameters:\fP
+.RS 4
+\fIfmt\fP If NULL then '%x %X' will be used. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+This function utilizes the same time tokens as strftime(). 
+.RE
+.PP
+
+.SS "\fBshtime_t\fP shtime (void)"
+.PP
+Generate a 64bit representation integral of the current time with millisecond precision. \fBReturns:\fP
+.RS 4
+an unsigned long representing the milliseconds since 2014 UTC. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+32bit friendly. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "\fBshtime_t\fP shtime_adj (\fBshtime_t\fP stamp, double secs)"
+.PP
+Adjust a libshare time-stamp by a degree of seconds. 
+.SS "int shtime_after (\fBshtime_t\fP stamp, \fBshtime_t\fP cmp_stamp)"
+.PP
+test whether a time is more recent than another time. 
+.SS "int shtime_before (\fBshtime_t\fP stamp, \fBshtime_t\fP cmp_stamp)"
+.PP
+test whether a time is previous than another time. 
+.SS "int shtime_prec (\fBshtime_t\fP stamp)"
+.PP
+the degree of precision of the time-stamp. 
+.SS "double shtimef (\fBshtime_t\fP stamp)"
+.PP
+Generate a float-point precision representation of the specified time. \fBReturns:\fP
+.RS 4
+an double representing the milliseconds since 2014 UTC. 
+.RE
+.PP
+
+.SS "int shtimems (\fBshtime_t\fP t)"
+.PP
+Obtain the milliseconds portion of the time specified. 
+.SS "\fBshtime_t\fP shtimeu (time_t unix_t)"
+.PP
+Generate a 64bit 'libshare time-stamp' given a unix epoch value. 
+.SS "time_t shutime (\fBshtime_t\fP t)"
+.PP
+Convert a share library timestamp into a unix timestamp. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

@@ -1,0 +1,109 @@
+.TH "Libshare_fsdir" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsdir \- 
+.PP
+Directory container inode management.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshfs_dir_t\fP"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshfs_dir_t\fP \fBshfs_dir_t\fP"
+.br
+.ti -1c
+.RI "typedef \fBshfs_dir_t\fP * \fBSHDIR\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_dir_base\fP (\fBshfs_t\fP *tree)"
+.br
+.RI "\fIThe base SHINODE_PARTITION type inode for a sharefs partition. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_dir_cwd\fP (\fBshfs_t\fP *tree)"
+.br
+.RI "\fIThe current working inode directory for a sharefs partition. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_dir_parent\fP (\fBshfs_ino_t\fP *inode)"
+.br
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_dir_entry\fP (\fBshfs_ino_t\fP *inode, char *fname)"
+.br
+.RI "\fIReturn an inode from a directory inode. \fP"
+.ti -1c
+.RI "\fBshfs_ino_t\fP * \fBshfs_dir_find\fP (\fBshfs_t\fP *tree, char *path)"
+.br
+.RI "\fILocate a directory inode on a sharefs partition by an absolute pathname. \fP"
+.ti -1c
+.RI "\fBshfs_dir_t\fP * \fBshfs_opendir\fP (\fBshfs_t\fP *fs, char *path)"
+.br
+.RI "\fIOpen a directory to be listed. \fP"
+.ti -1c
+.RI "\fBshfs_dirent_t\fP * \fBshfs_readdir\fP (\fBshfs_dir_t\fP *dir)"
+.br
+.ti -1c
+.RI "int \fBshfs_closedir\fP (\fBshfs_dir_t\fP *dir)"
+.br
+.ti -1c
+.RI "int \fBshfs_chroot\fP (\fBshfs_t\fP *fs, \fBshfs_ino_t\fP *dir)"
+.br
+.ti -1c
+.RI "int \fBshfs_chroot_path\fP (\fBshfs_t\fP *fs, char *path)"
+.br
+.ti -1c
+.RI "int \fBshfs_dir_remove\fP (\fBshfs_ino_t\fP *dir)"
+.br
+.ti -1c
+.RI "int \fBshfs_fnmatch\fP (\fBshfs_ino_t\fP *file, char *fspec, \fBshfs_dirent_t\fP **ent_p)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Directory container inode management. 
+.SH "Function Documentation"
+.PP 
+.SS "\fBshfs_ino_t\fP* shfs_dir_base (\fBshfs_t\fP * tree)"
+.PP
+The base SHINODE_PARTITION type inode for a sharefs partition. 
+.SS "\fBshfs_ino_t\fP* shfs_dir_cwd (\fBshfs_t\fP * tree)"
+.PP
+The current working inode directory for a sharefs partition. 
+.SS "\fBshfs_ino_t\fP* shfs_dir_entry (\fBshfs_ino_t\fP * inode, char * fname)"
+.PP
+Return an inode from a directory inode. 
+.SS "\fBshfs_ino_t\fP* shfs_dir_find (\fBshfs_t\fP * tree, char * path)"
+.PP
+Locate a directory inode on a sharefs partition by an absolute pathname. 
+.SS "\fBshfs_ino_t\fP* shfs_dir_parent (\fBshfs_ino_t\fP * inode)"\fBReturns:\fP
+.RS 4
+The SHINODE_DIRECTORY parent of an inode. 
+.RE
+.PP
+
+.SS "\fBshfs_dir_t\fP* shfs_opendir (\fBshfs_t\fP * fs, char * path)"
+.PP
+Open a directory to be listed. \fBParameters:\fP
+.RS 4
+\fIfs\fP The sharefs partition to use or NULL for default. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A resource for tracking a directory list. 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

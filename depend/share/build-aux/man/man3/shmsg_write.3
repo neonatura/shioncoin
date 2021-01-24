@@ -1,0 +1,991 @@
+.TH "The share library 'sharefs' file system." 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+The share library 'sharefs' file system. \- 
+.PP
+The sharefs file system.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshfs_idx_t\fP"
+.br
+.ti -1c
+.RI "struct \fBshfs_hdr_t\fP"
+.br
+.RI "\fIA sharefs filesystem inode header. \fP"
+.ti -1c
+.RI "struct \fBshfs_t\fP"
+.br
+.RI "\fIThe sharefs filesystem structure. \fP"
+.ti -1c
+.RI "struct \fBshfs_journal_t\fP"
+.br
+.RI "\fIA sharefs filesystem journal. \fP"
+.ti -1c
+.RI "struct \fBshsig_t\fP"
+.br
+.in -1c
+.SS "Modules"
+
+.in +1c
+.ti -1c
+.RI "\fBLibshare_fsinode\fP"
+.br
+.PP
+
+.RI "\fIBase file-system inode management. \fP"
+.ti -1c
+.RI "\fBLibshare_fspartition\fP"
+.br
+.PP
+
+.RI "\fIThe libshare 'share-fs' file-system partition management. \fP"
+.ti -1c
+.RI "\fBLibshare_fsjournal\fP"
+.br
+.PP
+
+.RI "\fIPartition journal management. \fP"
+.ti -1c
+.RI "\fBLibshare_fslink\fP"
+.br
+.PP
+
+.RI "\fIDirectory container inode management. \fP"
+.ti -1c
+.RI "\fBLibshare_fsdir\fP"
+.br
+.PP
+
+.RI "\fIDirectory container inode management. \fP"
+.ti -1c
+.RI "\fBLibshare_fsmeta\fP"
+.br
+.PP
+
+.RI "\fIInode supplemental meta information. \fP"
+.ti -1c
+.RI "\fBLibshare_fsfile\fP"
+.br
+.PP
+
+.RI "\fIFile I/O access routines. \fP"
+.ti -1c
+.RI "\fBLibshare_fscache\fP"
+.br
+.PP
+
+.RI "\fIFile-system inode cacheing. \fP"
+.ti -1c
+.RI "\fBLibshare_fsaux\fP"
+.br
+.PP
+
+.RI "\fIGeneric 'auxillary' binary data storage. \fP"
+.ti -1c
+.RI "\fBLibshare_fsattr\fP"
+.br
+.PP
+
+.RI "\fIInode attributes. \fP"
+.ti -1c
+.RI "\fBLibshare_fszlib\fP"
+.br
+.PP
+
+.RI "\fIlibshare filesystem inode compression I/O functionality \fP"
+.ti -1c
+.RI "\fBLibshare_fsbin\fP"
+.br
+.PP
+
+.RI "\fIlibhshare filesystem inode binary I/O functionality. \fP"
+.ti -1c
+.RI "\fBLibshare_fsref\fP"
+.br
+.PP
+
+.RI "\fIlibhshare filesystem inode refary I/O functionality. \fP"
+.ti -1c
+.RI "\fBLibshare_fsmem\fP"
+.br
+.PP
+
+.RI "\fIlocal hard-disk memory I/O \fP"
+.ti -1c
+.RI "\fBLibshare_fsrev\fP"
+.br
+.PP
+
+.RI "\fIrevision repository \fP"
+.ti -1c
+.RI "\fBLibshare_fsobj\fP"
+.br
+.PP
+
+.RI "\fIgeneric object key references \fP"
+.ti -1c
+.RI "\fBLibshare_fshome\fP"
+.br
+.PP
+
+.RI "\fIindividual user 'home' file-system \fP"
+.ti -1c
+.RI "\fBLibshare_fsstream\fP"
+.br
+.PP
+
+.RI "\fIPosix stdio oriented stream IO on sharefs files. \fP"
+.ti -1c
+.RI "\fBLibshare_fslog\fP"
+.br
+.PP
+
+.RI "\fIApplication logging calls. \fP"
+.ti -1c
+.RI "\fBLibshare_fsproc\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHFS_LEVEL_PUBLIC\fP   0"
+.br
+.ti -1c
+.RI "#define \fBSHFS_MAX_LEVELS\fP   1"
+.br
+.ti -1c
+.RI "#define \fBNAME_MAX\fP   4095"
+.br
+.ti -1c
+.RI "#define \fBPATH_MAX\fP   NAME_MAX"
+.br
+.ti -1c
+.RI "#define \fBSHFS_OVERLAY\fP   (1 << 0)"
+.br
+.RI "\fIOverlay sharefs on top of current filesystem. \fP"
+.ti -1c
+.RI "#define \fBSHFS_TRACK\fP   (1 << 1)"
+.br
+.RI "\fITrack all revisions of file modifications. \fP"
+.ti -1c
+.RI "#define \fBSHFS_PRIVATE\fP   (1 << 2)"
+.br
+.RI "\fIA sharefs filesystem that is externally unaccessible beyond the scope of this application. \fP"
+.ti -1c
+.RI "#define \fBSHFS_SYNC\fP   (1 << 3)"
+.br
+.RI "\fIDisabling caching and asynchronous file operations. \fP"
+.ti -1c
+.RI "#define \fBSHFS_REMOTE\fP   (1 << 4)"
+.br
+.RI "\fIThe partition is located on a remote machine. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_NULL\fP   0"
+.br
+.RI "\fIAn inode reference to nothing. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_APP\fP   100"
+.br
+.RI "\fIInode is in reference to an application-specific directory. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_PARTITION\fP   101"
+.br
+.RI "\fIInode is the root of an entire sharefs partition. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_PEER\fP   102"
+.br
+.RI "\fIInode is a reference to a remote sharefs partition. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_ARCHIVE\fP   104"
+.br
+.RI "\fIAn archive of files and/or directories. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_REFERENCE\fP   105"
+.br
+.RI "\fIA reference to another inode. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_META\fP   106"
+.br
+.RI "\fIA meta definition hashmap (meta map). \fP"
+.ti -1c
+.RI "#define \fBSHINODE_DIRECTORY\fP   107"
+.br
+.RI "\fIA directory containing multiple file references. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_AUX\fP   108"
+.br
+.RI "\fIAn auxillary unparseable data segment stored in the sharefs sub-system. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_FILE\fP   109"
+.br
+.RI "\fIA generic reference to a path which contains further references to data. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_BINARY\fP   110"
+.br
+.RI "\fIRaw binary data referenced by a. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_COMPRESS\fP   112"
+.br
+.RI "\fIA zlib compressed binary segment. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_CRYPT\fP   113"
+.br
+.RI "\fIA TEA encoded binary segment. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_DATABASE\fP   114"
+.br
+.RI "\fIA reference to a sqlite database. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_ACCESS\fP   115"
+.br
+.RI "\fIInode specific permissions based on credentials. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_FILE_LOCK\fP   116"
+.br
+.RI "\fIInode specific access mutex. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_LICENSE\fP   117"
+.br
+.ti -1c
+.RI "#define \fBSHINODE_EXTERNAL\fP   118"
+.br
+.ti -1c
+.RI "#define \fBSHINODE_REPOSITORY\fP   120"
+.br
+.RI "\fIA repository of file revisions. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_REVISION\fP   121"
+.br
+.RI "\fIA reference to a particular version of a file. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_DELTA\fP   122"
+.br
+.RI "\fIInode is a reference to a binary delta of a file revision. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_OBJECT\fP   130"
+.br
+.RI "\fIA generic reference to a collection of data. \fP"
+.ti -1c
+.RI "#define \fBSHINODE_OBJECT_KEY\fP   131"
+.br
+.ti -1c
+.RI "#define \fBSHINODE_TEST\fP   140"
+.br
+.RI "\fIA libshare inode type used for testing purposes. \fP"
+.ti -1c
+.RI "#define \fBIS_INODE_CONTAINER\fP(_type)"
+.br
+.ti -1c
+.RI "#define \fBSHFS_MAX_BLOCK_SIZE\fP   4096"
+.br
+.RI "\fIThe maximum size a single block can contain. \fP"
+.ti -1c
+.RI "#define \fBSHFS_BLOCK_DATA_SIZE\fP   (SHFS_MAX_BLOCK_SIZE - sizeof(\fBshfs_hdr_t\fP))"
+.br
+.RI "\fIThe size of the data segment each inode contains. \fP"
+.ti -1c
+.RI "#define \fBSHFS_MAX_BLOCK\fP   57344"
+.br
+.RI "\fIThe maximum number of blocks in a sharefs journal. \fP"
+.ti -1c
+.RI "#define \fBSHFS_PATH_MAX\fP   (SHFS_BLOCK_DATA_SIZE - 34)"
+.br
+.RI "\fIThe maximum length of a sharefs file name. \fP"
+.ti -1c
+.RI "#define \fBSHFS_ATTR_BITS\fP   'abcdefhlmrstvwxz'"
+.br
+.RI "\fIThe character tokens representing the inode attributes. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_ARCH\fP   (1 << 0)"
+.br
+.RI "\fIIndicates the inode contains an SHINODE_ARCHIVE file containing stored directories and/or files. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_BLOCK\fP   (1 << 1)"
+.br
+.ti -1c
+.RI "#define \fBSHATTR_CRED\fP   (1 << 2)"
+.br
+.RI "\fIIndicates the inode has SHINODE_ACCESS credentials. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_DB\fP   (1 << 3)"
+.br
+.RI "\fIIndicates the inode is a database. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_ENC\fP   (1 << 4)"
+.br
+.RI "\fIIndicates the inode is encrypted. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_FLOCK\fP   (1 << 5)"
+.br
+.RI "\fIIndicates the inode has a SHINODE_ACCESS lock blocking access. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_HIDDEN\fP   (1 << 6)"
+.br
+.RI "\fIIndicates the inode is not listed in a directory listing. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_LINK\fP   (1 << 7)"
+.br
+.RI "\fIIndicates the inode is a SHINODE_REFERENCE to another inode. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_META\fP   (1 << 8)"
+.br
+.RI "\fIThis inode has supplementatal SHINODE_META information. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_READ\fP   (1 << 9)"
+.br
+.RI "\fIIndicates the inode has global read access. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_SYNC\fP   (1 << 10)"
+.br
+.RI "\fIIndicates the inode synchronizes with the share daemon. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_TEMP\fP   (1 << 11)"
+.br
+.RI "\fIIndicates that inode is not persistent. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_VER\fP   (1 << 12)"
+.br
+.RI "\fIThis inode has multiple revision versions. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_WRITE\fP   (1 << 13)"
+.br
+.RI "\fIThis inode has global write access. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_EXE\fP   (1 << 14)"
+.br
+.RI "\fIThis inode has global execute access. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_COMP\fP   (1 << 15)"
+.br
+.RI "\fIIndicates the inode is storing compressed data. \fP"
+.ti -1c
+.RI "#define \fBSHATTR_LINK_EXT\fP   (SHATTR_LINK)"
+.br
+.RI "\fIA SHINODE_EXTERNAL inode referencing a local-disk path. \fP"
+.ti -1c
+.RI "#define \fBHAS_SHMETA_INODE\fP(_ino)"
+.br
+.ti -1c
+.RI "#define \fBSHINODE_DEFAULT_ATTR_FORMAT\fP(_attr)"
+.br
+.RI "\fIThe default format for data contained by a SHINODE_FILE inode. \fP"
+.ti -1c
+.RI "#define \fBIS_SHINODE_ARCHIVABLE\fP(_ino)   (shfs_format(_ino) == SHINODE_DIRECTORY)"
+.br
+.RI "\fIcan inode be archived. \fP"
+.ti -1c
+.RI "#define \fBIS_SHINODE_COMPRESSABLE\fP(_ino)   (shfs_format(_ino) == SHINODE_BINARY)"
+.br
+.RI "\fIcan inode be compressed. \fP"
+.ti -1c
+.RI "#define \fBIS_SHINODE_ENCRYPTABLE\fP(_ino)"
+.br
+.RI "\fIcan inode be encrypted. \fP"
+.ti -1c
+.RI "#define \fBIS_SHINODE_VERSIONABLE\fP(_ino)   (shfs_format(_ino) == SHINODE_BINARY)"
+.br
+.RI "\fIcan inode be converted into a revision repository. \fP"
+.ti -1c
+.RI "#define \fBSHFS_MAX_JOURNAL\fP   57344"
+.br
+.RI "\fIThe number of journals a sharefs filesystem contains. \fP"
+.ti -1c
+.RI "#define \fBSHFS_MAX_JOURNAL_SIZE\fP   (SHFS_MAX_BLOCK * SHFS_MAX_BLOCK_SIZE)"
+.br
+.RI "\fIThe maximum number of bytes in a sharefs file-system journal. \fP"
+.ti -1c
+.RI "#define \fBSHMETA_READ\fP   'read'"
+.br
+.ti -1c
+.RI "#define \fBSHMETA_WRITE\fP   'write'"
+.br
+.ti -1c
+.RI "#define \fBSHMETA_EXEC\fP   'exec'"
+.br
+.ti -1c
+.RI "#define \fBSHMETA_USER\fP   'user'"
+.br
+.RI "\fIThe read-access group assigned to the inode. \fP"
+.ti -1c
+.RI "#define \fBSHMETA_GROUP\fP   'group'"
+.br
+.ti -1c
+.RI "#define \fBSHMETA_SIGNATURE\fP   'signature'"
+.br
+.RI "\fIA digital signature. \fP"
+.ti -1c
+.RI "#define \fBSHMETA_DESC\fP   'desc'"
+.br
+.RI "\fIA textual description of the inode. \fP"
+.ti -1c
+.RI "#define \fBSHMETA_USER_NAME\fP   'user.name'"
+.br
+.RI "\fIlogin user's real name \fP"
+.ti -1c
+.RI "#define \fBSHMETA_USER_EMAIL\fP   'user.email'"
+.br
+.RI "\fIlogin user's email address. \fP"
+.ti -1c
+.RI "#define \fBSHMETA_USER_PASS\fP   'sys.pass'"
+.br
+.RI "\fIlogin user's password key. \fP"
+.ti -1c
+.RI "#define \fBSHMETA_USER_SALT\fP   'sys.salt'"
+.br
+.RI "\fIlogin user's password salt. \fP"
+.ti -1c
+.RI "#define \fBBASE_SHMETA_PATH\fP   'meta'"
+.br
+.RI "\fIA directory prefix referencing file meta information. \fP"
+.ti -1c
+.RI "#define \fBshfs_meta_free\fP(_meta_p)   shmeta_free(_meta_p)"
+.br
+.RI "\fIFree an instance to a sharedfs meta definition hashmap. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshfs_t\fP \fBshfs_t\fP"
+.br
+.RI "\fIA type defintion for the sharefs filesytem structure. \fP"
+.ti -1c
+.RI "typedef struct \fBshfs_ino_t\fP \fBshfs_ino_t\fP"
+.br
+.RI "\fIA sharefs filesystem inode. \fP"
+.ti -1c
+.RI "typedef __uint16_t \fBshfs_inode_off_t\fP"
+.br
+.RI "\fIA sharefs filesystem inode or journal reference. \fP"
+.ti -1c
+.RI "typedef __uint16_t \fBshfs_ino_type_t\fP"
+.br
+.RI "\fIA sharefs inode type definition. \fP"
+.ti -1c
+.RI "typedef __uint32_t \fBshfs_attr_t\fP"
+.br
+.RI "\fIA sharefs inode attribute definitions. \fP"
+.ti -1c
+.RI "typedef struct \fBshfs_idx_t\fP \fBshfs_idx_t\fP"
+.br
+.RI "\fIA sharefs filesystem inode position header. \fP"
+.ti -1c
+.RI "typedef struct \fBshfs_hdr_t\fP \fBshfs_hdr_t\fP"
+.br
+.ti -1c
+.RI "typedef struct \fBshfs_block_t\fP \fBshfs_block_t\fP"
+.br
+.ti -1c
+.RI "typedef struct \fBshfs_t\fP \fBSHFS\fP"
+.br
+.RI "\fIA convienence macro for accessing a sharefs file partition. \fP"
+.ti -1c
+.RI "typedef struct \fBshfs_ino_t\fP \fBSHFL\fP"
+.br
+.RI "\fIA convienence macro for accessing a sharefs file node. \fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_journal_index\fP (\fBshkey_t\fP *key)"
+.br
+.RI "\fIIdentify the default journal number for a inode's name. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+The sharefs file system. 
+
+File-system process specific. 
+.SH "Define Documentation"
+.PP 
+.SS "#define BASE_SHMETA_PATH   'meta'"
+.PP
+A directory prefix referencing file meta information. 
+.PP
+Definition at line 838 of file shfs.h.
+.SS "#define HAS_SHMETA_INODE(_ino)"\fBValue:\fP
+.PP
+.nf
+( (_ino->blk.hdr.attr & SHATTR_META) || \
+  )
+.fi
+.PP
+Definition at line 300 of file shfs.h.
+.SS "#define IS_INODE_CONTAINER(_type)"\fBValue:\fP
+.PP
+.nf
+(_type != SHINODE_AUX && \
+   _type != SHINODE_REFERENCE && \
+   _type != SHINODE_EXTERNAL && \
+   _type != SHINODE_LICENSE && \
+   _type != SHINODE_FILE_LOCK && \
+   _type != SHINODE_OBJECT_KEY)
+.fi
+.PP
+Definition at line 232 of file shfs.h.
+.SS "#define IS_SHINODE_ARCHIVABLE(_ino)   (shfs_format(_ino) == SHINODE_DIRECTORY)"
+.PP
+can inode be archived. 
+.PP
+Definition at line 321 of file shfs.h.
+.SS "#define IS_SHINODE_COMPRESSABLE(_ino)   (shfs_format(_ino) == SHINODE_BINARY)"
+.PP
+can inode be compressed. 
+.PP
+Definition at line 325 of file shfs.h.
+.SS "#define IS_SHINODE_ENCRYPTABLE(_ino)"\fBValue:\fP
+.PP
+.nf
+(shfs_format(_ino) == SHINODE_BINARY || \
+   shfs_format(_ino) == SHINODE_COMPRESS)
+.fi
+.PP
+can inode be encrypted. 
+.PP
+Definition at line 329 of file shfs.h.
+.SS "#define IS_SHINODE_VERSIONABLE(_ino)   (shfs_format(_ino) == SHINODE_BINARY)"
+.PP
+can inode be converted into a revision repository. 
+.PP
+Definition at line 334 of file shfs.h.
+.SS "#define SHATTR_ARCH   (1 << 0)"
+.PP
+Indicates the inode contains an SHINODE_ARCHIVE file containing stored directories and/or files. 
+.PP
+Definition at line 266 of file shfs.h.
+.SS "#define SHATTR_COMP   (1 << 15)"
+.PP
+Indicates the inode is storing compressed data. 
+.PP
+Definition at line 296 of file shfs.h.
+.SS "#define SHATTR_CRED   (1 << 2)"
+.PP
+Indicates the inode has SHINODE_ACCESS credentials. 
+.PP
+Definition at line 270 of file shfs.h.
+.SS "#define SHATTR_DB   (1 << 3)"
+.PP
+Indicates the inode is a database. 
+.PP
+Definition at line 272 of file shfs.h.
+.SS "#define SHATTR_ENC   (1 << 4)"
+.PP
+Indicates the inode is encrypted. 
+.PP
+Definition at line 274 of file shfs.h.
+.SS "#define SHATTR_EXE   (1 << 14)"
+.PP
+This inode has global execute access. 
+.PP
+Definition at line 294 of file shfs.h.
+.SS "#define SHATTR_FLOCK   (1 << 5)"
+.PP
+Indicates the inode has a SHINODE_ACCESS lock blocking access. 
+.PP
+Definition at line 276 of file shfs.h.
+.SS "#define SHATTR_HIDDEN   (1 << 6)"
+.PP
+Indicates the inode is not listed in a directory listing. 
+.PP
+Definition at line 278 of file shfs.h.
+.SS "#define SHATTR_LINK   (1 << 7)"
+.PP
+Indicates the inode is a SHINODE_REFERENCE to another inode. 
+.PP
+Definition at line 280 of file shfs.h.
+.SS "#define SHATTR_LINK_EXT   (SHATTR_LINK)"
+.PP
+A SHINODE_EXTERNAL inode referencing a local-disk path. 
+.PP
+Definition at line 298 of file shfs.h.
+.SS "#define SHATTR_META   (1 << 8)"
+.PP
+This inode has supplementatal SHINODE_META information. 
+.PP
+Definition at line 282 of file shfs.h.
+.SS "#define SHATTR_READ   (1 << 9)"
+.PP
+Indicates the inode has global read access. 
+.PP
+Definition at line 284 of file shfs.h.
+.SS "#define SHATTR_SYNC   (1 << 10)"
+.PP
+Indicates the inode synchronizes with the share daemon. 
+.PP
+Definition at line 286 of file shfs.h.
+.SS "#define SHATTR_TEMP   (1 << 11)"
+.PP
+Indicates that inode is not persistent. 
+.PP
+Definition at line 288 of file shfs.h.
+.SS "#define SHATTR_VER   (1 << 12)"
+.PP
+This inode has multiple revision versions. 
+.PP
+Definition at line 290 of file shfs.h.
+.SS "#define SHATTR_WRITE   (1 << 13)"
+.PP
+This inode has global write access. 
+.PP
+Definition at line 292 of file shfs.h.
+.SS "#define SHFS_ATTR_BITS   'abcdefhlmrstvwxz'"
+.PP
+The character tokens representing the inode attributes. 
+.PP
+Definition at line 263 of file shfs.h.
+.SS "#define SHFS_BLOCK_DATA_SIZE   (SHFS_MAX_BLOCK_SIZE - sizeof(\fBshfs_hdr_t\fP))"
+.PP
+The size of the data segment each inode contains. 
+.PP
+Definition at line 249 of file shfs.h.
+.SS "#define SHFS_MAX_BLOCK   57344"
+.PP
+The maximum number of blocks in a sharefs journal. 
+.PP
+Definition at line 254 of file shfs.h.
+.SS "#define SHFS_MAX_BLOCK_SIZE   4096"
+.PP
+The maximum size a single block can contain. \fBNote:\fP
+.RS 4
+Each block segment is 4096 bytes which is equal to the size of \fC\fBshfs_ino_t\fP\fP structure. 
+.RE
+.PP
+
+.PP
+Definition at line 244 of file shfs.h.
+.SS "#define SHFS_MAX_JOURNAL   57344"
+.PP
+The number of journals a sharefs filesystem contains. \fBshfs_journal_t.index\fP 
+.PP
+Definition at line 759 of file shfs.h.
+.SS "#define SHFS_MAX_JOURNAL_SIZE   (SHFS_MAX_BLOCK * SHFS_MAX_BLOCK_SIZE)"
+.PP
+The maximum number of bytes in a sharefs file-system journal. 
+.PP
+Definition at line 764 of file shfs.h.
+.SS "#define shfs_meta_free(_meta_p)   shmeta_free(_meta_p)"
+.PP
+Free an instance to a sharedfs meta definition hashmap. \fBNote:\fP
+.RS 4
+Directly calls \fC\fBshmeta_free()\fP\fP. 
+.RE
+.PP
+
+.PP
+Definition at line 844 of file shfs.h.
+.SS "#define SHFS_OVERLAY   (1 << 0)"
+.PP
+Overlay sharefs on top of current filesystem. \fBNote:\fP
+.RS 4
+Use 'shnet --nosync' for example behavior of this flag. 
+.RE
+.PP
+
+.PP
+Definition at line 71 of file shfs.h.
+.SS "#define SHFS_PATH_MAX   (SHFS_BLOCK_DATA_SIZE - 34)"
+.PP
+The maximum length of a sharefs file name. \fBNote:\fP
+.RS 4
+The length is subtracted by 16 bytes of a hash tag incase to track longer filenames and 1 byte for a null-terminator. 
+.RE
+.PP
+
+.PP
+Definition at line 260 of file shfs.h.
+.SS "#define SHFS_PRIVATE   (1 << 2)"
+.PP
+A sharefs filesystem that is externally unaccessible beyond the scope of this application. \fBNote:\fP
+.RS 4
+Use 'shnet --hidden' for example behavior of this flag. 
+.RE
+.PP
+
+.PP
+Definition at line 84 of file shfs.h.
+.SS "#define SHFS_REMOTE   (1 << 4)"
+.PP
+The partition is located on a remote machine. 
+.PP
+Definition at line 94 of file shfs.h.
+.SS "#define SHFS_SYNC   (1 << 3)"
+.PP
+Disabling caching and asynchronous file operations. 
+.PP
+Definition at line 89 of file shfs.h.
+.SS "#define SHFS_TRACK   (1 << 1)"
+.PP
+Track all revisions of file modifications. \fBNote:\fP
+.RS 4
+Use 'shnet --track' for example behavior of this flag. 
+.RE
+.PP
+
+.PP
+Definition at line 77 of file shfs.h.
+.SS "#define SHINODE_ACCESS   115"
+.PP
+Inode specific permissions based on credentials. 
+.PP
+Definition at line 193 of file shfs.h.
+.SS "#define SHINODE_APP   100"
+.PP
+Inode is in reference to an application-specific directory. \fBNote:\fP
+.RS 4
+See also: \fCshfs_node.d_type\fP 
+.RE
+.PP
+
+.PP
+Definition at line 121 of file shfs.h.
+.SS "#define SHINODE_ARCHIVE   104"
+.PP
+An archive of files and/or directories. \fBNote:\fP
+.RS 4
+See also: \fCshfs_node.d_type\fP 
+.RE
+.PP
+
+.PP
+Definition at line 139 of file shfs.h.
+.SS "#define SHINODE_AUX   108"
+.PP
+An auxillary unparseable data segment stored in the sharefs sub-system. 
+.PP
+Definition at line 161 of file shfs.h.
+.SS "#define SHINODE_BINARY   110"
+.PP
+Raw binary data referenced by a. \fBSee also:\fP
+.RS 4
+\fBSHINODE_FILE\fP inode. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+A SHINODE_BINARY inode contains SHINODE_AUX referencing the raw binary data segments. 
+.RE
+.PP
+
+.PP
+Definition at line 172 of file shfs.h.
+.SS "#define SHINODE_COMPRESS   112"
+.PP
+A zlib compressed binary segment. 
+.PP
+Definition at line 178 of file shfs.h.
+.SS "#define SHINODE_CRYPT   113"
+.PP
+A TEA encoded binary segment. 
+.PP
+Definition at line 183 of file shfs.h.
+.SS "#define SHINODE_DATABASE   114"
+.PP
+A reference to a sqlite database. 
+.PP
+Definition at line 188 of file shfs.h.
+.SS "#define SHINODE_DEFAULT_ATTR_FORMAT(_attr)"\fBValue:\fP
+.PP
+.nf
+( \
+    ((_attr) & SHATTR_DB) ? SHINODE_DATABASE : \
+    ((_attr) & SHATTR_VER) ? SHINODE_REVISION : \
+    ((_attr) & SHATTR_ENC) ? SHINODE_CRYPT : \
+    ((_attr) & SHATTR_COMP) ? SHINODE_COMPRESS : \
+    SHINODE_BINARY \
+  )
+.fi
+.PP
+The default format for data contained by a SHINODE_FILE inode. \fBNote:\fP
+.RS 4
+Does not apply to SHINODE_LINK references. 
+.RE
+.PP
+
+.PP
+Definition at line 308 of file shfs.h.
+.SS "#define SHINODE_DELTA   122"
+.PP
+Inode is a reference to a binary delta of a file revision. 
+.PP
+Definition at line 217 of file shfs.h.
+.SS "#define SHINODE_DIRECTORY   107"
+.PP
+A directory containing multiple file references. 
+.PP
+Definition at line 156 of file shfs.h.
+.SS "#define SHINODE_FILE   109"
+.PP
+A generic reference to a path which contains further references to data. 
+.PP
+Definition at line 166 of file shfs.h.
+.SS "#define SHINODE_FILE_LOCK   116"
+.PP
+Inode specific access mutex. 
+.PP
+Definition at line 198 of file shfs.h.
+.SS "#define SHINODE_META   106"
+.PP
+A meta definition hashmap (meta map). \fBNote:\fP
+.RS 4
+The referenced inode may be local or remote. 
+.RE
+.PP
+
+.PP
+Definition at line 151 of file shfs.h.
+.SS "#define SHINODE_NULL   0"
+.PP
+An inode reference to nothing. 
+.PP
+Definition at line 115 of file shfs.h.
+.SS "#define SHINODE_OBJECT   130"
+.PP
+A generic reference to a collection of data. 
+.PP
+Definition at line 223 of file shfs.h.
+.SS "#define SHINODE_PARTITION   101"
+.PP
+Inode is the root of an entire sharefs partition. \fBNote:\fP
+.RS 4
+See also: \fCshfs_node.d_type\fP 
+.RE
+.PP
+
+.PP
+Definition at line 127 of file shfs.h.
+.SS "#define SHINODE_PEER   102"
+.PP
+Inode is a reference to a remote sharefs partition. \fBNote:\fP
+.RS 4
+See also: \fCshfs_node.d_type\fP 
+.RE
+.PP
+
+.PP
+Definition at line 133 of file shfs.h.
+.SS "#define SHINODE_REFERENCE   105"
+.PP
+A reference to another inode. \fBNote:\fP
+.RS 4
+The referenced inode may be local or remote. 
+.RE
+.PP
+
+.PP
+Definition at line 145 of file shfs.h.
+.SS "#define SHINODE_REPOSITORY   120"
+.PP
+A repository of file revisions. 
+.PP
+Definition at line 207 of file shfs.h.
+.SS "#define SHINODE_REVISION   121"
+.PP
+A reference to a particular version of a file. 
+.PP
+Definition at line 212 of file shfs.h.
+.SS "#define SHINODE_TEST   140"
+.PP
+A libshare inode type used for testing purposes. 
+.PP
+Definition at line 230 of file shfs.h.
+.SS "#define SHMETA_DESC   'desc'"
+.PP
+A textual description of the inode. 
+.PP
+Definition at line 822 of file shfs.h.
+.SS "#define SHMETA_SIGNATURE   'signature'"
+.PP
+A digital signature. 
+.PP
+Definition at line 817 of file shfs.h.
+.SS "#define SHMETA_USER   'user'"
+.PP
+The read-access group assigned to the inode. 
+.PP
+Definition at line 811 of file shfs.h.
+.SS "#define SHMETA_USER_EMAIL   'user.email'"
+.PP
+login user's email address. 
+.PP
+Definition at line 827 of file shfs.h.
+.SS "#define SHMETA_USER_NAME   'user.name'"
+.PP
+login user's real name 
+.PP
+Definition at line 825 of file shfs.h.
+.SS "#define SHMETA_USER_PASS   'sys.pass'"
+.PP
+login user's password key. 
+.PP
+Definition at line 830 of file shfs.h.
+.SS "#define SHMETA_USER_SALT   'sys.salt'"
+.PP
+login user's password salt. 
+.PP
+Definition at line 833 of file shfs.h.
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef struct \fBshfs_ino_t\fP \fBSHFL\fP"
+.PP
+A convienence macro for accessing a sharefs file node. 
+.PP
+Definition at line 461 of file shfs.h.
+.SS "typedef struct \fBshfs_t\fP \fBSHFS\fP"
+.PP
+A convienence macro for accessing a sharefs file partition. 
+.PP
+Definition at line 457 of file shfs.h.
+.SS "typedef __uint32_t \fBshfs_attr_t\fP"
+.PP
+A sharefs inode attribute definitions. 
+.PP
+Definition at line 351 of file shfs.h.
+.SS "typedef struct \fBshfs_idx_t\fP \fBshfs_idx_t\fP"
+.PP
+A sharefs filesystem inode position header. 
+.PP
+Definition at line 357 of file shfs.h.
+.SS "typedef struct \fBshfs_ino_t\fP \fBshfs_ino_t\fP"
+.PP
+A sharefs filesystem inode. 
+.PP
+Definition at line 108 of file shfs.h.
+.SS "typedef __uint16_t \fBshfs_ino_type_t\fP"
+.PP
+A sharefs inode type definition. 
+.PP
+Definition at line 346 of file shfs.h.
+.SS "typedef __uint16_t \fBshfs_inode_off_t\fP"
+.PP
+A sharefs filesystem inode or journal reference. 
+.PP
+Definition at line 341 of file shfs.h.
+.SS "typedef struct \fBshfs_t\fP \fBshfs_t\fP"
+.PP
+A type defintion for the sharefs filesytem structure. 
+.PP
+Definition at line 101 of file shfs.h.
+.SH "Function Documentation"
+.PP 
+.SS "int shfs_journal_index (\fBshkey_t\fP * key)"
+.PP
+Identify the default journal number for a inode's name. \fBReturns:\fP
+.RS 4
+A sharefs filesystem journal index number. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Journal #0 is reserved for system use. 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

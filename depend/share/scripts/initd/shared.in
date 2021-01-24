@@ -1,0 +1,109 @@
+#!/bin/sh
+
+#  Copyright 2014 Neo Natura
+#
+#  This file is part of the Share Library.
+#  (https://github.com/neonatura/share)
+#        
+#  The Share Library is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version. 
+#
+#  The Share Library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with The Share Library.  If not, see <http://www.gnu.org/licenses/>.
+
+prog="shared"
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Allow anyone to run status
+if [ "$1" = "status" ] ; then
+  status $prog
+  RETVAL=$?
+  exit $RETVAL
+fi
+
+# Check that we're a privileged user
+test $EUID = 0  ||  exit 4
+
+# Check that networking is up.
+[ "${NETWORKING}" = "no" ] && exit 1
+
+test -f /etc/sysconfig/shared  && . /etc/sysconfig/shared
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+daemon="@sbindir@/$prog"
+EXTRA_OPTIONS=""
+
+RETVAL=0
+PID_FILE=/var/run/shared.pid
+
+start() {
+  test -x $daemon  || exit 5
+
+  echo -n $"Starting $prog: "
+
+  daemon $daemon "$EXTRAOPTIONS"
+  RETVAL=$?
+  echo
+  if test $RETVAL = 0 ; then
+    touch /var/lock/subsys/shared
+  fi
+  return $RETVAL
+}
+
+stop() {
+  echo -n $"Stopping $prog: "
+  killproc $prog
+  RETVAL=$?
+  echo
+  rm -f /var/lock/subsys/shared
+  return $RETVAL
+}
+
+restart() {
+  stop
+  sleep 1
+  start
+}
+
+reload() {
+  echo -n $"Reloading configuration: "  
+  killproc $prog -HUP
+  RETVAL=$?
+  echo
+  return $RETVAL
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    restart
+    ;;
+  reload|force-reload)
+    restart
+    ;;
+  condrestart|try-restart)
+    if [ -f /var/lock/subsys/shared ] ; then
+      restart
+    fi
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|restart|reload|force-reload|condrestart|try-restart|status}"
+    RETVAL=2
+esac
+
+exit $RETVAL

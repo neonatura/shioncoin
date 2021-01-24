@@ -1448,16 +1448,6 @@ extern "C" {
 
 void start_node(void)
 {
-  char username[256];
-  char password[256];
-
-  /* set rpc credentials */
-  get_rpc_cred(username, password);
-  string strUser(username);
-  string strPass(username);
-  mapArgs["-rpcuser"] = strUser;
-  mapArgs["-rpcpassword"] = strPass;
-
   /* start cpp threads */
   StartCoinServer();
 }

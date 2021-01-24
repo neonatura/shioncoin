@@ -79,6 +79,7 @@ static int test_term(CIface *iface, void *_unused_)
     UnregisterWallet(wallet);
 #endif
   SetWallet(iface, NULL);
+	return (0);
 }
 
 static int test_peer_add(CIface *iface, void *arg)
@@ -174,7 +175,7 @@ static int test_block_templ(CIface *iface, CBlock **block_p)
     
   if (!wallet) {
     unet_log(ifaceIndex, "GetBlocKTemplate: Wallet not initialized.");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   CBlockIndex *pindexBest = GetBestBlockIndex(TEST_COIN_IFACE);
@@ -182,11 +183,11 @@ static int test_block_templ(CIface *iface, CBlock **block_p)
 
   const CPubKey& pubkey = test_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid())
-    return (NULL);
+    return (ERR_INVAL);
 
   pblock = test_CreateNewBlock(pubkey);
   if (!pblock)
-    return (NULL);
+    return (ERR_INVAL);
 
   pblock->nTime = MAX(median, GetAdjustedTime());
   pblock->nNonce = 0;

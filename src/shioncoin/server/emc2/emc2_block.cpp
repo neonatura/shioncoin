@@ -827,19 +827,23 @@ bool EMC2Block::CheckBlock()
   }
 
 	/* verify difficulty match proof-of-work hash. */
+#if 0
 	if (GetHash() == emc2_hashGenesisBlock) { /* genesis block */
 		ok = emc2_CheckProofOfWork(GetPoWHash(), nBits, EMC2_bnGenesisProofOfWorkLimit);
 	} else {
 		ok = emc2_CheckProofOfWork(GetPoWHash(), nBits, EMC2_bnProofOfWorkLimit);
 	}
+#endif
+	ok = emc2_CheckProofOfWork(GetPoWHash(), nBits, emc2_bnProofOfWorkLimit);
 	if (!ok) {
-		return error(SHERR_INVAL, "CheckBlock() : proof of work failed");
+    return (trust(-50, "(emc2) CheckBlock: proof of work failed"));
 	}
-
+#if 0
   // Check proof of work matches claimed amount
   if (!emc2_CheckProofOfWork(GetPoWHash(), nBits)) {
     return (trust(-50, "(emc2) CheckBlock: proof of work failed"));
   }
+#endif
 
   // Check timestamp
   if (GetBlockTime() > GetAdjustedTime() + EMC2_MAX_DRIFT_TIME) {

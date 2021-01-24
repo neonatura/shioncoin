@@ -1,0 +1,62 @@
+
+<pre class="western">  SIP: 34
+  Layer: Consensus (soft fork)
+  Title: ShionID Digital Credential
+  Author: Brian Burrell &lt; support@neo-natura.com &gt;
+  Status: Extensionable
+  Type: Standards Track
+  Created: 2020-05-05</pre>
+==Abstract== 
+The SIP introduces a specific type of context which can be used in order to accmodate user credential registration with third-party vendors.
+
+==Motivation== 
+Currently, web sites require a registration process in order to collect an identifier, a passphrase, and personal information.
+
+The ShionID context combines a hashed email address identifier, for privacy, with a crypted passphrase in order to allow for immediate identification of an individual. In addition, common profile information can also be associated.
+
+Combining this information, in a public accessible manner with prudent exposure to personal information, provides the ability for a person to login into a supported website and have the registration process be performed immediately. In other words, the person would not need to registrer their account for first-time use, and instead the website would rely on Shioncoin blockchain context information in order to identify the user with an email address, initial passphrase, and misc profile information.
+
+From a user perspective, they simply login using their pre-established ShionID email address and password -- as if they had previously registered with the site or interface.
+
+Additional required field gathering or consent may still be required in order to complete the registration in some cases (depending on web site or third-party interface's actual requirements).
+
+==Specification== 
+The ShionID uses a Shioncoin Context extended transaction with a label prefix of "id:" in order to indicate it's application.
+
+The label of the context is in the format: "id:<sha256 of email>"
+
+Verification of whether a ShionID exists is comprised of performing a sha256 hash on the email and prepending the "id:" prefix, and then querying it from the context records on the Shioncoin blockchain. 
+
+The value of the ShionID context is composed of a JSON object.
+
+The password is crypted using the PBKDF2 algorithm (HMAC SHA256) with the token name "crypted_password" and value in the following format: "sha256:<iter>:<salt>:<hash>"
+
+===Profile Tokens===
+Each token name and token value is limited to 135 maximum characters. 
+
+All profile token are optional.
+
+Here is a list of common tokens:
+	geo; A \"<lat>,<lon>\" value referencing a general location.
+	country; A country code (\"US\") referencing residence.
+	zipcode; A postal zipcode.
+	website; An associated web site.
+	name; An organization or real person name.
+	nickname; An alternate personal name.
+	gender; A 'M' for male or 'F' for female.
+	birthdate; Year of birth.
+	zoneinfo; A timezone locale (\"America/Denver\")
+
+Custom profile tokens are permitted.
+
+==Interfacing==
+For convienence, the "ctx.setid", "ctx.getid", and "ctx.listid" RPC commands are provided. The "ctx.listid" can be used by a script to store information into a database.
+
+The SHAPI service interface provides the api methods "api.context.setid", "api.context.getid", and "api.context.listid" which exhibit similar functionality to the RPC commands specified above.
+
+==Alternative Usage==
+It is not mandatory that the ShionID profile be used specifically for login or registration purposes. 
+
+Notice should be taken that the ShionID is limited to using an email address identifier for a key per it's standard use. A non-email identifier, such as a pre-established ID or username, can be used providing it's understood it will only be available for specific cases that expect a non-email identiier.
+
+Additional hash algorithms besides sha256 may be incorporated as standard practice in a future implementation.

@@ -280,3 +280,29 @@ You can optionally install the shcoind.exe program as a service:
 Note: The "shcoind.exe" must run as the same user when running the "shc.exe" utility program in order to communicate.
 
 
+** ShionCoin Configuration **
+
+Use "shcoind --help" in order to get a list of all configuration options.
+
+The shioncoin configuration is applied in the following order:
+# A sharelib preference settings (see libshare "shpref" utility program).
+# On windows; "C:\ProgramData\ShionCoin\shc.conf", and on Linux; "/var/lib/shioncoin/shc.conf".
+# A path ".shc/shc.conf" relative to the user's home directory.
+# Environment variable settings.
+# A shcoind command-line argument.
+
+Each stage will over-write previous options when specified. Therefore, a command-line argument will always over-ride a configuration file.
+
+A default "shc.conf" datafile will be written to the "ProgramData" (windows) or "/var/lib/" (linux) area, when one does not previously exist. A new RPC key will be generated at this point in time.
+
+Review the auto-generated "shc.conf" in order to become familar with the configuration options available.
+
+In order to specify a libshare preference, use the "shpref" command in order to set a configuration value. Prepend the string "shcoind." to the preference name. 
+For example: shpref shcoind.shc-port 24104
+
+To specify a environment variable, prepend "SHCOIND_" and replace all punctuation with a underscore ("_") character.
+Linux/Bash example: export SHCOIND_DEBUG="1"
+Windows example: set SHCOIND_DEBUG=1
+
+The "shc" coin-console RPC client program will read the two "shc" datafile locations specified above in order to retrieve the option "rpc-key".
+

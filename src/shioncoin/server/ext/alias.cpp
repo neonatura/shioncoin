@@ -587,7 +587,7 @@ void CAlias::NotifySharenet(int ifaceIndex)
   shnet_inform(iface, TX_REFERENCE, &ref, sizeof(ref));
 }
 
-int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx)
+int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx, bool fTest)
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
@@ -655,20 +655,21 @@ int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalle
 		return (ERR_INVAL);
 	}
 
-  if (!s_wtx.Send()) {
-    error(ERR_CANCELED, "Send: %s", s_wtx.GetError().c_str());
-		return (ERR_CANCELED);
+	if (!fTest) {
+		if (!s_wtx.Send()) {
+			error(ERR_CANCELED, "Send: %s", s_wtx.GetError().c_str());
+			return (ERR_CANCELED);
+		}
+		Debug("(%s) SENT:ALIASNEW : title=%s, aliashash=%s, tx=%s\n", 
+				iface->name, title, alias->GetHash().ToString().c_str(), 
+				s_wtx.GetHash().GetHex().c_str());
 	}
 
   wtx = s_wtx;
-  Debug("(%s) SENT:ALIASNEW : title=%s, aliashash=%s, tx=%s\n", 
-      iface->name, title, alias->GetHash().ToString().c_str(), 
-      s_wtx.GetHash().GetHex().c_str());
-
   return (0);
 }
 
-int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx)
+int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx, bool fTest)
 {
   int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(iface);
@@ -752,14 +753,15 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
     return (SHERR_CANCELED);
 	}
 
-  if (!s_wtx.Send()) {
-		error(SHERR_CANCELED, "update_alias_addr_tx: submit transaction \"%s\" failure (%s).", iface->name, s_wtx.GetHash().GetHex().c_str(), s_wtx.GetError().c_str());
-    return (SHERR_CANCELED);
+	if (!fTest) {
+		if (!s_wtx.Send()) {
+			error(SHERR_CANCELED, "update_alias_addr_tx: submit transaction \"%s\" failure (%s).", iface->name, s_wtx.GetHash().GetHex().c_str(), s_wtx.GetError().c_str());
+			return (SHERR_CANCELED);
+		}
+		Debug("SENT:ALIASUPDATE : title=%s, aliashash=%s, tx=%s\n", title, alias->GetHash().ToString().c_str(), s_wtx.GetHash().GetHex().c_str());
 	}
 
   wtx = (CWalletTx)s_wtx;
-  Debug("SENT:ALIASUPDATE : title=%s, aliashash=%s, tx=%s\n", title, alias->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
-
 	return (0);
 }
 
@@ -830,7 +832,7 @@ Object CAlias::ToValue(int ifaceIndex)
 {
   Object obj = CIdent::ToValue();
 
-/* DEBUG: TODO: custimize CIDent::TOValue */
+/* TODO: custimize CIDent::TOValue */
   if (GetType() == ALIAS_COINADDR) {
     obj.push_back(Pair("type-name", "coinaddr"));
 

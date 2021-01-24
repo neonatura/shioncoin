@@ -1,0 +1,66 @@
+.TH "tx_metric_msg_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tx_metric_msg_t \- 
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "uint32_t \fBmet_type\fP"
+.br
+.RI "\fIThe type of metric (SHMETRIC_XX). \fP"
+.ti -1c
+.RI "uint32_t \fBmet_flags\fP"
+.br
+.RI "\fIType specific flags for the metric instance. \fP"
+.ti -1c
+.RI "char \fBmet_name\fP [8]"
+.br
+.RI "\fIA self-identifying sub-type of the metric. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBmet_expire\fP"
+.br
+.RI "\fIThe time-stamp of when the metric expires. \fP"
+.ti -1c
+.RI "uint64_t \fBmet_acc\fP"
+.br
+.RI "\fIThe account being referenced. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 249 of file shnet.h.
+.SH "Field Documentation"
+.PP 
+.SS "uint64_t \fBtx_metric_msg_t::met_acc\fP"
+.PP
+The account being referenced. 
+.PP
+Definition at line 263 of file shnet.h.
+.SS "\fBshtime_t\fP \fBtx_metric_msg_t::met_expire\fP"
+.PP
+The time-stamp of when the metric expires. 
+.PP
+Definition at line 260 of file shnet.h.
+.SS "uint32_t \fBtx_metric_msg_t::met_flags\fP"
+.PP
+Type specific flags for the metric instance. 
+.PP
+Definition at line 254 of file shnet.h.
+.SS "char \fBtx_metric_msg_t::met_name\fP[8]"
+.PP
+A self-identifying sub-type of the metric. 
+.PP
+Definition at line 257 of file shnet.h.
+.SS "uint32_t \fBtx_metric_msg_t::met_type\fP"
+.PP
+The type of metric (SHMETRIC_XX). 
+.PP
+Definition at line 251 of file shnet.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

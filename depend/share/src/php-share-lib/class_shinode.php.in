@@ -1,0 +1,59 @@
+<?php
+require_once("class_share_fs.php");
+
+class shinode extends share_fs
+{
+  protected $filesystem;
+  protected $file;
+  protected $path;
+
+  public function __construct($path, $fs = null)
+  {
+
+    if ($fs == null) {
+      $fs = $this->local_fs();
+    }
+
+    $this->path = $path;
+    $this->filesystem = $fs;
+    $this->file = $this->shfs_file_find($fs, $path);
+  }
+
+  public function crc()
+  {
+    return ($this->shfs_crc($this->file));
+  }
+
+  public function shkey()
+  {
+    return ($this->shfs_file_key($this->file));
+  }
+
+  public function parent_dir()
+  {
+    return ($this->shfs_dir_parent($this->file));
+  }
+
+  public function get_meta($def)
+  {
+    return ($this->shfs_meta_get($this->file, $def));
+  }
+
+  public function set_meta($def, $str)
+  {
+    return ($this->shfs_meta_set($this->file, $def, $str));
+  }
+
+  public function path()
+  {
+    return ($this->shfs_inode_path($this->file));
+  }
+
+  public function __toString()
+  {
+    return (shfs_inode_print($this->file));
+  }
+
+}
+
+?>

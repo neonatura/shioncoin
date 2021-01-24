@@ -496,8 +496,6 @@ bool LTCWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, 
 
         // Fill vtxPrev by copying from previous transactions vtxPrev
         wtxNew.AddSupportingTransactions();
-        wtxNew.fTimeReceivedIsTxTime = true;
-
         break;
       }
     }
@@ -714,8 +712,6 @@ bool LTCWallet::CreateAccountTransaction(string strFromAccount, const vector<pai
 
         // Fill vtxPrev by copying from previous transactions vtxPrev
         wtxNew.AddSupportingTransactions();
-        wtxNew.fTimeReceivedIsTxTime = true;
-
         break;
       }
     }

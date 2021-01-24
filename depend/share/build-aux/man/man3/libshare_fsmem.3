@@ -1,0 +1,52 @@
+.TH "Libshare_fsmem" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsmem \- 
+.PP
+local hard-disk memory I/O  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_mem_read\fP (char *path, \fBshbuf_t\fP *buff)"
+.br
+.RI "\fIRead a file from the local filesystem into a memory buffer. \fP"
+.ti -1c
+.RI "int \fBshfs_read_mem\fP (char *path, char **data_p, size_t *data_len_p)"
+.br
+.RI "\fIRead a file from the local filesystem into memory. \fP"
+.ti -1c
+.RI "int \fBshfs_mem_write\fP (char *path, \fBshbuf_t\fP *buff)"
+.br
+.RI "\fIWrite a file from a memory buffer to the local filesystem. \fP"
+.ti -1c
+.RI "int \fBshfs_write_mem\fP (char *path, void *data, size_t data_len)"
+.br
+.RI "\fIWrite a file from memory to the local filesystem. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+local hard-disk memory I/O 
+.SH "Function Documentation"
+.PP 
+.SS "int shfs_mem_read (char * path, \fBshbuf_t\fP * buff)"
+.PP
+Read a file from the local filesystem into a memory buffer. 
+.SS "int shfs_mem_write (char * path, \fBshbuf_t\fP * buff)"
+.PP
+Write a file from a memory buffer to the local filesystem. 
+.SS "int shfs_read_mem (char * path, char ** data_p, size_t * data_len_p)"
+.PP
+Read a file from the local filesystem into memory. 
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.SS "int shfs_write_mem (char * path, void * data, size_t data_len)"
+.PP
+Write a file from memory to the local filesystem. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

@@ -34,6 +34,8 @@
 #include "mnemonic.h"
 #include "txcreator.h"
 #include "chain.h"
+#include "txmempool.h"
+#include "txfeerate.h"
 #include "color/color_pool.h"
 #include "color/color_block.h"
 
@@ -655,6 +657,7 @@ static const ApiItems& stratum_api_account_send(int ifaceIndex, string strAccoun
 	CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(ifaceIndex);
   Array ret;
+	char fee_str[32];
 	double dAmount;
 	double dFee;
   int64 nAmount;
@@ -691,8 +694,12 @@ static const ApiItems& stratum_api_account_send(int ifaceIndex, string strAccoun
 		return (items);
   }
 
-	dFee = atof(shjson_astr(params, "fee", 0));
-  nFee = roundint64(dAmount * COIN);
+	memset(fee_str, 0, sizeof(fee_str));
+	strncpy(fee_str, shjson_astr(params, "fee", ""), sizeof(fee_str)-1);
+	if (!isalpha(*fee_str)) {
+		dFee = atof(fee_str);
+		nFee = roundint64(dAmount * COIN);
+	}
 
   nBalance  = GetAccountBalance(ifaceIndex, strAccount, nMinConfirmDepth);
   if (nAmount > nBalance) {
@@ -737,6 +744,25 @@ static const ApiItems& stratum_api_account_send(int ifaceIndex, string strAccoun
 		items.push_back(obj);
 	} else /* fBatch */ {
 		CTxBatchCreator b_tx(wallet, strAccount, scriptPub, nAmount); 
+
+		if (isalpha(*fee_str)) {
+			const int confTarget = 4;
+			CBlockPolicyEstimator *est = GetFeeEstimator(iface);
+			/* todo: not calc'n inputs */
+			if (est) {
+				int64 nBytes = (int64)wallet->GetVirtualTransactionSize(b_tx);
+				if (0 == strcasecmp(fee_str, "economical")) {
+					nFee = est->GetMinFee(nBytes).GetFee(nBytes);
+				} else if (0 == strcasecmp(fee_str, "priority")) {
+					nFee = est->estimateSmartFee(confTarget, NULL).GetFee(nBytes);
+					nFee *= 2;
+				} else { /* regular */
+					nFee = est->estimateSmartFee(confTarget, NULL).GetFee(nBytes);
+				}
+			}
+		}
+
+		b_tx.SetMinFee(nFee);
 		if (!fTest) {
 			if (b_tx.Send())
 				strError = b_tx.GetError();
@@ -996,60 +1022,94 @@ static const ApiItems& stratum_api_alias_list(int ifaceIndex, string strAccount,
 		if (!pindex)
 			continue;
 
-		if (pindex->GetBlockTime() < begin_t)
+		if (pindex->GetBlockTime() <= begin_t)
 			continue;
 
+		bool fOwner = false;
 		if (fSelf) {
 			CTxDestination dest;
 			CScript script;
 			int mode;
 			int nOut;
 
-			if (!GetExtOutput(tx, OP_ALIAS, mode, nOut, script))
-				continue;
-			if (!ExtractDestination(script, dest))
-				continue;
-			if (!IsOutputForAccount(wallet, addr_list, dest))
-				continue;
+			if (GetExtOutput(tx, OP_ALIAS, mode, nOut, script) &&
+					ExtractDestination(script, dest) &&
+					IsOutputForAccount(wallet, addr_list, dest))
+				fOwner = true;
 		}
+		if (fSelf && !fOwner)
+			continue;	
 
 		Object obj = tx.GetAlias()->ToValue(ifaceIndex);
 		obj.push_back(Pair("blockhash", hBlock.GetHex()));
+		obj.push_back(Pair("hash", tx.GetAlias()->GetHash().GetHex()));
 		obj.push_back(Pair("time", (uint64_t)pindex->GetBlockTime()));
 		obj.push_back(Pair("txid", hTx.GetHex()));
+		if (!fSelf)
+			obj.push_back(Pair("owner", fOwner));
 		items.push_back(obj);
   }
 
   return (items);
 }
 
-static const ApiItems& stratum_api_alias_set(int ifaceIndex, string strAccount, shjson_t *params, string& strError)
+static int stratum_api_alias_set(int ifaceIndex, ApiItems& result, string strAccount, shjson_t *params, string& strError)
 {
 	static ApiItems items;
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 	CWallet *wallet = GetWallet(ifaceIndex);
+	string strExtAccount = "@" + strAccount;
 	CCoinAddr addr(ifaceIndex);
 	CTransaction in_tx;
 	CWalletTx wtx;
+	bool fTest = false;
 	int err;
 
 	items.clear();
 
+	const string test_str(shjson_astr(params, "test", ""));
+	if (test_str == "1")
+		fTest = true;
+
 	const string alias_addr_str(shjson_astr(params, "address", ""));
 	addr = CCoinAddr(ifaceIndex, alias_addr_str);
+	if (!addr.IsValid()) {
+		strError = "invalid coin addresss format";
+		return (ERR_INVAL);
+	}
 
-	string strExtAccount = "@" + strAccount;
+	/* address specified must be relevant for underlying account. */
+	bool found = false;
+  BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
+  {
+    const CCoinAddr& l_address = CCoinAddr(ifaceIndex, item.first);
+    const string& l_account = item.second;
+    if (strAccount == l_account && addr == l_address) {
+			found = true;
+			break;
+		}
+  }
+  if (!found) {
+		strError = "coin address invalid for account";
+		return (ERR_REMOTE);
+  }
 
 	vector<CTxDestination> addr_list;
 	GetOutputsForAccount(wallet, strExtAccount, addr_list);
 
 	string alias_name(shjson_astr(params, "label", ""));
+  if(alias_name.size() == 0 ||
+			alias_name.size() > 135) {
+		strError = "invalid alias label length";
+		return (ERR_INVAL);
+	}
+
 	CAlias *alias = GetAliasByName(iface, alias_name, in_tx);
 	if (!alias) {
-		err = init_alias_addr_tx(iface, alias_name.c_str(), addr, wtx);
+		err = init_alias_addr_tx(iface, alias_name.c_str(), addr, wtx, fTest);
 		if (err) {
-			strError = string(error_str(err));
-			return (items);
+			strError = "initialize alias address transaction";
+			return (err);
 		}
 	} else {
 		CTxDestination dest;
@@ -1061,33 +1121,35 @@ static const ApiItems& stratum_api_alias_set(int ifaceIndex, string strAccount, 
 				!ExtractDestination(script, dest) ||
 				!IsOutputForAccount(wallet, addr_list, dest)) {
 			/* wrong account specified. */
-			strError = string(error_str(ERR_ACCESS));
-			return (items);
+			strError = "error updating alias address";
+			return (ERR_ACCESS);
 		}
 
-		err = update_alias_addr_tx(iface, alias_name.c_str(), addr, wtx);
+		err = update_alias_addr_tx(iface, alias_name.c_str(), addr, wtx, fTest);
 		if (err) {
-			strError = string(error_str(err));
-			return (items);
+			strError = "error updating alias address";
+			return (err);
 		}
 	}
+
 
 	alias = wtx.GetAlias();
 	if (alias) {
 		int nTxSize = (int)wallet->GetVirtualTransactionSize(wtx);
 		int64_t nOutValue = wtx.GetValueOut();
-		int64_t nFee = nOutValue - nFee;
+		int64_t nFee = wallet->GetTxFee(wtx);
 
 		Object obj = wtx.GetAlias()->ToValue(ifaceIndex);
-//		obj.push_back(Pair("hash", alias->GetHash().GetHex()));
+		obj.push_back(Pair("hash", alias->GetHash().GetHex()));
 		obj.push_back(Pair("txid", wtx.GetHash().GetHex().c_str()));
-//		obj.push_back(Pair("fee", ValueFromAmount(nFee)));
+		obj.push_back(Pair("fee", ValueFromAmount(nFee)));
 		obj.push_back(Pair("txsize", nTxSize));
 
 		items.push_back(obj);
 	}
 
-	return (items);
+	result = items;
+	return (0);
 }
 
 static const ApiItems& stratum_api_alias_get(int ifaceIndex, string strAccount, shjson_t *params, string& strError)
@@ -1168,6 +1230,30 @@ static const ApiItems& stratum_api_alias_get(int ifaceIndex, string strAccount, 
 	return (items);
 }
 
+static const ApiItems& stratum_api_alias_info(int ifaceIndex, string strAccount, shjson_t *params, string& strError)
+{
+	static ApiItems items;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	int nBestHeight = GetBestHeight(iface);
+	Array ret;
+	alias_list *list;
+	uint160 hash;
+	string label;
+
+	strError = "";
+	items.clear();
+
+	list = GetAliasTable(ifaceIndex);
+	if (!list) return (items);
+
+	Object obj;
+	obj.push_back(Pair("fee", ValueFromAmount(GetAliasOpFee(iface, nBestHeight))));
+	obj.push_back(Pair("total", (int)list->size()));
+	items.push_back(obj);
+
+	return (items);
+}
+
 static const ApiItems& stratum_api_context_list(int ifaceIndex, string strAccount, shjson_t *params, int64 begin_t, bool fSelf)
 {
 	static ApiItems items;
@@ -1226,6 +1312,30 @@ static const ApiItems& stratum_api_context_list(int ifaceIndex, string strAccoun
 	return (items);
 }
 
+static const ApiItems& stratum_api_context_info(int ifaceIndex, string strAccount, shjson_t *params, string& strError)
+{
+	static ApiItems items;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	int nBestHeight = GetBestHeight(iface);
+	Array ret;
+	ctx_list *list;
+	uint160 hash;
+	string label;
+
+	strError = "";
+	items.clear();
+
+	list = GetContextTable(ifaceIndex);
+	if (!list) return (items);
+
+	Object obj;
+	obj.push_back(Pair("fee", ValueFromAmount(GetContextOpFee(iface, nBestHeight))));
+	obj.push_back(Pair("total", (int)list->size()));
+	items.push_back(obj);
+
+	return (items);
+}
+
 static const ApiItems& stratum_api_context_set(int ifaceIndex, string strAccount, shjson_t *params, string& strError)
 {
 	static ApiItems items;
@@ -1233,8 +1343,10 @@ static const ApiItems& stratum_api_context_set(int ifaceIndex, string strAccount
 	CWallet *wallet = GetWallet(ifaceIndex);
 	string strName(shjson_astr(params, "label", ""));
 	string strValue(shjson_astr(params, "value", ""));
+	string strTest(shjson_astr(params, "value", ""));
 	CContext *ctx;
 	CWalletTx wtx;
+	bool fTest = false;
 	int err;
 
 	strError = "";
@@ -1245,9 +1357,12 @@ static const ApiItems& stratum_api_context_set(int ifaceIndex, string strAccount
 	vector<CTxDestination> addr_list;
 	GetOutputsForAccount(wallet, strExtAccount, addr_list);
 
+	if (strTest == "1")
+		fTest = true;
+
 	cbuff vchValue(strValue.begin(), strValue.end());
 	if (!IsContextName(iface, strName)) {
-		err = init_ctx_tx(iface, wtx, strAccount, strName, vchValue);
+		err = init_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, fTest);
 		if (err) {
 			strError = string(error_str(err));
 			return (items);
@@ -1269,7 +1384,7 @@ static const ApiItems& stratum_api_context_set(int ifaceIndex, string strAccount
 			return (items);
 		}
 
-		err = update_ctx_tx(iface, wtx, strAccount, strName, vchValue);
+		err = update_ctx_tx(iface, wtx, strAccount, strName, vchValue, NULL, fTest);
 		if (err) {
 			strError = string(error_str(err));
 			return (items);
@@ -1863,6 +1978,8 @@ static const ApiItems& stratum_api_block_mined(int ifaceIndex, user_t *user, shj
 	return (items);
 }
 
+extern double GetDifficulty(int ifaceIndex, const CBlockIndex* blockindex);
+
 static const ApiItems& stratum_api_block_list(int ifaceIndex, user_t *user, shjson_t *params, int64 begin_t)
 {
 	static ApiItems items;
@@ -1880,6 +1997,8 @@ static const ApiItems& stratum_api_block_list(int ifaceIndex, user_t *user, shjs
 		obj.push_back(Pair("time", (int)pindex->nTime));
 		obj.push_back(Pair("height", pindex->nHeight));
 		obj.push_back(Pair("bits", HexBits(pindex->nBits)));
+		obj.push_back(Pair("difficulty", GetDifficulty(ifaceIndex, pindex)));
+
 		items.push_back(obj);
 		if (pindex->GetBlockTime() < begin_t)
 			break;
@@ -1982,6 +2101,7 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 	ApiItems result;
 	string strError = "";
 	uint160 hColor;
+	int codeError;
 	int offset;
 	int err;
 
@@ -2033,13 +2153,17 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 	} else if (0 == strcmp(method, "api.alias.self")) {
 		result = stratum_api_alias_list(ifaceIndex, strAccount, params, begin_t, true);
 	} else if (0 == strcmp(method, "api.alias.set")) {
-		result = stratum_api_alias_set(ifaceIndex, strAccount, params, strError);
+		codeError = stratum_api_alias_set(ifaceIndex, result, strAccount, params, strError);
 	} else if (0 == strcmp(method, "api.alias.get")) {
 		result = stratum_api_alias_get(ifaceIndex, strAccount, params, strError);
+	} else if (0 == strcmp(method, "api.alias.info")) {
+		result = stratum_api_alias_info(ifaceIndex, strAccount, params, strError);
 	} else if (0 == strcmp(method, "api.context.list")) {
 		result = stratum_api_context_list(ifaceIndex, strAccount, params, begin_t, false);
 	} else if (0 == strcmp(method, "api.context.self")) {
 		result = stratum_api_context_list(ifaceIndex, strAccount,  params, begin_t, true);
+	} else if (0 == strcmp(method, "api.context.info")) {
+		result = stratum_api_context_info(ifaceIndex, strAccount, params, strError);
 	} else if (0 == strcmp(method, "api.context.set")) {
 		result = stratum_api_context_set(ifaceIndex, strAccount, params, strError);
 	} else if (0 == strcmp(method, "api.context.get")) {
@@ -2089,7 +2213,8 @@ shjson_t *stratum_request_api_list(int ifaceIndex, user_t *user, string strAccou
 	}
 	if (result.size() == 0 && strError != "") {
 		shjson_t *reply = shjson_init(NULL);
-		set_stratum_error(reply, SHERR_INVAL, (char *)strError.c_str());
+		if (codeError == 0) codeError = ERR_INVAL;
+		set_stratum_error(reply, codeError, (char *)strError.c_str());
 		shjson_null_add(reply, "result");
 		return (reply);
 	}

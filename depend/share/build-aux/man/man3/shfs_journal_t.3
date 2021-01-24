@@ -1,0 +1,67 @@
+.TH "shfs_journal_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shfs_journal_t \- 
+.PP
+A sharefs filesystem journal.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shfs.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBshfs_t\fP * \fBtree\fP"
+.br
+.RI "\fIThe sharefs partition this journal is part of. \fP"
+.ti -1c
+.RI "int \fBindex\fP"
+.br
+.RI "\fIThe index number of the journal. \fP"
+.ti -1c
+.RI "\fBshbuf_t\fP * \fBbuff\fP"
+.br
+.RI "\fIThe data segment of the journaled sharefs file system. \fP"
+.ti -1c
+.RI "char \fBpath\fP [4095+1]"
+.br
+.RI "\fIThe path to the sharefs partition journal on the local filesystem. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBstamp\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+A sharefs filesystem journal. 
+.PP
+Definition at line 772 of file shfs.h.
+.SH "Field Documentation"
+.PP 
+.SS "\fBshbuf_t\fP* \fBshfs_journal_t::buff\fP"
+.PP
+The data segment of the journaled sharefs file system. 
+.PP
+Definition at line 786 of file shfs.h.
+.SS "int \fBshfs_journal_t::index\fP"
+.PP
+The index number of the journal. 
+.PP
+Definition at line 781 of file shfs.h.
+.SS "char \fBshfs_journal_t::path\fP[4095+1]"
+.PP
+The path to the sharefs partition journal on the local filesystem. 
+.PP
+Definition at line 791 of file shfs.h.
+.SS "\fBshfs_t\fP* \fBshfs_journal_t::tree\fP"
+.PP
+The sharefs partition this journal is part of. 
+.PP
+Definition at line 776 of file shfs.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

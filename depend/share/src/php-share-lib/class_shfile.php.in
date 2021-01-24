@@ -1,0 +1,47 @@
+<?php
+require_once("class_shinode.php");
+
+class shfile extends shinode
+{
+
+  public function import($path)
+  {
+  }
+
+  public function export($path)
+  {
+  }
+
+  public function generate_signature($sig)
+  {
+    return ($this->shfs_sig_gen($this->file, $sig));
+  }
+
+  public function verify_signature($peer_key)
+  {
+    $this->shfs_sig_verify($this->file, $peer_key);
+  }
+
+/*
+  public function read()
+  {
+    $buf = null;
+    $len = 0;
+    $this->errno = $this->shfs_file_read($this->file, &$buf, &$len);
+    if ($this->errno != 0)
+      return (null);
+
+    return ($buf);
+  }
+*/
+
+  public function write($data)
+  {
+    $len = strlen($data);
+    $this->errno = $this->shfs_file_write($this->file, $data, $len);
+    return ($this->errno);
+  }
+
+
+}
+?>

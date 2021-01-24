@@ -55,7 +55,7 @@ const RPCOp WALLET_DONATE = {
   "Summary: Donate coins as a block transaction fee identified by the specified certificate.\n"
   "Params: [ <account> The coin account name., <value> The coin value to donate, <cert-hash> The associated certificate's hash. ]\n"
   "\n"
-  "Donated coins are added to the upcoming block reward. Donations may be optionally associated with a certificate. The maximum donation value in a single transaction is 500 coins."
+  "Donated coins are added to the upcoming block reward. Donations may be optionally associated with a certificate. The maximum donation value in a single transaction is 1000 coins."
 };
 
 const RPCOp WALLET_KEYPHRASE = {
@@ -293,15 +293,27 @@ const RPCOp CTX_SETFILE = {
 
 const RPCOp CTX_GETID = {
   &rpc_ctx_getid, 1, {RPC_STRING},
-  "Syntax: <name>\n"
-  "Print profile information for a given ID name."
+  "Syntax: <email>\n"
+  "Print profile information for a given email ID."
 };
+
 const RPCOp CTX_SETID = {
-  &rpc_ctx_setid, 3, {RPC_ACCOUNT, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING},
-  "Syntax: <account> <id-name> <real-name> <email> [<country>] [\"geo:<lat>,<lon>\" | <zipcode>] [<url>]\n"
-  "Params: [ <account> The account to associate with the context, <id-name> The name of the entity, <real-name> An organization or real person name, <email> An email address, <country> A country in \"en_US\" or \"US\" style format, <zipcode> A five-digit numeric zip-code, <url> An associated web reference. ]\n"
+  &rpc_ctx_setid, 3, {RPC_ACCOUNT, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING},
+  "Syntax: <account> <email> <password> [<param>=<value>]\n"
+  "Params: [ <account> The account to associate with the context, <email> An email address, <password> A unique passphrase, [<param>] One or more of the parameters specified below. ]\n"
   "\n"
-  "Set profile information for a given ID name."
+  "Set profile information for a given email address ID.\n"
+	"\n"
+	"Parameters: (optional)\n"
+	"\tbirthdate\tYear of birth.\n"
+	"\tcountry\t\tA country code (\"US\") referencing residence.\n"
+	"\tgender\t\tA 'M' for male or 'F' for female.\n"
+	"\tgeo\t\tA \"<lat>,<lon>\" referencing a general location.\n"
+	"\tname\t\tAn organization or real person name.\n"
+	"\tnickname\tAn alternate personal name.\n"
+	"\twebsite\t\tAn associated web site.\n"
+	"\tzipcode\t\tA postal zipcode.\n"
+	"\tzoneinfo\tA timezone locale (\"America/Denver\")\n"
 };
 
 const RPCOp CTX_GETLOC = {

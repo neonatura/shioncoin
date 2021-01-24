@@ -1,0 +1,500 @@
+.TH "Network socket operations." 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Network socket operations. \- 
+.PP
+The libshare Socket Handling provides access to regular socket operations with posix or convienence functions in addition to access to the ESP network protocol.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshnet_t\fP"
+.br
+.ti -1c
+.RI "struct \fBtx_app_msg_t\fP"
+.br
+.RI "\fIApplication identifying information returned to a message-queue client. \fP"
+.ti -1c
+.RI "struct \fBtx_account_msg_t\fP"
+.br
+.RI "\fIAccount information returned to a message-queue client. \fP"
+.ti -1c
+.RI "struct \fBtx_id_msg_t\fP"
+.br
+.RI "\fIAccount identity returned to a message-queue client. \fP"
+.ti -1c
+.RI "struct \fBtx_session_msg_t\fP"
+.br
+.ti -1c
+.RI "struct \fBtx_license_msg_t\fP"
+.br
+.ti -1c
+.RI "struct \fBtx_event_msg_t\fP"
+.br
+.ti -1c
+.RI "struct \fBtx_bond_msg_t\fP"
+.br
+.ti -1c
+.RI "struct \fBtx_metric_msg_t\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBUSHORT_MAX\fP   65536"
+.br
+.ti -1c
+.RI "#define \fBIPPROTO\fP   ESTP 121"
+.br
+.ti -1c
+.RI "#define \fBSHNET_ALIVE\fP   (1 << 0)"
+.br
+.RI "\fIsocket is not closed \fP"
+.ti -1c
+.RI "#define \fBSHNET_CONNECT\fP   (1 << 1)"
+.br
+.RI "\fIperform asynchronous connection \fP"
+.ti -1c
+.RI "#define \fBSHNET_ASYNC\fP   (1 << 2)"
+.br
+.RI "\fIdo not block client calls \fP"
+.ti -1c
+.RI "#define \fBSHNET_LISTEN\fP   (1 << 3)"
+.br
+.RI "\fIsocket is bound to listen on port. \fP"
+.ti -1c
+.RI "#define \fBSHNET_EMULATE\fP   (1 << 4)"
+.br
+.RI "\fIuser-level emulation of network protocol \fP"
+.ti -1c
+.RI "#define \fBSHNET_SHUTDOWN\fP   (1 << 5)"
+.br
+.RI "\fIterminate socket after processing \fP"
+.ti -1c
+.RI "#define \fBSHNET_DEFAULT_DEVICE\fP   'eth0'"
+.br
+.ti -1c
+.RI "#define \fBTX_NONE\fP   0"
+.br
+.RI "\fIA generic type referencing an invalid transaction. \fP"
+.ti -1c
+.RI "#define \fBTX_LISTEN\fP   1"
+.br
+.RI "\fIA transaction mode to request broadcasts of a transaction type. \fP"
+.ti -1c
+.RI "#define \fBTX_APP\fP   2"
+.br
+.RI "\fIA libshare application identifier. \fP"
+.ti -1c
+.RI "#define \fBTX_FILE\fP   3"
+.br
+.RI "\fIA share-fs partition file transaction. \fP"
+.ti -1c
+.RI "#define \fBTX_BOND\fP   4"
+.br
+.RI "\fIA USDe currency transaction. \fP"
+.ti -1c
+.RI "#define \fBTX_WARD\fP   5"
+.br
+.RI "\fIA ward can be placed on another transaction to prohibit from being used. \fP"
+.ti -1c
+.RI "#define \fBTX_LEDGER\fP   6"
+.br
+.RI "\fIA collection of transactions. \fP"
+.ti -1c
+.RI "#define \fBTX_IDENT\fP   7"
+.br
+.RI "\fIA specfic application's reference to an account. \fP"
+.ti -1c
+.RI "#define \fBTX_ACCOUNT\fP   8"
+.br
+.RI "\fIAn identifier of user credentials. \fP"
+.ti -1c
+.RI "#define \fBTX_TASK\fP   9"
+.br
+.RI "\fIA task performing sexe execution thread(s). \fP"
+.ti -1c
+.RI "#define \fBTX_THREAD\fP   10"
+.br
+.RI "\fIA sexe runtime execution thread. \fP"
+.ti -1c
+.RI "#define \fBTX_TRUST\fP   11"
+.br
+.RI "\fIA secondary confirmation of a transaction. \fP"
+.ti -1c
+.RI "#define \fBTX_EVENT\fP   12"
+.br
+.RI "\fIAn event specifies when a transaction will become valid. \fP"
+.ti -1c
+.RI "#define \fBTX_SESSION\fP   13"
+.br
+.RI "\fIAn active application session for an identity. \fP"
+.ti -1c
+.RI "#define \fBTX_LICENSE\fP   14"
+.br
+.RI "\fIA license granting access permission. \fP"
+.ti -1c
+.RI "#define \fBTX_WALLET\fP   15"
+.br
+.RI "\fIA wallet owned by an identity. \fP"
+.ti -1c
+.RI "#define \fBTX_METRIC\fP   16"
+.br
+.RI "\fIAn account metric of identification. \fP"
+.ti -1c
+.RI "#define \fBMAX_TX\fP   17"
+.br
+.RI "\fIThe maximum number of transaction operations supported. \fP"
+.ti -1c
+.RI "#define \fBTX_BOND_NONE\fP   0"
+.br
+.ti -1c
+.RI "#define \fBTX_BOND_PREPARE\fP   1"
+.br
+.ti -1c
+.RI "#define \fBTX_BOND_SCHEDULE\fP   2"
+.br
+.ti -1c
+.RI "#define \fBTX_BOND_TRANSMIT\fP   3"
+.br
+.ti -1c
+.RI "#define \fBTX_BOND_CONFIRM\fP   4"
+.br
+.ti -1c
+.RI "#define \fBTX_BOND_PENDING\fP   5"
+.br
+.ti -1c
+.RI "#define \fBTX_BOND_COMPLETE\fP   6"
+.br
+.ti -1c
+.RI "#define \fBTX_BONDERR_ADDR\fP   10"
+.br
+.ti -1c
+.RI "#define \fBTX_BONDERR_ACCOUNT\fP   11"
+.br
+.ti -1c
+.RI "#define \fBTX_BONDERR_DEBIT\fP   12"
+.br
+.ti -1c
+.RI "#define \fBTX_BONDERR_NET\fP   13"
+.br
+.ti -1c
+.RI "#define \fBTX_BONDERR_SESS\fP   14"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshnet_t\fP \fBshnet_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshnet_accept\fP (int sockfd)"
+.br
+.RI "\fIaccept \fP"
+.ti -1c
+.RI "int \fBshnet_bindsk\fP (int sockfd, char *hostname, unsigned int port)"
+.br
+.RI "\fIbind \fP"
+.ti -1c
+.RI "int \fBshnet_bind\fP (int sockfd, const struct sockaddr *addr, socklen_t addrlen)"
+.br
+.RI "\fIbind \fP"
+.ti -1c
+.RI "int \fBshnet_close\fP (int sk)"
+.br
+.RI "\fIclose \fP"
+.ti -1c
+.RI "int \fBshnet_conn\fP (int sk, char *host, unsigned short port, int async)"
+.br
+.RI "\fIconnect \fP"
+.ti -1c
+.RI "int \fBshnet_fcntl\fP (int fd, int cmd, long arg)"
+.br
+.RI "\fIfcntl \fP"
+.ti -1c
+.RI "struct hostent * \fBshnet_gethostbyname\fP (char *name)"
+.br
+.RI "\fIgethost \fP"
+.ti -1c
+.RI "struct hostent * \fBshnet_peer\fP (char *name)"
+.br
+.RI "\fIgethost \fP"
+.ti -1c
+.RI "ssize_t \fBshnet_read\fP (int fd, const void *buf, size_t count)"
+.br
+.RI "\fIread \fP"
+.ti -1c
+.RI "int \fBshnet_sk\fP (void)"
+.br
+.RI "\fICreates a standard IPv4 TCP socket. \fP"
+.ti -1c
+.RI "int \fBshnet_socket\fP (int domain, int type, int protocol)"
+.br
+.RI "\fICreate a network socket. \fP"
+.ti -1c
+.RI "struct sockaddr * \fBshnet_host\fP (int sockfd)"
+.br
+.RI "\fIsocket \fP"
+.ti -1c
+.RI "ssize_t \fBshnet_write\fP (int fd, const void *buf, size_t count)"
+.br
+.RI "\fIwrite \fP"
+.ti -1c
+.RI "int \fBshnet_verify\fP (fd_set *readfds, fd_set *writefds, long *millis)"
+.br
+.RI "\fIWaits on the specified read/write socket streams and marks which are available for an IO operation. \fP"
+.ti -1c
+.RI "int \fBshnet_select\fP (int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)"
+.br
+.RI "\fIPerforms a POSIX select() against a set of \fBshnet_t\fP socket streams. \fP"
+.ti -1c
+.RI "int \fBshconnect\fP (int sk, struct sockaddr *skaddr, socklen_t skaddr_len)"
+.br
+.RI "\fIInitiate a standard posix connection managable by libshare. \fP"
+.ti -1c
+.RI "int \fBshconnect_host\fP (char *host, unsigned short port, int flags)"
+.br
+.RI "\fI* Initiate a connection to the hostname and port specified. \fP"
+.ti -1c
+.RI "int \fBshconnect_peer\fP (\fBshpeer_t\fP *peer, int flags)"
+.br
+.RI "\fI* Initiate a socket connection to a libshare peer entity. \fP"
+.ti -1c
+.RI "\fBshbuf_t\fP * \fBshnet_read_buf\fP (int fd)"
+.br
+.RI "\fIObtain the internal socket buffer used for a network connection. \fP"
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBshnet_t\fP \fB_sk_table\fP [65536]"
+.br
+.RI "\fIsocket \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+The libshare Socket Handling provides access to regular socket operations with posix or convienence functions in addition to access to the ESP network protocol. 
+
+The ESP protocol performs streaming compression and provides more security than TCP. The libshare network socket operations. 
+.SH "Define Documentation"
+.PP 
+.SS "#define MAX_TX   17"
+.PP
+The maximum number of transaction operations supported. 
+.PP
+Definition at line 170 of file shnet.h.
+.SS "#define SHNET_ALIVE   (1 << 0)"
+.PP
+socket is not closed 
+.PP
+Definition at line 59 of file shnet.h.
+.SS "#define SHNET_ASYNC   (1 << 2)"
+.PP
+do not block client calls 
+.PP
+Definition at line 63 of file shnet.h.
+.SS "#define SHNET_CONNECT   (1 << 1)"
+.PP
+perform asynchronous connection 
+.PP
+Definition at line 61 of file shnet.h.
+.SS "#define SHNET_EMULATE   (1 << 4)"
+.PP
+user-level emulation of network protocol 
+.PP
+Definition at line 67 of file shnet.h.
+.SS "#define SHNET_LISTEN   (1 << 3)"
+.PP
+socket is bound to listen on port. 
+.PP
+Definition at line 65 of file shnet.h.
+.SS "#define SHNET_SHUTDOWN   (1 << 5)"
+.PP
+terminate socket after processing 
+.PP
+Definition at line 69 of file shnet.h.
+.SS "#define TX_ACCOUNT   8"
+.PP
+An identifier of user credentials. 
+.PP
+Definition at line 133 of file shnet.h.
+.SS "#define TX_APP   2"
+.PP
+A libshare application identifier. 
+.PP
+Definition at line 109 of file shnet.h.
+.SS "#define TX_BOND   4"
+.PP
+A USDe currency transaction. 
+.PP
+Definition at line 117 of file shnet.h.
+.SS "#define TX_EVENT   12"
+.PP
+An event specifies when a transaction will become valid. \fBSee also:\fP
+.RS 4
+shicald 
+.RE
+.PP
+
+.PP
+Definition at line 150 of file shnet.h.
+.SS "#define TX_FILE   3"
+.PP
+A share-fs partition file transaction. 
+.PP
+Definition at line 113 of file shnet.h.
+.SS "#define TX_IDENT   7"
+.PP
+A specfic application's reference to an account. 
+.PP
+Definition at line 129 of file shnet.h.
+.SS "#define TX_LEDGER   6"
+.PP
+A collection of transactions. 
+.PP
+Definition at line 125 of file shnet.h.
+.SS "#define TX_LICENSE   14"
+.PP
+A license granting access permission. 
+.PP
+Definition at line 158 of file shnet.h.
+.SS "#define TX_LISTEN   1"
+.PP
+A transaction mode to request broadcasts of a transaction type. \fBNote:\fP
+.RS 4
+Only applicable for client message-queue communication. 
+.RE
+.PP
+
+.PP
+Definition at line 105 of file shnet.h.
+.SS "#define TX_METRIC   16"
+.PP
+An account metric of identification. 
+.PP
+Definition at line 167 of file shnet.h.
+.SS "#define TX_NONE   0"
+.PP
+A generic type referencing an invalid transaction. 
+.PP
+Definition at line 100 of file shnet.h.
+.SS "#define TX_SESSION   13"
+.PP
+An active application session for an identity. 
+.PP
+Definition at line 154 of file shnet.h.
+.SS "#define TX_TASK   9"
+.PP
+A task performing sexe execution thread(s). 
+.PP
+Definition at line 137 of file shnet.h.
+.SS "#define TX_THREAD   10"
+.PP
+A sexe runtime execution thread. 
+.PP
+Definition at line 141 of file shnet.h.
+.SS "#define TX_TRUST   11"
+.PP
+A secondary confirmation of a transaction. 
+.PP
+Definition at line 145 of file shnet.h.
+.SS "#define TX_WALLET   15"
+.PP
+A wallet owned by an identity. 
+.PP
+Definition at line 162 of file shnet.h.
+.SS "#define TX_WARD   5"
+.PP
+A ward can be placed on another transaction to prohibit from being used. 
+.PP
+Definition at line 121 of file shnet.h.
+.SH "Function Documentation"
+.PP 
+.SS "int shconnect (int sk, struct sockaddr * skaddr, socklen_t skaddr_len)"
+.PP
+Initiate a standard posix connection managable by libshare. 
+.SS "int shconnect_host (char * host, unsigned short port, int flags)"
+.PP
+* Initiate a connection to the hostname and port specified. 
+.SS "int shconnect_peer (\fBshpeer_t\fP * peer, int flags)"
+.PP
+* Initiate a socket connection to a libshare peer entity. 
+.SS "int shnet_accept (int sockfd)"
+.PP
+accept 
+.SS "int shnet_bind (int sockfd, const struct sockaddr * addr, socklen_t addrlen)"
+.PP
+bind 
+.SS "int shnet_bindsk (int sockfd, char * hostname, unsigned int port)"
+.PP
+bind 
+.SS "int shnet_close (int sk)"
+.PP
+close 
+.SS "int shnet_conn (int sk, char * host, unsigned short port, int async)"
+.PP
+connect 
+.SS "int shnet_fcntl (int fd, int cmd, long arg)"
+.PP
+fcntl 
+.SS "struct hostent* shnet_gethostbyname (char * name)\fC [read]\fP"
+.PP
+gethost 
+.SS "struct sockaddr* shnet_host (int sockfd)\fC [read]\fP"
+.PP
+socket 
+.SS "struct hostent* shnet_peer (char * name)\fC [read]\fP"
+.PP
+gethost 
+.SS "ssize_t shnet_read (int fd, const void * buf, size_t count)"
+.PP
+read 
+.SS "\fBshbuf_t\fP* shnet_read_buf (int fd)"
+.PP
+Obtain the internal socket buffer used for a network connection. 
+.SS "int shnet_select (int nfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds, struct timeval * timeout)"
+.PP
+Performs a POSIX select() against a set of \fBshnet_t\fP socket streams. 
+.SS "int shnet_sk (void)"
+.PP
+Creates a standard IPv4 TCP socket. 
+.SS "int shnet_socket (int domain, int type, int protocol)"
+.PP
+Create a network socket. \fBParameters:\fP
+.RS 4
+\fIdomain\fP Either AF_INET or AF_INET6. 
+.br
+\fItype\fP Only SOCK_STREAM is supported. 
+.br
+\fIprotocol\fP Either IPPROTO_TCP or IPPROTO_SHNET. 
+.RE
+.PP
+
+.SS "int shnet_verify (fd_set * readfds, fd_set * writefds, long * millis)"
+.PP
+Waits on the specified read/write socket streams and marks which are available for an IO operation. \fBSee also:\fP
+.RS 4
+\fBshnet_select()\fP 
+.RE
+.PP
+
+.SS "ssize_t shnet_write (int fd, const void * buf, size_t count)"
+.PP
+write 
+.SH "Variable Documentation"
+.PP 
+.SS "\fBshnet_t\fP \fB_sk_table\fP[65536]"
+.PP
+socket 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

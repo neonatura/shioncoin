@@ -113,7 +113,7 @@ void unet_close_idle(void)
     }
 
     if (t->mode == UNET_STRATUM ||
-        t->mode == UNET_STRATUM_ESL) {
+        t->mode == UNET_SHAPI) {
       if (t->stamp != UNDEFINED_TIME &&
           shtime_before(shtime_adj(t->stamp, MAX_IDLE_TIME), now)) {
         unet_close(sk, "idle");

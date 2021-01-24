@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(shioncoin, 4.1)
+AC_INIT(shioncoin, 5.1)
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -20,9 +20,9 @@ AM_CONDITIONAL([KMOD_DIR], [test -f /lib/modules/`uname -r`/build])
 
 LT_INIT
 
-version_patch=0
+version_patch=1
 AC_SUBST(version_patch)
-version_info=4:1:0
+version_info=5:1:0
 AC_SUBST(version_info)
 
 AC_CONFIG_FILES([doc/NEWS])
@@ -250,22 +250,22 @@ AM_CONDITIONAL(HAVE_GIT, [test x"$GIT" = x"git"])
 #AC_CHECK_LIB([boost_filesystem], [boost], ,
 #  AC_MSG_ERROR("libboost (runtime library) is required")
 #)
-AC_ARG_WITH([libshare],
-  [AS_HELP_STRING([--with-libshare],
-  [specify a path to the libshare build directory])],
-  [],
-  [with_libshare=yes])
-
-LIBSHARE=
-AS_IF([test "x$with_libshare" = "xyes"],
-  AC_CHECK_LIB([share_sexe], [sexe_prun],
-    AC_DEFINE_UNQUOTED([HAVE_LIBSHARE], [1], [Define if you have the libshare library installed]),
-    [with_libshare=../../depend/share/build]
-  )
-)
-AC_SUBST([LIBSHARE], $with_libshare)
+#AC_ARG_WITH([libshare],
+#  [AS_HELP_STRING([--with-libshare],
+#  [specify a path to the libshare directory])],
+#  [],
+#  [with_libshare=yes])
+#
+#LIBSHARE=
+#AS_IF([test "x$with_libshare" = "xyes"],
+#  AC_CHECK_LIB([share_sexe], [sexe_prun],
+#    AC_DEFINE_UNQUOTED([HAVE_LIBSHARE], [1], [Define if you have the libshare library installed]),
+#    [with_libshare=../../depend/share]
+#  )
+#)
+AC_SUBST([LIBSHARE], [../../depend/share])
 AM_CONDITIONAL([STATIC_LIBSHARE], test x"$with_libshare" != x"yes") 
-AM_CONDITIONAL([GIT_LIBSHARE], test x"$with_libshare" = x"../../depend/share/build") 
+AM_CONDITIONAL([GIT_LIBSHARE], test x"$with_libshare" = x"../../depend/share") 
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -385,11 +385,17 @@ AS_HELP_STRING([--enable-debug],
 esac], [debug=false])
 AM_CONDITIONAL(DEBUG, test x"$debug" = x"true")
 
-# SEXE Execution Transactions (enabled by default)
-AC_ARG_ENABLE([sexe],
-  AS_HELP_STRING([--disable-sexe], [Disable execution of SEXE programs.]))
-AM_CONDITIONAL(USE_SEXE, [test "x$enable_sexe" != "xno"])
-if test "x$enable_sexe" != "xno" ; then
+# SEXE Execution Transactions (disabled by default)
+AC_ARG_ENABLE(sexe,
+AS_HELP_STRING([--enable-sexe],
+               [enable sexeging, default: no]),
+[case "${enableval}" in
+             yes) sexe=true ;;
+             no)  sexe=false ;;
+             *)   AC_MSG_ERROR([bad value ${enableval} for --enable-sexe]) ;;
+esac], [sexe=false])
+AM_CONDITIONAL(USE_SEXE, test x"$sexe" = x"true")
+if test x"$sexe" = x"true" ; then
   AC_DEFINE_UNQUOTED([USE_SEXE], 1, [Define to enable execution of SEXE programs.])
 fi
 
@@ -459,6 +465,13 @@ if test "x$enable_stratum" != "xno" ; then
   AC_DEFINE_UNQUOTED([STRATUM_SERVICE], 1, [Define to enable stratum service.])
 fi
 
+AC_ARG_ENABLE([shapi],
+  AS_HELP_STRING([--disable-shapi], [Disable shapi service.]))
+AM_CONDITIONAL(SHAPI_SERVICE, [test "x$enable_shapi" != "xno"])
+if test "x$enable_shapi" != "xno" ; then
+  AC_DEFINE_UNQUOTED([SHAPI_SERVICE], 1, [Define to enable shapi service.])
+fi
+
 AC_ARG_ENABLE([rpc],
   AS_HELP_STRING([--disable-rpc], [Disable RPC service.]))
 AM_CONDITIONAL(RPC_SERVICE, [test "x$enable_rpc" != "xno"])
@@ -470,5 +483,8 @@ fi
 #AM_CONDITIONAL(ENABLE_WALLET, [test "x$enable_wallet" != "xno"])
 #AM_CONDITIONAL([ENABLE_WALLET], 1, [Define to share-wallet functionality.])
 
-AC_OUTPUT(Makefile depend/Makefile src/libalgo/Makefile src/libfractal/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/libcoin/Makefile src/libdi3/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile)
+# libhtm
+AC_CONFIG_SUBDIRS([depend/share])
+
+AC_OUTPUT(Makefile src/libalgo/Makefile src/libfractal/Makefile src/secp256k1/Makefile src/libcrypto/Makefile src/libcoin/Makefile src/libdi3/Makefile src/coin-console/cdk/Makefile src/coin-console/Makefile src/shioncoin/Makefile doc/Makefile bin/Makefile)
 

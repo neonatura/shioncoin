@@ -145,7 +145,8 @@ static int color_bind(CIface *iface, void *_unused_)
 
 static int color_term(CIface *iface, void *_unused_)
 {
-  SetWallet(iface, NULL);
+	SetWallet (iface, NULL);
+	return (0);
 }
 static int color_msg_recv(CIface *iface, CNode *pnode)
 {
@@ -273,7 +274,7 @@ static int color_block_templ(CIface *iface, CBlock **block_p)
     
   if (!wallet) {
     unet_log(ifaceIndex, "GetBlocKTemplate: Wallet not initialized.");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   CBlockIndex *pindexBest = GetBestBlockIndex(COLOR_COIN_IFACE);
@@ -282,13 +283,13 @@ static int color_block_templ(CIface *iface, CBlock **block_p)
   const CPubKey& pubkey = color_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
 error(SHERR_INVAL, "color_block_templ: error obtaining main pubkey.\n");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
 	uint160 hColor = 0;
   pblock = color_CreateNewBlock(hColor, NULL, pubkey);
   if (!pblock)
-    return (NULL);
+    return (ERR_INVAL);
 
   pblock->nTime = MAX(median, GetAdjustedTime());
   pblock->nNonce = 0;

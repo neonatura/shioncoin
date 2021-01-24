@@ -42,7 +42,7 @@
 
 #define OPT_PROMPT "shcon.prompt"
 
-#define OPT_PASS "shcon.password"
+#define OPT_PASS "shcoind.rpc-key"
 
 
 int shcon_opt_init(void);
@@ -67,6 +67,8 @@ void opt_bool_set(char *opt_name, int b);
 
 /** The current coin interface being utilized. */
 const char *opt_iface(void);
+
+const char *get_shioncoin_path(void);
 
 
 #endif /* ndef __SHCON_OPT_H__ */

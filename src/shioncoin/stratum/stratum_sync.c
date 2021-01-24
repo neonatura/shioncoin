@@ -683,7 +683,7 @@ int stratum_sync_userlist_resp(user_t *user, shjson_t *tree)
         rem_crc = (int)shjson_array_num(udata, NULL, j - 1);
         crc = stratum_ext_addr_crc(j, worker);
         if (crc && crc != rem_crc) {
-#if 0 /* DEBUG: TODO: */
+#if 0 /* TODO: */
           user->ifaceIndex = j;
           memset(user->sync_acc, 0, sizeof(user->sync_acc));
           strncpy(user->sync_acc, r_user->worker, sizeof(user->sync_acc)-1);

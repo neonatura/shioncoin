@@ -1,0 +1,48 @@
+.TH "shlog_t" 3 "9 Nov 2014" "Version 2.16" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shlog_t \- 
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "int \fBlog_level\fP"
+.br
+.RI "\fILOG_XXX level of message. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBlog_stamp\fP"
+.br
+.RI "\fIthe time when the message was logged. \fP"
+.ti -1c
+.RI "char \fBlog_text\fP [512]"
+.br
+.RI "\fIcontent of the message. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 435 of file shfs.h.
+.SH "Field Documentation"
+.PP 
+.SS "int \fBshlog_t::log_level\fP"
+.PP
+LOG_XXX level of message. 
+.PP
+Definition at line 438 of file shfs.h.
+.SS "\fBshtime_t\fP \fBshlog_t::log_stamp\fP"
+.PP
+the time when the message was logged. 
+.PP
+Definition at line 440 of file shfs.h.
+.SS "char \fBshlog_t::log_text\fP[512]"
+.PP
+content of the message. 
+.PP
+Definition at line 442 of file shfs.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.
