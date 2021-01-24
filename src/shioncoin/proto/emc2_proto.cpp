@@ -183,6 +183,7 @@ static int emc2_term(CIface *iface, void *_unused_)
     UnregisterWallet(wallet);
 #endif
   SetWallet(iface, NULL);
+	return (0);
 }
 
 static int emc2_msg_recv(CIface *iface, CNode *pnode)

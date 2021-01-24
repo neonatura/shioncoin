@@ -118,7 +118,7 @@ class CTxCreator : public CWalletTx
 
     bool HaveInput(const CPubKey& pubKey);
 
-    bool AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxFee = 0);
+    bool AddExtTx(CWalletTx *tx, const CScript& scriptPubKey, int64 nTxFee = 0, int64 nValue = 0);
 
     bool AddOutput(const CPubKey& pubkey, int64 nValue, bool fInsert = false);
 

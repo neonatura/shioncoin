@@ -1,0 +1,8 @@
+What is SEXE?
+
+SEXE is a libshare project which aims to introduce the ability to run compiled bytecode on local disk, sharefs partition, and on remote machines.
+
+All source code for SEXE compiled bytecode is written in the Lua programming language.
+Reference: http://www.lua.org/ (PUC RIO)
+
+By default, the compiler "sxc", interpreter "sx", and symbol lister "readsexe" progams are distributed with libshare 

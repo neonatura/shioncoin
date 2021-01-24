@@ -329,10 +329,6 @@ static bool testnet_LoadBlockIndex()
     hashBestChain = pindexBest->GetBlockHash();
   }
 
-  if (!pindexBest) {
-//fprintf(stderr, "DEBUG: TESTNETTxDB::LoadBlockIndex: error: hashBestChain '%s' not found in block index table\n", (hashBestChain).GetHex().c_str());
-  }
-
   SetBestBlockIndex(TESTNET_COIN_IFACE, pindexBest);
   //  SetBestHeight(iface, pindexBest->nHeight);
   wallet->bnBestChainWork = pindexBest->bnChainWork;
@@ -357,7 +353,6 @@ static bool testnet_LoadBlockIndex()
       break;
     TESTNETBlock block;
     if (!block.ReadFromDisk(pindex)) {
-//fprintf(stderr, "DEBUG: TESTNETBlock::LoadBlockIndex() : block.ReadFromDisk failed");
       pindexFork = pindex->pprev;
       continue;
     }
@@ -380,7 +375,6 @@ static bool testnet_LoadBlockIndex()
   if (pindexFork && !fRequestShutdown)
   {
     // Reorg back to the fork
-//fprintf(stderr, "DEBUG: LoadBlockIndex() : *** moving best chain pointer back to block %d '%s'\n", pindexFork->nHeight, pindexFork->GetBlockHash().GetHex().c_str());
     TESTNETBlock block;
     if (!block.ReadFromDisk(pindexFork))
       return error(SHERR_INVAL, "LoadBlockIndex() : block.ReadFromDisk failed");
@@ -607,7 +601,7 @@ bool testnet_InitBlockIndex()
 
   ret = testnet_LoadBlockIndex();
   if (!ret) {
-		error(ERR_INVAL, "DEBUG: testnet_InitBlockIndex: LoadBlockIndex failure");
+		error(ERR_INVAL, "testnet_InitBlockIndex: LoadBlockIndex failure");
     return (false);
 	}
 
@@ -632,7 +626,7 @@ bool testnet_RestoreBlockIndex()
   int err;
   bool ret;
 
-/* DEBUG: TODO: remove "testnet_block.*" and "testnet_tx.*" first */
+/*  TODO: remove "testnet_block.*" and "testnet_tx.*" first */
 
 #if 0
   {

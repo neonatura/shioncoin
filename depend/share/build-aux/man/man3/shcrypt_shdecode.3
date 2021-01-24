@@ -1,0 +1,204 @@
+.TH "Encryption and decryption of memory segments." 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Encryption and decryption of memory segments. \- 
+.PP
+Encryption routines.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBashencode\fP (char *data, size_t *data_len_p, \fBshkey_t\fP *key)"
+.br
+.RI "\fIEncrypt a data segment without allocating additional memory. \fP"
+.ti -1c
+.RI "int \fBshencode\fP (char *data, size_t data_len, uint8_t **data_p, uint32_t *data_len_p, \fBshkey_t\fP *key)"
+.br
+.RI "\fIEncrypts byte array data of length len with key key using TEA. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshencode_str\fP (char *data)"
+.br
+.ti -1c
+.RI "int \fBashdecode\fP (uint8_t *data, size_t *data_len_p, \fBshkey_t\fP *key)"
+.br
+.RI "\fIDecrypt a data segment without allocating additional memory. \fP"
+.ti -1c
+.RI "int \fBshdecode\fP (uint8_t *data, uint32_t data_len, char **data_p, size_t *data_len_p, \fBshkey_t\fP *key)"
+.br
+.RI "\fIDecrypts byte array data of length len with a  key token. \fP"
+.ti -1c
+.RI "int \fBshdecode_str\fP (char *data, \fBshkey_t\fP *key)"
+.br
+.RI "\fIDecrypt a string into it's original format using an assigned key. \fP"
+.ti -1c
+.RI "int \fBshencode_b64\fP (char *data, size_t data_len, uint8_t **data_p, uint32_t *data_len_p, \fBshkey_t\fP *key)"
+.br
+.ti -1c
+.RI "int \fBshdecode_b64\fP (char *data, size_t data_len, uint8_t **data_p, uint32_t *data_len_p, \fBshkey_t\fP *key)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Encryption routines. 
+.SH "Function Documentation"
+.PP 
+.SS "int ashdecode (uint8_t * data, size_t * data_len_p, \fBshkey_t\fP * key)"
+.PP
+Decrypt a data segment without allocating additional memory. \fBParameters:\fP
+.RS 4
+\fIdata\fP - pointer to 8 bit data array to be decrypted - SEE NOTES 
+.br
+\fIlen\fP - length of array 
+.br
+\fIkey\fP - Pointer to four integer array (16 bytes) holding TEA key 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero on success and negative one (-1) when the string is not encrypted. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Modifies data and len 
+.PP
+Fills \fBdata\fP with decrypted data and \fBlen\fP with the size of the new data 
+.RE
+.PP
+\fBBug\fP
+.RS 4
+Using magic numbers in encrypt and decrypt routines - use defines instead - Kyle 
+.PP
+If the 64 bit encoding functions aren't used outside this module, their prototypes should be in the code, not header - Simon 
+.PP
+Add sanity checking to input - Rob 
+.PP
+Require that input len is a multiple of 8 bytes - making a requirement we can't enforce or check is a recipe for corruption - Rob 
+.RE
+.PP
+
+.SS "int ashencode (char * data, size_t * data_len_p, \fBshkey_t\fP * key)"
+.PP
+Encrypt a data segment without allocating additional memory. \fBParameters:\fP
+.RS 4
+\fIdata\fP - A segment of data.  - The length of the data segment. 
+.br
+\fIkey\fP - Pointer to a libshare \fBshkey_t\fP token key. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero on success and negative one (-1) when the string is already encrypted with the same key. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Fills \fCdata\fP with encrypted data and \fClen\fP with the size of the new data array 
+.PP
+data size must be equal to or larger than ((len + 7) / 8) * 8 + 8 + 4 TEA encrypts in 8 byte blocks, so it must include enough space to hold the entire data to pad out to an 8 byte boundary, plus another 8 bytes at the end to give the length to the decrypt algorithm, plus another 4 bytes to signify that it has been encrypted. 
+.PP
+You must use the same key passed into this function in order to decrypt the segment. 
+.RE
+.PP
+\fBBug\fP
+.RS 4
+The data segment must be allocated 20 bytes larger than data_len. If possible this should return the same data length even if up to 16 bytes of the segment suffix is not encrypted. 
+.PP
+Both parameters will be modified. 
+.PP
+Specifying a different key will not prevent the data segment from being re-encrypted. The magic number \fBSHMEM_MAGIC\fP should be used instead. 
+.RE
+.PP
+
+.SS "int shdecode (uint8_t * data, uint32_t data_len, char ** data_p, size_t * data_len_p, \fBshkey_t\fP * key)"
+.PP
+Decrypts byte array data of length len with a  key token. \fBParameters:\fP
+.RS 4
+\fIdata\fP pointer to 8 bit data array to be decrypted 
+.br
+\fIlen\fP length of array 
+.br
+\fIdata_p\fP A reference to the decrypted data segment. 
+.br
+\fIdata_len_p\fP The length of the decrypted data segment. 
+.br
+\fIkey\fP - Pointer to four integer array (16 bytes). 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero on success and negative one (-1) when the string is not encrypted. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Modifies data and len 
+.RE
+.PP
+\fBBug\fP
+.RS 4
+Using magic numbers in encrypt and decrypt routines - use defines instead - Kyle 
+.PP
+If the 64 bit encoding functions aren't used outside this module, their prototypes should be in the code, not header - Simon 
+.PP
+Add sanity checking to input - Rob 
+.PP
+Require that input len is a multiple of 8 bytes - making a requirement we can't enforce or check is a recipe for corruption - Rob 
+.RE
+.PP
+
+.SS "int shdecode_str (char * data, \fBshkey_t\fP * key)"
+.PP
+Decrypt a string into it's original format using an assigned key. \fBParameters:\fP
+.RS 4
+\fIkey\fP The key returned by \fBshencode_str()\fP 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero on success and negative one (-1) when the string is not encrypted. 
+.RE
+.PP
+
+.SS "int shencode (char * data, size_t data_len, uint8_t ** data_p, uint32_t * data_len_p, \fBshkey_t\fP * key)"
+.PP
+Encrypts byte array data of length len with key key using TEA. \fBParameters:\fP
+.RS 4
+\fIdata\fP - A segment of data.  - The length of the data segment. 
+.br
+\fIkey\fP - Pointer to a libshare \fBshkey_t\fP token key. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero on success and negative one (-1) when the string is already encrypted with the same key. 
+.RE
+.PP
+\fBNote:\fP
+.RS 4
+Fills \fCdata\fP with encrypted data and \fClen\fP with the size of the new data array 
+.PP
+data size must be equal to or larger than ((len + 7) / 8) * 8 + 8 + 4 TEA encrypts in 8 byte blocks, so it must include enough space to hold the entire data to pad out to an 8 byte boundary, plus another 8 bytes at the end to give the length to the decrypt algorithm, plus another 4 bytes to signify that it has been encrypted. 
+.RE
+.PP
+\fBBug\fP
+.RS 4
+The data segment must be allocated 20 bytes larger than data_len. If possible this should return the same data length even if up to 16 bytes of the segment suffix is not encrypted. 
+.PP
+Both parameters will be modified. 
+.PP
+Specifying a different key will not prevent the data segment from being re-encrypted. The magic number \fBSHMEM_MAGIC\fP should be used instead. 
+.RE
+.PP
+
+.SS "\fBshkey_t\fP* shencode_str (char * data)"\fBSee also:\fP
+.RS 4
+\fBshdecode_str()\fP 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

@@ -169,7 +169,7 @@ unet_table_t *t;
       shjson_free(&json);
     }
 
-/* DEBUG: TODO: .. show mem usage .. blockIndex vs mapped files ~ */
+		/* TODO: .. show mem usage .. blockIndex vs mapped files ~ */
   }
 
   return (shbuf_data(buff));

@@ -289,8 +289,6 @@ bool COLORWallet::CreateAccountTransaction(string strFromAccount, const vector<p
 
         // Fill vtxPrev by copying from previous transactions vtxPrev
         wtxNew.AddSupportingTransactions();
-        wtxNew.fTimeReceivedIsTxTime = true;
-
         break;
       }
     }

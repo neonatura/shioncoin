@@ -1,0 +1,169 @@
+.TH "Libshare_fsmsg" 3 "14 Apr 2015" "Version 2.25" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsmsg \- 
+.PP
+libshare IPC message-queue IO calls.  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshmsg_t\fP"
+.br
+.ti -1c
+.RI "struct \fBshmsgq_t\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBMAX_MESSAGE_QUEUES\fP   512"
+.br
+.ti -1c
+.RI "#define \fBMESSAGE_QUEUE_SIZE\fP   4096000"
+.br
+.RI "\fIThe maximum size of an individual libshare message queue. \fP"
+.ti -1c
+.RI "#define \fBMAX_MESSAGES_PER_QUEUE\fP   2048"
+.br
+.RI "\fIThe maximum number of messages a message queue can contain. \fP"
+.ti -1c
+.RI "#define \fBSHMSGF_RMID\fP   (1 << 0)"
+.br
+.RI "\fIremove a message queue's resources. \fP"
+.ti -1c
+.RI "#define \fBSHMSGF_OVERFLOW\fP   (1 << 1)"
+.br
+.RI "\fIdiscard stale messages when queue is full. \fP"
+.ti -1c
+.RI "#define \fBSHMSGF_ANONYMOUS\fP   (1 << 2)"
+.br
+.RI "\fIallow for receiving messages sent by one self. \fP"
+.ti -1c
+.RI "#define \fBSHMSGF_AUTH\fP   (1 << 4)"
+.br
+.RI "\fIunused \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef struct \fBshmsg_t\fP \fBshmsg_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshmsgget\fP (\fBshpeer_t\fP *peer)"
+.br
+.RI "\fIObtain the message queue id from a share library peer. \fP"
+.ti -1c
+.RI "int \fBshmsgsnd\fP (int msqid, const void *msgp, size_t msgsz)"
+.br
+.RI "\fISend a message to a share library peer. \fP"
+.ti -1c
+.RI "int \fBshmsg_write\fP (int msg_qid, \fBshbuf_t\fP *msg_buff, \fBshkey_t\fP *dest_key)"
+.br
+.RI "\fISend a message to a share library peer. \fP"
+.ti -1c
+.RI "int \fBshmsgrcv\fP (int msqid, void *msgp, size_t msgsz)"
+.br
+.RI "\fIReceive a message from a share library peer. \fP"
+.ti -1c
+.RI "int \fBshmsg_read\fP (int msg_qid, \fBshkey_t\fP *src_key, \fBshbuf_t\fP *msg_buff)"
+.br
+.RI "\fIReceive a message from a share library peer. \fP"
+.ti -1c
+.RI "int \fBshmsgctl\fP (int msg_qid, int cmd, int value)"
+.br
+.RI "\fISet or retrieve message queue control attributes. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+libshare IPC message-queue IO calls. 
+.SH "Define Documentation"
+.PP 
+.SS "#define MAX_MESSAGES_PER_QUEUE   2048"
+.PP
+The maximum number of messages a message queue can contain. 
+.PP
+Definition at line 902 of file shfs.h.
+.SS "#define MESSAGE_QUEUE_SIZE   4096000"
+.PP
+The maximum size of an individual libshare message queue. 
+.PP
+Definition at line 900 of file shfs.h.
+.SS "#define SHMSGF_ANONYMOUS   (1 << 2)"
+.PP
+allow for receiving messages sent by one self. 
+.PP
+Definition at line 912 of file shfs.h.
+.SS "#define SHMSGF_AUTH   (1 << 4)"
+.PP
+unused 
+.PP
+Definition at line 915 of file shfs.h.
+.SS "#define SHMSGF_OVERFLOW   (1 << 1)"
+.PP
+discard stale messages when queue is full. 
+.PP
+Definition at line 909 of file shfs.h.
+.SS "#define SHMSGF_RMID   (1 << 0)"
+.PP
+remove a message queue's resources. 
+.PP
+Definition at line 906 of file shfs.h.
+.SH "Function Documentation"
+.PP 
+.SS "int shmsg_read (int msg_qid, \fBshkey_t\fP * src_key, \fBshbuf_t\fP * msg_buff)"
+.PP
+Receive a message from a share library peer. 
+.SS "int shmsg_write (int msg_qid, \fBshbuf_t\fP * msg_buff, \fBshkey_t\fP * dest_key)"
+.PP
+Send a message to a share library peer. \fBParameters:\fP
+.RS 4
+\fIdest_key\fP Peer key of message destination. Specifying NULL indicates to use the peer used to open the message queue. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshmsgget()\fP 
+.RE
+.PP
+
+.SS "int shmsgctl (int msg_qid, int cmd, int value)"
+.PP
+Set or retrieve message queue control attributes. 
+.SS "int shmsgget (\fBshpeer_t\fP * peer)"
+.PP
+Obtain the message queue id from a share library peer. \fBParameters:\fP
+.RS 4
+\fIpeer\fP The destination peer message queue. 
+.RE
+.PP
+
+.SS "int shmsgrcv (int msqid, void * msgp, size_t msgsz)"
+.PP
+Receive a message from a share library peer. 
+.SS "int shmsgsnd (int msqid, const void * msgp, size_t msgsz)"
+.PP
+Send a message to a share library peer. \fBParameters:\fP
+.RS 4
+\fImsg_qid\fP The share library message queue id. 
+.br
+\fImsg_type\fP A non-zero user-defined categorical number. 
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshmsgget()\fP 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

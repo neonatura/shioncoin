@@ -1,0 +1,16 @@
+@PACKAGE_NAME@ @PACKAGE_VERSION@
+
+A brief description of the files in this directory:
+
+
+  - shkey
+                Example program to create conextual key references to string or file context.
+
+  - shfs_inode_remote_copy
+                Example progam to copy a remote sharefs file.
+
+  - shfs_inode_remote_link 
+                Example progam to create a local reference of a remote file.
+                
+  - esl
+                Example client/server pair that utilzes the Encrypted Socket Layer (ESL) over a TCP socket.

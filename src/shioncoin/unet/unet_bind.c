@@ -77,6 +77,44 @@ int unet_bind(int mode, int port, char *host)
   return (0);
 }
 
+int unet_bind_esl(int mode, int port, char *host)
+{
+  shpeer_t *peer;
+  char hostname[MAXHOSTNAMELEN+1];
+  char errbuf[256];
+  int err;
+  int sk;
+
+	if (host && !*host)
+		host = NULL;
+
+  if (_unet_bind[mode].fd != UNDEFINED_SOCKET)
+    return (0); /* already bound */
+
+	sk = esl_bind(port);
+	if (sk < 0)
+		return (sk);
+
+	shnet_fcntl(sk, F_SETFL, O_NONBLOCK);
+
+  _unet_bind[mode].fd = sk;
+  _unet_bind[mode].port = port;
+  _unet_bind[mode].scan_stamp = shtime();
+  _unet_bind[mode].scan_freq = 0.025;
+
+  sprintf(hostname, "127.0.0.1 %d", port);
+  peer = shpeer_init(unet_mode_label(mode), hostname);
+  memcpy(&_unet_bind[mode].peer, peer, sizeof(shpeer_t));
+  shpeer_free(&peer);
+
+  descriptor_claim(sk, mode, DF_LISTEN | DF_ESL);
+
+	/* init thread for calling timer */
+	unet_thread_init(mode);
+
+  return (0);
+}
+
 void unet_connop_set(int mode, unet_addr_op accept_op)
 {
   if (mode < 0 || mode >= MAX_UNET_MODES)

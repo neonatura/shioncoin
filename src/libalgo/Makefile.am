@@ -54,5 +54,6 @@ libalgo_a_SOURCES = \
 	$(common_includes)
 
 libalgo_a_CPPFLAGS = \
+	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include/ \
 	-std=c++11
 

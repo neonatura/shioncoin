@@ -1,0 +1,65 @@
+.TH "bug" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+bug \- Bug List 
+ 
+.IP "\fBGlobal \fBashdecode\fP \fP" 1c
+Using magic numbers in encrypt and decrypt routines - use defines instead - Kyle 
+.PP
+If the 64 bit encoding functions aren't used outside this module, their prototypes should be in the code, not header - Simon 
+.PP
+Add sanity checking to input - Rob 
+.PP
+Require that input len is a multiple of 8 bytes - making a requirement we can't enforce or check is a recipe for corruption - Rob 
+.PP
+.PP
+ 
+.IP "\fBGlobal \fBashencode\fP \fP" 1c
+The data segment must be allocated 20 bytes larger than data_len. If possible this should return the same data length even if up to 16 bytes of the segment suffix is not encrypted. 
+.PP
+Both parameters will be modified. 
+.PP
+Specifying a different key will not prevent the data segment from being re-encrypted. The magic number \fBSHMEM_MAGIC\fP should be used instead. 
+.PP
+.PP
+ 
+.IP "\fBGlobal \fBashkey_num\fP \fP" 1c
+psuedo thread-safe 
+.PP
+.PP
+ 
+.IP "\fBGlobal \fBashkey_str\fP \fP" 1c
+psuedo thread-safe 
+.PP
+.PP
+ 
+.IP "\fBGlobal \fBshdecode\fP \fP" 1c
+Using magic numbers in encrypt and decrypt routines - use defines instead - Kyle 
+.PP
+If the 64 bit encoding functions aren't used outside this module, their prototypes should be in the code, not header - Simon 
+.PP
+Add sanity checking to input - Rob 
+.PP
+Require that input len is a multiple of 8 bytes - making a requirement we can't enforce or check is a recipe for corruption - Rob 
+.PP
+.PP
+ 
+.IP "\fBGlobal \fBshencode\fP \fP" 1c
+The data segment must be allocated 20 bytes larger than data_len. If possible this should return the same data length even if up to 16 bytes of the segment suffix is not encrypted. 
+.PP
+Both parameters will be modified. 
+.PP
+Specifying a different key will not prevent the data segment from being re-encrypted. The magic number \fBSHMEM_MAGIC\fP should be used instead. 
+.PP
+.PP
+ 
+.IP "\fBGlobal \fBshlock_open\fP \fP" 1c
+flags should be stored in \fBshkey_t\fP instead of a paramter 
+.PP
+.PP
+ 
+.IP "\fBGlobal \fBshpool_grow\fP \fP" 1c
+smaller incremental reallocs have been known to fail in glibc 
+.PP
+

@@ -131,6 +131,7 @@ static int ltc_term(CIface *iface, void *_unused_)
    }
 #endif
   SetWallet(iface, NULL);
+	return (0);
 }
 static int ltc_msg_recv(CIface *iface, CNode *pnode)
 {
@@ -258,7 +259,7 @@ static int ltc_block_templ(CIface *iface, CBlock **block_p)
     
   if (!wallet) {
     unet_log(ifaceIndex, "GetBlocKTemplate: Wallet not initialized.");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   CBlockIndex *pindexBest = GetBestBlockIndex(LTC_COIN_IFACE);
@@ -267,12 +268,12 @@ static int ltc_block_templ(CIface *iface, CBlock **block_p)
   const CPubKey& pubkey = ltc_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
 error(SHERR_INVAL, "ltc_block_templ: error obtaining main pubkey.\n");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   pblock = ltc_CreateNewBlock(pubkey);
   if (!pblock)
-    return (NULL);
+    return (ERR_INVAL);
 
   pblock->nTime = MAX(median, GetAdjustedTime());
   pblock->nNonce = 0;

@@ -1,0 +1,185 @@
+.TH "Libshare_sysproc" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_sysproc \- 
+.PP
+libshare spawned process management  
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBshproc_req_t\fP"
+.br
+.ti -1c
+.RI "struct \fBshproc_t\fP"
+.br
+.ti -1c
+.RI "struct \fBshproc_pool_t\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHPROC_NONE\fP   0"
+.br
+.ti -1c
+.RI "#define \fBSHPROC_IDLE\fP   1"
+.br
+.ti -1c
+.RI "#define \fBSHPROC_PEND\fP   2"
+.br
+.ti -1c
+.RI "#define \fBSHPROC_RUN\fP   3"
+.br
+.ti -1c
+.RI "#define \fBMAX_SHPROC_STATES\fP   4"
+.br
+.ti -1c
+.RI "#define \fBSHPROC_MAX\fP   100"
+.br
+.RI "\fIA control option which manages the maximum number of processes spawned. \fP"
+.ti -1c
+.RI "#define \fBSHPROC_PRIO\fP   101"
+.br
+.ti -1c
+.RI "#define \fBSHPROC_POOL_DEFAULT_SIZE\fP   16"
+.br
+.RI "\fIThe default maximum number of processes spawned. \fP"
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef int(* \fBshproc_op_t\fP )(int, \fBshbuf_t\fP *buff)"
+.br
+.ti -1c
+.RI "typedef struct \fBshproc_req_t\fP \fBshproc_req_t\fP"
+.br
+.ti -1c
+.RI "typedef struct \fBshproc_t\fP \fBshproc_t\fP"
+.br
+.ti -1c
+.RI "typedef struct \fBshproc_pool_t\fP \fBshproc_pool_t\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshproc_pool_t\fP * \fBshproc_init\fP (shproc_op_t req_f, shproc_op_t resp_f)"
+.br
+.RI "\fICreate a new pool to manage process workers. \fP"
+.ti -1c
+.RI "int \fBshproc_conf\fP (\fBshproc_pool_t\fP *pool, int type, int val)"
+.br
+.RI "\fIConfigure a process pool's attributes. \fP"
+.ti -1c
+.RI "\fBshproc_pool_t\fP * \fBshproc_pool\fP (void)"
+.br
+.RI "\fIObtain currrent pool, if any, that has been initialized. \fP"
+.ti -1c
+.RI "\fBshproc_t\fP * \fBshproc_start\fP (\fBshproc_pool_t\fP *pool)"
+.br
+.RI "\fIStart a new process to handle worker requests. \fP"
+.ti -1c
+.RI "int \fBshproc_stop\fP (\fBshproc_t\fP *proc)"
+.br
+.RI "\fITerminate a running worker process. \fP"
+.ti -1c
+.RI "\fBshproc_t\fP * \fBshproc_get\fP (\fBshproc_pool_t\fP *pool, int state)"
+.br
+.RI "\fIObtain a process slot from the pool based on process state. \fP"
+.ti -1c
+.RI "int \fBshproc_schedule\fP (\fBshproc_t\fP *proc, unsigned char *data, size_t data_len)"
+.br
+.ti -1c
+.RI "\fBshproc_t\fP * \fBshproc_pull\fP (\fBshproc_pool_t\fP *pool)"
+.br
+.RI "\fIObtain a process from the pool that is ready for work. \fP"
+.ti -1c
+.RI "int \fBshproc_push\fP (\fBshproc_pool_t\fP *pool, int fd, unsigned char *data, size_t data_len)"
+.br
+.RI "\fIPerform a request against a process ready for work. \fP"
+.ti -1c
+.RI "void \fBshproc_free\fP (\fBshproc_pool_t\fP **pool_p)"
+.br
+.RI "\fIdeallocate resources for a process pool \fP"
+.ti -1c
+.RI "void \fBshproc_signal\fP (void *sig_f)"
+.br
+.RI "\fISet a custom signal handler for worker process. \fP"
+.ti -1c
+.RI "void \fBshproc_poll\fP (\fBshproc_pool_t\fP *pool)"
+.br
+.RI "\fIProcess pending communications with worker process(es). \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+libshare spawned process management 
+.SH "Define Documentation"
+.PP 
+.SS "#define SHPROC_MAX   100"
+.PP
+A control option which manages the maximum number of processes spawned. 
+.PP
+Definition at line 441 of file shsys.h.
+.SS "#define SHPROC_POOL_DEFAULT_SIZE   16"
+.PP
+The default maximum number of processes spawned. 
+.PP
+Definition at line 445 of file shsys.h.
+.SH "Function Documentation"
+.PP 
+.SS "int shproc_conf (\fBshproc_pool_t\fP * pool, int type, int val)"
+.PP
+Configure a process pool's attributes. .IP "\(bu" 2
+SHPROC_MAX The maximum number of processes that can be spawned in the pool.
+.IP "\(bu" 2
+SHPROC_PRIO A value in the range -20 to 19. A lower priority indicates a more favorable scheduling. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fItype\fP The configuration option value to set or get. 
+.br
+\fIval\fP Zero to indicate a 'Get Value' request; otherwise the parameter specifies the value to the option to. 
+.RE
+.PP
+
+.PP
+
+.SS "void shproc_free (\fBshproc_pool_t\fP ** pool_p)"
+.PP
+deallocate resources for a process pool 
+.SS "\fBshproc_t\fP* shproc_get (\fBshproc_pool_t\fP * pool, int state)"
+.PP
+Obtain a process slot from the pool based on process state. 
+.SS "\fBshproc_pool_t\fP* shproc_init (shproc_op_t req_f, shproc_op_t resp_f)"
+.PP
+Create a new pool to manage process workers. 
+.SS "void shproc_poll (\fBshproc_pool_t\fP * pool)"
+.PP
+Process pending communications with worker process(es). 
+.SS "\fBshproc_pool_t\fP* shproc_pool (void)"
+.PP
+Obtain currrent pool, if any, that has been initialized. 
+.SS "\fBshproc_t\fP* shproc_pull (\fBshproc_pool_t\fP * pool)"
+.PP
+Obtain a process from the pool that is ready for work. 
+.SS "int shproc_push (\fBshproc_pool_t\fP * pool, int fd, unsigned char * data, size_t data_len)"
+.PP
+Perform a request against a process ready for work. 
+.SS "void shproc_signal (void * sig_f)"
+.PP
+Set a custom signal handler for worker process. 
+.SS "\fBshproc_t\fP* shproc_start (\fBshproc_pool_t\fP * pool)"
+.PP
+Start a new process to handle worker requests. 
+.SS "int shproc_stop (\fBshproc_t\fP * proc)"
+.PP
+Terminate a running worker process. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

@@ -651,6 +651,11 @@ bool CPool::AddActiveTx(CPoolTx& ptx)
 		LOCK(wallet->cs_wallet);
 		if (wallet->mapWallet.count(ptx.GetHash()) != 0) {
 			CWalletTx& wtx = wallet->mapWallet[ptx.GetHash()]; 
+			if (!wtx.hashBlock.IsNull()) {
+				/* mark as not commited to blockchain. */
+				wtx.hashBlock = 0;
+				wallet->WriteWalletTx(wtx);
+			}
 			/* inform peers of active tx */
 			wallet->RelayWalletTransaction(wtx);
 		}
@@ -1120,11 +1125,19 @@ bool CPool::Commit(CBlock& block)
     fee->processBlock(pindex->nHeight, entries, true);
   }
 
-	/* set 'Commit' flag on wallet transactions. 
-  BOOST_FOREACH(const CTransaction& tx, block.vtx) {
-		 wtx.fCommit = true 
+  CWallet *wallet = GetWallet(GetIface());
+	if (wallet) {
+		BOOST_FOREACH(const CTransaction& tx, block.vtx) {
+			const uint256& tx_hash = tx.GetHash();
+			if (wallet->mapWallet.count(tx_hash) != 0) {
+				CWalletTx& wtx = wallet->mapWallet[tx_hash];
+				if (wtx.hashBlock != hash) {
+					wtx.SetMerkleBranch(&block);
+					wallet->WriteWalletTx(wtx);
+				}
+			}
+		}
 	}
-	*/
 
   PurgeOverflowTx();
 
@@ -1232,7 +1245,14 @@ bool CPool::AreInputsSpent(CPoolTx& ptx)
     }
 
     if (!vOuts[nOut].IsNull()) {
+			error(ERR_INVAL, "AreInputsSpent: prevtx '%s' output #%d already spent in tx '%s' (pool tx '%s')\n", in.prevout.hash.GetHex().c_str(), nOut, vOuts[nOut].GetHex().c_str(), ptx.GetHash().GetHex().c_str()); 
       /* this is already spent */
+			CWallet *wallet = GetWallet(ifaceIndex);
+			if (wallet && wallet->mapWallet.count(in.prevout.hash) != 0) {
+				/* redundant (& should not occur). */
+				CWalletTx& wtx = wallet->mapWallet[in.prevout.hash];
+				wtx.MarkSpent(nOut);
+			}
       return (true);
     }
   }

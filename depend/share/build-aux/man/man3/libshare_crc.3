@@ -1,0 +1,20 @@
+.TH "libshare_crc" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libshare_crc \- CRC Checksum Verification 
+The libshare library provides a method to generate and print CRC checksums derived from segments of binary information.
+.PP
+The algorithm computes a 64-bit number from the data segment.
+.PP
+The algorythm is a modified form of adler32 suitable for 64bit generation. The checksum is not compatible with standard adler based algorythms.
+.PP
+The checksum is used to generate a libshare 'Key' (\fBshkey_t\fP) used through-out the libshare library suite.
+.PP
+References:
+.IP "\(bu" 2
+\fCWikipedia: Checksum\fP
+.IP "\(bu" 2
+\fBHash/Digest Keys\fP 
+.PP
+

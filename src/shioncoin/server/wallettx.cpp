@@ -115,8 +115,10 @@ void CWallet::WalletUpdateSpent(const CTransaction &tx)
 			if (fArch) {
 				WriteArchTx(wtx);
 				EraseWalletTx(hash);
+#if 0
 			} else {
 				WriteWalletTx(wtx);
+#endif
 			}
 		}
 	}
@@ -252,9 +254,40 @@ bool CWallet::AddTx(const CWalletTx& wtxIn)
 
 void CWallet::RemoveTx(uint256 hash)
 {
+	CIface *iface = GetCoinByIndex(ifaceIndex);
 
 	{
 		LOCK(cs_wallet);
+
+#if 0
+		{ /* may be redundant; ensure the spent coin database is not referencing a tx that is being deleted. */
+			CTransaction tx;
+			if (::GetTransaction(iface, hash, tx, NULL)) {
+				tx_cache mapInputs;
+				for (unsigned int i = 0; i < tx.vin.size(); i++) {
+					const uint256& hashTx = tx.vin[i].prevout.hash;
+
+					CTransaction tmp_tx;
+					if (!::GetTransaction(iface, hashTx, tmp_tx, NULL))
+						continue;
+
+					vector<uint256> vOuts;
+					if (tmp_tx.ReadCoins(ifaceIndex, vOuts)) {
+						bool fUpdated = false;
+						for (unsigned int j = 0; j < vOuts.size(); j++) {
+							if (vOuts[j] == hash) {
+								fUpdated = true;
+								vOuts[j].SetNull();
+							}
+						}
+						if (fUpdated) {
+							tmp_tx.WriteCoins(ifaceIndex, vOuts);
+						}
+					}
+				}
+			}
+		}
+#endif
 
 		EraseWalletTx(hash); /* active wtx db */
 		mapWallet.erase(hash); /* active mem */

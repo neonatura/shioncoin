@@ -1,0 +1,37 @@
+.TH "shfs_dirent_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shfs_dirent_t \- 
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "char \fBd_name\fP [((4096-sizeof(\fBshfs_hdr_t\fP))-34)]"
+.br
+.ti -1c
+.RI "struct stat \fBd_stat\fP"
+.br
+.ti -1c
+.RI "uint64_t \fBd_crc\fP"
+.br
+.ti -1c
+.RI "\fBshfs_ino_type_t\fP \fBd_type\fP"
+.br
+.ti -1c
+.RI "\fBshfs_ino_type_t\fP \fBd_format\fP"
+.br
+.ti -1c
+.RI "\fBshfs_attr_t\fP \fBd_attr\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 1000 of file shfs.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

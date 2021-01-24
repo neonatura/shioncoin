@@ -448,6 +448,7 @@ bool InsertExecTable(CIface *iface, const CTransaction& tx)
 
 	/* add to exec/call transaction mapping table. */
 	wallet->mapExec[hExec] = hTx;
+	return (true);
 }
 
 bool InsertExecCallTable(CIface *iface, const uint160& hExec, const CTransaction& tx)
@@ -474,6 +475,7 @@ bool InsertExecCallTable(CIface *iface, const uint160& hExec, const CTransaction
 
 	/* add to exec/call transaction mapping table. */
 	wallet->mapExec[hCall] = tx.GetHash();
+	return (true);
 }
 
 bool InsertExecCallPendingTable(CIface *iface, const uint160& hExec, const CTransaction& tx)
@@ -499,6 +501,7 @@ bool InsertExecCallPendingTable(CIface *iface, const uint160& hExec, const CTran
 
 	/* add to exec/call transaction mapping table. */
 	wallet->mapExec[hCall] = tx.GetHash();
+	return (true);
 }
 
 bool IsExecPending(CIface *iface, const uint160& hExec)
@@ -1409,6 +1412,7 @@ static int _OpenStack(int ifaceIndex, CExec *exec, CCoinAddr sendAddr, int64_t s
 	strcpy(hash, hExec.GetHex().c_str());
 	argv[0] = (char *)hash;
 	argv[1] = NULL;
+	argc = 1;
 
 	buff = shbuf_init();
 	shbuf_cat(buff, stack.data(), stack.size());
@@ -2162,11 +2166,9 @@ int init_exec_tx(CIface *iface, string strAccount, string strPath, CWalletTx& wt
   }
 #endif
 
-  wtx.SetNull();
-  wtx.strFromAccount = strAccount; /* originating account for payment */
-
   /* embed exec content into transaction */
-  exec = wtx.CreateExec();
+  CTxCreator s_wtx(wallet, strAccount);
+  exec = s_wtx.CreateExec();
 	exec->SetSenderAddr(sendAddr);
 
 	cbuff data;
@@ -2201,14 +2203,19 @@ int init_exec_tx(CIface *iface, string strAccount, string strPath, CWalletTx& wt
   CScript scriptPubKey;
   uint160 hExec = exec->GetHash();
   scriptPubKey << OP_EXT_NEW << CScript::EncodeOP_N(OP_EXEC) << OP_HASH160 << hExec << OP_2DROP << OP_RETURN;
-  string strError = wallet->SendMoney(strAccount, scriptPubKey, nFee, wtx, false);
-  if (strError != "") {
-    error(ifaceIndex, "init_exec_tx: %s", strError.c_str());
+	if (!s_wtx.AddOutput(scriptPubKey, nFee)) {
+    error(ifaceIndex, "init_exec_tx: %s", s_wtx.GetError().c_str());
+    return (SHERR_INVAL);
+	}
+
+	if (!s_wtx.Send()) {
+    error(ifaceIndex, "init_exec_tx: %s", s_wtx.GetError().c_str());
     return (SHERR_INVAL);
   }
 
 	/* note: class will not be available until processed onto the block-chain. */
 
+	wtx = (CWalletTx)s_wtx;
   Debug("(%s) INIT EXEC TX[%s]: %s", iface->name, hExec.GetHex().c_str(), exec->ToString(ifaceIndex).c_str());
 
   return (0);
@@ -2443,7 +2450,7 @@ int generate_exec_tx(CIface *iface, string strAccount, string strClass, int64 nF
 
 //fprintf(stderr, "DEBUG: generate_exec_tx: CONTEXT[%s]: %s\n", node->string, text);
 					err = init_ctx_tx(iface, ctx_tx, strAccount,
-							strName, vchFromString(string(text)), NULL, true);
+							strName, vchFromString(string(text))); //	, NULL, true);
 					free(text);
 					if (err) {
 						error(err, "generate_exec_tx: error initializing context \"%s\"", strName.c_str());

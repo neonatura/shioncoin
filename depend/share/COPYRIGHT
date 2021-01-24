@@ -1,0 +1,6 @@
+The libshare library utilizes external libraries in varios portions of the library suite. The following provides a lists of copyrights [per license agreement].
+ 
+The "libshare_ssl" library, used by the "shcoind" and "shcoin" executables, utilize the Openssl library (http://www.openssl.org/source/openssl-1.0.1g.tar.gz).
+The library contents is in the "/src/share-ssl-lib/openssl-1.0.1g/" directory.
+Copyright (c) 1998-2011 The OpenSSL Project.  All rights reserved.
+

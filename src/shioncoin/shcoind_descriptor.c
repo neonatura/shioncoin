@@ -430,3 +430,9 @@ shbuf_t *descriptor_wbuff(int fd)
 
   return (d->wbuff);
 }
+
+int get_total_descriptor_claimed()
+{
+	return (_total_descriptor_claim);
+}
+

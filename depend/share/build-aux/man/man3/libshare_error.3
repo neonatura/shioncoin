@@ -1,0 +1,163 @@
+.TH "Libshare_error" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_error \- 
+.PP
+The libshare error codes.  
+
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHERR_NONE\fP   0"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOENT\fP   -2"
+.br
+.ti -1c
+.RI "#define \fBSHERR_SRCH\fP   -3"
+.br
+.ti -1c
+.RI "#define \fBSHERR_IO\fP   -5"
+.br
+.ti -1c
+.RI "#define \fBSHERR_2BIG\fP   -7"
+.br
+.ti -1c
+.RI "#define \fBSHERR_BADF\fP   -9"
+.br
+.ti -1c
+.RI "#define \fBSHERR_AGAIN\fP   -11"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOMEM\fP   -12"
+.br
+.ti -1c
+.RI "#define \fBSHERR_ACCESS\fP   -13"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOTDIR\fP   -20"
+.br
+.ti -1c
+.RI "#define \fBSHERR_ISDIR\fP   -21"
+.br
+.ti -1c
+.RI "#define \fBSHERR_INVAL\fP   -22"
+.br
+.ti -1c
+.RI "#define \fBSHERR_FBIG\fP   -27"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOMSG\fP   -42"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOTUNIQ\fP   -76"
+.br
+.ti -1c
+.RI "#define \fBSHERR_ILSEQ\fP   -84"
+.br
+.ti -1c
+.RI "#define \fBSHERR_CONNRESET\fP   -104"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOBUFS\fP   -105"
+.br
+.ti -1c
+.RI "#define \fBSHERR_ALREADY\fP   -114"
+.br
+.ti -1c
+.RI "#define \fBSHERR_REMOTEIO\fP   -121"
+.br
+.ti -1c
+.RI "#define \fBSHERR_TIME\fP   -62"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NONET\fP   -64"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOPKG\fP   -65"
+.br
+.ti -1c
+.RI "#define \fBSHERR_REMOTE\fP   -66"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOLINK\fP   -67"
+.br
+.ti -1c
+.RI "#define \fBSHERR_PROTO\fP   -71"
+.br
+.ti -1c
+.RI "#define \fBSHERR_OPNOTSUPP\fP   -95"
+.br
+.ti -1c
+.RI "#define \fBSHERR_ADDRINUSE\fP   -98"
+.br
+.ti -1c
+.RI "#define \fBSHERR_ADDRNOTAVAIL\fP   -99"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NETDOWN\fP   -100"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NETUNREACH\fP   -101"
+.br
+.ti -1c
+.RI "#define \fBSHERR_SHUTDOWN\fP   -108"
+.br
+.ti -1c
+.RI "#define \fBSHERR_TOOMANYREFS\fP   -109"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOMEDIUM\fP   -123"
+.br
+.ti -1c
+.RI "#define \fBSHERR_CANCELED\fP   -125"
+.br
+.ti -1c
+.RI "#define \fBSHERR_NOKEY\fP   -126"
+.br
+.ti -1c
+.RI "#define \fBSHERR_KEYEXPIRED\fP   -127"
+.br
+.ti -1c
+.RI "#define \fBSHERR_KEYREVOKED\fP   -128"
+.br
+.ti -1c
+.RI "#define \fBSHERR_KEYREJECTED\fP   -129"
+.br
+.ti -1c
+.RI "#define \fBSHERR_OWNERDEAD\fP   -130"
+.br
+.ti -1c
+.RI "#define \fBsherrstr\fP(_errcode)   strerror(-1 * _errcode)"
+.br
+.RI "\fIConverts a libshare error code to a libshare error message. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+The libshare error codes. 
+.SH "Define Documentation"
+.PP 
+.SS "#define sherrstr(_errcode)   strerror(-1 * _errcode)"
+.PP
+Converts a libshare error code to a libshare error message. \fBParameters:\fP
+.RS 4
+\fI_errcode\fP A libshare error code. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A string message associated with the libshare error code. 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBshkeystore.c\fP.
+.PP
+Definition at line 86 of file sherr.h.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

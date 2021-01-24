@@ -1,0 +1,96 @@
+.TH "shmsgq_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shmsgq_t \- 
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBshtime_t\fP \fBlock_t\fP"
+.br
+.RI "\fIexpiration of lock or 0 if unlocked. \fP"
+.ti -1c
+.RI "uint32_t \fBflags\fP"
+.br
+.RI "\fImessage queue flags SHMSGF_XX \fP"
+.ti -1c
+.RI "uint32_t \fB__reserved_1__\fP"
+.br
+.ti -1c
+.RI "uint32_t \fBread_idx\fP"
+.br
+.RI "\fIread msg seek offset \fP"
+.ti -1c
+.RI "uint32_t \fBwrite_idx\fP"
+.br
+.RI "\fIwrite msg seek offset \fP"
+.ti -1c
+.RI "uint32_t \fBread_of\fP"
+.br
+.RI "\fIread data seek offset \fP"
+.ti -1c
+.RI "uint32_t \fBwrite_of\fP"
+.br
+.RI "\fIwrite data seek offset \fP"
+.ti -1c
+.RI "\fBshmsg_t\fP \fBmsg\fP [2048]"
+.br
+.RI "\fItable of message definitions \fP"
+.ti -1c
+.RI "unsigned char \fBdata\fP [0]"
+.br
+.RI "\fIraw message content data \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 352 of file shsys.h.
+.SH "Field Documentation"
+.PP 
+.SS "unsigned char \fBshmsgq_t::data\fP[0]"
+.PP
+raw message content data 
+.PP
+Definition at line 378 of file shsys.h.
+.SS "uint32_t \fBshmsgq_t::flags\fP"
+.PP
+message queue flags SHMSGF_XX 
+.PP
+Definition at line 357 of file shsys.h.
+.SS "\fBshtime_t\fP \fBshmsgq_t::lock_t\fP"
+.PP
+expiration of lock or 0 if unlocked. 
+.PP
+Definition at line 354 of file shsys.h.
+.SS "\fBshmsg_t\fP \fBshmsgq_t::msg\fP[2048]"
+.PP
+table of message definitions 
+.PP
+Definition at line 375 of file shsys.h.
+.SS "uint32_t \fBshmsgq_t::read_idx\fP"
+.PP
+read msg seek offset 
+.PP
+Definition at line 363 of file shsys.h.
+.SS "uint32_t \fBshmsgq_t::read_of\fP"
+.PP
+read data seek offset 
+.PP
+Definition at line 369 of file shsys.h.
+.SS "uint32_t \fBshmsgq_t::write_idx\fP"
+.PP
+write msg seek offset 
+.PP
+Definition at line 366 of file shsys.h.
+.SS "uint32_t \fBshmsgq_t::write_of\fP"
+.PP
+write data seek offset 
+.PP
+Definition at line 372 of file shsys.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

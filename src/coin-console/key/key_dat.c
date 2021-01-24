@@ -25,29 +25,6 @@
 
 #include "shcon.h"
 
-const char *get_shioncoin_path(void)
-{
-	static char ret_path[PATH_MAX+1];
-
-	if (!*ret_path) {
-#ifdef WINDOWS
-		char *str;
-
-		str = getenv("ProgramData");
-		if (!str)
-			str = "C:\\ProgramData";
-
-		sprintf(ret_path, "%s\\shioncoin\\", str);
-		mkdir(ret_path, 0777);
-#else
-		strcpy(ret_path, "/var/lib/shioncoin/");
-		mkdir(ret_path, 0777);
-#endif
-	}
-
-	return (ret_path);
-}
-
 shkey_t *key_dat_pass(char *host)
 {
   shkey_t *key;
@@ -61,8 +38,11 @@ shkey_t *key_dat_pass(char *host)
 
 	/* may be over-written by command-line argument. */
 	key_str = opt_str(OPT_PASS);
-	if (key_str && *key_str)
-		return (shkey_gen(key_str));
+	if (key_str && *key_str) {
+		key = shkey_hexgen(key_str);
+		if (key)
+			return (key);
+	}
 
   if (!host) {
 		host = opt_str(OPT_HOSTNAME);

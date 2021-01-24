@@ -1,0 +1,64 @@
+.TH "Libshare_fslog" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fslog \- 
+.PP
+Application logging calls.  
+
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHLOG_INFO\fP   1"
+.br
+.ti -1c
+.RI "#define \fBSHLOG_WARNING\fP   2"
+.br
+.ti -1c
+.RI "#define \fBSHLOG_ERROR\fP   3"
+.br
+.ti -1c
+.RI "#define \fBSHLOG_RUSAGE\fP   4"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshlog\fP (int level, int err_code, char *log_str)"
+.br
+.RI "\fIPerform a generic logging operation. \fP"
+.ti -1c
+.RI "void \fBsherr\fP (int err_code, char *log_str)"
+.br
+.RI "\fILog a libshare error code (SHERR_XXX) and an error message. \fP"
+.ti -1c
+.RI "void \fBshwarn\fP (char *log_str)"
+.br
+.RI "\fILog a warning message. \fP"
+.ti -1c
+.RI "void \fBshinfo\fP (char *log_str)"
+.br
+.RI "\fILog a informational message. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Application logging calls. 
+.SH "Function Documentation"
+.PP 
+.SS "void sherr (int err_code, char * log_str)"
+.PP
+Log a libshare error code (SHERR_XXX) and an error message. 
+.SS "void shinfo (char * log_str)"
+.PP
+Log a informational message. 
+.SS "int shlog (int level, int err_code, char * log_str)"
+.PP
+Perform a generic logging operation. 
+.SS "void shwarn (char * log_str)"
+.PP
+Log a warning message. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

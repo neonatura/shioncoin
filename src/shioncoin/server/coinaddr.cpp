@@ -88,24 +88,28 @@ bool CCoinAddr::Set(const WitnessV0KeyHash& id)
 {
 	nType = ADDR_BECH32;
 	SetData(0, &id, 20);
+	return (true);
 }
 
 bool CCoinAddr::Set(const WitnessV0ScriptHash& id)
 {
 	nType = ADDR_BECH32;
 	SetData(0, &id, 32);
+	return (true);
 }
 
 bool CCoinAddr::Set(const WitnessV14KeyHash& id)
 {
 	nType = ADDR_BECH32;
 	SetData(14, &id, 20);
+	return (true);
 }
 
 bool CCoinAddr::Set(const WitnessV14ScriptHash& id)
 {
 	nType = ADDR_BECH32;
 	SetData(14, &id, 32);
+	return (true);
 }
 
 bool CCoinAddr::Set(const WitnessUnknown& id)
@@ -113,6 +117,7 @@ bool CCoinAddr::Set(const WitnessUnknown& id)
 	nType = ADDR_BECH32;
 	/* TODO: */
 	SetData(id.version, id.program, id.length);  
+	return (true);
 }
 
 bool CCoinAddr::Set(const CTxDestination &dest)

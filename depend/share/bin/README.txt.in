@@ -1,0 +1,45 @@
+@PACKAGE_NAME@ @PACKAGE_VERSION@
+
+A brief description of the files in this directory:
+
+  - libshare.a
+                Static library to access the Share Library API.
+
+  - libshare.so
+                Shared library to access the Share Library API.
+
+  - libshare.jar
+                Shared library JNI wrapper to access the Share Library API.
+
+  - test_libshare_java 
+                Test routines ran through a java JNI wrapper.
+
+  - test_libshare 
+                Test routines ran against the satic libshare library.
+
+  - share 
+                The command-line tool to access Share Library functionality.
+
+  - shared
+                The Share Library daemon to synchronize filesystems.
+
+  - shcat 
+                A script that prints a sharefs file to the output.
+
+  - shls 
+                A script that lists a sharefs directory.
+
+  - shrm 
+                A script that removes a sharefs directory or file.
+
+  - shmkdir
+                A script that makes a sharefs directory.
+
+  - shcp 
+                A script that copies a sharefs directory or file.
+
+  - docs 
+                Doxygen generated API documentation in HTML format.
+
+  - man 
+                Man pages for the Share Library suite.

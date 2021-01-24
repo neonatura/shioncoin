@@ -696,7 +696,7 @@ bool TESTNETBlock::CheckBlock()
   }
 
 
-/* DEBUG: TODO: */
+/* TODO: */
 /* addition verification.. 
  * ensure genesis block has higher payout in coinbase
  * ensure genesis block has lower difficulty (nbits)

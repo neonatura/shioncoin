@@ -1,0 +1,6 @@
+[neonatura]
+name=Neo Natura
+baseurl=ftp://neo-natura.com/el6/$basearch/
+gpgcheck=1
+gpgkey=ftp://neo-natura/el6/RPM-GPG-KEY-Neo\ Natura
+enabled=1

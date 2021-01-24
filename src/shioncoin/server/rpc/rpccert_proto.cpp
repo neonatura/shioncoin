@@ -335,7 +335,8 @@ Value rpc_wallet_donate(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(SHERR_INVAL, "Invalid account name specified.");
 
   int64 nValue = AmountFromValue(params[1]);
-  if (nValue < iface->min_tx_fee || nValue > (MAX_TRANSACTION_FEE(iface) / 2))
+  if (nValue < iface->min_tx_fee || 
+			nValue > MAX_TRANSACTION_FEE(iface))
     throw JSONRPCError(SHERR_INVAL, "Invalid coin value specified.");
 
   uint160 hCert;

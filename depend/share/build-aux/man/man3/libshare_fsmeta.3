@@ -1,0 +1,74 @@
+.TH "Libshare_fsmeta" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsmeta \- 
+.PP
+Inode supplemental meta information.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_meta\fP (\fBshfs_t\fP *tree, \fBshfs_ino_t\fP *ent, \fBshmeta_t\fP **val_p)"
+.br
+.RI "\fIObtain a reference to the meta definition hashmap associated with the inode entry. \fP"
+.ti -1c
+.RI "int \fBshfs_meta_save\fP (\fBshfs_t\fP *tree, \fBshfs_ino_t\fP *ent, \fBshmeta_t\fP *h)"
+.br
+.RI "\fIFlush the inode's meta map to disk. \fP"
+.ti -1c
+.RI "const char * \fBshfs_meta_get\fP (\fBshfs_ino_t\fP *file, char *def)"
+.br
+.RI "\fIRetrieve a SHMETA_XX meta defintion from a share library file. \fP"
+.ti -1c
+.RI "int \fBshfs_meta_perm\fP (\fBshfs_ino_t\fP *file, char *def, \fBshkey_t\fP *user)"
+.br
+.ti -1c
+.RI "int \fBshfs_meta_set\fP (\fBshfs_ino_t\fP *file, char *def, char *value)"
+.br
+.ti -1c
+.RI "int \fBshfs_sig_verify\fP (\fBshfs_ino_t\fP *file, \fBshkey_t\fP *peer_key)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Inode supplemental meta information. 
+.SH "Function Documentation"
+.PP 
+.SS "int shfs_meta (\fBshfs_t\fP * tree, \fBshfs_ino_t\fP * ent, \fBshmeta_t\fP ** val_p)"
+.PP
+Obtain a reference to the meta definition hashmap associated with the inode entry. \fBNote:\fP
+.RS 4
+The \fC\fBshfs_ino_t\fP\fP inode will cache the hashmap reference. 
+.RE
+.PP
+\fBParameters:\fP
+.RS 4
+\fIent\fP The inode entry. 
+.br
+\fIval_p\fP A memory reference to the meta definition hashmap being filled in. 
+.RE
+.PP
+
+.SS "const char* shfs_meta_get (\fBshfs_ino_t\fP * file, char * def)"
+.PP
+Retrieve a SHMETA_XX meta defintion from a share library file. 
+.SS "int shfs_meta_save (\fBshfs_t\fP * tree, \fBshfs_ino_t\fP * ent, \fBshmeta_t\fP * h)"
+.PP
+Flush the inode's meta map to disk. \fBParameters:\fP
+.RS 4
+\fIThe\fP inode associated with the meta map. 
+.br
+\fIval\fP The meta map to store to disk. 
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A zero (0) on success and a negative one (-1) on failure. 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

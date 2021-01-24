@@ -56,7 +56,7 @@ static err_code_t _error_code_table[] = {
 	{ ERR_NOMSG, "NOMSG" },
 	{ ERR_XFULL, "XFULL" },
 	{ ERR_OVERFLOW, "OVERFLOW" },
-	{ ERR_NOTUNIQ, "NOTUNIQ" },
+	{ ERR_NOTUNIQ, "key is not unique" },
 	{ ERR_ILSEQ, "illegal byte sequence" },
 	{ ERR_CONNRESET, "CONNRESET" },
 	{ ERR_NOBUFS, "NOBUFS" },

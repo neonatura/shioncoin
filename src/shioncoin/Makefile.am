@@ -97,6 +97,17 @@ stratum_sources = \
 	stratum/http/http_matrix.c \
 	stratum/http/http_pool.c
 
+shapi_sources = \
+	shapi/shapi_api.cpp \
+	shapi/shapi_api_faucet.cpp \
+	shapi/shapi_api.h \
+	shapi/shapi.c \
+	shapi/shapi.h \
+	shapi/shapi_protocol.c \
+	shapi/shapi_protocol.h \
+	shapi/shapi_user.c \
+	shapi/shapi_user.h
+
 
 #bn_sources = \
 #	server/bn/bn_add.c \
@@ -350,6 +361,10 @@ server_sources = \
 
 if STRATUM_SERVICE
 server_sources += $(stratum_sources)
+endif
+
+if SHAPI_SERVICE
+server_sources += $(shapi_sources)
 endif
 
 if EMC2_SERVICE

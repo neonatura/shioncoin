@@ -70,22 +70,22 @@ static int testnet_init(CIface *iface, void *_unused_)
 	/* ACTIVE: BIP9 */
 	iface->vDeployments[DEPLOYMENT_TESTDUMMY].bit = 28;
 	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nStartTime = 1546300800; /* 01/01/19 */
-	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nTimeout = 1577836800; /* 01/01/20 */
+	iface->vDeployments[DEPLOYMENT_TESTDUMMY].nTimeout = 1609459200; /* 01/01/21 */
 
 	/* ACTIVE: BIP68, BIP112, and BIP113 */
 	iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
 	iface->vDeployments[DEPLOYMENT_CSV].nStartTime = 1546300800; /* 01/01/19 */
-	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1577836800; /* 01/01/20 */
+	iface->vDeployments[DEPLOYMENT_CSV].nTimeout = 1609459200; /* 01/01/21 */
 
 	/* ACTIVE: BIP141, BIP143, and BIP147 */
 	iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
 	iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = 1546300800; /* 01/01/19 */
-	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1577836800; /* 01/01/20 */
+	iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = 1609459200; /* 01/01/21 */
 
 	/* ACTIVE: SIP32 */
 	iface->vDeployments[DEPLOYMENT_ALGO].bit = 5;
 	iface->vDeployments[DEPLOYMENT_ALGO].nStartTime = 1556409600; /* 04/27/19 */
-	iface->vDeployments[DEPLOYMENT_ALGO].nTimeout = 1577836800; /* 01/01/20 */
+	iface->vDeployments[DEPLOYMENT_ALGO].nTimeout = 1609459200; /* 01/01/21 */
 
 	iface->vDeployments[DEPLOYMENT_PARAM].bit = 6;
 	iface->vDeployments[DEPLOYMENT_PARAM].nStartTime = 1577836800; /* 01/01/20 */
@@ -151,6 +151,7 @@ static int testnet_term(CIface *iface, void *_unused_)
    }
 #endif
   SetWallet(iface, NULL);
+	return (0);
 }
 static int testnet_msg_recv(CIface *iface, CNode *pnode)
 {
@@ -263,7 +264,7 @@ static int testnet_block_templ(CIface *iface, CBlock **block_p)
     
   if (!wallet) {
     unet_log(ifaceIndex, "GetBlocKTemplate: Wallet not initialized.");
-    return (NULL);
+    return (ERR_INVAL);
   }
 
   CBlockIndex *pindexBest = GetBestBlockIndex(TESTNET_COIN_IFACE);
@@ -272,12 +273,12 @@ static int testnet_block_templ(CIface *iface, CBlock **block_p)
   const CPubKey& pubkey = testnet_GetMainAccountPubKey(wallet);
   if (!pubkey.IsValid()) {
 error(SHERR_INVAL, "testnet_block_templ: error obtaining main pubkey.\n");
-    return (-1);
+    return (ERR_INVAL);
   }
 
   pblock = testnet_CreateNewBlock(pubkey);
   if (!pblock)
-    return (-1);
+    return (ERR_INVAL);
 
   pblock->nTime = MAX(median, GetAdjustedTime());
   pblock->nNonce = 0;

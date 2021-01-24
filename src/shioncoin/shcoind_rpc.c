@@ -47,22 +47,25 @@ static const char *rpc_dat_path(void)
 
 	memset(ret_path, 0, sizeof(ret_path));
 
-	path = (const char *)opt_str(OPT_RPC_MAP);
-	if (!path || !*path) {
-		path = get_shioncoin_path();
-		snprintf(ret_path, sizeof(ret_path)-1, "%sblockchain/rpc.dat", path);
-	} else {
-		strncpy(ret_path, path, sizeof(ret_path)-1);
-	}
+	path = get_shioncoin_path();
+#ifdef WINDOWS
+	snprintf(ret_path, sizeof(ret_path)-1, "%sblockchain\\rpc.dat", path);
+#else
+	snprintf(ret_path, sizeof(ret_path)-1, "%sblockchain/rpc.dat", path);
+#endif
 
 	return ((const char *)ret_path);
 }
 
+#if 0
 void get_rpc_cred(char *username, char *password)
 {
   char *in_name = (char *)get_rpc_username();
   char *in_pass = (char *)get_rpc_password(NULL); 
   int err;
+
+	*username = '\000';
+	*password = '\000';
 
   if (!in_pass) {
     /* generate new key for local use */
@@ -80,8 +83,8 @@ void get_rpc_cred(char *username, char *password)
 
   strcpy(username, in_name);
   strcpy(password, in_pass);
-
 }
+#endif
 
 const char *get_rpc_username(void)
 {
@@ -127,6 +130,12 @@ shkey_t *get_rpc_dat_password(char *host)
   if (!host)
     host = "127.0.0.1";
 
+	if (0 == strcmp(host, "127.0.0.1")) {
+		key = shkey_hexgen(opt_str(OPT_RPC_KEY));
+		if (key)
+			return (key);
+	}
+
   buff = shbuf_init();
   err = shfs_mem_read(rpc_dat_path(), buff);
   if (!err) {
@@ -160,6 +169,7 @@ shkey_t *get_rpc_dat_password(char *host)
   return (NULL);
 }
 
+#if 0
 int set_rpc_dat_password(char *host, shkey_t *in_key)
 {
   shkey_t *key;
@@ -236,6 +246,7 @@ int set_rpc_dat_password(char *host, shkey_t *in_key)
 
   return (0);
 }
+#endif
 
 #define FIVE_MINUTES 300
 uint32_t get_rpc_pin(char *host)
@@ -613,6 +624,7 @@ void rpc_term(void)
   unet_unbind(UNET_RPC);
 }
 
+#if 0
 unsigned char *hd_master_secret(void)
 {
 	static unsigned char raw_key[64];
@@ -636,6 +648,7 @@ unsigned char *hd_master_secret(void)
 
 	return (raw_key);
 }
+#endif
 
 #ifdef __cplusplus
 }

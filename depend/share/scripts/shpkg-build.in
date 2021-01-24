@@ -1,0 +1,163 @@
+#!/bin/bash
+
+#  Copyright 2015 Neo Natura 
+#
+#  This file is part of the Share Library.
+#  (https://github.com/neonatura/share)
+#        
+#  The Share Library is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version. 
+#
+#  The Share Library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with The Share Library.  If not, see <http://www.gnu.org/licenses/>.
+
+# --version
+if [ "$1" = "--version" ] ; then
+  echo "@PACKAGE_NAME@ version @PACKAGE_VERSION@ (libshare)"
+  echo ""
+  echo "Copyright 2013 Neo Natura"
+  echo "Licensed under the GNU GENERAL PUBLIC LICENSE Version 3"
+  echo "Visit 'https://github.com/neonatura/share' for more information."
+  exit 0;
+fi
+
+# --help
+if [ "$1" = "" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ] ; then
+  echo "@PACKAGE_NAME@ version @PACKAGE_VERSION@ (libshare)"
+  echo "usage: $0 <source path>"
+  echo ""
+  echo "Prints the contents of a file on a sharefs filesystem."
+  echo "Relative path is based on the current filesystem's working directory."
+  echo ""
+  echo "Visit 'https://github.com/neonatura/share' for more information."
+  exit 0;
+fi
+
+# setup script environment
+PATH=".:$PATH"
+PROC_NAME="`basename "$0"`"
+SRC_FILE="`basename "$1"`"
+PKG_NAME="`basename "$1"|cut -d- -f1`"
+
+# load configuration
+mkdir -p ~/.shpkg/SPECS
+touch $HOME/.shpkg/SPECS/$PKG_NAME.spec
+. $HOME/.shpkg/SPECS/$PKG_NAME.spec
+
+# parse arguments
+PKG_SUFFIX="`basename "$1"|cut -d- -f2`"
+PKG_VER="`echo "$PKG_SUFFIX"|cut -d. -f1-2`"
+PKG_ARCH=`arch`
+SRC_DIR="$HOME/.shpkg/SOURCES/$PKG_NAME"
+SRC_PATH="$SRC_DIR/$SRC_FILE"
+TAR_NAME="$PKG_NAME-$PKG_VER"
+BUILD_DIR="$HOME/.shpkg/BUILD/$PKG_NAME"
+INSTALL_DIR="$HOME/.shpkg/RELEASE/$PKG_NAME"
+
+if [ "$PKG_NAME" = "" ] || [ "$PKG_VER" = "" ] ; then
+  echo "@PACKAGE_NAME@ version @PACKAGE_VERSION@ (libshare)"
+  echo "usage: $0 <source path>"
+  echo ""
+  echo "Prints the contents of a file on a sharefs filesystem."
+  echo "Relative path is based on the current filesystem's working directory."
+  echo ""
+  echo "Visit 'https://github.com/neonatura/share' for more information."
+  exit 1;
+fi
+
+
+echo "Package Name: $PKG_NAME"
+echo "Version: $PKG_VER"
+echo "Source File: $SRC_PATH"
+echo "Architecture: $PKG_ARCH"
+echo
+
+stat "$1"
+if [ $? -ne 0 ]; then
+  exit $?
+fi
+
+# prep build area
+rm -rf $SRC_DIR
+mkdir -p $SRC_DIR
+cp "$1" "$SRC_PATH"
+chown -R root.root $SRC_DIR
+chmod -R a+rX,g-w,o-w $SRC_DIR
+cd $SRC_DIR
+
+echo -n "$PROC_NAME: extracting source tarball.."
+gzip -dc $SRC_PATH | tar -xf -
+echo
+if [ $? -ne 0 ]; then
+  echo "$SRC_FILE: file is not a gzipped tarball."
+  exit $?
+fi
+
+# prep build area
+#rm -rf $BUILD_DIR
+mkdir -p $BUILD_DIR
+chown -R root.root $BUILD_DIR
+chmod -R a+rX,g-w,o-w $BUILD_DIR
+
+# configure build
+cd $BUILD_DIR
+echo -n "$PROC_NAME: configuring '`pwd`'.."
+chmod u+x $SRC_DIR/$TAR_NAME/configure
+$SRC_DIR/$TAR_NAME/configure --prefix="$INSTALL_DIR" >& shpkg_build.log
+echo
+if [ $? -ne 0 ]; then
+  cat shpkg_build.log
+  exit $?
+fi
+
+# compile package
+echo -n "$PROC_NAME: compiling.."
+make >& shpkg_make.log
+echo
+if [ $? -ne 0 ]; then
+  cat shpkg_make.log
+  exit $?
+fi
+
+# package installation files
+echo -n "$PROC_NAME: packaging.."
+rm -rf $INSTALL_DIR
+mkdir -p $INSTALL_DIR
+chown -R root.root $INSTALL_DIR
+chmod -R a+rX,g-w,o-w $INSTALL_DIR
+make install >& shpkg_install.log
+echo
+if [ $? -ne 0 ]; then
+  cat shpkg_install.log
+  exit $?
+fi
+
+install_file() {
+  echo "$1: added"
+  shpkg add $PKG_NAME "$1" 
+}
+
+# create package
+shpkg create $PKG_NAME $PKG_VER
+
+# add built executables to package.
+find $INSTALL_DIR | grep -v "/$" | \
+  while read a; do \
+    if [ -f "$a" ]; then \
+      install_file $a; \
+    fi; \
+  done
+
+if [ "$PackageCertificate" != "" ]; then 
+  shpkg sign $PKG_NAME $PackageCertificate
+fi
+
+# generate a arch-specific tarball from libshare package system dir
+shcp /sys/pkg/$PKG_NAME/ $PKG_NAME-$PKG_VER-$PKG_ARCH.tar.gz

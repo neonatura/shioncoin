@@ -1,0 +1,39 @@
+.TH "Libshare_mempam" 3 "20 Jan 2015" "Version 2.20" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_mempam \- 
+.PP
+Account permission access management.  
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshpam_user_gen\fP (char *username)"
+.br
+.ti -1c
+.RI "char * \fBshpam_seed_sys\fP (char *username)"
+.br
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshpam_seed_gen\fP (\fBshkey_t\fP *user_key, char *passphrase)"
+.br
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshpam_seed_def\fP (char *username)"
+.br
+.ti -1c
+.RI "int \fBshpam_seed_verify\fP (\fBshkey_t\fP *seed_key, \fBshkey_t\fP *user_key, char *passphrase)"
+.br
+.ti -1c
+.RI "\fBshkey_t\fP * \fBshpam_sess_gen\fP (\fBshkey_t\fP *seed_key, \fBshtime_t\fP stamp, uint64_t crc)"
+.br
+.ti -1c
+.RI "int \fBshpam_sess_verify\fP (\fBshkey_t\fP *sess_key, \fBshkey_t\fP *seed_key, \fBshtime_t\fP stamp, uint64_t crc)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Account permission access management. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

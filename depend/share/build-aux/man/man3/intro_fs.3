@@ -1,0 +1,21 @@
+.TH "intro_fs" 3 "25 Jan 2015" "Version 2.22" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+intro_fs \- Accessing the share-fs filesystem. 
+Goto: \fBThe sharefs reference manual.\fP
+.PP
+The filesystem stores introduces new inode types in order to reference additional information relating to a file or directory. 
+.PP
+\fBSee also:\fP
+.RS 4
+\fBshfs_ino_t\fP
+.RE
+.PP
+The sharefs filesystem can overlay on top of the base filesystem by linking directories and files into a sharefs partition. The sharefs file may only link to the file, as needed, to conserve duplicate data.
+.PP
+Revisions of files can be tracked and reverted. The sharefs uses compressed deltas in order to store each supplemental revision to a file. This design allows for small changes to large files with little overhead.
+.PP
+Permissions may be applied to which file revisions are imported or exported from remote machines by link files or directories to a remote sharefs partition.
+.PP
+Symbolic links can be used to reference local or remote paths. Multiple clients can link to a single directory or file in order to share revisions. 

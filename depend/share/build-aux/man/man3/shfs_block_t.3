@@ -1,0 +1,46 @@
+.TH "shfs_block_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shfs_block_t \- 
+.PP
+The contents of a sharefs inode.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shfs.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBshfs_hdr_t\fP \fBhdr\fP"
+.br
+.RI "\fIThe definition header of the inode block. \fP"
+.ti -1c
+.RI "unsigned char \fBraw\fP [(4096-sizeof(\fBshfs_hdr_t\fP))]"
+.br
+.RI "\fIThe data segment of the inode block. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+The contents of a sharefs inode. 
+.PP
+Definition at line 477 of file shfs.h.
+.SH "Field Documentation"
+.PP 
+.SS "\fBshfs_hdr_t\fP \fBshfs_block_t::hdr\fP"
+.PP
+The definition header of the inode block. 
+.PP
+Definition at line 482 of file shfs.h.
+.SS "unsigned char \fBshfs_block_t::raw\fP[(4096-sizeof(\fBshfs_hdr_t\fP))]"
+.PP
+The data segment of the inode block. 
+.PP
+Definition at line 487 of file shfs.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

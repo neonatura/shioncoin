@@ -1,0 +1,51 @@
+.TH "tx_license_msg_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tx_license_msg_t \- 
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBshpeer_t\fP \fBlic_peer\fP"
+.br
+.RI "\fIThe originating peer granting the license. \fP"
+.ti -1c
+.RI "\fBshsig_t\fP \fBlic_sig\fP"
+.br
+.RI "\fIThe digital signature the licence is granting access for. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP \fBlic_name\fP"
+.br
+.RI "\fIThe key reference to the licensing content. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBlic_expire\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Definition at line 224 of file shnet.h.
+.SH "Field Documentation"
+.PP 
+.SS "\fBshkey_t\fP \fBtx_license_msg_t::lic_name\fP"
+.PP
+The key reference to the licensing content. 
+.PP
+Definition at line 230 of file shnet.h.
+.SS "\fBshpeer_t\fP \fBtx_license_msg_t::lic_peer\fP"
+.PP
+The originating peer granting the license. 
+.PP
+Definition at line 226 of file shnet.h.
+.SS "\fBshsig_t\fP \fBtx_license_msg_t::lic_sig\fP"
+.PP
+The digital signature the licence is granting access for. 
+.PP
+Definition at line 228 of file shnet.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

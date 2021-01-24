@@ -1,0 +1,151 @@
+.TH "shfs_hdr_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shfs_hdr_t \- 
+.PP
+A sharefs filesystem inode header.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shfs.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBshkey_t\fP \fBname\fP"
+.br
+.RI "\fIA hashed reference of the inode. \fP"
+.ti -1c
+.RI "\fBshkey_t\fP \fBowner\fP"
+.br
+.RI "\fIA hashed reference of the inode's owner id. \fP"
+.ti -1c
+.RI "\fBshsize_t\fP \fBsize\fP"
+.br
+.RI "\fIThe total size of the data segment being referenced. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBctime\fP"
+.br
+.RI "\fIThe time that the inode was created. \fP"
+.ti -1c
+.RI "\fBshtime_t\fP \fBmtime\fP"
+.br
+.RI "\fIThe last time this inode was written to. \fP"
+.ti -1c
+.RI "uint64_t \fBcrc\fP"
+.br
+.RI "\fIA crc checksum representation of the underlying data. \fP"
+.ti -1c
+.RI "\fBshfs_attr_t\fP \fBattr\fP"
+.br
+.RI "\fIA bitvector specifying inode attributes. \fP"
+.ti -1c
+.RI "\fBshfs_ino_type_t\fP \fBtype\fP"
+.br
+.RI "\fIType of inode. \fP"
+.ti -1c
+.RI "\fBshfs_ino_type_t\fP \fBformat\fP"
+.br
+.RI "\fIType of inode data contained. \fP"
+.ti -1c
+.RI "\fBshfs_idx_t\fP \fBpos\fP"
+.br
+.RI "\fIInode position in the partition. \fP"
+.ti -1c
+.RI "\fBshfs_idx_t\fP \fBnpos\fP"
+.br
+.RI "\fIThe position of the next inode in a chain. \fP"
+.ti -1c
+.RI "\fBshfs_idx_t\fP \fBfpos\fP"
+.br
+.RI "\fIThe position of the first inode in a chain. \fP"
+.ti -1c
+.RI "uint16_t \fB__reserved_1__\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+A sharefs filesystem inode header. 
+
+\fBSee also:\fP
+.RS 4
+\fBshfs_meta()\fP \fBSHINODE_DIRECTORY\fP 
+.RE
+.PP
+
+.PP
+Definition at line 381 of file shfs.h.
+.SH "Field Documentation"
+.PP 
+.SS "\fBshfs_attr_t\fP \fBshfs_hdr_t::attr\fP"
+.PP
+A bitvector specifying inode attributes. 
+.PP
+Definition at line 417 of file shfs.h.
+.SS "uint64_t \fBshfs_hdr_t::crc\fP"
+.PP
+A crc checksum representation of the underlying data. 
+.PP
+Definition at line 412 of file shfs.h.
+.SS "\fBshtime_t\fP \fBshfs_hdr_t::ctime\fP"
+.PP
+The time that the inode was created. 
+.PP
+Definition at line 402 of file shfs.h.
+.SS "\fBshfs_ino_type_t\fP \fBshfs_hdr_t::format\fP"
+.PP
+Type of inode data contained. 
+.PP
+Definition at line 428 of file shfs.h.
+.SS "\fBshfs_idx_t\fP \fBshfs_hdr_t::fpos\fP"
+.PP
+The position of the first inode in a chain. 
+.PP
+Definition at line 443 of file shfs.h.
+.SS "\fBshtime_t\fP \fBshfs_hdr_t::mtime\fP"
+.PP
+The last time this inode was written to. 
+.PP
+Definition at line 407 of file shfs.h.
+.SS "\fBshkey_t\fP \fBshfs_hdr_t::name\fP"
+.PP
+A hashed reference of the inode. 
+.PP
+Definition at line 387 of file shfs.h.
+.SS "\fBshfs_idx_t\fP \fBshfs_hdr_t::npos\fP"
+.PP
+The position of the next inode in a chain. 
+.PP
+Definition at line 438 of file shfs.h.
+.SS "\fBshkey_t\fP \fBshfs_hdr_t::owner\fP"
+.PP
+A hashed reference of the inode's owner id. 
+.PP
+Definition at line 392 of file shfs.h.
+.SS "\fBshfs_idx_t\fP \fBshfs_hdr_t::pos\fP"
+.PP
+Inode position in the partition. 
+.PP
+Definition at line 433 of file shfs.h.
+.SS "\fBshsize_t\fP \fBshfs_hdr_t::size\fP"
+.PP
+The total size of the data segment being referenced. 
+.PP
+Definition at line 397 of file shfs.h.
+.SS "\fBshfs_ino_type_t\fP \fBshfs_hdr_t::type\fP"
+.PP
+Type of inode. \fBSee also:\fP
+.RS 4
+\fBSHINODE_FILE\fP 
+.RE
+.PP
+
+.PP
+Definition at line 423 of file shfs.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

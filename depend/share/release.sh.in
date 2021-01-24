@@ -1,0 +1,20 @@
+#!/bin/bash
+
+ARCH=`arch`
+DIST=`cut -d" " -f1 /etc/issue|head -n 1`
+SRCDIR=@top_srcdir@
+RELDIR="$SRCDIR/release/"
+
+cd $SRCDIR
+rm -rf $RELDIR/libshare
+mkdir -p $RELDIR/libshare
+
+cd $RELDIR
+$SRCDIR/configure --libdir=$RELDIR/libshare --bindir=$RELDIR/libshare --sbindir=$RELDIR/libshare --docdir=$RELDIR/libshare
+make
+make install
+
+tar -cpf libshare.tar libshare
+gzip -f libshare.tar
+cp libshare.tar.gz libshare-@VERSION@_$DIST-$ARCH.tgz
+mv -f libshare.tar.gz libshare_$DIST-$ARCH.tgz

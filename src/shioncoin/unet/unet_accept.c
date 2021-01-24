@@ -64,6 +64,7 @@ int unet_accept(int mode, unsigned int *sk_p)
 {
   unet_bind_t *bind;
   struct sockaddr_in *addr;
+	desc_t *d;
   char buf[256];
   int cli_fd;
 
@@ -75,11 +76,17 @@ int unet_accept(int mode, unsigned int *sk_p)
   if (bind->fd == UNDEFINED_SOCKET)
     return (SHERR_BADF);
 
-  cli_fd = shnet_accept_nb(bind->fd);
+	d = descriptor_get(bind->fd);
+	if (d && (d->flag & DF_ESL)) {
+		cli_fd = esl_accept(bind->fd);
+		if (cli_fd == ERR_AGAIN) cli_fd = 0;
+	} else {
+		cli_fd = shnet_accept_nb(bind->fd);
+	}
   if (cli_fd == 0)
     return (SHERR_AGAIN);
   if (cli_fd < 0) {
-    sprintf(buf, "unet_accept: warning: error %d (errno %d) (bind->fd %d).", cli_fd, errno, bind->fd);
+    sprintf(buf, "unet_accept: warning: %s (error-code %d) (errno %d) (bind->fd %d).", error_str(cli_fd), cli_fd, errno, bind->fd);
     unet_log(mode, buf); 
     return ((int)cli_fd);
   }
@@ -117,15 +124,23 @@ int unet_accept(int mode, unsigned int *sk_p)
     }
   }
 
+	/* Add to the internal socket descriptor list. */
   unet_add(mode, cli_fd);
 
   {
     unet_table_t *t = get_unet_table(cli_fd);
     if (t) {
+			/* This is an inbound network service connection. */
       t->flag |= UNETF_INBOUND; 
+
+			/* Mark accepted ESL sockets as such. */
+			if (d && (d->flag & DF_ESL)) {
+				t->flag |= UNETF_ESL;
+			}
     }
   }
 
+	/* Call the per-service operation for a new connection being established. */
   if (bind->op_accept) {
     (*bind->op_accept)(cli_fd, shaddr(cli_fd));
   }

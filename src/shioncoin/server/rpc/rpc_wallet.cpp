@@ -325,6 +325,7 @@ Value rpc_wallet_get(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum)
 {
+	CWallet *wallet = GetWallet(iface);
 
 	if (fStratum)
 		throw runtime_error("unsupported operation");
@@ -350,16 +351,23 @@ Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum)
 	int ifaceIndex = GetCoinIndex(iface);
 
 	string strAddress = params[0].get_str();
+
 	CCoinAddr address(ifaceIndex, strAddress);
 	if (!address.IsValid())
-		throw JSONRPCError(-5, "Invalid address");
-	CKeyID keyID;
-	if (!address.GetKeyID(keyID))
-		throw JSONRPCError(-3, "Address does not refer to a key");
+		throw JSONRPCError(ERR_INVAL, "Invalid address");
+
+	CKeyID keyid;
+	if (!ExtractDestinationKey(wallet, address.Get(), keyid)) {
+		if (!address.GetKeyID(keyid)) {
+			throw JSONRPCError(ERR_NOKEY, "Invalid address");
+		}
+	}
+
 	CSecret vchSecret;
-	bool fCompressed;
-	if (!pwalletMain->GetSecret(keyID, vchSecret, fCompressed))
+	bool fCompressed = true;
+	if (!pwalletMain->GetSecret(keyid, vchSecret, fCompressed))
 		throw JSONRPCError(-4,"Private key for address " + strAddress + " is not known");
+
 	return CCoinSecret(ifaceIndex, vchSecret, fCompressed).ToString();
 }
 

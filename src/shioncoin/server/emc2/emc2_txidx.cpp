@@ -208,7 +208,6 @@ static bool emc2_LoadBlockIndex()
 #endif
   {
     if (EMC2Block::pindexGenesisBlock == NULL) {
-  //    fprintf(stderr, "DEBUG: EMC2TxDB::LoadBlockIndex() : EMC2Block::hashBestChain not loaded, but pindexGenesisBlock == NULL");
       return true;
     }
     //    return error(SHERR_INVAL, "EMC2TxDB::LoadBlockIndex() : EMC2Block::hashBestChain not loaded");
@@ -232,10 +231,6 @@ static bool emc2_LoadBlockIndex()
     if (!pindexBest)
       return error(SHERR_INVAL, "EMC2TxDB::LoadBlockIndex() : EMC2Block::hashBestChain not found in the block index");
     hashBestChain = pindexBest->GetBlockHash();
-  }
-
-  if (!pindexBest) {
-//fprintf(stderr, "DEBUG: EMC2TxDB::LoadBlockIndex: error: hashBestChain '%s' not found in block index table\n", (hashBestChain).GetHex().c_str());
   }
 
   SetBestBlockIndex(EMC2_COIN_IFACE, pindexBest);
@@ -266,7 +261,6 @@ static bool emc2_LoadBlockIndex()
       break;
     EMC2Block block;
     if (!block.ReadFromDisk(pindex)) {
-//fprintf(stderr, "DEBUG: EMC2Block::LoadBlockIndex() : block.ReadFromDisk failed");
       pindexFork = pindex->pprev;
       continue;
     }
@@ -289,7 +283,6 @@ static bool emc2_LoadBlockIndex()
   if (pindexFork && !fRequestShutdown)
   {
     // Reorg back to the fork
-//fprintf(stderr, "DEBUG: LoadBlockIndex() : *** moving best chain pointer back to block %d '%s'\n", pindexFork->nHeight, pindexFork->GetBlockHash().GetHex().c_str());
     EMC2Block block;
     if (!block.ReadFromDisk(pindexFork))
       return error(SHERR_INVAL, "LoadBlockIndex() : block.ReadFromDisk failed");

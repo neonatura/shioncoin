@@ -1,0 +1,55 @@
+.TH "Libshare_fsref" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Libshare_fsref \- 
+.PP
+libhshare filesystem inode refary I/O functionality.  
+
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSHFS_MAX_REFERENCE_HIERARCHY\fP   ( (SHFS_BLOCK_DATA_SIZE - sizeof(\fBshpeer_t\fP)) / sizeof(\fBshkey_t\fP) )"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBshfs_ref_read\fP (\fBshfs_ino_t\fP *file, \fBshbuf_t\fP *buff)"
+.br
+.RI "\fIRetrieve information about a reference share-fs inode. \fP"
+.ti -1c
+.RI "int \fBshfs_ref_write\fP (\fBshfs_ino_t\fP *file, \fBshbuf_t\fP *buff)"
+.br
+.RI "\fICreate a reference to another share-fs inode. \fP"
+.ti -1c
+.RI "int \fBshfs_ref_set\fP (\fBshfs_ino_t\fP *file, \fBshfs_ino_t\fP *ref_file)"
+.br
+.RI "\fICreate a reference to another share-fs inode. \fP"
+.ti -1c
+.RI "int \fBshfs_ref_get\fP (\fBshfs_ino_t\fP *file, \fBshfs_t\fP **ref_fs_p, \fBshfs_ino_t\fP **ref_file_p)"
+.br
+.RI "\fIObtain a reference to another share-fs inode. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+libhshare filesystem inode refary I/O functionality. 
+.SH "Function Documentation"
+.PP 
+.SS "int shfs_ref_get (\fBshfs_ino_t\fP * file, \fBshfs_t\fP ** ref_fs_p, \fBshfs_ino_t\fP ** ref_file_p)"
+.PP
+Obtain a reference to another share-fs inode. 
+.SS "int shfs_ref_read (\fBshfs_ino_t\fP * file, \fBshbuf_t\fP * buff)"
+.PP
+Retrieve information about a reference share-fs inode. 
+.SS "int shfs_ref_set (\fBshfs_ino_t\fP * file, \fBshfs_ino_t\fP * ref_file)"
+.PP
+Create a reference to another share-fs inode. 
+.SS "int shfs_ref_write (\fBshfs_ino_t\fP * file, \fBshbuf_t\fP * buff)"
+.PP
+Create a reference to another share-fs inode. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

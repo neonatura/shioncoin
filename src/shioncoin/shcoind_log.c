@@ -105,10 +105,10 @@ void timing_term(int ifaceIndex, char *tag, shtime_t *stamp_p)
 
 }
 
+static FILE *net_fl;
 void f_shcoind_log_net(const char *iface, const char *addr, const char *tag, size_t size, const char *src_fname, long src_line)
 {
 	static shbuf_t *buff;
-	static FILE *net_fl;
 	static time_t last_t;
 	char fname[PATH_MAX+1];
 	char origin[256];
@@ -164,5 +164,12 @@ void f_shcoind_log_net(const char *iface, const char *addr, const char *tag, siz
 	}
 
 	shbuf_clear(buff);
+}
+void shcoind_log_net_free(void)
+{
+	if (net_fl) {
+		fclose(net_fl);
+	}
+	net_fl = NULL;
 }
 

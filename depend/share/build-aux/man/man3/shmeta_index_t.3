@@ -1,0 +1,40 @@
+.TH "shmeta_index_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shmeta_index_t \- 
+.PP
+Data structure for iterating through a hash table.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shmem.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBshmeta_t\fP * \fBht\fP"
+.br
+.ti -1c
+.RI "\fBshmeta_entry_t\fP * \fBtthis\fP"
+.br
+.ti -1c
+.RI "\fBshmeta_entry_t\fP * \fBnext\fP"
+.br
+.ti -1c
+.RI "unsigned int \fBindex\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Data structure for iterating through a hash table. 
+
+We keep a pointer to the next hash entry here to allow the current hash entry to be freed or otherwise mangled between calls to shmeta_next(). 
+.PP
+Definition at line 500 of file shmem.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.

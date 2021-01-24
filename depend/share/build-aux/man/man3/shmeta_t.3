@@ -1,0 +1,57 @@
+.TH "shmeta_t" 3 "8 May 2015" "Version 2.26" "libshare" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+shmeta_t \- 
+.PP
+A meta definition is part of a \fC\fBshmeta_t\fP\fP hashmap.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <shmem.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBshmeta_entry_t\fP ** \fBarray\fP"
+.br
+.ti -1c
+.RI "\fBshmeta_index_t\fP \fBiterator\fP"
+.br
+.ti -1c
+.RI "unsigned int \fBcount\fP"
+.br
+.ti -1c
+.RI "unsigned int \fBmax\fP"
+.br
+.ti -1c
+.RI "\fBshmetafunc_t\fP \fBhash_func\fP"
+.br
+.ti -1c
+.RI "\fBshmeta_entry_t\fP * \fBfree\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+A meta definition is part of a \fC\fBshmeta_t\fP\fP hashmap. 
+
+The share library meta definitions can be used to hash header information from a socket stream, retaining access to the meta information by a token, and allowing for efficient redelivery or caching.
+.PP
+\fBNote:\fP
+.RS 4
+A \fCshfs_tree\fP sharefs file system associates meta definition information with every \fCshfs_node\fP inode entry. 
+.PP
+The size of the array is always a power of two. We use the maximum index rather than the size so that we can use bitwise-AND for modular arithmetic. The count of hash entries may be greater depending on the chosen collision rate. 
+.PP
+The table is an array indexed by the hash of the key; collisions are resolved by hanging a linked list of hash entries off each element of the array. Although this is a really simple design it isn't too bad given that pools have a low allocation overhead. 
+.RE
+.PP
+
+.PP
+Definition at line 515 of file shmem.h.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libshare from the source code.
