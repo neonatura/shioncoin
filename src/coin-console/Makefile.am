@@ -57,20 +57,20 @@ console_sources = \
 
 
 shc_SOURCES = $(console_sources)
-shc_CFLAGS = $(tool_flags) -DSHC_COIN_CLIENT
+shc_CFLAGS = $(tool_flags) -DSHC_COIN_CLIENT -DBLOCKCHAIN_LABEL=\"shc\"
 shc_LDADD = $(ld_flags)
 
 if EMC2_SERVICE
 bin_PROGRAMS += emc2
 emc2_SOURCES = $(console_sources)
-emc2_CFLAGS = $(tool_flags) -DEMC2_COIN_CLIENT
+emc2_CFLAGS = $(tool_flags) -DEMC2_COIN_CLIENT -DBLOCKCHAIN_LABEL=\"emc2\"
 emc2_LDADD = $(ld_flags)
 endif
 
 if TESTNET_SERVICE
 bin_PROGRAMS += testnet
 testnet_SOURCES = $(console_sources)
-testnet_CFLAGS = $(tool_flags) -DTESTNET_COIN_CLIENT
+testnet_CFLAGS = $(tool_flags) -DTESTNET_COIN_CLIENT -DBLOCKCHAIN_LABEL=\"testnet\"
 testnet_LDADD = $(ld_flags)
 endif
 

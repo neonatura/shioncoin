@@ -44,21 +44,20 @@ void shcon_tool_usage(char *prog_name)
 {
   fprintf(stdout,
       "Usage: %s [COMMAND] [PARAMS]\n"
-      "Perform RPC operations on the shioncoin daemon.\n"
+      "RPC shioncoin daemon interface for the \"%s\" blockchain.\n"
       "\n"
       "Options:\n"
       "\t--prompt\tInteractively run commands from a console.\n"
-      "\t--host\tThe shcoind RPC host to connect to.\n"
-      "\t--port\tThe shcoind RPC port to connect to.\n"
-      "\t--pass\tThe shcoind RPC access password.\n"
+      "\t--host\t\tThe shcoind RPC host to connect to.\n"
+      "\t--port\t\tThe shcoind RPC port to connect to.\n"
+      "\t--pass\t\tThe shcoind RPC access password.\n"
       "\n"
       "Commands:\n"
       "\tUse the \"help\" command in order to list all available RPC operations.\n"
       "\n"
       "Visit 'http://docs.sharelib.net/' for libshare API documentation."
       "Report bugs to <support@neo-natura.com>.\n",
-      prog_name
-      );
+      prog_name, BLOCKCHAIN_LABEL);
 }
 
 

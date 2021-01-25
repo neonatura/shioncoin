@@ -465,13 +465,13 @@ console_sources = \
 	command/command_print.c
 
 shc_SOURCES = $(console_sources)
-shc_CFLAGS = $(tool_flags) -DSHC_COIN_CLIENT
+shc_CFLAGS = $(tool_flags) -DSHC_COIN_CLIENT -DBLOCKCHAIN_LABEL=\"shc\"
 shc_LDADD = $(ld_flags)
 @EMC2_SERVICE_TRUE@emc2_SOURCES = $(console_sources)
-@EMC2_SERVICE_TRUE@emc2_CFLAGS = $(tool_flags) -DEMC2_COIN_CLIENT
+@EMC2_SERVICE_TRUE@emc2_CFLAGS = $(tool_flags) -DEMC2_COIN_CLIENT -DBLOCKCHAIN_LABEL=\"emc2\"
 @EMC2_SERVICE_TRUE@emc2_LDADD = $(ld_flags)
 @TESTNET_SERVICE_TRUE@testnet_SOURCES = $(console_sources)
-@TESTNET_SERVICE_TRUE@testnet_CFLAGS = $(tool_flags) -DTESTNET_COIN_CLIENT
+@TESTNET_SERVICE_TRUE@testnet_CFLAGS = $(tool_flags) -DTESTNET_COIN_CLIENT -DBLOCKCHAIN_LABEL=\"testnet\"
 @TESTNET_SERVICE_TRUE@testnet_LDADD = $(ld_flags)
 all: all-am
 
