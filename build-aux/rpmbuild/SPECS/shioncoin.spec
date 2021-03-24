@@ -250,10 +250,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/shtimeu.3.gz
 %{_mandir}/man3/shutimef.3.gz
 %{_mandir}/man3/shwarn.3.gz
-
-%files devel
-%defattr(-,root,root,-)
-%doc
 %{_includedir}/*
 %{_libdir}/*.so
 %{_libdir}/*.a
