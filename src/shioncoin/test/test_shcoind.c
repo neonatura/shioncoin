@@ -120,7 +120,6 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_matrix);
   SUITE_ADD_TEST(suite, TEST_serializetx);
 
-
   /* block-chain transaction tests */
   SUITE_ADD_TEST(suite, TEST_reorganize);
 	SUITE_ADD_TEST(suite, TEST_algo_sha256d);

@@ -1413,20 +1413,18 @@ _TEST(segwit)
     delete block;
   }
 
-  iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
+	iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
   iface->vDeployments[DEPLOYMENT_CSV].nStartTime = time(NULL);
-  iface->vDeployments[DEPLOYMENT_CSV].nTimeout = time(NULL) + 240;
-
+  iface->vDeployments[DEPLOYMENT_CSV].nTimeout = time(NULL) + 120;
   iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
   iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = time(NULL);
-  iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = time(NULL) + 240;
-
+  iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = time(NULL) + 120;
   iface->vDeployments[DEPLOYMENT_PARAM].bit = 6;
   iface->vDeployments[DEPLOYMENT_PARAM].nStartTime = time(NULL);
-  iface->vDeployments[DEPLOYMENT_PARAM].nTimeout = time(NULL) + 240;
+  iface->vDeployments[DEPLOYMENT_PARAM].nTimeout = time(NULL) + 120;
 
   /* create some blocks */
-  for (i = 0; i < 2048; i++) { 
+  for (i = 0; i < 1024; i++) { 
     CBlockIndex *pindexPrev = GetBestBlockIndex(iface);
 
     blocks[i] = test_GenerateBlock();
@@ -1435,8 +1433,6 @@ _TEST(segwit)
 
     if (IsWitnessEnabled(iface, pindexPrev))
       break;
-
-//    delete block;
   }
 
   CBlockIndex *pindexPrev = GetBestBlockIndex(iface);

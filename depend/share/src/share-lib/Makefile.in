@@ -448,7 +448,6 @@ am__libshare_a_SOURCES_DIST = share.h sherr.h shtime.h shcrc.h \
 	$(top_srcdir)/src/gnu/strftime.c \
 	$(top_srcdir)/src/gnu/stripslash.c \
 	$(top_srcdir)/src/gnu/strncasecmp.c \
-	$(top_srcdir)/src/gnu/strndup.c \
 	$(top_srcdir)/src/gnu/strnlen.c \
 	$(top_srcdir)/src/gnu/strnlen1.c \
 	$(top_srcdir)/src/gnu/strtol.c $(top_srcdir)/src/gnu/strtoll.c \
@@ -625,22 +624,21 @@ am__objects_7 = libshare_a-alloca.$(OBJEXT) \
 	libshare_a-strcasecmp.$(OBJEXT) libshare_a-strchrnul.$(OBJEXT) \
 	libshare_a-strdup.$(OBJEXT) libshare_a-strftime.$(OBJEXT) \
 	libshare_a-stripslash.$(OBJEXT) \
-	libshare_a-strncasecmp.$(OBJEXT) libshare_a-strndup.$(OBJEXT) \
-	libshare_a-strnlen.$(OBJEXT) libshare_a-strnlen1.$(OBJEXT) \
-	libshare_a-strtol.$(OBJEXT) libshare_a-strtoll.$(OBJEXT) \
-	libshare_a-strtoul.$(OBJEXT) libshare_a-strtoull.$(OBJEXT) \
-	libshare_a-symlink.$(OBJEXT) libshare_a-time_r.$(OBJEXT) \
-	libshare_a-time_rz.$(OBJEXT) libshare_a-timegm.$(OBJEXT) \
-	libshare_a-timespec.$(OBJEXT) libshare_a-uinttostr.$(OBJEXT) \
-	libshare_a-umaxtostr.$(OBJEXT) libshare_a-unistd.$(OBJEXT) \
-	libshare_a-width.$(OBJEXT) libshare_a-unsetenv.$(OBJEXT) \
-	libshare_a-utimens.$(OBJEXT) libshare_a-utimensat.$(OBJEXT) \
-	libshare_a-vasnprintf.$(OBJEXT) libshare_a-vsnprintf.$(OBJEXT) \
-	libshare_a-wcrtomb.$(OBJEXT) libshare_a-wctype-h.$(OBJEXT) \
-	libshare_a-wcwidth.$(OBJEXT) libshare_a-write.$(OBJEXT) \
-	libshare_a-xalloc-die.$(OBJEXT) libshare_a-xmalloc.$(OBJEXT) \
-	libshare_a-xsize.$(OBJEXT) libshare_a-xstrndup.$(OBJEXT) \
-	libshare_a-xstrtol.$(OBJEXT) \
+	libshare_a-strncasecmp.$(OBJEXT) libshare_a-strnlen.$(OBJEXT) \
+	libshare_a-strnlen1.$(OBJEXT) libshare_a-strtol.$(OBJEXT) \
+	libshare_a-strtoll.$(OBJEXT) libshare_a-strtoul.$(OBJEXT) \
+	libshare_a-strtoull.$(OBJEXT) libshare_a-symlink.$(OBJEXT) \
+	libshare_a-time_r.$(OBJEXT) libshare_a-time_rz.$(OBJEXT) \
+	libshare_a-timegm.$(OBJEXT) libshare_a-timespec.$(OBJEXT) \
+	libshare_a-uinttostr.$(OBJEXT) libshare_a-umaxtostr.$(OBJEXT) \
+	libshare_a-unistd.$(OBJEXT) libshare_a-width.$(OBJEXT) \
+	libshare_a-unsetenv.$(OBJEXT) libshare_a-utimens.$(OBJEXT) \
+	libshare_a-utimensat.$(OBJEXT) libshare_a-vasnprintf.$(OBJEXT) \
+	libshare_a-vsnprintf.$(OBJEXT) libshare_a-wcrtomb.$(OBJEXT) \
+	libshare_a-wctype-h.$(OBJEXT) libshare_a-wcwidth.$(OBJEXT) \
+	libshare_a-write.$(OBJEXT) libshare_a-xalloc-die.$(OBJEXT) \
+	libshare_a-xmalloc.$(OBJEXT) libshare_a-xsize.$(OBJEXT) \
+	libshare_a-xstrndup.$(OBJEXT) libshare_a-xstrtol.$(OBJEXT) \
 	libshare_a-xstrtol-error.$(OBJEXT) \
 	libshare_a-xstrtoul.$(OBJEXT) libshare_a-xstrtoumax.$(OBJEXT) \
 	libshare_a-regex.$(OBJEXT) libshare_a-openat.$(OBJEXT) \
@@ -855,7 +853,6 @@ am__libshare_la_SOURCES_DIST = share.h sherr.h shtime.h shcrc.h \
 	$(top_srcdir)/src/gnu/strftime.c \
 	$(top_srcdir)/src/gnu/stripslash.c \
 	$(top_srcdir)/src/gnu/strncasecmp.c \
-	$(top_srcdir)/src/gnu/strndup.c \
 	$(top_srcdir)/src/gnu/strnlen.c \
 	$(top_srcdir)/src/gnu/strnlen1.c \
 	$(top_srcdir)/src/gnu/strtol.c $(top_srcdir)/src/gnu/strtoll.c \
@@ -1002,26 +999,25 @@ am__objects_12 = libshare_la-alloca.lo libshare_la-allocator.lo \
 	libshare_la-strcasecmp.lo libshare_la-strchrnul.lo \
 	libshare_la-strdup.lo libshare_la-strftime.lo \
 	libshare_la-stripslash.lo libshare_la-strncasecmp.lo \
-	libshare_la-strndup.lo libshare_la-strnlen.lo \
-	libshare_la-strnlen1.lo libshare_la-strtol.lo \
-	libshare_la-strtoll.lo libshare_la-strtoul.lo \
-	libshare_la-strtoull.lo libshare_la-symlink.lo \
-	libshare_la-time_r.lo libshare_la-time_rz.lo \
-	libshare_la-timegm.lo libshare_la-timespec.lo \
-	libshare_la-uinttostr.lo libshare_la-umaxtostr.lo \
-	libshare_la-unistd.lo libshare_la-width.lo \
-	libshare_la-unsetenv.lo libshare_la-utimens.lo \
-	libshare_la-utimensat.lo libshare_la-vasnprintf.lo \
-	libshare_la-vsnprintf.lo libshare_la-wcrtomb.lo \
-	libshare_la-wctype-h.lo libshare_la-wcwidth.lo \
-	libshare_la-write.lo libshare_la-xalloc-die.lo \
-	libshare_la-xmalloc.lo libshare_la-xsize.lo \
-	libshare_la-xstrndup.lo libshare_la-xstrtol.lo \
-	libshare_la-xstrtol-error.lo libshare_la-xstrtoul.lo \
-	libshare_la-xstrtoumax.lo libshare_la-regex.lo \
-	libshare_la-openat.lo libshare_la-openat-die.lo \
-	libshare_la-openat-proc.lo libshare_la-opendir-safer.lo \
-	$(am__objects_11)
+	libshare_la-strnlen.lo libshare_la-strnlen1.lo \
+	libshare_la-strtol.lo libshare_la-strtoll.lo \
+	libshare_la-strtoul.lo libshare_la-strtoull.lo \
+	libshare_la-symlink.lo libshare_la-time_r.lo \
+	libshare_la-time_rz.lo libshare_la-timegm.lo \
+	libshare_la-timespec.lo libshare_la-uinttostr.lo \
+	libshare_la-umaxtostr.lo libshare_la-unistd.lo \
+	libshare_la-width.lo libshare_la-unsetenv.lo \
+	libshare_la-utimens.lo libshare_la-utimensat.lo \
+	libshare_la-vasnprintf.lo libshare_la-vsnprintf.lo \
+	libshare_la-wcrtomb.lo libshare_la-wctype-h.lo \
+	libshare_la-wcwidth.lo libshare_la-write.lo \
+	libshare_la-xalloc-die.lo libshare_la-xmalloc.lo \
+	libshare_la-xsize.lo libshare_la-xstrndup.lo \
+	libshare_la-xstrtol.lo libshare_la-xstrtol-error.lo \
+	libshare_la-xstrtoul.lo libshare_la-xstrtoumax.lo \
+	libshare_la-regex.lo libshare_la-openat.lo \
+	libshare_la-openat-die.lo libshare_la-openat-proc.lo \
+	libshare_la-opendir-safer.lo $(am__objects_11)
 @LIBSHARE_JAVA_TRUE@am__objects_13 =  \
 @LIBSHARE_JAVA_TRUE@	libshare_la-libshare_java_wrap.lo
 am_libshare_la_OBJECTS = $(am__objects_2) $(am__objects_8) \
@@ -1289,7 +1285,6 @@ am__depfiles_remade = ./$(DEPDIR)/libshare_a-CuTest.Po \
 	./$(DEPDIR)/libshare_a-strftime.Po \
 	./$(DEPDIR)/libshare_a-stripslash.Po \
 	./$(DEPDIR)/libshare_a-strncasecmp.Po \
-	./$(DEPDIR)/libshare_a-strndup.Po \
 	./$(DEPDIR)/libshare_a-strnlen.Po \
 	./$(DEPDIR)/libshare_a-strnlen1.Po \
 	./$(DEPDIR)/libshare_a-strtol.Po \
@@ -1550,7 +1545,6 @@ am__depfiles_remade = ./$(DEPDIR)/libshare_a-CuTest.Po \
 	./$(DEPDIR)/libshare_la-strftime.Plo \
 	./$(DEPDIR)/libshare_la-stripslash.Plo \
 	./$(DEPDIR)/libshare_la-strncasecmp.Plo \
-	./$(DEPDIR)/libshare_la-strndup.Plo \
 	./$(DEPDIR)/libshare_la-strnlen.Plo \
 	./$(DEPDIR)/libshare_la-strnlen1.Plo \
 	./$(DEPDIR)/libshare_la-strtol.Plo \
@@ -3024,7 +3018,6 @@ gnu_sources = $(top_srcdir)/src/gnu/alloca.c \
 	$(top_srcdir)/src/gnu/strftime.c \
 	$(top_srcdir)/src/gnu/stripslash.c \
 	$(top_srcdir)/src/gnu/strncasecmp.c \
-	$(top_srcdir)/src/gnu/strndup.c \
 	$(top_srcdir)/src/gnu/strnlen.c \
 	$(top_srcdir)/src/gnu/strnlen1.c \
 	$(top_srcdir)/src/gnu/strtol.c $(top_srcdir)/src/gnu/strtoll.c \
@@ -3605,7 +3598,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_a-strftime.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_a-stripslash.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_a-strncasecmp.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_a-strndup.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_a-strnlen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_a-strnlen1.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_a-strtol.Po@am__quote@ # am--include-marker
@@ -3866,7 +3858,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_la-strftime.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_la-stripslash.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_la-strncasecmp.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_la-strndup.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_la-strnlen.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_la-strnlen1.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshare_la-strtol.Plo@am__quote@ # am--include-marker
@@ -7013,20 +7004,6 @@ libshare_a-strncasecmp.obj: $(top_srcdir)/src/gnu/strncasecmp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_a_CFLAGS) $(CFLAGS) -c -o libshare_a-strncasecmp.obj `if test -f '$(top_srcdir)/src/gnu/strncasecmp.c'; then $(CYGPATH_W) '$(top_srcdir)/src/gnu/strncasecmp.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/gnu/strncasecmp.c'; fi`
 
-libshare_a-strndup.o: $(top_srcdir)/src/gnu/strndup.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_a_CFLAGS) $(CFLAGS) -MT libshare_a-strndup.o -MD -MP -MF $(DEPDIR)/libshare_a-strndup.Tpo -c -o libshare_a-strndup.o `test -f '$(top_srcdir)/src/gnu/strndup.c' || echo '$(srcdir)/'`$(top_srcdir)/src/gnu/strndup.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libshare_a-strndup.Tpo $(DEPDIR)/libshare_a-strndup.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/src/gnu/strndup.c' object='libshare_a-strndup.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_a_CFLAGS) $(CFLAGS) -c -o libshare_a-strndup.o `test -f '$(top_srcdir)/src/gnu/strndup.c' || echo '$(srcdir)/'`$(top_srcdir)/src/gnu/strndup.c
-
-libshare_a-strndup.obj: $(top_srcdir)/src/gnu/strndup.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_a_CFLAGS) $(CFLAGS) -MT libshare_a-strndup.obj -MD -MP -MF $(DEPDIR)/libshare_a-strndup.Tpo -c -o libshare_a-strndup.obj `if test -f '$(top_srcdir)/src/gnu/strndup.c'; then $(CYGPATH_W) '$(top_srcdir)/src/gnu/strndup.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/gnu/strndup.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libshare_a-strndup.Tpo $(DEPDIR)/libshare_a-strndup.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/src/gnu/strndup.c' object='libshare_a-strndup.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_a_CFLAGS) $(CFLAGS) -c -o libshare_a-strndup.obj `if test -f '$(top_srcdir)/src/gnu/strndup.c'; then $(CYGPATH_W) '$(top_srcdir)/src/gnu/strndup.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/gnu/strndup.c'; fi`
-
 libshare_a-strnlen.o: $(top_srcdir)/src/gnu/strnlen.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_a_CFLAGS) $(CFLAGS) -MT libshare_a-strnlen.o -MD -MP -MF $(DEPDIR)/libshare_a-strnlen.Tpo -c -o libshare_a-strnlen.o `test -f '$(top_srcdir)/src/gnu/strnlen.c' || echo '$(srcdir)/'`$(top_srcdir)/src/gnu/strnlen.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libshare_a-strnlen.Tpo $(DEPDIR)/libshare_a-strnlen.Po
@@ -9113,13 +9090,6 @@ libshare_la-strncasecmp.lo: $(top_srcdir)/src/gnu/strncasecmp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_la_CFLAGS) $(CFLAGS) -c -o libshare_la-strncasecmp.lo `test -f '$(top_srcdir)/src/gnu/strncasecmp.c' || echo '$(srcdir)/'`$(top_srcdir)/src/gnu/strncasecmp.c
 
-libshare_la-strndup.lo: $(top_srcdir)/src/gnu/strndup.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_la_CFLAGS) $(CFLAGS) -MT libshare_la-strndup.lo -MD -MP -MF $(DEPDIR)/libshare_la-strndup.Tpo -c -o libshare_la-strndup.lo `test -f '$(top_srcdir)/src/gnu/strndup.c' || echo '$(srcdir)/'`$(top_srcdir)/src/gnu/strndup.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libshare_la-strndup.Tpo $(DEPDIR)/libshare_la-strndup.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/src/gnu/strndup.c' object='libshare_la-strndup.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_la_CFLAGS) $(CFLAGS) -c -o libshare_la-strndup.lo `test -f '$(top_srcdir)/src/gnu/strndup.c' || echo '$(srcdir)/'`$(top_srcdir)/src/gnu/strndup.c
-
 libshare_la-strnlen.lo: $(top_srcdir)/src/gnu/strnlen.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libshare_la_CFLAGS) $(CFLAGS) -MT libshare_la-strnlen.lo -MD -MP -MF $(DEPDIR)/libshare_la-strnlen.Tpo -c -o libshare_la-strnlen.lo `test -f '$(top_srcdir)/src/gnu/strnlen.c' || echo '$(srcdir)/'`$(top_srcdir)/src/gnu/strnlen.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libshare_la-strnlen.Tpo $(DEPDIR)/libshare_la-strnlen.Plo
@@ -9941,7 +9911,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libshare_a-strftime.Po
 	-rm -f ./$(DEPDIR)/libshare_a-stripslash.Po
 	-rm -f ./$(DEPDIR)/libshare_a-strncasecmp.Po
-	-rm -f ./$(DEPDIR)/libshare_a-strndup.Po
 	-rm -f ./$(DEPDIR)/libshare_a-strnlen.Po
 	-rm -f ./$(DEPDIR)/libshare_a-strnlen1.Po
 	-rm -f ./$(DEPDIR)/libshare_a-strtol.Po
@@ -10202,7 +10171,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libshare_la-strftime.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-stripslash.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-strncasecmp.Plo
-	-rm -f ./$(DEPDIR)/libshare_la-strndup.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-strnlen.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-strnlen1.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-strtol.Plo
@@ -10510,7 +10478,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libshare_a-strftime.Po
 	-rm -f ./$(DEPDIR)/libshare_a-stripslash.Po
 	-rm -f ./$(DEPDIR)/libshare_a-strncasecmp.Po
-	-rm -f ./$(DEPDIR)/libshare_a-strndup.Po
 	-rm -f ./$(DEPDIR)/libshare_a-strnlen.Po
 	-rm -f ./$(DEPDIR)/libshare_a-strnlen1.Po
 	-rm -f ./$(DEPDIR)/libshare_a-strtol.Po
@@ -10771,7 +10738,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libshare_la-strftime.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-stripslash.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-strncasecmp.Plo
-	-rm -f ./$(DEPDIR)/libshare_la-strndup.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-strnlen.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-strnlen1.Plo
 	-rm -f ./$(DEPDIR)/libshare_la-strtol.Plo

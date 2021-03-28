@@ -142,14 +142,6 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex 
 							}
 							pindexCount = pindexCount->pprev;
 						}
-#if 0
-						for (int i = 0; i < nPeriod; i++) {
-							if (Condition(pindexCount, params)) {
-								count++;
-							}
-							pindexCount = pindexCount->pprev;
-						}
-#endif
 						if (count >= nThreshold) {
 							stateNext = THRESHOLD_LOCKED_IN;
 						}

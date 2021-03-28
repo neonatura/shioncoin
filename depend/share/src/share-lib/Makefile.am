@@ -330,7 +330,6 @@ gnu_sources = \
 	$(top_srcdir)/src/gnu/strftime.c \
 	$(top_srcdir)/src/gnu/stripslash.c \
 	$(top_srcdir)/src/gnu/strncasecmp.c \
-	$(top_srcdir)/src/gnu/strndup.c \
 	$(top_srcdir)/src/gnu/strnlen.c \
 	$(top_srcdir)/src/gnu/strnlen1.c \
 	$(top_srcdir)/src/gnu/strtol.c \

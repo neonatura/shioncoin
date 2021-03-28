@@ -54,8 +54,20 @@ void test_shcoind_init(void)
   test_LoadWallet();
 
 
-  iface->nRuleChangeActivationThreshold = 4;
-  iface->nMinerConfirmationWindow = 5;
+	iface->vDeployments[DEPLOYMENT_CSV].bit = 0;
+  iface->vDeployments[DEPLOYMENT_CSV].nStartTime = time(NULL) + 3600;
+  iface->vDeployments[DEPLOYMENT_CSV].nTimeout = time(NULL) + 7200;
+  iface->vDeployments[DEPLOYMENT_SEGWIT].bit = 1;
+  iface->vDeployments[DEPLOYMENT_SEGWIT].nStartTime = time(NULL) + 3600;
+  iface->vDeployments[DEPLOYMENT_SEGWIT].nTimeout = time(NULL) + 7200; 
+  iface->vDeployments[DEPLOYMENT_PARAM].bit = 6;
+  iface->vDeployments[DEPLOYMENT_PARAM].nStartTime = time(NULL) + 3600;
+  iface->vDeployments[DEPLOYMENT_PARAM].nTimeout = time(NULL) + 7200;
+
+#if 0
+  iface->nRuleChangeActivationThreshold = 3;
+  iface->nMinerConfirmationWindow = 10;
+#endif
 
 }
 
