@@ -249,6 +249,8 @@ bool CTxCreator::SetChangeAddr(const CPubKey& scriptPubKey)
 
 CCoinAddr CTxCreator::GetChangeAddr()
 {
+	const CCoinAddr& changeAddr = pwallet->GetChangeAddr(fAccount ? strFromAccount : "");
+#if 0
   CIface *iface = GetCoinByIndex(pwallet->ifaceIndex);
 	CCoinAddr changeAddr(pwallet->ifaceIndex);
 	bool fOk = false;
@@ -265,6 +267,7 @@ CCoinAddr CTxCreator::GetChangeAddr()
 		}
 	}
 
+#endif
 	return (changeAddr);
 }
 
@@ -443,6 +446,8 @@ bool CTxCreator::Generate()
   set<pair<const CWalletTx*,unsigned int> > setCoinsCopy;
   int64 nTotCredit = nCredit;
 
+	const CCoinAddr& changeAddr = GetChangeAddr();
+
   nFee = MIN_RELAY_TX_FEE(iface);
   do {
     set<pair<const CWalletTx*,unsigned int> > setCoins;
@@ -540,7 +545,7 @@ bool CTxCreator::Generate()
 		if (MoneyRange(iface, nChange) &&
 				nChange >= MIN_INPUT_VALUE(iface) &&
 				nChange >= DUST_RELAY_TX_FEE(iface)) {
-			const CCoinAddr& changeAddr = wallet->GetChangeAddr(fAccount ? strFromAccount : "");
+//			const CCoinAddr& changeAddr = wallet->GetChangeAddr(fAccount ? strFromAccount : "");
       CScript script;
       script.SetDestination(changeAddr.Get());
       t_wtx.vout.insert(t_wtx.vout.end(), CTxOut(nChange, script));
@@ -572,7 +577,7 @@ bool CTxCreator::Generate()
 	if (MoneyRange(iface, nChange) &&
 			nChange >= MIN_INPUT_VALUE(iface) &&
 			nChange >= DUST_RELAY_TX_FEE(iface)) {
-		const CCoinAddr& changeAddr = GetChangeAddr();
+//		const CCoinAddr& changeAddr = GetChangeAddr();
     AddOutput(changeAddr.Get(), nChange); 
   }
 

@@ -499,7 +499,7 @@ bool core_ConnectCoinInputs(int ifaceIndex, CTransaction *tx, const CBlockIndex*
 		nValueIn += prevtx.vout[prevout.n].nValue;
 
 		if (fVerifySig) {
-			if (!VerifySignature(ifaceIndex, prevtx, *tx, i, 0, nVerifyFlags)) {
+			if (!VerifySignature(ifaceIndex, prevtx, *tx, i, 0, nVerifyFlags, pBlock)) {
 				return (error(SHERR_ACCESS, "core_ConnectCoinInputs: error verifying signature integrity."));
 			}
 		}

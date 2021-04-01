@@ -2183,8 +2183,9 @@ static bool VerifyWitnessProgram(CSignature& sig, cstack_t& witness, int witvers
   // Scripts inside witness implicitly require cleanstack behaviour
   if (stack.size() != 1)
     return error(ERR_INVAL, "VerifyWitnessProgram: stack.size() != 1");
-  if (!CastToBool(stack.back()))
+  if (!CastToBool(stack.back())) {
     return error(ERR_INVAL, "VerifyWitnessProgram: !CastToBool");
+	}
 
   return true;
 }
@@ -2288,8 +2289,9 @@ bool VerifyScript(CSignature& sig, const CScript& scriptSig, cstack_t& witness, 
 }
 
 
-bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, int nHashType, int flags)
+bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, int nHashType, int flags, CBlock *block)
 {
+	int i;
 
 	if (nIn >= txTo.vin.size())
 		return (false);
@@ -2298,20 +2300,39 @@ bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransact
   if (txin.prevout.n >= txFrom.vout.size())
     return false;
 
+	const uint256& hashFrom = txFrom.GetHash();
   const CTxOut& txout = txFrom.vout[txin.prevout.n];
-  if (txin.prevout.hash != txFrom.GetHash())
+  if (txin.prevout.hash != hashFrom)
     return false;
 
-  CTransaction *txSig = (CTransaction *)&txTo;
-  CSignature sig(ifaceIndex, txSig, nIn);
-  cstack_t witness;
-	if (!txTo.wit.IsNull()) {
-		witness = txTo.wit.vtxinwit[nIn].scriptWitness.stack;
+	{
+		CTransaction *txSig = (CTransaction *)&txTo;
+		CSignature sig(ifaceIndex, txSig, nIn);
+		cstack_t witness;
+
+		sig.mapInputs[hashFrom] = txFrom;
+
+		if (block) {
+			const uint256& hashTo = txTo.GetHash();
+
+			/* add in tx's from block incase they end up being an input (v5.2). */
+			for (i = 0; i < block->vtx.size(); i++) {
+				const CTransaction& tx = block->vtx[i];
+				const uint256& hash = tx.GetHash();
+				if (hashTo != hash) {
+					sig.mapInputs[hash] = tx;
+				}
+			}
+		}
+
+		if (!txTo.wit.IsNull()) {
+			witness = txTo.wit.vtxinwit[nIn].scriptWitness.stack;
+		}
+		if (!VerifyScript(sig, txin.scriptSig, witness, txout.scriptPubKey, flags)){
+			txSig->print(ifaceIndex);
+			return (false);
+		}
 	}
-  if (!VerifyScript(sig, txin.scriptSig, witness, txout.scriptPubKey, flags)){
-    txSig->print(ifaceIndex);
-    return (false);
-  }
 
   return (true);
 }

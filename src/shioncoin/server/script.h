@@ -935,8 +935,6 @@ bool IsStandard(const CScript& scriptPubKey);
 bool IsMine(const CKeyStore& keystore, const CTxDestination &dest);
 bool IsMine(const CKeyStore &keystore, const CScript& scriptPubKey, bool fWitnessFlag = false);
 
-bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, int nHashType, int flags);
-
 // Given two sets of signatures for scriptPubKey, possibly with OP_0 placeholders,
 // combine them intelligently and return the result.
 CScript CombineSignatures(CSignature& sig, CScript scriptPubKey, unsigned int nIn, const CScript& scriptSig1, const CScript& scriptSig2);
@@ -949,5 +947,8 @@ bool Solver(const CKeyStore& keystore, const CScript& scriptPubKey, uint256 hash
 #endif
 
 CScript GetScriptForDestination(const CTxDestination& dest);
+
+bool VerifySignature(int ifaceIndex, const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, int nHashType, int flags, CBlock *block = NULL);
+
 
 #endif /* ndef __SERVER__SCRIPT_H__ */

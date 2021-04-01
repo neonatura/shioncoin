@@ -98,15 +98,17 @@ static bool serv_state(CIface *iface, int flag)
 }
 #endif
 
-static void chain_VerifyValidOutputs(int ifaceIndex, const uint256& tx_hash, CWalletTx& wtx)
+static bool chain_VerifyValidOutputs(int ifaceIndex, const uint256& tx_hash, CWalletTx& wtx)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
 	vector<uint256> vOuts;
 	bool fUpdated = false;
+	bool fHasNull = false;
+	int i;
 
 	/* ensure spent references are valid tx's. */
 	if (!wtx.ReadCoins(ifaceIndex, vOuts))
-		return;
+		return (false);
 
 	for (unsigned int i = 0; i < vOuts.size(); i++) {
 		if (vOuts[i].IsNull())
@@ -119,8 +121,23 @@ static void chain_VerifyValidOutputs(int ifaceIndex, const uint256& tx_hash, CWa
 		}
 	}
 
+	wtx.vfSpent.resize(vOuts.size());
+	for (i = 0; i < vOuts.size(); i++) {
+		if (vOuts[i].IsNull()) {
+			wtx.vfSpent[i] = false;
+			fHasNull = true;
+		} else {
+			wtx.vfSpent[i] = true;
+		}
+	}
+
 	if (fUpdated)
 		wtx.WriteCoins(ifaceIndex, vOuts);
+
+	if (fHasNull)
+		fUpdated = true;
+
+	return (!fUpdated);
 }
 
 
@@ -131,16 +148,48 @@ static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransa
   uint256 tx_hash = tx.GetHash();
 
 	if (wallet->mapWallet.count(tx_hash) == 0) {
-//		if (wallet->HasArchTx(tx_hash))
+	//	if (wallet->HasArchTx(tx_hash))
 		{
 			CWalletTx wtx(wallet);
 			if (wallet->ReadArchTx(tx_hash, wtx)) {
-				chain_VerifyValidOutputs(ifaceIndex, tx_hash, wtx);
+				bool fOk = chain_VerifyValidOutputs(ifaceIndex, tx_hash, wtx);
+				if (!fOk) {
+					wtx.SetMerkleBranch(block);
+					wallet->AddTx(wtx);
+				}
 				return;
 			}
 		}
 
-		if (wallet->IsMine(tx)) { /* found missing wallet tx. */
+		bool fIsMine = false;
+		BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+			if (wallet->IsMine(txout)) {
+				fIsMine = true;
+				break;
+			}
+		}
+
+#if 0
+		/* check inputs to catch spends */
+		if (!fIsMine && !tx.IsCoinBase()) {
+			BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+				const uint256& hash = txin.prevout.hash;
+				int nOut = txin.prevout.n;
+
+				if (wallet->mapWallet.count(hash) != 0) {
+					CWalletTx& prev = wallet->mapWallet[hash];
+					if (nOut < prev.vout.size()) {
+						const CTxOut& prevout = prev.vout[nOut];
+						if (wallet->IsMine(prevout)) {
+							fIsMine = true;
+						}
+					}
+				}
+			}
+		}
+#endif
+
+		if (fIsMine) { /* found missing wallet tx. */
 			CWalletTx wtx(wallet, tx);
 			wallet->InitSpent(wtx);
 			wtx.SetMerkleBranch(block);
@@ -156,6 +205,7 @@ static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransa
 		if (wtx.IsCoinBase() && wallet->IsMine(wtx) &&
 				wtx.GetBlocksToMaturity(ifaceIndex) > 0)
 			fCoinBase = true;
+
 		chain_VerifyValidOutputs(ifaceIndex, tx_hash, wtx);
 	}
 
@@ -482,7 +532,7 @@ static bool chain_IsNodeBusy(CNode *pnode)
 		return (false);
 	}
 
-	if (pchBuf) {
+	{
 		bool fBusy = false;
 
 		{
@@ -699,6 +749,8 @@ bool ServiceLegacyBlockEvent(CIface *iface)
 
 bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *pfrom)
 {
+	static CBlockIndex *currentIndex;
+	static time_t currentTime;
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
 	CBlockIndex *pindex = NULL;
 	std::vector<CInv> vInv;
@@ -726,7 +778,13 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 	pfrom->pindexLastBlock = pindexLast;
 #endif
 
-	/* check redundancy. */
+	/* duplicity for all nodes */
+	if (currentIndex == pindexLast &&
+			time(NULL) == currentTime) {
+		return (false);
+	}
+
+	/* check redundancy of node request. */
 	if (pfrom->pindexLastBlock) {
 		unsigned int idx = 0;
 		for (; idx < vBlocks.size(); idx++) {
@@ -779,6 +837,9 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 					MSG_BLOCK | nFetchFlags, vBlocks[idx]->GetBlockHash()));
 	}
 	pfrom->PushMessage("getdata", vInv);
+
+	currentIndex = pindexLast;
+	currentTime = time(NULL);
 
 	/* debug */
 	Debug("(%s) ServiceBlockEvent: requesting %d blocks (%s) (height %d) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pindexFirst->nHeight, pfrom->addr.ToString().c_str());
