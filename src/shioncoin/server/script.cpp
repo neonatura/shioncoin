@@ -2665,12 +2665,12 @@ void CScript::SetNoDestination()
 	*this << OP_RETURN << OP_0;
 }
 
-void CScript::SetMultisig(int nRequired, const std::vector<ECKey>& keys)
+void CScript::SetMultisig(int nRequired, std::vector<ECKey>& keys)
 {
     this->clear();
 
     *this << EncodeOP_N(nRequired);
-    BOOST_FOREACH(const ECKey& key, keys)
+    BOOST_FOREACH(ECKey& key, keys)
         *this << key.GetPubKey();
     *this << EncodeOP_N(keys.size()) << OP_CHECKMULTISIG;
 }

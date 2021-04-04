@@ -561,6 +561,9 @@ bool CSignature::SignAddress(const CScript& scriptPubKey, cstack_t& ret, txnoutt
 				ret.push_back(cbuff(scriptSigRet.begin(), scriptSigRet.end()));
 				return (true);
 			}
+
+		default: /* -Wswitch */
+			break;
 	}
 
 	return (false);

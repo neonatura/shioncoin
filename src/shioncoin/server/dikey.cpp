@@ -34,6 +34,8 @@
 
 #define SIP33_EXTKEY_SIZE 
 
+static const uint8_t ver = DILITHIUM_VERSION;
+
 void DIKey::MakeNewKey()
 {
 	unsigned char secret[DILITHIUM_SECRET_SIZE];
@@ -46,9 +48,10 @@ void DIKey::MakeNewKey()
     } 
   }
 
-	SetSecret(CSecret(secret, secret+DILITHIUM_SECRET_SIZE));
+	vchPub.clear();
   fPubSet = false;
 
+	SetSecret(CSecret(secret, secret+DILITHIUM_SECRET_SIZE));
 }
 
 bool DIKey::SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed)
@@ -63,17 +66,16 @@ bool DIKey::SetSecret(const CSecret& vchSecret)
     return (error(SHERR_INVAL, "DIKey.SetSecret: invalid secret size (%d) specified.", vchSecret.size()));
   }
 
+	vchPub.clear();
+	fPubSet = false;
+
 	vch = vchSecret;
 
 	if (nCreateTime == 0)
 		nCreateTime = GetTime();
 
-//	nFlag |= CKeyMetadata::META_DILITHIUM;
-
 	/* always considered 'compressed'. */
 	SetCompressedPubKey();
-
-	fPubSet = false;
 
   return (true);
 }
@@ -110,7 +112,28 @@ bool DIKey::SetPubKey(const CPubKey& vchPubKey)
   return (true);
 }
 
-CPubKey DIKey::GetPubKey() const
+void DIKey::SetCompressedPubKey()
+{
+  fCompressedPubKey = true;
+
+  if (vch.size() != 0) {
+		uint8_t pk[DILITHIUM_PUBLIC_KEY_SIZE];
+		uint8_t sk[DILITHIUM_PRIVATE_KEY_SIZE];
+		int err;
+
+		err = di3_keypair(pk, sk, (uint8_t *)vch.data());
+		if (err) {
+			error(err, "DIKey.GetPrivKey: error generating di3 keypair");
+			return;
+		}
+
+		cbuff pubkey_buf(&ver, &ver + 1);
+		pubkey_buf.insert(pubkey_buf.end(), pk, pk + DILITHIUM_PUBLIC_KEY_SIZE);
+		vchPub = pubkey_buf;
+	}
+}
+
+CPubKey DIKey::GetPubKey()
 {
 
   if (IsNull()) {
@@ -122,30 +145,30 @@ CPubKey DIKey::GetPubKey() const
     return (CPubKey());
   }
 
-	static const uint8_t ver = DILITHIUM_VERSION;
+	if (vchPub.size() != 0) {
+		/* cached */
+		return (CPubKey(vchPub));
+	}
+
 	uint8_t pk[DILITHIUM_PUBLIC_KEY_SIZE];
 	uint8_t sk[DILITHIUM_PRIVATE_KEY_SIZE];
 	int err;
 
-  if (IsNull()) {
-    return (CPubKey());
-	}
-
 	err = di3_keypair(pk, sk, (uint8_t *)vch.data());
 	if (err) {
 		error(err, "DIKey.GetPrivKey: error generating di3 keypair");
-    return (CPubKey());
+		return (CPubKey());
 	}
 
 	cbuff pubkey_buf(&ver, &ver + 1);
 	pubkey_buf.insert(pubkey_buf.end(), pk, pk + DILITHIUM_PUBLIC_KEY_SIZE);
-  CPubKey ret_pubkey(pubkey_buf);
-  if (!ret_pubkey.IsValid()) {
-    error(SHERR_INVAL, "DIKey.GetPubKey: error serializing public key.");
-    return (CPubKey());
-  }
+	CPubKey ret_pubkey(pubkey_buf);
+	if (!ret_pubkey.IsValid()) {
+		error(SHERR_INVAL, "DIKey.GetPubKey: error serializing public key.");
+		return (CPubKey());
+	}
 
-  return (ret_pubkey);
+	return (ret_pubkey);
 }
 
 bool DIKey::Sign(uint256 hash, std::vector<unsigned char>& vchSig)
@@ -352,7 +375,7 @@ static void SIP33Hash(const ChainCode &chainCode, unsigned int nChild, uint16_t 
 
 }
 
-bool DIKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const 
+bool DIKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc)
 {
 	std::vector<unsigned char, secure_allocator<unsigned char>> vout(128);
 	unsigned char vchKey[DILITHIUM_SECRET_SIZE];
@@ -384,7 +407,7 @@ bool DIKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, cons
 	return (true);
 }
 
-bool DIExtKey::Derive(DIExtKey &out, unsigned int _nChild) const 
+bool DIExtKey::Derive(DIExtKey &out, unsigned int _nChild)
 {
 	out.nDepth = nDepth + 1;
 	CKeyID id = key.GetPubKey().GetID();
@@ -420,7 +443,7 @@ void DIExtKey::SetMaster(const unsigned char *seed, unsigned int nSeedLen)
 	memcpy(&chaincode, buf + DIKey::DILITHIUM_SECRET_SIZE, sizeof(chaincode));
 }
 
-DIExtPubKey DIExtKey::Neuter() const 
+DIExtPubKey DIExtKey::Neuter()
 {
 	DIExtPubKey ret;
 	ret.nDepth = nDepth;
@@ -431,7 +454,7 @@ DIExtPubKey DIExtKey::Neuter() const
 	return ret;
 }
 
-bool DIExtPubKey::Derive(DIExtPubKey& outPubKey, unsigned int nChild) const
+bool DIExtPubKey::Derive(DIExtPubKey& outPubKey, unsigned int nChild)
 {
 	return (false);
 }

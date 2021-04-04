@@ -231,11 +231,6 @@ class CKey : public CKeyMetadata
     bool fCompressedPubKey;
     cbuff vchPub;
 
-    void SetCompressedPubKey()
-		{
-			fCompressedPubKey = true;
-		}
-
 		void Init(const CKey& b)
 		{
 			CKeyMetadata::Init(b);
@@ -331,7 +326,7 @@ public:
 
     virtual bool SetPubKey(const CPubKey& vchPubKey) = 0;
 
-    virtual CPubKey GetPubKey() const = 0;
+    virtual CPubKey GetPubKey() = 0;
 
     virtual bool Sign(uint256 hash, std::vector<unsigned char>& vchSig) = 0;
 
@@ -356,8 +351,9 @@ public:
 
     virtual void MergeKey(CKey& keyChild, cbuff tag) = 0;
 
-		virtual bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const = 0;
-
+		virtual bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) = 0;
+		
+		virtual void SetCompressedPubKey() = 0;
 
 };
 

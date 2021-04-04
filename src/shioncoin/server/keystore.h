@@ -43,10 +43,10 @@ public:
     virtual ~CKeyStore() {}
 
     /* Add an ECDSA key to the store. */
-    virtual bool AddKey(const ECKey& key) =0;
+    virtual bool AddKey(ECKey& key) =0;
 
     /* Add an DILITHIUM key to the store. */
-    virtual bool AddKey(const DIKey& key) =0;
+    virtual bool AddKey(DIKey& key) =0;
 
     // Check whether a key corresponding to a given address is present in the store.
     virtual bool HaveKey(const CKeyID &address) const =0;
@@ -97,9 +97,9 @@ protected:
 public:
 //    bool AddKey(const HDPrivKey& key);
 
-    bool AddKey(const ECKey& key);
+    bool AddKey(ECKey& key);
 
-    bool AddKey(const DIKey& key);
+    bool AddKey(DIKey& key);
 
     bool HaveKey(const CKeyID &address) const
     {

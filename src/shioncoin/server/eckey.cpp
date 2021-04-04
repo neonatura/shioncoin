@@ -31,6 +31,7 @@
 #include "hmac_sha512.h"
 
 static secp256k1_context* secp256k1_context_sign = NULL;
+
 static secp256k1_context* secp256k1_context_verify = NULL;
 
 #ifdef __cplusplus
@@ -105,6 +106,9 @@ void ECKey::MakeNewKey(bool fCompressed)
 	unsigned char secret[32];
   int i;
 
+	vchPub.clear();
+	fPubSet = false;
+
   do {
     uint64_t *v_ptr = (uint64_t *)secret;//(uint64_t *)vch.data();
     for (i = 0; i < 4; i++) { /* 4 * 8 = 32b */
@@ -118,10 +122,7 @@ void ECKey::MakeNewKey(bool fCompressed)
   if (fCompressed)
     SetCompressedPubKey();
 #endif
-
 //  fSet = true;
-  fPubSet = false;
-
 }
 
 bool ECKey::SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed)
@@ -132,12 +133,12 @@ bool ECKey::SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed)
   if (!ec_privkey_import_der(secp256k1_context_sign, secret, vchPrivKey.data(), vchPrivKey.size()))
     return (false);
 
-//  fSet = true;
 	SetSecret(CSecret(secret, secret+32), (fCompressed || fCompressedPubKey));
 #if 0
   if (fCompressed || fCompressedPubKey)
     SetCompressedPubKey();
 #endif
+//  fSet = true;
 
   return true;
 }
@@ -156,6 +157,9 @@ bool ECKey::SetSecret(const CSecret& vchSecret, bool fCompressed)
     return (error(SHERR_INVAL, "ECKey.SetSecret: invalid secret specified."));
   }
 
+	vchPub.clear();
+	fPubSet = false;
+
 	vch = vchSecret;
   //fSet = true;
   if (fCompressed || fCompressedPubKey)
@@ -163,8 +167,6 @@ bool ECKey::SetSecret(const CSecret& vchSecret, bool fCompressed)
 
 	if (nCreateTime == 0)
 		nCreateTime = GetTime();
-
-	fPubSet = false;
 
   return true;
 }
@@ -215,7 +217,28 @@ bool ECKey::SetPubKey(const CPubKey& vchPubKey)
   return true;
 }
 
-CPubKey ECKey::GetPubKey() const
+void ECKey::SetCompressedPubKey()
+{
+	fCompressedPubKey = true;
+
+	if (vch.size() != 0) {
+		secp256k1_pubkey pubkey;
+		unsigned char result[65];
+		size_t clen = 65;
+
+		int ret = secp256k1_ec_pubkey_create(secp256k1_context_sign, &pubkey, (unsigned char *)vch.data());
+		if (!ret) {
+			error(SHERR_INVAL, "ECKey.GetPubKey: error creating public key.");
+			return;
+		}
+
+		secp256k1_ec_pubkey_serialize(secp256k1_context_sign, result, &clen, &pubkey, fCompressedPubKey ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
+
+		vchPub = cbuff(result, result + clen);
+	}
+}
+
+CPubKey ECKey::GetPubKey()
 {
 
   if (IsNull()) {
@@ -226,29 +249,30 @@ CPubKey ECKey::GetPubKey() const
 
     return (CPubKey());
   }
-//  assert(fValid);
 
-  secp256k1_pubkey pubkey;
-  unsigned char result[65];
-  size_t clen = 65;
-  int ret = secp256k1_ec_pubkey_create(secp256k1_context_sign, &pubkey, (unsigned char *)vch.data());
-  if (!ret) {
-    error(SHERR_INVAL, "ECKey.GetPubKey: error creating public key.");
-    return (CPubKey());
-  }
-//  assert(ret);
+	if (vchPub.size() != 0) {
+		return (CPubKey(vchPub));
+	}
 
-  secp256k1_ec_pubkey_serialize(secp256k1_context_sign, result, &clen, &pubkey, fCompressedPubKey ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
-//  assert(result.size() == clen);
-//  assert(result.IsValid());
+	secp256k1_pubkey pubkey;
+	unsigned char result[65];
+	size_t clen = 65;
+	int ret = secp256k1_ec_pubkey_create(secp256k1_context_sign, &pubkey, (unsigned char *)vch.data());
+	if (!ret) {
+		error(SHERR_INVAL, "ECKey.GetPubKey: error creating public key.");
+		return (CPubKey());
+	}
 
-  CPubKey ret_pubkey(cbuff(result, result + clen));
-  if (!ret_pubkey.IsValid()) {
-    error(SHERR_INVAL, "ECKey.GetPubKey: error serializing public key.");
-    return (CPubKey());
-  }
+	secp256k1_ec_pubkey_serialize(secp256k1_context_sign, result, &clen, &pubkey, fCompressedPubKey ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
 
-  return (ret_pubkey);
+	cbuff pubkey_buf(result, result + clen);
+	CPubKey ret_pubkey(pubkey_buf);
+	if (!ret_pubkey.IsValid()) {
+		error(SHERR_INVAL, "ECKey.GetPubKey: internal error serializing public key.");
+		return (CPubKey());
+	}
+
+	return (ret_pubkey);
 }
 
 bool ECKey::Sign(uint256 hash, std::vector<unsigned char>& vchSig)
@@ -535,7 +559,7 @@ void BIP32Hash(const ChainCode &chainCode, unsigned int nChild, unsigned char he
 	CHMAC_SHA512(chainCode.begin(), sizeof(ChainCode)).Write(&header, 1).Write(data, 32).Write(num, 4).Finalize(output);
 }
 
-bool ECKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const 
+bool ECKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc)
 {
 	unsigned char vch[32];
 
@@ -561,7 +585,7 @@ bool ECKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, cons
 	return (ret);
 }
 
-bool ECExtKey::Derive(ECExtKey &out, unsigned int _nChild) const 
+bool ECExtKey::Derive(ECExtKey &out, unsigned int _nChild)
 {
 	out.nDepth = nDepth + 1;
 	CKeyID id = key.GetPubKey().GetID();
@@ -582,7 +606,7 @@ void ECExtKey::SetMaster(const unsigned char *seed, unsigned int nSeedLen)
 	memset(vchFingerprint, 0, sizeof(vchFingerprint));
 }
 
-ECExtPubKey ECExtKey::Neuter() const 
+ECExtPubKey ECExtKey::Neuter()
 {
 	ECExtPubKey ret;
 	ret.nDepth = nDepth;
@@ -595,7 +619,7 @@ ECExtPubKey ECExtKey::Neuter() const
 
 static const unsigned int COMPRESSED_PUBLIC_KEY_SIZE  = 33;
 
-bool ECExtPubKey::Derive(ECExtPubKey& outPubKey, unsigned int nChild) const
+bool ECExtPubKey::Derive(ECExtPubKey& outPubKey, unsigned int nChild)
 {
 	outPubKey.nDepth = nDepth + 1;
 	CKeyID id = pubkey.GetID();

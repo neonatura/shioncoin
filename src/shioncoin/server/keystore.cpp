@@ -39,7 +39,7 @@ bool CKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
 
   vchPubKeyOut = key.GetPubKey();
 #endif
-	const CKey *key = GetKey(address);
+	CKey *key = GetKey(address);
 	if (!key)
 		return (false);
   vchPubKeyOut = key->GetPubKey();
@@ -59,7 +59,7 @@ bool CBasicKeyStore::AddKey(const HDPrivKey& key)
 }
 #endif
 
-bool CBasicKeyStore::AddKey(const ECKey& key)
+bool CBasicKeyStore::AddKey(ECKey& key)
 {
 	const CPubKey& pubkey = key.GetPubKey();
 	const CKeyID& keyid = pubkey.GetID();
@@ -72,7 +72,7 @@ bool CBasicKeyStore::AddKey(const ECKey& key)
 	return (true);
 }
 
-bool CBasicKeyStore::AddKey(const DIKey& key)
+bool CBasicKeyStore::AddKey(DIKey& key)
 {
 
 	const CPubKey& pubkey = key.GetPubKey();

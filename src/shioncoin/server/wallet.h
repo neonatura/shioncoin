@@ -221,15 +221,15 @@ class CWallet : public CBasicKeyStore
 
 		bool GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag = 0);
 
-		bool AddKey(const ECKey& key);
+		bool AddKey(ECKey& key);
 
-		bool AddKey(const DIKey& key);
+		bool AddKey(DIKey& key);
 
 		// Adds a key to the store, without saving it to disk (used by LoadWallet)
-		bool LoadKey(const ECKey& key) { return CBasicKeyStore::AddKey(key); }
+		bool LoadKey(ECKey& key) { return CBasicKeyStore::AddKey(key); }
 		//
 		// Adds a key to the store, without saving it to disk (used by LoadWallet)
-		bool LoadKey(const DIKey& key) { return CBasicKeyStore::AddKey(key); }
+		bool LoadKey(DIKey& key) { return CBasicKeyStore::AddKey(key); }
 
 		bool AddCScript(const CScript& redeemScript);
 		bool LoadCScript(const CScript& redeemScript) { return CBasicKeyStore::AddCScript(redeemScript); }

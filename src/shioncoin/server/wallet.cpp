@@ -133,7 +133,7 @@ bool CWallet::GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag)
 	return (true);
 }
 
-bool CWallet::AddKey(const ECKey& key)
+bool CWallet::AddKey(ECKey& key)
 {
 
 	if (!CBasicKeyStore::AddKey(key))
@@ -157,7 +157,7 @@ bool CWallet::AddKey(const ECKey& key)
 	return true;
 }
 
-bool CWallet::AddKey(const DIKey& key)
+bool CWallet::AddKey(DIKey& key)
 {
 
 	if (!CBasicKeyStore::AddKey(key))

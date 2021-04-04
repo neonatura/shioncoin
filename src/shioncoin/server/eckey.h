@@ -101,7 +101,7 @@ class ECKey : public CKey
 
     bool SetPubKey(const CPubKey& vchPubKey);
 
-    CPubKey GetPubKey() const; /* CKey */
+    CPubKey GetPubKey(); /* CKey */
 
     bool Sign(uint256 hash, std::vector<unsigned char>& vchSig); /* CKey */
 
@@ -128,7 +128,9 @@ class ECKey : public CKey
 
     void MergeKey(CKey& childKey, cbuff tag);
 
-		bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
+		bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc);
+
+		void SetCompressedPubKey();
 
 };
 
@@ -149,7 +151,7 @@ struct ECExtPubKey
 			a.pubkey == b.pubkey;
 	}
 
-	bool Derive(ECExtPubKey& out, unsigned int nChild) const;
+	bool Derive(ECExtPubKey& out, unsigned int nChild);
 
 	void Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const;
 
@@ -193,9 +195,9 @@ struct ECExtKey
 			a.key == b.key;
 	}
 
-	bool Derive(ECExtKey& out, unsigned int nChild) const;
+	bool Derive(ECExtKey& out, unsigned int nChild);
 
-	ECExtPubKey Neuter() const;
+	ECExtPubKey Neuter();
 
 	void SetMaster(const unsigned char* seed, unsigned int nSeedLen);
 

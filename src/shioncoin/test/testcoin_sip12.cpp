@@ -64,9 +64,10 @@ _TEST(sip12_consensus)
 	int64 step = MAX(10, (bal - COIN) / 10240 / 10);
 
 	int of;
-	for (of = 0; of < 2; of++) { /* x100 param */
+	for (of = 0; of < 10; of++) { /* x100 param */
+fprintf(stderr, "DEBUG: TEST: SIP12: x%d\n", of);
 		CCoinAddr addr = wallet->GetRecvAddr(strAccount);
-		for (idx = 0; idx < 50; idx++) {
+		for (idx = 0; idx < 10; idx++) {
 			CTxCreator s_wtx(wallet, strAccount);
 			s_wtx.AddOutput(addr.Get(), step);
 			AddParamIfNeccessary(iface, s_wtx); /* OP_PARAM */

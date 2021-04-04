@@ -867,7 +867,7 @@ public:
 
     void SetDestination(const CTxDestination& address);
 
-    void SetMultisig(int nRequired, const std::vector<ECKey>& keys);
+    void SetMultisig(int nRequired, std::vector<ECKey>& keys);
 
     void PrintHex() const
     {

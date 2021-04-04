@@ -101,7 +101,7 @@ class DIKey : public CKey
 
     bool SetPubKey(const CPubKey& vchPubKey);
 
-    CPubKey GetPubKey() const; /* CKey */
+    CPubKey GetPubKey(); /* CKey */
 
     bool Sign(uint256 hash, std::vector<unsigned char>& vchSig); /* CKey */
 
@@ -133,7 +133,9 @@ class DIKey : public CKey
 
     void MergeKey(CKey& childKey, cbuff tag);
 
-		bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
+		bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc);
+
+		void SetCompressedPubKey();
 
 };
 
@@ -154,7 +156,7 @@ struct DIExtPubKey
 			a.pubkey == b.pubkey;
 	}
 
-	bool Derive(DIExtPubKey& out, unsigned int nChild) const;
+	bool Derive(DIExtPubKey& out, unsigned int nChild);
 
 	IMPLEMENT_SERIALIZE (
 			READWRITE(nDepth);
@@ -183,9 +185,9 @@ struct DIExtKey
 			a.key == b.key;
 	}
 
-	bool Derive(DIExtKey& out, unsigned int nChild) const;
+	bool Derive(DIExtKey& out, unsigned int nChild);
 
-	DIExtPubKey Neuter() const;
+	DIExtPubKey Neuter();
 
 	void SetMaster(const unsigned char* seed, unsigned int nSeedLen);
 
