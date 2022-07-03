@@ -1,12 +1,12 @@
 Name:           libshare
-Version:        5.1
+Version:        5.2
 Release:        1%{?dist}
 Summary:        The share library suite.
 
 Group:          System Environment/Libraries
 License:        GPLv3+
 URL:            http://www.sharelib.net/
-Source0:        ftp://ftp.sharelib.net/release/libshare/libshare-5.1.tar.gz
+Source0:        ftp://ftp.sharelib.net/release/libshare/libshare-5.2.tar.gz
 
 #BuildRequires:  gcc-java, java-1.8.0-openjdk-devel, swig, help2man, doxygen
 #Requires:       java-1.8.0-openjdk
@@ -266,5 +266,5 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-*  Wed Dec 18 2019 Neo Natura <support@neo-natura.com> - 5.1
+*  Mon Jul 12 2021 Neo Natura <support@neo-natura.com> - 5.2
 - The RPM release of the libshare software suite.

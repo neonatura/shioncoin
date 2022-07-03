@@ -33,7 +33,7 @@
 /**
  * Trigger a event to be handled with the object provided.
  */
-int sexe_event_handle(lua_State *L, char *e_name, shjson_t *json);
+int sexe_event_handle(lua_State *L, const char *e_name, shjson_t *json);
 
 shkey_t *sexe_event_key(char *e_name);
 

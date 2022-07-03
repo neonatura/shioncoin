@@ -94,7 +94,7 @@ void luaF_close (lua_State *L, StkId level) {
       luaF_freeupval(L, uv);  /* free upvalue */
     else {
       unlinkupval(uv);  /* remove upvalue from 'uvhead' list */
-      setobj(L, &uv->u.value, uv->v);  /* move value to upvalue slot */
+      lsetobj(L, &uv->u.value, uv->v);  /* move value to upvalue slot */
       uv->v = &uv->u.value;  /* now current value lives here */
       gch(o)->next = g->allgc;  /* link upvalue into 'allgc' list */
       g->allgc = o;

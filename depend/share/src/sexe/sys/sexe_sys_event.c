@@ -26,16 +26,23 @@
 #include "sexe.h"
 
 
+//extern shjson_t *sexe_table_get(lua_State *L);
+
 
 /**
  * The "os.register(<string>,<function>)" function will register a callback function for the event name specified.
  */
 int _lfunc_register_event(sexe_t *L)
 {
-	int ef_nr = sexe_event_next_id();
-  const char *e_name = (int)luaL_checkstring(L, 1);
-	shkey_t *key = sexe_event_key(e_name);
-	char *ptr = shkey_hex(key);
+	const char *e_name;
+	int ef_nr;
+	shkey_t *key;
+	char *ptr;
+
+	e_name = luaL_checkstring(L, 1);
+	ef_nr = sexe_event_next_id();
+	key = sexe_event_key(e_name);
+	ptr = shkey_hex(key);
 
 	/* _EVENT table */
 	lua_getglobal(L, EVENT_ENV);  
@@ -64,7 +71,7 @@ int _lfunc_register_event(sexe_t *L)
 	/* set _ENV['_EVENT'] */
 	lua_setglobal(L, EVENT_ENV);
 
-  return (0);
+	return (0);
 }
 
 /**
@@ -72,21 +79,21 @@ int _lfunc_register_event(sexe_t *L)
  */
 int lfunc_trigger_event(sexe_t *L)
 {
-  const char *e_name;
-  shjson_t *json;
-  int t_reg = 0;
+	const char *e_name;
+	shjson_t *json;
+	int t_reg = 0;
 	int ret_bool;
 	int err;
 
 	/* first argument: event name */
-	e_name = (int)luaL_checkstring(L, 1);
+	e_name = luaL_checkstring(L, 1);
 
-  /* second optional arg; table of data. */
-  json = NULL;
-  if (lua_istable(L, 2)) {
-    lua_pushvalue(L, 2);
-    json = sexe_table_get(L);
-  }
+	/* second optional arg; table of data. */
+	json = NULL;
+	if (lua_istable(L, 2)) {
+		lua_pushvalue(L, 2);
+		json = sexe_table_get(L);
+	}
 
 	ret_bool = 1; 
 	err = sexe_event_handle(L, e_name, json);
@@ -97,7 +104,7 @@ int lfunc_trigger_event(sexe_t *L)
 
 	/* iterate through registered functions for event */
 	{
-	  shkey_t *key = sexe_event_key(e_name);
+		shkey_t *key = sexe_event_key(e_name);
 		char *e_hex = shkey_hex(key);
 		lua_getglobal(L, EVENT_ENV);
 		if (lua_isnil(L, -1)) {
@@ -131,8 +138,8 @@ int lfunc_trigger_event(sexe_t *L)
 	}
 #endif
 
-  if (json)
-    shjson_free(&json);
+	if (json)
+		shjson_free(&json);
 
 	/* return single boolean */
 	lua_pushboolean(L, ret_bool);
@@ -144,8 +151,10 @@ int lfunc_trigger_event(sexe_t *L)
  */
 int _lfunc_unregister_event(sexe_t *L)
 {
-  const char *e_name = (int)luaL_checkstring(L, 1);
+  const char *e_name;
   int err;
+
+	e_name = luaL_checkstring(L, 1);
 
 #if 0
 /* todo: only remove event func, and whole event if last func */

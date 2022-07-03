@@ -32,6 +32,7 @@
 #ifndef __SHARE_LIB__SEXE_H__
 #define __SHARE_LIB__SEXE_H__
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -342,15 +343,6 @@ extern "C" {
 #include "sys/sexe_sys.h"
 #else
 typedef uint32_t Instruction;
-
-void sexe_table_set(lua_State *L, shjson_t *json);
-
-shjson_t *sexe_table_get(lua_State *L);
-
-shjson_t *sexe_table_getdef(lua_State *L);
-
-
-
 #endif
 
 /**
@@ -782,6 +774,15 @@ void sexe_event_register(lua_State *L, char *e_name, lua_CFunction f);
 int sexe_io_serialize(sexe_t *S, char *tag, shjson_t *j);
 
 int sexe_io_unserialize(sexe_t *S, char *tag, shjson_t **j_p);
+
+/* sexe_table.c */
+void sexe_table_set(lua_State *L, shjson_t *json);
+
+/* sexe_table.c */
+shjson_t *sexe_table_get(lua_State *L);
+
+/* sexe_table.c */
+shjson_t *sexe_table_getdef(lua_State *L);
 
 
 /**

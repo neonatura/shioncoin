@@ -75,30 +75,57 @@ lib_LIBRARIES = libshare_sexe.a
 bin_PROGRAMS = sx sxc readsexe static_sx static_sxc
 include_HEADERS = sexe.h sexe_lua.h sexe_conf.h
 lib_LTLIBRARIES = libshare_sexe.la
-#TESTS = test_sexe.sh
+TESTS = test_sexe.sh
+
+sx_cflags = -DSEXELIB -I$(top_srcdir)/src/share-lib
+sxc_cflags = -DSEXELIB -I$(top_srcdir)/src/share-lib
+if FREEBSD
+sx_cflags += -DLUA_USE_POSIX -DLUA_USE_DLOPEN -Wl,-E
+sxc_cflags += -DLUA_USE_POSIX -DLUA_USE_DLOPEN -Wl,-E
+endif
+if LINUX
+sx_cflags += -DLUA_USE_LINUX -Wl,-E \
+	-fstack-protector-strong \
+	-fstack-clash-protection \
+	-fcf-protection
+sxc_cflags += -DLUA_USE_LINUX -Wl,-E \
+	-fstack-protector-strong \
+	-fstack-clash-protection \
+	-fcf-protection
+endif
+if DEBUG
+sx_cflags += -g
+sxc_cflags += -g
+else
+sx_cflags += -mtune=generic -fasynchronous-unwind-tables -O2
+sxc_cflags += -mtune=generic -fasynchronous-unwind-tables -O2
+endif
+if !X86_64
+sx_cflags += -D__i386__
+sxc_cflags += -D__i386__
+else
+sx_cflags += -D__x86_64
+sxc_cflags += -D__x86_64
+endif
 
 sx_SOURCES = $(common_includes) $(common_sources) sexe_interp.c
 sx_LDADD = $(top_builddir)/src/share-lib/libshare.la
-sx_CFLAGS= -Wall -DSEXELIB \
-	-I$(top_srcdir)/src/share-lib
+sx_CFLAGS= $(sx_cflags)
 sx_LDFLAGS = $(ld_flags)
 
 static_sx_SOURCES = $(common_includes) $(common_sources) sexe_interp.c
 static_sx_LDADD = $(top_builddir)/src/share-lib/libshare.a
-static_sx_CFLAGS= -Wall -DSEXELIB \
-	-I$(top_srcdir)/src/share-lib
+static_sx_CFLAGS= $(sx_cflags)
 static_sx_LDFLAGS = $(ld_flags)
 
 sxc_SOURCES = $(common_includes) $(common_sources) sexe_compile.c
 sxc_LDADD = $(top_builddir)/src/share-lib/libshare.la
-sxc_CFLAGS= -Wall -DSEXELIB \
-	-I$(top_srcdir)/src/share-lib
+sxc_CFLAGS= $(sxc_cflags)
 sxc_LDFLAGS = $(ld_flags)
 
 static_sxc_SOURCES = $(common_includes) $(common_sources) sexe_compile.c
 static_sxc_LDADD = $(top_builddir)/src/share-lib/libshare.a
-static_sxc_CFLAGS= -Wall -DSEXELIB \
-	-I$(top_srcdir)/src/share-lib
+static_sxc_CFLAGS= $(sx_cflags)
 static_sxc_LDFLAGS = $(ld_flags)
 
 readsexe_SOURCES = $(common_includes) $(common_sources) sexe_symbol.c
@@ -124,26 +151,15 @@ sxc_CFLAGS += -DLUA_USE_POSIX -DLUA_USE_DLOPEN -Wl,-E
 endif
 
 if LINUX
-sx_CFLAGS += -DLUA_USE_LINUX -Wl,-E
-sxc_CFLAGS += -DLUA_USE_LINUX -Wl,-E 
 readsexe_CFLAGS += -DLUA_USE_LINUX
 libshare_sexe_a_CFLAGS += -DLUA_USE_LINUX
 libshare_sexe_la_CFLAGS += -DLUA_USE_LINUX
 endif
 
-if DEBUG
-sx_CFLAGS += -g
-sxc_CFLAGS += -g
-endif
-
 if !X86_64
-sx_CFLAGS += -D__i386__
-sxc_CFLAGS += -D__i386__
 readsexe_CFLAGS += -D__i386__
 libshare_sexe_la_CFLAGS += -D__i386__ 
 else
-sx_CFLAGS += -D__x86_64
-sxc_CFLAGS += -D__x86_64
 readsexe_CFLAGS += -D__x86_64
 libshare_sexe_a_CFLAGS += -D__x86_64
 libshare_sexe_la_CFLAGS += -D__x86_64

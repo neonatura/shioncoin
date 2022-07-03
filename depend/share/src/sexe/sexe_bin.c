@@ -36,6 +36,7 @@
 #include "lmem.h"
 #include "lobject.h"
 #include "lstring.h"
+#include "ltable.h"
 #include "lapi.h"
 #include "ldo.h"
 #include "sexe_compile.h"
@@ -814,7 +815,7 @@ int sexe_load(lua_State *L, lua_Reader reader, void *data, const char *chunkname
       Table *reg = hvalue(&G(L)->l_registry);
       const TValue *gt = luaH_getint(reg, LUA_RIDX_GLOBALS);
       /* set global table as 1st upvalue of 'f' (may be LUA_ENV) */
-      setobj(L, f->upvals[0]->v, gt);
+      lsetobj(L, f->upvals[0]->v, gt);
       luaC_barrier(L, f->upvals[0], gt);
     }
   }

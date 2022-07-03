@@ -1394,7 +1394,7 @@ noinst_LIBRARIES =
 noinst_LTLIBRARIES = libgnu.la
 
 #EXTRA_DIST += strndup.c
-
+#
 #EXTRA_libgnu_la_SOURCES += strndup.c
 EXTRA_DIST = acl-internal.h acl.h acl_entries.c alignof.h alloca.c \
 	alloca.in.h allocator.h areadlink.h areadlink.h at-func.c \

@@ -192,7 +192,7 @@ LUA_API void lua_insert (lua_State *L, int idx) {
 static void moveto (lua_State *L, TValue *fr, int idx) {
   TValue *to = index2addr(L, idx);
   api_checkvalidindex(L, to);
-  setobj(L, to, fr);
+  lsetobj(L, to, fr);
   if (idx < LUA_REGISTRYINDEX)  /* function upvalue? */
     luaC_barrier(L, clCvalue(L->ci->func), fr);
   /* LUA_REGISTRYINDEX does not need gc barrier
@@ -1255,7 +1255,7 @@ LUA_API const char *lua_setupvalue (lua_State *L, int funcindex, int n) {
   name = aux_upvalue(fi, n, &val, &owner);
   if (name) {
     L->top--;
-    setobj(L, val, L->top);
+    lsetobj(L, val, L->top);
     luaC_barrier(L, owner, L->top);
   }
   lua_unlock(L);

@@ -18,7 +18,7 @@
 #define invalidateTMcache(t)	((t)->flags = 0)
 
 
-LUAI_FUNC const TValue *luaH_getint (Table *t, int key);
+LUAI_FUNC const TValue *luaH_getint(Table *t, int key);
 LUAI_FUNC void luaH_setint (lua_State *L, Table *t, int key, TValue *value);
 LUAI_FUNC const TValue *luaH_getstr (Table *t, TString *key);
 LUAI_FUNC const TValue *luaH_get (Table *t, const TValue *key);

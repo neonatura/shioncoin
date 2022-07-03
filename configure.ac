@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(shioncoin, 5.2)
+AC_INIT(shioncoin, 5.3)
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -22,7 +22,7 @@ LT_INIT
 
 version_patch=1
 AC_SUBST(version_patch)
-version_info=5:2:0
+version_info=5:3:0
 AC_SUBST(version_info)
 
 AC_CONFIG_FILES([doc/NEWS])

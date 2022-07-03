@@ -574,7 +574,7 @@ void luaV_execute (lua_State *L) {
       )
       vmcase(OP_SETUPVAL,
         UpVal *uv = cl->upvals[GETARG_B(i)];
-        setobj(L, uv->v, ra);
+        lsetobj(L, uv->v, ra);
         luaC_barrier(L, uv, ra);
       )
       vmcase(OP_SETTABLE,

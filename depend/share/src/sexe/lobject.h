@@ -223,11 +223,12 @@ typedef struct lua_TValue TValue;
 #define setdeadvalue(obj)	settt_(obj, LUA_TDEADKEY)
 
 
-
+#if 0
 #define setobj(L,obj1,obj2) \
 	{ const TValue *io2=(obj2); TValue *io1=(obj1); \
 	  io1->value_ = io2->value_; io1->tt_ = io2->tt_; \
 	  checkliveness(G(L),io1); }
+#endif
 
 
 /*
@@ -235,18 +236,18 @@ typedef struct lua_TValue TValue;
 */
 
 /* from stack to (same) stack */
-#define setobjs2s	setobj
+#define setobjs2s	lsetobj
 /* to stack (not from same stack) */
-#define setobj2s	setobj
+#define setobj2s	lsetobj
 #define setsvalue2s	setsvalue
 #define sethvalue2s	sethvalue
 #define setptvalue2s	setptvalue
 /* from table to same table */
-#define setobjt2t	setobj
+#define setobjt2t	lsetobj
 /* to table */
-#define setobj2t	setobj
+#define setobj2t	lsetobj
 /* to new object */
-#define setobj2n	setobj
+#define setobj2n	lsetobj
 #define setsvalue2n	setsvalue
 
 
@@ -581,6 +582,8 @@ LUAI_FUNC const char *luaO_pushvfstring (lua_State *L, const char *fmt,
                                                        va_list argp);
 LUAI_FUNC const char *luaO_pushfstring (lua_State *L, const char *fmt, ...);
 LUAI_FUNC void luaO_chunkid (char *out, const char *source, size_t len);
+
+void lsetobj(lua_State *L, struct lua_TValue *io1, const struct lua_TValue *io2);
 
 
 #endif

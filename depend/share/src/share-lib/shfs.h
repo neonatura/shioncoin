@@ -2172,6 +2172,8 @@ ssize_t shfsize(int fd);
 
 int shfgetc(int fd);
 
+int shfattr_set(int fd, int attr);
+
 /**
  * @}
  */

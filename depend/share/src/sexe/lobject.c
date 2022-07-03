@@ -281,3 +281,14 @@ void luaO_chunkid (char *out, const char *source, size_t bufflen) {
   }
 }
 
+void lsetobj(lua_State *L, struct lua_TValue *io1, const struct lua_TValue *io2)
+{
+	fprintf(stderr, "DEBUG: REMOVE ME: lsetobj: io1(%llu) io2(%llu)\n", (unsigned long long)io1, (unsigned long long)io2);
+//	const struct lua_TValue *io2=(obj2);
+//	struct lua_TValue *io1=(obj1);
+	io1->value_ = io2->value_;
+	io1->tt_ = io2->tt_;
+	checkliveness(G(L),io1); 
+}
+
+

@@ -2153,7 +2153,7 @@ EXTRA_DIST += strings.in.h
 
 
 #EXTRA_DIST += strndup.c
-
+#
 #EXTRA_libgnu_la_SOURCES += strndup.c
 
 ## end   gnulib module strndup

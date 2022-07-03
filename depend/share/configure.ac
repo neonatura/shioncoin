@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(libshare, 5.01)
+AC_INIT(libshare, 5.03)
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/share-lib])
@@ -15,7 +15,7 @@ LT_INIT
 
 version_patch=1
 AC_SUBST(version_patch)
-version_info=5:1:0
+version_info=5:3:0
 AC_SUBST(version_info)
 
 # docs

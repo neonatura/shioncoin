@@ -907,13 +907,23 @@ LUALIB_API const char *luaL_gsub (lua_State *L, const char *s, const char *p,
 
 
 static void *l_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
-  (void)ud; (void)osize;  /* not used */
+	void *data;
+  (void)ud;   /* not used */
+
   if (nsize == 0) {
     free(ptr);
     return NULL;
   }
-  else
-    return realloc(ptr, nsize);
+
+	if (!ptr) {
+		data = calloc(1, nsize);
+	} else {
+		data = realloc(ptr, nsize);
+		if (data && nsize > osize)
+			memset(data + osize, 0, (nsize - osize));
+	}
+
+	return (data);
 }
 
 

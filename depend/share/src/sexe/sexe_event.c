@@ -72,7 +72,7 @@ void sexe_event_register(lua_State *L, char *e_name, lua_CFunction f)
 
 }
 
-int sexe_event_handle(lua_State *L, char *e_name, shjson_t *json)
+int sexe_event_handle(lua_State *L, const char *e_name, shjson_t *json)
 {
 	shkey_t *key = sexe_event_key(e_name);
 	char *e_hex = shkey_hex(key);

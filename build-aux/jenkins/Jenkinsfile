@@ -1,0 +1,90 @@
+pipeline {
+  agent any
+
+  environment {
+    BRANCH_NAME = "${GIT_BRANCH}"
+    SHORT_COMMIT = GIT_COMMIT.substring(0,7)
+    BUILD_VERSION = "${GIT_COMMIT}"
+		TAG_NAME = "v${GIT_BRANCH}"
+    SERVICE_NAME = 'shioncoin'
+//    ARTIFACT_PATH = "s3://${ATH_S3_ARTIFACTS_BUCKET}/backend/build/athena"
+  //  JOB_DEPLOY = 'athena/backend/deployment/be-cd'
+    JOB_DEPLOY = 'echo'
+  }
+
+  stages {
+    stage('Build') {
+      steps {
+        echo "=> Configure service for branch: ${env.BRANCH_NAME}"
+        tar -cpf shioncoin-${BUILD_VERSION} *
+        ./autogen.sh
+        mkdir -p build
+        dir('build') {
+          echo "==> Build service with build_version: ${env.BUILD_VERSION}"
+          sh '''#!/bin/bash
+            ../configure
+            make clean
+            make
+          '''
+        }
+      }
+    }
+    stage('Package') {
+      steps {
+        echo "=> Package service for branch: ${env.BRANCH_NAME}"
+        sh '''#!/bin/bash -xe
+          build-aux/package.sh
+        '''
+        echo "=> Cleanup temporary files & folders"
+        sh """#!/bin/bash
+          rm -rf build-${BUILD_VERSION}
+        """
+      }
+      post {
+        failure {
+          echo "=> Build failure"
+        }
+        success {
+          echo "=> Build success"
+        }
+      }
+    }
+    stage('Deploy') {
+      when { anyOf {
+        branch 'develop'
+        branch 'master'
+        branch pattern: "release/.+", comparator: "REGEXP"
+      } }
+      steps {
+        echo "=> Run CD Process for branch ${BRANCH_NAME}"
+        build job: "${JOB_DEPLOY}", parameters: [
+          string(name: 'branch_name', value: "${BRANCH_NAME}"),
+          string(name: 'service', value: "${SERVICE_NAME}"),
+          string(name: 'binary_path', value: "${ARTIFACT_PATH}/${BUILD_VERSION}.tar.gz"),
+          string(name: 'version', value: "${BUILD_VERSION}")]
+      }
+      post {
+        always {
+          script {
+            if (BRANCH_NAME == 'master' ) {
+              echo "=> Deploy / Post/ Notify for branch ${BRANCH_NAME}"
+              echo "=> Notification should have been sent for branch ${BRANCH_NAME}"
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    always {
+      echo "=> Clean Workspace after run"
+      cleanWs()
+    }
+    success {
+      echo "==> Build Success"
+    }
+    failure {
+      echo "==> Build Failure"
+    }
+  }
+}

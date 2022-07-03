@@ -357,8 +357,8 @@ gnu_sources = \
 	$(top_srcdir)/src/gnu/xalloc-die.c \
 	$(top_srcdir)/src/gnu/xmalloc.c \
 	$(top_srcdir)/src/gnu/xsize.c \
-	$(top_srcdir)/src/gnu/xstrndup.c \
 	$(top_srcdir)/src/gnu/xstrtol.c \
+	$(top_srcdir)/src/gnu/xstrndup.c \
 	$(top_srcdir)/src/gnu/xstrtol-error.c \
 	$(top_srcdir)/src/gnu/xstrtoul.c \
 	$(top_srcdir)/src/gnu/xstrtoumax.c \
