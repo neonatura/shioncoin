@@ -27,6 +27,7 @@
 #define __SERVER__CERTIFICATE_H__
 
 
+#if 0
 class CIdent : public CExtCore
 {
   public:
@@ -142,8 +143,9 @@ class CIdent : public CExtCore
     Object ToValue();
 
 };
+#endif
 
-class CCert : public CIdent
+class CCert : public CEntity
 {
   public:
     static const int CERTF_CHAIN = SHCERT_CERT_CHAIN;
@@ -159,10 +161,10 @@ class CCert : public CIdent
       SetNull();
     }
 
-    CCert(const CIdent& identIn)
+    CCert(const CEntity& identIn)
     {
       SetNull();
-      CIdent::Init(identIn);
+      CEntity::Init(identIn);
     }
 
     CCert(const CCert& certIn)
@@ -209,7 +211,7 @@ class CCert : public CIdent
     }
 
     IMPLEMENT_SERIALIZE (
-        READWRITE(*(CIdent *)this);
+        READWRITE(*(CEntity *)this);
         READWRITE(this->hashIssuer);
         READWRITE(this->signature);
         READWRITE(this->vContext);
@@ -219,7 +221,7 @@ class CCert : public CIdent
 
     void Init(const CCert& b)
     {
-      CIdent::Init(b);
+      CEntity::Init(b);
       hashIssuer = b.hashIssuer;
       signature = b.signature;
       vContext = b.vContext;
@@ -229,7 +231,7 @@ class CCert : public CIdent
 
     friend bool operator==(const CCert &a, const CCert &b) {
       return (
-          ((CIdent&) a) == ((CIdent&) b) &&
+          ((CEntity&) a) == ((CEntity&) b) &&
           a.hashIssuer == b.hashIssuer &&
           a.signature == b.signature &&
           a.vContext == b.vContext &&
@@ -251,7 +253,7 @@ class CCert : public CIdent
 
     void SetNull()
     {
-      CIdent::SetNull();
+      CEntity::SetNull();
       signature.SetNull();
       vContext.clear();
 
@@ -440,10 +442,7 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
 
 int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, string strAccount, string strTitle, string hexSeed = string(), int64 nLicenseFee = 0);
 
-int init_ident_stamp_tx(CIface *iface, string strAccount, string strComment, CWalletTx& wtx);
-
 int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletTx& wtx);
-
 
 bool VerifyLicense(CTransaction& tx);
 
@@ -453,17 +452,9 @@ extern bool GetTxOfCert(CIface *iface, const uint160& hash, CTransaction& tx);
 
 extern bool GetTxOfLicense(CIface *iface, const uint160& hash, CTransaction& tx);
 
-extern int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint160 hashCert, CWalletTx& wtx);
-
-extern int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, uint160 hashCert, CCoinAddr addrDest, CWalletTx& wtx);
-
-extern bool VerifyIdent(CTransaction& tx, int& mode);
-
 int GetTotalCertificates(int ifaceIndex);
 
 cert_list *GetCertTable(int ifaceIndex);
-
-cert_list *GetIdentTable(int ifaceIndex);
 
 cert_list *GetLicenseTable(int ifaceIndex);
 
@@ -481,16 +472,9 @@ bool DisconnectCertificate(CIface *iface, CTransaction& tx);
 
 bool GetCertByName(CIface *iface, string name, CCert& cert);
 
-bool GetTxOfIdent(CIface *iface, const uint160& hash, CTransaction& tx);
-
-bool InsertIdentTable(CIface *iface, CTransaction& tx);
-
 bool CommitLicenseTx(CIface *iface, CTransaction& tx, int nHeight);
 
 bool VerifyLicenseChain(CIface *iface, CTransaction& tx);
-
-
-
 
 
 #endif /* ndef __SERVER__CERTIFICATE_H__ */

@@ -419,7 +419,7 @@ std::string CContext::ToString()
 Object CContext::ToValue()
 {
   static char buf[256];
-  Object obj = CIdent::ToValue();
+  Object obj = CEntity::ToValue();
   uint64_t crc;
 
   memset(buf, 0, sizeof(buf));

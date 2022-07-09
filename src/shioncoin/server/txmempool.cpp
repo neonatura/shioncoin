@@ -108,8 +108,10 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
     return (false); /* dup */
 
   /* verify core integrity of transaction */
-  if (!VerifyTx(tx))
+  if (!VerifyTx(tx)) {
+fprintf(stderr, "DEBUG: REMOVE ME: !CPool::AddTx()\n");
     return (false);
+	}
 
   CPoolTx ptx(tx);
   if (pfrom == NULL)
@@ -123,6 +125,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
   CalculateLimits(ptx);
   if (!VerifyLimits(ptx)) {
     AddInvalTx(ptx);
+fprintf(stderr, "DEBUG: REMOVE ME: CPool: hard limit failure\n");
     return (false); /* hard limit failure. */
   }
 
@@ -148,6 +151,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
   /* individual coin standards */
   if (!VerifyStandards(ptx)) {
     AddInvalTx(ptx);
+fprintf(stderr, "DEBUG: REMOVE ME: CPool: hard coin standards\n");
     return (false);
   }
 
@@ -162,6 +166,7 @@ bool CPool::AddTx(CTransaction& tx, CNode *pfrom, uint160 hColor)
     if (!IsFreeRelay(ptx.GetTx(), ptx.GetInputs())) {
       /* invalid fee rate */
       AddInvalTx(ptx);
+fprintf(stderr, "DEBUG: REMOVE ME: CPool: invalid tx fee\n");
       return (false);
     }
 
@@ -252,6 +257,7 @@ bool CPool::VerifyStandards(CPoolTx& ptx)
     }
 #endif
 		if (!IsStandard(txout.scriptPubKey)) {
+fprintf(stderr, "DEBUG: REMOVE ME: (%s) CPool.VerifyStandards: rejecting transaction \"%s\" with non-standard output coin script: %s\n", iface->name, ptx.GetHash().GetHex().c_str(), txout.scriptPubKey.ToString().c_str());
       return (error(SHERR_INVAL, "(%s) CPool.VerifyStandards: rejecting transaction \"%s\" with non-standard output coin script: %s", iface->name, ptx.GetHash().GetHex().c_str(), txout.scriptPubKey.ToString().c_str()));
 		}
   }
@@ -286,6 +292,7 @@ bool CPool::VerifyStandards(CPoolTx& ptx)
       vector<vector<unsigned char> > stack;
       CSignature sig(ifaceIndex, (CTransaction *)&wtx, i);
       if (!EvalScript(sig, stack, wtx.vin[i].scriptSig, SIGVERSION_BASE, 0)) {
+fprintf(stderr, "DEBUG:REMOVE ME: CPool.VerifyStandards: error evaluating input script.\n");
         return (error(SHERR_INVAL, "CPool.VerifyStandards: error evaluating input script."));
       }
     }
@@ -293,12 +300,15 @@ bool CPool::VerifyStandards(CPoolTx& ptx)
     int64 nInputValue = wtx.GetValueIn(ptx.GetInputs());
     int64 nOutputValue = wtx.GetValueOut();
     if (nInputValue < nOutputValue) {
+fprintf(stderr, "DEBUG: REMOVE ME: CPool.VerifyStandards: input value (%f) is lower than output value (%f).\n", (double)nInputValue/COIN, (double)nOutputValue/COIN);
       return (error(SHERR_INVAL, "CPool.VerifyStandards: input value (%f) is lower than output value (%f).", (double)nInputValue/COIN, (double)nOutputValue/COIN));
     }
   }
 
-  if (!VerifyCoinStandards(ptx.GetTx(), ptx.GetInputs()))
+  if (!VerifyCoinStandards(ptx.GetTx(), ptx.GetInputs())) {
+fprintf(stderr, "DEBUG: REMOVE ME: CPool.VerifyStandards: a component of the transaction is not standard.\n");
     return (error(SHERR_INVAL, "CPool.VerifyStandards: a component of the transaction is not standard."));
+	}
 
   return (true);
 }

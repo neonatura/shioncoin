@@ -290,6 +290,10 @@ server_sources = \
 	server/ext/txext.h \
 	server/ext/ext_param.cpp \
 	server/ext/ext_param.h \
+	server/ext/entity.cpp \
+	server/ext/entity.h \
+	server/ext/ident.cpp \
+	server/ext/ident.h \
 	server/ext/alias.cpp \
 	server/ext/alias.h \
 	server/ext/certificate.cpp \

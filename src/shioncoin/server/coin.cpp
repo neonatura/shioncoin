@@ -597,14 +597,16 @@ void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight, CBlockIndex *
 			if (err) {
 				error(err, "CommitContextTx failure");
 			}
-		} else if (tx.isFlag(CTransaction::TXF_IDENT)) {
-			InsertIdentTable(iface, tx);
 		} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
 			bool fRet = CommitLicenseTx(iface, tx, nHeight);
 			if (!fRet) {
 				error(SHERR_INVAL, "CommitLicenseTx failure");
 			}
 		} 
+
+		if (tx.isFlag(CTransaction::TXF_IDENT)) {
+			InsertIdentTable(iface, tx);
+		}
 
 		/* non-exlusive */
 		if (tx.isFlag(CTransaction::TXF_OFFER)) {

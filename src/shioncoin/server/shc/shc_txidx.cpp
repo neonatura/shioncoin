@@ -187,13 +187,15 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
       } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
 				if (IsContextTx(tx))
 					vContext.push_back(pindexNew);
-      } else if (tx.isFlag(CTransaction::TXF_IDENT)) {
-				if (IsIdentTx(tx))
-					vIdent.push_back(pindexNew);
       } else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
 				if (IsLicenseTx(tx))
 					vLicense.push_back(pindexNew);
       }
+
+      if (tx.isFlag(CTransaction::TXF_IDENT)) {
+				if (IsIdentTx(tx))
+					vIdent.push_back(pindexNew);
+			}
 
 			/* non-exclusive */
 			if (tx.isFlag(CTransaction::TXF_OFFER)) {
@@ -426,7 +428,8 @@ static bool shc_LoadBlockIndex()
       int mode;
 
       /* remove ident from pending list */
-      CIdent& ident = (CIdent&)id_tx.certificate;
+      //CIdent& ident = (CIdent&)id_tx.certificate;
+      CIdent& ident = (CIdent&)id_tx.ident;
       const uint160& hIdent = ident.GetHash();
       idents->erase(hIdent);
 

@@ -830,7 +830,7 @@ std::string CAlias::ToString(int ifaceIndex)
 
 Object CAlias::ToValue(int ifaceIndex)
 {
-  Object obj = CIdent::ToValue();
+  Object obj = CEntity::ToValue();
 
 /* TODO: custimize CIDent::TOValue */
   if (GetType() == ALIAS_COINADDR) {

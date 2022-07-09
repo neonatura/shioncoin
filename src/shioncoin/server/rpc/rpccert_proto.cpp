@@ -472,7 +472,8 @@ Value rpc_cert_export(CIface *iface, const Array& params, bool fStratum)
     throw JSONRPCError(err, "Unable to obtain certificate specified.");
 
   CWallet *wallet = GetWallet(iface);
-  const CIdent& ident = (CIdent&)tx.certificate;
+ // const CIdent& ident = (CIdent&)tx.certificate;
+  const CEntity& ident = (CEntity&)tx.certificate;
   Object obj;
 
   CCoinAddr cert_addr(ifaceIndex, stringFromVch(ident.vAddr));

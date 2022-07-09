@@ -29,8 +29,12 @@
 
 #define DEFAULT_ALIAS_LIFESPAN 378432000 /* 12 yr */ 
 
-class CAlias : public CIdent
+class CAlias : public CEntity
 {
+
+	private:
+		static const int MINIMUM_ALIAS_LIFESPAN = 378432000; /* 12y */
+
   public:
     static const int ALIAS_NONE = 0;
     static const int ALIAS_COINADDR = TXREF_PUBADDR;
@@ -46,10 +50,10 @@ class CAlias : public CIdent
       Init(alias);
     }
 
-    CAlias(const CIdent& ident)
+    CAlias(const CEntity& ident)
     {
       SetNull();
-      CIdent::Init(ident);
+      CEntity::Init(ident);
     }
 
     CAlias(std::string labelIn, const uint160& hashIn)
@@ -70,7 +74,7 @@ class CAlias : public CIdent
     }
 
     IMPLEMENT_SERIALIZE (
-      READWRITE(*(CIdent *)this);
+      READWRITE(*(CEntity *)this);
     )
 
     void FillReference(SHAlias *ref);
@@ -82,12 +86,12 @@ class CAlias : public CIdent
     friend bool operator==(const CAlias &a, const CAlias &b)
     {
       return (
-          ((CIdent&) a) == ((CIdent&) b)
+          ((CEntity&) a) == ((CEntity&) b)
         );
     }
     void Init(const CAlias& alias)
     {
-      CIdent::Init(alias);
+      CEntity::Init(alias);
     }
 
     CAlias operator=(const CAlias &b)
@@ -99,7 +103,7 @@ class CAlias : public CIdent
 
     void SetNull()
     {
-      CIdent::SetNull();
+      CEntity::SetNull();
     }
 
     void NotifySharenet(int ifaceIndex);
@@ -111,6 +115,11 @@ class CAlias : public CIdent
       cbuff rawbuf(raw, raw + sizeof(hashOut));
       return Hash160(rawbuf);
     }
+
+		time_t GetMinimumLifespan()
+		{
+			return (MINIMUM_ALIAS_LIFESPAN); 
+		}
 
     std::string ToString(int ifaceIndex);
 

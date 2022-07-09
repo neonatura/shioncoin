@@ -1123,20 +1123,6 @@ CAlias *CTransaction::RemoveAlias(std::string name)
   return (&alias);
 }
 
-/*
-CIdent *CTransaction::CreateEntity(const char *name, cbuff secret)
-{
-
-  if (nFlag & CTransaction::TXF_ENTITY)
-    return (NULL);
-
-  nFlag |= CTransaction::TXF_ENTITY;
-  entity = CIdent(name, secret);
-
-  return (&entity);
-}
-*/
-
 CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr, string hexSeed, int64 nLicenseFee)
 {
   cbuff vchContext;
@@ -1144,7 +1130,6 @@ CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
 			(nFlag & CTransaction::TXF_LICENSE) ||
 			(nFlag & CTransaction::TXF_ASSET) ||
-			(nFlag & CTransaction::TXF_IDENT) ||
 			(nFlag & CTransaction::TXF_CONTEXT))
     return (NULL); /* already in use */
 
@@ -1193,7 +1178,6 @@ CCert *CTransaction::CreateLicense(CCert *cert)
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
 			(nFlag & CTransaction::TXF_LICENSE) ||
 			(nFlag & CTransaction::TXF_ASSET) ||
-			(nFlag & CTransaction::TXF_IDENT) ||
 			(nFlag & CTransaction::TXF_CONTEXT))
     return (NULL); /* already in use */
   
@@ -1300,7 +1284,6 @@ CAsset *CTransaction::CreateAsset(string strAssetName, string strAssetHash)
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
 			(nFlag & CTransaction::TXF_LICENSE) ||
 			(nFlag & CTransaction::TXF_ASSET) ||
-			(nFlag & CTransaction::TXF_IDENT) ||
 			(nFlag & CTransaction::TXF_CONTEXT))
     return (NULL); /* already in use */
 
@@ -1350,21 +1333,20 @@ CAsset *CTransaction::RemoveAsset(const CAsset& assetIn)
   return (asset);
 }
 
-CIdent *CTransaction::CreateIdent(CIdent *ident)
+CIdent *CTransaction::CreateIdent(CIdent *identIn)
 {
 
-  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
-			(nFlag & CTransaction::TXF_LICENSE) ||
-			(nFlag & CTransaction::TXF_ASSET) ||
-			(nFlag & CTransaction::TXF_IDENT) ||
-			(nFlag & CTransaction::TXF_CONTEXT))
+  if (nFlag & CTransaction::TXF_IDENT)
     return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_IDENT;
-  certificate = CCert(*ident);
-  shgeo_local(&certificate.geo, SHGEO_PREC_DISTRICT);
+  //certificate = CCert(*ident);
+	ident = CIdent(*identIn);
+//  shgeo_local(&certificate.geo, SHGEO_PREC_DISTRICT);
+  shgeo_local(&ident.geo, SHGEO_PREC_DISTRICT);
 
-  return ((CIdent *)&certificate);
+  //return ((CIdent *)&certificate);
+  return ((CIdent *)&ident);
 }
 
 CIdent *CTransaction::CreateIdent(int ifaceIndex, CCoinAddr& addr)
@@ -1375,11 +1357,17 @@ CIdent *CTransaction::CreateIdent(int ifaceIndex, CCoinAddr& addr)
 
   nFlag |= CTransaction::TXF_IDENT;
 
+#if 0
   certificate.SetNull();
   shgeo_local(&certificate.geo, SHGEO_PREC_DISTRICT);
   certificate.vAddr = vchFromString(addr.ToString());
+#endif
+  ident.SetNull();
+  shgeo_local(&ident.geo, SHGEO_PREC_DISTRICT);
+  ident.vAddr = vchFromString(addr.ToString());
 
-  return ((CIdent *)&certificate);
+  //return ((CIdent *)&certificate);
+  return ((CIdent *)&ident);
 }
 
 bool CTransaction::VerifyValidateMatrix(int ifaceIndex, const CTxMatrix& matrix, CBlockIndex *pindex)
@@ -1686,7 +1674,7 @@ Object CTransaction::ToValue(int ifaceIndex)
 		if (flags & TXF_OFFER)
 			obj.push_back(Pair("offer", offer.ToValue()));
 		if (flags & TXF_IDENT) {
-			CIdent& ident = (CIdent&)certificate;
+			//CIdent& ident = (CIdent&)certificate;
 			obj.push_back(Pair("ident", ident.ToValue()));
 		}
 		if (flags & TXF_MATRIX) {
@@ -1897,7 +1885,6 @@ CContext *CTransaction::CreateContext()
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
 			(nFlag & CTransaction::TXF_LICENSE) ||
 			(nFlag & CTransaction::TXF_ASSET) ||
-			(nFlag & CTransaction::TXF_IDENT) ||
 			(nFlag & CTransaction::TXF_CONTEXT))
     return (NULL); /* already in use */
 
@@ -2640,10 +2627,11 @@ void CTransaction::Init(const CTransaction& tx)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_CONTEXT)
 		certificate = tx.certificate;
-	else if (this->nFlag & TXF_IDENT)
-		certificate = tx.certificate;
 	else if (this->nFlag & TXF_LICENSE)
 		certificate = tx.certificate;
+
+	if (this->nFlag & TXF_IDENT)
+		ident = tx.ident;
 
 	/* non-exclusive */
 	if (this->nFlag & TXF_OFFER)

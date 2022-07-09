@@ -664,6 +664,7 @@ class CTransaction : public CTransactionCore
 {
 
   public:
+    CIdent ident;
     CCert certificate;
     CAlias alias;
     COffer offer;
@@ -701,9 +702,10 @@ class CTransaction : public CTransactionCore
       if ((this->nFlag & TXF_CERTIFICATE) ||
           (this->nFlag & TXF_LICENSE) ||
           (this->nFlag & TXF_ASSET) ||
-          (this->nFlag & TXF_IDENT) ||
           (this->nFlag & TXF_CONTEXT))
         READWRITE(certificate);
+			if (this->nFlag & TXF_IDENT) 
+        READWRITE(ident);
 			if (this->nFlag & TXF_EXEC)
         READWRITE(exec);
       if (this->nFlag & TXF_ALIAS)
@@ -726,6 +728,7 @@ class CTransaction : public CTransactionCore
     {
 
       CTransactionCore::SetNull();
+			ident.SetNull();
       certificate.SetNull();
 			alias.SetNull();
       offer.SetNull();
@@ -894,12 +897,19 @@ class CTransaction : public CTransactionCore
       return (&alias);
     }
 
+    CIdent *GetIdent()
+    {
+      if (!(this->nFlag & TXF_IDENT)) {
+				return (NULL);
+			}
+      return (&ident);
+    }
+
     CCert *GetCertificate()
     {
       if (!(this->nFlag & TXF_CERTIFICATE) && 
           !(this->nFlag & TXF_LICENSE) && 
           !(this->nFlag & TXF_ASSET) && 
-          !(this->nFlag & TXF_IDENT) && 
           !(this->nFlag & TXF_CONTEXT)) {
 				return (NULL);
 			}
@@ -973,9 +983,9 @@ class CTransaction : public CTransactionCore
 
     CTxMatrix *GenerateValidateMatrix(int ifaceIndex, CBlockIndex *pindex = NULL);
 
-    bool VerifyValidateMatrix(int ifaceIndex, const CTxMatrix& matrix, CBlockIndex *pindex);
+		CTxMatrix *GenerateSpringMatrix(int ifaceIndex, CIdent& ident);
 
-    CTxMatrix *GenerateSpringMatrix(int ifaceIndex, CIdent& ident);
+    bool VerifyValidateMatrix(int ifaceIndex, const CTxMatrix& matrix, CBlockIndex *pindex);
 
     bool VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, shnum_t *lat_p, shnum_t *lon_p);
 

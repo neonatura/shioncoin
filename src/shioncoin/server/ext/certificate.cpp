@@ -48,6 +48,7 @@ cert_list *GetCertTable(int ifaceIndex)
   return (&wallet->mapCert);
 }
 
+#if 0
 cert_list *GetIdentTable(int ifaceIndex)
 {
   if (ifaceIndex < 0 || ifaceIndex >= MAX_COIN_IFACE)
@@ -57,6 +58,7 @@ cert_list *GetIdentTable(int ifaceIndex)
     return (NULL);
   return (&wallet->mapIdent);
 }
+#endif
 
 cert_list *GetLicenseTable(int ifaceIndex)
 {
@@ -177,6 +179,7 @@ bool InsertCertTable(CIface *iface, CTransaction& tx, unsigned int nHeight, bool
   return (true);
 }
 
+#if 0
 bool InsertIdentTable(CIface *iface, CTransaction& tx)
 {
   CWallet *wallet = GetWallet(iface);
@@ -196,6 +199,7 @@ bool InsertIdentTable(CIface *iface, CTransaction& tx)
 
   return (true);
 }
+#endif
 
 static bool GetOutDestination(int ifaceIndex, const CTransaction& tx, CCoinAddr addr, int& nOut)
 {
@@ -289,6 +293,7 @@ bool GetCertByName(CIface *iface, string name, CCert& cert)
   return (true);
 }
 
+#if 0
 bool DecodeIdentHash(const CScript& script, int& mode, uint160& hash)
 {
   CScript::const_iterator pc = script.begin();
@@ -326,6 +331,7 @@ bool DecodeIdentHash(const CScript& script, int& mode, uint160& hash)
   hash = uint160(vch);
   return (true);
 }
+#endif
 
 bool DecodeCertHash(const CScript& script, int& mode, uint160& hash)
 {
@@ -524,6 +530,7 @@ int64 GetCertReturnFee(const CTransaction& tx)
 	return nFee;
 }
 
+#if 0
 bool IsIdentTx(const CTransaction& tx)
 {
   int tot;
@@ -547,6 +554,7 @@ bool IsIdentTx(const CTransaction& tx)
 
   return (true);
 }
+#endif
 
 bool IsCertTx(const CTransaction& tx)
 {
@@ -665,6 +673,8 @@ bool IsLocalCert(CIface *iface, const CTransaction& tx)
 
   return (IsLocalCert(iface, tx.vout[nOut]));
 }
+
+#if 0
 bool IsLocalIdent(CIface *iface, const CTransaction& tx)
 {
   if (!IsIdentTx(tx))
@@ -708,6 +718,7 @@ bool VerifyIdent(CTransaction& tx, int& mode)
 
   return (true);
 }
+#endif
 
 /**
  * Verify the integrity of an certificate.
@@ -874,6 +885,7 @@ bool GetTxOfCert(CIface *iface, const uint160& hash, CTransaction& tx)
   return (true);
 }
 
+#if 0
 bool GetTxOfIdent(CIface *iface, const uint160& hash, CTransaction& tx)
 {
   int ifaceIndex = GetCoinIndex(iface);
@@ -893,6 +905,7 @@ bool GetTxOfIdent(CIface *iface, const uint160& hash, CTransaction& tx)
 
   return (true);
 }
+#endif
 
 bool VerifyCertHash(CIface *iface, const uint160& hash)
 {
@@ -1477,7 +1490,7 @@ void CLicense::NotifySharenet(int ifaceIndex)
 
 }
 
-
+#if 0
 /**
  * Submits an amount of coins as a transaction fee.
  * @param strAccount The account to donate funds from.
@@ -1759,7 +1772,7 @@ CTransaction *tx = (CTransaction *)&wtx;
 
   return (0);
 }
-
+#endif
 
 /**
  * Generate a signature unique to this identify in relation to an external context. Only call after the "origin" signature has been generated.
@@ -1852,10 +1865,12 @@ bool CCert::VerifySignatureSeed(string hexSeed)
   return (signature.VerifySeed(hexSeed));
 }
 
+#if 0
 std::string CIdent::ToString()
 {
   return (write_string(Value(ToValue()), false));
 }
+#endif
 
 std::string CCert::ToString()
 {
@@ -1867,6 +1882,7 @@ std::string CLicense::ToString()
   return (write_string(Value(ToValue()), false));
 }
 
+#if 0
 Object CIdent::ToValue()
 {
   Object obj = CExtCore::ToValue();
@@ -1892,10 +1908,11 @@ Object CIdent::ToValue()
 
   return (obj);
 }
+#endif
 
 Object CCert::ToValue()
 {
-  Object obj = CIdent::ToValue();
+  Object obj = CEntity::ToValue();
 
   obj.push_back(Pair("certhash", GetHash().GetHex()));
   if (hashIssuer.size() != 0)

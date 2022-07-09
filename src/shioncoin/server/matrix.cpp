@@ -786,8 +786,8 @@ bool BlockGenerateSpringMatrix(CIface *iface, CTransaction& tx, int64& nReward)
 		return (false); /* reward too small */
 
 
-	CIdent ident;
-	CTxMatrix *m = tx.GenerateSpringMatrix(ifaceIndex, ident);
+	CIdent springIdent;
+	CTxMatrix *m = tx.GenerateSpringMatrix(ifaceIndex, springIdent);
 	if (!m)
 		return (false); /* not applicable */
 
@@ -795,7 +795,7 @@ bool BlockGenerateSpringMatrix(CIface *iface, CTransaction& tx, int64& nReward)
 	int64 min_tx = (int64)iface->min_tx_fee;
 
 	CScript scriptPubKeyOrig;
-	CCoinAddr addr(ifaceIndex, stringFromVch(ident.vAddr));
+	CCoinAddr addr(ifaceIndex, stringFromVch(springIdent.vAddr));
 	scriptPubKeyOrig.SetDestination(addr.Get());
 
 	CScript scriptMatrix;
@@ -865,15 +865,22 @@ CTxMatrix *CTransaction::GenerateSpringMatrix(int ifaceIndex, CIdent& ident)
 
 	const uint160& hashIdent = wallet->mapIdent.begin()->first;
 
-	CTransaction tx;
-	bool hasIdent = GetTxOfIdent(iface, hashIdent, tx);
+	CTransaction id_tx;
+	bool hasIdent = GetTxOfIdent(iface, hashIdent, id_tx);
 	if (!hasIdent) {
 		wallet->mapIdent.erase(hashIdent); /* invalido */
 		return (NULL);
 	}
-	ident = (CIdent&)tx.certificate;
 
-	shgeo_loc(&ident.geo, &lat, &lon, NULL);
+//	ident = (CIdent&)tx.certificate;
+	CIdent *springIdent = id_tx.GetIdent();
+	if (!springIdent) {
+		wallet->mapIdent.erase(hashIdent); /* invalido */
+		return (NULL);
+	}
+
+	//shgeo_loc(&ident.geo, &lat, &lon, NULL);
+	shgeo_loc(&springIdent->geo, &lat, &lon, NULL);
 	if (!is_spring_loc(lat, lon)) {
 		wallet->mapIdent.erase(hashIdent); /* invalido */
 		return (NULL);
@@ -894,19 +901,28 @@ bool CTransaction::VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, s
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 
-	CTransaction tx;
-	if (!GetTxOfIdent(iface, matrix.hRef, tx))
+	CTransaction id_tx;
+	if (!GetTxOfIdent(iface, matrix.hRef, id_tx)) {
 		return error(SHERR_INVAL, "VerifySpringMatrix: invalid ident tx.");
+	}
 
+#if 0
 	CCert *cert = tx.GetCertificate();
 	if (!cert)
 		return (error(SHERR_INVAL, "VerifySptringMatrix: invalid reference hash"));
 
 	CIdent& ident = (CIdent&)(*cert);
+#endif
 
-	shgeo_loc(&ident.geo, lat_p, lon_p, NULL);
-	if (!is_spring_loc(*lat_p, *lon_p))
+	CIdent *springIdent = id_tx.GetIdent();
+	if (!springIdent) {
+		return (error(SHERR_INVAL, "VerifySptringMatrix: invalid reference hash"));
+	}
+
+	shgeo_loc(&springIdent->geo, lat_p, lon_p, NULL);
+	if (!is_spring_loc(*lat_p, *lon_p)) {
 		return error(SHERR_INVAL, "VerifySpringMatrix: invalid spring location.");
+	}
 
 	CTxMatrix cmp_matrix;
 	spring_matrix_compress(cmp_matrix.vData);
@@ -921,7 +937,6 @@ bool CTransaction::VerifySpringMatrix(int ifaceIndex, const CTxMatrix& matrix, s
 	return (true);
 }
 
-
 void BlockRetractSpringMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pindex)
 {
 	const CTxMatrix& matrix = tx.matrix;
@@ -934,9 +949,15 @@ void BlockRetractSpringMatrix(CIface *iface, CTransaction& tx, CBlockIndex *pind
 		return;
 
 	/* re-establish location bits in spring matrix. */
-	CIdent& ident = (CIdent&)id_tx.certificate;
+//	CIdent& ident = (CIdent&)id_tx.certificate;
+	CIdent *springIdent = id_tx.GetIdent();
+	if (!springIdent) {
+		return;
+	}
+
 	shnum_t lat, lon;
-	shgeo_loc(&ident.geo, &lat, &lon, NULL);
+	//shgeo_loc(&springIdent.geo, &lat, &lon, NULL);
+	shgeo_loc(&springIdent->geo, &lat, &lon, NULL);
 	spring_loc_set(lat, lon);
 }
 

@@ -201,7 +201,9 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/color/color_pool.cpp server/color/color_pool.h \
 	server/color/color_rpc.cpp server/ext/txext.cpp \
 	server/ext/txext.h server/ext/ext_param.cpp \
-	server/ext/ext_param.h server/ext/alias.cpp server/ext/alias.h \
+	server/ext/ext_param.h server/ext/entity.cpp \
+	server/ext/entity.h server/ext/ident.cpp server/ext/ident.h \
+	server/ext/alias.cpp server/ext/alias.h \
 	server/ext/certificate.cpp server/ext/certificate.h \
 	server/ext/offer.cpp server/ext/offer.h server/ext/asset.cpp \
 	server/ext/asset.h server/ext/exec.cpp server/ext/exec.h \
@@ -332,7 +334,8 @@ am__objects_13 = $(am__objects_3) $(am__objects_4) \
 	shcoind-color_block.$(OBJEXT) shcoind-color_wallet.$(OBJEXT) \
 	shcoind-color_txidx.$(OBJEXT) shcoind-color_pool.$(OBJEXT) \
 	shcoind-color_rpc.$(OBJEXT) shcoind-txext.$(OBJEXT) \
-	shcoind-ext_param.$(OBJEXT) shcoind-alias.$(OBJEXT) \
+	shcoind-ext_param.$(OBJEXT) shcoind-entity.$(OBJEXT) \
+	shcoind-ident.$(OBJEXT) shcoind-alias.$(OBJEXT) \
 	shcoind-certificate.$(OBJEXT) shcoind-offer.$(OBJEXT) \
 	shcoind-asset.$(OBJEXT) shcoind-exec.$(OBJEXT) \
 	shcoind-context.$(OBJEXT) shcoind-altchain.$(OBJEXT) \
@@ -455,7 +458,9 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/color/color_pool.cpp server/color/color_pool.h \
 	server/color/color_rpc.cpp server/ext/txext.cpp \
 	server/ext/txext.h server/ext/ext_param.cpp \
-	server/ext/ext_param.h server/ext/alias.cpp server/ext/alias.h \
+	server/ext/ext_param.h server/ext/entity.cpp \
+	server/ext/entity.h server/ext/ident.cpp server/ext/ident.h \
+	server/ext/alias.cpp server/ext/alias.h \
 	server/ext/certificate.cpp server/ext/certificate.h \
 	server/ext/offer.cpp server/ext/offer.h server/ext/asset.cpp \
 	server/ext/asset.h server/ext/exec.cpp server/ext/exec.h \
@@ -624,7 +629,8 @@ am__objects_26 = $(am__objects_16) $(am__objects_17) \
 	test_shcoind-color_txidx.$(OBJEXT) \
 	test_shcoind-color_pool.$(OBJEXT) \
 	test_shcoind-color_rpc.$(OBJEXT) test_shcoind-txext.$(OBJEXT) \
-	test_shcoind-ext_param.$(OBJEXT) test_shcoind-alias.$(OBJEXT) \
+	test_shcoind-ext_param.$(OBJEXT) test_shcoind-entity.$(OBJEXT) \
+	test_shcoind-ident.$(OBJEXT) test_shcoind-alias.$(OBJEXT) \
 	test_shcoind-certificate.$(OBJEXT) \
 	test_shcoind-offer.$(OBJEXT) test_shcoind-asset.$(OBJEXT) \
 	test_shcoind-exec.$(OBJEXT) test_shcoind-context.$(OBJEXT) \
@@ -744,15 +750,16 @@ am__depfiles_remade = ./$(DEPDIR)/shcoind-account.Po \
 	./$(DEPDIR)/shcoind-emc2_pool.Po \
 	./$(DEPDIR)/shcoind-emc2_proto.Po \
 	./$(DEPDIR)/shcoind-emc2_txidx.Po \
-	./$(DEPDIR)/shcoind-emc2_wallet.Po ./$(DEPDIR)/shcoind-exec.Po \
+	./$(DEPDIR)/shcoind-emc2_wallet.Po \
+	./$(DEPDIR)/shcoind-entity.Po ./$(DEPDIR)/shcoind-exec.Po \
 	./$(DEPDIR)/shcoind-ext_param.Po ./$(DEPDIR)/shcoind-global.Po \
 	./$(DEPDIR)/shcoind-http.Po ./$(DEPDIR)/shcoind-http_alias.Po \
 	./$(DEPDIR)/shcoind-http_coin.Po \
 	./$(DEPDIR)/shcoind-http_context.Po \
 	./$(DEPDIR)/shcoind-http_fractal.Po \
 	./$(DEPDIR)/shcoind-http_matrix.Po \
-	./$(DEPDIR)/shcoind-http_pool.Po ./$(DEPDIR)/shcoind-init.Po \
-	./$(DEPDIR)/shcoind-keystore.Po \
+	./$(DEPDIR)/shcoind-http_pool.Po ./$(DEPDIR)/shcoind-ident.Po \
+	./$(DEPDIR)/shcoind-init.Po ./$(DEPDIR)/shcoind-keystore.Po \
 	./$(DEPDIR)/shcoind-ltc_block.Po \
 	./$(DEPDIR)/shcoind-ltc_netmsg.Po \
 	./$(DEPDIR)/shcoind-ltc_pool.Po \
@@ -887,6 +894,7 @@ am__depfiles_remade = ./$(DEPDIR)/shcoind-account.Po \
 	./$(DEPDIR)/test_shcoind-emc2_proto.Po \
 	./$(DEPDIR)/test_shcoind-emc2_txidx.Po \
 	./$(DEPDIR)/test_shcoind-emc2_wallet.Po \
+	./$(DEPDIR)/test_shcoind-entity.Po \
 	./$(DEPDIR)/test_shcoind-exec.Po \
 	./$(DEPDIR)/test_shcoind-ext_param.Po \
 	./$(DEPDIR)/test_shcoind-global.Po \
@@ -897,6 +905,7 @@ am__depfiles_remade = ./$(DEPDIR)/shcoind-account.Po \
 	./$(DEPDIR)/test_shcoind-http_fractal.Po \
 	./$(DEPDIR)/test_shcoind-http_matrix.Po \
 	./$(DEPDIR)/test_shcoind-http_pool.Po \
+	./$(DEPDIR)/test_shcoind-ident.Po \
 	./$(DEPDIR)/test_shcoind-init.Po \
 	./$(DEPDIR)/test_shcoind-keystore.Po \
 	./$(DEPDIR)/test_shcoind-ltc_block.Po \
@@ -1699,7 +1708,8 @@ server_sources = $(blockchain_sources) $(proto_sources) \
 	server/color/color_pool.h server/color/color_rpc.cpp \
 	server/ext/txext.cpp server/ext/txext.h \
 	server/ext/ext_param.cpp server/ext/ext_param.h \
-	server/ext/alias.cpp server/ext/alias.h \
+	server/ext/entity.cpp server/ext/entity.h server/ext/ident.cpp \
+	server/ext/ident.h server/ext/alias.cpp server/ext/alias.h \
 	server/ext/certificate.cpp server/ext/certificate.h \
 	server/ext/offer.cpp server/ext/offer.h server/ext/asset.cpp \
 	server/ext/asset.h server/ext/exec.cpp server/ext/exec.h \
@@ -1922,6 +1932,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_proto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_txidx.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-emc2_wallet.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-entity.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-exec.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ext_param.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-global.Po@am__quote@ # am--include-marker
@@ -1932,6 +1943,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_fractal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_matrix.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-http_pool.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ident.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-init.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-keystore.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ltc_block.Po@am__quote@ # am--include-marker
@@ -2077,6 +2089,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_proto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_txidx.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-emc2_wallet.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-entity.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-exec.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ext_param.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-global.Po@am__quote@ # am--include-marker
@@ -2087,6 +2100,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_fractal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_matrix.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-http_pool.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ident.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-init.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-keystore.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ltc_block.Po@am__quote@ # am--include-marker
@@ -4202,6 +4216,34 @@ shcoind-ext_param.obj: server/ext/ext_param.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-ext_param.obj `if test -f 'server/ext/ext_param.cpp'; then $(CYGPATH_W) 'server/ext/ext_param.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ext_param.cpp'; fi`
 
+shcoind-entity.o: server/ext/entity.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-entity.o -MD -MP -MF $(DEPDIR)/shcoind-entity.Tpo -c -o shcoind-entity.o `test -f 'server/ext/entity.cpp' || echo '$(srcdir)/'`server/ext/entity.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-entity.Tpo $(DEPDIR)/shcoind-entity.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/entity.cpp' object='shcoind-entity.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-entity.o `test -f 'server/ext/entity.cpp' || echo '$(srcdir)/'`server/ext/entity.cpp
+
+shcoind-entity.obj: server/ext/entity.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-entity.obj -MD -MP -MF $(DEPDIR)/shcoind-entity.Tpo -c -o shcoind-entity.obj `if test -f 'server/ext/entity.cpp'; then $(CYGPATH_W) 'server/ext/entity.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/entity.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-entity.Tpo $(DEPDIR)/shcoind-entity.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/entity.cpp' object='shcoind-entity.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-entity.obj `if test -f 'server/ext/entity.cpp'; then $(CYGPATH_W) 'server/ext/entity.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/entity.cpp'; fi`
+
+shcoind-ident.o: server/ext/ident.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-ident.o -MD -MP -MF $(DEPDIR)/shcoind-ident.Tpo -c -o shcoind-ident.o `test -f 'server/ext/ident.cpp' || echo '$(srcdir)/'`server/ext/ident.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-ident.Tpo $(DEPDIR)/shcoind-ident.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ident.cpp' object='shcoind-ident.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-ident.o `test -f 'server/ext/ident.cpp' || echo '$(srcdir)/'`server/ext/ident.cpp
+
+shcoind-ident.obj: server/ext/ident.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-ident.obj -MD -MP -MF $(DEPDIR)/shcoind-ident.Tpo -c -o shcoind-ident.obj `if test -f 'server/ext/ident.cpp'; then $(CYGPATH_W) 'server/ext/ident.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ident.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-ident.Tpo $(DEPDIR)/shcoind-ident.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ident.cpp' object='shcoind-ident.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-ident.obj `if test -f 'server/ext/ident.cpp'; then $(CYGPATH_W) 'server/ext/ident.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ident.cpp'; fi`
+
 shcoind-alias.o: server/ext/alias.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-alias.o -MD -MP -MF $(DEPDIR)/shcoind-alias.Tpo -c -o shcoind-alias.o `test -f 'server/ext/alias.cpp' || echo '$(srcdir)/'`server/ext/alias.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-alias.Tpo $(DEPDIR)/shcoind-alias.Po
@@ -5601,6 +5643,34 @@ test_shcoind-ext_param.obj: server/ext/ext_param.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ext_param.cpp' object='test_shcoind-ext_param.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-ext_param.obj `if test -f 'server/ext/ext_param.cpp'; then $(CYGPATH_W) 'server/ext/ext_param.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ext_param.cpp'; fi`
+
+test_shcoind-entity.o: server/ext/entity.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-entity.o -MD -MP -MF $(DEPDIR)/test_shcoind-entity.Tpo -c -o test_shcoind-entity.o `test -f 'server/ext/entity.cpp' || echo '$(srcdir)/'`server/ext/entity.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-entity.Tpo $(DEPDIR)/test_shcoind-entity.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/entity.cpp' object='test_shcoind-entity.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-entity.o `test -f 'server/ext/entity.cpp' || echo '$(srcdir)/'`server/ext/entity.cpp
+
+test_shcoind-entity.obj: server/ext/entity.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-entity.obj -MD -MP -MF $(DEPDIR)/test_shcoind-entity.Tpo -c -o test_shcoind-entity.obj `if test -f 'server/ext/entity.cpp'; then $(CYGPATH_W) 'server/ext/entity.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/entity.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-entity.Tpo $(DEPDIR)/test_shcoind-entity.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/entity.cpp' object='test_shcoind-entity.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-entity.obj `if test -f 'server/ext/entity.cpp'; then $(CYGPATH_W) 'server/ext/entity.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/entity.cpp'; fi`
+
+test_shcoind-ident.o: server/ext/ident.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-ident.o -MD -MP -MF $(DEPDIR)/test_shcoind-ident.Tpo -c -o test_shcoind-ident.o `test -f 'server/ext/ident.cpp' || echo '$(srcdir)/'`server/ext/ident.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-ident.Tpo $(DEPDIR)/test_shcoind-ident.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ident.cpp' object='test_shcoind-ident.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-ident.o `test -f 'server/ext/ident.cpp' || echo '$(srcdir)/'`server/ext/ident.cpp
+
+test_shcoind-ident.obj: server/ext/ident.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-ident.obj -MD -MP -MF $(DEPDIR)/test_shcoind-ident.Tpo -c -o test_shcoind-ident.obj `if test -f 'server/ext/ident.cpp'; then $(CYGPATH_W) 'server/ext/ident.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ident.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-ident.Tpo $(DEPDIR)/test_shcoind-ident.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/ident.cpp' object='test_shcoind-ident.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-ident.obj `if test -f 'server/ext/ident.cpp'; then $(CYGPATH_W) 'server/ext/ident.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/ident.cpp'; fi`
 
 test_shcoind-alias.o: server/ext/alias.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-alias.o -MD -MP -MF $(DEPDIR)/test_shcoind-alias.Tpo -c -o test_shcoind-alias.o `test -f 'server/ext/alias.cpp' || echo '$(srcdir)/'`server/ext/alias.cpp
@@ -7135,6 +7205,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/shcoind-emc2_proto.Po
 	-rm -f ./$(DEPDIR)/shcoind-emc2_txidx.Po
 	-rm -f ./$(DEPDIR)/shcoind-emc2_wallet.Po
+	-rm -f ./$(DEPDIR)/shcoind-entity.Po
 	-rm -f ./$(DEPDIR)/shcoind-exec.Po
 	-rm -f ./$(DEPDIR)/shcoind-ext_param.Po
 	-rm -f ./$(DEPDIR)/shcoind-global.Po
@@ -7145,6 +7216,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/shcoind-http_fractal.Po
 	-rm -f ./$(DEPDIR)/shcoind-http_matrix.Po
 	-rm -f ./$(DEPDIR)/shcoind-http_pool.Po
+	-rm -f ./$(DEPDIR)/shcoind-ident.Po
 	-rm -f ./$(DEPDIR)/shcoind-init.Po
 	-rm -f ./$(DEPDIR)/shcoind-keystore.Po
 	-rm -f ./$(DEPDIR)/shcoind-ltc_block.Po
@@ -7290,6 +7362,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/test_shcoind-emc2_proto.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-emc2_txidx.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-emc2_wallet.Po
+	-rm -f ./$(DEPDIR)/test_shcoind-entity.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-exec.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ext_param.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-global.Po
@@ -7300,6 +7373,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/test_shcoind-http_fractal.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-http_matrix.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-http_pool.Po
+	-rm -f ./$(DEPDIR)/test_shcoind-ident.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-init.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-keystore.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ltc_block.Po
@@ -7505,6 +7579,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/shcoind-emc2_proto.Po
 	-rm -f ./$(DEPDIR)/shcoind-emc2_txidx.Po
 	-rm -f ./$(DEPDIR)/shcoind-emc2_wallet.Po
+	-rm -f ./$(DEPDIR)/shcoind-entity.Po
 	-rm -f ./$(DEPDIR)/shcoind-exec.Po
 	-rm -f ./$(DEPDIR)/shcoind-ext_param.Po
 	-rm -f ./$(DEPDIR)/shcoind-global.Po
@@ -7515,6 +7590,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/shcoind-http_fractal.Po
 	-rm -f ./$(DEPDIR)/shcoind-http_matrix.Po
 	-rm -f ./$(DEPDIR)/shcoind-http_pool.Po
+	-rm -f ./$(DEPDIR)/shcoind-ident.Po
 	-rm -f ./$(DEPDIR)/shcoind-init.Po
 	-rm -f ./$(DEPDIR)/shcoind-keystore.Po
 	-rm -f ./$(DEPDIR)/shcoind-ltc_block.Po
@@ -7660,6 +7736,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/test_shcoind-emc2_proto.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-emc2_txidx.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-emc2_wallet.Po
+	-rm -f ./$(DEPDIR)/test_shcoind-entity.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-exec.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ext_param.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-global.Po
@@ -7670,6 +7747,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/test_shcoind-http_fractal.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-http_matrix.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-http_pool.Po
+	-rm -f ./$(DEPDIR)/test_shcoind-ident.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-init.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-keystore.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ltc_block.Po

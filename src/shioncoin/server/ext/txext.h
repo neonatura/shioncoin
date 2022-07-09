@@ -332,6 +332,8 @@ typedef std::map<uint160, uint256> ctx_list;
 typedef std::map<uint160, uint256> altchain_list;
 
 
+#include "entity.h"
+#include "ident.h"
 #include "certificate.h"
 #include "offer.h"
 #include "asset.h"
