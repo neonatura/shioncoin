@@ -103,7 +103,9 @@ class CWallet : public CBasicKeyStore
 		mutable std::map<uint256, std::string> mapAliasArch;
 
 		mutable std::map<uint160, uint256> mapLicense;
+
 		mutable std::map<uint160, uint256> mapAsset;
+		mutable std::map<uint160, uint64_t> mapAssetChecksum;
 
 		mutable std::map<uint160, uint256> mapOffer;
 		mutable std::map<uint160, uint256> mapOfferArch;

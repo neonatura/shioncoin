@@ -67,7 +67,7 @@ CBlockIndex static * InsertBlockIndex(uint256 hash)
 }
 
 typedef vector<CBlockIndex*> txlist;
-bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec, txlist& vOffer)
+bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec, txlist& vOffer, txlist& vAsset)
 {
   CIface *iface = GetCoinByIndex(TESTNET_COIN_IFACE);
   CWallet *wallet = GetWallet(TESTNET_COIN_IFACE);
@@ -168,9 +168,7 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
           vAlias.push_back(pindexNew);
       } 
 
-			if (tx.isFlag(CTransaction::TXF_ASSET)) {
-        /* not implemented. */
-      } else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
+      if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
         if (IsCertTx(tx))
           vCert.push_back(pindexNew);
       } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
@@ -184,6 +182,11 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
         if (IsLicenseTx(tx))
           vLicense.push_back(pindexNew);
       } 
+
+			if (tx.isFlag(CTransaction::TXF_ASSET)) {
+        if (IsAssetTx(tx))
+          vAsset.push_back(pindexNew);
+			}
 
       if (tx.isFlag(CTransaction::TXF_IDENT)) {
         if (IsIdentTx(tx))
@@ -266,7 +269,9 @@ static bool testnet_LoadBlockIndex()
   txlist vContext;
 	txlist vExec;
 	txlist vOffer;
-  if (!testnet_FillBlockIndex(vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec, vOffer))
+	txlist vAsset;
+
+  if (!testnet_FillBlockIndex(vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec, vOffer, vAsset))
     return (false);
 
   if (fRequestShutdown)
@@ -506,6 +511,16 @@ static bool testnet_LoadBlockIndex()
     delete block;
 
 		lhash = pindex->GetBlockHash();
+  }
+
+	/* asset */
+  BOOST_FOREACH(CBlockIndex *pindex, vAsset) {
+    CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+    BOOST_FOREACH(CTransaction& tx, block->vtx) {
+      if (IsAssetTx(tx))
+        ProcessAssetTx(iface, tx, pindex->nHeight);
+    }
+    delete block;
   }
 
   /* offer */

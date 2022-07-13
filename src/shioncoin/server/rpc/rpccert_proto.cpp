@@ -33,7 +33,6 @@
 #include "wallet.h"
 #include "txmempool.h"
 #include "certificate.h"
-#include "asset.h"
 #include "rpc_proto.h"
 
 using namespace std;
@@ -552,7 +551,7 @@ Value rpc_cert_export(CIface *iface, const Array& params, bool fStratum)
 }
 
 
-
+#if 0
 Value rpc_asset_new(CIface *iface, const Array& params, bool fStratum) 
 {
   CWallet *wallet = GetWallet(iface);
@@ -916,4 +915,4 @@ Value rpc_asset_list(CIface *iface, const Array& params, bool fHelp)
 
   return (result);
 }
-
+#endif

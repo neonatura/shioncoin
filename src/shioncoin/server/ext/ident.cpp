@@ -251,14 +251,10 @@ int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint
 	if (!wallet || !iface->enabled)
 		return (SHERR_OPNOTSUPP);
 
-fprintf(stderr, "DEBUG: REMOVE ME: init_ident_donate_tx: (input) nValue %f\n", ((double)nValue/COIN));
-
 	int64 nFee = nValue - iface->min_tx_fee;
 	if (nFee < iface->min_input) {
 		return (SHERR_INVAL);
 	}
-
-fprintf(stderr, "DEBUG: REMOVE ME: init_ident_donate_tx: nFee %f\n", ((double)nFee / COIN));
 
 	CTransaction tx;
 	bool hasCert = GetTxOfCert(iface, hashCert, tx);
@@ -279,10 +275,8 @@ fprintf(stderr, "DEBUG: REMOVE ME: init_ident_donate_tx: nFee %f\n", ((double)nF
 
 		CIdent& c_ident = (CIdent&)tx.certificate;
 		ident = t_wtx.CreateIdent(&c_ident);
-fprintf(stderr, "DEBUG: REMOVE ME: {%x} = t_wtx.CreateIdent(c_ident): \n", ident, ident->ToString().c_str());
 	} else {
 		ident = t_wtx.CreateIdent(ifaceIndex, addr);
-fprintf(stderr, "DEBUG: REMOVE ME: {%x} = t_wtx.CreateIdent(addr): \n", ident, ident->ToString().c_str());
 	}
 	if (!ident)
 		return (SHERR_INVAL);
@@ -297,7 +291,6 @@ fprintf(stderr, "DEBUG: REMOVE ME: {%x} = t_wtx.CreateIdent(addr): \n", ident, i
 	scriptPubKey += scriptPubKeyOrig;
 	if (!t_wtx.AddOutput(scriptPubKey, nValue, true))
 		return SHERR_CANCELED;
-fprintf(stderr, "DEBUG: REMOVE ME: s_wtx.AddExtTx(nFee %f)\n", ((double)nValue * COIN));
 	if (!t_wtx.Send()) {
 		return (SHERR_CANCELED);
 	}
@@ -310,7 +303,6 @@ fprintf(stderr, "DEBUG: REMOVE ME: s_wtx.AddExtTx(nFee %f)\n", ((double)nValue *
 	nFee -= nFeeRequired;
 #endif
 	nFee = MAX(iface->min_tx_fee, nFee);
-fprintf(stderr, "DEBUG: REMOVE ME: init_ident_donate_tx: nFee/2 %f\n", ((double)nFee / COIN));
 
 	/* send from intermediate as tx fee */
 #if 0
@@ -319,7 +311,6 @@ fprintf(stderr, "DEBUG: REMOVE ME: init_ident_donate_tx: nFee/2 %f\n", ((double)
 #endif
 	CIdent *gen_ident = s_wtx.CreateIdent(ident);
 	if (!gen_ident) {
-fprintf(stderr, "DEBUG: REMOVE ME: !gen_ident\n");
 		return (SHERR_INVAL);
 	}
 
@@ -334,10 +325,8 @@ fprintf(stderr, "DEBUG: REMOVE ME: !gen_ident\n");
 #endif
 	if (!s_wtx.AddExtTx(&t_wtx, feePubKey, nFee))
 		return (SHERR_CANCELED);
-fprintf(stderr, "DEBUG: REMOVE ME: s_wtx.AddExtTx(nFee %f)\n", ((double)nFee * COIN));
 
 	if (!s_wtx.Send()) {
-fprintf(stderr, "DEBUG: REMOVE ME: !t_wtx.Send(): %s\n", s_wtx.GetError().c_str());
 		return (SHERR_CANCELED);
 	}
 

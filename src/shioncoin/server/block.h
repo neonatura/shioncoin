@@ -664,8 +664,9 @@ class CTransaction : public CTransactionCore
 {
 
   public:
-    CIdent ident;
     CCert certificate;
+    CIdent ident;
+		CAsset asset;
     CAlias alias;
     COffer offer;
     CTxMatrix matrix;
@@ -701,11 +702,13 @@ class CTransaction : public CTransactionCore
       READWRITE(*(CTransactionCore*)this);
       if ((this->nFlag & TXF_CERTIFICATE) ||
           (this->nFlag & TXF_LICENSE) ||
-          (this->nFlag & TXF_ASSET) ||
           (this->nFlag & TXF_CONTEXT))
         READWRITE(certificate);
 			if (this->nFlag & TXF_IDENT) 
         READWRITE(ident);
+			if (this->nFlag & TXF_ASSET) {
+        READWRITE(asset);
+			}
 			if (this->nFlag & TXF_EXEC)
         READWRITE(exec);
       if (this->nFlag & TXF_ALIAS)
@@ -728,8 +731,9 @@ class CTransaction : public CTransactionCore
     {
 
       CTransactionCore::SetNull();
-			ident.SetNull();
       certificate.SetNull();
+			ident.SetNull();
+			asset.SetNull();
 			alias.SetNull();
       offer.SetNull();
       matrix.SetNull();
@@ -870,9 +874,10 @@ class CTransaction : public CTransactionCore
     COffer *PayOffer(COffer *accept);
     COffer *RemoveOffer(uint160 hashOffer);
 
-    CAsset *CreateAsset(string strAssetName, string strAssetHash);
-    CAsset *UpdateAsset(const CAsset& assetIn, string strAssetName, string strAssetHash);
-    CAsset *RemoveAsset(const CAsset& assetIn);
+		CAsset *CreateAsset(CCert *cert, int nType, const cbuff& vContent);
+		CAsset *UpdateAsset(CAsset *assetIn, const cbuff& vContent);
+    CAsset *TransferAsset(CAsset *assetIn);
+    CAsset *RemoveAsset(CAsset *assetIn);
 
     CExec *CreateExec();
     CExecCheckpoint *UpdateExec(const CExec& execIn);
@@ -909,7 +914,6 @@ class CTransaction : public CTransactionCore
     {
       if (!(this->nFlag & TXF_CERTIFICATE) && 
           !(this->nFlag & TXF_LICENSE) && 
-          !(this->nFlag & TXF_ASSET) && 
           !(this->nFlag & TXF_CONTEXT)) {
 				return (NULL);
 			}
@@ -971,7 +975,29 @@ class CTransaction : public CTransactionCore
 		{
 			if (!(this->nFlag & TXF_ASSET))
 				return (NULL);
-			return ((CAsset *)&certificate);
+			return ((CAsset *)&asset);
+		}
+
+		CAsset *GetNewAsset()
+		{
+			if (nFlag & CTransaction::TXF_ASSET) {
+				return (NULL);
+			}
+
+			nFlag |= CTransaction::TXF_ASSET;
+			asset = CAsset();
+			return ((CAsset *)&asset);
+		}
+
+		CAsset *GetDerivedAsset(CAsset *assetIn)
+		{
+			if (nFlag & CTransaction::TXF_ASSET) {
+				return (NULL);
+			}
+
+			nFlag |= CTransaction::TXF_ASSET;
+			asset = CAsset(*assetIn);
+			return ((CAsset *)&asset);
 		}
 
     CTxMatrix *GetMatrix()

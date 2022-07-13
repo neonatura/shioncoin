@@ -653,7 +653,6 @@ bool CTxCreator::Send()
     /* ensure transaction has been finalized. */
     bool ok = Generate();
     if (!ok) {
-fprintf(stderr, "DEBUG: REMOVE ME: CTxCreator !Generate\n");
       return (false);
 		}
   }
@@ -678,7 +677,6 @@ fprintf(stderr, "DEBUG: REMOVE ME: CTxCreator !Generate\n");
 
   if (!pwallet->CommitTransaction(*this)) {
     strError = "An error occurred while commiting the transaction.";
-fprintf(stderr, "DEBUG: REMOVE ME:An error occurred while commiting the transaction.\n");
     return (false);
   }
 

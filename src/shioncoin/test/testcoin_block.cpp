@@ -551,9 +551,7 @@ _TEST(identtx)
   _TRUE(orig_bal > COIN + (iface->min_tx_fee * 2));
 
   certFee = GetCertOpFee(iface, GetBestHeight(iface)) + COIN;
-fprintf(stderr, "DEBUG: REMOVE ME: TEST: IDENT-DONATE: (certFee %f) (orig_bal %f)\n", ((double)certFee/COIN), orig_bal);
   err = init_ident_donate_tx(iface, strAccount, certFee, hashCert, wtx);  
-fprintf(stderr, "DEBUG: REMOVE ME: %d = init_ident_donate_tx()\n", err);
   _TRUE(err == 0);
   _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
   _TRUE(VerifyIdent(wtx, mode) == true);

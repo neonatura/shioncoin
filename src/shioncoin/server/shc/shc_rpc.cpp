@@ -28,8 +28,10 @@
 #include "strlcpy.h"
 #include "chain.h"
 #include "certificate.h"
+#include "asset.h"
 #include "rpc_proto.h"
 #include "rpccert_proto.h"
+#include "rpcasset_proto.h"
 #include "rpcalias_proto.h"
 #include "rpccontext_proto.h"
 #include "rpcexec_proto.h"
@@ -486,8 +488,8 @@ const RPCOp ASSET_INFO = {
   "Show general information about certified assets."
 };
 const RPCOp ASSET_NEW = {
-  &rpc_asset_new, 4, {RPC_ACCOUNT, RPC_STRING, RPC_STRING, RPC_STRING},
-  "Syntax: <account> <cert> <title> <data>\n"
+  &rpc_asset_new, 4, {RPC_ACCOUNT, RPC_STRING, RPC_INT, RPC_STRING, RPC_INT64},
+  "Syntax: <account> <cert> <type> <data> [<fee>]\n"
   "Summary: Create a certified asset.\n"
   "\n"
   "Submit a new asset transaction onto the blockchain."
@@ -520,9 +522,16 @@ const RPCOp ASSET_REMOVE = {
   "\n"
   "Remove an asset from the blockchain."
 };
+const RPCOp ASSET_TRANSFER = {
+  &rpc_asset_transfer, 4, {RPC_ACCOUNT, RPC_STRING, RPC_COINADDR},
+  "Syntax: <account> <asset> <address>\n"
+  "Summary: Transfer an existing asset to a destination extended transaction address.\n"
+  "\n"
+  "Transfer an asset on the blockchain."
+};
 const RPCOp ASSET_UPDATE = {
-  &rpc_asset_update, 4, {RPC_ACCOUNT, RPC_STRING, RPC_STRING, RPC_STRING},
-  "Syntax: <account> <asset> <title> <data>\n"
+  &rpc_asset_update, 4, {RPC_ACCOUNT, RPC_STRING, RPC_STRING},
+  "Syntax: <account> <asset> <data>\n"
   "Summary: Update an existing asset.\n"
   "\n"
   "Update information for an asset on the blockchain."
@@ -610,6 +619,7 @@ void shc_RegisterRPCOp(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "asset.listacc", ASSET_LISTACC);
   RegisterRPCOp(ifaceIndex, "asset.listcert", ASSET_LISTCERT);
   RegisterRPCOp(ifaceIndex, "asset.remove", ASSET_REMOVE);
+  RegisterRPCOp(ifaceIndex, "asset.send", ASSET_TRANSFER);
   RegisterRPCOp(ifaceIndex, "asset.update", ASSET_UPDATE);
 
   RegisterRPCOp(ifaceIndex, "cert.export", CERT_EXPORT);

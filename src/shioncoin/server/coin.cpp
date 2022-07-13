@@ -585,12 +585,7 @@ void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight, CBlockIndex *
 			}
 		} 
 
-		if (tx.isFlag(CTransaction::TXF_ASSET)) {
-			bool fRet = ProcessAssetTx(iface, tx, nHeight);
-			if (!fRet) {
-				error(SHERR_INVAL, "ProcessAssetTx failure");
-			}
-		} else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
+		if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
 			InsertCertTable(iface, tx, nHeight);
 		} else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
 			int err = CommitContextTx(iface, tx, nHeight);
@@ -606,6 +601,13 @@ void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight, CBlockIndex *
 
 		if (tx.isFlag(CTransaction::TXF_IDENT)) {
 			InsertIdentTable(iface, tx);
+		}
+
+		if (tx.isFlag(CTransaction::TXF_ASSET)) {
+			bool fRet = ProcessAssetTx(iface, tx, nHeight);
+			if (!fRet) {
+				error(SHERR_INVAL, "ProcessAssetTx failure");
+			}
 		}
 
 		/* non-exlusive */

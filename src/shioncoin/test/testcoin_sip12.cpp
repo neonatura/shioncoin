@@ -65,7 +65,6 @@ _TEST(sip12_consensus)
 
 	int of;
 	for (of = 0; of < 10; of++) { /* x100 param */
-fprintf(stderr, "DEBUG: TEST: SIP12: x%d\n", of);
 		CCoinAddr addr = wallet->GetRecvAddr(strAccount);
 		for (idx = 0; idx < 10; idx++) {
 			CTxCreator s_wtx(wallet, strAccount);

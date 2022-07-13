@@ -101,6 +101,11 @@ class CEntity : public CExtCore
 			return (nType);
 		}
 
+		int GetMaximumVersion()
+		{
+			return (SHC_VERSION_MAJOR);
+		}
+
 		bool IsLocalRegion();
 
 		uint160 GetHash();

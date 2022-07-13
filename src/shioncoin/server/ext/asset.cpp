@@ -34,20 +34,27 @@
 using namespace std;
 using namespace json_spirit;
 
-
-
+#define MIME_APPLICATION_OCTET_STREAM SHMIME_BINARY
+#define MIME_TEXT_PLAIN SHMIME_TEXT_PLAIN
+#define MIME_APP_GZIP SHMIME_APP_GZIP
+#define MIME_APP_LINUX SHMIME_APP_LINUX
+#define MIME_APP_LINUX_32 SHMIME_APP_LINUX_32
+#define MIME_APP_TAR SHMIME_APP_TAR
+#define MIME_APP_PEM SHMIME_APP_PEM
+#define MIME_APP_SQLITE SHMIME_APP_SQLITE
+#define MIME_APP_SEXE SHMIME_APP_SEXE
+#define MIME_APP_BZ2 SHMIME_APP_BZ2
+#define MIME_APP_RAR SHMIME_APP_RAR
+#define MIME_APP_ZIP SHMIME_APP_ZIP
+#define MIME_APP_XZ SHMIME_APP_XZ
+#define MIME_APP_WIN SHMIME_APP_WIN
+#define MIME_IMAGE_GIF SHMIME_IMG_GIF
+#define MIME_IMAGE_PNG SHMIME_IMG_PNG
+#define MIME_IMAGE_JPEG SHMIME_IMG_JPEG
+#define MIME_MODEL_OBJ "model/obj"
+#define MIME_MODEL_MTL "model/mtl"
 
 asset_list *GetAssetTable(int ifaceIndex)
-{
-  if (ifaceIndex < 0 || ifaceIndex >= MAX_COIN_IFACE)
-    return (NULL);
-  CWallet *wallet = GetWallet(ifaceIndex);
-  if (!wallet)
-    return (NULL);
-  return (&wallet->mapAsset);
-}
-
-asset_list *GetAssetPendingTable(int ifaceIndex)
 {
   if (ifaceIndex < 0 || ifaceIndex >= MAX_COIN_IFACE)
     return (NULL);
@@ -96,9 +103,6 @@ bool DecodeAssetHash(const CScript& script, int& mode, uint160& hash)
 }
 
 
-
-
-
 string assetFromOp(int op) {
 	switch (op) {
 	case OP_EXT_NEW:
@@ -107,6 +111,10 @@ string assetFromOp(int op) {
 		return "assetupdate";
 	case OP_EXT_ACTIVATE:
 		return "assetactivate";
+	case OP_EXT_TRANSFER:
+		return "assettransfer";
+	case OP_EXT_REMOVE:
+		return "assetremove";
 	default:
 		return "<unknown asset op>";
 	}
@@ -202,6 +210,7 @@ bool IsAssetTx(const CTransaction& tx)
     uint160 hash;
     int mode;
 
+		/* todo: check mode */
     if (DecodeAssetHash(out.scriptPubKey, mode, hash)) {
       tot++;
     }
@@ -297,6 +306,28 @@ bool IsLocalAsset(CIface *iface, const CTransaction& tx)
   return (IsLocalAsset(iface, tx.vout[nOut]));
 }
 
+int GetAssetTransactionMode(CTransaction& tx, uint160& hAsset)
+{
+	int nOut;
+  int mode;
+
+	  /* core verification */
+  if (!IsAssetTx(tx)) {
+    return (-1); /* tx not flagged as asset */
+	}
+
+  /* verify hash in pub-script matches asset hash */
+  nOut = IndexOfAssetOutput(tx);
+  if (nOut == -1) {
+    return (-1); /* no extension output */
+	}
+
+  if (!DecodeAssetHash(tx.vout[nOut].scriptPubKey, mode, hAsset)) {
+    return (-1); /* no asset hash in output */
+	}
+
+	return (mode);
+}
 
 /**
  * Verify the integrity of an asset transaction.
@@ -327,8 +358,8 @@ bool VerifyAsset(CTransaction& tx)
       mode != OP_EXT_REMOVE)
     return (false);
 
-  CAsset asset(tx.certificate);
-  if (hashAsset != asset.GetHash())
+  CAsset *asset = (CAsset *)&tx.asset;
+  if (hashAsset != asset->GetHash())
     return error(SHERR_INVAL, "asset hash mismatch");
 
   return (true);
@@ -368,31 +399,643 @@ bool VerifyAssetAccount(CWallet *wallet, const CTxOut& outAsset, string strAccou
 	return (false);
 }
 
+std::string CAsset::ToString()
+{
+  return (write_string(Value(ToValue()), false));
+}
 
-int init_asset_tx(CIface *iface, string strAccount, uint160 hashCert, string strTitle, string strHash, CWalletTx& wtx)
+Object CAsset::ToValue()
+{
+  Object obj;
+
+  obj.push_back(Pair("hash", GetHash().GetHex()));
+	obj.push_back(Pair("title", GetLabel()));
+	if (GetHashIssuer() != 0) {
+		obj.push_back(Pair("issuer", GetHashIssuer().GetHex()));
+	}
+	obj.push_back(Pair("subtype", (int)GetSubType()));
+	obj.push_back(Pair("valuecrc", (uint64_t)GetContentChecksum()));
+	if (GetContentSize() != 0) {
+		obj.push_back(Pair("valuesize", (uint64_t)GetContentSize()));
+	}
+
+  return (obj);
+}
+
+bool CAsset::SignContent(int ifaceIndex)
+{
+	cbuff vchContext = GetSignatureContext(ifaceIndex);
+	if (vchContext.size() == 0)
+		return (false);
+
+  return (signature.SignContext(vchContext));
+}
+
+bool CAsset::VerifyContent(int ifaceIndex)
+{
+	cbuff vchContext = GetSignatureContext(ifaceIndex);
+	if (vchContext.size() == 0)
+		return (false);
+
+  return (signature.VerifyContext(vchContext.data(), vchContext.size()));
+}
+
+cbuff CAsset::GetSignatureContext(int ifaceIndex)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+	cbuff vContext;
+
+  CTransaction cert_tx;
+	uint160 hCert(vAddr);
+	if (hCert != 0 && GetTxOfCert(iface, hCert, cert_tx)) {
+		CDataStream ser(SER_DISK, CLIENT_VERSION);
+		CCert *serCert = cert_tx.GetCertificate();
+
+		ser << *serCert;
+		size_t buff_len = ser.size();
+		uint8_t *buff = (uint8_t *)calloc(buff_len, sizeof(uint8_t));
+		ser.read((char *)buff, buff_len);
+		vContext.insert(vContext.end(), buff, buff + buff_len);
+		free(buff);
+	}
+
+  CTransaction asset_tx;
+	if (hashIssuer != 0 && GetTxOfAsset(iface, hashIssuer, asset_tx)) {
+		CDataStream ser(SER_DISK, CLIENT_VERSION);
+		CAsset *serAsset = asset_tx.GetAsset();
+
+		ser << *serAsset;
+		size_t buff_len = ser.size();
+		uint8_t *buff = (uint8_t *)calloc(buff_len, sizeof(uint8_t));
+		ser.read((char *)buff, buff_len);
+		vContext.insert(vContext.end(), buff, buff + buff_len);
+		free(buff);
+	}
+
+	const cbuff& data = GetContent();
+	vContext.insert(vContext.end(), data.begin(), data.end());
+
+	return (vContext);
+}
+
+string CAsset::GetMimeType()
+{
+
+	if (GetType() == AssetType::DATA) {
+		switch (GetSubType()) {
+			case AssetMimeType::TEXT:
+				return (MIME_TEXT_PLAIN);
+			case AssetMimeType::IMAGE_GIF:
+				return (MIME_IMAGE_GIF);
+			case AssetMimeType::IMAGE_PNG:
+				return (MIME_IMAGE_PNG);
+			case AssetMimeType::IMAGE_JPEG:
+				return (MIME_IMAGE_JPEG);
+			case AssetMimeType::MODEL_OBJ:
+				return (MIME_MODEL_OBJ);
+			case AssetMimeType::MODEL_MTL:
+				return (MIME_MODEL_MTL);
+		}
+	}
+
+	return (MIME_APPLICATION_OCTET_STREAM);
+}
+
+bool CAsset::VerifyTransaction()
+{
+	const string& strLabel = GetLabel();
+	const int nVersion = GetVersion();
+	const uint160& hCert = GetCertificateHash();
+
+	if (nVersion < GetMinimumVersion() ||
+			nVersion > GetMaximumVersion()) {
+		return (false);
+	}
+
+	if (hCert == 0) {
+		return (false);
+	}
+
+	if (strLabel.size() == 0 ||
+			strLabel.size() > MAX_ASSET_LABEL_LENGTH) {
+		return (false);
+	}
+
+	if (vContent.size() == 0 ||
+			vContent.size() > MAX_ASSET_CONTENT_LENGTH) {
+		return (false);
+	}
+
+	return (true);
+}
+
+/* obtain all previous assets in sequence associated with "tx". */
+bool GetAssetChain(CIface *iface, const CTransaction& txIn, vector<CTransaction>& vTx)
+{
+	CAsset *asset = (CAsset *)&txIn.asset;
+	CTransaction tx;
+	uint160 l_hashIssuer = 0;
+	uint160 hashAsset;
+	int nOut;
+	int mode;
+	int i;
+
+	vTx.clear();
+
+	nOut = IndexOfAssetOutput(txIn);
+	if (nOut == -1)
+		return (false);
+	if (!DecodeAssetHash(txIn.vout[nOut].scriptPubKey, mode, hashAsset))
+		return (false);
+
+	if (mode == OP_EXT_NEW)
+		return (true); /* all done */
+
+	tx = txIn;
+//	mode = OP_EXT_UPDATE;
+	l_hashIssuer = tx.GetAsset()->GetHashIssuer();
+	while (l_hashIssuer != 0) {//mode == OP_EXT_UPDATE) {
+		int txSize = tx.vin.size();
+		for (i = 0; i < txSize; i++) {
+			const CTxIn& in = tx.vin[i];
+			const uint256& hashPrevTx = in.prevout.hash;
+			int nPrevOut = in.prevout.n;
+			CTransaction p_tx;
+
+			if (!GetTransaction(iface, in.prevout.hash, p_tx, NULL)) {
+fprintf(stderr, "GetAssetChain: invalid input tx \"%s\"\n", p_tx.GetHash().GetHex().c_str());
+				continue; /* soft error */
+			}
+
+			const CTxOut& out = p_tx.vout[nPrevOut];
+			if (!DecodeAssetHash(out.scriptPubKey, mode, hashAsset)) {
+fprintf(stderr, "GetAssetChain: !DecodeAssetHash\n");
+				continue; /* onto next tx */
+			}
+
+#if 0
+			CAsset *p_asset = p_tx.GetAsset();
+			if (!p_asset) {
+fprintf(stderr, "GetAssetChain: !p_asset\n");
+				continue;
+			}
+#endif
+			/*
+			if (mode == OP_EXT_NEW) {
+				if (hashAsset != l_hashIssuer) {
+fprintf(stderr, "GetAssetChain: !DecodeAssetHash: hashAsset != l_hashIssuer\n");
+					continue; // wrong chain 
+				}
+			} else {
+				if (p_asset->GetHashIssuer() != l_hashIssuer) {
+fprintf(stderr, "GetAssetChain: !DecodeAssetHash: p_asset->hashIssuer != l_hashIssuer\n");
+					continue; // wrong chain 
+				}
+			}
+	*/
+			if (hashAsset != l_hashIssuer) {
+				/* wrong chain reference. */
+				continue;
+			}
+
+			tx = p_tx;
+			vTx.insert(vTx.begin(), tx);
+			//l_hashIssuer = p_asset->GetHashIssuer();
+			l_hashIssuer = tx.GetAsset()->GetHashIssuer();
+			break;
+		}
+		if (i == txSize)
+			return (error(ERR_INVAL, "GetAssetChain: invalid chain"));
+	}
+
+	return (true);
+}
+
+bool GetAssetRootHash(CIface *iface, CTransaction& tx, uint160& hAsset) 
+{
+	vector<CTransaction> vTx;
+
+	/* load entire asset hierarchy. */
+	if (!GetAssetChain(iface, tx, vTx))
+		return (false);
+
+	if (vTx.size() == 0) {
+		CAsset *asset = tx.GetAsset();
+		if (!asset)
+			return (false);
+
+		hAsset = asset->GetHash(); 
+	} else {
+		CAsset *asset = vTx[0].GetAsset();
+		if (!asset)
+			return (false);
+
+		/* return initial asset hash. */
+		hAsset = asset->GetHash();
+	}
+
+	return (true);
+}
+
+bool VerifyAssetChainOrigin(CIface *iface, CTransaction& tx, uint256& hPrevAssetTx)
+{
+	uint160 hAsset;
+
+	if (tx.GetAsset() == NULL) {
+		return (false);
+	}
+
+	if (!GetAssetRootHash(iface, tx, hAsset)) {
+		return (error(SHERR_INVAL, "VerifyAssetChainOrigin: unknown asset root hash"));
+	}
+
+	CTransaction asset_tx;
+	if (!GetTxOfAsset(iface, hAsset, asset_tx)) {
+		return (error(SHERR_INVAL, "VerifyAssetChainOrigin: unknown asset hash"));
+	}
+
+	CAsset *prevAsset = asset_tx.GetAsset();
+	if (!prevAsset)
+		return (false);
+	if (prevAsset->GetHash() != tx.GetAsset()->GetHashIssuer())
+		return (error(ERR_INVAL, "VerifyAssetChainOrigin: invalid hash issuer"));
+
+	/* cycle through inputs and find previous asset. */
+	const uint256& hTx = asset_tx.GetHash();
+	for (int i = 0; i < tx.vin.size(); i++) {
+		const CTxIn& in = tx.vin[i];
+		if (in.prevout.hash == hTx) {
+			hPrevAssetTx = hTx;
+			return (true);
+		}
+	}
+
+	return (false);
+}
+
+static bool InsertAssetTable(CIface *iface, CTransaction& tx)
+{
+	CWallet *wallet = GetWallet(iface);
+	CAsset *asset = tx.GetAsset();
+	uint160 hAsset;
+
+	if (asset == NULL) {
+		return (error(ERR_INVAL, "InsertAssetTable: invalid asset transaction."));
+	}
+
+	if (!GetAssetRootHash(iface, tx, hAsset)) {
+		return (error(ERR_INVAL, "InsertAssetTable: invalid asset transaction hierarchy."));
+	}
+
+	/* set asset root hash to new transaction id. */
+	wallet->mapAsset[hAsset] = tx.GetHash();
+	
+	/* set asset root hash to new content checksum. */
+	wallet->mapAssetChecksum[hAsset] = asset->GetContentChecksum();
+
+	return (true);
+}
+
+static bool RemoveAssetTable(CIface *iface, CTransaction& tx)
+{
+	CWallet *wallet = GetWallet(iface);
+	CAsset *asset = tx.GetAsset();
+	uint160 hAsset;
+
+	if (asset == NULL) {
+		return (error(ERR_INVAL, "InsertAssetTable: invalid asset transaction."));
+	}
+
+	if (!GetAssetRootHash(iface, tx, hAsset)) {
+		return (error(ERR_INVAL, "InsertAssetTable: invalid asset transaction hierarchy."));
+	}
+
+	wallet->mapAsset.erase(hAsset);
+	wallet->mapAssetChecksum.erase(hAsset);
+	return (true);
+}
+
+bool IsExistingAssetChecksum(CWallet *wallet, uint64_t crc)
+{
+	const map<uint160, uint64_t>& checksumList = wallet->mapAssetChecksum;
+
+	for (map<uint160, uint64_t>::const_iterator mi = checksumList.begin(); mi != checksumList.end(); ++mi) {
+		uint64_t cmp_crc = (*mi).second;
+		if (cmp_crc == crc) {
+			return (true);
+		}
+	}
+
+	return (false);
+}
+
+int64_t GetAssetChecksum(CWallet *wallet, const uint160& hAsset)
+{
+	map<uint160, uint64_t>& checksumList = wallet->mapAssetChecksum;
+
+	map<uint160, uint64_t>::iterator mi = checksumList.find(hAsset);
+	if (mi != checksumList.end()) {
+		uint64_t crc = (*mi).second;
+		return (crc);
+	}
+
+	return (0);
+}
+
+static bool ProcessNewAssetTx(CIface *iface, CTransaction& tx)
+{
+	CWallet *wallet = GetWallet(iface);
+	CAsset *asset = tx.GetAsset();
+	const uint160& hAsset = asset->GetHash();
+
+	if (wallet->mapAsset.count(hAsset) != 0) {
+		return (false); /* dup */
+	}
+
+	/* verify content is unique. */
+	if (IsExistingAssetChecksum(wallet, asset->GetContentChecksum())) {
+		return (false);
+	}
+
+	/* verify asset content signature */
+	if (!asset->VerifyContent(GetCoinIndex(iface))) {
+		return (false);
+	}
+
+	InsertAssetTable(iface, tx);
+	return (true);
+}
+
+static bool ProcessUpdateAssetTx(CIface *iface, CTransaction& tx)
+{
+  CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	uint256 hPrevAssetTx;
+
+	CAsset *asset = tx.GetAsset();
+	if (!asset)
+		return (false);
+
+	if (!VerifyAssetChainOrigin(iface, tx, hPrevAssetTx)) {
+		return (error(ERR_INVAL, "ProcessUpdateAssetTx: !VerifyAssetChainOrigin"));
+	}
+
+	CTransaction p_tx;
+	if (!GetTransaction(iface, hPrevAssetTx, p_tx, NULL)) {
+		return (error(ERR_INVAL, "ProcessUpdateAssetTx: !GetTransaction(<previous asset>)"));
+	}
+	CAsset *prevAsset = p_tx.GetAsset();  
+	if (!prevAsset) {
+		return (error(ERR_INVAL, "ProcessUpdateAssetTx: !prevAsset"));
+	}
+
+	if (prevAsset->GetLabel() != asset->GetLabel()) {
+		return (error(ERR_INVAL, "ProcessUpdateAsset invalid asset label."));
+	}
+	if (prevAsset->GetCertificateHash() != asset->GetCertificateHash()) {
+		return (error(ERR_INVAL, "ProcessUpdateAsset invalid asset certificate."));
+	}
+
+	InsertAssetTable(iface, tx);
+
+	return (true);
+}
+
+static bool ProcessTransferAssetTx(CIface *iface, CTransaction& tx)
+{
+  CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	uint256 hPrevAssetTx;
+
+	CAsset *asset = tx.GetAsset();
+	if (!asset)
+		return (false);
+
+	if (!VerifyAssetChainOrigin(iface, tx, hPrevAssetTx)) {
+		return (false);
+	}
+
+	CTransaction p_tx;
+	if (!GetTransaction(iface, hPrevAssetTx, p_tx, NULL)) {
+		return (false);
+	}
+	CAsset *prevAsset = p_tx.GetAsset();  
+	if (!prevAsset) {
+		return (false);
+	}
+
+	if (prevAsset->GetLabel() != asset->GetLabel()) {
+		return (false);
+	}
+	if (prevAsset->GetCertificateHash() != asset->GetCertificateHash()) {
+		return (false);
+	}
+	if (prevAsset->GetContentChecksum() != asset->GetContentChecksum()) {
+		return (false);
+	}
+
+	InsertAssetTable(iface, tx);
+	return (true);
+}
+
+static bool ProcessRemoveAssetTx(CIface *iface, CTransaction& tx)
+{
+  CWallet *wallet = GetWallet(iface);
+	uint256 hPrevAssetTx;
+	CCert cert;
+
+	CAsset *asset = tx.GetAsset();
+	if (!asset)
+		return (false);
+
+	const uint160& hIssuer = asset->GetHashIssuer();
+
+	if (!VerifyAssetChainOrigin(iface, tx, hPrevAssetTx)) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset invalid chain"));
+	}
+
+	CTransaction p_tx;
+	if (!GetTransaction(iface, hPrevAssetTx, p_tx, NULL)) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset asset transaction unavailable"));
+	}
+	CAsset *prevAsset = p_tx.GetAsset();  
+	if (!prevAsset) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset asset unavailable"));
+	}
+
+	if (prevAsset->GetLabel() != asset->GetLabel()) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset invalid asset label."));
+	}
+	if (prevAsset->GetCertificateHash() != asset->GetCertificateHash()) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset invalid asset certificate."));
+	}
+	if (prevAsset->GetContentChecksum() != asset->GetContentChecksum()) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset invalid asset content checksum."));
+	}
+
+	RemoveAssetTable(iface, tx);
+	return (true);
+}
+
+bool ProcessAssetTx(CIface *iface, CTransaction& tx, int nHeight)
+{
+  CWallet *wallet = GetWallet(iface);
+
+	if (!VerifyAsset(tx)) {
+		return (error(SHERR_INVAL, "ProcessAssetTx: !VerifyAsset"));
+	}
+
+	int nOut = IndexOfAssetOutput(tx);
+	if (nOut == -1)
+		return (false);
+
+	int mode;
+	uint160 hashAsset;
+	if (!DecodeAssetHash(tx.vout[nOut].scriptPubKey, mode, hashAsset))
+		return (false); /* no alias hash in output */
+
+	switch (mode) {
+		case OP_EXT_NEW:
+			if (!ProcessNewAssetTx(iface, tx))
+				return (false);
+			break;
+		case OP_EXT_UPDATE:
+			if (!ProcessUpdateAssetTx(iface, tx))
+				return (false);
+			break;
+		case OP_EXT_TRANSFER:
+			if (!ProcessTransferAssetTx(iface, tx))
+				return (false);
+			break;
+		case OP_EXT_REMOVE:
+			if (!ProcessRemoveAssetTx(iface, tx))
+				return (false);
+			break;
+	}
+
+	return (true);
+}
+
+bool DisconnectAssetTx(CIface *iface, CTransaction& tx)
+{
+  CWallet *wallet = GetWallet(iface);
+	CAsset *asset;
+	
+	asset = tx.GetAsset();
+	if (!asset)
+		return (error(ERR_INVAL, "DisconnectAssetTx: !Asset"));
+
+	int nOut = IndexOfAssetOutput(tx);
+	if (nOut == -1)
+		return (error(ERR_INVAL, "DisconnectAssetTx: !ExtOutput"));
+
+	int mode;
+	uint160 hAsset;
+	if (!DecodeAssetHash(tx.vout[nOut].scriptPubKey, mode, hAsset))
+		return (error(SHERR_INVAL, "DisconnectAssetTx: no alias hash in output"));
+
+	if (mode == OP_EXT_NEW) {
+		/* scrub clean */
+		wallet->mapAsset.erase(hAsset);
+		wallet->mapAssetChecksum.erase(hAsset);
+		return (true);
+	}
+
+	/* load entire asset hierarchy. */
+	vector<CTransaction> vTx;
+	if (!GetAssetChain(iface, tx, vTx))
+		return (error(ERR_INVAL, "DisconnectAssetTx: !GetAssetChain"));
+
+	/* set previous asset as primary */
+	hAsset = vTx[0].GetAsset()->GetHash();
+	uint256 hTx = vTx.back().GetHash();
+	wallet->mapAsset[hAsset] = hTx;
+	wallet->mapAssetChecksum[hAsset] = vTx.back().GetAsset()->GetContentChecksum();
+	return (true);
+}
+
+bool GetAssetContent(CIface *iface, CTransaction& tx, cbuff& vContentOut)
+{
+	vector<CTransaction> vTx;
+	uint160 hAsset;
+	int mode;
+
+	mode = GetAssetTransactionMode(tx, hAsset);
+	if (mode == -1)
+		return (false);
+
+	if (mode == OP_EXT_NEW || mode == OP_EXT_UPDATE) {
+		CAsset *asset = tx.GetAsset();
+		if (!asset)
+			return (false);
+
+		vContentOut = asset->GetContent();
+		return (true);
+	}
+
+	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE) {
+		if (!GetAssetChain(iface, tx, vTx)) {
+			return (error(ERR_INVAL, "GetAssetContent: GetAssetChain failure."));
+		}
+
+		/* search through hiearchy for a content record. */
+		for (int i = 0; i < vTx.size(); i++) {
+			mode = GetAssetTransactionMode(vTx[i], hAsset);
+			if (mode == -1)
+				return (false);
+
+			if (mode == OP_EXT_NEW || mode == OP_EXT_UPDATE) {
+				CAsset *asset = vTx[i].GetAsset();
+				if (!asset)
+					return (false);
+
+				vContentOut = asset->GetContent();
+				return (true);
+			}
+		}
+	}
+
+	return (-1);
+}
+
+int init_asset_tx(CIface *iface, string strAccount, uint160 hCert, int nType, const cbuff& vContent, int64 nMinFee, CWalletTx& wtx)
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
 
-  if(strTitle.length() == 0 || strTitle.length() > 135)
-    return (SHERR_INVAL);
-  if(strHash.length() == 0 || strHash.length() > 135)
-    return (SHERR_INVAL);
+	/* calculate fee for asset creation operation. */
+  int64 nFee = MAX(nMinFee, GetAssetOpFee(iface, GetBestHeight(iface)));
+	if (!MoneyRange(iface, nFee)) {
+		return (ERR_INVAL);
+	}
 
-  int64 nFee = GetAssetOpFee(iface, GetBestHeight(iface));
+	/* verify balanace of account is sufficient. */
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
   if (bal < nFee) {
     return (ERR_FEE);
   }
 
+	/* establish associated certificate. */
+  CTransaction cert_tx;
+	if (!GetTxOfCert(iface, hCert, cert_tx)) {
+		return (ERR_NOENT);
+	}
+	CCert *certIssuer = cert_tx.GetCertificate();
+	if (!certIssuer) {
+		return (ERR_NOENT);
+	}
+
+	/* inherited attributes from certificate. */
 	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
 
+	/* initialize an asset transaction. */
   CTxCreator s_wtx(wallet, strAccount);
-  CAsset *asset = s_wtx.CreateAsset(strTitle, strHash);
+  CAsset *asset = s_wtx.CreateAsset(certIssuer, nType, vContent);
 
 	/* sign cert */
-  asset->vAddr = cbuff(hashCert.begin(), hashCert.end());
-  if (!asset->Sign(ifaceIndex))
+	/* note: all sub-sequent updates, removals, or transfers will retain the same certificate reference. */
+  asset->vAddr = cbuff(hCert.begin(), hCert.end());
+  if (!asset->SignContent(ifaceIndex))
 		return (ERR_ACCESS);
 
   uint160 assetHash = asset->GetHash();
@@ -412,26 +1055,18 @@ int init_asset_tx(CIface *iface, string strAccount, uint160 hashCert, string str
     return (SHERR_CANCELED);
 
   wtx = (CWalletTx)s_wtx; 
-  Debug("(%s) SENT:ASSETNEW : title=%s, ref=%s, assethash=%s, tx=%s\n",
-      iface->name, strTitle.c_str(), strHash.c_str(), 
+  Debug("(%s) SENT:ASSETNEW : title=%s, cert=%s, assethash=%s, tx=%s\n",
+      iface->name, asset->GetLabel().c_str(), hCert.GetHex().c_str(),
       assetHash.ToString().c_str(), wtx.GetHash().GetHex().c_str());
 
   return (0);
 }
 
-int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, string strTitle, string strHash, CWalletTx& wtx)
+int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, const cbuff& vContent, CWalletTx& wtx)
 {
   int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(iface);
 	int nOut;
-
-  if(strTitle.length() == 0 || strTitle.length() > 135) {
-    return (SHERR_INVAL);
-  }
-
-  if(strHash.length() == 0 || strHash.length() > 135) {
-    return (SHERR_INVAL);
-  }
 
   /* verify original asset */
   CTransaction tx;
@@ -472,15 +1107,9 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
 		}
 	}
 
-  /* generate tx */
-  CAsset *asset;
-
 	/* create asset */
   CTxCreator s_wtx(wallet, strAccount);
-  asset = s_wtx.UpdateAsset(CAsset(tx.certificate), strTitle, strHash);
-
-	/* original asset hash */
-	asset->hashIssuer = hashAsset;
+  CAsset *asset = s_wtx.UpdateAsset(&tx.asset, vContent);
 
   uint160 assetHash = asset->GetHash();
 
@@ -504,6 +1133,84 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
     return (error(SHERR_CANCELED, "update_asset_tx: %s", s_wtx.GetError().c_str()));
 
   wtx = (CWalletTx)s_wtx;
+  Debug("(%s) SENT:ASSETUPDATE : assethash=%s, tx=%s", 
+			iface->name, asset->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
+
+	return (0);
+}
+
+int transfer_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, const CCoinAddr& extAddr, CWalletTx& wtx)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+  CWallet *wallet = GetWallet(iface);
+	int nOut;
+
+  /* verify original asset */
+  CTransaction tx;
+  if (!GetTxOfAsset(iface, hashAsset, tx)) {
+    return (ERR_NOENT);
+  }
+	nOut = IndexOfAssetOutput(tx);
+	if (nOut == -1)
+		return (ERR_INVAL);
+#if 0
+  if (!IsLocalAsset(iface, tx)) {
+    return (SHERR_REMOTE);
+  }
+#endif
+	if (!VerifyAssetAccount(wallet, tx.vout[nOut], strAccount)) {
+		return (ERR_ACCESS); /* invalid account specified. */
+	}
+
+  /* establish original tx */
+  uint256 hTxIn = tx.GetHash();
+
+#if 0
+  /* generate new coin address */
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
+  if (!extAddr.IsValid()) {
+    return (ERR_INVAL);
+  }
+#endif
+
+	/* establish fee for asset update. */
+	int64 nTxFee = (MIN_TX_FEE(iface) * 2);
+	int64 nCredit = wallet->GetCredit(tx.vout[nOut]);
+  int64 nNetFee = MAX(nTxFee, nCredit - nTxFee);
+
+	/* verify account has balance for tx fee. */
+	if (nNetFee > nCredit) {
+		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+		if (bal < (nNetFee - nCredit)) {
+			return (ERR_FEE);
+		}
+	}
+
+	/* create asset */
+  CTxCreator s_wtx(wallet, strAccount);
+  CAsset *asset = s_wtx.TransferAsset(tx.GetAsset());
+  uint160 assetHash = asset->GetHash();
+
+	if (nCredit > nNetFee) {
+		s_wtx.SetMinFee(nCredit - nNetFee);
+	}
+
+	if (!s_wtx.AddInput(hTxIn, nOut))
+		return (false);
+
+  /* generate output script */
+	CScript scriptPubKey;
+	CScript scriptPubKeyOrig;
+  scriptPubKeyOrig.SetDestination(extAddr.Get());
+	scriptPubKey << OP_EXT_TRANSFER << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP;
+  scriptPubKey += scriptPubKeyOrig;
+  if (!s_wtx.AddOutput(scriptPubKey, nNetFee))
+    return (SHERR_INVAL);
+
+  if (!s_wtx.Send())
+    return (error(SHERR_CANCELED, "update_asset_tx: %s", s_wtx.GetError().c_str()));
+
+  wtx = (CWalletTx)s_wtx;
   Debug("SENT:ASSETUPDATE : assethash=%s, tx=%s", asset->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
 
 	return (0);
@@ -514,7 +1221,7 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
  * @param hashAsset The asset hash from it's last tx op.
  * @param strAccount The account that has ownership over the asset.
  * @param wtx The new transaction to be filled in.
- * @note The previous asset tx fee is returned to the account, and the current fee is burned.
+ * @note The previous asset tx fee is returned to the current account. The removal tx fee is burned.
  */
 int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, CWalletTx& wtx)
 {
@@ -556,14 +1263,11 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
 	}
 
   /* generate tx */
-  CCert *asset;
+  CAsset *asset;
 	CScript scriptPubKey;
 
   CTxCreator s_wtx(wallet, strAccount);
-  asset = s_wtx.RemoveAsset(CAsset(tx.certificate));
-
-	/* original asset hash */
-	asset->hashIssuer = hashAsset;
+  asset = s_wtx.RemoveAsset(tx.GetAsset());
 
   uint160 assetHash = asset->GetHash();
 
@@ -586,285 +1290,4 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
 
 	return (0);
 }
-
-std::string CAsset::ToString()
-{
-  return (write_string(Value(ToValue()), false));
-}
-
-Object CAsset::ToValue()
-{
-  Object obj;
-	uint160 hCert(vAddr);
-
-	obj.push_back(Pair("certhash", hCert.GetHex())); 
-	obj.push_back(Pair("data", stringFromVch(vContext)));
-  obj.push_back(Pair("hash", GetHash().GetHex()));
-	obj.push_back(Pair("title", GetLabel()));
-
-  return (obj);
-}
-
-bool CAsset::Sign(CCert *cert)
-{
-  string hexContext = stringFromVch(cert->signature.vPubKey);
-  cbuff vchContext = ParseHex(hexContext);
-  return (signature.SignContext(vchContext));
-}
-bool CAsset::Sign(int ifaceIndex)
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  CTransaction cert_tx;
-
-	uint160 hCert(vAddr);
-  if (!GetTxOfCert(iface, hCert, cert_tx))
-    return (false);
-
-  return (Sign(&cert_tx.certificate));
-}
-
-bool CAsset::VerifySignature(CCert *cert)
-{
-  string hexContext = stringFromVch(cert->signature.vPubKey);
-  cbuff vchContext = ParseHex(hexContext);
-  return (signature.VerifyContext(vchContext.data(), vchContext.size()));
-}
-
-bool CAsset::VerifySignature(int ifaceIndex)
-{
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  CTransaction cert_tx;
-
-	uint160 hCert(vAddr);
-  if (!GetTxOfCert(iface, hCert, cert_tx))
-    return (false);
-
-  return (VerifySignature(&cert_tx.certificate));
-}
-
-
-
-bool VerifyAssetChainOrigin(CIface *iface, const CTransaction& tx, uint160 hIssuer, uint256& hPrevAssetTx)
-{
-	CAsset *asset;
-	int i;
-
-	CTransaction asset_tx;
-	if (!GetTxOfAsset(iface, hIssuer, asset_tx))
-		return (false);
-
-	/* cycle through inputs and find previous asset. */
-	const uint256& hTx = asset_tx.GetHash();
-	for (i = 0; i < tx.vin.size(); i++) {
-		const CTxIn& in = tx.vin[i];
-		if (in.prevout.hash == hTx) {
-			hPrevAssetTx = hTx;
-			return (true);
-		}
-	}
-
-	return (false);
-}
-
-bool ProcessNewAssetTx(CIface *iface, CTransaction& tx)
-{
-	CWallet *wallet = GetWallet(iface);
-	CAsset *asset = tx.GetAsset();
-	const uint160& hAsset = asset->GetHash();
-
-	if (wallet->mapAsset.count(hAsset) != 0)
-		return (false); /* dup */
-
-	/* verify certificate signature */
-	if (!asset->VerifySignature(GetCoinIndex(iface))) {
-		return (false);
-	}
-
-	wallet->mapAsset[hAsset] = tx.GetHash();
-	return (true);
-}
-
-bool ProcessUpdateAssetTx(CIface *iface, CTransaction& tx)
-{
-  CWallet *wallet = GetWallet(iface);
-  int ifaceIndex = GetCoinIndex(iface);
-  CTransaction cert_tx;
-	uint256 hPrevAssetTx;
-	CCert cert;
-
-	CAsset *asset = tx.GetAsset();
-	if (!asset)
-		return (false);
-
-	const uint160& hIssuer = asset->GetIssuerHash();
-	if (!VerifyAssetChainOrigin(iface, tx, hIssuer, hPrevAssetTx)) {
-		return (false);
-	}
-
-	wallet->mapAsset[hIssuer] = tx.GetHash();
-	return (true);
-}
-
-bool ProcessRemoveAssetTx(CIface *iface, CTransaction& tx)
-{
-  CWallet *wallet = GetWallet(iface);
-	uint256 hPrevAssetTx;
-	CCert cert;
-
-	CAsset *asset = tx.GetAsset();
-	if (!asset)
-		return (false);
-
-	const uint160& hIssuer = asset->GetIssuerHash();
-	if (!VerifyAssetChainOrigin(iface, tx, hIssuer, hPrevAssetTx)) {
-		return (false);
-	}
-
-	wallet->mapAsset.erase(hIssuer);
-	return (true);
-}
-
-bool ProcessAssetTx(CIface *iface, CTransaction& tx, int nHeight)
-{
-  CWallet *wallet = GetWallet(iface);
-
-	if (!VerifyAsset(tx)) {
-		return (false);
-	}
-
-	int nOut = IndexOfAssetOutput(tx);
-	if (nOut == -1)
-		return (false);
-
-	int mode;
-	uint160 hashAsset;
-	if (!DecodeAssetHash(tx.vout[nOut].scriptPubKey, mode, hashAsset))
-		return (false); /* no alias hash in output */
-
-	switch (mode) {
-		case OP_EXT_NEW:
-			if (!ProcessNewAssetTx(iface, tx))
-				return (false);
-			break;
-		case OP_EXT_UPDATE:
-			if (!ProcessUpdateAssetTx(iface, tx))
-				return (false);
-			break;
-		case OP_EXT_REMOVE:
-			if (!ProcessRemoveAssetTx(iface, tx))
-				return (false);
-			break;
-	}
-
-	return (true);
-}
-
-/* obtain all previous assets in sequence associated with "tx". */
-bool GetAssetChain(CIface *iface, const CTransaction& txIn, vector<CTransaction>& vTx)
-{
-	CAsset *asset = (CAsset *)&txIn.certificate;
-	CTransaction tx;
-	uint160 l_hashIssuer = 0;
-	uint160 hashAsset;
-	int nOut;
-	int mode;
-	int i;
-
-	vTx.clear();
-
-	nOut = IndexOfAssetOutput(txIn);
-	if (nOut == -1)
-		return (false);
-	if (!DecodeAssetHash(txIn.vout[nOut].scriptPubKey, mode, hashAsset))
-		return (false);
-
-	if (mode == OP_EXT_NEW)
-		return (true); /* all done */
-
-	tx = txIn;
-	mode = OP_EXT_UPDATE;
-	l_hashIssuer = tx.GetAsset()->hashIssuer;
-	while (mode == OP_EXT_UPDATE) {
-		for (i = 0; i < tx.vin.size(); i++) {
-			const CTxIn& in = tx.vin[i];
-			const uint256& hashPrevTx = in.prevout.hash;
-			int nPrevOut = in.prevout.n;
-			CTransaction p_tx;
-
-			if (!GetTransaction(iface, in.prevout.hash, p_tx, NULL)) {
-fprintf(stderr, "GetAssetChain: invalid input tx \"%s\"\n", p_tx.GetHash().GetHex().c_str());
-				continue; /* soft error */
-			}
-
-			const CTxOut& out = p_tx.vout[nPrevOut];
-			if (!DecodeAssetHash(out.scriptPubKey, mode, hashAsset)) {
-fprintf(stderr, "GetAssetChain: !DecodeAssetHash\n");
-				continue; /* onto next tx */
-			}
-
-			CAsset *p_asset = p_tx.GetAsset();
-			if (!p_asset) {
-				continue;
-			}
-			if (mode == OP_EXT_NEW) {
-				if (hashAsset != l_hashIssuer) {
-fprintf(stderr, "GetAssetChain: !DecodeAssetHash: hashAsset != l_hashIssuer\n");
-					continue; /* wrong chain */
-				}
-			} else {
-				if (p_asset->hashIssuer != l_hashIssuer) {
-fprintf(stderr, "GetAssetChain: !DecodeAssetHash: p_asset->hashIssuer != l_hashIssuer\n");
-					continue; /* wrong chain */
-				}
-			}
-
-			tx = p_tx;
-			vTx.insert(vTx.begin(), tx);
-			l_hashIssuer = p_asset->hashIssuer;
-			break;
-		}
-		if (i == tx.vin.size())
-			return (error(ERR_INVAL, "GetAssetChain: invalid chain"));
-	}
-
-	return (true);
-}
-
-bool DisconnectAssetTx(CIface *iface, CTransaction& tx)
-{
-  CWallet *wallet = GetWallet(iface);
-	CAsset *asset;
-	
-	asset = tx.GetAsset();
-	if (!asset)
-		return (error(ERR_INVAL, "DisconnectAssetTx: !Asset"));
-
-	int nOut = IndexOfAssetOutput(tx);
-	if (nOut == -1)
-		return (error(ERR_INVAL, "DisconnectAssetTx: !ExtOutput"));
-
-	int mode;
-	uint160 hAsset;
-	if (!DecodeAssetHash(tx.vout[nOut].scriptPubKey, mode, hAsset))
-		return (error(SHERR_INVAL, "DisconnectAssetTx: no alias hash in output"));
-
-	if (mode == OP_EXT_NEW) {
-		/* scrub clean */
-		wallet->mapAsset.erase(hAsset);
-//		wallet->mapAssetArch.erase(hAsset);
-		return (true);
-	}
-
-	/* load entire asset hierarchy. */
-	vector<CTransaction> vTx;
-	if (!GetAssetChain(iface, tx, vTx))
-		return (error(ERR_INVAL, "DisconnectAssetTx: !GetAssetChain"));
-
-	/* set previous asset as primary */
-	hAsset = vTx[0].GetAsset()->GetHash();
-	uint256 hTx = vTx.back().GetHash();
-	wallet->mapAsset[hAsset] = hTx;
-	return (true);
-}
-
 

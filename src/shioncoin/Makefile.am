@@ -159,6 +159,7 @@ common_includes = \
 	server/global.h \
 	server/allocators.h \
 	server/rpcalias_proto.h \
+	server/rpcasset_proto.h \
 	server/rpccert_proto.h \
 	server/rpccontext_proto.h \
 	server/rpcexec_proto.h \
@@ -311,6 +312,7 @@ server_sources = \
 	server/ext/altchain_color.c \
 	server/ext/altchain_color.h \
 	server/rpc/rpcalias_proto.cpp \
+	server/rpc/rpcasset_proto.cpp \
 	server/rpc/rpccert_proto.cpp \
 	server/rpc/rpccolor_proto.cpp \
 	server/rpc/rpccontext_proto.cpp \

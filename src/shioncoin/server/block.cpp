@@ -1129,7 +1129,6 @@ CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr
 
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
 			(nFlag & CTransaction::TXF_LICENSE) ||
-			(nFlag & CTransaction::TXF_ASSET) ||
 			(nFlag & CTransaction::TXF_CONTEXT))
     return (NULL); /* already in use */
 
@@ -1177,7 +1176,6 @@ CCert *CTransaction::CreateLicense(CCert *cert)
 
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
 			(nFlag & CTransaction::TXF_LICENSE) ||
-			(nFlag & CTransaction::TXF_ASSET) ||
 			(nFlag & CTransaction::TXF_CONTEXT))
     return (NULL); /* already in use */
   
@@ -1276,61 +1274,70 @@ COffer *CTransaction::RemoveOffer(uint160 hashOffer)
 	return (off);
 }
 
-
-CAsset *CTransaction::CreateAsset(string strAssetName, string strAssetHash)
+CAsset *CTransaction::CreateAsset(CCert *cert, int nType, const cbuff& vContent)
 {
-	CAsset *asset;
+	CAsset *newAsset;
 
-  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
-			(nFlag & CTransaction::TXF_LICENSE) ||
-			(nFlag & CTransaction::TXF_ASSET) ||
-			(nFlag & CTransaction::TXF_CONTEXT))
-    return (NULL); /* already in use */
+	newAsset = GetNewAsset();
+	if (!newAsset) {
+		return (NULL);
+	}
 
-  nFlag |= CTransaction::TXF_ASSET;
-	asset = GetAsset();
+	newAsset->SetLabel(cert->GetLabel());
+	newAsset->SetCertificateHash(cert->GetHash());
+	newAsset->SetType(nType);
+	newAsset->SetContent(vContent);
 
-	asset->SetNull();
-	asset->SetLabel(strAssetName);
-	asset->vContext = vchFromString(strAssetHash);
+	if (newAsset->GetLabel().length() > CAsset::MAX_ASSET_LABEL_LENGTH) {
+		string label = string(newAsset->GetLabel());
+		label.resize(CAsset::MAX_ASSET_LABEL_LENGTH);
+		newAsset->SetLabel(label);
+	}
 
-  asset->nFlag |= SHCERT_CERT_CHAIN;
-  asset->nFlag &= ~SHCERT_CERT_SIGN;
-  asset->nFlag &= ~SHCERT_CERT_DIGITAL;
-
-  return (asset);
+  return (newAsset);
 }
 
-CAsset *CTransaction::UpdateAsset(const CAsset& assetIn, string strAssetName, string strAssetHash)
+CAsset *CTransaction::UpdateAsset(CAsset *assetIn, const cbuff& vContent)
 {
-	CAsset *asset;
+	CAsset *newAsset;
 
-  if (nFlag & CTransaction::TXF_ASSET)
-    return (NULL);
+	newAsset = GetDerivedAsset(assetIn);
+	if (!newAsset) {
+		return (NULL);
+	}
 
-  nFlag |= CTransaction::TXF_ASSET;
-	asset = GetAsset();
-	*asset = assetIn;
-  asset->SetLabel(strAssetName);
-	asset->vContext = vchFromString(strAssetHash);
-
-  return (asset);
+	newAsset->SetContent(vContent);
+	newAsset->SetHashIssuer(assetIn->GetHash());
+  return (newAsset);
 }
 
-CAsset *CTransaction::RemoveAsset(const CAsset& assetIn)
+CAsset *CTransaction::TransferAsset(CAsset *assetIn)
 {
-	CAsset *asset;
+	CAsset *newAsset;
 
-  if (nFlag & CTransaction::TXF_ASSET)
-    return (NULL);
+	newAsset = GetDerivedAsset(assetIn);
+	if (!newAsset) {
+		return (NULL);
+	}
 
-  nFlag |= CTransaction::TXF_ASSET;
-	asset = GetAsset();
+	newAsset->ResetContent();
+	newAsset->SetHashIssuer(assetIn->GetHash());
+  return (newAsset);
+}
 
-	asset->SetNull();
-	asset->vAddr = assetIn.vAddr;
+CAsset *CTransaction::RemoveAsset(CAsset *assetIn)
+{
+	CAsset *newAsset;
 
-  return (asset);
+	newAsset = GetDerivedAsset(assetIn);
+	if (!newAsset) {
+		return (NULL);
+	}
+
+	newAsset->ResetContent();
+	newAsset->SetHashIssuer(assetIn->GetHash());
+
+  return (newAsset);
 }
 
 CIdent *CTransaction::CreateIdent(CIdent *identIn)
@@ -1653,7 +1660,7 @@ Object CTransaction::ToValue(int ifaceIndex)
 		if (flags & TXF_ALIAS)
 			obj.push_back(Pair("alias", alias.ToValue(ifaceIndex)));
 		if (flags & TXF_ASSET) {
-			CAsset asset(certificate);
+			//CAsset asset(certificate);
 			obj.push_back(Pair("asset", asset.ToValue()));
 		}
 		if (flags & TXF_EXEC) {
@@ -1884,7 +1891,6 @@ CContext *CTransaction::CreateContext()
 
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
 			(nFlag & CTransaction::TXF_LICENSE) ||
-			(nFlag & CTransaction::TXF_ASSET) ||
 			(nFlag & CTransaction::TXF_CONTEXT))
     return (NULL); /* already in use */
 
@@ -2621,9 +2627,7 @@ void CTransaction::Init(const CTransaction& tx)
 	if (this->nFlag & TXF_ALIAS)
 		alias = CAlias(tx.alias);
 
-	if (this->nFlag & TXF_ASSET)
-		certificate = tx.certificate;
-	else if (this->nFlag & TXF_CERTIFICATE)
+	if (this->nFlag & TXF_CERTIFICATE)
 		certificate = tx.certificate;
 	else if (this->nFlag & TXF_CONTEXT)
 		certificate = tx.certificate;
@@ -2632,6 +2636,10 @@ void CTransaction::Init(const CTransaction& tx)
 
 	if (this->nFlag & TXF_IDENT)
 		ident = tx.ident;
+
+	if (this->nFlag & TXF_ASSET) {
+		asset = tx.asset;
+	}
 
 	/* non-exclusive */
 	if (this->nFlag & TXF_OFFER)

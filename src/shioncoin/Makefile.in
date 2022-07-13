@@ -147,24 +147,25 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	$(top_srcdir)/src/share-lib/net/shnet.h unet/unet.h \
 	server/coin.h server/validation.h server/chain.h \
 	server/global.h server/allocators.h server/rpcalias_proto.h \
-	server/rpccert_proto.h server/rpccontext_proto.h \
-	server/rpcexec_proto.h server/rpcoffer_proto.h \
-	server/rpcparam_proto.h server/compat.h server/txidx.h \
-	server/key.h server/eckey.h server/dikey.h server/keystore.h \
-	server/mruset.h server/net.h server/txsignature.h \
-	server/versionbits.h server/algobits.h server/script.h \
-	server/serialize.h server/strlcpy.h server/ui_interface.h \
-	server/version.h server/walletdb.h server/wallet.h \
-	server/account.h server/txcreator.h shcoind_version.h \
-	server_iface.h shcoind_rpc.h shcoind_error.h shcoind_log.h \
-	shcoind_opt.h shcoind_signal.h shcoind_descriptor.h shcoind.h \
-	shcoind_rpc.c shcoind_error.c shcoind_log.c shcoind_opt.c \
-	shcoind_signal.c shcoind_descriptor.c unet/unet_accept.c \
-	unet/unet_bind.c unet/unet_thread.c unet/unet.c \
-	unet/unet_close.c unet/unet_connect.c unet/unet_io.c \
-	unet/unet_timer.c unet/unet_peerdb.c unet/unet_event.c \
-	unet/unet_local.c server/mnemonic.cpp server/version.cpp \
-	server/util.cpp server/util.h $(srcdir)/blockchain/bc_arch.c \
+	server/rpcasset_proto.h server/rpccert_proto.h \
+	server/rpccontext_proto.h server/rpcexec_proto.h \
+	server/rpcoffer_proto.h server/rpcparam_proto.h \
+	server/compat.h server/txidx.h server/key.h server/eckey.h \
+	server/dikey.h server/keystore.h server/mruset.h server/net.h \
+	server/txsignature.h server/versionbits.h server/algobits.h \
+	server/script.h server/serialize.h server/strlcpy.h \
+	server/ui_interface.h server/version.h server/walletdb.h \
+	server/wallet.h server/account.h server/txcreator.h \
+	shcoind_version.h server_iface.h shcoind_rpc.h shcoind_error.h \
+	shcoind_log.h shcoind_opt.h shcoind_signal.h \
+	shcoind_descriptor.h shcoind.h shcoind_rpc.c shcoind_error.c \
+	shcoind_log.c shcoind_opt.c shcoind_signal.c \
+	shcoind_descriptor.c unet/unet_accept.c unet/unet_bind.c \
+	unet/unet_thread.c unet/unet.c unet/unet_close.c \
+	unet/unet_connect.c unet/unet_io.c unet/unet_timer.c \
+	unet/unet_peerdb.c unet/unet_event.c unet/unet_local.c \
+	server/mnemonic.cpp server/version.cpp server/util.cpp \
+	server/util.h $(srcdir)/blockchain/bc_arch.c \
 	$(srcdir)/blockchain/bc_block.c $(srcdir)/blockchain/bc_fmap.c \
 	$(srcdir)/blockchain/bc_index.c \
 	$(srcdir)/blockchain/bc_table.c \
@@ -210,12 +211,13 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/ext/context.cpp server/ext/context.h \
 	server/ext/altchain.cpp server/ext/altchain.h \
 	server/ext/altchain_color.c server/ext/altchain_color.h \
-	server/rpc/rpcalias_proto.cpp server/rpc/rpccert_proto.cpp \
-	server/rpc/rpccolor_proto.cpp server/rpc/rpccontext_proto.cpp \
-	server/rpc/rpcexec_proto.cpp server/rpc/rpcoffer_proto.cpp \
-	server/rpc/rpcparam_proto.cpp server/rpc/rpcdump.cpp \
-	server/rpc/rpc_command.cpp server/rpc/rpc_parse.cpp \
-	server/rpc/rpc_wallet.cpp server/rpc/rpc_wallet_addr.cpp \
+	server/rpc/rpcalias_proto.cpp server/rpc/rpcasset_proto.cpp \
+	server/rpc/rpccert_proto.cpp server/rpc/rpccolor_proto.cpp \
+	server/rpc/rpccontext_proto.cpp server/rpc/rpcexec_proto.cpp \
+	server/rpc/rpcoffer_proto.cpp server/rpc/rpcparam_proto.cpp \
+	server/rpc/rpcdump.cpp server/rpc/rpc_command.cpp \
+	server/rpc/rpc_parse.cpp server/rpc/rpc_wallet.cpp \
+	server/rpc/rpc_wallet_addr.cpp \
 	server/rpc/rpcrawtransaction.cpp server/versionbits.cpp \
 	server/algobits.cpp server/txsignature.cpp server/protocol.cpp \
 	server/block.cpp server/block.h server/checkpoints.cpp \
@@ -341,6 +343,7 @@ am__objects_13 = $(am__objects_3) $(am__objects_4) \
 	shcoind-context.$(OBJEXT) shcoind-altchain.$(OBJEXT) \
 	shcoind-altchain_color.$(OBJEXT) \
 	shcoind-rpcalias_proto.$(OBJEXT) \
+	shcoind-rpcasset_proto.$(OBJEXT) \
 	shcoind-rpccert_proto.$(OBJEXT) \
 	shcoind-rpccolor_proto.$(OBJEXT) \
 	shcoind-rpccontext_proto.$(OBJEXT) \
@@ -404,24 +407,25 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	$(top_srcdir)/src/share-lib/net/shnet.h unet/unet.h \
 	server/coin.h server/validation.h server/chain.h \
 	server/global.h server/allocators.h server/rpcalias_proto.h \
-	server/rpccert_proto.h server/rpccontext_proto.h \
-	server/rpcexec_proto.h server/rpcoffer_proto.h \
-	server/rpcparam_proto.h server/compat.h server/txidx.h \
-	server/key.h server/eckey.h server/dikey.h server/keystore.h \
-	server/mruset.h server/net.h server/txsignature.h \
-	server/versionbits.h server/algobits.h server/script.h \
-	server/serialize.h server/strlcpy.h server/ui_interface.h \
-	server/version.h server/walletdb.h server/wallet.h \
-	server/account.h server/txcreator.h shcoind_version.h \
-	server_iface.h shcoind_rpc.h shcoind_error.h shcoind_log.h \
-	shcoind_opt.h shcoind_signal.h shcoind_descriptor.h shcoind.h \
-	shcoind_rpc.c shcoind_error.c shcoind_log.c shcoind_opt.c \
-	shcoind_signal.c shcoind_descriptor.c unet/unet_accept.c \
-	unet/unet_bind.c unet/unet_thread.c unet/unet.c \
-	unet/unet_close.c unet/unet_connect.c unet/unet_io.c \
-	unet/unet_timer.c unet/unet_peerdb.c unet/unet_event.c \
-	unet/unet_local.c server/mnemonic.cpp server/version.cpp \
-	server/util.cpp server/util.h $(srcdir)/blockchain/bc_arch.c \
+	server/rpcasset_proto.h server/rpccert_proto.h \
+	server/rpccontext_proto.h server/rpcexec_proto.h \
+	server/rpcoffer_proto.h server/rpcparam_proto.h \
+	server/compat.h server/txidx.h server/key.h server/eckey.h \
+	server/dikey.h server/keystore.h server/mruset.h server/net.h \
+	server/txsignature.h server/versionbits.h server/algobits.h \
+	server/script.h server/serialize.h server/strlcpy.h \
+	server/ui_interface.h server/version.h server/walletdb.h \
+	server/wallet.h server/account.h server/txcreator.h \
+	shcoind_version.h server_iface.h shcoind_rpc.h shcoind_error.h \
+	shcoind_log.h shcoind_opt.h shcoind_signal.h \
+	shcoind_descriptor.h shcoind.h shcoind_rpc.c shcoind_error.c \
+	shcoind_log.c shcoind_opt.c shcoind_signal.c \
+	shcoind_descriptor.c unet/unet_accept.c unet/unet_bind.c \
+	unet/unet_thread.c unet/unet.c unet/unet_close.c \
+	unet/unet_connect.c unet/unet_io.c unet/unet_timer.c \
+	unet/unet_peerdb.c unet/unet_event.c unet/unet_local.c \
+	server/mnemonic.cpp server/version.cpp server/util.cpp \
+	server/util.h $(srcdir)/blockchain/bc_arch.c \
 	$(srcdir)/blockchain/bc_block.c $(srcdir)/blockchain/bc_fmap.c \
 	$(srcdir)/blockchain/bc_index.c \
 	$(srcdir)/blockchain/bc_table.c \
@@ -467,12 +471,13 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/ext/context.cpp server/ext/context.h \
 	server/ext/altchain.cpp server/ext/altchain.h \
 	server/ext/altchain_color.c server/ext/altchain_color.h \
-	server/rpc/rpcalias_proto.cpp server/rpc/rpccert_proto.cpp \
-	server/rpc/rpccolor_proto.cpp server/rpc/rpccontext_proto.cpp \
-	server/rpc/rpcexec_proto.cpp server/rpc/rpcoffer_proto.cpp \
-	server/rpc/rpcparam_proto.cpp server/rpc/rpcdump.cpp \
-	server/rpc/rpc_command.cpp server/rpc/rpc_parse.cpp \
-	server/rpc/rpc_wallet.cpp server/rpc/rpc_wallet_addr.cpp \
+	server/rpc/rpcalias_proto.cpp server/rpc/rpcasset_proto.cpp \
+	server/rpc/rpccert_proto.cpp server/rpc/rpccolor_proto.cpp \
+	server/rpc/rpccontext_proto.cpp server/rpc/rpcexec_proto.cpp \
+	server/rpc/rpcoffer_proto.cpp server/rpc/rpcparam_proto.cpp \
+	server/rpc/rpcdump.cpp server/rpc/rpc_command.cpp \
+	server/rpc/rpc_parse.cpp server/rpc/rpc_wallet.cpp \
+	server/rpc/rpc_wallet_addr.cpp \
 	server/rpc/rpcrawtransaction.cpp server/versionbits.cpp \
 	server/algobits.cpp server/txsignature.cpp server/protocol.cpp \
 	server/block.cpp server/block.h server/checkpoints.cpp \
@@ -637,6 +642,7 @@ am__objects_26 = $(am__objects_16) $(am__objects_17) \
 	test_shcoind-altchain.$(OBJEXT) \
 	test_shcoind-altchain_color.$(OBJEXT) \
 	test_shcoind-rpcalias_proto.$(OBJEXT) \
+	test_shcoind-rpcasset_proto.$(OBJEXT) \
 	test_shcoind-rpccert_proto.$(OBJEXT) \
 	test_shcoind-rpccolor_proto.$(OBJEXT) \
 	test_shcoind-rpccontext_proto.$(OBJEXT) \
@@ -773,6 +779,7 @@ am__depfiles_remade = ./$(DEPDIR)/shcoind-account.Po \
 	./$(DEPDIR)/shcoind-rpc_wallet.Po \
 	./$(DEPDIR)/shcoind-rpc_wallet_addr.Po \
 	./$(DEPDIR)/shcoind-rpcalias_proto.Po \
+	./$(DEPDIR)/shcoind-rpcasset_proto.Po \
 	./$(DEPDIR)/shcoind-rpccert_proto.Po \
 	./$(DEPDIR)/shcoind-rpccolor_proto.Po \
 	./$(DEPDIR)/shcoind-rpccontext_proto.Po \
@@ -924,6 +931,7 @@ am__depfiles_remade = ./$(DEPDIR)/shcoind-account.Po \
 	./$(DEPDIR)/test_shcoind-rpc_wallet.Po \
 	./$(DEPDIR)/test_shcoind-rpc_wallet_addr.Po \
 	./$(DEPDIR)/test_shcoind-rpcalias_proto.Po \
+	./$(DEPDIR)/test_shcoind-rpcasset_proto.Po \
 	./$(DEPDIR)/test_shcoind-rpccert_proto.Po \
 	./$(DEPDIR)/test_shcoind-rpccolor_proto.Po \
 	./$(DEPDIR)/test_shcoind-rpccontext_proto.Po \
@@ -1600,6 +1608,7 @@ common_includes = \
 	server/global.h \
 	server/allocators.h \
 	server/rpcalias_proto.h \
+	server/rpcasset_proto.h \
 	server/rpccert_proto.h \
 	server/rpccontext_proto.h \
 	server/rpcexec_proto.h \
@@ -1716,12 +1725,13 @@ server_sources = $(blockchain_sources) $(proto_sources) \
 	server/ext/context.cpp server/ext/context.h \
 	server/ext/altchain.cpp server/ext/altchain.h \
 	server/ext/altchain_color.c server/ext/altchain_color.h \
-	server/rpc/rpcalias_proto.cpp server/rpc/rpccert_proto.cpp \
-	server/rpc/rpccolor_proto.cpp server/rpc/rpccontext_proto.cpp \
-	server/rpc/rpcexec_proto.cpp server/rpc/rpcoffer_proto.cpp \
-	server/rpc/rpcparam_proto.cpp server/rpc/rpcdump.cpp \
-	server/rpc/rpc_command.cpp server/rpc/rpc_parse.cpp \
-	server/rpc/rpc_wallet.cpp server/rpc/rpc_wallet_addr.cpp \
+	server/rpc/rpcalias_proto.cpp server/rpc/rpcasset_proto.cpp \
+	server/rpc/rpccert_proto.cpp server/rpc/rpccolor_proto.cpp \
+	server/rpc/rpccontext_proto.cpp server/rpc/rpcexec_proto.cpp \
+	server/rpc/rpcoffer_proto.cpp server/rpc/rpcparam_proto.cpp \
+	server/rpc/rpcdump.cpp server/rpc/rpc_command.cpp \
+	server/rpc/rpc_parse.cpp server/rpc/rpc_wallet.cpp \
+	server/rpc/rpc_wallet_addr.cpp \
 	server/rpc/rpcrawtransaction.cpp server/versionbits.cpp \
 	server/algobits.cpp server/txsignature.cpp server/protocol.cpp \
 	server/block.cpp server/block.h server/checkpoints.cpp \
@@ -1962,6 +1972,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpc_wallet.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpc_wallet_addr.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcalias_proto.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpcasset_proto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpccert_proto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpccolor_proto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-rpccontext_proto.Po@am__quote@ # am--include-marker
@@ -2119,6 +2130,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpc_wallet.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpc_wallet_addr.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcalias_proto.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpcasset_proto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpccert_proto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpccolor_proto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-rpccontext_proto.Po@am__quote@ # am--include-marker
@@ -4356,6 +4368,20 @@ shcoind-rpcalias_proto.obj: server/rpc/rpcalias_proto.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpcalias_proto.obj `if test -f 'server/rpc/rpcalias_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcalias_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcalias_proto.cpp'; fi`
 
+shcoind-rpcasset_proto.o: server/rpc/rpcasset_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpcasset_proto.o -MD -MP -MF $(DEPDIR)/shcoind-rpcasset_proto.Tpo -c -o shcoind-rpcasset_proto.o `test -f 'server/rpc/rpcasset_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcasset_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpcasset_proto.Tpo $(DEPDIR)/shcoind-rpcasset_proto.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcasset_proto.cpp' object='shcoind-rpcasset_proto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpcasset_proto.o `test -f 'server/rpc/rpcasset_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcasset_proto.cpp
+
+shcoind-rpcasset_proto.obj: server/rpc/rpcasset_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpcasset_proto.obj -MD -MP -MF $(DEPDIR)/shcoind-rpcasset_proto.Tpo -c -o shcoind-rpcasset_proto.obj `if test -f 'server/rpc/rpcasset_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcasset_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcasset_proto.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpcasset_proto.Tpo $(DEPDIR)/shcoind-rpcasset_proto.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcasset_proto.cpp' object='shcoind-rpcasset_proto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-rpcasset_proto.obj `if test -f 'server/rpc/rpcasset_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcasset_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcasset_proto.cpp'; fi`
+
 shcoind-rpccert_proto.o: server/rpc/rpccert_proto.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-rpccert_proto.o -MD -MP -MF $(DEPDIR)/shcoind-rpccert_proto.Tpo -c -o shcoind-rpccert_proto.o `test -f 'server/rpc/rpccert_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpccert_proto.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-rpccert_proto.Tpo $(DEPDIR)/shcoind-rpccert_proto.Po
@@ -5783,6 +5809,20 @@ test_shcoind-rpcalias_proto.obj: server/rpc/rpcalias_proto.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcalias_proto.cpp' object='test_shcoind-rpcalias_proto.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpcalias_proto.obj `if test -f 'server/rpc/rpcalias_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcalias_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcalias_proto.cpp'; fi`
+
+test_shcoind-rpcasset_proto.o: server/rpc/rpcasset_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpcasset_proto.o -MD -MP -MF $(DEPDIR)/test_shcoind-rpcasset_proto.Tpo -c -o test_shcoind-rpcasset_proto.o `test -f 'server/rpc/rpcasset_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcasset_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpcasset_proto.Tpo $(DEPDIR)/test_shcoind-rpcasset_proto.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcasset_proto.cpp' object='test_shcoind-rpcasset_proto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpcasset_proto.o `test -f 'server/rpc/rpcasset_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpcasset_proto.cpp
+
+test_shcoind-rpcasset_proto.obj: server/rpc/rpcasset_proto.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpcasset_proto.obj -MD -MP -MF $(DEPDIR)/test_shcoind-rpcasset_proto.Tpo -c -o test_shcoind-rpcasset_proto.obj `if test -f 'server/rpc/rpcasset_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcasset_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcasset_proto.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-rpcasset_proto.Tpo $(DEPDIR)/test_shcoind-rpcasset_proto.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/rpc/rpcasset_proto.cpp' object='test_shcoind-rpcasset_proto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-rpcasset_proto.obj `if test -f 'server/rpc/rpcasset_proto.cpp'; then $(CYGPATH_W) 'server/rpc/rpcasset_proto.cpp'; else $(CYGPATH_W) '$(srcdir)/server/rpc/rpcasset_proto.cpp'; fi`
 
 test_shcoind-rpccert_proto.o: server/rpc/rpccert_proto.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-rpccert_proto.o -MD -MP -MF $(DEPDIR)/test_shcoind-rpccert_proto.Tpo -c -o test_shcoind-rpccert_proto.o `test -f 'server/rpc/rpccert_proto.cpp' || echo '$(srcdir)/'`server/rpc/rpccert_proto.cpp
@@ -7235,6 +7275,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/shcoind-rpc_wallet.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpc_wallet_addr.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpcalias_proto.Po
+	-rm -f ./$(DEPDIR)/shcoind-rpcasset_proto.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpccert_proto.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpccolor_proto.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpccontext_proto.Po
@@ -7392,6 +7433,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/test_shcoind-rpc_wallet.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpc_wallet_addr.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpcalias_proto.Po
+	-rm -f ./$(DEPDIR)/test_shcoind-rpcasset_proto.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpccert_proto.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpccolor_proto.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpccontext_proto.Po
@@ -7609,6 +7651,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/shcoind-rpc_wallet.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpc_wallet_addr.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpcalias_proto.Po
+	-rm -f ./$(DEPDIR)/shcoind-rpcasset_proto.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpccert_proto.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpccolor_proto.Po
 	-rm -f ./$(DEPDIR)/shcoind-rpccontext_proto.Po
@@ -7766,6 +7809,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/test_shcoind-rpc_wallet.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpc_wallet_addr.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpcalias_proto.Po
+	-rm -f ./$(DEPDIR)/test_shcoind-rpcasset_proto.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpccert_proto.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpccolor_proto.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-rpccontext_proto.Po

@@ -62,6 +62,7 @@ Value rpc_wallet_setcert(CIface *iface, const Array& params, bool fStratum);
 
 Value rpc_cert_export(CIface *iface, const Array& params, bool fHelp);
 
+#if 0
 Value rpc_asset_get(CIface *iface, const Array& params, bool fHelp);
 Value rpc_asset_info(CIface *iface, const Array& params, bool fHelp);
 Value rpc_asset_new(CIface *iface, const Array& params, bool fHelp);
@@ -70,6 +71,7 @@ Value rpc_asset_listacc(CIface *iface, const Array& params, bool fHelp);
 Value rpc_asset_listcert(CIface *iface, const Array& params, bool fHelp);
 Value rpc_asset_remove(CIface *iface, const Array& params, bool fHelp);
 Value rpc_asset_update(CIface *iface, const Array& params, bool fHelp);
+#endif
 
 
 #endif /* ndef __SERVER__RPCCERT_PROTO_H__ */

@@ -26,32 +26,90 @@
 #ifndef __ASSET_H__
 #define __ASSET_H__
 
+enum AssetType {
+	NONE = 0,
+	/* Any person considered as an asset by the management domain. */
+	PERSON = 1,
+	/* An entity of any size, complexity, or positioning within an organizational structure. */
+	ORGANIZATION = 2,
+	/* A discrete set of information resources organized for the collection, processing, maintenance, use, sharing, dissemination, or disposition of information. */
+	SYSTEM = 3,
+	/* Computer programs and associated data that may be dynamically written or modified during execution. */
+	SOFTWARE = 4,
+	/* A repository of information or data, which may or may not be a traditional relational database system. */
+	DATABASE = 5,
+	/* An information system(s) implemented with a collection of interconnected components. Such components may include routers, hubs, cabling, telecommunications controllers, key distribution centers, and technical control devices. */
+	NETWORK = 6,
+	/* A set of related IT components provided in support of one or more business processes. */
+	SERVICE = 7,
+	/* Any piece of information suitable for use in a computer. */
+	DATA = 8,
+	/* A machine (real or virtual) for performing calculations automatically (including, but not limited to, computer, servers, routers, switches, etc. */
+	DEVICE = 9,
+	/* A dedicated single connection between two endpoints on a network. */
+	CIRCUIT = 10,
+	/* A network service provider such as a web hosting daemon. */
+	DAEMON = 11,
+	/* A barcode referencing a consumer product. */
+	PRODUCT_BARCODE = 12,
+	/* A serial number of a consumer product. */
+	PRODUCT_SERIAL = 13
+};
+
+enum AssetMimeType {
+	BINARY = 0,
+	TEXT = 1,
+	IMAGE_GIF = 2,
+	IMAGE_PNG = 3,
+	IMAGE_JPEG = 4,
+	MODEL_OBJ = 5,
+	MODEL_MTL = 6
+};
 
 
+typedef shgeo_t CAssetRegion;
 
 /**
- * An asset is treated as a specific type of certification.
- * @note An asset is not capable of additional context data being stored.
+ * An asset is treated as virtual property. All asset transaction associated with the same certificate are considered different attributes of the same asset, and therefore each asset is afforded it's own certificate.
+ * Note: Content committed to block-chain must be unique per asset type and content.
  */
-class CAsset : public CCert
+class CAsset : public CEntity
 {
 
+	protected:
+    uint160 hashIssuer; // parent asset
+    CSign signature; // signature of content
+    cbuff vContent; // asset content data 
+    int64 nContentChecksum;
+    int nSubType; // type-specific attribute
+
+		cbuff GetSignatureContext(int ifaceIndex);
+
   public:
+    static const int MIN_ASSET_VERSION = 5;
+
+    static const int DEFAULT_ASSET_VERSION = 5;
+
+    static const int MAX_ASSET_LABEL_LENGTH = 135;
+
+    static const int MAX_ASSET_CONTENT_LENGTH = 128000;
+
     CAsset()
     {
       SetNull();
-    }
-
-    CAsset(const CCert& certIn)
-    {
-      SetNull();
-      CCert::Init(certIn);
     }
 
     CAsset(const CAsset& assetIn)
     {
       SetNull();
       Init(assetIn);
+    }
+
+    CAsset(CCert& certIn)
+    {
+      SetNull();
+			hashIssuer = certIn.GetHash();
+			SetLabel(certIn.GetLabel());
     }
 
     CAsset(string labelIn)
@@ -61,23 +119,39 @@ class CAsset : public CCert
     }
 
     IMPLEMENT_SERIALIZE (
-      READWRITE(*(CCert *)this);
+			READWRITE(*(CEntity *)this);
+			READWRITE(this->hashIssuer);
+			READWRITE(this->signature);
+			READWRITE(this->vContent);
+			READWRITE(this->nContentChecksum);
+			READWRITE(this->nSubType);
     )
 
     void SetNull()
     {
-      CCert::SetNull();
+      CEntity::SetNull();
+			nVersion = DEFAULT_ASSET_VERSION;
     }
 
     void Init(const CAsset& assetIn)
     {
-      CCert::Init(assetIn);
+      CEntity::Init(assetIn);
+			hashIssuer = assetIn.hashIssuer;
+			signature = assetIn.signature;
+			vContent = assetIn.vContent;
+			nContentChecksum = assetIn.nContentChecksum;
+			nSubType = assetIn.nSubType;
     }
 
     friend bool operator==(const CAsset &a, const CAsset &b)
     {
       return (
-        ((CCert&) a) == ((CCert&) b)
+				((CEntity&) a) == ((CEntity&) b) &&
+				a.hashIssuer == b.hashIssuer &&
+				a.signature == b.signature &&
+				a.vContent == b.vContent &&
+				a.nContentChecksum == b.nContentChecksum &&
+				a.nSubType == b.nSubType
       );
     }
 
@@ -88,17 +162,102 @@ class CAsset : public CCert
       return (*this);
     }
 
-    bool Sign(CCert *cert);
+    bool SignContent(int ifaceIndex);
 
-    bool Sign(int ifaceIndex);
+    bool VerifyContent(int ifaceIndex);
 
-    bool VerifySignature(CCert *cert);
+		uint160 GetHashIssuer()
+		{
+			return (hashIssuer);
+		}
 
-    bool VerifySignature(int ifaceIndex);
+		void SetHashIssuer(uint160 hash)
+		{
+			hashIssuer = hash;
+		}
 
-    bool Sign(uint160 sigCertIn);
+		CSign GetSignature()
+		{
+			return (signature);
+		}
 
-    bool VerifySignature();
+		void SetSignature(const CSign& signatureIn)
+		{
+			signature = signatureIn;
+		}
+
+		cbuff GetContent()
+		{
+			return (vContent);
+		}
+
+		void SetContent(const cbuff& vContentIn)
+		{
+			vContent = vContentIn;
+			CalculateContentChecksum();
+		}
+
+		int64 GetContentChecksum()
+		{
+			return (nContentChecksum);
+		}
+
+		int GetSubType()
+		{
+			return (nSubType);
+		}
+
+		void SetSubType(int nSubTypeIn)
+		{
+			nSubType = nSubTypeIn;
+		}
+
+		CAssetRegion *GetRegion()
+		{
+			return (&geo);
+		}
+
+		void SetRegion(const CAssetRegion& region)
+		{
+			memcpy(&geo, &region, sizeof(CAssetRegion));
+		}
+
+		uint160 GetCertificateHash()
+		{
+			uint160 hCert(vAddr);
+			return (hCert);
+		}
+
+		void SetCertificateHash(uint160 hCert)
+		{
+			vAddr = cbuff(hCert.begin(), hCert.end());
+		}
+
+		size_t GetContentSize()
+		{
+			return (vContent.size());
+		}
+
+		void CalculateContentChecksum()
+		{
+			nContentChecksum = GetType() +
+				bcrc(vContent.data(), vContent.size()); // libshare
+		}
+
+		void ResetContent()
+		{
+			// retains checksum
+			vContent = cbuff();
+		}
+
+		string GetMimeType();
+
+		int GetMinimumVersion()
+		{
+			return (MIN_ASSET_VERSION);
+		}
+
+		bool VerifyTransaction();
 
     const uint160 GetHash()
     {
@@ -108,7 +267,7 @@ class CAsset : public CCert
       return Hash160(rawbuf);
     }
 
-    std::string ToString();
+    string ToString();
 
     Object ToValue();
 
@@ -117,7 +276,11 @@ class CAsset : public CCert
 
 bool GetTxOfAsset(CIface *iface, const uint160& hashAsset, CTransaction& tx); 
 
+CAsset *GetAssetByHash(CIface *iface, const uint160& hAsset);
+
 int64 GetAssetOpFee(CIface *iface, int nHeight); 
+
+bool GetAssetContent(CIface *iface, CTransaction& tx, cbuff& vContentOut);
 
 asset_list *GetAssetTable(int ifaceIndex);
 
@@ -129,13 +292,13 @@ bool ProcessAssetTx(CIface *iface, CTransaction& tx, int nHeight);
 
 bool DisconnectAssetTx(CIface *iface, CTransaction& tx);
 
-int init_asset_tx(CIface *iface, string strAccount, uint160 hashCert, string strTitle, string strHash, CWalletTx& wtx);
+int init_asset_tx(CIface *iface, string strAccount, uint160 hCert, int nType, const cbuff& vContent, int64 nMinFee, CWalletTx& wtx);
 
-int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, string strTitle, string strHash, CWalletTx& wtx);
+int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, const cbuff& vContent, CWalletTx& wtx);
+
+int transfer_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, const CCoinAddr& dest, CWalletTx& wtx);
 
 int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, CWalletTx& wtx);
-
-
 
 
 #endif /* ndef __ASSET_H__ */

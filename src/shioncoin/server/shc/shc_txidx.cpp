@@ -70,7 +70,7 @@ CBlockIndex static * InsertBlockIndex(uint256 hash)
 }
 
 typedef vector<CBlockIndex*> txlist;
-bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec, txlist& vOffer)
+bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& vLicense, txlist& vAlias, txlist& vContext, txlist& vExec, txlist& vOffer, txlist& vAsset)
 {
   CIface *iface = GetCoinByIndex(SHC_COIN_IFACE);
   blkidx_t *blockIndex = GetBlockTable(SHC_COIN_IFACE);
@@ -179,9 +179,7 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
 					vAlias.push_back(pindexNew);
       }
 
-			if (tx.isFlag(CTransaction::TXF_ASSET)) {
-				/* not implemented. */
-      } else if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
+      if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
 				if (IsCertTx(tx))
           vCert.push_back(pindexNew);
       } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
@@ -195,6 +193,11 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
       if (tx.isFlag(CTransaction::TXF_IDENT)) {
 				if (IsIdentTx(tx))
 					vIdent.push_back(pindexNew);
+			}
+
+			if (tx.isFlag(CTransaction::TXF_ASSET)) {
+				if (IsAssetTx(tx))
+					vAsset.push_back(pindexNew);
 			}
 
 			/* non-exclusive */
@@ -274,7 +277,9 @@ static bool shc_LoadBlockIndex()
   txlist vContext;
   txlist vExec;
 	txlist vOffer;
-  if (!shc_FillBlockIndex(vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec, vOffer))
+	txlist vAsset;
+
+  if (!shc_FillBlockIndex(vSpring, vCert, vIdent, vLicense, vAlias, vContext, vExec, vOffer, vAsset))
     return (false);
 
   if (fRequestShutdown)
@@ -504,6 +509,16 @@ static bool shc_LoadBlockIndex()
 
 		lhash = pindex->GetBlockHash();
 	}
+
+	/* asset */
+  BOOST_FOREACH(CBlockIndex *pindex, vAsset) {
+    CBlock *block = GetBlockByHash(iface, pindex->GetBlockHash());
+    BOOST_FOREACH(CTransaction& tx, block->vtx) {
+      if (IsAssetTx(tx))
+        ProcessAssetTx(iface, tx, pindex->nHeight);
+    }
+    delete block;
+  }
 
 	/* offer */
   BOOST_FOREACH(CBlockIndex *pindex, vOffer) {
