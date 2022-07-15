@@ -34,60 +34,67 @@
 
 class CParam : public CExtCore
 {
-  public:
+
+	public:
+		/** The maximum supported version of an param type transaction. */
+		static const int MAX_PARAM_VERSION = SHC_VERSION_MAJOR;
+
+		/** The maximum life-span, in seconds, of an param type transaction. */
+		static const int MAX_PARAM_LIFESPAN = 2592000; /* 30d */
+
 		static const int MAX_MODE_LENGTH = 135;
 
 		int64 nValue;
 
-    CParam()
+		CParam()
 		{
-      SetNull();
+			SetNull();
 		}
 
-    CParam(const CParam& param)
-    {
-      SetNull();
-      Init(param);
-    }
+		CParam(const CParam& param)
+		{
+			SetNull();
+			Init(param);
+		}
 
-    CParam(string strLabelIn, int64_t nValueIn)
-    {
-      SetNull();
+		CParam(string strLabelIn, int64_t nValueIn)
+		{
+			SetNull();
 			SetLabel(strLabelIn);
 			nValue = nValueIn;
-    }
+		}
 
-    IMPLEMENT_SERIALIZE (
-      READWRITE(*(CExtCore *)this);
-			READWRITE(this->nValue);
-    )
+		IMPLEMENT_SERIALIZE (
+				READWRITE(*(CExtCore *)this);
+				READWRITE(this->nValue);
+				)
 
-    friend bool operator==(const CParam &a, const CParam &b)
-    {
-      return (
-          ((CExtCore&) a) == ((CExtCore&) b) &&
-					a.nValue == b.nValue
-        );
-    }
+			friend bool operator==(const CParam &a, const CParam &b)
+			{
+				return (
+						((CExtCore&) a) == ((CExtCore&) b) &&
+						a.nValue == b.nValue
+						);
+			}
 
-    void Init(const CParam& b)
-    {
+		void Init(const CParam& b)
+		{
 			CExtCore::Init(b);
 			nValue = b.nValue;
-    }
+		}
 
-    CParam operator=(const CParam &b)
-    {
+		CParam operator=(const CParam &b)
+		{
 			SetNull();
-      Init(b);
-      return *this;
-    }
+			Init(b);
+			return *this;
+		}
 
-    void SetNull()
-    {
-      CExtCore::SetNull();
+		void SetNull()
+		{
+			CExtCore::SetNull();
 			nValue = 0;
-    }
+		}
 
 		string GetMode()
 		{
@@ -99,11 +106,26 @@ class CParam : public CExtCore
 			return (nValue);
 		}
 
-    const uint160 GetHash();
+		int GetMaximumVersion()
+		{
+			return (MAX_PARAM_VERSION);
+		}
 
-    std::string ToString();
+		time_t GetMinimumLifespan()
+		{
+			return (GetMaximumLifespan());
+		}
 
-    Object ToValue();
+		time_t GetMaximumLifespan()
+		{
+			return (MAX_PARAM_LIFESPAN);
+		}
+
+		const uint160 GetHash();
+
+		std::string ToString();
+
+		Object ToValue();
 
 };
 

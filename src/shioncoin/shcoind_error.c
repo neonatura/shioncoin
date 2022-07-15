@@ -91,9 +91,10 @@ static err_code_t _error_code_table[] = {
 	{ ERR_EXPIRE, "Task has expired" },
 	{ ERR_ENCODE, "Serialization failure" },
 	{ ERR_FEE, "Insufficient funds" },
-	{ ERR_COMMIT, "Record not commited" },
+	{ ERR_COMMIT, "record not commited" },
 	{ ERR_NOCLASS, "class not found" },
 	{ ERR_NOMETHOD, "method not found" },
+	{ ERR_VERSION, "invalid version" },
 
 	/* terminator */
 	{ 0, NULL },

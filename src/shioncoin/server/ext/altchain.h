@@ -33,7 +33,9 @@ typedef map<int, int> color_opt;
 
 class CAltBlock
 {
+
 	public:
+
 		/* block header */
 		unsigned int nFlag;
 		uint256 hashPrevBlock;
@@ -112,57 +114,61 @@ class CAltTx
 		/* custom color extension. */
 		cbuff vchAux;
 
-    CAltTx()
-    {
-      SetNull();
-    }
+		CAltTx()
+		{
+			SetNull();
+		}
 
 		IMPLEMENT_SERIALIZE
-		(
-		 READWRITE(this->nFlag);
-		 READWRITE(vin);
-		 READWRITE(vout);
-		 READWRITE(nLockTime);
-		 if (this->nFlag > 1)
+			(
+			 READWRITE(this->nFlag);
+			 READWRITE(vin);
+			 READWRITE(vout);
+			 READWRITE(nLockTime);
+			 if (this->nFlag > 1)
 			 READWRITE(vchAux);
-		)
+			)
 
-		void SetNull()
-		{
-			nFlag = 1;
-			vin.clear();
-			vout.clear();
-			nLockTime = 0;
-			vchAux.clear();
-		}
+			void SetNull()
+			{
+				nFlag = 1;
+				vin.clear();
+				vout.clear();
+				nLockTime = 0;
+				vchAux.clear();
+			}
 
 		bool IsNull() const
 		{
 			return (vin.empty() && vout.empty());
 		}
 
-    friend bool operator==(const CAltTx& a, const CAltTx& b)
-    {
-      return (a.nFlag  == b.nFlag &&
-          a.vin       == b.vin &&
-          a.vout      == b.vout &&
-          a.nLockTime == b.nLockTime &&
-          a.vchAux == b.vchAux);
-    }
+		friend bool operator==(const CAltTx& a, const CAltTx& b)
+		{
+			return (a.nFlag  == b.nFlag &&
+					a.vin       == b.vin &&
+					a.vout      == b.vout &&
+					a.nLockTime == b.nLockTime &&
+					a.vchAux == b.vchAux);
+		}
 
 		const uint256 GetHash();
 
 		bool IsCoinBase() const;
 
-    std::string ToString();
+		std::string ToString();
 
-    Object ToValue();
+		Object ToValue();
 
 };
 
 class CAltChain : public CExtCore
 {
-  public:
+
+	public:
+		/** The maximum supported version of an entity type transaction. */
+		static const int MAX_ALTBLOCK_VERSION = SHC_VERSION_MAJOR;
+
 		uint32_t nFlag;
 		uint160 hColor;
 		CAltBlock block;
@@ -170,49 +176,49 @@ class CAltChain : public CExtCore
 
 		static const int ALT_MANAGED = (1 << 0);
 
-    CAltChain()
+		CAltChain()
 		{
-      SetNull();
+			SetNull();
 		}
 
-    CAltChain(uint160 hColor)
-    {
-      SetNull();
-    }
+		CAltChain(uint160 hColor)
+		{
+			SetNull();
+		}
 
-    CAltChain(const CAltChain& altchain)
-    {
-      SetNull();
-      Init(altchain);
-    }
+		CAltChain(const CAltChain& altchain)
+		{
+			SetNull();
+			Init(altchain);
+		}
 
-    IMPLEMENT_SERIALIZE (
-      READWRITE(*(CExtCore *)this);
-			READWRITE(this->hColor);
-			READWRITE(this->block);
-			READWRITE(this->vtx);
-    )
+		IMPLEMENT_SERIALIZE (
+				READWRITE(*(CExtCore *)this);
+				READWRITE(this->hColor);
+				READWRITE(this->block);
+				READWRITE(this->vtx);
+				)
 
-    friend bool operator==(const CAltChain &a, const CAltChain &b)
-    {
-			if (a.vtx.size() != b.vtx.size())
-				return (false);
+			friend bool operator==(const CAltChain &a, const CAltChain &b)
+			{
+				if (a.vtx.size() != b.vtx.size())
+					return (false);
 #if 0
-			for (int i = 0; i < a.vtx.size(); i++) {
-				if (a.vtx[i] == b.vtx[i])
-					continue;
-				return (false);
-			}
+				for (int i = 0; i < a.vtx.size(); i++) {
+					if (a.vtx[i] == b.vtx[i])
+						continue;
+					return (false);
+				}
 #endif
-      return (
-          ((CExtCore&) a) == ((CExtCore&) b) &&
-					a.hColor == b.hColor &&
-					a.block == b.block
-        );
-    }
+				return (
+						((CExtCore&) a) == ((CExtCore&) b) &&
+						a.hColor == b.hColor &&
+						a.block == b.block
+						);
+			}
 
-    void Init(const CAltChain& altchain)
-    {
+		void Init(const CAltChain& altchain)
+		{
 			CExtCore::Init(altchain);
 			hColor = altchain.hColor;
 			block = altchain.block;
@@ -221,37 +227,48 @@ class CAltChain : public CExtCore
 			for (int i = 0; i < altchain.vtx.size(); i++) {
 				vtx.insert(vtx.end(), altchain.vtx[i]);
 			}
-    }
+		}
 
-    CAltChain operator=(const CAltChain &b)
-    {
+		CAltChain operator=(const CAltChain &b)
+		{
 			SetNull();
-      Init(b);
-      return *this;
-    }
+			Init(b);
+			return *this;
+		}
 
-    void SetNull()
-    {
-      CExtCore::SetNull();
+		void SetNull()
+		{
+			CExtCore::SetNull();
 
 			hColor = 0;
 			block.SetNull();
 			vtx.clear();
-    }
+		}
 
 		/* return the altchain contents as a regular block. */
 		CBlock *GetBlock();
 
-    const uint160 GetHash();
+		const uint160 GetHash();
 
 		const uint160 GetColorHash()
 		{
 			return (hColor);
 		}
 
-    std::string ToString();
+		int GetMaximumVersion()
+		{
+			return (MAX_ALTBLOCK_VERSION);
+		}
 
-    Object ToValue();
+		time_t GetMaximumLifespan()
+		{
+			/* does not expire */
+			return (SHTIME_UNDEFINED);
+		}
+
+		std::string ToString();
+
+		Object ToValue();
 
 };
 

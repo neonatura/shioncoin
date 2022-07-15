@@ -35,95 +35,95 @@ class CAlias : public CEntity
 	private:
 		static const int MINIMUM_ALIAS_LIFESPAN = 378432000; /* 12y */
 
-  public:
-    static const int ALIAS_NONE = 0;
-    static const int ALIAS_COINADDR = TXREF_PUBADDR;
+	public:
+		static const int ALIAS_NONE = 0;
+		static const int ALIAS_COINADDR = TXREF_PUBADDR;
 
-    CAlias()
-    {
-      SetNull();
-    }
-
-    CAlias(const CAlias& alias)
-    {
-      SetNull();
-      Init(alias);
-    }
-
-    CAlias(const CEntity& ident)
-    {
-      SetNull();
-      CEntity::Init(ident);
-    }
-
-    CAlias(std::string labelIn, const uint160& hashIn)
-    {
-      SetNull();
-
-      /* assign title */
-      SetLabel(labelIn);
-
-      /* fill content layer */
-      char hstr[256];
-      memset(hstr, 0, sizeof(hstr));
-      strncpy(hstr, hashIn.GetHex().c_str(), sizeof(hstr)-1);
-      vAddr = cbuff(hstr, hstr + strlen(hstr));
-
-      /* set attributes */
-      SetType(ALIAS_COINADDR);
-    }
-
-    IMPLEMENT_SERIALIZE (
-      READWRITE(*(CEntity *)this);
-    )
-
-    void FillReference(SHAlias *ref);
-
-    bool GetCoinAddr(int ifaceIndex, CCoinAddr& addrRet);
-
-    void SetCoinAddr(CCoinAddr& addr);
-
-    friend bool operator==(const CAlias &a, const CAlias &b)
-    {
-      return (
-          ((CEntity&) a) == ((CEntity&) b)
-        );
-    }
-    void Init(const CAlias& alias)
-    {
-      CEntity::Init(alias);
-    }
-
-    CAlias operator=(const CAlias &b)
-    {
+		CAlias()
+		{
 			SetNull();
-      Init(b);
-      return *this;
-    }
+		}
 
-    void SetNull()
-    {
-      CEntity::SetNull();
-    }
+		CAlias(const CAlias& alias)
+		{
+			SetNull();
+			Init(alias);
+		}
 
-    void NotifySharenet(int ifaceIndex);
+		CAlias(const CEntity& ident)
+		{
+			SetNull();
+			CEntity::Init(ident);
+		}
 
-    const uint160 GetHash()
-    {
-      uint256 hashOut = SerializeHash(*this);
-      unsigned char *raw = (unsigned char *)&hashOut;
-      cbuff rawbuf(raw, raw + sizeof(hashOut));
-      return Hash160(rawbuf);
-    }
+		CAlias(std::string labelIn, const uint160& hashIn)
+		{
+			SetNull();
+
+			/* assign title */
+			SetLabel(labelIn);
+
+			/* fill content layer */
+			char hstr[256];
+			memset(hstr, 0, sizeof(hstr));
+			strncpy(hstr, hashIn.GetHex().c_str(), sizeof(hstr)-1);
+			vAddr = cbuff(hstr, hstr + strlen(hstr));
+
+			/* set attributes */
+			SetType(ALIAS_COINADDR);
+		}
+
+		IMPLEMENT_SERIALIZE (
+				READWRITE(*(CEntity *)this);
+				)
+
+			void FillReference(SHAlias *ref);
+
+		bool GetCoinAddr(int ifaceIndex, CCoinAddr& addrRet);
+
+		void SetCoinAddr(CCoinAddr& addr);
+
+		friend bool operator==(const CAlias &a, const CAlias &b)
+		{
+			return (
+					((CEntity&) a) == ((CEntity&) b)
+					);
+		}
+		void Init(const CAlias& alias)
+		{
+			CEntity::Init(alias);
+		}
+
+		CAlias operator=(const CAlias &b)
+		{
+			SetNull();
+			Init(b);
+			return *this;
+		}
+
+		void SetNull()
+		{
+			CEntity::SetNull();
+		}
+
+		void NotifySharenet(int ifaceIndex);
+
+		const uint160 GetHash()
+		{
+			uint256 hashOut = SerializeHash(*this);
+			unsigned char *raw = (unsigned char *)&hashOut;
+			cbuff rawbuf(raw, raw + sizeof(hashOut));
+			return Hash160(rawbuf);
+		}
 
 		time_t GetMinimumLifespan()
 		{
 			return (MINIMUM_ALIAS_LIFESPAN); 
 		}
 
-    std::string ToString(int ifaceIndex);
+		std::string ToString(int ifaceIndex);
 
-    Object ToValue(int ifaceIndex);
+		Object ToValue(int ifaceIndex);
 
 };
 

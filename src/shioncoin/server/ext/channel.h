@@ -31,208 +31,208 @@ class CWallet;
 
 class CChannelKey
 {
-  public:
-    uint160 addr;
-    cbuff pubkey;
-    cbuff mpubkey;
-    cbuff mchain;
-    cbuff hdpubkey;
-    int64 nValue;
+	public:
+		uint160 addr;
+		cbuff pubkey;
+		cbuff mpubkey;
+		cbuff mchain;
+		cbuff hdpubkey;
+		int64 nValue;
 
-    IMPLEMENT_SERIALIZE (
-      READWRITE(addr);
-      READWRITE(pubkey);
-      READWRITE(mpubkey);
-      READWRITE(mchain);
-      READWRITE(hdpubkey);
-      READWRITE(nValue);
-    )
+		IMPLEMENT_SERIALIZE (
+				READWRITE(addr);
+				READWRITE(pubkey);
+				READWRITE(mpubkey);
+				READWRITE(mchain);
+				READWRITE(hdpubkey);
+				READWRITE(nValue);
+				)
 
-    void SetNull()
-    {
-      addr = 0;
-      pubkey.clear();
-      mpubkey.clear();
-      mchain.clear();
-      hdpubkey.clear();
-      nValue = 0;
-    }
+			void SetNull()
+			{
+				addr = 0;
+				pubkey.clear();
+				mpubkey.clear();
+				mchain.clear();
+				hdpubkey.clear();
+				nValue = 0;
+			}
 
-    friend bool operator==(const CChannelKey &a, const CChannelKey &b)
-    {
-      return (
-        a.addr == b.addr &&
-        a.pubkey == b.pubkey &&
-        a.mpubkey == b.mpubkey &&
-        a.mchain == b.mchain &&
-        a.hdpubkey == b.hdpubkey &&
-        a.nValue == b.nValue
-      );
-    }
+		friend bool operator==(const CChannelKey &a, const CChannelKey &b)
+		{
+			return (
+					a.addr == b.addr &&
+					a.pubkey == b.pubkey &&
+					a.mpubkey == b.mpubkey &&
+					a.mchain == b.mchain &&
+					a.hdpubkey == b.hdpubkey &&
+					a.nValue == b.nValue
+					);
+		}
 
-    CChannelKey operator=(const CChannelKey &b)
-    {
+		CChannelKey operator=(const CChannelKey &b)
+		{
 			SetNull();
-      Init(b);
-      return (*this);
-    }
+			Init(b);
+			return (*this);
+		}
 
-    void Init(const CChannelKey& b)
-    {
-      addr = b.addr;
-      pubkey = b.pubkey;
-      mpubkey = b.mpubkey;
-      mchain = b.mchain;
-      hdpubkey = b.hdpubkey;
-      nValue = b.nValue;
-    }
+		void Init(const CChannelKey& b)
+		{
+			addr = b.addr;
+			pubkey = b.pubkey;
+			mpubkey = b.mpubkey;
+			mchain = b.mchain;
+			hdpubkey = b.hdpubkey;
+			nValue = b.nValue;
+		}
 
-    bool GenerateMasterKey(CWallet *wallet, string strAccount);
+		bool GenerateMasterKey(CWallet *wallet, string strAccount);
 
-    bool GetMasterKey(CWallet *wallet, HDPrivKey& privkey);
+		bool GetMasterKey(CWallet *wallet, HDPrivKey& privkey);
 
-    bool VerifyChannelMasterKey(CWallet *wallet);
+		bool VerifyChannelMasterKey(CWallet *wallet);
 
-    bool GetPubKey(cbuff& ret_buff, int idx);
+		bool GetPubKey(cbuff& ret_buff, int idx);
 
-    int64 GetValue()
-    {
-      return (nValue);
-    }
+		int64 GetValue()
+		{
+			return (nValue);
+		}
 
-    void SetValue(int64 val)
-    {
-      nValue = val;
-    }
+		void SetValue(int64 val)
+		{
+			nValue = val;
+		}
 
-    std::string ToString();
+		std::string ToString();
 
-    Object ToValue();
+		Object ToValue();
 };
 
 class CChannel
 {
-  public:
-    CChannelKey origin;
-    CChannelKey peer;
-    uint160 hRedeem;
-    unsigned int nSeq;
+	public:
+		CChannelKey origin;
+		CChannelKey peer;
+		uint160 hRedeem;
+		unsigned int nSeq;
 
-    CChannel()
-    {
-      SetNull();
-    }
-
-    IMPLEMENT_SERIALIZE (
-      READWRITE(origin);
-      READWRITE(peer);
-      READWRITE(hRedeem);
-      READWRITE(nSeq);
-    )
-
-    void SetNull()
-    {
-      origin.SetNull();
-      peer.SetNull();
-      hRedeem = 0;
-      nSeq = 1;
-    }
-
-    void Init(const CChannel& channelIn)
-    {
-      origin = channelIn.origin;
-      peer = channelIn.peer;
-      hRedeem = channelIn.hRedeem;
-      nSeq = channelIn.nSeq;
-    }
-
-    friend bool operator==(const CChannel &a, const CChannel &b)
-    {
-      return (
-        a.origin == b.origin &&
-        a.peer == b.peer &&
-        a.hRedeem == b.hRedeem &&
-        a.nSeq == b.nSeq
-      );
-    }
-
-    CChannel operator=(const CChannel &b)
-    {
+		CChannel()
+		{
 			SetNull();
-      Init(b);
-      return (*this);
-    }
+		}
 
-    const uint160 GetHash()
-    {
-      return (hRedeem);
-    }
+		IMPLEMENT_SERIALIZE (
+				READWRITE(origin);
+				READWRITE(peer);
+				READWRITE(hRedeem);
+				READWRITE(nSeq);
+				)
 
-    cbuff GetOriginPubKey()
-    {
-      cbuff ret_buff;
+			void SetNull()
+			{
+				origin.SetNull();
+				peer.SetNull();
+				hRedeem = 0;
+				nSeq = 1;
+			}
 
-      if (!origin.GetPubKey(ret_buff, nSeq))
-        return (cbuff());
+		void Init(const CChannel& channelIn)
+		{
+			origin = channelIn.origin;
+			peer = channelIn.peer;
+			hRedeem = channelIn.hRedeem;
+			nSeq = channelIn.nSeq;
+		}
 
-      return (ret_buff);
-    }
+		friend bool operator==(const CChannel &a, const CChannel &b)
+		{
+			return (
+					a.origin == b.origin &&
+					a.peer == b.peer &&
+					a.hRedeem == b.hRedeem &&
+					a.nSeq == b.nSeq
+					);
+		}
 
-    cbuff GetPeerPubKey()
-    {
-      cbuff ret_buff;
+		CChannel operator=(const CChannel &b)
+		{
+			SetNull();
+			Init(b);
+			return (*this);
+		}
 
-      if (!peer.GetPubKey(ret_buff, nSeq))
-        return (cbuff());
+		const uint160 GetHash()
+		{
+			return (hRedeem);
+		}
 
-      return (ret_buff);
-    }
+		cbuff GetOriginPubKey()
+		{
+			cbuff ret_buff;
 
-    CChannelKey *GetOrigin()
-    {
-      return (&origin);
-    }
+			if (!origin.GetPubKey(ret_buff, nSeq))
+				return (cbuff());
 
-    CChannelKey *GetPeer()
-    {
-      return (&peer);
-    }
+			return (ret_buff);
+		}
 
-    int64 GetOriginValue()
-    {
-      return (GetOrigin()->GetValue());
-    }
-    int64 GetPeerValue()
-    {
-      return (GetPeer()->GetValue());
-    }
-    void SetOriginValue(int64 val)
-    {
-      GetOrigin()->SetValue(val);
-    }
-    void SetPeerValue(int64 val)
-    {
-      GetPeer()->SetValue(val);
-    }
+		cbuff GetPeerPubKey()
+		{
+			cbuff ret_buff;
+
+			if (!peer.GetPubKey(ret_buff, nSeq))
+				return (cbuff());
+
+			return (ret_buff);
+		}
+
+		CChannelKey *GetOrigin()
+		{
+			return (&origin);
+		}
+
+		CChannelKey *GetPeer()
+		{
+			return (&peer);
+		}
+
+		int64 GetOriginValue()
+		{
+			return (GetOrigin()->GetValue());
+		}
+		int64 GetPeerValue()
+		{
+			return (GetPeer()->GetValue());
+		}
+		void SetOriginValue(int64 val)
+		{
+			GetOrigin()->SetValue(val);
+		}
+		void SetPeerValue(int64 val)
+		{
+			GetPeer()->SetValue(val);
+		}
 
 
-    bool SetHash();
+		bool SetHash();
 
-    bool GetRedeemScript(CScript& script);
- 
-    bool GetChannelTx(int ifaceIndex, CTransaction& tx);
+		bool GetRedeemScript(CScript& script);
 
-    const CCoinAddr GetOriginAddr(int ifaceIndex);
+		bool GetChannelTx(int ifaceIndex, CTransaction& tx);
 
-    const CCoinAddr GetPeerAddr(int ifaceIndex);
+		const CCoinAddr GetOriginAddr(int ifaceIndex);
 
-    bool GeneratePubKey();
+		const CCoinAddr GetPeerAddr(int ifaceIndex);
 
-    bool VerifyPubKey();
+		bool GeneratePubKey();
 
-    std::string ToString();
+		bool VerifyPubKey();
 
-    Object ToValue();
+		std::string ToString();
+
+		Object ToValue();
 
 };
 

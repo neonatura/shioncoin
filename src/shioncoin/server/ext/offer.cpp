@@ -1019,7 +1019,7 @@ int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 {
 	CWallet *wallet = GetWallet(iface);
 	int ifaceIndex = GetCoinIndex(iface);
-	COffer& ctx = (COffer&)tx.certificate;
+	COffer& ctx = (COffer&)tx.offer;
 	uint160 hOffer = ctx.GetHash();
 	int err;
 

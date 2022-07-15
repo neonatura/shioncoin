@@ -23,7 +23,6 @@
  *  @endcopyright
  */  
 
-
 #ifndef __ALTCHAIN_COLOR_H__
 #define __ALTCHAIN_COLOR_H__
 
@@ -32,7 +31,7 @@ extern "C" {
 #endif
 
 
-void color_gen(char *name, uint32_t *red_p, uint32_t *green_p, uint32_t *blue_p, uint32_t *alpha_p, char *ret_label, char *ret_abrev);
+	void color_gen(char *name, uint32_t *red_p, uint32_t *green_p, uint32_t *blue_p, uint32_t *alpha_p, char *ret_label, char *ret_abrev);
 
 
 #ifdef __cplusplus

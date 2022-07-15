@@ -104,6 +104,14 @@ const uint256 CExtCore::GetOrigin()
 }
 #endif
 
+int CExtCore::VerifyTransaction()
+{
+	
+	if (!VerifyVersion())
+		return (ERR_VERSION);
+
+	return (0);
+}
 
 std::string CExtCore::ToString()
 {
@@ -125,7 +133,6 @@ Object CExtCore::ToValue()
 
   return (obj);
 }
-
 
 bool CSign::SignContext(cbuff& vchContext, string hexSeed)
 {

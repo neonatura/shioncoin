@@ -31,9 +31,16 @@ class CCoinAddr;
 
 class COffer : public CExtCore 
 {
-  public:
+
+	public:
+		/** The maximum supported version of an offer type transaction. */
+		static const int MAX_OFFER_VERSION = SHC_VERSION_MAJOR;
+
+		/** The maximum life-span, in seconds, of an offer type transaction. */
+		static const int MAX_OFFER_LIFESPAN = 1440; // 24min
+
 		/* reserved */
-    unsigned int nType;
+		unsigned int nType;
 		/** the output of the sink-tx holding alt-coins. */
 		unsigned int hSinkOut;
 		/** the actual SHC currency being exchanged. */
@@ -45,7 +52,7 @@ class COffer : public CExtCore
 		/** the exchange rate (<shc-currency> * ((double)nRate*COIN)). */
 		int64 nRate;
 		/** the original offer's hash. */
-    uint160 hashOffer;
+		uint160 hashOffer;
 		/** optional alt-currency color hash (COLOR_COIN_IFACE). */
 		uint160 hashColor;
 		/** the final destination SHC currency transaction hash. */
@@ -55,71 +62,71 @@ class COffer : public CExtCore
 		/** the intermediate tx where the initiator's is storing alt currency. */
 		uint256 hSinkTx;
 		/** reserved */
-    uint256 hChain;
+		uint256 hChain;
 		/** the offer initiator's alt-currency receiving [pubkey] address. */
-    cbuff vchPayAddr;
+		cbuff vchPayAddr;
 		/** the offer acceptor's SHC receiving [pubkey] address. */
-    cbuff vchXferAddr;
+		cbuff vchXferAddr;
 		/** the pubkey address receiving SHC coins. */
 		cbuff vchPayCoin;
 		/** the pubkey address receiving alt-currency coins. */
 		cbuff vchXferCoin;
 
-    COffer() { 
-      SetNull();
-    }
+		COffer() { 
+			SetNull();
+		}
 
-    COffer(const COffer& offerIn)
-    {
-      SetNull();
-      Init(offerIn);
-    }
+		COffer(const COffer& offerIn)
+		{
+			SetNull();
+			Init(offerIn);
+		}
 
-    IMPLEMENT_SERIALIZE (
-      READWRITE(*(CExtCore *)this);
-			READWRITE(nType);
-			READWRITE(nValue);
-			READWRITE(nMinValue);
-			READWRITE(nMaxValue);
-			READWRITE(nRate);
-			READWRITE(hashOffer);
-			READWRITE(hashColor);
-			READWRITE(hPayTx);
-			READWRITE(hXferTx);
-			READWRITE(hSinkTx);
-			READWRITE(hSinkOut);
-			READWRITE(hChain);
-			READWRITE(vchPayAddr);
-			READWRITE(vchXferAddr);
-			READWRITE(vchPayCoin);
-			READWRITE(vchXferCoin);
-    )
+		IMPLEMENT_SERIALIZE (
+				READWRITE(*(CExtCore *)this);
+				READWRITE(nType);
+				READWRITE(nValue);
+				READWRITE(nMinValue);
+				READWRITE(nMaxValue);
+				READWRITE(nRate);
+				READWRITE(hashOffer);
+				READWRITE(hashColor);
+				READWRITE(hPayTx);
+				READWRITE(hXferTx);
+				READWRITE(hSinkTx);
+				READWRITE(hSinkOut);
+				READWRITE(hChain);
+				READWRITE(vchPayAddr);
+				READWRITE(vchXferAddr);
+				READWRITE(vchPayCoin);
+				READWRITE(vchXferCoin);
+				)
 
-    friend bool operator==(const COffer &a, const COffer &b) {
-      return (
-          ((CExtCore&) a) == ((CExtCore&) b) &&
-					a.nType == b.nType &&
-					a.nValue == b.nValue &&
-					a.nMinValue == b.nMinValue &&
-					a.nMaxValue == b.nMaxValue &&
-					a.nRate == b.nRate &&
-					a.hashOffer == b.hashOffer &&
-					a.hashColor == b.hashColor &&
-					a.hPayTx == b.hPayTx &&
-					a.hXferTx == b.hXferTx &&
-					a.hSinkTx == b.hSinkTx &&
-					a.hSinkOut == b.hSinkOut &&
-					a.hChain == b.hChain &&
-					a.vchPayAddr == b.vchPayAddr &&
-					a.vchXferAddr == b.vchXferAddr &&
-					a.vchPayCoin == b.vchPayCoin &&
-					a.vchXferCoin == b.vchXferCoin
-          );
-    }
+			friend bool operator==(const COffer &a, const COffer &b) {
+				return (
+						((CExtCore&) a) == ((CExtCore&) b) &&
+						a.nType == b.nType &&
+						a.nValue == b.nValue &&
+						a.nMinValue == b.nMinValue &&
+						a.nMaxValue == b.nMaxValue &&
+						a.nRate == b.nRate &&
+						a.hashOffer == b.hashOffer &&
+						a.hashColor == b.hashColor &&
+						a.hPayTx == b.hPayTx &&
+						a.hXferTx == b.hXferTx &&
+						a.hSinkTx == b.hSinkTx &&
+						a.hSinkOut == b.hSinkOut &&
+						a.hChain == b.hChain &&
+						a.vchPayAddr == b.vchPayAddr &&
+						a.vchXferAddr == b.vchXferAddr &&
+						a.vchPayCoin == b.vchPayCoin &&
+						a.vchXferCoin == b.vchXferCoin
+						);
+			}
 
-    void Init(const COffer& b)
-    {
-      CExtCore::Init(b);
+		void Init(const COffer& b)
+		{
+			CExtCore::Init(b);
 
 			nType = b.nType;
 			nValue = b.nValue;
@@ -137,22 +144,22 @@ class COffer : public CExtCore
 			vchXferAddr = b.vchXferAddr;
 			vchPayCoin = b.vchPayCoin;
 			vchXferCoin = b.vchXferCoin;
-    }
+		}
 
-    COffer operator=(const COffer &b)
-    {
+		COffer operator=(const COffer &b)
+		{
 			SetNull();
-      Init(b);
-      return *this;
-    }
+			Init(b);
+			return *this;
+		}
 
-    friend bool operator!=(const COffer &a, const COffer &b) {
-        return !(a == b);
-    }
-    
-    void SetNull()
-    {
-      CExtCore::SetNull();
+		friend bool operator!=(const COffer &a, const COffer &b) {
+			return !(a == b);
+		}
+
+		void SetNull()
+		{
+			CExtCore::SetNull();
 
 			nType = 16; /* reserved */
 			nValue == 0;
@@ -170,46 +177,62 @@ class COffer : public CExtCore
 			vchXferAddr.clear();
 			vchPayCoin.clear(); 
 			vchXferCoin.clear();
-    }
+		}
 
-    bool IsNull() const 
-    {
-      return (nMinValue == 0 || nMaxValue == 0);
-    }
+		bool IsNull() const 
+		{
+			return (nMinValue == 0 || nMaxValue == 0);
+		}
 
-    CIface *GetPayIface()
-    {
-      return (GetCoin(stringFromVch(vchPayCoin).c_str()));
-    }
+		CIface *GetPayIface()
+		{
+			return (GetCoin(stringFromVch(vchPayCoin).c_str()));
+		}
 
-    CIface *GetXferIface()
-    {
-      return (GetCoin(stringFromVch(vchXferCoin).c_str()));
-    }
+		CIface *GetXferIface()
+		{
+			return (GetCoin(stringFromVch(vchXferCoin).c_str()));
+		}
 
-    const uint160 GetHash()
-    {
-      uint256 hash = SerializeHash(*this);
-      unsigned char *raw = (unsigned char *)&hash;
-      cbuff rawbuf(raw, raw + sizeof(hash));
-      return Hash160(rawbuf);
-    }
+		const uint160 GetHash()
+		{
+			uint256 hash = SerializeHash(*this);
+			unsigned char *raw = (unsigned char *)&hash;
+			cbuff rawbuf(raw, raw + sizeof(hash));
+			return Hash160(rawbuf);
+		}
 
-    bool GetPayAddr(int ifaceIndex, CCoinAddr& addr);
+		bool GetPayAddr(int ifaceIndex, CCoinAddr& addr);
 
-    bool GetPayAccount(int ifaceIndex, CCoinAddr& addr, std::string& account);
+		bool GetPayAccount(int ifaceIndex, CCoinAddr& addr, std::string& account);
 
-    bool GetXferAddr(int ifaceIndex, CCoinAddr& addr);
+		bool GetXferAddr(int ifaceIndex, CCoinAddr& addr);
 
-    bool GetXferAccount(int ifaceIndex, CCoinAddr& addr, std::string& account);
+		bool GetXferAccount(int ifaceIndex, CCoinAddr& addr, std::string& account);
 
 		void SetPayAddr(const CPubKey& payAddr);
 
 		void SetXferAddr(const CPubKey& xferAddr);
 
-    Object ToValue();
+		int GetMaximumVersion()
+		{
+			return (MAX_OFFER_VERSION);
+		}
 
-    std::string ToString();
+		time_t GetMinimumLifespan()
+		{
+			return (GetMaximumLifespan());
+		}
+
+		time_t GetMaximumLifespan()
+		{
+			return (MAX_OFFER_LIFESPAN);
+		}
+
+		Object ToValue();
+
+		std::string ToString();
+
 };
 
 

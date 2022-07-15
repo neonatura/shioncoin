@@ -84,6 +84,27 @@ bool CEntity::IsLocalRegion()
 	return (ret);
 }
 
+int CEntity::VerifyTransaction()
+{
+	int err;
+
+	err = CExtCore::VerifyTransaction();
+	if (err)
+		return (err);
+
+	if (GetLabelSize() == 0 ||
+			GetLabelSize() > GetMaximumLabelSize()) {
+		return (ERR_INVAL);
+	}
+
+	if (GetContentSize() < 0 ||
+			GetContentSize() > GetMaximumContentSize()) {
+		return (ERR_2BIG);
+	}
+
+	return (0);
+}
+
 bool IsLocalEntity(CIface *iface, const CTxOut& txout) 
 {
   CWallet *pwalletMain = GetWallet(iface);

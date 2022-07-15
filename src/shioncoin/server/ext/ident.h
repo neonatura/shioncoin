@@ -36,75 +36,75 @@ class CIdent : public CEntity
 	int64 nValue;
 	int nFlag;
 
-  public:
+	public:
 
-    CIdent()
-    {
-      SetNull();
-    }
+	CIdent()
+	{
+		SetNull();
+	}
 
-    CIdent(const CIdent& ent)
-    {
-      SetNull();
-      Init(ent);
-    }
+	CIdent(const CIdent& ent)
+	{
+		SetNull();
+		Init(ent);
+	}
 
-    CIdent(string labelIn)
-    {
-      SetNull();
-      SetLabel(labelIn);
-    }
+	CIdent(string labelIn)
+	{
+		SetNull();
+		SetLabel(labelIn);
+	}
 
-    IMPLEMENT_SERIALIZE (
+	IMPLEMENT_SERIALIZE (
 			READWRITE(*(CEntity *)this);
 			READWRITE(this->hash);
 			READWRITE(this->signature);
 			READWRITE(this->vContext);
 			READWRITE(this->nValue);
 			READWRITE(this->nFlag);
-    )
+			)
 
-    friend bool operator==(const CIdent &a, const CIdent &b)
-    {
-      return (
-          ((CEntity&) a) == ((CEntity&) b)
-					);
-    }
-
-    CIdent operator=(const CIdent &b)
-    {
-      SetNull();
-      Init(b);
-      return *this;
-    }
-
-    void SetNull()
-    {
-      CEntity::SetNull();
-      nVersion = 3;
-      nValue = 0;
-			hash = 0;
-
-			nFlag = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
-			// should be:
-			//nFlag = SHCERT_ENT_ORGANIZATION;
-    }
-
-    void Init(const CIdent& b)
-    {
-			CEntity::Init(b);
-    }
-
-    uint160 GetHash();
-
-		time_t GetMinimumLifespan()
+		friend bool operator==(const CIdent &a, const CIdent &b)
 		{
-			return (0);
+			return (
+					((CEntity&) a) == ((CEntity&) b)
+					);
 		}
 
-    std::string ToString();
+	CIdent operator=(const CIdent &b)
+	{
+		SetNull();
+		Init(b);
+		return *this;
+	}
 
-    Object ToValue();
+	void SetNull()
+	{
+		CEntity::SetNull();
+		nVersion = 3;
+		nValue = 0;
+		hash = 0;
+
+		nFlag = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
+		// should be:
+		//nFlag = SHCERT_ENT_ORGANIZATION;
+	}
+
+	void Init(const CIdent& b)
+	{
+		CEntity::Init(b);
+	}
+
+	uint160 GetHash();
+
+	time_t GetMinimumLifespan()
+	{
+		return (0);
+	}
+
+	std::string ToString();
+
+	Object ToValue();
 
 };
 

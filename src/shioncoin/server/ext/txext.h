@@ -38,284 +38,362 @@ using namespace json_spirit;
 
 inline bool arrcasecmp(cbuff v1, cbuff v2)
 {
-  int idx;
+	int idx;
 
-  if (v1.size() != v2.size())
-    return (false);
+	if (v1.size() != v2.size())
+		return (false);
 
-  size_t len = v1.size();
-  unsigned char *p1 = &*v1.begin();
-  unsigned char *p2 = &*v2.begin();
-  for (idx = 0; idx < len; idx++) {
-    if (tolower(p1[idx]) != tolower(p2[idx]))
-      return (false);
-  }
+	size_t len = v1.size();
+	unsigned char *p1 = &*v1.begin();
+	unsigned char *p2 = &*v2.begin();
+	for (idx = 0; idx < len; idx++) {
+		if (tolower(p1[idx]) != tolower(p2[idx]))
+			return (false);
+	}
 
-  return (true);
+	return (true);
 }
 
 inline std::string stringFromVch(const std::vector<unsigned char> &vch) 
 {
-  std::string res;
-  if (vch.size() != 0) {
-    std::vector<unsigned char>::const_iterator vi = vch.begin();
-    while (vi != vch.end()) {
-      res += (char) (*vi);
-      vi++;
-    }
-  }
-  return res;
+	std::string res;
+	if (vch.size() != 0) {
+		std::vector<unsigned char>::const_iterator vi = vch.begin();
+		while (vi != vch.end()) {
+			res += (char) (*vi);
+			vi++;
+		}
+	}
+	return res;
 }
 
 inline shpeer_t *sharenet_peer(void)
 {
-  static shpeer_t *ret_peer;
-  if (!ret_peer)
-    ret_peer = shpeer_init(NULL, NULL);
-  return (ret_peer);
+	static shpeer_t *ret_peer;
+	if (!ret_peer)
+		ret_peer = shpeer_init(NULL, NULL);
+	return (ret_peer);
 }
-
 
 class CSign
 {
-  public:
-    static const int ALG_ECDSA = SHALG_ECDSA; // SHKEY_ALG_ECDSA
-    static const int ALG_U160 = SHALG_SHR; // SHKEY_ALG_U160
+	public:
+		static const int ALG_ECDSA = SHALG_ECDSA; // SHKEY_ALG_ECDSA
+		static const int ALG_U160 = SHALG_SHR; // SHKEY_ALG_U160
 
-    unsigned int nAlg;
-    cbuff vPubKey;
-    cbuff vAddrKey;
-    std::vector<cbuff> vSig;
+		unsigned int nAlg;
+		cbuff vPubKey;
+		cbuff vAddrKey;
+		std::vector<cbuff> vSig;
 
-    CSign()
-    {
-      SetNull();
-    }
+		CSign()
+		{
+			SetNull();
+		}
 
-    CSign(uint160 hash, string hexSeed = string())
-    {
-      SetNull();
-      SignContext(hash, hexSeed);
-    }
+		CSign(uint160 hash, string hexSeed = string())
+		{
+			SetNull();
+			SignContext(hash, hexSeed);
+		}
 
-    IMPLEMENT_SERIALIZE (
-      READWRITE(this->nAlg);
-      READWRITE(this->vPubKey);
-      READWRITE(this->vAddrKey);
-      READWRITE(this->vSig);
-    )
+		IMPLEMENT_SERIALIZE (
+				READWRITE(this->nAlg);
+				READWRITE(this->vPubKey);
+				READWRITE(this->vAddrKey);
+				READWRITE(this->vSig);
+				)
 
-    void SetNull()
-    {
-      nAlg = 0;
-      vPubKey.clear();
-      vAddrKey.clear();
-      vSig.clear();
-    }
+			void SetNull()
+			{
+				nAlg = 0;
+				vPubKey.clear();
+				vAddrKey.clear();
+				vSig.clear();
+			}
 
-    bool IsNull()
-    {
-      return (nAlg == 0);
-    }
+		bool IsNull()
+		{
+			return (nAlg == 0);
+		}
 
-    void Init(const CSign& b)
-    {
-      nAlg = b.nAlg;
-      vPubKey = b.vPubKey;
-      vAddrKey = b.vAddrKey;
-      vSig = b.vSig;
-    }
+		void Init(const CSign& b)
+		{
+			nAlg = b.nAlg;
+			vPubKey = b.vPubKey;
+			vAddrKey = b.vAddrKey;
+			vSig = b.vSig;
+		}
 
-    friend bool operator==(const CSign &a, const CSign &b)
-    {
-      return (
-          a.nAlg == b.nAlg &&
-          a.vPubKey == b.vPubKey &&
-          a.vAddrKey == b.vAddrKey &&
-          a.vSig == b.vSig
-          );
-    }
+		friend bool operator==(const CSign &a, const CSign &b)
+		{
+			return (
+					a.nAlg == b.nAlg &&
+					a.vPubKey == b.vPubKey &&
+					a.vAddrKey == b.vAddrKey &&
+					a.vSig == b.vSig
+					);
+		}
 
-    CSign operator=(const CSign &b)
-    {
-      Init(b);
-      return *this;
-    }
-
-
-    bool SignContext(cbuff& vchContext, string hexSeed = string());
-
-    bool SignContext(uint160 hash, string hexSeed = string())
-    {
-      cbuff vchContext(hash.begin(), hash.end());
-      return (SignContext(vchContext, hexSeed));
-    }
-
-    bool SignContext(string hexContext, string hexSeed = string())
-    {
-      cbuff vchContext = ParseHex(hexContext);
-      return (SignContext(vchContext, hexSeed)); 
-    }
-
-    bool VerifyContext(unsigned char *data, size_t data_len);
+		CSign operator=(const CSign &b)
+		{
+			Init(b);
+			return *this;
+		}
 
 
-    bool SignAddress(int ifaceIndex, CCoinAddr& addr, unsigned char *data, size_t data_len);
+		bool SignContext(cbuff& vchContext, string hexSeed = string());
 
-    bool VerifyAddress(CCoinAddr& addr, unsigned char *data, size_t data_len);
+		bool SignContext(uint160 hash, string hexSeed = string())
+		{
+			cbuff vchContext(hash.begin(), hash.end());
+			return (SignContext(vchContext, hexSeed));
+		}
 
-    bool SignOrigin(int ifaceIndex, CCoinAddr& addr);
+		bool SignContext(string hexContext, string hexSeed = string())
+		{
+			cbuff vchContext = ParseHex(hexContext);
+			return (SignContext(vchContext, hexSeed)); 
+		}
 
-    bool VerifyOrigin(CCoinAddr& addr);
-
-
-
-
-    bool VerifyContext(uint160 hash);
-
-    //bool Sign(int ifaceIndex, CCoinAddr& addr, unsigned char *data, size_t data_len);
-    bool Sign(int ifaceIndex, CCoinAddr& addr, cbuff& vchContext, string hexSeed = string());
-
-    bool Sign(int ifaceIndex, CCoinAddr& addr, string hexContext, string hexSeed = string());
-
-    bool Verify(CCoinAddr& addr, unsigned char *data, size_t data_len);
-
-    bool VerifySeed(string hexSeed);
+		bool VerifyContext(unsigned char *data, size_t data_len);
 
 
-    const uint160 GetHash()
-    {
-      uint256 hashOut = SerializeHash(*this);
-      unsigned char *raw = (unsigned char *)&hashOut;
-      cbuff rawbuf(raw, raw + sizeof(hashOut));
-      return Hash160(rawbuf);
-    }
+		bool SignAddress(int ifaceIndex, CCoinAddr& addr, unsigned char *data, size_t data_len);
 
-    std::string ToString();
+		bool VerifyAddress(CCoinAddr& addr, unsigned char *data, size_t data_len);
 
-    Object ToValue();
+		bool SignOrigin(int ifaceIndex, CCoinAddr& addr);
+
+		bool VerifyOrigin(CCoinAddr& addr);
+
+
+
+
+		bool VerifyContext(uint160 hash);
+
+		//bool Sign(int ifaceIndex, CCoinAddr& addr, unsigned char *data, size_t data_len);
+		bool Sign(int ifaceIndex, CCoinAddr& addr, cbuff& vchContext, string hexSeed = string());
+
+		bool Sign(int ifaceIndex, CCoinAddr& addr, string hexContext, string hexSeed = string());
+
+		bool Verify(CCoinAddr& addr, unsigned char *data, size_t data_len);
+
+		bool VerifySeed(string hexSeed);
+
+
+		const uint160 GetHash()
+		{
+			uint256 hashOut = SerializeHash(*this);
+			unsigned char *raw = (unsigned char *)&hashOut;
+			cbuff rawbuf(raw, raw + sizeof(hashOut));
+			return Hash160(rawbuf);
+		}
+
+		std::string ToString();
+
+		Object ToValue();
 
 };
 
 
 class CExtCore
 {
-  static const int PROTO_EXT_VERSION = 1;
 
-  public:
-    unsigned int nVersion;
-    shtime_t tExpire;
-    cbuff vchLabel;
-//    CSign signature;
+	static const int PROTO_EXT_VERSION = 1;
 
-    CExtCore() {
-      SetNull();
-    }
-    CExtCore(std::string labelIn) {
-      SetNull();
-      SetLabel(labelIn);
-    }
+	public:
 
-    IMPLEMENT_SERIALIZE (
-      READWRITE(this->nVersion);
-      READWRITE(this->tExpire);
-      READWRITE(this->vchLabel);
-//      READWRITE(this->signature);
-    )
+	static const int MAX_EXT_LIFESPAN = 1514743200; // ~48y
 
-    void SetNull()
-    {
-      nVersion = PROTO_EXT_VERSION;
-      tExpire = SHTIME_UNDEFINED;
-//      tExpire = shtime_adj(shtime(), SHARE_DEFAULT_EXPIRE_TIME);
-      vchLabel.clear();
-//      signature.SetNull();
-    }
+	unsigned int nVersion;
+	shtime_t tExpire;
+	cbuff vchLabel;
 
-    /** Obtain the expiration time in unix-seconds. */
-    time_t GetExpireTime()
-    {
-      return (shutime(tExpire));
-    }
+	CExtCore() {
+		SetNull();
+	}
+	CExtCore(std::string labelIn) {
+		SetNull();
+		SetLabel(labelIn);
+	}
 
-    /** Set's the expiration time. */
-    void SetExpireTime(shtime_t tExpireIn)
-    {
-      tExpire = tExpireIn;
-    }
+	IMPLEMENT_SERIALIZE (
+			READWRITE(this->nVersion);
+			READWRITE(this->tExpire);
+			READWRITE(this->vchLabel);
+			//      READWRITE(this->signature);
+			)
 
-    /** Set's the expiration to the specified seconds into the future. */
-    void SetExpireSpan(double sec)
-    {
-      tExpire = shtime_adj(shtime(), sec);
-    }
+		void SetNull()
+		{
+			nVersion = PROTO_EXT_VERSION;
+			tExpire = SHTIME_UNDEFINED;
+			vchLabel.clear();
+		}
 
-    void SetExpireTime()
-    {
-      double dSpan = (double)SHARE_DEFAULT_EXPIRE_TIME;
-      SetExpireSpan(dSpan);
-    }
+	/** Obtain the expiration time in unix-seconds. */
+	time_t GetExpireTime()
+	{
+		return (shutime(tExpire));
+	}
 
-    bool IsExpired()
-    {
-      if (tExpire == SHTIME_UNDEFINED)
-        return (false);
-      return (shtime_after(shtime(), tExpire));
-    }
+	/** Set's the expiration time. */
+	void SetExpireTime(shtime_t tExpireIn)
+	{
+		tExpire = tExpireIn;
+	}
 
-    bool IsExpired(int64_t nTime)
-    {
-      if (tExpire == SHTIME_UNDEFINED)
-        return (false);
-			shtime_t t = shtimeu((time_t)nTime);
-      return (shtime_after(t, tExpire));
-    }
+	/** Set's the expiration to the specified seconds into the future. */
+	void SetExpireSpan(double sec)
+	{
+		tExpire = shtime_adj(shtime(), sec);
+	}
 
-    void Init(const CExtCore& b)
-    {
-      nVersion = b.nVersion;
-      tExpire = b.tExpire;
-      vchLabel = b.vchLabel;
-//      signature = b.signature;
-    }
+	void SetExpireTime()
+	{
+		double dSpan = (double)SHARE_DEFAULT_EXPIRE_TIME;
+		SetExpireSpan(dSpan);
+	}
 
-    friend bool operator==(const CExtCore &a, const CExtCore &b)
-    {
-      return (a.nVersion == b.nVersion &&
-          a.tExpire == b.tExpire &&
-          a.vchLabel == b.vchLabel
-//          a.signature == b.signature
-          );
-    }
+	bool IsExpired()
+	{
+		if (tExpire == SHTIME_UNDEFINED)
+			return (false);
+		return (shtime_after(shtime(), tExpire));
+	}
 
-    CExtCore operator=(const CExtCore &b)
-    {
-      Init(b);
-      return *this;
-    }
+	bool IsExpired(int64_t nTime)
+	{
+		if (tExpire == SHTIME_UNDEFINED)
+			return (false);
+		shtime_t t = shtimeu((time_t)nTime);
+		return (shtime_after(t, tExpire));
+	}
 
-    void SetLabel(std::string labelIn)
-    {
-      vchLabel = vchFromString(labelIn);
-    }
-    std::string GetLabel()
-    {
-      return (stringFromVch(vchLabel)); 
-    }
+	void Init(const CExtCore& b)
+	{
+		nVersion = b.nVersion;
+		tExpire = b.tExpire;
+		vchLabel = b.vchLabel;
+	}
 
-    int GetVersion()
-    {
-      return (nVersion);
-    }
+	friend bool operator==(const CExtCore &a, const CExtCore &b)
+	{
+		return (a.nVersion == b.nVersion &&
+				a.tExpire == b.tExpire &&
+				a.vchLabel == b.vchLabel
+				);
+	}
 
-    void SetVersion(int ver)
-    {
-      nVersion = ver;
-    }
+	CExtCore operator=(const CExtCore &b)
+	{
+		Init(b);
+		return *this;
+	}
 
-    std::string ToString();
+	void SetLabel(std::string labelIn)
+	{
+		vchLabel = vchFromString(labelIn);
+	}
 
-    Object ToValue();
+	std::string GetLabel()
+	{
+		return (stringFromVch(vchLabel)); 
+	}
+
+	int GetVersion()
+	{
+		return (nVersion);
+	}
+
+	void SetVersion(int ver)
+	{
+		nVersion = ver;
+	}
+
+	virtual int GetMinimumVersion() 
+	{
+		return (PROTO_EXT_VERSION);
+	}
+
+	virtual int GetMaximumVersion()
+	{
+		return (SHC_VERSION_MAJOR);
+	}
+
+	virtual int GetDefaultVersion()
+	{
+		return (GetMinimumVersion());
+	}
+
+	bool VerifyVersion()
+	{
+		if (GetVersion() < GetMinimumVersion()) {
+			return (false);
+		}
+		if (GetVersion() > GetMaximumVersion()) {
+			return (false);
+		}
+		return (true);
+	}
+
+	int GetLabelSize()
+	{
+		return (GetLabel().length());
+	}
+
+#if 0
+	virtual int GetMaximumContentSize()
+	{
+		return (0);
+	}
+
+	virtual int64 GetTransactionFee(CIface *iface, int64 nMinFee, int nHeight, size_t nSize = 0)
+	{
+		return (MAX(nMinFee, MIN_TX_FEE(iface)));
+	}
+#endif
+
+	virtual time_t GetMinimumLifespan()
+	{
+		return (SHTIME_UNDEFINED);
+	}
+
+	virtual time_t GetMaximumLifespan()
+	{
+		return (MAX_EXT_LIFESPAN);
+	}
+
+	virtual time_t GetDefaultLifespan()
+	{
+		return (GetMinimumLifespan());
+	}
+
+	virtual time_t CalculateLifespan(int64 nBaseFee, int64 nFee)
+	{
+		double base = (double)GetMinimumLifespan();
+
+		base = (base / nBaseFee * nFee);
+		base = MIN(base, GetMaximumLifespan());
+
+		return ((time_t)base);
+	}
+
+	bool VerifyLifespan(int64 nBaseFee, int64 nFee)
+	{
+		time_t lifespan = CalculateLifespan(nBaseFee, nFee);
+		double diff = shtime_diff(shtime(), tExpire);
+		if (diff > lifespan)
+			return (false);
+		return (true);
+	}
+
+	int VerifyTransaction();
+
+	std::string ToString();
+
+	Object ToValue();
 
 };
 

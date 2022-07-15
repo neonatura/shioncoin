@@ -29,9 +29,20 @@
 
 class CEntity : public CExtCore
 {
+
 	public:
+		//		/** The maximum supported version of an entity type transaction. */
+		//		static const int MAX_ENTITY_VERSION = SHC_VERSION_MAJOR;
+
+		//		/** The maximum life-span, in seconds, of an entity type transaction. */
+		//		static const int MAX_ENTITY_LIFESPAN = 1514743200; // ~48y
+
+		static const int MAX_ENTITY_LABEL_LENGTH = 135;
+
 		shgeo_t geo;
+
 		cbuff vAddr;
+
 		unsigned int nType;
 
 		CEntity()
@@ -56,17 +67,17 @@ class CEntity : public CExtCore
 				READWRITE(FLATDATA(geo));
 				READWRITE(this->vAddr);
 				READWRITE(this->nType);
-		)
+				)
 
-		friend bool operator==(const CEntity &a, const CEntity &b)
-		{
-			return (
-					((CExtCore&) a) == ((CExtCore&) b) &&
-					0 == memcmp(&a.geo, &b.geo, sizeof(shgeo_t)) &&
-					a.nType == b.nType &&
-					a.vAddr == b.vAddr
-					);
-		}
+			friend bool operator==(const CEntity &a, const CEntity &b)
+			{
+				return (
+						((CExtCore&) a) == ((CExtCore&) b) &&
+						0 == memcmp(&a.geo, &b.geo, sizeof(shgeo_t)) &&
+						a.nType == b.nType &&
+						a.vAddr == b.vAddr
+						);
+			}
 
 		CEntity operator=(const CEntity &b)
 		{
@@ -101,12 +112,42 @@ class CEntity : public CExtCore
 			return (nType);
 		}
 
-		int GetMaximumVersion()
-		{
-			return (SHC_VERSION_MAJOR);
-		}
+		// double GetGeoLatitude()
+		// double GetGeoLongitude()
+		// int GetGeoPrecision()
 
 		bool IsLocalRegion();
+
+		virtual int GetMaximumLabelSize()
+		{
+			return (MAX_ENTITY_LABEL_LENGTH);
+		}
+
+		virtual int GetContentSize()
+		{
+			return (0);
+		}
+
+		virtual int GetMaximumContentSize()
+		{
+			return (0);
+		}
+
+#if 0
+		int GetMaximumVersion() /* CExtCore */
+		{
+			return (MAX_ENTITY_VERSION);
+		}
+#endif
+
+#if 0
+		time_t GetMaximumLifespan() /* CExtCore */
+		{
+			return (MAX_ENTITY_LIFESPAN);
+		}
+#endif
+
+		int VerifyTransaction();
 
 		uint160 GetHash();
 

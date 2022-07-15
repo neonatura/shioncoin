@@ -45,6 +45,7 @@ extern "C" {
 #define ERR_COMMIT     CUSTOM_ERROR(4)
 #define ERR_NOCLASS    CUSTOM_ERROR(5)
 #define ERR_NOMETHOD   CUSTOM_ERROR(6)
+#define ERR_VERSION    CUSTOM_ERROR(7)
 
 /* redundant (convienence) */
 #define ERR_STALE ERR_EXPIRE

@@ -77,94 +77,94 @@ class CAsset : public CEntity
 {
 
 	protected:
-    uint160 hashIssuer; // parent asset
-    CSign signature; // signature of content
-    cbuff vContent; // asset content data 
-    int64 nContentChecksum;
-    int nSubType; // type-specific attribute
+		uint160 hashIssuer; // parent asset
+		CSign signature; // signature of content
+		cbuff vContent; // asset content data 
+		int64 nContentChecksum;
+		int nSubType; // type-specific attribute
 
 		cbuff GetSignatureContext(int ifaceIndex);
 
-  public:
-    static const int MIN_ASSET_VERSION = 5;
+	public:
+		static const int MIN_ASSET_VERSION = 5;
 
-    static const int DEFAULT_ASSET_VERSION = 5;
+		static const int DEFAULT_ASSET_VERSION = 5;
 
-    static const int MAX_ASSET_LABEL_LENGTH = 135;
+		static const int MAX_ASSET_LABEL_LENGTH = 135;
 
-    static const int MAX_ASSET_CONTENT_LENGTH = 128000;
+		static const int MAX_ASSET_CONTENT_LENGTH = 128000;
 
-    CAsset()
-    {
-      SetNull();
-    }
+		CAsset()
+		{
+			SetNull();
+		}
 
-    CAsset(const CAsset& assetIn)
-    {
-      SetNull();
-      Init(assetIn);
-    }
+		CAsset(const CAsset& assetIn)
+		{
+			SetNull();
+			Init(assetIn);
+		}
 
-    CAsset(CCert& certIn)
-    {
-      SetNull();
+		CAsset(CCert& certIn)
+		{
+			SetNull();
 			hashIssuer = certIn.GetHash();
 			SetLabel(certIn.GetLabel());
-    }
+		}
 
-    CAsset(string labelIn)
-    {
-      SetNull();
-      SetLabel(labelIn);
-    }
+		CAsset(string labelIn)
+		{
+			SetNull();
+			SetLabel(labelIn);
+		}
 
-    IMPLEMENT_SERIALIZE (
-			READWRITE(*(CEntity *)this);
-			READWRITE(this->hashIssuer);
-			READWRITE(this->signature);
-			READWRITE(this->vContent);
-			READWRITE(this->nContentChecksum);
-			READWRITE(this->nSubType);
-    )
+		IMPLEMENT_SERIALIZE (
+				READWRITE(*(CEntity *)this);
+				READWRITE(this->hashIssuer);
+				READWRITE(this->signature);
+				READWRITE(this->vContent);
+				READWRITE(this->nContentChecksum);
+				READWRITE(this->nSubType);
+				)
 
-    void SetNull()
-    {
-      CEntity::SetNull();
-			nVersion = DEFAULT_ASSET_VERSION;
-    }
+			void SetNull()
+			{
+				CEntity::SetNull();
+				nVersion = DEFAULT_ASSET_VERSION;
+			}
 
-    void Init(const CAsset& assetIn)
-    {
-      CEntity::Init(assetIn);
+		void Init(const CAsset& assetIn)
+		{
+			CEntity::Init(assetIn);
 			hashIssuer = assetIn.hashIssuer;
 			signature = assetIn.signature;
 			vContent = assetIn.vContent;
 			nContentChecksum = assetIn.nContentChecksum;
 			nSubType = assetIn.nSubType;
-    }
+		}
 
-    friend bool operator==(const CAsset &a, const CAsset &b)
-    {
-      return (
-				((CEntity&) a) == ((CEntity&) b) &&
-				a.hashIssuer == b.hashIssuer &&
-				a.signature == b.signature &&
-				a.vContent == b.vContent &&
-				a.nContentChecksum == b.nContentChecksum &&
-				a.nSubType == b.nSubType
-      );
-    }
+		friend bool operator==(const CAsset &a, const CAsset &b)
+		{
+			return (
+					((CEntity&) a) == ((CEntity&) b) &&
+					a.hashIssuer == b.hashIssuer &&
+					a.signature == b.signature &&
+					a.vContent == b.vContent &&
+					a.nContentChecksum == b.nContentChecksum &&
+					a.nSubType == b.nSubType
+					);
+		}
 
-    CAsset operator=(const CAsset &b)
-    {
+		CAsset operator=(const CAsset &b)
+		{
 			SetNull();
-      Init(b);
-      return (*this);
-    }
+			Init(b);
+			return (*this);
+		}
 
-    bool SignContent(int ifaceIndex);
+		bool SignContent(int ifaceIndex);
 
-    bool VerifyContent(int ifaceIndex);
+		bool VerifyContent(int ifaceIndex);
 
 		uint160 GetHashIssuer()
 		{
@@ -202,6 +202,28 @@ class CAsset : public CEntity
 			return (nContentChecksum);
 		}
 
+		int GetContentSize()
+		{
+			return (vContent.size());
+		}
+
+		void CalculateContentChecksum()
+		{
+			nContentChecksum = GetType() +
+				bcrc(vContent.data(), vContent.size()); // libshare
+		}
+
+		void ResetContent()
+		{
+			// retains checksum
+			vContent = cbuff();
+		}
+
+		int GetMaximumContentSize() /* CEntity */
+		{
+			return (MAX_ASSET_CONTENT_LENGTH);
+		}
+
 		int GetSubType()
 		{
 			return (nSubType);
@@ -233,23 +255,6 @@ class CAsset : public CEntity
 			vAddr = cbuff(hCert.begin(), hCert.end());
 		}
 
-		size_t GetContentSize()
-		{
-			return (vContent.size());
-		}
-
-		void CalculateContentChecksum()
-		{
-			nContentChecksum = GetType() +
-				bcrc(vContent.data(), vContent.size()); // libshare
-		}
-
-		void ResetContent()
-		{
-			// retains checksum
-			vContent = cbuff();
-		}
-
 		string GetMimeType();
 
 		int GetMinimumVersion()
@@ -257,19 +262,19 @@ class CAsset : public CEntity
 			return (MIN_ASSET_VERSION);
 		}
 
-		bool VerifyTransaction();
+		int VerifyTransaction();
 
-    const uint160 GetHash()
-    {
-      uint256 hashOut = SerializeHash(*this);
-      unsigned char *raw = (unsigned char *)&hashOut;
-      cbuff rawbuf(raw, raw + sizeof(hashOut));
-      return Hash160(rawbuf);
-    }
+		const uint160 GetHash()
+		{
+			uint256 hashOut = SerializeHash(*this);
+			unsigned char *raw = (unsigned char *)&hashOut;
+			cbuff rawbuf(raw, raw + sizeof(hashOut));
+			return Hash160(rawbuf);
+		}
 
-    string ToString();
+		string ToString();
 
-    Object ToValue();
+		Object ToValue();
 
 };
 

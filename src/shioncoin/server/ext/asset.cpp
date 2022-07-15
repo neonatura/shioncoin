@@ -501,32 +501,25 @@ string CAsset::GetMimeType()
 	return (MIME_APPLICATION_OCTET_STREAM);
 }
 
-bool CAsset::VerifyTransaction()
+int CAsset::VerifyTransaction()
 {
-	const string& strLabel = GetLabel();
-	const int nVersion = GetVersion();
 	const uint160& hCert = GetCertificateHash();
+	int err;
 
-	if (nVersion < GetMinimumVersion() ||
-			nVersion > GetMaximumVersion()) {
-		return (false);
-	}
-
-	if (hCert == 0) {
-		return (false);
-	}
-
-	if (strLabel.size() == 0 ||
-			strLabel.size() > MAX_ASSET_LABEL_LENGTH) {
-		return (false);
-	}
+	err = CEntity::VerifyTransaction();
+	if (err)
+		return (err);
 
 	if (vContent.size() == 0 ||
 			vContent.size() > MAX_ASSET_CONTENT_LENGTH) {
-		return (false);
+		return (ERR_INVAL);
 	}
 
-	return (true);
+	if (hCert == 0) {
+		return (ERR_INVAL);
+	}
+
+	return (0);
 }
 
 /* obtain all previous assets in sequence associated with "tx". */
@@ -563,36 +556,14 @@ bool GetAssetChain(CIface *iface, const CTransaction& txIn, vector<CTransaction>
 			CTransaction p_tx;
 
 			if (!GetTransaction(iface, in.prevout.hash, p_tx, NULL)) {
-fprintf(stderr, "GetAssetChain: invalid input tx \"%s\"\n", p_tx.GetHash().GetHex().c_str());
 				continue; /* soft error */
 			}
 
 			const CTxOut& out = p_tx.vout[nPrevOut];
 			if (!DecodeAssetHash(out.scriptPubKey, mode, hashAsset)) {
-fprintf(stderr, "GetAssetChain: !DecodeAssetHash\n");
 				continue; /* onto next tx */
 			}
 
-#if 0
-			CAsset *p_asset = p_tx.GetAsset();
-			if (!p_asset) {
-fprintf(stderr, "GetAssetChain: !p_asset\n");
-				continue;
-			}
-#endif
-			/*
-			if (mode == OP_EXT_NEW) {
-				if (hashAsset != l_hashIssuer) {
-fprintf(stderr, "GetAssetChain: !DecodeAssetHash: hashAsset != l_hashIssuer\n");
-					continue; // wrong chain 
-				}
-			} else {
-				if (p_asset->GetHashIssuer() != l_hashIssuer) {
-fprintf(stderr, "GetAssetChain: !DecodeAssetHash: p_asset->hashIssuer != l_hashIssuer\n");
-					continue; // wrong chain 
-				}
-			}
-	*/
 			if (hashAsset != l_hashIssuer) {
 				/* wrong chain reference. */
 				continue;

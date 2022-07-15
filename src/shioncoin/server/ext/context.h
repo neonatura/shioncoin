@@ -32,87 +32,95 @@
 
 class CContext : public CCert
 {
-  public:
+	public:
 
-    /**
-     * The maximum size permitted of the context context payload.
-     */
-    static const unsigned int MAX_VALUE_SIZE = 4096;
+		/**
+		 * The maximum size permitted of the context context payload.
+		 */
+		static const unsigned int MAX_VALUE_SIZE = 4096;
 
-    CContext()
-    {
-      SetNull();
-    }
+		/** The maximum size permitted of the context context payload. */
+		static const unsigned int MAX_CONTEXT_CONTENT_LENGTH = 4096;
 
-    CContext(const CCert& certIn)
-    {
-      SetNull();
-      CCert::Init(certIn);
-    }
-
-    CContext(const CContext& ctxIn)
-    {
-      SetNull();
-      Init(ctxIn);
-    }
-
-    IMPLEMENT_SERIALIZE (
-      READWRITE(*(CCert *)this);
-    )
-
-    void SetNull()
-    {
-      CCert::SetNull();
-    }
-
-    void Init(const CContext& ctxIn)
-    {
-      CCert::Init(ctxIn);
-    }
-
-    friend bool operator==(const CContext &a, const CContext &b)
-    {
-      return (
-        ((CCert&) a) == ((CCert&) b)
-      );
-    }
-
-    CContext operator=(const CContext &b)
-    {
+		CContext()
+		{
 			SetNull();
-      Init(b);
-      return (*this);
-    }
+		}
 
-    bool Sign(int ifaceIndex);
+		CContext(const CCert& certIn)
+		{
+			SetNull();
+			CCert::Init(certIn);
+		}
 
-    bool VerifySignature();
+		CContext(const CContext& ctxIn)
+		{
+			SetNull();
+			Init(ctxIn);
+		}
 
-    /**
-     * The 'context hash' is identical to the 'hashed context name'.
-     */
-    const uint160 GetHash()
-    {
-      return (hashIssuer);
-    }
+		IMPLEMENT_SERIALIZE (
+				READWRITE(*(CCert *)this);
+				)
 
-    void SetName(uint160 hName)
-    {
-      hashIssuer = hName;
-    }
+			void SetNull()
+			{
+				CCert::SetNull();
+			}
 
-    uint160 GetName()
-    {
-      return (hashIssuer);
-    }
+		void Init(const CContext& ctxIn)
+		{
+			CCert::Init(ctxIn);
+		}
 
-    bool SetValue(string name, cbuff value);
+		friend bool operator==(const CContext &a, const CContext &b)
+		{
+			return (
+					((CCert&) a) == ((CCert&) b)
+					);
+		}
 
-    void NotifySharenet(int ifaceIndex);
+		CContext operator=(const CContext &b)
+		{
+			SetNull();
+			Init(b);
+			return (*this);
+		}
 
-    std::string ToString();
+		bool Sign(int ifaceIndex);
 
-    Object ToValue();
+		bool VerifySignature();
+
+		/**
+		 * The 'context hash' is identical to the 'hashed context name'.
+		 */
+		const uint160 GetHash()
+		{
+			return (hashIssuer);
+		}
+
+		void SetName(uint160 hName)
+		{
+			hashIssuer = hName;
+		}
+
+		uint160 GetName()
+		{
+			return (hashIssuer);
+		}
+
+		bool SetValue(string name, cbuff value);
+
+		void NotifySharenet(int ifaceIndex);
+
+		int GetMaximumContentSize() /* CExtCore */
+		{
+			return (MAX_CONTEXT_CONTENT_LENGTH);
+		}
+
+		std::string ToString();
+
+		Object ToValue();
 
 };
 
