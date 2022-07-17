@@ -583,6 +583,17 @@ void COffer::SetXferAddr(const CPubKey& xferAddr)
 	vchXferAddr = xferAddr.Raw();
 }
 
+int COffer::VerifyTransaction()
+{
+  int err;
+
+  err = CExtCore::VerifyTransaction();
+  if (err)
+    return (err);
+
+  return (0);
+}
+
 std::string OfferHoldAltCoin(CIface *iface, string strAccount, COffer *offer, int64 nValue)
 {
   CWallet *wallet = GetWallet(iface);

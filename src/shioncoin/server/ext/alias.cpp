@@ -860,4 +860,13 @@ Object CAlias::ToValue(int ifaceIndex)
   return (obj);
 }
 
+int CAlias::VerifyTransaction()
+{
+  int err;
 
+  err = CEntity::VerifyTransaction();
+  if (err)
+    return (err);
+
+	return (0);
+}

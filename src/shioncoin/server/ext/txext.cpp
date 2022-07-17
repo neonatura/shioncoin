@@ -110,6 +110,12 @@ int CExtCore::VerifyTransaction()
 	if (!VerifyVersion())
 		return (ERR_VERSION);
 
+#if 0
+	/* expired records are valid, but can not be accessed or listed. */
+	if (IsExpired())
+		return (ERR_EXPIRE);
+#endif
+
 	return (0);
 }
 

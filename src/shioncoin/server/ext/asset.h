@@ -53,17 +53,22 @@ enum AssetType {
 	/* A barcode referencing a consumer product. */
 	PRODUCT_BARCODE = 12,
 	/* A serial number of a consumer product. */
-	PRODUCT_SERIAL = 13
+	PRODUCT_SERIAL = 13,
+	/* n/a */
+	CUSTOM = 14
 };
 
 enum AssetMimeType {
 	BINARY = 0,
 	TEXT = 1,
-	IMAGE_GIF = 2,
-	IMAGE_PNG = 3,
-	IMAGE_JPEG = 4,
-	MODEL_OBJ = 5,
-	MODEL_MTL = 6
+	SEXE = 2,
+	SQLITE = 3,
+	PEM = 4,
+	IMAGE_GIF = 5,
+	IMAGE_PNG = 6,
+	IMAGE_JPEG = 7,
+	MODEL_OBJ = 8,
+	MODEL_MTL = 9
 };
 
 
@@ -89,6 +94,10 @@ class CAsset : public CEntity
 		static const int MIN_ASSET_VERSION = 5;
 
 		static const int DEFAULT_ASSET_VERSION = 5;
+
+		static const int MIN_ASSET_LIFESPAN = 378432000; /* 12y */
+
+		static const int MAX_ASSET_LIFESPAN = MAX_EXT_LIFESPAN; /* 48y */
 
 		static const int MAX_ASSET_LABEL_LENGTH = 135;
 
@@ -127,11 +136,11 @@ class CAsset : public CEntity
 				READWRITE(this->nSubType);
 				)
 
-			void SetNull()
-			{
-				CEntity::SetNull();
-				nVersion = DEFAULT_ASSET_VERSION;
-			}
+		void SetNull()
+		{
+			CEntity::SetNull();
+			nVersion = DEFAULT_ASSET_VERSION;
+		}
 
 		void Init(const CAsset& assetIn)
 		{
@@ -194,7 +203,7 @@ class CAsset : public CEntity
 		void SetContent(const cbuff& vContentIn)
 		{
 			vContent = vContentIn;
-			CalculateContentChecksum();
+			SetContentChecksum();
 		}
 
 		int64 GetContentChecksum()
@@ -207,10 +216,19 @@ class CAsset : public CEntity
 			return (vContent.size());
 		}
 
-		void CalculateContentChecksum()
+		int64 CalculateContentChecksum()
 		{
-			nContentChecksum = GetType() +
-				bcrc(vContent.data(), vContent.size()); // libshare
+			return (GetType() + bcrc(vContent.data(), vContent.size())); // libshare
+		}
+
+		void SetContentChecksum(int64 nChecksum)
+		{
+			nContentChecksum = nChecksum;
+		}
+
+		void SetContentChecksum()
+		{
+			SetContentChecksum(CalculateContentChecksum());
 		}
 
 		void ResetContent()
@@ -222,6 +240,11 @@ class CAsset : public CEntity
 		int GetMaximumContentSize() /* CEntity */
 		{
 			return (MAX_ASSET_CONTENT_LENGTH);
+		}
+
+		bool VerifyContentChecksum()
+		{
+			return (GetContentChecksum() == CalculateContentChecksum());
 		}
 
 		int GetSubType()
@@ -262,6 +285,20 @@ class CAsset : public CEntity
 			return (MIN_ASSET_VERSION);
 		}
 
+		int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1);
+
+		time_t GetMinimumLifespan()
+		{
+			return (MIN_ASSET_LIFESPAN);
+		}
+
+		time_t CalculateLifespan(CIface *iface, int64 nFee);
+
+		void ResetExpireTime(CIface *iface, int64 nFee)
+		{
+			SetExpireSpan(CalculateLifespan(iface, nFee));
+		}
+
 		int VerifyTransaction();
 
 		const uint160 GetHash()
@@ -276,12 +313,15 @@ class CAsset : public CEntity
 
 		Object ToValue();
 
+		static string GetExtLabel()
+		{
+			return ("ASSET");
+		}
+
 };
 
 
-bool GetTxOfAsset(CIface *iface, const uint160& hashAsset, CTransaction& tx); 
-
-CAsset *GetAssetByHash(CIface *iface, const uint160& hAsset);
+CAsset *GetAssetByHash(CIface *iface, const uint160& hashAsset, CTransaction& tx); 
 
 int64 GetAssetOpFee(CIface *iface, int nHeight); 
 
@@ -297,13 +337,37 @@ bool ProcessAssetTx(CIface *iface, CTransaction& tx, int nHeight);
 
 bool DisconnectAssetTx(CIface *iface, CTransaction& tx);
 
-int init_asset_tx(CIface *iface, string strAccount, uint160 hCert, int nType, const cbuff& vContent, int64 nMinFee, CWalletTx& wtx);
+int IndexOfAssetOutput(const CTransaction& tx);
+
+bool DecodeAssetHash(const CScript& script, int& mode, uint160& hash);
+
+int init_asset_tx(CIface *iface, string strAccount, uint160 hCert, int nType, int nSubType, const cbuff& vContent, int64 nMinFee, CWalletTx& wtx);
 
 int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, const cbuff& vContent, CWalletTx& wtx);
 
 int transfer_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, const CCoinAddr& dest, CWalletTx& wtx);
 
+int activate_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, int64 nMinFee, CWalletTx& wtx);
+
 int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, CWalletTx& wtx);
+
+int64 CalculateAssetFee(CIface *iface, int nHeight, int nContentSize = 0, time_t nLifespan = 0);
+
+const string GetAssetTypeLabel(int type);
+
+int GetAssetType(string strType);
+
+void GetAssetTypeLabels(vector<string>& vLabel);
+
+const string GetAssetSubTypeLabel(int type, int subType);
+
+int GetAssetSubType(int type, string strSubType);
+
+void GetAssetSubTypeLabels(int type, vector<string>& vLabel);
+
+const string GetAssetMimeTypeLabel(int mimeType);
+
+int GetAssetMimeType(string strMimeType);
 
 
 #endif /* ndef __ASSET_H__ */

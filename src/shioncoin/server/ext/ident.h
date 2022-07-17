@@ -30,81 +30,83 @@
 class CIdent : public CEntity
 {
 
-	uint160 hash;
-	CSign signature;
-	cbuff vContext;
-	int64 nValue;
-	int nFlag;
-
 	public:
 
-	CIdent()
-	{
-		SetNull();
-	}
+		uint160 hash;
+		CSign signature;
+		cbuff vContext;
+		int64 nValue;
+		int nFlag;
 
-	CIdent(const CIdent& ent)
-	{
-		SetNull();
-		Init(ent);
-	}
-
-	CIdent(string labelIn)
-	{
-		SetNull();
-		SetLabel(labelIn);
-	}
-
-	IMPLEMENT_SERIALIZE (
-			READWRITE(*(CEntity *)this);
-			READWRITE(this->hash);
-			READWRITE(this->signature);
-			READWRITE(this->vContext);
-			READWRITE(this->nValue);
-			READWRITE(this->nFlag);
-			)
-
-		friend bool operator==(const CIdent &a, const CIdent &b)
+		CIdent()
 		{
-			return (
-					((CEntity&) a) == ((CEntity&) b)
-					);
+			SetNull();
 		}
 
-	CIdent operator=(const CIdent &b)
-	{
-		SetNull();
-		Init(b);
-		return *this;
-	}
+		CIdent(const CIdent& ent)
+		{
+			SetNull();
+			Init(ent);
+		}
 
-	void SetNull()
-	{
-		CEntity::SetNull();
-		nVersion = 3;
-		nValue = 0;
-		hash = 0;
+		CIdent(string labelIn)
+		{
+			SetNull();
+			SetLabel(labelIn);
+		}
 
-		nFlag = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
-		// should be:
-		//nFlag = SHCERT_ENT_ORGANIZATION;
-	}
+		IMPLEMENT_SERIALIZE (
+				READWRITE(*(CEntity *)this);
+				READWRITE(this->hash);
+				READWRITE(this->signature);
+				READWRITE(this->vContext);
+				READWRITE(this->nValue);
+				READWRITE(this->nFlag);
+				)
 
-	void Init(const CIdent& b)
-	{
-		CEntity::Init(b);
-	}
+			friend bool operator==(const CIdent &a, const CIdent &b)
+			{
+				return (
+						((CEntity&) a) == ((CEntity&) b)
+						);
+			}
 
-	uint160 GetHash();
+		CIdent operator=(const CIdent &b)
+		{
+			SetNull();
+			Init(b);
+			return *this;
+		}
 
-	time_t GetMinimumLifespan()
-	{
-		return (0);
-	}
+		void SetNull()
+		{
+			CEntity::SetNull();
+			nVersion = 3;
+			nValue = 0;
+			hash = 0;
 
-	std::string ToString();
+			nFlag = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
+			// should be:
+			//nFlag = SHCERT_ENT_ORGANIZATION;
+		}
 
-	Object ToValue();
+		void Init(const CIdent& b)
+		{
+			CEntity::Init(b);
+		}
+
+		uint160 GetHash();
+
+		time_t GetMinimumLifespan()
+		{
+			return (0);
+		}
+
+		int VerifyTransaction();
+
+		std::string ToString();
+
+		Object ToValue();
 
 };
 

@@ -2711,6 +2711,17 @@ CCoinAddr CExecCore::GetSenderAddr(int ifaceIndex)
 	return (addr);
 }
 
+int CExecCore::VerifyTransaction()
+{
+	int err;
+
+	err = CExtCore::VerifyTransaction();
+	if (err)
+		return (err);
+
+	return (0);
+}
+
 void CExecCall::SetCommitHeight(int ifaceIndex)
 {
 	SetCommitHeight((int64)GetBestHeight(ifaceIndex));

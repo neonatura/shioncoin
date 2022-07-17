@@ -36,6 +36,8 @@
 using namespace std;
 using namespace json_spirit;
 
+int GetBestHeight(CIface *iface);
+
 inline bool arrcasecmp(cbuff v1, cbuff v2)
 {
 	int idx;
@@ -250,10 +252,16 @@ class CExtCore
 		tExpire = shtime_adj(shtime(), sec);
 	}
 
+	/* DEBUG: REMOVE ME: */
 	void SetExpireTime()
 	{
 		double dSpan = (double)SHARE_DEFAULT_EXPIRE_TIME;
 		SetExpireSpan(dSpan);
+	}
+
+	virtual void ResetExpireTime(CIface *iface, int64 nFee)
+	{
+		SetExpireSpan((double)GetMinimumLifespan());
 	}
 
 	bool IsExpired()
@@ -343,17 +351,43 @@ class CExtCore
 		return (GetLabel().length());
 	}
 
-#if 0
+	virtual int GetContentSize()
+	{
+		return (0);
+	}
+
 	virtual int GetMaximumContentSize()
 	{
 		return (0);
 	}
 
-	virtual int64 GetTransactionFee(CIface *iface, int64 nMinFee, int nHeight, size_t nSize = 0)
+	virtual int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1)
 	{
-		return (MAX(nMinFee, MIN_TX_FEE(iface)));
+		if (nContentSize == -1) {
+			nContentSize = GetContentSize();
+		}
+		if (nLifespan == -1) {
+			nLifespan = GetLifespan();
+		}
+		return (MIN_TX_FEE(iface));
 	}
-#endif
+
+	virtual int64 GetMinimumFee(CIface *iface, int nHeight = -1)
+	{
+		if (nHeight == -1) {
+			nHeight = GetBestHeight(iface); 
+		}
+		return (CalculateFee(iface, nHeight, 0, 0));
+	}
+
+	virtual int64 GetMaximumFee(CIface *iface, int nHeight = -1)
+	{
+		if (nHeight == -1) {
+			nHeight = GetBestHeight(iface); 
+		}
+		return (CalculateFee(iface, nHeight, 
+					GetMaximumContentSize(), GetMaximumLifespan()));
+	}
 
 	virtual time_t GetMinimumLifespan()
 	{
@@ -365,6 +399,12 @@ class CExtCore
 		return (MAX_EXT_LIFESPAN);
 	}
 
+	virtual time_t CalculateLifespan(CIface *iface, int64 nFee)
+	{
+		return (GetMinimumLifespan());
+	}
+
+#if 0
 	virtual time_t GetDefaultLifespan()
 	{
 		return (GetMinimumLifespan());
@@ -379,7 +419,36 @@ class CExtCore
 
 		return ((time_t)base);
 	}
+#endif
 
+	time_t GetLifespan()
+	{
+		time_t nExpireTime = GetExpireTime();
+		time_t now = time(NULL);
+
+		if (nExpireTime == SHTIME_UNDEFINED)
+			return (0);
+
+		if (now >= nExpireTime)
+			return (0);
+
+		return (nExpireTime - time(NULL));
+	}
+
+	bool VerifyLifespan(CIface *iface, int64 nCredit)
+	{
+		if (GetExpireTime() == SHTIME_UNDEFINED)
+			return (true);
+
+		time_t lifespan = CalculateLifespan(iface, nCredit);
+		if ((GetExpireTime() - time(NULL)) > lifespan) {
+			return (false);
+		}
+
+		return (true);
+	}
+
+#if 0
 	bool VerifyLifespan(int64 nBaseFee, int64 nFee)
 	{
 		time_t lifespan = CalculateLifespan(nBaseFee, nFee);
@@ -388,12 +457,30 @@ class CExtCore
 			return (false);
 		return (true);
 	}
+#endif
 
 	int VerifyTransaction();
 
 	std::string ToString();
 
 	Object ToValue();
+
+	static string GetOpLabel(int op) {
+		switch (op) {
+			case OP_EXT_NEW:
+				return "new";
+			case OP_EXT_UPDATE:
+				return "update";
+			case OP_EXT_ACTIVATE:
+				return "activate";
+			case OP_EXT_TRANSFER:
+				return "transfer";
+			case OP_EXT_REMOVE:
+				return "remove";
+			default:
+				return "unknown";
+		}
+	}
 
 };
 

@@ -121,6 +121,8 @@ class CAlias : public CEntity
 			return (MINIMUM_ALIAS_LIFESPAN); 
 		}
 
+		int VerifyTransaction();
+
 		std::string ToString(int ifaceIndex);
 
 		Object ToValue(int ifaceIndex);

@@ -183,6 +183,17 @@ bool VerifyParamTx(CTransaction& tx, int& mode)
   return (true);
 }
 
+int CParam::VerifyTransaction()
+{
+  int err;
+
+  err = CExtCore::VerifyTransaction();
+  if (err)
+    return (err);
+
+  return (0);
+}
+
 Object CParam::ToValue()
 {
   Object obj = CExtCore::ToValue();

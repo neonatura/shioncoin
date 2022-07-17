@@ -1015,6 +1015,17 @@ Object CAltChain::ToValue()
   return (obj);
 }
 
+int CAltChain::VerifyTransaction()
+{
+	int err;
+
+	err = CExtCore::VerifyTransaction();
+	if (err)
+		return (err);
+
+	return (0);
+}
+
 const uint160 CAltChain::GetHash()
 {
 	uint256 hashOut = SerializeHash(*this);

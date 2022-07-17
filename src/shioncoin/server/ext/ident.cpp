@@ -232,6 +232,17 @@ uint160 CIdent::GetHash()
 	return Hash160(rawbuf);
 }
 
+int CIdent::VerifyTransaction()
+{
+  int err;
+
+  err = CEntity::VerifyTransaction();
+  if (err)
+    return (err);
+  
+  return (0);
+}
+
 /**
  * Submits an amount of coins as a transaction fee.
  * @param strAccount The account to donate funds from.

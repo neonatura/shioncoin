@@ -1274,7 +1274,7 @@ COffer *CTransaction::RemoveOffer(uint160 hashOffer)
 	return (off);
 }
 
-CAsset *CTransaction::CreateAsset(CCert *cert, int nType, const cbuff& vContent)
+CAsset *CTransaction::CreateAsset(CCert *cert, int nType, int nSubType, const cbuff& vContent)
 {
 	CAsset *newAsset;
 
@@ -1286,6 +1286,7 @@ CAsset *CTransaction::CreateAsset(CCert *cert, int nType, const cbuff& vContent)
 	newAsset->SetLabel(cert->GetLabel());
 	newAsset->SetCertificateHash(cert->GetHash());
 	newAsset->SetType(nType);
+	newAsset->SetSubType(nSubType);
 	newAsset->SetContent(vContent);
 
 	if (newAsset->GetLabel().length() > CAsset::MAX_ASSET_LABEL_LENGTH) {
@@ -1325,6 +1326,19 @@ CAsset *CTransaction::TransferAsset(CAsset *assetIn)
   return (newAsset);
 }
 
+CAsset *CTransaction::ActivateAsset(CAsset *assetIn)
+{
+	CAsset *newAsset;
+
+	newAsset = GetDerivedAsset(assetIn);
+	if (!newAsset) {
+		return (NULL);
+	}
+
+	newAsset->SetHashIssuer(assetIn->GetHash());
+  return (newAsset);
+}
+
 CAsset *CTransaction::RemoveAsset(CAsset *assetIn)
 {
 	CAsset *newAsset;
@@ -1337,7 +1351,71 @@ CAsset *CTransaction::RemoveAsset(CAsset *assetIn)
 	newAsset->ResetContent();
 	newAsset->SetHashIssuer(assetIn->GetHash());
 
-  return (newAsset);
+	return (newAsset);
+}
+
+bool CTransaction::VerifyAsset(int ifaceIndex)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+	uint160 hashAsset;
+	int nOut;
+	int err;
+
+	if (!iface)
+		return (false);
+
+	/* core verification */
+	if (!IsAssetTx(*this)) {
+		return (false); /* tx not flagged as asset */
+	}
+
+	/* verify hash in pub-script matches asset hash */
+	nOut = IndexOfAssetOutput(*this);
+	if (nOut == -1) {
+		return (false); /* no extension output */
+	}
+
+	int mode;
+	if (!DecodeAssetHash(vout[nOut].scriptPubKey, mode, hashAsset)) {
+		return (false); /* no asset hash in output */
+	}
+
+	if (mode != OP_EXT_NEW &&
+			mode != OP_EXT_ACTIVATE &&
+			mode != OP_EXT_UPDATE &&
+			mode != OP_EXT_TRANSFER &&
+			mode != OP_EXT_REMOVE)
+		return (false);
+
+	CAsset *asset = GetAsset();
+	if (hashAsset != asset->GetHash()) {
+		return error(SHERR_INVAL, "asset hash mismatch");
+	}
+
+	err = asset->VerifyTransaction();
+	if (err != 0) {
+		return (error(err, "asset verification failure"));
+	}
+
+	{
+		int nHeight = GetBestHeight(iface);
+		int64 nBaseFee = asset->CalculateFee(iface, nHeight);
+		int64 nCredit = vout[nOut].nValue;
+
+fprintf(stderr, "DEBUG: VerifyAsset(): nCredit %-8.8f\n", (nCredit/COIN)); 
+fprintf(stderr, "DEBUG: VerifyAsset(): nBaseFee %-8.8f\n", (nBaseFee/COIN)); 
+
+		/** asset fee must be at least base asset fee. */
+		if (nCredit < nBaseFee) {
+			return (error(ERR_FEE, "insufficient asset fund"));
+		}
+
+		if (!asset->VerifyLifespan(iface, nCredit)) {
+			return (error(ERR_INVAL, "expiration exceeds limit"));
+		}
+	}
+
+	return (true);
 }
 
 CIdent *CTransaction::CreateIdent(CIdent *identIn)

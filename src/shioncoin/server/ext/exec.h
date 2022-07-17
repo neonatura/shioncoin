@@ -200,6 +200,8 @@ class CExecCore : public CExtCore
 			return (GetMaximumLifespan());
 		}
 
+		int VerifyTransaction();
+
 		const uint160 GetHash()
 		{
 			uint256 hashOut = SerializeHash(*this);
@@ -559,8 +561,6 @@ class CExecCheckpoint : public CExecCore
 		{
 			return (CExecCore::GetHash());
 		}
-
-
 
 		bool verifyTxChain(int ifaceIndex);
 

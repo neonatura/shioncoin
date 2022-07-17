@@ -121,6 +121,8 @@ class CParam : public CExtCore
 			return (MAX_PARAM_LIFESPAN);
 		}
 
+		int VerifyTransaction();
+
 		const uint160 GetHash();
 
 		std::string ToString();

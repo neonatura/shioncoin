@@ -39,6 +39,8 @@
 #include "json_spirit_utils.h"
 
 
+Value rpc_asset_fee(CIface *iface, const Array& params, bool fHelp);
+
 Value rpc_asset_get(CIface *iface, const Array& params, bool fHelp);
 
 Value rpc_asset_info(CIface *iface, const Array& params, bool fHelp);
@@ -56,6 +58,10 @@ Value rpc_asset_update(CIface *iface, const Array& params, bool fHelp);
 Value rpc_asset_transfer(CIface *iface, const Array& params, bool fHelp);
 
 Value rpc_asset_remove(CIface *iface, const Array& params, bool fHelp);
+
+Value rpc_asset_newcert(CIface *iface, const Array& params, bool fStratum); 
+
+Value rpc_asset_activate(CIface *iface, const Array& params, bool fHelp);
 
 
 #endif /* ndef __SERVER__RPCASSET_PROTO_H__ */

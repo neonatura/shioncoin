@@ -229,6 +229,8 @@ class COffer : public CExtCore
 			return (MAX_OFFER_LIFESPAN);
 		}
 
+		int VerifyTransaction();
+
 		Object ToValue();
 
 		std::string ToString();

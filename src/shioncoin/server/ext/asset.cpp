@@ -34,25 +34,40 @@
 using namespace std;
 using namespace json_spirit;
 
-#define MIME_APPLICATION_OCTET_STREAM SHMIME_BINARY
-#define MIME_TEXT_PLAIN SHMIME_TEXT_PLAIN
-#define MIME_APP_GZIP SHMIME_APP_GZIP
-#define MIME_APP_LINUX SHMIME_APP_LINUX
-#define MIME_APP_LINUX_32 SHMIME_APP_LINUX_32
-#define MIME_APP_TAR SHMIME_APP_TAR
-#define MIME_APP_PEM SHMIME_APP_PEM
-#define MIME_APP_SQLITE SHMIME_APP_SQLITE
-#define MIME_APP_SEXE SHMIME_APP_SEXE
-#define MIME_APP_BZ2 SHMIME_APP_BZ2
-#define MIME_APP_RAR SHMIME_APP_RAR
-#define MIME_APP_ZIP SHMIME_APP_ZIP
-#define MIME_APP_XZ SHMIME_APP_XZ
-#define MIME_APP_WIN SHMIME_APP_WIN
-#define MIME_IMAGE_GIF SHMIME_IMG_GIF
-#define MIME_IMAGE_PNG SHMIME_IMG_PNG
-#define MIME_IMAGE_JPEG SHMIME_IMG_JPEG
-#define MIME_MODEL_OBJ "model/obj"
-#define MIME_MODEL_MTL "model/mtl"
+#define MAX_ASSET_TYPES 14
+#define MAX_ASSET_MIME_TYPES 10 
+
+static char *AssetTypeLabels[MAX_ASSET_TYPES] =
+{
+	"None",
+	"Person",
+	"Organization",
+	"System",
+	"Database",
+	"Network",
+	"Service",
+	"Data",
+	"Device",
+	"Circuit",
+	"Daemon",
+	"Barcode",
+	"SerialNumber",
+	"Custom"
+};
+
+static char *AssetMimeTypeLabels[MAX_ASSET_MIME_TYPES] =
+{
+	"text/plain",
+	"application/octet-stream",
+	"application/x-sexe",
+	"application/x-sqlite3",
+	"application/x-pem-file",
+	"image/gif",
+	"image/png",
+	"image/jpeg",
+	"model/obj",
+	"model/mtl"
+};
 
 asset_list *GetAssetTable(int ifaceIndex)
 {
@@ -102,7 +117,7 @@ bool DecodeAssetHash(const CScript& script, int& mode, uint160& hash)
   return (true);
 }
 
-
+#if 0
 string assetFromOp(int op) {
 	switch (op) {
 	case OP_EXT_NEW:
@@ -119,6 +134,7 @@ string assetFromOp(int op) {
 		return "<unknown asset op>";
 	}
 }
+#endif
 
 bool DecodeAssetScript(const CScript& script, int& op,
 		vector<vector<unsigned char> > &vvch, CScript::const_iterator& pc) 
@@ -186,14 +202,32 @@ CScript RemoveAssetScriptPrefix(const CScript& scriptIn)
 	return CScript(pc, scriptIn.end());
 }
 
-int64 GetAssetOpFee(CIface *iface, int nHeight) 
+int64 CalculateAssetFee(CIface *iface, int nHeight, int nContentSize, time_t nLifespan)
 {
-  double base = ((nHeight+1) / 10240) + 1;
-  double nRes = 5140 / base * COIN;
-  double nDif = 4982 /base * COIN;
+	/* base fee */
+  double base = ((nHeight+1) / 1024) + 1;
+  double nRes = 10280 / base * COIN;
+  double nDif = 9964 / base * COIN;
   int64 nFee = (int64)(nRes - nDif);
+
+	/* content fee */
+	int nSize = nContentSize / 16;
+  double nFact = 8192 / (double)MIN(8192, MAX(64, nSize));
+  nFee = (int64)((double)nFee / nFact);
+
+	/* lifespan */
+	if (nLifespan != 0) {
+		nLifespan = MAX(nLifespan, CAsset::MIN_ASSET_LIFESPAN);
+		nLifespan = MIN(nLifespan, CAsset::MAX_ASSET_LIFESPAN);
+		nFee = (int64)((double)nFee / (double)CAsset::MIN_ASSET_LIFESPAN * (double)nLifespan);
+	}
+
+	/* limits */
   nFee = MAX(MIN_TX_FEE(iface), nFee);
   nFee = MIN(MAX_TX_FEE(iface), nFee);
+
+fprintf(stderr, "DEBUG: CalculateAssetFee(): nContentSize(%u) nLifespan(%d) nFee(%-8.8f)\n", nContentSize, nLifespan, ((double)nFee/COIN));  
+
   return (nFee);
 }
 
@@ -210,13 +244,12 @@ bool IsAssetTx(const CTransaction& tx)
     uint160 hash;
     int mode;
 
-		/* todo: check mode */
     if (DecodeAssetHash(out.scriptPubKey, mode, hash)) {
       tot++;
     }
   }
   if (tot == 0) {
-    return false;
+    return (false);
   }
 
   return (true);
@@ -225,29 +258,37 @@ bool IsAssetTx(const CTransaction& tx)
 /**
  * Obtain the tx that defines this asset.
  */
-bool GetTxOfAsset(CIface *iface, const uint160& hashAsset, CTransaction& tx) 
+CAsset *GetAssetByHash(CIface *iface, const uint160& hashAsset, CTransaction& tx) 
 {
   int ifaceIndex = GetCoinIndex(iface);
   asset_list *assetes = GetAssetTable(ifaceIndex);
   bool ret;
 
   if (assetes->count(hashAsset) == 0) {
-    return false; /* nothing by that name, sir */
+    return (NULL); /* nothing by that name, sir */
   }
 
   uint256 hashBlock;
   uint256 hashTx = (*assetes)[hashAsset];
-  CTransaction txIn;
-  ret = GetTransaction(iface, hashTx, txIn, NULL);
+  ret = GetTransaction(iface, hashTx, tx, NULL);
   if (!ret) {
-    return false;
+    return (NULL);
   }
 
-  if (!IsAssetTx(txIn)) 
-    return false; /* inval; not an asset tx */
+  if (!IsAssetTx(tx)) {
+    return (NULL); /* inval; not an asset tx */
+	}
 
-  tx.Init(txIn);
-  return true;
+	CAsset *asset = tx.GetAsset();
+	if (!asset) {
+		return (NULL);
+	}
+
+	if (asset->IsExpired()) {
+		return (NULL); /* no longer valid. */
+	}
+
+	return (asset);
 }
 
 #if 0
@@ -275,7 +316,7 @@ static int IndexOfAssetOutput(const CTransaction& tx)
 	return (idx);
 }
 #endif
-static int IndexOfAssetOutput(const CTransaction& tx)
+int IndexOfAssetOutput(const CTransaction& tx)
 {
 	CScript script;
 	int nTxOut;
@@ -329,6 +370,7 @@ int GetAssetTransactionMode(CTransaction& tx, uint160& hAsset)
 	return (mode);
 }
 
+#if 0
 /**
  * Verify the integrity of an asset transaction.
  */
@@ -364,6 +406,7 @@ bool VerifyAsset(CTransaction& tx)
 
   return (true);
 }
+#endif
 
 bool VerifyAssetAccount(CWallet *wallet, const CTxOut& outAsset, string strAccount)
 {
@@ -408,6 +451,10 @@ Object CAsset::ToValue()
 {
   Object obj;
 
+	const string& strLabel = GetAssetTypeLabel(GetType());
+	if (strLabel != "") {
+		obj.push_back(Pair("category", strLabel)); 
+	}
   obj.push_back(Pair("hash", GetHash().GetHex()));
 	obj.push_back(Pair("title", GetLabel()));
 	if (GetHashIssuer() != 0) {
@@ -418,6 +465,7 @@ Object CAsset::ToValue()
 	if (GetContentSize() != 0) {
 		obj.push_back(Pair("valuesize", (uint64_t)GetContentSize()));
 	}
+	obj.push_back(Pair("mimetype", GetMimeType()));
 
   return (obj);
 }
@@ -460,7 +508,7 @@ cbuff CAsset::GetSignatureContext(int ifaceIndex)
 	}
 
   CTransaction asset_tx;
-	if (hashIssuer != 0 && GetTxOfAsset(iface, hashIssuer, asset_tx)) {
+	if (hashIssuer != 0 && GetAssetByHash(iface, hashIssuer, asset_tx)) {
 		CDataStream ser(SER_DISK, CLIENT_VERSION);
 		CAsset *serAsset = asset_tx.GetAsset();
 
@@ -481,24 +529,13 @@ cbuff CAsset::GetSignatureContext(int ifaceIndex)
 string CAsset::GetMimeType()
 {
 
-	if (GetType() == AssetType::DATA) {
-		switch (GetSubType()) {
-			case AssetMimeType::TEXT:
-				return (MIME_TEXT_PLAIN);
-			case AssetMimeType::IMAGE_GIF:
-				return (MIME_IMAGE_GIF);
-			case AssetMimeType::IMAGE_PNG:
-				return (MIME_IMAGE_PNG);
-			case AssetMimeType::IMAGE_JPEG:
-				return (MIME_IMAGE_JPEG);
-			case AssetMimeType::MODEL_OBJ:
-				return (MIME_MODEL_OBJ);
-			case AssetMimeType::MODEL_MTL:
-				return (MIME_MODEL_MTL);
-		}
+	if (GetType() == AssetType::SOFTWARE ||
+			GetType() == AssetType::DATABASE ||
+			GetType() == AssetType::DATA) {
+		return (GetAssetMimeTypeLabel(GetSubType()));
 	}
 
-	return (MIME_APPLICATION_OCTET_STREAM);
+	return (string("application/octet-stream"));
 }
 
 int CAsset::VerifyTransaction()
@@ -510,9 +547,9 @@ int CAsset::VerifyTransaction()
 	if (err)
 		return (err);
 
-	if (vContent.size() == 0 ||
+	if (//vContent.size() == 0 ||
 			vContent.size() > MAX_ASSET_CONTENT_LENGTH) {
-		return (ERR_INVAL);
+		return (ERR_2BIG);
 	}
 
 	if (hCert == 0) {
@@ -520,6 +557,42 @@ int CAsset::VerifyTransaction()
 	}
 
 	return (0);
+}
+
+int64 CAsset::CalculateFee(CIface *iface, int nHeight, int nContentSize, time_t nLifespan)
+{
+	if (nContentSize == -1) {
+		nContentSize = GetContentSize();
+	}
+	if (nLifespan == -1) {
+		nLifespan = GetLifespan();	
+	}
+
+	return (CalculateAssetFee(iface, nHeight, nContentSize, nLifespan));
+}
+
+time_t CAsset::CalculateLifespan(CIface *iface, int64 nFee)
+{
+	nFee = MAX(nFee, MIN_TX_FEE(iface));
+	nFee = MIN(nFee, MAX_TX_FEE(iface));
+
+  int nHeight = GetBestHeight(iface);
+	int64 nBaseFee = CalculateFee(iface, nHeight, GetContentSize(), 0);
+	double fact = 1 / (double)nBaseFee * (double)nFee;
+
+	time_t lifespan = (time_t)(GetMinimumLifespan() * fact);
+	lifespan = MAX(lifespan, GetMinimumLifespan());
+	lifespan = MIN(lifespan, GetMaximumLifespan());
+
+#if 0
+	double feeFactMax = 1 / GetMinimumFee(iface) * GetMaximumFee(iface);
+	double feeFact = MIN(feeFactMax, 1 / GetMinimumFee(iface) * nFee);
+	double lifespan = MAX((double)GetMinimumLifespan(),
+			(double)GetMaximumLifespan() / feeFactMax * feeFact);
+	return ((time_t)lifespan);
+#endif
+
+	return (lifespan);
 }
 
 /* obtain all previous assets in sequence associated with "tx". */
@@ -621,7 +694,7 @@ bool VerifyAssetChainOrigin(CIface *iface, CTransaction& tx, uint256& hPrevAsset
 	}
 
 	CTransaction asset_tx;
-	if (!GetTxOfAsset(iface, hAsset, asset_tx)) {
+	if (!GetAssetByHash(iface, hAsset, asset_tx)) {
 		return (error(SHERR_INVAL, "VerifyAssetChainOrigin: unknown asset hash"));
 	}
 
@@ -719,21 +792,30 @@ static bool ProcessNewAssetTx(CIface *iface, CTransaction& tx)
 	CAsset *asset = tx.GetAsset();
 	const uint160& hAsset = asset->GetHash();
 
+fprintf(stderr, "DEBG: REMOVE ME: ProcessNewAssetTx()/start\n");
+
 	if (wallet->mapAsset.count(hAsset) != 0) {
-		return (false); /* dup */
+		return (error(ERR_NOTUNIQ, "ProcessNewAssetTx: non-unique hash asset."));
+	}
+
+	/* verify content checksum. */
+	if (!asset->VerifyContentChecksum()) {
+		return (error(ERR_INVAL, "ProcessNewAssetTx: invalid content checksum."));
 	}
 
 	/* verify content is unique. */
 	if (IsExistingAssetChecksum(wallet, asset->GetContentChecksum())) {
-		return (false);
+		return (error(ERR_INVAL, "ProcessNewAssetTx: IsExistingAssetChecksum()"));
 	}
 
 	/* verify asset content signature */
 	if (!asset->VerifyContent(GetCoinIndex(iface))) {
-		return (false);
+		return (error(ERR_INVAL, "ProcessNewAssetTx: invalid content signature"));
 	}
 
+
 	InsertAssetTable(iface, tx);
+fprintf(stderr, "DEBG: REMOVE ME: ProcessNewAssetTx()/finish\n");
 	return (true);
 }
 
@@ -743,9 +825,16 @@ static bool ProcessUpdateAssetTx(CIface *iface, CTransaction& tx)
   int ifaceIndex = GetCoinIndex(iface);
 	uint256 hPrevAssetTx;
 
+fprintf(stderr, "DEBG: REMOVE ME: ProcessUpdateAssetTx()/start\n");
+
 	CAsset *asset = tx.GetAsset();
 	if (!asset)
 		return (false);
+
+	/* verify content is unique. */
+	if (IsExistingAssetChecksum(wallet, asset->GetContentChecksum())) {
+		return (error(ERR_INVAL, "ProcessUpdateAssetTx: content references already existing content."));
+	}
 
 	if (!VerifyAssetChainOrigin(iface, tx, hPrevAssetTx)) {
 		return (error(ERR_INVAL, "ProcessUpdateAssetTx: !VerifyAssetChainOrigin"));
@@ -766,8 +855,12 @@ static bool ProcessUpdateAssetTx(CIface *iface, CTransaction& tx)
 	if (prevAsset->GetCertificateHash() != asset->GetCertificateHash()) {
 		return (error(ERR_INVAL, "ProcessUpdateAsset invalid asset certificate."));
 	}
+	if (prevAsset->GetExpireTime() != asset->GetExpireTime()) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset invalid asset expiration."));
+	}
 
 	InsertAssetTable(iface, tx);
+fprintf(stderr, "DEBG: REMOVE ME: ProcessUpdateAssetTx()/finish\n");
 
 	return (true);
 }
@@ -804,8 +897,59 @@ static bool ProcessTransferAssetTx(CIface *iface, CTransaction& tx)
 	if (prevAsset->GetContentChecksum() != asset->GetContentChecksum()) {
 		return (false);
 	}
+	if (prevAsset->GetExpireTime() != asset->GetExpireTime()) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset invalid asset expiration."));
+	}
 
 	InsertAssetTable(iface, tx);
+	return (true);
+}
+
+static bool ProcessActivateAssetTx(CIface *iface, CTransaction& tx)
+{
+  CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	uint256 hPrevAssetTx;
+
+fprintf(stderr, "DEBG: REMOVE ME: ProcessActivateAssetTx()/start\n");
+
+	CAsset *asset = tx.GetAsset();
+	if (!asset)
+		return (false);
+
+	if (!VerifyAssetChainOrigin(iface, tx, hPrevAssetTx)) {
+		return (error(ERR_INVAL, "ProcessActivateAssetTx: !VerifyAssetChainOrigin"));
+	}
+
+	/* verify content checksum. */
+	if (!asset->VerifyContentChecksum()) {
+		return (error(ERR_INVAL, "ProcessNewAssetTx: invalid content checksum."));
+	}
+
+	CTransaction p_tx;
+	if (!GetTransaction(iface, hPrevAssetTx, p_tx, NULL)) {
+		return (error(ERR_INVAL, "ProcessActivateAssetTx: !GetTransaction(<previous asset>)"));
+	}
+	CAsset *prevAsset = p_tx.GetAsset();  
+	if (!prevAsset) {
+		return (error(ERR_INVAL, "ProcessActivateAssetTx: !prevAsset"));
+	}
+
+	if (prevAsset->GetLabel() != asset->GetLabel()) {
+		return (error(ERR_INVAL, "ProcessActivateAsset invalid asset label."));
+	}
+	if (prevAsset->GetCertificateHash() != asset->GetCertificateHash()) {
+		return (error(ERR_INVAL, "ProcessActivateAsset invalid asset certificate."));
+	}
+	if (prevAsset->GetContentChecksum() != asset->GetContentChecksum()) {
+fprintf(stderr, "DEBUG: TEST: prevAsset->GetContentChecksum %llu\n", prevAsset->GetContentChecksum());
+fprintf(stderr, "DEBUG: TEST: asset->GetContentChecksum %llu\n", asset->GetContentChecksum());
+		return (error(ERR_INVAL, "ProcessActivateAsst: invalid asset checksum."));
+	}
+
+	InsertAssetTable(iface, tx);
+fprintf(stderr, "DEBG: REMOVE ME: ProcessActivateAssetTx()/finish\n");
+
 	return (true);
 }
 
@@ -843,6 +987,9 @@ static bool ProcessRemoveAssetTx(CIface *iface, CTransaction& tx)
 	if (prevAsset->GetContentChecksum() != asset->GetContentChecksum()) {
 		return (error(ERR_INVAL, "ProcessRemoveAsset invalid asset content checksum."));
 	}
+	if (prevAsset->GetExpireTime() != asset->GetExpireTime()) {
+		return (error(ERR_INVAL, "ProcessRemoveAsset invalid asset expiration."));
+	}
 
 	RemoveAssetTable(iface, tx);
 	return (true);
@@ -852,18 +999,18 @@ bool ProcessAssetTx(CIface *iface, CTransaction& tx, int nHeight)
 {
   CWallet *wallet = GetWallet(iface);
 
-	if (!VerifyAsset(tx)) {
+	if (!tx.VerifyAsset(GetCoinIndex(iface))) {
 		return (error(SHERR_INVAL, "ProcessAssetTx: !VerifyAsset"));
 	}
 
 	int nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1)
-		return (false);
+		return (error(SHERR_INVAL, "no asset output script"));
 
 	int mode;
 	uint160 hashAsset;
 	if (!DecodeAssetHash(tx.vout[nOut].scriptPubKey, mode, hashAsset))
-		return (false); /* no alias hash in output */
+		return (error(SHERR_INVAL, "no asset hash in output"));
 
 	switch (mode) {
 		case OP_EXT_NEW:
@@ -877,6 +1024,10 @@ bool ProcessAssetTx(CIface *iface, CTransaction& tx, int nHeight)
 		case OP_EXT_TRANSFER:
 			if (!ProcessTransferAssetTx(iface, tx))
 				return (false);
+			break;
+		case OP_EXT_ACTIVATE:
+			if (!ProcessActivateAssetTx(iface, tx))
+				return (error(ERR_INVAL, "ProcessAssetTx: ProcessActivateAssetTx failure"));
 			break;
 		case OP_EXT_REMOVE:
 			if (!ProcessRemoveAssetTx(iface, tx))
@@ -935,7 +1086,7 @@ bool GetAssetContent(CIface *iface, CTransaction& tx, cbuff& vContentOut)
 	if (mode == -1)
 		return (false);
 
-	if (mode == OP_EXT_NEW || mode == OP_EXT_UPDATE) {
+	if (mode == OP_EXT_NEW || mode == OP_EXT_UPDATE || mode == OP_EXT_ACTIVATE) {
 		CAsset *asset = tx.GetAsset();
 		if (!asset)
 			return (false);
@@ -944,47 +1095,172 @@ bool GetAssetContent(CIface *iface, CTransaction& tx, cbuff& vContentOut)
 		return (true);
 	}
 
-	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE) {
-		if (!GetAssetChain(iface, tx, vTx)) {
-			return (error(ERR_INVAL, "GetAssetContent: GetAssetChain failure."));
-		}
+	if (!GetAssetChain(iface, tx, vTx)) {
+		return (error(ERR_INVAL, "GetAssetContent: GetAssetChain failure."));
+	}
 
-		/* search through hiearchy for a content record. */
-		for (int i = 0; i < vTx.size(); i++) {
-			mode = GetAssetTransactionMode(vTx[i], hAsset);
-			if (mode == -1)
+	/* search through hiearchy for a content record. */
+	for (int i = (vTx.size() - 1); i >= 0; i--) {
+		mode = GetAssetTransactionMode(vTx[i], hAsset);
+		if (mode == -1)
+			return (false);
+
+		if (mode == OP_EXT_NEW || mode == OP_EXT_UPDATE || mode == OP_EXT_ACTIVATE) {
+			CAsset *asset = vTx[i].GetAsset();
+			if (!asset)
 				return (false);
 
-			if (mode == OP_EXT_NEW || mode == OP_EXT_UPDATE) {
-				CAsset *asset = vTx[i].GetAsset();
-				if (!asset)
-					return (false);
-
-				vContentOut = asset->GetContent();
-				return (true);
-			}
+			vContentOut = asset->GetContent();
+			return (true);
 		}
 	}
 
 	return (-1);
 }
 
-int init_asset_tx(CIface *iface, string strAccount, uint160 hCert, int nType, const cbuff& vContent, int64 nMinFee, CWalletTx& wtx)
+/* establish fee for generating an asset transaction. */
+static bool EstablishAssetFee(CIface *iface, const string& strAccount, CTxCreator& wtx, 
+		const CTxOut *vout, int64& nNetFee, int64 nMinFee = 0)
+{
+  CWallet *wallet = GetWallet(iface);
+	CAsset *asset = wtx.GetAsset();
+  int nHeight = GetBestHeight(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	int64 nCredit = 0;
+
+	if (!asset)
+		return (false);
+
+	if (vout) {
+		nCredit = vout->nValue;
+	}
+
+  nNetFee = MAX(nMinFee, asset->CalculateFee(iface, nHeight)); // asset fee
+  int64 nTxFee = MAX(MIN_TX_FEE(iface), nCredit - nNetFee); // remainder as tx fee
+
+  int64 nDebit = nNetFee + nTxFee; // the total debit amount
+	if (nDebit > nCredit) {
+		/* verify account has balance for tx fee. */
+		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+		if (bal < (nDebit - nCredit)) {
+			return (false);
+		}
+	}
+
+	wtx.SetMinFee(nTxFee);
+	return (true);
+}
+
+const string GetAssetTypeLabel(int type)
+{
+
+	if (type < 0 || type >= MAX_ASSET_TYPES)
+		return (string());
+
+	return (string(AssetTypeLabels[type]));
+}
+
+int GetAssetType(string strType)
+{
+	int idx;
+
+	for (idx = 0; idx < MAX_ASSET_TYPES; idx++) {
+		if (0 == strcasecmp(strType.c_str(), AssetTypeLabels[idx])) {
+			return (idx);
+		}
+	}
+
+	return (-1);
+}
+
+void GetAssetTypeLabels(vector<string>& vLabel)
+{
+	int idx;
+
+	vLabel.clear();
+	for (idx = 0; idx < MAX_ASSET_TYPES; idx++) {
+		vLabel.push_back(string(AssetTypeLabels[idx]));
+	}
+}
+
+int GetMaxAssetSubTypes(int type)
+{
+
+	switch (type) {
+		case AssetType::SOFTWARE:
+		case AssetType::DATABASE:
+		case AssetType::DATA:
+			return (MAX_ASSET_MIME_TYPES);
+	}
+	return (0);
+}
+
+const string GetAssetSubTypeLabel(int type, int subType)
+{
+
+	switch (type) {
+		case AssetType::SOFTWARE:
+		case AssetType::DATABASE:
+		case AssetType::DATA:
+			return (GetAssetMimeTypeLabel(subType));
+	}
+
+	return (string());
+}
+
+int GetAssetSubType(int type, string strSubType)
+{
+
+	switch (type) {
+		case AssetType::DATA:
+			return (GetAssetMimeType(strSubType));
+	}
+
+	return (-1);
+}
+
+void GetAssetSubTypeLabels(int type, vector<string>& vLabel)
+{
+	int nMax = GetMaxAssetSubTypes(type);
+	int idx;
+
+	vLabel.clear();
+	switch (type) {
+		case AssetType::DATA:
+			for (idx = 0; idx < nMax; idx++) {
+				string strLabel = GetAssetSubTypeLabel(type, idx);
+				vLabel.push_back(strLabel);
+			}
+			break;
+	}
+}
+
+const string GetAssetMimeTypeLabel(int mimeType)
+{
+
+	if (mimeType < 0 || mimeType >= MAX_ASSET_MIME_TYPES)
+		return (string());
+
+	return (string(AssetMimeTypeLabels[mimeType]));
+}
+
+int GetAssetMimeType(string strMimeType)
+{
+	int idx;
+
+	for (idx = 0; idx < MAX_ASSET_MIME_TYPES; idx++) {
+		if (0 == strcasecmp(strMimeType.c_str(), AssetMimeTypeLabels[idx])) {
+			return (idx);
+		}
+	}
+
+	return (-1);
+}
+
+int init_asset_tx(CIface *iface, string strAccount, uint160 hCert, int nType, int nSubType, const cbuff& vContent, int64 nMinFee, CWalletTx& wtx)
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
-
-	/* calculate fee for asset creation operation. */
-  int64 nFee = MAX(nMinFee, GetAssetOpFee(iface, GetBestHeight(iface)));
-	if (!MoneyRange(iface, nFee)) {
-		return (ERR_INVAL);
-	}
-
-	/* verify balanace of account is sufficient. */
-  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nFee) {
-    return (ERR_FEE);
-  }
 
 	/* establish associated certificate. */
   CTransaction cert_tx;
@@ -1001,7 +1277,27 @@ int init_asset_tx(CIface *iface, string strAccount, uint160 hCert, int nType, co
 
 	/* initialize an asset transaction. */
   CTxCreator s_wtx(wallet, strAccount);
-  CAsset *asset = s_wtx.CreateAsset(certIssuer, nType, vContent);
+  CAsset *asset = s_wtx.CreateAsset(certIssuer, nType, nSubType, vContent);
+
+	/* ensure content is unique per asset type. */
+	if (IsExistingAssetChecksum(wallet, asset->GetContentChecksum())) {
+		return (ERR_NOTUNIQ);
+	}
+
+	/* calculate fee for asset creation operation. */
+  int nHeight = GetBestHeight(iface);
+  int64 nFee = MAX(nMinFee, asset->CalculateFee(iface, nHeight));
+	if (!MoneyRange(iface, nFee)) {
+		return (ERR_INVAL);
+	}
+	/* verify balanace of account is sufficient. */
+  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+  if (bal < nFee) {
+    return (ERR_FEE);
+  }
+
+	/* establish expiration timestamp. */
+	asset->ResetExpireTime(iface, nFee);
 
 	/* sign cert */
 	/* note: all sub-sequent updates, removals, or transfers will retain the same certificate reference. */
@@ -1041,17 +1337,12 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
 
   /* verify original asset */
   CTransaction tx;
-  if (!GetTxOfAsset(iface, hashAsset, tx)) {
+  if (!GetAssetByHash(iface, hashAsset, tx)) {
     return (SHERR_NOENT);
   }
 	nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1)
-		return (false);
-#if 0
-  if(!IsLocalAsset(iface, tx)) {
-    return (SHERR_REMOTE);
-  }
-#endif
+		return (ERR_INVAL);
 	if (!VerifyAssetAccount(wallet, tx.vout[nOut], strAccount)) {
 		return (SHERR_ACCESS); /* invalid account specified. */
 	}
@@ -1065,35 +1356,38 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
     return (SHERR_INVAL);
   }
 
-	/* establish fee for asset update. */
-	int64 nTxFee = (MIN_TX_FEE(iface) * 2);
-	int64 nCredit = wallet->GetCredit(tx.vout[nOut]);
-  int64 nNetFee = MAX(nTxFee, nCredit - nTxFee);
-
-	/* verify account has balance for tx fee. */
-	if (nNetFee > nCredit) {
-		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-		if (bal < (nNetFee - nCredit)) {
-			return (ERR_FEE);
-		}
-	}
-
 	/* create asset */
   CTxCreator s_wtx(wallet, strAccount);
   CAsset *asset = s_wtx.UpdateAsset(&tx.asset, vContent);
 
-  uint160 assetHash = asset->GetHash();
-
-	if (nCredit > nNetFee) {
-		s_wtx.SetMinFee(nCredit - nNetFee);
+	/* ensure content is unique per asset type. */
+	if (IsExistingAssetChecksum(wallet, asset->GetContentChecksum())) {
+		return (ERR_NOTUNIQ);
 	}
 
+	/* establish fee for asset update. */
+	int nHeight = GetBestHeight(iface);
+	int64 nCredit = wallet->GetCredit(tx.vout[nOut]); // past credit
+	int64 nNetFee = asset->CalculateFee(iface, nHeight); // asset fee
+	int64 nTxFee = MAX(MIN_TX_FEE(iface), nCredit - nNetFee); // remainder as tx fee
+	int64 nDebit = nNetFee + nTxFee; // the total debit amount
+	if (nDebit > nCredit) {
+		/* verify account has balance for tx fee. */
+		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+		if (bal < (nDebit - nCredit)) {
+			return (ERR_FEE);
+		}
+	}
+	s_wtx.SetMinFee(nTxFee);
+
+  /* link previous asset as input */
 	if (!s_wtx.AddInput(hTxIn, nOut))
-		return (false);
+		return (ERR_INVAL);
 
   /* generate output script */
 	CScript scriptPubKey;
 	CScript scriptPubKeyOrig;
+  uint160 assetHash = asset->GetHash();
   scriptPubKeyOrig.SetDestination(extAddr.Get());
 	scriptPubKey << OP_EXT_UPDATE << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
@@ -1101,7 +1395,7 @@ int update_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
     return (SHERR_INVAL);
 
   if (!s_wtx.Send())
-    return (error(SHERR_CANCELED, "update_asset_tx: %s", s_wtx.GetError().c_str()));
+    return (SHERR_CANCELED);//, "update_asset_tx: %s", s_wtx.GetError().c_str()));
 
   wtx = (CWalletTx)s_wtx;
   Debug("(%s) SENT:ASSETUPDATE : assethash=%s, tx=%s", 
@@ -1118,17 +1412,12 @@ int transfer_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset
 
   /* verify original asset */
   CTransaction tx;
-  if (!GetTxOfAsset(iface, hashAsset, tx)) {
+  if (!GetAssetByHash(iface, hashAsset, tx)) {
     return (ERR_NOENT);
   }
 	nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1)
 		return (ERR_INVAL);
-#if 0
-  if (!IsLocalAsset(iface, tx)) {
-    return (SHERR_REMOTE);
-  }
-#endif
 	if (!VerifyAssetAccount(wallet, tx.vout[nOut], strAccount)) {
 		return (ERR_ACCESS); /* invalid account specified. */
 	}
@@ -1136,40 +1425,31 @@ int transfer_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset
   /* establish original tx */
   uint256 hTxIn = tx.GetHash();
 
-#if 0
-  /* generate new coin address */
-	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
-  if (!extAddr.IsValid()) {
-    return (ERR_INVAL);
-  }
-#endif
-
-	/* establish fee for asset update. */
-	int64 nTxFee = (MIN_TX_FEE(iface) * 2);
-	int64 nCredit = wallet->GetCredit(tx.vout[nOut]);
-  int64 nNetFee = MAX(nTxFee, nCredit - nTxFee);
-
-	/* verify account has balance for tx fee. */
-	if (nNetFee > nCredit) {
-		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-		if (bal < (nNetFee - nCredit)) {
-			return (ERR_FEE);
-		}
-	}
-
 	/* create asset */
   CTxCreator s_wtx(wallet, strAccount);
   CAsset *asset = s_wtx.TransferAsset(tx.GetAsset());
-  uint160 assetHash = asset->GetHash();
 
-	if (nCredit > nNetFee) {
-		s_wtx.SetMinFee(nCredit - nNetFee);
+  /* establish fee for asset transfer. */
+  int nHeight = GetBestHeight(iface);
+  int64 nCredit = wallet->GetCredit(tx.vout[nOut]); // past credit
+  int64 nNetFee = asset->CalculateFee(iface, nHeight); // asset fee
+  int64 nTxFee = MAX(MIN_TX_FEE(iface), nCredit - nNetFee); // remainder as tx fee
+  int64 nDebit = nNetFee + nTxFee; // the total debit amount
+	if (nDebit > nCredit) {
+		/* verify account has balance for tx fee. */
+		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+		if (bal < (nDebit - nCredit)) {
+			return (ERR_FEE);
+		}
 	}
+	s_wtx.SetMinFee(nTxFee);
 
+	/* add previous asset as transaction input. */
 	if (!s_wtx.AddInput(hTxIn, nOut))
-		return (false);
+		return (ERR_INVAL);
 
   /* generate output script */
+  uint160 assetHash = asset->GetHash();
 	CScript scriptPubKey;
 	CScript scriptPubKeyOrig;
   scriptPubKeyOrig.SetDestination(extAddr.Get());
@@ -1183,6 +1463,94 @@ int transfer_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset
 
   wtx = (CWalletTx)s_wtx;
   Debug("SENT:ASSETUPDATE : assethash=%s, tx=%s", asset->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
+
+	return (0);
+}
+
+int activate_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, int64 nMinFee, CWalletTx& wtx)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+  CWallet *wallet = GetWallet(iface);
+	int nOut;
+
+  /* verify original asset */
+  CTransaction tx;
+  if (!GetAssetByHash(iface, hashAsset, tx)) {
+    return (ERR_NOENT);
+  }
+	nOut = IndexOfAssetOutput(tx);
+	if (nOut == -1) {
+fprintf(stderr, "DEBUG: TEST: !IndexOfAssetOutput(tx)\n");
+		return (ERR_INVAL);
+	}
+	if (!VerifyAssetAccount(wallet, tx.vout[nOut], strAccount)) {
+		return (ERR_ACCESS); /* invalid account specified. */
+	}
+
+  /* establish original tx */
+  uint256 hTxIn = tx.GetHash();
+
+  /* generate new coin address */
+	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
+  if (!extAddr.IsValid()) {
+fprintf(stderr, "DEBUG: TEST: !extAddr\n");
+    return (SHERR_INVAL);
+  }
+	/* create asset tx */
+  CTxCreator s_wtx(wallet, strAccount);
+  CAsset *asset = s_wtx.ActivateAsset(tx.GetAsset());
+
+	/* add previous asset as transaction input. */
+	if (!s_wtx.AddInput(hTxIn, nOut)) {
+fprintf(stderr, "DEBUG: TEST: !s_wtx.AddInput()\n");
+		return (ERR_INVAL);
+	}
+
+	/* redefine content. */
+	cbuff vContent;
+	if (!GetAssetContent(iface, tx, vContent)) {
+fprintf(stderr, "DEBUG: TEST: !GetAssetContent\n");
+		return (ERR_INVAL);
+	}
+	asset->SetContent(vContent);
+fprintf(stderr, "DEBUG: activate_asset_tx: vContent size %u\n", asset->GetContentSize()); 
+
+  /* establish fee for asset transfer. */
+  int nHeight = GetBestHeight(iface);
+  int64 nCredit = wallet->GetCredit(tx.vout[nOut]); // past credit
+  int64 nNetFee = MAX(nMinFee, asset->CalculateFee(iface, nHeight)); // asset fee
+  int64 nTxFee = MAX(MIN_TX_FEE(iface), nCredit - nNetFee); // remainder as tx fee
+  int64 nDebit = nNetFee + nTxFee; // the total debit amount
+	if (nDebit > nCredit) {
+		/* verify account has balance for tx fee. */
+		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+		if (bal < (nDebit - nCredit)) {
+			return (ERR_FEE);
+		}
+	}
+	s_wtx.SetMinFee(nTxFee);
+
+	/* reset expiration. */
+	asset->ResetExpireTime(iface, nNetFee);
+
+  /* generate output script */
+  uint160 assetHash = asset->GetHash();
+	CScript scriptPubKey;
+	CScript scriptPubKeyOrig;
+  scriptPubKeyOrig.SetDestination(extAddr.Get());
+	scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP;
+  scriptPubKey += scriptPubKeyOrig;
+  if (!s_wtx.AddOutput(scriptPubKey, nNetFee)) {
+fprintf(stderr, "DEBUG: TEST: !s_wtx.AddOutput(%s, %-8.8f)\n", scriptPubKey.ToString().c_str(), ((double)nNetFee/COIN));
+    return (SHERR_INVAL);
+	}
+
+
+  if (!s_wtx.Send())
+    return (error(SHERR_CANCELED, "activate_asset_tx: %s", s_wtx.GetError().c_str()));
+
+  wtx = (CWalletTx)s_wtx;
+  Debug("SENT:ASSETACTIVATE : assethash=%s, tx=%s", asset->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
 
 	return (0);
 }
@@ -1201,12 +1569,12 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
 
   /* verify original asset */
   CTransaction tx;
-  if (!GetTxOfAsset(iface, hashAsset, tx)) {
+  if (!GetAssetByHash(iface, hashAsset, tx)) {
     return (SHERR_NOENT);
   }
 	int nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1)
-		return (false);
+		return (SHERR_INVAL);
 #if 0
   if(!IsLocalAsset(iface, tx)) {
     return (SHERR_REMOTE);
@@ -1219,36 +1587,32 @@ int remove_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset, 
   /* establish original tx */
   uint256 hTxIn = tx.GetHash();
 
-	/* establish fee for asset update. */
-	int64 nCredit = wallet->GetCredit(tx.vout[nOut]);
-  int64 nNetFee = MIN_TX_FEE(iface);
-	int64 nTxFee = nCredit - nNetFee;
-	int64 nDebit = nNetFee + nTxFee;
+  /* generate tx */
+  CTxCreator s_wtx(wallet, strAccount);
+  CAsset *asset = s_wtx.RemoveAsset(tx.GetAsset());
 
 	/* establish fee for asset removal. */
+	int nHeight = GetBestHeight(iface);
+	int64 nCredit = wallet->GetCredit(tx.vout[nOut]); // past credit
+  int64 nNetFee = asset->CalculateFee(iface, nHeight); // asset fee
+	int64 nTxFee = MAX(MIN_TX_FEE(iface), nCredit - nNetFee); // remainder as tx fee
+	int64 nDebit = nNetFee + nTxFee; // the total debit amount
 	if (nDebit > nCredit) {
+		/* verify account has balance for tx fee. */
 		int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
 		if (bal < (nDebit - nCredit)) {
 			return (ERR_FEE);
 		}
 	}
-
-  /* generate tx */
-  CAsset *asset;
-	CScript scriptPubKey;
-
-  CTxCreator s_wtx(wallet, strAccount);
-  asset = s_wtx.RemoveAsset(tx.GetAsset());
-
-  uint160 assetHash = asset->GetHash();
-
 	s_wtx.SetMinFee(nTxFee);
 
   /* link previous asset as input */
 	if (!s_wtx.AddInput(hTxIn, nOut))
-		return (false);
+		return (SHERR_INVAL);
 
   /* generate output script */
+	CScript scriptPubKey;
+  uint160 assetHash = asset->GetHash();
 	scriptPubKey << OP_EXT_REMOVE << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP << OP_RETURN << OP_0;
   if (!s_wtx.AddOutput(scriptPubKey, nNetFee))
     return (SHERR_INVAL);

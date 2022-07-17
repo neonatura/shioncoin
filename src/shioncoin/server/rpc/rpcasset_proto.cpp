@@ -70,15 +70,16 @@ Value rpc_asset_new(CIface *iface, const Array& params, bool fHelp)
 		throw JSONRPCError(ERR_INVAL, "invalid certificate hash");
 
 	int nType = params[2].get_int();
+	int nSubType = params[3].get_int();
 
-	string strContent = params[3].get_str();
+	string strContent = params[4].get_str();
 	if (strContent.length() > CAsset::MAX_ASSET_CONTENT_LENGTH) {
 		throw JSONRPCError(ERR_INVAL, "asset data payload exceeds maximum length");
 	}
 
 	int64 nMinFee = 0;
-	if (params.size() > 4) {
-		nMinFee = AmountFromValue(params[3]);
+	if (params.size() > 5) {
+		nMinFee = AmountFromValue(params[5]);
 		if (nMinFee < 0) {
 			throw JSONRPCError(-5, "Invalid coin minimum fee value.");
 		}
@@ -86,7 +87,7 @@ Value rpc_asset_new(CIface *iface, const Array& params, bool fHelp)
 
 	CWalletTx wtx;
 	cbuff vContent(strContent.begin(), strContent.end());
-	err = init_asset_tx(iface, strAccount, hIssuer, nType, vContent, nMinFee, wtx);
+	err = init_asset_tx(iface, strAccount, hIssuer, nType, nSubType, vContent, nMinFee, wtx);
 	if (err) {
 		throw JSONRPCError(err, "failure initializing asset transaction.");
 	}
@@ -195,6 +196,30 @@ Value rpc_asset_remove(CIface *iface, const Array& params, bool fHelp)
 	return (wtx.ToValue(ifaceIndex));
 }
 
+Value rpc_asset_fee(CIface *iface, const Array& params, bool fHelp)
+{
+  int ifaceIndex = GetCoinIndex(iface);
+
+  if (fHelp || params.size() > 2)
+    throw runtime_error("invalid parameters");
+
+  if (ifaceIndex != TEST_COIN_IFACE &&
+      ifaceIndex != TESTNET_COIN_IFACE &&
+      ifaceIndex != SHC_COIN_IFACE)
+    throw runtime_error("Unsupported operation for coin service.");
+
+	int nSize = CAsset::MAX_ASSET_CONTENT_LENGTH;
+	if (params.size() >= 1) 
+		nSize = MAX(0, MIN(CAsset::MAX_ASSET_CONTENT_LENGTH, params[0].get_int()));
+
+	time_t nLifespan = 0;
+	if (params.size() >= 2)
+		nLifespan = ((time_t)params[1].get_int() * 31536000);
+
+  int64 nFee = CalculateAssetFee(iface, (int)GetBestHeight(ifaceIndex), nSize, nLifespan);
+	return (ValueFromAmount(nFee));
+}
+
 Value rpc_asset_get(CIface *iface, const Array& params, bool fHelp)
 {
 	int ifaceIndex = GetCoinIndex(iface);
@@ -214,7 +239,7 @@ Value rpc_asset_get(CIface *iface, const Array& params, bool fHelp)
 		throw JSONRPCError(-5, "Invalid assetificate hash specified.");
 
 	CTransaction tx;
-	if (!GetTxOfAsset(iface, hAsset, tx)) {
+	if (!GetAssetByHash(iface, hAsset, tx)) {
 		uint256 hTx = (*assets)[hAsset];
 
 		CTxMemPool *mempool = GetTxMemPool(iface);
@@ -254,10 +279,10 @@ Value rpc_asset_info(CIface *iface, const Array& params, bool fHelp)
       ifaceIndex != SHC_COIN_IFACE)
     throw runtime_error("Unsupported operation for coin service.");
 
-  int64 nFee = GetAssetOpFee(iface, (int)GetBestHeight(ifaceIndex));
+//  int64 nFee = CalculateAssetFee(iface, (int)GetBestHeight(ifaceIndex));
   Object result;
 
-  result.push_back(Pair("fee", ValueFromAmount(nFee)));
+//  result.push_back(Pair("fee", ValueFromAmount(nFee)));
   result.push_back(Pair("total", (int64_t)GetTotalAssets(ifaceIndex)));
  
   return (result);
@@ -448,5 +473,75 @@ Value rpc_asset_list(CIface *iface, const Array& params, bool fHelp)
 	}
 
 	return (result);
+}
+
+Value rpc_asset_newcert(CIface *iface, const Array& params, bool fStratum) 
+{
+  CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	string hexSeed;
+	int64 nFee = 0;
+  int err;
+
+  if (params.size() < 2)
+    throw runtime_error("invalid parameters");
+
+  if (ifaceIndex != TEST_COIN_IFACE &&
+      ifaceIndex != TESTNET_COIN_IFACE &&
+      ifaceIndex != SHC_COIN_IFACE)
+    throw runtime_error("Unsupported operation for coin service.");
+
+  string strAccount = AccountFromValue(params[0]);
+  if (!IsAccountValid(iface, strAccount))
+    throw JSONRPCError(SHERR_INVAL, "Invalid account name specified.");
+
+  string strTitle = params[1].get_str();
+  if (strTitle.length() == 0 || strTitle.length() > 135)
+    throw JSONRPCError(-5, "Certificate name must be between 1 and 135 characters.");
+
+  if (wallet->mapCertLabel.count(strTitle))
+    throw JSONRPCError(-5, "Certificate name must be unique.");
+
+  CWalletTx wtx;
+  err = init_cert_tx(iface, wtx, strAccount, strTitle, hexSeed, nFee);
+  if (err)
+    throw JSONRPCError(err, "Failure initializing transaction.");
+
+  return (wtx.ToValue(ifaceIndex));
+}
+
+Value rpc_asset_activate(CIface *iface, const Array& params, bool fHelp)
+{
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	int err;
+
+	if (params.size() < 2)
+		throw runtime_error("invalid parameters");
+
+	if (ifaceIndex != TEST_COIN_IFACE &&
+			ifaceIndex != TESTNET_COIN_IFACE &&
+			ifaceIndex != SHC_COIN_IFACE)
+		throw runtime_error("Unsupported operation for coin service.");
+
+	string strAccount = AccountFromValue(params[0]);
+	if (!IsAccountValid(iface, strAccount))
+		throw JSONRPCError(ERR_INVAL, "Invalid account name specified.");
+
+	uint160 hAsset = uint160(params[1].get_str());
+	if (hAsset == 0)
+		throw JSONRPCError(ERR_INVAL, "invalid asset hash");
+
+	int64 nMinFee = 0; 
+	if (params.size() > 2) {
+		nMinFee = AmountFromValue(params[2]); 
+	}
+
+	CWalletTx wtx;
+	err = activate_asset_tx(iface, strAccount, hAsset, nMinFee, wtx);
+	if (err)
+		throw JSONRPCError(err, "failure updating asset transaction.");
+
+	return (wtx.ToValue(ifaceIndex));
 }
 

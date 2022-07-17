@@ -367,6 +367,8 @@ class CCert : public CEntity
 		}
 #endif
 
+		int VerifyTransaction();
+
 		std::string ToString();
 
 		Object ToValue();

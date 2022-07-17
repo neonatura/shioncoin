@@ -123,6 +123,7 @@ class CEntity : public CExtCore
 			return (MAX_ENTITY_LABEL_LENGTH);
 		}
 
+#if 0
 		virtual int GetContentSize()
 		{
 			return (0);
@@ -132,6 +133,7 @@ class CEntity : public CExtCore
 		{
 			return (0);
 		}
+#endif
 
 #if 0
 		int GetMaximumVersion() /* CExtCore */

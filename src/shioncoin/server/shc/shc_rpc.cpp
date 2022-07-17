@@ -475,6 +475,12 @@ const RPCOp EXEC_TRANSFER = {
 #endif
 
 
+const RPCOp ASSET_FEE = {
+  &rpc_asset_fee, 0, {RPC_INT},
+  "Summary: Display fee information for generating an asset.\n"
+  "\n"
+  "Print fee information for an asset."
+};
 const RPCOp ASSET_GET = {
   &rpc_asset_get, 1, {RPC_STRING},
   "Summary: Display information about an asset.\n"
@@ -486,13 +492,6 @@ const RPCOp ASSET_INFO = {
   "Summary: Display information about asset transactions.\n"
   "\n"
   "Show general information about certified assets."
-};
-const RPCOp ASSET_NEW = {
-  &rpc_asset_new, 4, {RPC_ACCOUNT, RPC_STRING, RPC_INT, RPC_STRING, RPC_INT64},
-  "Syntax: <account> <cert> <type> <data> [<fee>]\n"
-  "Summary: Create a certified asset.\n"
-  "\n"
-  "Submit a new asset transaction onto the blockchain."
 };
 const RPCOp ASSET_LIST = {
   &rpc_asset_list, 0, {RPC_STRING},
@@ -515,6 +514,22 @@ const RPCOp ASSET_LISTCERT = {
   "\n"
   "List all assets on blockchain certified by specified certificate hash."
 };
+const RPCOp ASSET_NEW = {
+  &rpc_asset_new, 5, {RPC_ACCOUNT, RPC_STRING, RPC_INT, RPC_INT, RPC_STRING, RPC_INT64},
+  "Syntax: <account> <cert> <type> <subtype> <data> [<fee>]\n"
+  "Summary: Create a certified asset.\n"
+  "\n"
+	"Generate a certified digital asset.\n"
+	"\n"
+	"Note: See commands 'asset.type' and 'asset.subtype' for applicable <type> and <subtype> parameter values."
+};
+const RPCOp ASSET_NEWCERT = {
+  &rpc_asset_newcert, 2, {RPC_ACCOUNT, RPC_STRING, RPC_STRING},
+  "Syntax: <account> <label> [<cert>]\n"
+  "Summary: Create a certified asset.\n"
+  "\n"
+  "Submit a new asset transaction onto the blockchain."
+};
 const RPCOp ASSET_REMOVE = {
   &rpc_asset_remove, 2, {RPC_ACCOUNT, RPC_STRING},
   "Syntax: <account> <asset>\n"
@@ -522,8 +537,15 @@ const RPCOp ASSET_REMOVE = {
   "\n"
   "Remove an asset from the blockchain."
 };
+const RPCOp ASSET_ACTIVATE = { /* asset.renew */
+  &rpc_asset_activate, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> <asset>\n"
+  "Summary: Renew an existing asset.\n"
+  "\n"
+  "Renew the expiration time-span of an asset on the blockchain."
+};
 const RPCOp ASSET_TRANSFER = {
-  &rpc_asset_transfer, 4, {RPC_ACCOUNT, RPC_STRING, RPC_COINADDR},
+  &rpc_asset_transfer, 3, {RPC_ACCOUNT, RPC_STRING, RPC_COINADDR},
   "Syntax: <account> <asset> <address>\n"
   "Summary: Transfer an existing asset to a destination extended transaction address.\n"
   "\n"
@@ -612,15 +634,20 @@ void shc_RegisterRPCOp(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "alias.pubaddr", ALIAS_PUBADDR);
   RegisterRPCOp(ifaceIndex, "alias.remove", ALIAS_REMOVE);
 
-  RegisterRPCOp(ifaceIndex, "asset.get", ASSET_GET);
-  RegisterRPCOp(ifaceIndex, "asset.info", ASSET_INFO);
-  RegisterRPCOp(ifaceIndex, "asset.new", ASSET_NEW);
-  RegisterRPCOp(ifaceIndex, "asset.list", ASSET_LIST);
-  RegisterRPCOp(ifaceIndex, "asset.listacc", ASSET_LISTACC);
-  RegisterRPCOp(ifaceIndex, "asset.listcert", ASSET_LISTCERT);
-  RegisterRPCOp(ifaceIndex, "asset.remove", ASSET_REMOVE);
-  RegisterRPCOp(ifaceIndex, "asset.send", ASSET_TRANSFER);
-  RegisterRPCOp(ifaceIndex, "asset.update", ASSET_UPDATE);
+//  if (opt_bool(OPT_TX_ASSET)) {
+		RegisterRPCOp(ifaceIndex, "asset.fee", ASSET_FEE);
+		RegisterRPCOp(ifaceIndex, "asset.get", ASSET_GET);
+		RegisterRPCOp(ifaceIndex, "asset.info", ASSET_INFO);
+		RegisterRPCOp(ifaceIndex, "asset.list", ASSET_LIST);
+		RegisterRPCOp(ifaceIndex, "asset.listacc", ASSET_LISTACC);
+		RegisterRPCOp(ifaceIndex, "asset.listcert", ASSET_LISTCERT);
+		RegisterRPCOp(ifaceIndex, "asset.new", ASSET_NEW);
+		RegisterRPCOp(ifaceIndex, "asset.newcert", ASSET_NEWCERT);
+		RegisterRPCOp(ifaceIndex, "asset.remove", ASSET_REMOVE);
+		RegisterRPCOp(ifaceIndex, "asset.renew", ASSET_ACTIVATE);
+		RegisterRPCOp(ifaceIndex, "asset.send", ASSET_TRANSFER);
+		RegisterRPCOp(ifaceIndex, "asset.update", ASSET_UPDATE);
+//	}
 
   RegisterRPCOp(ifaceIndex, "cert.export", CERT_EXPORT);
   RegisterRPCOp(ifaceIndex, "cert.info", CERT_INFO);

@@ -874,10 +874,14 @@ class CTransaction : public CTransactionCore
     COffer *PayOffer(COffer *accept);
     COffer *RemoveOffer(uint160 hashOffer);
 
-		CAsset *CreateAsset(CCert *cert, int nType, const cbuff& vContent);
+		/* TXF_ASSET : CAsset */
+		CAsset *CreateAsset(CCert *cert, int nType, int nSubType, const cbuff& vContent);
 		CAsset *UpdateAsset(CAsset *assetIn, const cbuff& vContent);
     CAsset *TransferAsset(CAsset *assetIn);
+    CAsset *ActivateAsset(CAsset *assetIn);
     CAsset *RemoveAsset(CAsset *assetIn);
+		/** Verify the integrity of an asset transaction. */
+		bool VerifyAsset(int ifaceIndex);
 
     CExec *CreateExec();
     CExecCheckpoint *UpdateExec(const CExec& execIn);

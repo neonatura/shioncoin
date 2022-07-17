@@ -1729,6 +1729,7 @@ _TEST(txmempool_depend)
   _TRUE(true == s_tx.AddOutput(addr.Get(), (int64)COIN));
   _TRUE(true == s_tx.Send());
 
+fprintf(stderr, "DEBUG: REMOVE ME: TEST: txmempool_depend: pool->size() == %d\n", pool->size());
   _TRUE(pool->size() == 2);
 
   {

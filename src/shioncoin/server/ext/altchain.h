@@ -266,6 +266,8 @@ class CAltChain : public CExtCore
 			return (SHTIME_UNDEFINED);
 		}
 
+		int VerifyTransaction();
+
 		std::string ToString();
 
 		Object ToValue();

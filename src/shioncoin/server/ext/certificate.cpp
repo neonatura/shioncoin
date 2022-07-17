@@ -1910,6 +1910,17 @@ Object CIdent::ToValue()
 }
 #endif
 
+int CCert::VerifyTransaction()
+{
+  int err;
+
+  err = CEntity::VerifyTransaction();
+  if (err)
+    return (err);
+
+  return (0);
+}
+
 Object CCert::ToValue()
 {
   Object obj = CEntity::ToValue();
