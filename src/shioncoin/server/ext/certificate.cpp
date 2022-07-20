@@ -79,8 +79,8 @@ int GetTotalCertificates(int ifaceIndex)
 bool VerifyCertChain(CIface *iface, CTransaction& tx)
 {
   int ifaceIndex = GetCoinIndex(iface);
-  CCert& cert = tx.certificate;
-  uint160 &cert_hash = cert.hashIssuer;
+  CCert *cert = (CCert *)&tx.certificate;
+  uint160 &cert_hash = cert->hashIssuer;
   CTransaction ptx;
   int idx;
   
@@ -88,12 +88,12 @@ bool VerifyCertChain(CIface *iface, CTransaction& tx)
     if (!GetTxOfCert(iface, cert_hash, ptx))
       return error(SHERR_INVAL, "VerifyCertChain: unknown originating certificate.");
 
-    CCert *pcert = &ptx.certificate;
+    CCert *pcert = (CCert *)&ptx.certificate;
     if (!pcert->VerifySignature(ifaceIndex))
       return error(SHERR_INVAL, "VerifyCertChain: signature integrity error");
   }
 
-  if (!cert.VerifySignature(ifaceIndex))
+  if (!cert->VerifySignature(ifaceIndex))
     return error(SHERR_INVAL, "VerifyCertChain: signature integrity error");
 
 #if 0
@@ -139,15 +139,15 @@ bool InsertCertTable(CIface *iface, CTransaction& tx, unsigned int nHeight, bool
   if (!VerifyCertChain(iface, tx))
     return error(SHERR_INVAL, "CommitCertTx: chain verification failure [tx %s].", tx.GetHash().GetHex().c_str());
 
-  CCert& cert = tx.certificate;
+  CCert *cert = (CCert *)&tx.certificate;
 
-  string strCertLabel = cert.GetLabel();
+  string strCertLabel = cert->GetLabel();
   int count = wallet->mapCertLabel.count(strCertLabel);
   if (count != 0) {
     return (error(SHERR_NOTUNIQ, "CommitCertTx: non-unique certificate name '%s' rejected.", strCertLabel.c_str()));
   }
 
-  const uint160& hCert = cert.GetHash();
+  const uint160& hCert = cert->GetHash();
   count = wallet->mapCert.count(hCert);
   if (count) {
     const uint256& o_tx = wallet->mapCert[hCert]; 
@@ -173,8 +173,10 @@ bool InsertCertTable(CIface *iface, CTransaction& tx, unsigned int nHeight, bool
   wallet->mapCert[hCert] = tx.GetHash();
   wallet->mapCertLabel[strCertLabel] = hCert;
 
+#if 0
   /* save to sharefs sub-system. */
   cert.NotifySharenet(GetCoinIndex(iface));
+#endif
 
   return (true);
 }
@@ -245,7 +247,7 @@ bool CommitLicenseTx(CIface *iface, CTransaction& tx, int nHeight)
   if (!GetTxOfCert(iface, hashCert, cert_tx))
     return error(SHERR_INVAL, "CommitLicenseTx: unknown certificate \"%s\".", hashCert.GetHex().c_str());
 
-  CCert *cert = &cert_tx.certificate;
+  CCert *cert = (CCert *)&cert_tx.certificate;
 
   if (!(cert->nFlag & SHCERT_CERT_DIGITAL)) {
     return error(SHERR_INVAL, "CommitLicenseTx: license certificate is not sufficient to grant digital license.");
@@ -270,8 +272,10 @@ bool CommitLicenseTx(CIface *iface, CTransaction& tx, int nHeight)
 
   wallet->mapLicense[hLic] = tx.GetHash();
 
+#if 0
   /* save to sharefs sub-system. */
   lic.NotifySharenet(GetCoinIndex(iface));
+#endif
 
   return (true);
 }
@@ -753,7 +757,7 @@ bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight)
   if (tx.vout[nOut].nValue < GetCertOpFee(iface, nHeight))
     return error(SHERR_INVAL, "VerifyCert: insufficient fee (%f) for block accepted at height %d.", (double)tx.vout[nOut].nValue/COIN, (int)nHeight);
 
-  CCert *cert = &tx.certificate;
+  CCert *cert = (CCert *)&tx.certificate;
   if (hashCert != cert->GetHash())
     return (error(SHERR_INVAL, "VerifyCert: invalid cert hash"));
 
@@ -814,7 +818,7 @@ bool VerifyLicenseChain(CIface *iface, CTransaction& tx)
     return error(SHERR_INVAL, "VerifyLicenseChain: uknown certificate issuer '%s'", cert_hash.GetHex().c_str());
   }
 
-  CCert *cert = &cert_tx.certificate;
+  CCert *cert =  (CCert *)&cert_tx.certificate;
   if (!cert->VerifySignature(ifaceIndex))
     return error(SHERR_INVAL, "VerifyLicenseChain: signature integrity error with chained certificated.");
 
@@ -1114,7 +1118,7 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
     return (SHERR_NOENT);
   }
 
-  CCert *cert = &tx.certificate;
+  CCert *cert = (CCert *)&tx.certificate;
 
   if (!(cert->nFlag & SHCERT_CERT_SIGN)) {
     error(SHERR_INVAL, "init_license_tx: error: origin certificate is not capable of signing.");
@@ -1176,7 +1180,7 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
 	CTxCreator s_wtx(wallet, strAccount);
 
   /* initialize license */
-  CCert *lic = s_wtx.CreateLicense(&tx.certificate);
+  CLicense *lic = s_wtx.CreateLicense((CCert *)&tx.certificate);
   if (!lic)
     return (SHERR_INVAL);
   lic->tExpire = cert->tExpire;
@@ -1400,6 +1404,23 @@ static void FillSharenetCertificate(SHCert *cert, CCert *c_cert, CCert *iss)
 
 }
 
+int CCertCore::VerifyTransaction()
+{
+  int err;
+
+  err = CEntity::VerifyTransaction();
+  if (err)
+    return (err);
+
+  return (0);
+}
+
+std::string CCertCore::ToString()
+{
+  return (write_string(Value(ToValue()), false));
+}
+
+#if 0
 void CCert::NotifySharenet(int ifaceIndex)
 {
   SHCert cert;
@@ -1431,7 +1452,6 @@ void CCert::NotifySharenet(int ifaceIndex)
 #endif
 
 }
-
 void CLicense::NotifySharenet(int ifaceIndex)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -1489,6 +1509,7 @@ void CLicense::NotifySharenet(int ifaceIndex)
 #endif
 
 }
+#endif
 
 #if 0
 /**
@@ -1914,16 +1935,23 @@ int CCert::VerifyTransaction()
 {
   int err;
 
-  err = CEntity::VerifyTransaction();
+  err = CCertCore::VerifyTransaction();
   if (err)
     return (err);
 
   return (0);
 }
 
-Object CCert::ToValue()
+Object CCertCore::ToValue()
 {
   Object obj = CEntity::ToValue();
+
+  return (obj);
+}
+
+Object CCert::ToValue()
+{
+  Object obj = CCertCore::ToValue();
 
   obj.push_back(Pair("certhash", GetHash().GetHex()));
   if (hashIssuer.size() != 0)
@@ -1944,13 +1972,14 @@ Object CCert::ToValue()
 
 Object CLicense::ToValue()
 {
-  Object obj = CCert::ToValue();
+  Object obj = CCertCore::ToValue();
   obj.push_back(Pair("hash", GetHash().GetHex()));
   return (obj);
 }
 
 bool CLicense::Sign(CCert *cert)
 {
+	if (!cert) return (false);
   string hexContext = stringFromVch(cert->signature.vPubKey);
   cbuff vchContext = ParseHex(hexContext);
 
@@ -1966,7 +1995,7 @@ bool CLicense::Sign(int ifaceIndex)
   if (!GetTxOfCert(iface, hashIssuer, cert_tx))
     return (false);
 
-  return (Sign(&cert_tx.certificate));
+  return (Sign(cert_tx.GetCertificate()));
 }
 
 bool CLicense::VerifySignature(int ifaceIndex, CCert *cert)
@@ -1984,14 +2013,14 @@ bool CLicense::VerifySignature(int ifaceIndex)
   if (!GetTxOfCert(iface, hashIssuer, cert_tx))
     return error(SHERR_INVAL, "VerifySIgnature");
 
-  return (VerifySignature(ifaceIndex, &cert_tx.certificate));
+  return (VerifySignature(ifaceIndex, (CCert *)&cert_tx.certificate));
 }
 
 bool DisconnectCertificate(CIface *iface, CTransaction& tx)
 {
   CWallet *wallet = GetWallet(iface);
-  CCert& cert = tx.certificate;
-  const uint160 hCert = cert.GetHash();
+  CCert *cert = (CCert *)&tx.certificate;
+  const uint160 hCert = cert->GetHash();
 
   if (wallet->mapCert.count(hCert) == 0)
     return (false);
@@ -2018,10 +2047,10 @@ bool DisconnectCertificate(CIface *iface, CTransaction& tx)
     wallet->mapCertArch[o_tx] = o_cert;
 
     wallet->mapCert[hCert] = n_tx; 
-    wallet->mapCertLabel[cert.GetLabel()] = hCert;
+    wallet->mapCertLabel[cert->GetLabel()] = hCert;
   } else {
     wallet->mapCert.erase(hCert);
-    wallet->mapCertLabel.erase(cert.GetLabel());
+    wallet->mapCertLabel.erase(cert->GetLabel());
   }
 
   return (true);

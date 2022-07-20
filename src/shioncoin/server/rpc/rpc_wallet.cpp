@@ -1610,7 +1610,7 @@ Value rpc_wallet_setcert(CIface *iface, const Array& params, bool fStratum)
 	CTransaction tx;
 	if (!GetTxOfCert(iface, hCert, tx))
 		throw JSONRPCError(ERR_NOENT, "unknown certificate");
-	CCert *cert = &tx.certificate;
+	CCert *cert = (CCert *)&tx.certificate;
 
 	CAccountCache *acc = wallet->GetAccount(strAccount);
 	if (!acc)

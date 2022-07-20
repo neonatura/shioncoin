@@ -68,11 +68,13 @@ _TEST(sip10_ctxtx)
 		err = init_ctx_tx(iface, wtx, strLabel, strName, vchValue);
 		_TRUE(0 == err);
 	}
-	CContext ctx(wtx.certificate);
-	uint160 hashContext = ctx.GetHash();
+	CContext *ctx = wtx.GetContext();
+	_TRUEPTR(ctx);
+	uint160 hashContext = ctx->GetHash();
 
 	_TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyContextTx(iface, wtx, nBestHeight) == true);
+//	_TRUE(VerifyContextTx(iface, wtx, nBestHeight) == true);
+	_TRUE(wtx.VerifyContext(TEST_COIN_IFACE) == true);
 	_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	/* insert ctx into chain + create a coin balance */
@@ -135,11 +137,13 @@ _TEST(sip10_di_ctxtx)
 		err = init_ctx_tx(iface, wtx, strLabel, strName, vchValue);
 		_TRUE(0 == err);
 	}
-	CContext ctx(wtx.certificate);
-	uint160 hashContext = ctx.GetHash();
+	CContext *ctx = wtx.GetContext();
+	_TRUEPTR(ctx);
+	uint160 hashContext = ctx->GetHash();
 
 	_TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyContextTx(iface, wtx, nBestHeight) == true);
+	//_TRUE(VerifyContextTx(iface, wtx, nBestHeight) == true);
+	_TRUE(wtx.VerifyContext(TEST_COIN_IFACE) == true);
 	_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	/* insert ctx into chain + create a coin balance */

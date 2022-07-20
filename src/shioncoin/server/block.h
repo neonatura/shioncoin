@@ -664,7 +664,8 @@ class CTransaction : public CTransactionCore
 {
 
   public:
-    CCert certificate;
+    CCertCore certificate;
+    CContext context;
     CIdent ident;
 		CAsset asset;
     CAlias alias;
@@ -701,9 +702,12 @@ class CTransaction : public CTransactionCore
     (
       READWRITE(*(CTransactionCore*)this);
       if ((this->nFlag & TXF_CERTIFICATE) ||
-          (this->nFlag & TXF_LICENSE) ||
-          (this->nFlag & TXF_CONTEXT))
+          (this->nFlag & TXF_LICENSE)) {
         READWRITE(certificate);
+			}
+			if (this->nFlag & TXF_CONTEXT) {
+        READWRITE(context);
+			}
 			if (this->nFlag & TXF_IDENT) 
         READWRITE(ident);
 			if (this->nFlag & TXF_ASSET) {
@@ -732,6 +736,7 @@ class CTransaction : public CTransactionCore
 
       CTransactionCore::SetNull();
       certificate.SetNull();
+      context.SetNull();
 			ident.SetNull();
 			asset.SetNull();
 			alias.SetNull();
@@ -866,7 +871,7 @@ class CTransaction : public CTransactionCore
 
     CCert *DeriveCert(int ifaceIndex, string strTitle, CCoinAddr& addr, CCert *chain, string hexSeed, int64 nLicenseFee);
 
-    CCert *CreateLicense(CCert *cert);
+    CLicense *CreateLicense(CCert *cert);
 
     COffer *CreateOffer();
     COffer *AcceptOffer(COffer *offerIn);
@@ -893,6 +898,8 @@ class CTransaction : public CTransactionCore
     CIdent *CreateIdent(int ifaceIndex, CCoinAddr& addr);
 
     CContext *CreateContext();
+		/** Verify the integrity of an context transaction. */
+		bool VerifyContext(int ifaceIndex); 
 
 		CAltChain *CreateAltChain();
 
@@ -916,12 +923,18 @@ class CTransaction : public CTransactionCore
 
     CCert *GetCertificate()
     {
-      if (!(this->nFlag & TXF_CERTIFICATE) && 
-          !(this->nFlag & TXF_LICENSE) && 
-          !(this->nFlag & TXF_CONTEXT)) {
+      if (!(this->nFlag & TXF_CERTIFICATE)) {
 				return (NULL);
 			}
-      return (&certificate);
+      return ((CCert *)&certificate);
+    }
+
+    CLicense *GetLicense()
+    {
+      if (!(this->nFlag & TXF_LICENSE)) {
+				return (NULL);
+			}
+      return ((CLicense *)&certificate);
     }
 
     CContext *GetContext()
@@ -929,7 +942,7 @@ class CTransaction : public CTransactionCore
       if (!(this->nFlag & TXF_CONTEXT)) {
 				return (NULL);
 			}
-      return ((CContext *)&certificate);
+      return ((CContext *)&context);
     }
 
 		CExec *GetExec() const

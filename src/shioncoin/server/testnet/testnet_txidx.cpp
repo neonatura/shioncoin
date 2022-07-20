@@ -171,9 +171,6 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
       if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
         if (IsCertTx(tx))
           vCert.push_back(pindexNew);
-      } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
-        if (IsContextTx(tx))
-          vContext.push_back(pindexNew);
 #if 0
       } else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
         /* not implemented */
@@ -182,6 +179,11 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
         if (IsLicenseTx(tx))
           vLicense.push_back(pindexNew);
       } 
+
+      if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
+        if (IsContextTx(tx))
+          vContext.push_back(pindexNew);
+			}
 
 			if (tx.isFlag(CTransaction::TXF_ASSET)) {
         if (IsAssetTx(tx))

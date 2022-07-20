@@ -118,13 +118,13 @@ Value rpc_cert_list(CIface *iface, const Array& params, bool fStratum)
       continue;
     }
 
-    CCert& cert = tx.certificate;
+    CCert *cert = (CCert *)&tx.certificate;
     if (kwd.length() != 0) {
-      if (cert.GetLabel().find(kwd) == std::string::npos)
+      if (cert->GetLabel().find(kwd) == std::string::npos)
         continue;
     }
 
-    result.push_back(Pair(cert.GetLabel().c_str(), hCert.GetHex()));
+    result.push_back(Pair(cert->GetLabel().c_str(), hCert.GetHex()));
   }
 
   return (result);
@@ -165,8 +165,8 @@ Value rpc_cert_get(CIface *iface, const Array& params, bool fStratum)
     }
   }
  
-  CCert& cert = tx.certificate;
-  Object result = cert.ToValue();
+  CCert *cert = (CCert *)&tx.certificate;
+  Object result = cert->ToValue();
 
   result.push_back(Pair("txid", tx.GetHash().GetHex()));
 

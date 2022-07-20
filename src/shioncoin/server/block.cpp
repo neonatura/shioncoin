@@ -1126,21 +1126,24 @@ CAlias *CTransaction::RemoveAlias(std::string name)
 CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr, string hexSeed, int64 nLicenseFee)
 {
   cbuff vchContext;
+	CCert newCert;
 
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
-			(nFlag & CTransaction::TXF_LICENSE) ||
-			(nFlag & CTransaction::TXF_CONTEXT))
+			(nFlag & CTransaction::TXF_LICENSE)) {
     return (NULL); /* already in use */
+	}
 
   nFlag |= CTransaction::TXF_CERTIFICATE;
-  certificate = CCert(strTitle);
-  certificate.SetExpireTime();
-  certificate.SetSerialNumber();
-  shgeo_local(&certificate.geo, SHGEO_PREC_DISTRICT);
-  certificate.SetFee(nLicenseFee);
-  certificate.Sign(ifaceIndex, addr, vchContext, hexSeed);
+  newCert = CCert(strTitle);
+  newCert.SetExpireTime();
+  newCert.ResetSerialNumber();
+  shgeo_local(&newCert.geo, SHGEO_PREC_DISTRICT);
+  newCert.SetFee(nLicenseFee);
+  newCert.Sign(ifaceIndex, addr, vchContext, hexSeed);
 
-  return (&certificate);
+	certificate = newCert;
+
+  return (GetCertificate());
 }
 
 CCert *CTransaction::DeriveCert(int ifaceIndex, string strTitle, CCoinAddr& addr, CCert *chain, string hexSeed, int64 nLicenseFee)
@@ -1150,34 +1153,36 @@ CCert *CTransaction::DeriveCert(int ifaceIndex, string strTitle, CCoinAddr& addr
     return (NULL);
 
   nFlag |= CTransaction::TXF_CERTIFICATE;
-  certificate = CCert(strTitle);
-  certificate.SetSerialNumber();
-  certificate.hashIssuer = chain->GetHash();
 
-  certificate.nFlag |= SHCERT_CERT_CHAIN;
-  certificate.nFlag |= SHCERT_CERT_LICENSE; /* capable of licensing */
+  CCert newCert = CCert(strTitle);
+  newCert.ResetSerialNumber();
+  newCert.hashIssuer = chain->GetHash();
+
+  newCert.nFlag |= SHCERT_CERT_CHAIN;
+  newCert.nFlag |= SHCERT_CERT_LICENSE; /* capable of licensing */
   /* signing is revoked once parent is a chained cert */
   if (chain->nFlag & SHCERT_CERT_CHAIN)
-    certificate.nFlag &= ~SHCERT_CERT_SIGN;
+    newCert.nFlag &= ~SHCERT_CERT_SIGN;
 
-  shgeo_local(&certificate.geo, SHGEO_PREC_DISTRICT);
-  certificate.SetFee(nLicenseFee);
-  certificate.Sign(ifaceIndex, addr, chain, hexSeed);
+  shgeo_local(&newCert.geo, SHGEO_PREC_DISTRICT);
+  newCert.SetFee(nLicenseFee);
+  newCert.Sign(ifaceIndex, addr, chain, hexSeed);
 
-  return (&certificate);
+	certificate = newCert;
+  return (GetCertificate());
 }
 
 /**
  * @param lic_span The duration of the license in seconds.
  */
-CCert *CTransaction::CreateLicense(CCert *cert)
+CLicense *CTransaction::CreateLicense(CCert *cert)
 {
   double lic_span;
 
   if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
-			(nFlag & CTransaction::TXF_LICENSE) ||
-			(nFlag & CTransaction::TXF_CONTEXT))
+			(nFlag & CTransaction::TXF_LICENSE)) {
     return (NULL); /* already in use */
+	}
   
   nFlag |= CTransaction::TXF_LICENSE;
   CLicense license;
@@ -1185,17 +1190,15 @@ CCert *CTransaction::CreateLicense(CCert *cert)
   license.nFlag |= SHCERT_CERT_CHAIN;
   license.nFlag &= ~SHCERT_CERT_SIGN;
 
-  license.SetSerialNumber();
+  license.ResetSerialNumber();
   shgeo_local(&license.geo, SHGEO_PREC_DISTRICT);
   license.hashIssuer = cert->GetHash();
   license.Sign(cert);
 
-  certificate = (CCert&)license;
+  certificate = license;//(CCertCore&)license;
 
-  return (&certificate);
+  return (GetLicense());//&certificate);
 }
-
-
 
 COffer *CTransaction::CreateOffer()
 {
@@ -1766,8 +1769,7 @@ Object CTransaction::ToValue(int ifaceIndex)
 			obj.push_back(Pair("matrix", matrix.ToValue()));
 		}
 		if (flags & TXF_CONTEXT) {
-			CContext ctx(certificate);
-			obj.push_back(Pair("context", ctx.ToValue()));
+			obj.push_back(Pair("context", context.ToValue()));
 		}
 		if (flags & TXF_ALTCHAIN) {
 			CAltChain *alt = GetAltChain();
@@ -1967,20 +1969,81 @@ CContext *CTransaction::CreateContext()
 {
   CContext *ctx;
 
-  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
-			(nFlag & CTransaction::TXF_LICENSE) ||
-			(nFlag & CTransaction::TXF_CONTEXT))
+  if (nFlag & CTransaction::TXF_CONTEXT) {
     return (NULL); /* already in use */
+	}
 
   nFlag |= CTransaction::TXF_CONTEXT;
 
-  ctx = (CContext *)&certificate;
+  ctx = (CContext *)&context;
   ctx->SetNull();
 
+#if 0
   /* each context value expires after two years */
   ctx->SetExpireSpan((double)DEFAULT_CONTEXT_LIFESPAN);
+#endif
 
   return (ctx);
+}
+
+bool CTransaction::VerifyContext(int ifaceIndex)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  uint160 hashContext;
+  int nOut;
+  int err;
+
+  if (!iface)
+    return (false);
+
+  /* core verification */
+  if (!IsContextTx(*this)) {
+    return (false); /* tx not flagged as context */
+  }
+
+  /* verify hash in pub-script matches context hash */
+  nOut = IndexOfContextOutput(*this);
+  if (nOut == -1) {
+    return (false); /* no extension output */
+  }
+
+  int mode;
+  if (!DecodeContextHash(vout[nOut].scriptPubKey, mode, hashContext)) {
+    return (false); /* no context hash in output */
+  }
+
+	if (mode == OP_EXT_NEW && 
+			mode == OP_EXT_UPDATE &&
+			mode == OP_EXT_REMOVE) {
+		return (true);
+	}
+
+  CContext *context = GetContext();
+  if (hashContext != context->GetHash()) {
+    return error(SHERR_INVAL, "context hash mismatch");
+  }
+
+  err = context->VerifyTransaction();
+  if (err != 0) {
+    return (error(err, "context verification failure"));
+  }
+
+	{
+		int nHeight = GetBestHeight(iface);
+		int64 nBaseFee = context->CalculateFee(iface, nHeight);
+		int64 nCredit = vout[nOut].nValue;
+
+		/** context fee must be at least base context fee. */
+		if (nCredit < nBaseFee) {
+			return (error(ERR_FEE, "insufficient context fund"));
+		}
+
+		if (!context->VerifyLifespan(iface, nCredit)) {
+			return (error(ERR_INVAL, "expiration exceeds limit"));
+		}
+	}
+
+	return (true);
 }
 
 CAltChain *CTransaction::CreateAltChain()
@@ -2707,13 +2770,16 @@ void CTransaction::Init(const CTransaction& tx)
 
 	if (this->nFlag & TXF_CERTIFICATE)
 		certificate = tx.certificate;
-	else if (this->nFlag & TXF_CONTEXT)
-		certificate = tx.certificate;
 	else if (this->nFlag & TXF_LICENSE)
 		certificate = tx.certificate;
 
-	if (this->nFlag & TXF_IDENT)
+	if (this->nFlag & TXF_CONTEXT) {
+		context = tx.context;
+	}
+
+	if (this->nFlag & TXF_IDENT) {
 		ident = tx.ident;
+	}
 
 	if (this->nFlag & TXF_ASSET) {
 		asset = tx.asset;

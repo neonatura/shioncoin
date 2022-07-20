@@ -547,8 +547,7 @@ int CAsset::VerifyTransaction()
 	if (err)
 		return (err);
 
-	if (//vContent.size() == 0 ||
-			vContent.size() > MAX_ASSET_CONTENT_LENGTH) {
+	if (vContent.size() > MAX_ASSET_CONTENT_LENGTH) {
 		return (ERR_2BIG);
 	}
 

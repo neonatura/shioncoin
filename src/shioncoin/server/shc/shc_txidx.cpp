@@ -182,13 +182,15 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
       if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
 				if (IsCertTx(tx))
           vCert.push_back(pindexNew);
-      } else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
-				if (IsContextTx(tx))
-					vContext.push_back(pindexNew);
       } else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
 				if (IsLicenseTx(tx))
 					vLicense.push_back(pindexNew);
       }
+
+      if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
+				if (IsContextTx(tx))
+					vContext.push_back(pindexNew);
+			}
 
       if (tx.isFlag(CTransaction::TXF_IDENT)) {
 				if (IsIdentTx(tx))

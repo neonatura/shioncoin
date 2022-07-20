@@ -144,8 +144,23 @@ class CIdent : public CExtCore
 };
 #endif
 
-class CCert : public CEntity
+class CCertCore : public CEntity
 {
+
+	protected:
+		/**
+		 * Create a randomized serial number suitable for a certificate.
+		 */
+		static cbuff GenerateSerialNumber()
+		{
+			static unsigned char raw[32];
+			uint64_t *v = (uint64_t *)raw;
+
+			v[0] = shrand();
+			v[1] = shrand();
+
+			return (cbuff(raw, raw+16));
+		}
 
 	public:
 		/** The maximum supported version of an certificate type transaction. */
@@ -161,6 +176,231 @@ class CCert : public CEntity
 		cbuff vContext;
 		int64 nFee;
 		int nFlag;
+
+		CCertCore()
+		{
+			SetNull();
+		}
+
+		CCertCore(const CEntity& identIn)
+		{
+			SetNull();
+			CEntity::Init(identIn);
+		}
+
+		CCertCore(const CCertCore& certIn)
+		{
+			SetNull();
+			Init(certIn);
+		}
+
+		/**
+		 * Create a certificate authority.
+		 * @param hashEntity The entity being issued a certificate.
+		 * @param vSer A 16-byte (128-bit) serial number.
+		 */
+		CCertCore(string strTitle)
+		{
+			SetNull();
+			SetLabel(strTitle);
+		}
+
+		bool SetIssuer(CCertCore& issuer)
+		{
+
+			if (issuer.nFlag & CERTF_CHAIN)
+				return (false); /* cannot chain a chain'd cert */
+
+			nFlag |= CERTF_CHAIN;
+			hashIssuer = issuer.GetHash();
+			return (true);
+		}
+
+		void SetFee(int64 nFeeIn)
+		{
+			nFee = (uint64_t)nFeeIn; 
+		}
+
+		void ResetSerialNumber()
+		{
+			SetSerialNumber(GenerateSerialNumber());
+		}
+
+		virtual void SetSerialNumber(cbuff vSerialIn)
+		{
+		}
+#if 0
+		void SetSerialNumber(cbuff vSerialIn)
+		{
+			vContext = vSerialIn;
+		}
+#endif
+
+		IMPLEMENT_SERIALIZE (
+				READWRITE(*(CEntity *)this);
+				READWRITE(this->hashIssuer);
+				READWRITE(this->signature);
+				READWRITE(this->vContext);
+				READWRITE(this->nFee);
+				READWRITE(this->nFlag);
+				)
+
+			void Init(const CCertCore& b)
+			{
+				CEntity::Init(b);
+				hashIssuer = b.hashIssuer;
+				signature = b.signature;
+				vContext = b.vContext;
+				nFee = b.nFee;
+				nFlag = b.nFlag;
+			}
+
+		friend bool operator==(const CCertCore &a, const CCertCore &b) {
+			return (
+					((CEntity&) a) == ((CEntity&) b) &&
+					a.hashIssuer == b.hashIssuer &&
+					a.signature == b.signature &&
+					a.vContext == b.vContext &&
+					a.nFee == b.nFee &&
+					a.nFlag == b.nFlag
+					);
+		}
+
+		CCertCore operator=(const CCertCore &b) 
+		{
+			SetNull();
+			Init(b);
+			return *this;
+		}
+
+		friend bool operator!=(const CCertCore &a, const CCertCore &b) {
+			return !(a == b);
+		}
+
+		void SetNull()
+		{
+			CEntity::SetNull();
+			signature.SetNull();
+			vContext.clear();
+
+			nVersion = 3;
+			nFee = 0;
+			hashIssuer = 0;
+
+			/* x509 prep */
+			nFlag = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
+		}
+
+		int GetFlags()
+		{
+			return (nFlag);
+		}
+
+		int64 GetFee()
+		{
+			return (nFee);
+		}
+
+#if 0
+		/* a 128-bit binary context converted into a 160bit hexadecimal number. */
+		std::string GetSerialNumber()
+		{
+			return (HexStr(vContext));
+		}
+#endif
+		virtual std::string GetSerialNumber()
+		{
+			return (string());
+		}
+
+		uint160 GetIssuerHash()
+		{
+			return (hashIssuer);
+		}
+
+		uint160 GetHash()
+		{
+			uint256 hash = SerializeHash(*this);
+			unsigned char *raw = (unsigned char *)&hash;
+			cbuff rawbuf(raw, raw + sizeof(hash));
+			return Hash160(rawbuf);
+		}
+
+#if 0
+		/**
+		 * @note The signature does not take into account the geo-detic address (although the underlying certificate hash does).
+		 */
+		bool Sign(int ifaceIndex, CCoinAddr& addr, cbuff vchContext, string hexSeed = string());
+
+		bool Sign(int ifaceIndex, CCoinAddr& addr, CCertCore *cert, string hexSeed = string())
+		{
+			string hexContext = stringFromVch(cert->signature.vPubKey);
+			return (Sign(ifaceIndex, addr, ParseHex(hexContext), hexSeed));
+		}
+
+
+		/**
+		 * Verify the integrity of a signature against some context.
+		 */
+		bool VerifySignature(int ifaceIndex, cbuff vchContext);
+
+		/**
+		 * Verify the integrity of a signature against the pubkey of specific cert.
+		 */
+		bool VerifySignature(int ifaceIndex, CCertCore *cert)
+		{
+			return (VerifySignature(ifaceIndex, cert->signature.vPubKey));
+		}
+
+		/**
+		 * Verify the integrity of a signature against the pubkey of chained cert.
+		 */
+		bool VerifySignature(int ifaceIndex);
+
+		bool IsSignatureOwner(string strAccount = string());
+
+		bool VerifySignatureSeed(string hexSeed);
+#endif
+
+//		void NotifySharenet(int ifaceIndex);
+
+		int GetDefaultVersion()
+		{
+			return (3);
+		}
+
+		int GetMaximumVersion()
+		{
+			return (MAX_CERTIFICATE_VERSION);
+		}
+
+#if 0
+		time_t GetMaximumLifespan()
+		{
+			return (MAX_CERTIFICATE_LIFESPAN);
+		}
+#endif
+
+		int VerifyTransaction();
+
+		std::string ToString();
+
+		Object ToValue();
+
+};
+
+class CCert : public CCertCore
+{
+
+	public:
+		/** The maximum supported version of an certificate type transaction. */
+		static const int MAX_CERTIFICATE_VERSION = SHC_VERSION_MAJOR;
+
+		//		/** The maximum life-span, in seconds, of an certificate type transaction. */
+		//    static const int MAX_CERTIFICATE_LIFESPAN = 1514743200; // ~48y
+
+		static const int CERTF_CHAIN = SHCERT_CERT_CHAIN;
+
 
 		CCert()
 		{
@@ -206,43 +446,44 @@ class CCert : public CEntity
 			nFee = (uint64_t)nFeeIn; 
 		}
 
-		void SetSerialNumber()
-		{
-			SetSerialNumber(GenerateSerialNumber());
-		}
 
 		void SetSerialNumber(cbuff vSerialIn)
 		{
 			vContext = vSerialIn;
 		}
 
+#if 0
+		void SetSerialNumber()
+		{
+			SetSerialNumber(GenerateSerialNumber());
+		}
+		/**
+		 * Create a randomized serial number suitable for a certificate.
+		 */
+		static cbuff GenerateSerialNumber()
+		{
+			static unsigned char raw[32];
+			uint64_t *v = (uint64_t *)raw;
+
+			v[0] = shrand();
+			v[1] = shrand();
+
+			return (cbuff(raw, raw+16));
+		}
+#endif
+
 		IMPLEMENT_SERIALIZE (
-				READWRITE(*(CEntity *)this);
-				READWRITE(this->hashIssuer);
-				READWRITE(this->signature);
-				READWRITE(this->vContext);
-				READWRITE(this->nFee);
-				READWRITE(this->nFlag);
+				READWRITE(*(CCertCore *)this);
 				)
 
 			void Init(const CCert& b)
 			{
-				CEntity::Init(b);
-				hashIssuer = b.hashIssuer;
-				signature = b.signature;
-				vContext = b.vContext;
-				nFee = b.nFee;
-				nFlag = b.nFlag;
+				CCertCore::Init(b);
 			}
 
 		friend bool operator==(const CCert &a, const CCert &b) {
 			return (
-					((CEntity&) a) == ((CEntity&) b) &&
-					a.hashIssuer == b.hashIssuer &&
-					a.signature == b.signature &&
-					a.vContext == b.vContext &&
-					a.nFee == b.nFee &&
-					a.nFlag == b.nFlag
+					((CCertCore&) a) == ((CCertCore&) b)
 					);
 		}
 
@@ -259,18 +500,13 @@ class CCert : public CEntity
 
 		void SetNull()
 		{
-			CEntity::SetNull();
-			signature.SetNull();
-			vContext.clear();
-
-			nVersion = 3;
-			nFee = 0;
-			hashIssuer = 0;
+			CCertCore::SetNull();
 
 			/* x509 prep */
 			nFlag = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
 		}
 
+#if 0
 		int GetFlags()
 		{
 			return (nFlag);
@@ -280,6 +516,7 @@ class CCert : public CEntity
 		{
 			return (nFee);
 		}
+#endif
 
 		/* a 128-bit binary context converted into a 160bit hexadecimal number. */
 		std::string GetSerialNumber()
@@ -334,22 +571,9 @@ class CCert : public CEntity
 
 		bool VerifySignatureSeed(string hexSeed);
 
-		/**
-		 * Create a randomized serial number suitable for a certificate.
-		 */
-		static cbuff GenerateSerialNumber()
-		{
-			static unsigned char raw[32];
-			uint64_t *v = (uint64_t *)raw;
+//		void NotifySharenet(int ifaceIndex);
 
-			v[0] = shrand();
-			v[1] = shrand();
-
-			return (cbuff(raw, raw+16));
-		}
-
-		void NotifySharenet(int ifaceIndex);
-
+#if 0
 		int GetDefaultVersion()
 		{
 			return (3);
@@ -359,6 +583,7 @@ class CCert : public CEntity
 		{
 			return (MAX_CERTIFICATE_VERSION);
 		}
+#endif
 
 #if 0
 		time_t GetMaximumLifespan()
@@ -379,7 +604,7 @@ class CCert : public CEntity
  * A license is a specific type of certification.
  * @note A license is not capable of having contextual data.
  */
-class CLicense : public CCert
+class CLicense : public CCertCore
 {
 	public:
 		CLicense()
@@ -393,25 +618,25 @@ class CLicense : public CCert
 			Init(lic);
 		}
 
-		CLicense(const CCert& cert)
+		CLicense(const CCertCore& cert)
 		{
 			SetNull();
-			CCert::Init(cert);
+			CCertCore::Init(cert);
 		}
 
 		IMPLEMENT_SERIALIZE (
-				READWRITE(*(CCert *)this);
+				READWRITE(*(CCertCore *)this);
 				)
 
 			void SetNull()
 			{
-				CCert::SetNull();
+				CCertCore::SetNull();
 				nFlag |= SHCERT_CERT_LICENSE;
 			}
 
 		friend bool operator==(const CLicense &a, const CLicense &b) {
 			return (
-					((CCert&) a) == ((CCert&) b)
+					((CCertCore&) a) == ((CCertCore&) b)
 					);
 		}
 
@@ -428,7 +653,18 @@ class CLicense : public CCert
 
 		void Init(const CLicense& b)
 		{
-			CCert::Init(b);
+			CCertCore::Init(b);
+		}
+
+		void SetSerialNumber(cbuff vSerialIn)
+		{
+			vContext = vSerialIn;
+		}
+
+		/* a 128-bit binary context converted into a 160bit hexadecimal number. */
+		std::string GetSerialNumber()
+		{
+			return (HexStr(vContext));
 		}
 
 		bool Sign(CCert *cert);
@@ -439,7 +675,6 @@ class CLicense : public CCert
 
 		bool VerifySignature(int ifaceIndex);
 
-
 		const uint160 GetHash()
 		{
 			uint256 hash = SerializeHash(*this);
@@ -448,7 +683,7 @@ class CLicense : public CCert
 			return Hash160(rawbuf);
 		}
 
-		void NotifySharenet(int ifaceIndex);
+//		void NotifySharenet(int ifaceIndex);
 
 		std::string ToString();
 

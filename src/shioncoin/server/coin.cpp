@@ -587,17 +587,19 @@ void core_ConnectExtTx(CIface *iface, CBlock *pblock, int nHeight, CBlockIndex *
 
 		if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
 			InsertCertTable(iface, tx, nHeight);
-		} else if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
-			int err = CommitContextTx(iface, tx, nHeight);
-			if (err) {
-				error(err, "CommitContextTx failure");
-			}
 		} else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
 			bool fRet = CommitLicenseTx(iface, tx, nHeight);
 			if (!fRet) {
 				error(SHERR_INVAL, "CommitLicenseTx failure");
 			}
 		} 
+
+		if (tx.isFlag(CTransaction::TXF_CONTEXT)) {
+			int err = CommitContextTx(iface, tx, nHeight);
+			if (err) {
+				error(err, "CommitContextTx failure");
+			}
+		}
 
 		if (tx.isFlag(CTransaction::TXF_IDENT)) {
 			InsertIdentTable(iface, tx);

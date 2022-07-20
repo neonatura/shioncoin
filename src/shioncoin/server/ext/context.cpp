@@ -279,6 +279,35 @@ int64 GetContextOpFee(CIface *iface, int nHeight, int nSize)
   return (nFee);
 }
 
+int64 CalculateContextFee(CIface *iface, int nHeight, int nSize, int nLifespan)
+{
+  double base = ((nHeight+1) / 10240) + 1;
+  double nRes = 5200 / base * COIN;
+  double nDif = 5000 /base * COIN;
+  int64 nFee = (int64)(nRes - nDif);
+  double nFact;
+
+	/* content fee */
+  nFact = 4096 / (double)MIN(4096, MAX(32, nSize));
+  nFee = (int64)((double)nFee / nFact);
+
+	/* lifespan */
+  if (nLifespan != 0) {
+    nLifespan = MAX(nLifespan, CContext::MIN_CONTEXT_LIFESPAN);
+    nLifespan = MIN(nLifespan, CContext::MAX_CONTEXT_LIFESPAN);
+    nFee = (int64)((double)nFee / (double)CContext::MIN_CONTEXT_LIFESPAN * (double)nLifespan);
+  }
+
+  /* floor */
+  nFee /= 100000;
+  nFee *= 100000;
+
+  nFee = MAX(100000, nFee);
+  nFee = MAX(MIN_TX_FEE(iface), nFee);
+  nFee = MIN(MAX_TX_FEE(iface), nFee);
+  return (nFee);
+}
+
 
 int64 GetContextReturnFee(const CTransaction& tx) 
 {
@@ -359,7 +388,7 @@ bool IsLocalContext(CIface *iface, const CTransaction& tx)
   return (IsLocalContext(iface, tx.vout[nOut]));
 }
 
-
+#if 0
 /**
  * Verify the integrity of an ctx transaction.
  */
@@ -410,6 +439,7 @@ bool VerifyContextTx(CIface *iface, CTransaction& tx, int& mode)
 
   return (true);
 }
+#endif
 
 std::string CContext::ToString()
 {
@@ -427,8 +457,10 @@ Object CContext::ToValue()
   strncpy(buf, shcrcstr(crc), sizeof(buf)-1);
   string strChecksum(buf);
   
+#if 0
   if (nFlag != 0)
     obj.push_back(Pair("flags", nFlag));
+#endif
   obj.push_back(Pair("signature", signature.GetHash().GetHex()));
   obj.push_back(Pair("hash", GetHash().GetHex()));
   obj.push_back(Pair("valuesize", (int)vContext.size()));
@@ -481,25 +513,40 @@ bool CContext::VerifySignature()
   return (true);
 }
 
-
-
-
-
-
 /* @todo make extern in header */
 int CommitContextTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 {
   CWallet *wallet = GetWallet(iface);
-  CContext& ctx = (CContext&)tx.certificate;
-  uint160 hContext = ctx.GetHash();
+	CContext *ctx;
+	uint160 hContext;
   int err;
 
+fprintf(stderr, "DEBUG: CommitContextTx()/start\n");
+
+	ctx = tx.GetContext();
+	if (!ctx)
+		return (ERR_INVAL);
+	hContext = ctx->GetHash();
+
   /* validate */
+	if (!tx.VerifyContext(GetCoinIndex(iface))) {
+		return (ERR_INVAL);
+	}
+#if 0
   int tx_mode;
   if (!VerifyContextTx(iface, tx, tx_mode)) {
     error(SHERR_INVAL, "CommitContextTx: error verifying ctx tx.");
     return (SHERR_INVAL);
   }
+#endif
+	int tx_mode;
+	int nOut = IndexOfContextOutput(tx);
+  if (nOut == -1)
+    return (SHERR_INVAL);//error(SHERR_INVAL, "no contxt output script"));
+
+  uint160 hashContext;
+  if (!DecodeContextHash(tx.vout[nOut].scriptPubKey, tx_mode, hashContext))
+    return (SHERR_INVAL);//error(SHERR_INVAL, "no context hash in output"));
 
   if (wallet->mapContext.count(hContext) != 0) {
     /* already exists. */
@@ -514,12 +561,14 @@ int CommitContextTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
   wallet->mapContext[hContext] = tx.GetHash();
 
   /* propagate via share runtime library */
-  shctx_set_key(ctx.hashIssuer.GetKey(), 
-      ctx.vContext.data(), ctx.vContext.size());
+  shctx_set_key(ctx->hashIssuer.GetKey(), 
+      ctx->vContext.data(), ctx->vContext.size());
 #if 0
 /* DEBUG: */ /* record in libshare runtime */
   ctx.NotifySharenet(GetCoinIndex(iface));
 #endif
+
+fprintf(stderr, "DEBUG: CommitContextTx()/finish\n");
 
   return (0);
 }
@@ -527,8 +576,13 @@ int CommitContextTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 bool DisconnectContextTx(CIface *iface, CTransaction& tx)
 {
   CWallet *wallet = GetWallet(iface);
-  CContext *ctx = (CContext *)&tx.certificate;
-  const uint160& hContext = ctx->GetHash();
+	CContext *ctx;
+	uint160 hContext;
+
+	ctx = tx.GetContext();
+	if (!ctx)
+		return (false);
+	hContext = ctx->GetHash();
 
   if (wallet->mapContext.count(hContext) == 0)
     return (false);
@@ -569,10 +623,14 @@ CContext *GetContextByHash(CIface *iface, uint160 hashName, CTransaction& ctx_tx
   if (!GetTxOfContext(iface, hashName, ctx_tx))
     return (NULL);
 
-  ctx = (CContext *)&ctx_tx.certificate;
+  ctx = (CContext *)ctx_tx.GetContext();
+	if (!ctx)
+		return (NULL);
 
-  if (ctx->IsExpired())
+  if (ctx->IsExpired()) {
+fprintf(stderr, "DEBUG: GetContextByHash: IsExpired(): %u\n", ctx->GetExpireTime());
     return (NULL);
+	}
 
   return (ctx);
 }
@@ -691,6 +749,78 @@ bool CContext::SetValue(string name, cbuff value)
   return (true);
 }
 
+int64 CContext::CalculateFee(CIface *iface, int nHeight, int nContentSize, time_t nLifespan)
+{
+  if (nContentSize == -1) {
+    nContentSize = GetContentSize();
+  }
+  if (nLifespan == -1) {
+    nLifespan = GetLifespan();
+  }
+
+  return (CalculateContextFee(iface, nHeight, nContentSize, nLifespan));
+}
+
+time_t CContext::CalculateLifespan(CIface *iface, int64 nFee)
+{
+  nFee = MAX(nFee, MIN_TX_FEE(iface));
+  nFee = MIN(nFee, MAX_TX_FEE(iface));
+
+  int nHeight = GetBestHeight(iface);
+  int64 nBaseFee = CalculateFee(iface, nHeight, GetContentSize(), 0);
+  double fact = 1 / (double)nBaseFee * (double)nFee;
+
+  time_t lifespan = (time_t)(GetMinimumLifespan() * fact);
+  lifespan = MAX(lifespan, GetMinimumLifespan());
+  lifespan = MIN(lifespan, GetMaximumLifespan());
+
+fprintf(stderr, "DEBUG: CalculateLifespan: fact %f\n", fact);
+fprintf(stderr, "DEBUG: CalculateLifespan: GetMinLifespan %u\n", GetMinimumLifespan());
+fprintf(stderr, "DEBUG: CalculateLifespan: GetMaxLifespan %u\n", GetMaximumLifespan());
+fprintf(stderr, "DEBUG: CalculateLifespan: lifespan %u\n", lifespan);
+
+  return (lifespan);
+}
+
+int CContext::VerifyTransaction()
+{
+	int err;
+
+  err = CEntity::VerifyTransaction();
+  if (err)
+    return (err);
+
+	if (GetContentSize() > MAX_CONTEXT_CONTENT_LENGTH) {
+    return (ERR_2BIG);
+  }
+
+	err = ctx_context_verify(vContext);
+  if (err)
+    return (error(err, "context verification failure"));
+
+#if 0
+  int64 nFee = GetContextOpFee(iface, GetBestHeight(iface), ctx.vContext.size());
+  if (tx.vout[nOut].nValue < nFee)
+    return error(SHERR_INVAL, "insufficient funds in coin output");
+
+  now = time(NULL);
+  if (ctx.GetExpireTime() > (now + DEFAULT_CONTEXT_LIFESPAN))
+    return error(SHERR_INVAL, "invalid expiration time");
+#endif
+
+  if (!VerifySignature()) {
+    return (error(SHERR_ACCESS, "VerifyTransaction: invalid context signature."));
+  }
+
+	return (0);
+}
+
+void CContext::ResetExpireTime(CIface *iface, int64 nFee)
+{
+fprintf(stderr, "DEBUG: REMOVE ME: CContext::ResetExpireTime()\n");
+	SetExpireSpan(CalculateLifespan(iface, nFee));
+}
+
 static string GetObjectValue(Object obj, string cmp_name)
 {
 
@@ -708,6 +838,7 @@ static string GetObjectValue(Object obj, string cmp_name)
   return (string());
 }
 
+#if 0
 void CContext::NotifySharenet(int ifaceIndex)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -749,6 +880,7 @@ void CContext::NotifySharenet(int ifaceIndex)
 
 
 }
+#endif
 
 bool FormatGeoContext(CIface *iface, string& strGeo, shnum_t& lat, shnum_t& lon)
 {
@@ -836,6 +968,18 @@ string create_shionid_id(string strEmail)
 	return (strId);
 }
 
+int IndexOfContextOutput(const CTransaction& tx)
+{
+  CScript script;
+  int nTxOut;
+  int mode;
+
+  if (!GetExtOutput(tx, OP_CONTEXT, mode, nTxOut, script))
+    return (-1);
+
+  return (nTxOut);
+}
+
 int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc, bool fTest)
 {
   CWallet *wallet = GetWallet(iface);
@@ -899,6 +1043,15 @@ int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName
     error(SHERR_INVAL, "init_ctx_tx: error setting context value.");
     return (SHERR_INVAL);
   }
+
+fprintf(stderr, "DEBUG: CalculateLifespan: GetMinLifespan %u\n", ctx->GetMinimumLifespan());
+fprintf(stderr, "DEBUG: CalculateLifespan: GetMaxLifespan %u\n", ctx->GetMaximumLifespan());
+
+fprintf(stderr, "DEBUG: init_ctx: ResetExpireTime: getExpireTime/pre  %u\n", ctx->GetExpireTime());
+	ctx->ResetExpireTime(iface, nFee);
+fprintf(stderr, "DEBUG: init_ctx: ResetExpireTime: nFee %f\n", ((double)nFee/COIN));
+fprintf(stderr, "DEBUG: init_ctx: ResetExpireTime: lifespan %u\n", ctx->CalculateLifespan(iface, nFee));
+fprintf(stderr, "DEBUG: init_ctx: ResetExpireTime: getExpireTime  %u\n", ctx->GetExpireTime());
 
   if (!ctx->Sign(ifaceIndex)) {
     error(SHERR_INVAL, "init_ctx_tx: error signing context.");
@@ -1003,6 +1156,8 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
     error(SHERR_INVAL, "update_ctx_tx: error setting context value.");
     return (SHERR_INVAL);
   }
+
+	ctx->ResetExpireTime(iface, nValue); 
 
   if (!ctx->Sign(ifaceIndex)) {
     error(SHERR_INVAL, "update_ctx_tx: error signing context.");

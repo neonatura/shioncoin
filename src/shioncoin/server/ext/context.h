@@ -30,8 +30,9 @@
 
 #define DEFAULT_CONTEXT_LIFESPAN 63072000 /* two years */
 
-class CContext : public CCert
+class CContext : public CEntity
 {
+
 	public:
 
 		/**
@@ -42,15 +43,25 @@ class CContext : public CCert
 		/** The maximum size permitted of the context context payload. */
 		static const unsigned int MAX_CONTEXT_CONTENT_LENGTH = 4096;
 
+		static const time_t MIN_CONTEXT_LIFESPAN = 63072000; /* 2y */
+
+		static const time_t MAX_CONTEXT_LIFESPAN = 378432000; /* 12y */ 
+
+		uint160 hashIssuer;
+		CSign signature;
+		cbuff vContext;
+		int64 __reserved_0__;
+		int __reserved_1__;
+
 		CContext()
 		{
 			SetNull();
 		}
 
-		CContext(const CCert& certIn)
+		CContext(const CEntity& certIn)
 		{
 			SetNull();
-			CCert::Init(certIn);
+			CEntity::Init(certIn);
 		}
 
 		CContext(const CContext& ctxIn)
@@ -60,23 +71,47 @@ class CContext : public CCert
 		}
 
 		IMPLEMENT_SERIALIZE (
-				READWRITE(*(CCert *)this);
-				)
+			READWRITE(*(CEntity *)this);
+			READWRITE(this->hashIssuer);
+			READWRITE(this->signature);
+			READWRITE(this->vContext);
+			READWRITE(this->__reserved_0__);
+			READWRITE(this->__reserved_1__);
+		)
 
-			void SetNull()
-			{
-				CCert::SetNull();
-			}
+		void SetNull()
+		{
+			CEntity::SetNull();
+
+      signature.SetNull();
+      vContext.clear();
+
+      nVersion = 3;
+      hashIssuer = 0;
+
+			__reserved_0__ = 0;
+			__reserved_1__ = 0;
+		}
 
 		void Init(const CContext& ctxIn)
 		{
-			CCert::Init(ctxIn);
+			CEntity::Init(ctxIn);
+			hashIssuer = ctxIn.hashIssuer;
+			signature = ctxIn.signature;
+			vContext = ctxIn.vContext;
+			__reserved_0__ = ctxIn.__reserved_0__;
+			__reserved_1__ = ctxIn.__reserved_1__;
 		}
 
 		friend bool operator==(const CContext &a, const CContext &b)
 		{
 			return (
-					((CCert&) a) == ((CCert&) b)
+					((CEntity&) a) == ((CEntity&) b) &&
+					a.hashIssuer == b.hashIssuer &&
+					a.signature == b.signature &&
+					a.vContext == b.vContext &&
+					a.__reserved_0__ == b.__reserved_0__ &&
+					a.__reserved_1__ == b.__reserved_1__
 					);
 		}
 
@@ -86,6 +121,22 @@ class CContext : public CCert
 			Init(b);
 			return (*this);
 		}
+
+		time_t GetMinimumLifespan()
+		{
+			return (MIN_CONTEXT_LIFESPAN);
+		}
+
+		time_t GetMaximumLifespan()
+		{
+			return (MAX_CONTEXT_LIFESPAN);
+		}
+
+		time_t CalculateLifespan(CIface *iface, int64 nFee);
+
+		void ResetExpireTime(CIface *iface, int64 nFee);
+
+		int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1);
 
 		bool Sign(int ifaceIndex);
 
@@ -111,12 +162,40 @@ class CContext : public CCert
 
 		bool SetValue(string name, cbuff value);
 
-		void NotifySharenet(int ifaceIndex);
+		//		void NotifySharenet(int ifaceIndex);
+
+		cbuff GetContent()
+		{
+			return (vContext);
+		}
+
+		void SetContent(const cbuff& vContextIn)
+		{
+			vContext = vContextIn;
+		}
+
+		void ResetContent()
+    {
+      vContext = cbuff();
+    }
+
+		int GetContentSize()
+    {
+      return (vContext.size());
+    }
 
 		int GetMaximumContentSize() /* CExtCore */
 		{
 			return (MAX_CONTEXT_CONTENT_LENGTH);
 		}
+
+		int64 CalculateContentChecksum()
+		{
+			Object obj = CEntity::ToValue();
+			return ((int64_t)shcrc(vContext.data(), vContext.size()));
+		}
+
+		int VerifyTransaction();
 
 		std::string ToString();
 
@@ -126,8 +205,6 @@ class CContext : public CCert
 
 
 ctx_list *GetContextTable(int ifaceIndex);
-
-bool VerifyContextTx(CIface *iface, CTransaction& tx, int& mode);
 
 bool IsContextTx(const CTransaction& tx);
 
@@ -141,6 +218,9 @@ CContext *GetContextByHash(CIface *iface, uint160 hashName, CTransaction& ctx_tx
 
 CContext *GetContextByName(CIface *iface, string strName, CTransaction& ctx_tx);
 
+int64 CalculateContextFee(CIface *iface, int nHeight, int nSize = 0, int nLifespan = 0);
+
+bool DecodeContextHash(const CScript& script, int& mode, uint160& hash);
 
 int init_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strName, cbuff vchValue, shgeo_t *loc = NULL, bool fTest = false);
 
@@ -158,6 +238,8 @@ int ctx_context_verify(cbuff vchValue);
 int create_shionid_tx(CIface *iface, CWalletTx& wtx, string strAccount, map<string,string> mapParam, bool fTest = false);
 
 string create_shionid_id(string strEmail);
+
+int IndexOfContextOutput(const CTransaction& tx);
 
 
 #endif /* ndef __CONTEXT_H__ */
