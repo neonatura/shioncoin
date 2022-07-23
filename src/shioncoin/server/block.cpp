@@ -1470,14 +1470,10 @@ CIdent *CTransaction::CreateIdent(int ifaceIndex, CCoinAddr& addr)
 
 bool CTransaction::VerifyIdent(int ifaceIndex)
 {
-  CIface *iface = GetCoinByIndex(ifaceIndex);
 	uint160 hashIdent;
 	int mode;
 	int nOut;
 	int err;
-
-	if (!iface)
-		return (false);
 
 	/* core verification */
 	if (!IsIdentTx(*this)) {
@@ -1506,7 +1502,7 @@ bool CTransaction::VerifyIdent(int ifaceIndex)
 		return (error(SHERR_INVAL, "ident hash mismatch"));
 	}
 
-	err = ident->VerifyTransaction();
+	err = ident->VerifyTransaction(ifaceIndex);
 	if (err != 0) {
 		return (error(err, "ident verification failure"));
 	}
@@ -2041,6 +2037,96 @@ CContext *CTransaction::CreateContext()
 #endif
 
   return (ctx);
+}
+
+bool CTransaction::VerifyExec(int ifaceIndex, int nHeight)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  uint160 hashExec;
+  time_t now;
+	int mode;
+  int nOut;
+	int err;
+
+	if (!iface)
+		return (false);
+
+  /* core verification */
+	mode = 0;
+  if (!IsExecTx(*this, mode)) {
+		error(SHERR_INVAL, "IsExecTx [VerifyExec]");
+    return (false); /* tx not flagged as exec */
+  }
+
+  if (mode != OP_EXT_NEW && 
+      mode != OP_EXT_UPDATE &&
+      mode != OP_EXT_GENERATE) {
+		error(SHERR_INVAL, "mode %d [VerifyExec]", mode);
+    return (false);
+	}
+
+  /* verify hash in pub-script matches exec hash */
+  nOut = IndexOfExecOutput(*this);
+  if (nOut == -1) {
+		error(SHERR_INVAL, "IndexOfExecOutput [VerifyExec]");
+    return (false); /* no extension output */
+	}
+
+  if (!DecodeExecHash(vout[nOut].scriptPubKey, mode, hashExec)) {
+		error(SHERR_INVAL, "DecodeExecHash [VerifyExec]");
+    return (false); /* no exec hash in output */
+	}
+
+	if (nHeight <= 0)  {
+		nHeight = GetBestHeight(iface);
+	}
+
+	const int64& nCredit = vout[nOut].nValue;
+	if (mode == OP_EXT_NEW) {
+		CExec *exec = GetExec();
+		if (hashExec != exec->GetHash()) {
+			return error(SHERR_INVAL, "exec hash mismatch[exec-tx %s]: hashed as %s", hashExec.GetHex().c_str(), exec->GetHash().GetHex().c_str());
+		}
+
+#if 0
+		now = time(NULL);
+		if (exec->tExpire == SHTIME_UNDEFINED ||
+				exec->GetExpireTime() > (now + DEFAULT_EXEC_LIFESPAN + 1)) {
+			return error(SHERR_INVAL, "invalid exec expiration time");
+		}
+#endif
+		err = exec->VerifyTransaction();
+		if (err) {
+			return (error(err, "VerifyExec: error verifying exec transaction."));
+		}
+
+		/** exec fee must be at least base exec fee. */
+		int64 nBaseFee = exec->CalculateFee(iface, nHeight);
+		if (nCredit < nBaseFee) {
+			return (error(ERR_FEE, "insufficient exec output fund"));
+		}
+	} else if (mode == OP_EXT_GENERATE) {
+		CExecCall *call = GetExecCall();
+		if (hashExec != call->GetHash())
+			return error(SHERR_INVAL, "exec call hash mismatch");
+
+#if 0
+		bool ok = VerifyExecCall(call);
+		if (!ok)
+			return (error(SHERR_INVAL, "VerifyExecTx: exec call verification failure")); 
+#endif
+		err = call->VerifyTransaction();
+		if (err)
+			return (error(err, "VerifyExec: error verifying exec call transaction."));
+
+		/** exec fee must be at least base exec fee. */
+		int64 nBaseFee = call->CalculateFee(iface, nHeight);
+		if (nCredit < nBaseFee) {
+			return (error(ERR_FEE, "insufficient exec-call output fund"));
+		}
+	}
+
+  return (true);
 }
 
 bool CTransaction::VerifyContext(int ifaceIndex)

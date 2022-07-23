@@ -240,7 +240,7 @@ static bool AccountFromAddress(int ifaceIndex, CCoinAddr& addr, string& strAccou
 	return (found);
 }
 
-int IndexOfExecOutput(const CTransaction& tx)
+static int IndexOfExecOutput(const CTransaction& tx)
 {
   int idx;
 
@@ -936,6 +936,7 @@ int64 GetExecOpFee(CIface *iface, int nHeight, int nSize)
 
   return (nFee);
 }
+
 
 int64 GetExecReturnFee(const CTransaction& tx) 
 {
@@ -1946,23 +1947,6 @@ int64 CExec::GetStackHeight(int ifaceIndex)
 	return (nHeight);
 }
 
-int GetExecTxMode(CTransaction& tx)
-{
-	uint160 hashExec;
-	int nMode;
-	int nOut;
-
-  nOut = IndexOfExecOutput(tx);
-  if (nOut == -1)
-    return (-1);
-
-	nMode = -1;
-  if (!DecodeExecHash(tx.vout[nOut].scriptPubKey, nMode, hashExec)) {
-    return (-1);
-  }
-
-	return (nMode);
-}
 
 /* process a new exec-tx on the block-chain. */
 int ProcessExecTx(CIface *iface, CNode *pfrom, CTransaction& tx, int64 nHeight)
@@ -1975,13 +1959,13 @@ int ProcessExecTx(CIface *iface, CNode *pfrom, CTransaction& tx, int64 nHeight)
   int err;
 
   /* validate */
-  if (!tx.VerifyExec(nHeight)) {
+  int tx_mode;
+  if (!VerifyExec(tx, tx_mode)) {
     error(SHERR_INVAL, "ProcessExecTx: error verifying exec tx: %s", tx.ToString(ifaceIndex).c_str());
     return (SHERR_INVAL);
   }
 
-	int nMode = GetExecTxMode(tx);
-	switch (nMode) {
+	switch (tx_mode) {
 		case OP_EXT_NEW:
 			{
 				CExec *exec = tx.GetExec();
@@ -2740,19 +2724,6 @@ int CExec::VerifyTransaction()
 	return (0);
 }
 
-int64 CExec::CalculateFee(CIface *iface, int nHeight, int nContentSize, time_t nLifespan)
-{
-	if (nContentSize == -1) {
-		nContentSize = GetContentSize();
-	}
-	return (GetExecOpFee(iface, nHeight, nContentSize));
-}
-
-int64 CExecCall::CalculateFee(CIface *iface, int nHeight, int nContentSize, time_t nLifespan)
-{
-	return (MIN_TX_FEE(iface));
-}
-
 CCoinAddr CExecCore::GetSenderAddr(int ifaceIndex)
 {
   CCoinAddr addr(ifaceIndex);
@@ -2786,7 +2757,7 @@ void CExecCall::InitTxChain()
 	AddTxChain(GenerateChainCoinbase(this));
 }
 
-int CExecCall::VerifyTransaction()
+int CExecCall::VerifyTranaction()
 {
 	int err;
 

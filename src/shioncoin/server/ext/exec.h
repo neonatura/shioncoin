@@ -42,6 +42,8 @@ class CExecCore : public CExtCore
 		/** The maximum life-span, in seconds, of an exec type transaction. */
 		static const int MAX_EXEC_LIFESPAN = 1514743200; // ~48y
 
+		static const int MAX_EXEC_CONTENT_LENGTH = 780000;
+
 		/* the originating address of the transaction. */
 		uint160 kSender;
 		/* the executable code of a SEXE class. */
@@ -229,13 +231,13 @@ class CExec : public CExecCore
 		}
 
 		IMPLEMENT_SERIALIZE (
-				READWRITE(*(CExecCore *)this);
-				)
+			READWRITE(*(CExecCore *)this);
+		)
 
-			void SetNull()
-			{
-				CExecCore::SetNull();
-			}
+		void SetNull()
+		{
+			CExecCore::SetNull();
+		}
 
 		void Init(const CExec& execIn)
 		{
@@ -272,7 +274,6 @@ class CExec : public CExecCore
 			return (vContext);
 		}
 
-
 		bool SetSenderAddr(CCoinAddr& addr);
 
 		bool VerifyStack(int ifaceIndex);
@@ -287,6 +288,25 @@ class CExec : public CExecCore
 		{
 			return (GetLabel());
 		}
+
+		cbuff GetContent()
+		{
+			return (vContext);
+		}
+
+		int GetContentSize()
+		{
+			return (vContext.size());
+		}
+
+		int GetMaximumContentSize() /* CExtCore */
+		{
+			return (MAX_EXEC_CONTENT_LENGTH);
+		}
+
+		int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1);
+
+		int VerifyTransaction();
 
 		const uint160 GetHash()
 		{
@@ -322,13 +342,13 @@ class CExecCall : public CExec
 		}
 
 		IMPLEMENT_SERIALIZE (
-				READWRITE(*(CExec *)this);
-				)
+			READWRITE(*(CExec *)this);
+		)
 
-			void SetNull()
-			{
-				CExec::SetNull();
-			}
+		void SetNull()
+		{
+			CExec::SetNull();
+		}
 
 		void Init(const CExecCall& execIn)
 		{
@@ -456,6 +476,10 @@ class CExecCall : public CExec
 		/* create a 'coinbase' tx reference for signing. */
 		void InitTxChain();
 
+		int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1);
+
+		int VerifyTransaction();
+
 		const uint160 GetHash()
 		{
 			return (CExec::GetHash());
@@ -570,9 +594,6 @@ class CExecCheckpoint : public CExecCore
 
 };
 
-bool VerifyExec(CTransaction& tx, int& mode);
-
-int64 GetExecOpFee(CIface *iface, int nHeight, int nSize = MAX_EXEC_SIZE);
 
 int init_exec_tx(CIface *iface, string strAccount, string strPath, CWalletTx& wtx);
 
@@ -625,6 +646,14 @@ int update_exec_tx(CIface *iface, string strAccount, const uint160& hExec, CWall
 bool ExecRestoreCheckpoint(CIface *iface, const uint160& hExec);
 
 bool ExecRestoreCheckpoint(CIface *iface, CExec *exec);
+
+int IndexOfExecOutput(const CTransaction& tx);
+
+bool VerifyExec(CTransaction& tx, int& mode);
+
+bool DecodeExecHash(const CScript& script, int& mode, uint160& hash);
+
+int64 GetExecOpFee(CIface *iface, int nHeight, int nSize = MAX_EXEC_SIZE);
 
 
 #endif /* ndef __EXEC_H__ */

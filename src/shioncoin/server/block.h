@@ -972,6 +972,8 @@ class CTransaction : public CTransactionCore
 			return ((CExecCheckpoint *)&exec);
 		}
 
+		bool VerifyExec(int ifaceIndex, int nHeight = 0);
+
     COffer *GetOffer() const
     {
       if (!(this->nFlag & TXF_OFFER)) {

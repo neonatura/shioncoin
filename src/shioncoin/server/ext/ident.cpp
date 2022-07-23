@@ -247,6 +247,23 @@ Object CIdent::ToValue()
 	return (obj);
 }
 
+int CIdent::VerifyTransaction(int ifaceIndex)
+{
+	int err;
+
+	err = CEntity::VerifyTransaction();
+	if (err)
+		return (err);
+
+	if (vAddr.size() != 0) {
+		CCoinAddr addr(ifaceIndex, stringFromVch(vAddr));
+		if (!addr.IsValid())
+			return (ERR_ACCESS);
+	}
+	
+	return (0);
+}
+
 uint160 CIdent::GetHash()
 {
 	uint256 hash = SerializeHash(*this);

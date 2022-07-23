@@ -31,11 +31,11 @@ class CIdent : public CEntity
 
 	public:
 
-		uint160 hash;
-		CSign signature;
-		cbuff vContext;
-		int64 nValue;
-		int nFlag;
+		uint160 __uint160_reserved0__;
+		CSign __csign_reserved0__;
+		cbuff __cbuff_reserved0__;
+		int64 __int64_reserved0__;
+		int __int_reserved0__;
 
 		CIdent()
 		{
@@ -61,20 +61,20 @@ class CIdent : public CEntity
 		}
 
 		IMPLEMENT_SERIALIZE (
-				READWRITE(*(CEntity *)this);
-				READWRITE(this->hash);
-				READWRITE(this->signature);
-				READWRITE(this->vContext);
-				READWRITE(this->nValue);
-				READWRITE(this->nFlag);
-				)
+			READWRITE(*(CEntity *)this);
+			READWRITE(this->__uint160_reserved0__);
+			READWRITE(this->__csign_reserved0__);
+			READWRITE(this->__cbuff_reserved0__);
+			READWRITE(this->__int64_reserved0__);
+			READWRITE(this->__int_reserved0__);
+		)
 
-			friend bool operator==(const CIdent &a, const CIdent &b)
-			{
-				return (
-						((CEntity&) a) == ((CEntity&) b)
-						);
-			}
+		friend bool operator==(const CIdent &a, const CIdent &b)
+		{
+			return (
+					((CEntity&) a) == ((CEntity&) b)
+					);
+		}
 
 		CIdent operator=(const CIdent &b)
 		{
@@ -87,19 +87,21 @@ class CIdent : public CEntity
 		{
 			CEntity::SetNull();
 			nVersion = 3;
-			nValue = 0;
-			hash = 0;
-			nFlag = 0;
+			__int64_reserved0__ = 0;
+			__uint160_reserved0__ = 0;
+			__int_reserved0__ = 0;
 		}
 
 		void Init(const CIdent& b)
 		{
 			CEntity::Init(b);
-			hash = b.hash;
-			signature = b.signature;
-			vContext = b.vContext;
-			nValue = b.nValue;
-			nFlag = b.nFlag;
+#if 0
+			__uint160_reserved0__ = b.__uint160_reserved0__;
+			__csign_reserved0__ = b.__csign_reserved0__;
+			__cbuff_reserved0__ = b.__cbuff_reserved0__;
+			__int64_reserved0__ = b.__int64_reserved0__;
+			__int_reserved0__ = b.__int_reserved0__;
+#endif
 		}
 
 		void Init(const CCert& b)
@@ -113,6 +115,8 @@ class CIdent : public CEntity
 		{
 			return (0);
 		}
+
+		int VerifyTransaction(int ifaceIndex);
 
 		std::string ToString();
 

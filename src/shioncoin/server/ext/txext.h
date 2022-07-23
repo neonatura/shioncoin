@@ -360,16 +360,9 @@ class CExtCore
 		return (0);
 	}
 
+#if 0
 	virtual int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1)
 	{
-#if 0
-		if (nContentSize == -1) {
-			nContentSize = GetContentSize();
-		}
-		if (nLifespan == -1) {
-			nLifespan = GetLifespan();
-		}
-#endif
 		return (MIN_TX_FEE(iface));
 	}
 
@@ -389,6 +382,7 @@ class CExtCore
 		return (CalculateFee(iface, nHeight, 
 					GetMaximumContentSize(), GetMaximumLifespan()));
 	}
+#endif
 
 	virtual time_t GetMinimumLifespan()
 	{
