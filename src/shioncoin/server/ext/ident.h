@@ -26,7 +26,6 @@
 #ifndef __EXT__IDENT_H__
 #define __EXT__IDENT_H__
 
-
 class CIdent : public CEntity
 {
 
@@ -44,6 +43,12 @@ class CIdent : public CEntity
 		}
 
 		CIdent(const CIdent& ent)
+		{
+			SetNull();
+			Init(ent);
+		}
+
+		CIdent(const CCert& ent)
 		{
 			SetNull();
 			Init(ent);
@@ -84,15 +89,22 @@ class CIdent : public CEntity
 			nVersion = 3;
 			nValue = 0;
 			hash = 0;
-
-			nFlag = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
-			// should be:
-			//nFlag = SHCERT_ENT_ORGANIZATION;
+			nFlag = 0;
 		}
 
 		void Init(const CIdent& b)
 		{
 			CEntity::Init(b);
+			hash = b.hash;
+			signature = b.signature;
+			vContext = b.vContext;
+			nValue = b.nValue;
+			nFlag = b.nFlag;
+		}
+
+		void Init(const CCert& b)
+		{
+			CEntity::Init((CEntity&)b);
 		}
 
 		uint160 GetHash();
@@ -101,8 +113,6 @@ class CIdent : public CEntity
 		{
 			return (0);
 		}
-
-		int VerifyTransaction();
 
 		std::string ToString();
 
@@ -126,6 +136,14 @@ cert_list *GetIdentTable(int ifaceIndex);
 bool GetTxOfIdent(CIface *iface, const uint160& hash, CTransaction& tx);
 
 bool InsertIdentTable(CIface *iface, CTransaction& tx);
+
+bool IsIdentTx(const CTransaction& tx);
+
+int IndexOfIdentOutput(const CTransaction& tx);
+
+bool DecodeIdentHash(const CScript& script, int& mode, uint160& hash);
+
+int GetIdentTxMode(CTransaction& tx);
 
 
 #endif /* ndef __EXT__IDENT_H__ */

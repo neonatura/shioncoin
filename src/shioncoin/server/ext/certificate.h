@@ -724,7 +724,7 @@ bool IsLicenseTx(const CTransaction& tx);
 
 bool InsertCertTable(CIface *iface, CTransaction& tx, unsigned int nHeight, bool fUpdate = true);
 
-bool GetCertAccount(CIface *iface, const CTransaction& tx, string& strAccount);
+bool GetCertAccount(CIface *iface, CTransaction& tx, string& strAccount);
 
 bool IsCertAccount(CIface *iface, CTransaction& tx, string strAccount);
 

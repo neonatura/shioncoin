@@ -64,7 +64,9 @@ _TEST(sip5_certtx)
 		err = init_cert_tx(iface, wtx, strLabel, "SHCOIND TEST CA", hexSeed, 1);
 		_TRUE(0 == err);
 	}
-	uint160 hashCert = wtx.certificate.GetHash();
+	CCert *cert = wtx.GetCertificate();
+	_TRUEPTR(cert);
+	uint160 hashCert = cert->GetHash();
 
 	_TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
 	_TRUE(VerifyCert(iface, wtx, nBestHeight) == true);
@@ -115,8 +117,9 @@ _TEST(sip5_certtx)
 
 	_TRUE(lic_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
 	_TRUE(VerifyLicense(lic_wtx) == true);
-	CLicense lic(lic_wtx.certificate);
-	uint160 licHash = lic.GetHash();
+	CLicense *lic = lic_wtx.GetLicense();
+	_TRUEPTR(lic);
+	uint160 licHash = lic->GetHash();
 
 	_TRUE(lic_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 	/* insert license */
@@ -160,7 +163,9 @@ _TEST(sip5_di_certtx)
 		err = init_cert_tx(iface, wtx, strLabel, "SHCOIND DILITHIUM TEST CA", hexSeed, 1);
 		_TRUE(0 == err);
 	}
-	uint160 hashCert = wtx.certificate.GetHash();
+	CCert *cert = wtx.GetCertificate();
+	_TRUEPTR(cert);
+	uint160 hashCert = cert->GetHash();
 
 	_TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
 	_TRUE(VerifyCert(iface, wtx, nBestHeight) == true);

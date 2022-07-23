@@ -220,12 +220,24 @@ bool IsLocalAltChain(CIface *iface, const CTxOut& txout)
   return (IsMine(*pwalletMain, txout.scriptPubKey)); 
 }
 
+int IndexOfAltChainOutput(const CTransaction& tx)
+{
+  CScript script;
+  int nTxOut;
+  int mode;
+
+  if (!GetExtOutput(tx, OP_ALTCHAIN, mode, nTxOut, script))
+    return (-1);
+
+  return (nTxOut);
+}
+
 bool IsLocalAltChain(CIface *iface, const CTransaction& tx)
 {
   if (!IsAltChainTx(tx))
     return (false); /* not a altchain */
 
-  int nOut = IndexOfExtOutput(tx);
+  int nOut = IndexOfAltChainOutput(tx);
   if (nOut == -1)
     return (false); /* invalid state */
 
@@ -233,6 +245,7 @@ bool IsLocalAltChain(CIface *iface, const CTransaction& tx)
 }
 
 
+#if 0
 /**
  * Verify the integrity of an altchain transaction.
  */
@@ -283,6 +296,30 @@ bool VerifyAltChain(CTransaction& tx, int& mode)
     return error(SHERR_INVAL, "VerifyAltChain: label exceeds 135 characters.");
 
   return (true);
+}
+#endif
+
+int GetAltChainTxMode(CTransaction& tx)
+{
+  uint160 hashAltChain;
+  int nOut;
+	int mode;
+
+  /* core verification */
+  if (!IsAltChainTx(tx))
+    return (false);
+
+  /* verify hash in pub-script matches altchain hash */
+  nOut = IndexOfAltChainOutput(tx);
+  if (nOut == -1) {
+    return (false); /* no extension output */
+  }
+
+  if (!DecodeAltChainHash(tx.vout[nOut].scriptPubKey, mode, hashAltChain)) {
+    return (false); /* no altchain hash in output */
+  }
+
+	return (mode);
 }
 
 static void ReorganizeColorPoolMap(CIface *iface, const uint160& hColor, const uint256& hashBlock)
@@ -471,13 +508,16 @@ bool VerifyAltChainChain(CIface *iface, CTransaction& tx)
 
 static bool CommitNewAltChainTx(CIface *iface, CTransaction& tx, CNode *pfrom, bool fUpdate)
 {
+  int ifaceIndex = GetCoinIndex(iface);
 	CAltChain *alt;
 	CBlock *block;
 	int mode;
 
-	if (!VerifyAltChain(tx, mode))
+	if (!tx.VerifyAltChain(ifaceIndex)) {
 		return error(SHERR_INVAL, "CommitNewAltChainTx: error verifying altchain chain on tx '%s'.", tx.GetHash().GetHex().c_str());
+	}
 
+	mode = GetAltChainTxMode(tx);
 	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE)
 		return (true); /* unsupported - soft error */
 
@@ -597,12 +637,13 @@ bool CommitAltChainTx(CIface *iface, CTransaction& tx, CNode *pfrom, bool fUpdat
 /* called when altchain-tx is added to SHC service pool */
 bool CommitAltChainPoolTx(CIface *iface, CTransaction& tx, bool fPool)
 {
+  int ifaceIndex = GetCoinIndex(iface);
   CWallet *wallet = GetWallet(iface);
   CAltChain *alt;
 	CBlock *block;
 	int mode;
 
-	if (VerifyAltChain(tx, mode) == false) {
+	if (tx.VerifyAltChain(ifaceIndex) == false) {
 		return (error(SHERR_INVAL, "CommitAltChainPoolTx: error verifying alt-chain tx."));
 	}
 
@@ -1023,6 +1064,10 @@ int CAltChain::VerifyTransaction()
 	if (err)
 		return (err);
 
+	if (GetLabel().size() > MAX_ALTCHAIN_LABEL_LENGTH) {
+		return (ERR_INVAL);
+	}
+
 	return (0);
 }
 
@@ -1160,12 +1205,6 @@ int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt
 	if (wallet->mapColor.count(hColor) != 0)
 		return (ERR_EXIST);
 
-  int64 nFee = GetAltChainOpFee(iface);
-  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nFee) {
-    return (ERR_FEE);
-  }
-
   CTxCreator s_wtx(wallet, strAccount);
 
   CAltChain *altchain = s_wtx.CreateAltChain();
@@ -1173,6 +1212,14 @@ int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt
 		error(SHERR_INVAL, "init_altchain_tx: !CreateAltChain");
 		return (SHERR_INVAL);
 	}
+
+	int64 nFee = altchain->CalculateFee(iface, 0);
+  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+  if (bal < nFee) {
+    return (ERR_FEE);
+  }
+
+	altchain->ResetExpireTime(iface, nFee);
 
 	/* fill in altchain ext tx */
 	vector<CTransaction> vAltTx;
@@ -1218,18 +1265,20 @@ int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<
 	if (!color_IsSupported(hColor))
 		return (ERR_OPNOTSUPP);
 
-  int64 nFee = GetAltChainOpFee(iface);
-  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nFee) {
-    return (ERR_FEE);
-  }
-
   CTxCreator s_wtx(wallet, strAccount);
   CAltChain *altchain = s_wtx.CreateAltChain();
   if (!altchain) {
 		error(SHERR_INVAL, "update_altchain_tx: !CreateAltChain");
 		return (SHERR_INVAL);
 	}
+
+  int64 nFee = altchain->CalculateFee(iface, 0);
+  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
+  if (bal < nFee) {
+    return (ERR_FEE);
+  }
+
+	altchain->ResetExpireTime(iface, nFee);
 
 	/* fill in altchain ext tx */
 	const CPubKey& pubkey = GetAltChainAddr(hColor, strAccount, false); 

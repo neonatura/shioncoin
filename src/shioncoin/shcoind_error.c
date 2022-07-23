@@ -94,7 +94,7 @@ static err_code_t _error_code_table[] = {
 	{ ERR_COMMIT, "record not commited" },
 	{ ERR_NOCLASS, "class not found" },
 	{ ERR_NOMETHOD, "method not found" },
-	{ ERR_VERSION, "invalid version" },
+	{ ERR_VERSION, "unsupported version" },
 
 	/* terminator */
 	{ 0, NULL },

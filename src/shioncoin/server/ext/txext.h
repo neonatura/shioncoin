@@ -104,15 +104,15 @@ class CSign
 				READWRITE(this->vPubKey);
 				READWRITE(this->vAddrKey);
 				READWRITE(this->vSig);
-				)
+		)
 
-			void SetNull()
-			{
-				nAlg = 0;
-				vPubKey.clear();
-				vAddrKey.clear();
-				vSig.clear();
-			}
+		void SetNull()
+		{
+			nAlg = 0;
+			vPubKey.clear();
+			vAddrKey.clear();
+			vSig.clear();
+		}
 
 		bool IsNull()
 		{
@@ -224,15 +224,14 @@ class CExtCore
 			READWRITE(this->nVersion);
 			READWRITE(this->tExpire);
 			READWRITE(this->vchLabel);
-			//      READWRITE(this->signature);
-			)
+	)
 
-		void SetNull()
-		{
-			nVersion = PROTO_EXT_VERSION;
-			tExpire = SHTIME_UNDEFINED;
-			vchLabel.clear();
-		}
+	void SetNull()
+	{
+		nVersion = GetDefaultVersion();
+		tExpire = SHTIME_UNDEFINED;
+		vchLabel.clear();
+	}
 
 	/** Obtain the expiration time in unix-seconds. */
 	time_t GetExpireTime()
@@ -363,12 +362,14 @@ class CExtCore
 
 	virtual int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1)
 	{
+#if 0
 		if (nContentSize == -1) {
 			nContentSize = GetContentSize();
 		}
 		if (nLifespan == -1) {
 			nLifespan = GetLifespan();
 		}
+#endif
 		return (MIN_TX_FEE(iface));
 	}
 
@@ -498,8 +499,8 @@ typedef std::map<uint160, uint256> altchain_list;
 
 
 #include "entity.h"
-#include "ident.h"
 #include "certificate.h"
+#include "ident.h"
 #include "offer.h"
 #include "asset.h"
 #include "exec.h"

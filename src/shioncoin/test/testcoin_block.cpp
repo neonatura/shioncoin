@@ -554,7 +554,7 @@ _TEST(identtx)
   err = init_ident_donate_tx(iface, strAccount, certFee, hashCert, wtx);  
   _TRUE(err == 0);
   _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyIdent(wtx, mode) == true);
+  _TRUE(wtx.VerifyIdent(TEST_COIN_IFACE) == true);
   _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
   for (i = 0; i < 2; i++) {
@@ -584,7 +584,7 @@ _TEST(identtx)
   err = init_ident_certcoin_tx(iface, strAccount, certFee, hashCert, addr, csend_tx);
   _TRUE(err == 0);
   _TRUE(csend_tx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-  _TRUE(VerifyIdent(csend_tx, mode) == true);
+  _TRUE(csend_tx.VerifyIdent(TEST_COIN_IFACE) == true);
 
   for (idx = 0; idx < 3; idx++) {
     CBlock *block = test_GenerateBlock();

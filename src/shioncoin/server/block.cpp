@@ -1128,8 +1128,7 @@ CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr
   cbuff vchContext;
 	CCert newCert;
 
-  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
-			(nFlag & CTransaction::TXF_LICENSE)) {
+  if (nFlag & CTransaction::TXF_CERTIFICATE) {
     return (NULL); /* already in use */
 	}
 
@@ -1179,14 +1178,13 @@ CLicense *CTransaction::CreateLicense(CCert *cert)
 {
   double lic_span;
 
-  if ((nFlag & CTransaction::TXF_CERTIFICATE) ||
-			(nFlag & CTransaction::TXF_LICENSE)) {
+  if (nFlag & CTransaction::TXF_LICENSE) {
     return (NULL); /* already in use */
 	}
   
   nFlag |= CTransaction::TXF_LICENSE;
-  CLicense license;
 
+	license.SetNull();
   license.nFlag |= SHCERT_CERT_CHAIN;
   license.nFlag &= ~SHCERT_CERT_SIGN;
 
@@ -1195,9 +1193,7 @@ CLicense *CTransaction::CreateLicense(CCert *cert)
   license.hashIssuer = cert->GetHash();
   license.Sign(cert);
 
-  certificate = license;//(CCertCore&)license;
-
-  return (GetLicense());//&certificate);
+  return (GetLicense());
 }
 
 COffer *CTransaction::CreateOffer()
@@ -1421,20 +1417,34 @@ fprintf(stderr, "DEBUG: VerifyAsset(): nBaseFee %-8.8f\n", (nBaseFee/COIN));
 	return (true);
 }
 
-CIdent *CTransaction::CreateIdent(CIdent *identIn)
+CIdent *CTransaction::CreateIdent(const CIdent& identIn)
 {
 
   if (nFlag & CTransaction::TXF_IDENT)
     return (NULL); /* already in use */
 
   nFlag |= CTransaction::TXF_IDENT;
-  //certificate = CCert(*ident);
-	ident = CIdent(*identIn);
-//  shgeo_local(&certificate.geo, SHGEO_PREC_DISTRICT);
+
+	ident.SetNull();
+	ident = CIdent(identIn);
   shgeo_local(&ident.geo, SHGEO_PREC_DISTRICT);
 
-  //return ((CIdent *)&certificate);
-  return ((CIdent *)&ident);
+  return (GetIdent());
+}
+
+CIdent *CTransaction::CreateIdent(const CCert& certIn)
+{
+
+  if (nFlag & CTransaction::TXF_IDENT)
+    return (NULL); /* already in use */
+
+  nFlag |= CTransaction::TXF_IDENT;
+
+	ident.SetNull();
+	ident = CIdent(certIn);
+  shgeo_local(&ident.geo, SHGEO_PREC_DISTRICT);
+
+  return (GetIdent());
 }
 
 CIdent *CTransaction::CreateIdent(int ifaceIndex, CCoinAddr& addr)
@@ -1455,7 +1465,53 @@ CIdent *CTransaction::CreateIdent(int ifaceIndex, CCoinAddr& addr)
   ident.vAddr = vchFromString(addr.ToString());
 
   //return ((CIdent *)&certificate);
-  return ((CIdent *)&ident);
+  return (GetIdent());
+}
+
+bool CTransaction::VerifyIdent(int ifaceIndex)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+	uint160 hashIdent;
+	int mode;
+	int nOut;
+	int err;
+
+	if (!iface)
+		return (false);
+
+	/* core verification */
+	if (!IsIdentTx(*this)) {
+		return (false); /* tx not flagged as asset */
+	}
+
+	/* verify hash in pub-script matches ident hash */
+	nOut = IndexOfIdentOutput(*this);
+	if (nOut == -1) {
+		return (false); /* no extension output */
+	}
+
+	if (!DecodeIdentHash(vout[nOut].scriptPubKey, mode, hashIdent)) {
+		return (false); /* no ident hash in output */
+	}
+
+	if (mode != OP_EXT_NEW &&
+			mode != OP_EXT_ACTIVATE &&
+			mode != OP_EXT_GENERATE &&
+			mode != OP_EXT_PAY) {
+		return (error(ERR_OPNOTSUPP, "unsupported ident-tx mode."));
+	}
+
+	CIdent *ident = GetIdent();
+	if (hashIdent != ident->GetHash()) {
+		return (error(SHERR_INVAL, "ident hash mismatch"));
+	}
+
+	err = ident->VerifyTransaction();
+	if (err != 0) {
+		return (error(err, "ident verification failure"));
+	}
+
+	return (true);
 }
 
 bool CTransaction::VerifyValidateMatrix(int ifaceIndex, const CTxMatrix& matrix, CBlockIndex *pindex)
@@ -1732,10 +1788,11 @@ Object CTransaction::ToValue(int ifaceIndex)
 	if (ifaceIndex == TEST_COIN_IFACE ||
 			ifaceIndex == TESTNET_COIN_IFACE ||
 			ifaceIndex == SHC_COIN_IFACE) {
-		if (this->nFlag & TXF_CERTIFICATE) 
+		if (this->nFlag & TXF_CERTIFICATE) { 
 			obj.push_back(Pair("certificate", certificate.ToValue()));
+		}
 		if (this->nFlag & TXF_LICENSE) {
-			CLicense license(certificate);
+		//	CLicense license(certificate);
 			obj.push_back(Pair("license", license.ToValue()));
 		}
 		if (flags & TXF_ALIAS)
@@ -2058,13 +2115,72 @@ CAltChain *CTransaction::CreateAltChain()
 	alt = GetAltChain();
 	alt->SetNull();
 
-	/* does not expire */
-	alt->tExpire = SHTIME_UNDEFINED;
-
 	return (alt);
 }
 
+bool CTransaction::VerifyAltChain(int ifaceIndex)
+{
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	uint160 hashAltChain;
+	int mode;
+	int nOut; 
 
+	/* core verification */
+	if (!IsAltChainTx(*this))
+		return (error(SHERR_INVAL, "VerifyAltChain: not an altchain tx"));
+
+	/* verify hash in pub-script matches altchain hash */
+	nOut = IndexOfAltChainOutput(*this);
+	if (nOut == -1) { 
+		return (false); /* no extension output */
+	} 
+
+	if (!DecodeAltChainHash(vout[nOut].scriptPubKey, mode, hashAltChain)) {
+		return (false); /* no altchain hash in output */
+	}
+
+	CAltChain *altchain = GetAltChain();
+	if (!altchain)
+		return (false);
+
+	if (hashAltChain != altchain->GetHash()) {
+		return error(SHERR_INVAL, "VerifyAltChain: transaction references invalid altchain hash.");       
+		return (false); /* altchain hash mismatch */
+	}
+
+	for (int i = 0; i < altchain->vtx.size(); i++) {
+		const CAltTx& alt_tx = altchain->vtx[i];
+		/* auxilliary payload for color-specific coin implementations. */
+		if (alt_tx.vchAux.size() > 4096) {
+			return error(SHERR_INVAL, "VerifyAltChain: auxillary payload exceeds 4096 bytes.");
+		}
+
+		if ((int64)alt_tx.nLockTime > altchain->block.nTime)
+			return error(SHERR_INVAL, "VerifyAltChain: rejecting non-final transaction.");
+
+		BOOST_FOREACH(const CTxIn& txin, alt_tx.vin) {
+			if (!txin.IsFinal())
+				return (false);
+		}
+	} 
+
+	if (!altchain->VerifyTransaction()) {
+		return (false);
+	}
+
+	{
+		int nHeight = GetBestHeight(iface);
+		int64 nBaseFee = altchain->CalculateFee(iface, nHeight);
+		int64 nCredit = vout[nOut].nValue;
+
+		/** altchain fee must be at least base altchain fee. */
+		if (nCredit < nBaseFee) {
+			return (error(ERR_FEE, "insufficient altchain fund"));
+		}
+	}
+
+	return (true);
+}
 
 static bool GetCommitBranches(CBlockIndex *pbest, CBlockIndex *tip, CBlockIndex *pindexNew, vector<CBlockIndex*>& vConnect, vector<CBlockIndex*>& vDisconnect)
 {
@@ -2768,10 +2884,13 @@ void CTransaction::Init(const CTransaction& tx)
 	if (this->nFlag & TXF_ALIAS)
 		alias = CAlias(tx.alias);
 
-	if (this->nFlag & TXF_CERTIFICATE)
+	if (this->nFlag & TXF_CERTIFICATE) {
 		certificate = tx.certificate;
-	else if (this->nFlag & TXF_LICENSE)
-		certificate = tx.certificate;
+	}
+
+	if (this->nFlag & TXF_LICENSE) {
+		license = tx.license;
+	}
 
 	if (this->nFlag & TXF_CONTEXT) {
 		context = tx.context;

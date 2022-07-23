@@ -182,7 +182,9 @@ bool shc_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txlist& 
       if (tx.isFlag(CTransaction::TXF_CERTIFICATE)) {
 				if (IsCertTx(tx))
           vCert.push_back(pindexNew);
-      } else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
+      } 
+
+			if (tx.isFlag(CTransaction::TXF_LICENSE)) {
 				if (IsLicenseTx(tx))
 					vLicense.push_back(pindexNew);
       }
@@ -432,7 +434,6 @@ static bool shc_LoadBlockIndex()
     const CTransaction& m_tx = block->vtx[0];
     if (GetTxOfIdent(iface, m_tx.matrix.hRef, id_tx)) {
       shnum_t lat, lon;
-      int mode;
 
       /* remove ident from pending list */
       //CIdent& ident = (CIdent&)id_tx.certificate;
@@ -440,10 +441,13 @@ static bool shc_LoadBlockIndex()
       const uint160& hIdent = ident.GetHash();
       idents->erase(hIdent);
 
-      if (VerifyIdent(id_tx, mode) && mode == OP_EXT_NEW) {
-        /* mark location as claimed */
-        shgeo_loc(&ident.geo, &lat, &lon, NULL);
-        spring_loc_claim(lat, lon);
+      if (id_tx.VerifyIdent(ifaceIndex)) {
+				int mode = GetIdentTxMode(id_tx);
+				if (mode == OP_EXT_NEW) {
+					/* mark location as claimed */
+					shgeo_loc(&ident.geo, &lat, &lon, NULL);
+					spring_loc_claim(lat, lon);
+				}
       }
     }
 

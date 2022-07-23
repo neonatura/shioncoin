@@ -169,6 +169,8 @@ class CAltChain : public CExtCore
 		/** The maximum supported version of an entity type transaction. */
 		static const int MAX_ALTBLOCK_VERSION = SHC_VERSION_MAJOR;
 
+		static const int MAX_ALTCHAIN_LABEL_LENGTH = 135;
+
 		uint32_t nFlag;
 		uint160 hColor;
 		CAltBlock block;
@@ -199,23 +201,23 @@ class CAltChain : public CExtCore
 				READWRITE(this->vtx);
 				)
 
-			friend bool operator==(const CAltChain &a, const CAltChain &b)
-			{
-				if (a.vtx.size() != b.vtx.size())
-					return (false);
+		friend bool operator==(const CAltChain &a, const CAltChain &b)
+		{
+			if (a.vtx.size() != b.vtx.size())
+				return (false);
 #if 0
-				for (int i = 0; i < a.vtx.size(); i++) {
-					if (a.vtx[i] == b.vtx[i])
-						continue;
-					return (false);
-				}
-#endif
-				return (
-						((CExtCore&) a) == ((CExtCore&) b) &&
-						a.hColor == b.hColor &&
-						a.block == b.block
-						);
+			for (int i = 0; i < a.vtx.size(); i++) {
+				if (a.vtx[i] == b.vtx[i])
+					continue;
+				return (false);
 			}
+#endif
+			return (
+					((CExtCore&) a) == ((CExtCore&) b) &&
+					a.hColor == b.hColor &&
+					a.block == b.block
+					);
+		}
 
 		void Init(const CAltChain& altchain)
 		{
@@ -258,6 +260,21 @@ class CAltChain : public CExtCore
 		int GetMaximumVersion()
 		{
 			return (MAX_ALTBLOCK_VERSION);
+		}
+
+		int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1)
+		{
+			return (GetMinimumFee(iface, nHeight));
+		}
+
+		int64 GetMinimumFee(CIface *iface, int nHeight = -1)
+		{
+			return ((int64)MIN_TX_FEE(iface) * 10);
+		}
+
+		int64 GetMaximumFee(CIface *iface, int nHeight = -1)
+		{
+			return (GetMinimumFee(iface, nHeight));
 		}
 
 		time_t GetMaximumLifespan()
@@ -306,6 +323,12 @@ bool CommitAltChainOrphanTx(CIface *iface, const CTransaction& tx);
  * @returns true if the underlying transaction contained an extended altchain transaction.
  */
 bool IsAltChainTx(const CTransaction& tx);
+
+int GetAltChainTxMode(CTransaction& tx);
+
+bool DecodeAltChainHash(const CScript& script, int& mode, uint160& hash);
+
+int IndexOfAltChainOutput(const CTransaction& tx);
 
 int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt& opt, CWalletTx& wtx);
 

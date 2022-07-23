@@ -664,7 +664,8 @@ class CTransaction : public CTransactionCore
 {
 
   public:
-    CCertCore certificate;
+    CCert certificate;
+    CLicense license;
     CContext context;
     CIdent ident;
 		CAsset asset;
@@ -701,9 +702,11 @@ class CTransaction : public CTransactionCore
     IMPLEMENT_SERIALIZE
     (
       READWRITE(*(CTransactionCore*)this);
-      if ((this->nFlag & TXF_CERTIFICATE) ||
-          (this->nFlag & TXF_LICENSE)) {
+      if (this->nFlag & TXF_CERTIFICATE) {
         READWRITE(certificate);
+			}
+			if (this->nFlag & TXF_LICENSE) {
+        READWRITE(license);
 			}
 			if (this->nFlag & TXF_CONTEXT) {
         READWRITE(context);
@@ -736,6 +739,7 @@ class CTransaction : public CTransactionCore
 
       CTransactionCore::SetNull();
       certificate.SetNull();
+      license.SetNull();
       context.SetNull();
 			ident.SetNull();
 			asset.SetNull();
@@ -893,16 +897,18 @@ class CTransaction : public CTransactionCore
     CExecCall *GenerateExec(const CExec& execIn);
     CExec *TransferExec(const CExec& execIn);
 
-    CIdent *CreateIdent(CIdent *ident);
-
+    CIdent *CreateIdent(const CIdent& ident);
+    CIdent *CreateIdent(const CCert& ident);
     CIdent *CreateIdent(int ifaceIndex, CCoinAddr& addr);
+		bool VerifyIdent(int ifaceIndex);
 
     CContext *CreateContext();
 		/** Verify the integrity of an context transaction. */
 		bool VerifyContext(int ifaceIndex); 
 
 		CAltChain *CreateAltChain();
-
+		/* Verify the integrity of an altchain transaction. */
+		bool VerifyAltChain(int ifaceIndex);
 
     CAlias *GetAlias()
     {
@@ -934,7 +940,7 @@ class CTransaction : public CTransactionCore
       if (!(this->nFlag & TXF_LICENSE)) {
 				return (NULL);
 			}
-      return ((CLicense *)&certificate);
+      return ((CLicense *)&license);
     }
 
     CContext *GetContext()

@@ -47,14 +47,17 @@ cert_list *GetIdentTable(int ifaceIndex)
 bool InsertIdentTable(CIface *iface, CTransaction& tx)
 {
 	CWallet *wallet = GetWallet(iface);
-	int mode;
+	int ifaceIndex = GetCoinIndex(iface);
+	uint160 hashIdent = 0;
 
 	if (!wallet)
 		return (false);
 
-	if (!VerifyIdent(tx, mode))
+	if (!tx.VerifyIdent(ifaceIndex)) {
 		return (false);
+	}
 
+	int mode = GetIdentTxMode(tx);
 	if (mode == OP_EXT_NEW) { /* ident stamp */
 		//CIdent& ident = (CIdent&)tx.certificate;
 		CIdent& ident = (CIdent&)tx.ident;
@@ -103,6 +106,24 @@ bool DecodeIdentHash(const CScript& script, int& mode, uint160& hash)
 	return (true);
 }
 
+int GetIdentTxMode(CTransaction& tx)
+{
+	uint160 hashIdent;
+	int nMode;
+	int nOut;
+
+  nOut = IndexOfExtOutput(tx);
+  if (nOut == -1)
+    return (-1);
+
+  if (!DecodeIdentHash(tx.vout[nOut].scriptPubKey, nMode, hashIdent)) {
+    return (-1);
+  }
+
+	return (nMode);
+}
+
+
 bool IsIdentTx(const CTransaction& tx)
 {
 	int tot;
@@ -140,6 +161,7 @@ bool IsLocalIdent(CIface *iface, const CTransaction& tx)
 	return (IsLocalEntity(iface, tx.vout[nOut]));
 }
 
+#if 0 
 bool VerifyIdent(CTransaction& tx, int& mode)
 {
 	uint160 hashIdent;
@@ -172,6 +194,7 @@ bool VerifyIdent(CTransaction& tx, int& mode)
 
 	return (true);
 }
+#endif
 
 bool GetTxOfIdent(CIface *iface, const uint160& hash, CTransaction& tx)
 {
@@ -232,15 +255,16 @@ uint160 CIdent::GetHash()
 	return Hash160(rawbuf);
 }
 
-int CIdent::VerifyTransaction()
+int IndexOfIdentOutput(const CTransaction& tx)
 {
-  int err;
+	CScript script;
+	int nTxOut;
+	int mode;
 
-  err = CEntity::VerifyTransaction();
-  if (err)
-    return (err);
-  
-  return (0);
+	if (!GetExtOutput(tx, OP_IDENT, mode, nTxOut, script))
+		return (-1);
+
+	return (nTxOut);
 }
 
 /**
@@ -284,8 +308,8 @@ int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint
 			return (SHERR_ACCESS);
 		}
 
-		CIdent& c_ident = (CIdent&)tx.certificate;
-		ident = t_wtx.CreateIdent(&c_ident);
+		CCert *i_cert = tx.GetCertificate();
+		ident = t_wtx.CreateIdent(*i_cert);
 	} else {
 		ident = t_wtx.CreateIdent(ifaceIndex, addr);
 	}
@@ -320,7 +344,7 @@ int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint
 	s_wtx.SetNull();
 	s_wtx.strFromAccount = strAccount;
 #endif
-	CIdent *gen_ident = s_wtx.CreateIdent(ident);
+	CIdent *gen_ident = s_wtx.CreateIdent(*ident);
 	if (!gen_ident) {
 		return (SHERR_INVAL);
 	}
@@ -446,8 +470,10 @@ int init_ident_certcoin_tx(CIface *iface, string strAccount, uint64_t nValue, ui
 	}
 
 	CTxCreator s_wtx(wallet, strAccount);
-	CIdent& s_cert = (CIdent&)tx.certificate;
-	CIdent *ident = s_wtx.CreateIdent(&s_cert);
+	CCert *s_cert = tx.GetCertificate();
+	if (!s_cert)
+		return (ERR_INVAL);
+	CIdent *ident = s_wtx.CreateIdent(*s_cert);
 	if (!ident)
 		return (ERR_INVAL);
 

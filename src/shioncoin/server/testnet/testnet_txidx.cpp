@@ -175,7 +175,9 @@ bool testnet_FillBlockIndex(txlist& vSpring, txlist& vCert, txlist& vIdent, txli
       } else if (tx.isFlag(CTransaction::TXF_CHANNEL)) {
         /* not implemented */
 #endif
-      } else if (tx.isFlag(CTransaction::TXF_LICENSE)) {
+      }
+
+			if (tx.isFlag(CTransaction::TXF_LICENSE)) {
         if (IsLicenseTx(tx))
           vLicense.push_back(pindexNew);
       } 
@@ -444,10 +446,13 @@ static bool testnet_LoadBlockIndex()
       const uint160& hIdent = ident.GetHash();
       idents->erase(hIdent);
 
-      if (VerifyIdent(id_tx, mode) && mode == OP_EXT_NEW) {
-        /* mark location as claimed */
-        shgeo_loc(&ident.geo, &lat, &lon, NULL);
-        spring_loc_claim(lat, lon);
+      if (id_tx.VerifyIdent(ifaceIndex)) {
+				int mode = GetIdentTxMode(id_tx);
+				if (mode == OP_EXT_NEW) {
+					/* mark location as claimed */
+					shgeo_loc(&ident.geo, &lat, &lon, NULL);
+					spring_loc_claim(lat, lon);
+				}
       }
     }
 
