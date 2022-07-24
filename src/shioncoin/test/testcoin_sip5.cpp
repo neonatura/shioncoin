@@ -69,7 +69,7 @@ _TEST(sip5_certtx)
 	uint160 hashCert = cert->GetHash();
 
 	_TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyCert(iface, wtx, nBestHeight) == true);
+	_TRUE(wtx.VerifyCert(TEST_COIN_IFACE, nBestHeight) == true);
 	_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	/* insert cert into chain */
@@ -93,7 +93,7 @@ _TEST(sip5_certtx)
 	err = derive_cert_tx(iface, chain_wtx, hashCert, strLabel, strTitle);
 	_TRUE(err == 0);
 	_TRUE(chain_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyCert(iface, chain_wtx, nBestHeight) == true);
+	_TRUE(chain_wtx.VerifyCert(TEST_COIN_IFACE, nBestHeight) == true);
 	_TRUE(chain_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	for (unsigned int i = 0; i < 3; i++) { /* insert derived cert into chain */
@@ -116,7 +116,7 @@ _TEST(sip5_certtx)
 	_TRUE(0 == err);
 
 	_TRUE(lic_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyLicense(lic_wtx) == true);
+	_TRUE(lic_wtx.VerifyLicense(iface) == true);
 	CLicense *lic = lic_wtx.GetLicense();
 	_TRUEPTR(lic);
 	uint160 licHash = lic->GetHash();
@@ -168,7 +168,7 @@ _TEST(sip5_di_certtx)
 	uint160 hashCert = cert->GetHash();
 
 	_TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyCert(iface, wtx, nBestHeight) == true);
+	_TRUE(wtx.VerifyCert(TEST_COIN_IFACE, nBestHeight) == true);
 	_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	/* insert cert into chain */
@@ -192,7 +192,7 @@ _TEST(sip5_di_certtx)
 	err = derive_cert_tx(iface, chain_wtx, hashCert, strLabel, strTitle);
 	_TRUE(err == 0);
 	_TRUE(chain_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyCert(iface, chain_wtx, nBestHeight) == true);
+	_TRUE(chain_wtx.VerifyCert(TEST_COIN_IFACE, nBestHeight) == true);
 	_TRUE(chain_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	for (unsigned int i = 0; i < 3; i++) { /* insert derived cert into chain */

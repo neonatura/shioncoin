@@ -206,6 +206,7 @@ am__shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/ext/entity.h server/ext/ident.cpp server/ext/ident.h \
 	server/ext/alias.cpp server/ext/alias.h \
 	server/ext/certificate.cpp server/ext/certificate.h \
+	server/ext/license.cpp server/ext/license.h \
 	server/ext/offer.cpp server/ext/offer.h server/ext/asset.cpp \
 	server/ext/asset.h server/ext/exec.cpp server/ext/exec.h \
 	server/ext/context.cpp server/ext/context.h \
@@ -338,10 +339,10 @@ am__objects_13 = $(am__objects_3) $(am__objects_4) \
 	shcoind-color_rpc.$(OBJEXT) shcoind-txext.$(OBJEXT) \
 	shcoind-ext_param.$(OBJEXT) shcoind-entity.$(OBJEXT) \
 	shcoind-ident.$(OBJEXT) shcoind-alias.$(OBJEXT) \
-	shcoind-certificate.$(OBJEXT) shcoind-offer.$(OBJEXT) \
-	shcoind-asset.$(OBJEXT) shcoind-exec.$(OBJEXT) \
-	shcoind-context.$(OBJEXT) shcoind-altchain.$(OBJEXT) \
-	shcoind-altchain_color.$(OBJEXT) \
+	shcoind-certificate.$(OBJEXT) shcoind-license.$(OBJEXT) \
+	shcoind-offer.$(OBJEXT) shcoind-asset.$(OBJEXT) \
+	shcoind-exec.$(OBJEXT) shcoind-context.$(OBJEXT) \
+	shcoind-altchain.$(OBJEXT) shcoind-altchain_color.$(OBJEXT) \
 	shcoind-rpcalias_proto.$(OBJEXT) \
 	shcoind-rpcasset_proto.$(OBJEXT) \
 	shcoind-rpccert_proto.$(OBJEXT) \
@@ -466,6 +467,7 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	server/ext/entity.h server/ext/ident.cpp server/ext/ident.h \
 	server/ext/alias.cpp server/ext/alias.h \
 	server/ext/certificate.cpp server/ext/certificate.h \
+	server/ext/license.cpp server/ext/license.h \
 	server/ext/offer.cpp server/ext/offer.h server/ext/asset.cpp \
 	server/ext/asset.h server/ext/exec.cpp server/ext/exec.h \
 	server/ext/context.cpp server/ext/context.h \
@@ -637,9 +639,9 @@ am__objects_26 = $(am__objects_16) $(am__objects_17) \
 	test_shcoind-ext_param.$(OBJEXT) test_shcoind-entity.$(OBJEXT) \
 	test_shcoind-ident.$(OBJEXT) test_shcoind-alias.$(OBJEXT) \
 	test_shcoind-certificate.$(OBJEXT) \
-	test_shcoind-offer.$(OBJEXT) test_shcoind-asset.$(OBJEXT) \
-	test_shcoind-exec.$(OBJEXT) test_shcoind-context.$(OBJEXT) \
-	test_shcoind-altchain.$(OBJEXT) \
+	test_shcoind-license.$(OBJEXT) test_shcoind-offer.$(OBJEXT) \
+	test_shcoind-asset.$(OBJEXT) test_shcoind-exec.$(OBJEXT) \
+	test_shcoind-context.$(OBJEXT) test_shcoind-altchain.$(OBJEXT) \
 	test_shcoind-altchain_color.$(OBJEXT) \
 	test_shcoind-rpcalias_proto.$(OBJEXT) \
 	test_shcoind-rpcasset_proto.$(OBJEXT) \
@@ -766,6 +768,7 @@ am__depfiles_remade = ./$(DEPDIR)/shcoind-account.Po \
 	./$(DEPDIR)/shcoind-http_matrix.Po \
 	./$(DEPDIR)/shcoind-http_pool.Po ./$(DEPDIR)/shcoind-ident.Po \
 	./$(DEPDIR)/shcoind-init.Po ./$(DEPDIR)/shcoind-keystore.Po \
+	./$(DEPDIR)/shcoind-license.Po \
 	./$(DEPDIR)/shcoind-ltc_block.Po \
 	./$(DEPDIR)/shcoind-ltc_netmsg.Po \
 	./$(DEPDIR)/shcoind-ltc_pool.Po \
@@ -915,6 +918,7 @@ am__depfiles_remade = ./$(DEPDIR)/shcoind-account.Po \
 	./$(DEPDIR)/test_shcoind-ident.Po \
 	./$(DEPDIR)/test_shcoind-init.Po \
 	./$(DEPDIR)/test_shcoind-keystore.Po \
+	./$(DEPDIR)/test_shcoind-license.Po \
 	./$(DEPDIR)/test_shcoind-ltc_block.Po \
 	./$(DEPDIR)/test_shcoind-ltc_netmsg.Po \
 	./$(DEPDIR)/test_shcoind-ltc_pool.Po \
@@ -1720,6 +1724,7 @@ server_sources = $(blockchain_sources) $(proto_sources) \
 	server/ext/entity.cpp server/ext/entity.h server/ext/ident.cpp \
 	server/ext/ident.h server/ext/alias.cpp server/ext/alias.h \
 	server/ext/certificate.cpp server/ext/certificate.h \
+	server/ext/license.cpp server/ext/license.h \
 	server/ext/offer.cpp server/ext/offer.h server/ext/asset.cpp \
 	server/ext/asset.h server/ext/exec.cpp server/ext/exec.h \
 	server/ext/context.cpp server/ext/context.h \
@@ -1956,6 +1961,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ident.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-init.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-keystore.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-license.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ltc_block.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ltc_netmsg.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcoind-ltc_pool.Po@am__quote@ # am--include-marker
@@ -2114,6 +2120,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ident.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-init.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-keystore.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-license.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ltc_block.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ltc_netmsg.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_shcoind-ltc_pool.Po@am__quote@ # am--include-marker
@@ -4284,6 +4291,20 @@ shcoind-certificate.obj: server/ext/certificate.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-certificate.obj `if test -f 'server/ext/certificate.cpp'; then $(CYGPATH_W) 'server/ext/certificate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/certificate.cpp'; fi`
 
+shcoind-license.o: server/ext/license.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-license.o -MD -MP -MF $(DEPDIR)/shcoind-license.Tpo -c -o shcoind-license.o `test -f 'server/ext/license.cpp' || echo '$(srcdir)/'`server/ext/license.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-license.Tpo $(DEPDIR)/shcoind-license.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/license.cpp' object='shcoind-license.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-license.o `test -f 'server/ext/license.cpp' || echo '$(srcdir)/'`server/ext/license.cpp
+
+shcoind-license.obj: server/ext/license.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-license.obj -MD -MP -MF $(DEPDIR)/shcoind-license.Tpo -c -o shcoind-license.obj `if test -f 'server/ext/license.cpp'; then $(CYGPATH_W) 'server/ext/license.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/license.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-license.Tpo $(DEPDIR)/shcoind-license.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/license.cpp' object='shcoind-license.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -c -o shcoind-license.obj `if test -f 'server/ext/license.cpp'; then $(CYGPATH_W) 'server/ext/license.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/license.cpp'; fi`
+
 shcoind-offer.o: server/ext/offer.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(shcoind_CXXFLAGS) $(CXXFLAGS) -MT shcoind-offer.o -MD -MP -MF $(DEPDIR)/shcoind-offer.Tpo -c -o shcoind-offer.o `test -f 'server/ext/offer.cpp' || echo '$(srcdir)/'`server/ext/offer.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shcoind-offer.Tpo $(DEPDIR)/shcoind-offer.Po
@@ -5725,6 +5746,20 @@ test_shcoind-certificate.obj: server/ext/certificate.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/certificate.cpp' object='test_shcoind-certificate.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-certificate.obj `if test -f 'server/ext/certificate.cpp'; then $(CYGPATH_W) 'server/ext/certificate.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/certificate.cpp'; fi`
+
+test_shcoind-license.o: server/ext/license.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-license.o -MD -MP -MF $(DEPDIR)/test_shcoind-license.Tpo -c -o test_shcoind-license.o `test -f 'server/ext/license.cpp' || echo '$(srcdir)/'`server/ext/license.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-license.Tpo $(DEPDIR)/test_shcoind-license.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/license.cpp' object='test_shcoind-license.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-license.o `test -f 'server/ext/license.cpp' || echo '$(srcdir)/'`server/ext/license.cpp
+
+test_shcoind-license.obj: server/ext/license.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-license.obj -MD -MP -MF $(DEPDIR)/test_shcoind-license.Tpo -c -o test_shcoind-license.obj `if test -f 'server/ext/license.cpp'; then $(CYGPATH_W) 'server/ext/license.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/license.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_shcoind-license.Tpo $(DEPDIR)/test_shcoind-license.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='server/ext/license.cpp' object='test_shcoind-license.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test_shcoind-license.obj `if test -f 'server/ext/license.cpp'; then $(CYGPATH_W) 'server/ext/license.cpp'; else $(CYGPATH_W) '$(srcdir)/server/ext/license.cpp'; fi`
 
 test_shcoind-offer.o: server/ext/offer.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test_shcoind-offer.o -MD -MP -MF $(DEPDIR)/test_shcoind-offer.Tpo -c -o test_shcoind-offer.o `test -f 'server/ext/offer.cpp' || echo '$(srcdir)/'`server/ext/offer.cpp
@@ -7259,6 +7294,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/shcoind-ident.Po
 	-rm -f ./$(DEPDIR)/shcoind-init.Po
 	-rm -f ./$(DEPDIR)/shcoind-keystore.Po
+	-rm -f ./$(DEPDIR)/shcoind-license.Po
 	-rm -f ./$(DEPDIR)/shcoind-ltc_block.Po
 	-rm -f ./$(DEPDIR)/shcoind-ltc_netmsg.Po
 	-rm -f ./$(DEPDIR)/shcoind-ltc_pool.Po
@@ -7417,6 +7453,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/test_shcoind-ident.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-init.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-keystore.Po
+	-rm -f ./$(DEPDIR)/test_shcoind-license.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ltc_block.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ltc_netmsg.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ltc_pool.Po
@@ -7635,6 +7672,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/shcoind-ident.Po
 	-rm -f ./$(DEPDIR)/shcoind-init.Po
 	-rm -f ./$(DEPDIR)/shcoind-keystore.Po
+	-rm -f ./$(DEPDIR)/shcoind-license.Po
 	-rm -f ./$(DEPDIR)/shcoind-ltc_block.Po
 	-rm -f ./$(DEPDIR)/shcoind-ltc_netmsg.Po
 	-rm -f ./$(DEPDIR)/shcoind-ltc_pool.Po
@@ -7793,6 +7831,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/test_shcoind-ident.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-init.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-keystore.Po
+	-rm -f ./$(DEPDIR)/test_shcoind-license.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ltc_block.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ltc_netmsg.Po
 	-rm -f ./$(DEPDIR)/test_shcoind-ltc_pool.Po

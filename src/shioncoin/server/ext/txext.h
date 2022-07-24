@@ -494,6 +494,7 @@ typedef std::map<uint160, uint256> altchain_list;
 
 #include "entity.h"
 #include "certificate.h"
+#include "license.h"
 #include "ident.h"
 #include "offer.h"
 #include "asset.h"

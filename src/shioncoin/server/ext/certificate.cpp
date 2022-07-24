@@ -58,8 +58,6 @@ cert_list *GetIdentTable(int ifaceIndex)
     return (NULL);
   return (&wallet->mapIdent);
 }
-#endif
-
 cert_list *GetLicenseTable(int ifaceIndex)
 {
   if (ifaceIndex < 0 || ifaceIndex >= MAX_COIN_IFACE)
@@ -69,6 +67,7 @@ cert_list *GetLicenseTable(int ifaceIndex)
     return (NULL);
   return (&wallet->mapLicense);
 }
+#endif
 
 int GetTotalCertificates(int ifaceIndex)
 {
@@ -91,7 +90,11 @@ bool VerifyCertChain(CIface *iface, CTransaction& tx)
     CCert *pcert = (CCert *)&ptx.certificate;
     if (!pcert->VerifySignature(ifaceIndex))
       return error(SHERR_INVAL, "VerifyCertChain: signature integrity error");
-  }
+  } else {
+		if (cert->nFlag & SHCERT_CERT_CHAIN) {
+			return error(SHERR_INVAL, "VerifyCertChain: certificate cannot be certificate chain (must be derived)");
+		}
+	}
 
   if (!cert->VerifySignature(ifaceIndex))
     return error(SHERR_INVAL, "VerifyCertChain: signature integrity error");
@@ -126,18 +129,26 @@ bool VerifyCertChain(CIface *iface, CTransaction& tx)
   return (true);
 }
 
+/* todo: rename to ProcessCertTx() */
 bool InsertCertTable(CIface *iface, CTransaction& tx, unsigned int nHeight, bool fUpdate)
 {
   CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	int err;
 
   if (!wallet)
     return (false);
 
+	if (!tx.VerifyCert(ifaceIndex, nHeight)) {
+		return (false);
+	}
+#if 0
   if (!VerifyCert(iface, tx, nHeight))
     return error(SHERR_INVAL, "CommitCertTx: error verifying certificate.");
 
   if (!VerifyCertChain(iface, tx))
     return error(SHERR_INVAL, "CommitCertTx: chain verification failure [tx %s].", tx.GetHash().GetHex().c_str());
+#endif
 
   CCert *cert = (CCert *)&tx.certificate;
 
@@ -225,6 +236,7 @@ static bool GetOutDestination(int ifaceIndex, const CTransaction& tx, CCoinAddr 
   return (false);
 }
 
+#if 0
 bool CommitLicenseTx(CIface *iface, CTransaction& tx, int nHeight)
 {
   CWallet *wallet = GetWallet(iface);
@@ -281,6 +293,7 @@ bool CommitLicenseTx(CIface *iface, CTransaction& tx, int nHeight)
 
   return (true);
 }
+#endif
 
 bool GetCertByName(CIface *iface, string name, CCert& cert)
 {
@@ -377,6 +390,7 @@ bool DecodeCertHash(const CScript& script, int& mode, uint160& hash)
   return (true);
 }
 
+#if 0
 bool DecodeLicenseHash(const CScript& script, int& mode, uint160& hash)
 {
   CScript::const_iterator pc = script.begin();
@@ -414,12 +428,11 @@ bool DecodeLicenseHash(const CScript& script, int& mode, uint160& hash)
   hash = uint160(vch);
   return (true);
 }
-
+#endif
 
 bool IsCertOp(int op) {
 	return (op == OP_CERT);
 }
-
 
 string certFromOp(int op) {
 	switch (op) {
@@ -586,6 +599,7 @@ bool IsCertTx(const CTransaction& tx)
   return (true);
 }
 
+#if 0
 bool IsLicenseTx(const CTransaction& tx)
 {
   int tot;
@@ -609,6 +623,7 @@ bool IsLicenseTx(const CTransaction& tx)
 
   return (true);
 }
+#endif
 
 #if 0
 bool IsCertEntTx(const CTransaction& tx)
@@ -730,6 +745,7 @@ bool VerifyIdent(CTransaction& tx, int& mode)
 }
 #endif
 
+#if 0
 /**
  * Verify the integrity of an certificate.
  */
@@ -760,8 +776,10 @@ bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight)
       mode != OP_EXT_REMOVE)
     return (error(SHERR_INVAL, "VerifyCert: invalid operational mode."));
 
+#if 0
   if (tx.vout[nOut].nValue < GetCertOpFee(iface, nHeight))
     return error(SHERR_INVAL, "VerifyCert: insufficient fee (%f) for block accepted at height %d.", (double)tx.vout[nOut].nValue/COIN, (int)nHeight);
+#endif
 
   CCert *cert = (CCert *)tx.GetCertificate();
 	if (!cert)
@@ -779,7 +797,9 @@ bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight)
 
   return (true);
 }
+#endif
 
+#if 0
 /**
  * Verify the integrity of a license
  */
@@ -815,8 +835,6 @@ bool VerifyLicense(CTransaction& tx)
 
   return (true);
 }
-
-
 bool VerifyLicenseChain(CIface *iface, CTransaction& tx)
 {
   int ifaceIndex = GetCoinIndex(iface);
@@ -858,6 +876,7 @@ bool VerifyLicenseChain(CIface *iface, CTransaction& tx)
 
   return (true);
 }
+#endif
 
 #if 0
 bool GetCertEntByHash(CIface *iface, uint160 hash, CIdent& issuer)
@@ -939,6 +958,7 @@ bool VerifyCertHash(CIface *iface, const uint160& hash)
   return (true);
 }
 
+#if 0
 /**
  * Obtain the block-chain tx that encapsulates a license.
  * @param hash The license hash.
@@ -962,6 +982,7 @@ bool GetTxOfLicense(CIface *iface, const uint160& hash, CTransaction& tx)
 
   return (true);
 }
+#endif
 
 int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTitle, string hexSeed, int64 nLicenseFee)
 {
@@ -998,6 +1019,8 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
   if (bal < nFee) {
     return (ERR_FEE);
   }
+
+	cert->ResetExpireTime(iface, nFee);
 
   uint160 certHash = cert->GetHash();
 
@@ -1119,6 +1142,7 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
   return (0);
 }
 
+#if 0
 /**
  * A license tranaction pays back it's fee to the address which certifies it. 
  * @param iface The coin service interface.
@@ -1244,123 +1268,9 @@ int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletT
 
   return (0);
 }
-#if 0
-int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletTx& wtx)
-{
-  CWallet *wallet = GetWallet(iface);
-  int ifaceIndex = GetCoinIndex(iface);
-
-  CTransaction tx;
-  bool hasCert = GetTxOfCert(iface, hashCert, tx);
-  if (!hasCert) {
-    return (SHERR_NOENT);
-  }
-
-  CCert *cert = &tx.certificate;
-
-  if (!(cert->nFlag & SHCERT_CERT_SIGN)) {
-    error(SHERR_INVAL, "init_license_tx: error: origin certificate is not capable of signing.");
-    return (SHERR_INVAL);
-  }
-  if (!(cert->nFlag & SHCERT_CERT_DIGITAL)) {
-    error(SHERR_INVAL, "init_license_tx: error: origin certificate is not sufficient to grant a digital license.");
-    return (SHERR_INVAL);
-  }
-#if 0
-  if (!(cert->nFlag & SHCERT_CERT_CHAIN)) {
-    error(SHERR_INVAL, "init_license_tx: error: origin certificate is certificate authority (must be derived).");
-    return (SHERR_INVAL);
-  }
 #endif
 
-  if (!cert->VerifySignature(ifaceIndex)) {
-    error(SHERR_INVAL, "init_license_tx: error: origin certificate has invalid signature.");
-    return (SHERR_INVAL);
-  }
-
-  /* destination (certificate owner) */
-  CCoinAddr certAddr(stringFromVch(tx.certificate.vAddr));
-  if (!certAddr.IsValid())
-    return (error(SHERR_INVAL, "init_license_tx: certAddr '%s' is invalid: %s\n", certAddr.ToString().c_str(), tx.certificate.ToString().c_str()));
-  
-  string strExtAccount = "@" + strAccount;
-  CCoinAddr extAddr = GetAccountAddress(wallet, strExtAccount, true);
-  if (!extAddr.IsValid())
-    return (error(SHERR_INVAL, "error generating ext account addr"));
-
-  /* embed cert content into transaction */
-  wtx.SetNull();
-  wtx.strFromAccount = strAccount; /* originating account for payment */
-
-  CCert *lic = wtx.CreateLicense(&tx.certificate);
-  if (!lic) {
-    return (SHERR_INVAL);
-  }
-
-  lic->tExpire = cert->tExpire;
-
-  /* inherit title from cert */
-  lic->SetLabel(cert->GetLabel());
-
-  int64 nCertFee = lic->nFee;
-  int64 nOpFee = MAX(iface->min_tx_fee, 
-      GetCertOpFee(iface, GetBestHeight(iface)));
-  int64 nTxFee =  nOpFee + nCertFee;
-  nTxFee = MAX(iface->min_tx_fee, nTxFee);
-
-  int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
-  if (bal < nTxFee)
-    return (SHERR_AGAIN);
-
-  /* send to extended tx storage account */
-  uint160 licHash = lic->GetHash();
-
-  /* send license tx to intermediate address */
-  CScript scriptPubKey;
-  scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_LICENSE) << OP_HASH160 << licHash << OP_2DROP;
-  if (nCertFee >= (int64)iface->min_tx_fee) {
-    CScript scriptPubKeyDest;
-    scriptPubKeyDest.SetDestination(extAddr.Get());
-    scriptPubKey += scriptPubKeyDest;
-  } else {
-    /* no fee required */
-    scriptPubKey << OP_RETURN;
-  }
-
-  string certStrError = wallet->SendMoney(scriptPubKey, nTxFee, wtx, false);
-  if (certStrError != "") {
-    error(ifaceIndex, certStrError.c_str());
-    return (SHERR_CANCELED);
-  }
-
-  if (nCertFee >= (int64)iface->min_tx_fee) {
-    int nTxOut = 0; /* tx only had one output */
-    CWalletTx l_wtx;
-    vector<pair<CScript, int64> > vecSend;
-
-    l_wtx.SetNull();
-    l_wtx.strFromAccount = strAccount;
-    CScript scriptPubKeyFee;
-    scriptPubKeyFee.SetDestination(certAddr.Get());
-    vecSend.push_back(make_pair(scriptPubKeyFee, nCertFee));
-
-//    CReserveKey rkey(wallet);
-    int64 nRetFee = MAX(iface->min_tx_fee, wtx.vout[0].nValue - nCertFee);
-    if (!CreateTransactionWithInputTx(iface, strAccount,
-          vecSend, wtx, nTxOut, l_wtx, nRetFee) ||
-        !wallet->CommitTransaction(l_wtx)) {
-      error(SHERR_CANCELED, "error paying certificate owner the license fee.");
-      return (SHERR_CANCELED);
-    }
-  }
-
-  Debug("SENT:LICENSENEW : lichash=%s, tx=%s\n", lic->GetHash().ToString().c_str(), wtx.GetHash().GetHex().c_str());
-
-  return (0);
-}
-#endif
-
-
+#if 0
 static void FillSharenetCertificate(SHCert *cert, CCert *c_cert, CCert *iss)
 {
   int err;
@@ -1430,6 +1340,7 @@ static void FillSharenetCertificate(SHCert *cert, CCert *c_cert, CCert *iss)
   }
 
 }
+#endif
 
 int CCertCore::VerifyTransaction()
 {
@@ -1438,6 +1349,17 @@ int CCertCore::VerifyTransaction()
   err = CEntity::VerifyTransaction();
   if (err)
     return (err);
+
+#if 0
+	if (cert->hashIssuer.IsNull() &&
+			(cert->nFlag & SHCERT_CERT_CHAIN))
+		return (ERR_INVAL);
+#endif
+
+#if 0
+  if (!VerifyCertChain(iface, tx))
+    return error(SHERR_INVAL, "CommitCertTx: chain verification failure [tx %s].", tx.GetHash().GetHex().c_str());
+#endif
 
   return (0);
 }
@@ -1925,10 +1847,12 @@ std::string CCert::ToString()
   return (write_string(Value(ToValue()), false));
 }
 
+#if 0
 std::string CLicense::ToString()
 {
   return (write_string(Value(ToValue()), false));
 }
+#endif
 
 #if 0
 Object CIdent::ToValue()
@@ -1957,6 +1881,11 @@ Object CIdent::ToValue()
   return (obj);
 }
 #endif
+
+int64 CCert::CalculateFee(CIface *iface, int nHeight)
+{
+	return (GetCertOpFee(iface, nHeight));
+}
 
 int CCert::VerifyTransaction()
 {
@@ -1997,6 +1926,7 @@ Object CCert::ToValue()
   return (obj);
 }
 
+#if 0
 Object CLicense::ToValue()
 {
   Object obj = CCertCore::ToValue();
@@ -2042,6 +1972,7 @@ bool CLicense::VerifySignature(int ifaceIndex)
 
   return (VerifySignature(ifaceIndex, (CCert *)&cert_tx.certificate));
 }
+#endif
 
 bool DisconnectCertificate(CIface *iface, CTransaction& tx)
 {

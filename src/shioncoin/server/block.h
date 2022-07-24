@@ -872,10 +872,11 @@ class CTransaction : public CTransactionCore
     CAlias *RemoveAlias(std::string name);
 
     CCert *CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr, string hexSeed, int64 nLicenseFee);
-
     CCert *DeriveCert(int ifaceIndex, string strTitle, CCoinAddr& addr, CCert *chain, string hexSeed, int64 nLicenseFee);
+		bool VerifyCert(int ifaceIndex, int nHeight);
 
     CLicense *CreateLicense(CCert *cert);
+		bool VerifyLicense(CIface *iface);
 
     COffer *CreateOffer();
     COffer *AcceptOffer(COffer *offerIn);
@@ -896,6 +897,7 @@ class CTransaction : public CTransactionCore
     CExecCheckpoint *UpdateExec(const CExec& execIn);
     CExecCall *GenerateExec(const CExec& execIn);
     CExec *TransferExec(const CExec& execIn);
+		bool VerifyExec(int ifaceIndex, int nHeight = 0);
 
     CIdent *CreateIdent(const CIdent& ident);
     CIdent *CreateIdent(const CCert& ident);
@@ -971,8 +973,6 @@ class CTransaction : public CTransactionCore
 				return (NULL);
 			return ((CExecCheckpoint *)&exec);
 		}
-
-		bool VerifyExec(int ifaceIndex, int nHeight = 0);
 
     COffer *GetOffer() const
     {

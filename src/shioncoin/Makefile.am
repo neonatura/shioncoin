@@ -299,6 +299,8 @@ server_sources = \
 	server/ext/alias.h \
 	server/ext/certificate.cpp \
 	server/ext/certificate.h \
+	server/ext/license.cpp \
+	server/ext/license.h \
 	server/ext/offer.cpp \
 	server/ext/offer.h \
 	server/ext/asset.cpp \

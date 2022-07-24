@@ -1134,7 +1134,7 @@ CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr
 
   nFlag |= CTransaction::TXF_CERTIFICATE;
   newCert = CCert(strTitle);
-  newCert.SetExpireTime();
+//  newCert.SetExpireTime();
   newCert.ResetSerialNumber();
   shgeo_local(&newCert.geo, SHGEO_PREC_DISTRICT);
   newCert.SetFee(nLicenseFee);
@@ -1164,11 +1164,90 @@ CCert *CTransaction::DeriveCert(int ifaceIndex, string strTitle, CCoinAddr& addr
     newCert.nFlag &= ~SHCERT_CERT_SIGN;
 
   shgeo_local(&newCert.geo, SHGEO_PREC_DISTRICT);
+	newCert.SetExpireTime(chain->GetExpireTime());
   newCert.SetFee(nLicenseFee);
   newCert.Sign(ifaceIndex, addr, chain, hexSeed);
 
 	certificate = newCert;
   return (GetCertificate());
+}
+
+bool CTransaction::VerifyCert(int ifaceIndex, int nHeight)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  uint160 hashCert;
+  time_t now;
+  int nOut;
+	int err;
+  
+  /* core verification */
+  if (!IsCertTx(*this)) {
+    return (error(SHERR_INVAL, "VerifyCert: transaction does not contain a certificate: %s", ToString(GetCoinIndex(iface)).c_str()));
+  }
+  
+  /* verify hash in pub-script matches cert hash */
+  nOut = IndexOfExtOutput(*this);
+  if (nOut == -1)
+    return (error(SHERR_INVAL, "VerifyCert: no extension output"));
+    
+  int mode;
+  if (!DecodeCertHash(vout[nOut].scriptPubKey, mode, hashCert))
+    return (error(SHERR_INVAL, "VerifyCert: no cert hash in output"));
+    
+  if (mode != OP_EXT_NEW &&
+      mode != OP_EXT_ACTIVATE &&
+      mode != OP_EXT_UPDATE &&
+      mode != OP_EXT_TRANSFER &&
+      mode != OP_EXT_REMOVE)
+    return (error(SHERR_INVAL, "VerifyCert: invalid operational mode."));
+
+  CCert *cert = (CCert *)GetCertificate();
+  if (!cert)
+    return (false);
+  if (hashCert != cert->GetHash())
+    return (error(SHERR_INVAL, "VerifyCert: invalid cert hash"));
+
+	/** certificate fee must be at least base certificate fee. */
+	const int64& nCredit = vout[nOut].nValue;
+	int64 nBaseFee = cert->CalculateFee(iface, nHeight);
+	if (nCredit < nBaseFee) {
+		return (error(ERR_FEE, "insufficient certificate fund"));
+	}
+#if 0
+  if (vout[nOut].nValue < GetCertOpFee(iface, nHeight))
+    return error(SHERR_INVAL, "VerifyCert: insufficient fee (%f) for block accepted at height %d.", (double)vout[nOut].nValue/COIN, (int)nHeight);
+#endif
+
+fprintf(stderr, "DEBUG: REMOVE ME: VerifyLifespan: minLifespan %u\n", (unsigned int)cert->GetMinimumLifespan()); 
+fprintf(stderr, "DEBUG: REMOVE ME: VerifyLifespan: maxLifespan %u\n", (unsigned int)cert->GetMaximumLifespan()); 
+fprintf(stderr, "DEBUG: REMOVE ME: VerifyLifespan: expire span %u\n", cert->GetExpireTime());
+fprintf(stderr, "DEBUG: REMOVE ME: VerifyLifespan: expire span %u\n",
+		( cert->VerifyLifespan(iface, nCredit) ? "true" : "false" ));
+
+	if (!cert->VerifyLifespan(iface, nCredit)) {
+		return (error(ERR_INVAL, "certificate expiration exceeds limit"));
+	}
+
+	err = cert->VerifyTransaction();
+	if (err) {
+		return (error(err, "VerifyCert: cert transaction verification failure."));
+	}
+
+  if (!VerifyCertChain(iface, *this)) {
+    return (error(SHERR_INVAL, "CommitCertTx: chain verification failure [tx %s].", GetHash().GetHex().c_str()));
+	}
+    
+#if 0
+  if (cert->hashIssuer.IsNull() &&
+      (cert->nFlag & SHCERT_CERT_CHAIN))
+    return error(SHERR_INVAL, "VerifyCert: error: cert has no issuer and is also marked chained.");
+    
+  now = time(NULL);
+  if (cert->GetExpireTime() > (now + SHARE_DEFAULT_EXPIRE_TIME))
+    return error(SHERR_INVAL, "VerifyCert: invalid expiration time");
+#endif
+
+	return (true);
 }
 
 /**
@@ -1190,10 +1269,65 @@ CLicense *CTransaction::CreateLicense(CCert *cert)
 
   license.ResetSerialNumber();
   shgeo_local(&license.geo, SHGEO_PREC_DISTRICT);
+	license.SetExpireTime(cert->GetExpireTime());
   license.hashIssuer = cert->GetHash();
   license.Sign(cert);
 
   return (GetLicense());
+}
+
+bool CTransaction::VerifyLicense(CIface *iface)
+{
+	uint160 hashLicense;
+	int nOut;
+	int err;
+
+	/* core verification */
+	if (!IsLicenseTx(*this)) {
+		return (false); /* *this not flagged as cert */
+	}
+
+	/* verify hash in pub-script matches cert hash */
+	nOut = IndexOfExtOutput(*this);
+	if (nOut == -1) {
+		return (false); /* no extension output */
+	}
+
+	int mode;
+	if (!DecodeLicenseHash(vout[nOut].scriptPubKey, mode, hashLicense)) {
+		return (false); /* no cert hash in output */
+	}
+
+	if (mode != OP_EXT_ACTIVATE)
+		return (false);
+
+	CLicense *lic = GetLicense();
+	if (!lic)
+		return (false);
+	if (hashLicense != lic->GetHash())
+		return error(SHERR_INVAL, "license certificate hash mismatch");
+
+	/** license fee must be at least base license fee. */
+	const int64& nCredit = vout[nOut].nValue;
+	int64 nBaseFee = lic->CalculateFee(iface);
+	if (nCredit < nBaseFee) {
+		return (error(ERR_FEE, "insufficient license fund"));
+	}
+
+	/* verify expiration time is valid. */
+	if (!lic->VerifyLifespan(iface, nCredit)) {
+		return (error(ERR_INVAL, "expiration exceeds limit"));
+	}
+
+	err = lic->VerifyTransaction();
+	if (err) {
+		return (error(err, "VerifyLicense: license transaction verification failure.")); 
+	}
+
+  if (!VerifyLicenseChain(iface, *this))
+    return error(SHERR_INVAL, "VerifyLicense: chain verification failure.");
+
+	return (true);
 }
 
 COffer *CTransaction::CreateOffer()

@@ -166,8 +166,8 @@ class CCertCore : public CEntity
 		/** The maximum supported version of an certificate type transaction. */
 		static const int MAX_CERTIFICATE_VERSION = SHC_VERSION_MAJOR;
 
-		//		/** The maximum life-span, in seconds, of an certificate type transaction. */
-		//    static const int MAX_CERTIFICATE_LIFESPAN = 1514743200; // ~48y
+		/** The maximum life-span, in seconds, of an certificate type transaction. */
+		static const int MAX_CERTIFICATE_LIFESPAN = 1514743200; // ~48y
 
 		static const int CERTF_CHAIN = SHCERT_CERT_CHAIN;
 
@@ -374,12 +374,15 @@ class CCertCore : public CEntity
 			return (MAX_CERTIFICATE_VERSION);
 		}
 
-#if 0
+		time_t GetMinimumLifespan()
+		{
+			return (GetMaximumLifespan());
+		}
+
 		time_t GetMaximumLifespan()
 		{
 			return (MAX_CERTIFICATE_LIFESPAN);
 		}
-#endif
 
 		int VerifyTransaction();
 
@@ -571,6 +574,8 @@ class CCert : public CCertCore
 
 		bool VerifySignatureSeed(string hexSeed);
 
+		int64 CalculateFee(CIface *iface, int nHeight);
+
 //		void NotifySharenet(int ifaceIndex);
 
 #if 0
@@ -600,6 +605,7 @@ class CCert : public CCertCore
 
 };
 
+#if 0
 /**
  * A license is a specific type of certification.
  * @note A license is not capable of having contextual data.
@@ -690,11 +696,10 @@ class CLicense : public CCertCore
 		Object ToValue();
 
 };
+#endif
+
 
 class CWalletTx;
-
-
-bool VerifyCert(CIface *iface, CTransaction& tx, int nHeight);
 
 int64 GetCertOpFee(CIface *iface, int nHeight);
 
@@ -702,25 +707,25 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
 
 int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, string strAccount, string strTitle, string hexSeed = string(), int64 nLicenseFee = 0);
 
-int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletTx& wtx);
+//int init_license_tx(CIface *iface, string strAccount, uint160 hashCert, CWalletTx& wtx);
 
-bool VerifyLicense(CTransaction& tx);
+//bool VerifyLicense(CTransaction& tx);
 
 bool VerifyCertHash(CIface *iface, const uint160& hash);
 
 extern bool GetTxOfCert(CIface *iface, const uint160& hash, CTransaction& tx);
 
-extern bool GetTxOfLicense(CIface *iface, const uint160& hash, CTransaction& tx);
+//extern bool GetTxOfLicense(CIface *iface, const uint160& hash, CTransaction& tx);
 
 int GetTotalCertificates(int ifaceIndex);
 
 cert_list *GetCertTable(int ifaceIndex);
 
-cert_list *GetLicenseTable(int ifaceIndex);
+//cert_list *GetLicenseTable(int ifaceIndex);
 
 bool IsCertTx(const CTransaction& tx);
 
-bool IsLicenseTx(const CTransaction& tx);
+//bool IsLicenseTx(const CTransaction& tx);
 
 bool InsertCertTable(CIface *iface, CTransaction& tx, unsigned int nHeight, bool fUpdate = true);
 
@@ -732,9 +737,13 @@ bool DisconnectCertificate(CIface *iface, CTransaction& tx);
 
 bool GetCertByName(CIface *iface, string name, CCert& cert);
 
-bool CommitLicenseTx(CIface *iface, CTransaction& tx, int nHeight);
+bool DecodeCertHash(const CScript& script, int& mode, uint160& hash);
 
-bool VerifyLicenseChain(CIface *iface, CTransaction& tx);
+bool VerifyCertChain(CIface *iface, CTransaction& tx);
+
+//bool CommitLicenseTx(CIface *iface, CTransaction& tx, int nHeight);
+
+//bool VerifyLicenseChain(CIface *iface, CTransaction& tx);
 
 
 #endif /* ndef __SERVER__CERTIFICATE_H__ */
