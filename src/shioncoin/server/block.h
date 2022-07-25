@@ -866,10 +866,13 @@ class CTransaction : public CTransactionCore
     bool EraseTx(int ifaceIndex);
 
 		CParam *UpdateParam(std::string strName, int64_t nValue);
+		bool VerifyParam(int ifaceIndex, int nHeight);
 
     CAlias *CreateAlias(std::string name, int type = CAlias::ALIAS_COINADDR);
     CAlias *UpdateAlias(std::string name, const uint160& hash);
     CAlias *RemoveAlias(std::string name);
+		/* Verify the integrity of an alias transaction. */
+		bool VerifyAlias(int ifaceIndex, int nHeight);
 
     CCert *CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr, string hexSeed, int64 nLicenseFee);
     CCert *DeriveCert(int ifaceIndex, string strTitle, CCoinAddr& addr, CCert *chain, string hexSeed, int64 nLicenseFee);
@@ -883,6 +886,8 @@ class CTransaction : public CTransactionCore
     COffer *GenerateOffer(COffer *offerIn);
     COffer *PayOffer(COffer *accept);
     COffer *RemoveOffer(uint160 hashOffer);
+		/** Verify the integrity of an offer transaction. */
+		bool VerifyOffer(int ifaceIndex, int nHeight);
 
 		/* TXF_ASSET : CAsset */
 		CAsset *CreateAsset(CCert *cert, int nType, int nSubType, const cbuff& vContent);

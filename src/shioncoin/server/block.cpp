@@ -1089,6 +1089,69 @@ CParam *CTransaction::UpdateParam(std::string strName, int64_t nValue)
   return (par);
 }
 
+bool CTransaction::VerifyParam(int ifaceIndex, int nHeight)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+	CParam *param;
+	uint160 hashParam;
+	int mode;
+	int nOut;
+	int err;
+
+	/* verify hash in pub-script matches param hash */
+	CScript paramScript;
+	if (!GetExtOutput(*this, OP_PARAM, mode, nOut, paramScript))
+		return (false);
+
+	if (!DecodeParamHash(vout[nOut].scriptPubKey, mode, hashParam)) {
+		return (false); /* no param hash in output */
+	}
+
+	param = GetParam();
+	if (!param)
+		return (false);
+
+	const uint160& phash = param->GetHash();
+	if (hashParam != phash) {
+		/* param hash mismatch */
+		return (error(SHERR_INVAL, "VerifyParam: param \"%s\" transaction output references invalid param hash: \"%s\" [param: %s].", phash.GetHex().c_str(), vout[nOut].scriptPubKey.ToString().c_str(), param->ToString().c_str()));
+	}
+
+	{
+		int64 nBaseFee = param->CalculateFee(iface, nHeight);
+		int64 nCredit = vout[nOut].nValue;
+
+#if 0
+		/** param fee must be at least base param fee. */
+		if (nCredit < nBaseFee) {
+			return (error(ERR_FEE, "insufficient param fund"));
+		}
+#endif
+
+		if (!param->VerifyLifespan(iface, nCredit)) {
+			return (error(ERR_INVAL, "paramificate expiration exceeds limit"));
+		}
+	}
+
+	if (GetVersion() == 1 && mode != OP_EXT_UPDATE) {
+		return error(SHERR_INVAL, "VerifyParam: param \"%s\" has invalid operation mode (%d).", phash.GetHex().c_str(),  mode);
+	}
+
+	if (mode == OP_EXT_UPDATE) {
+    const CTxOut& txout = vout[nOut];
+
+    /* update operation is constrained to promote inclusion of additional outputs. */
+    if (txout.nValue != 0)
+      return (error(ERR_INVAL, "VerifyParam: param \"%s\" has invalid output coin value (%f).", hashParam.GetHex().c_str()), ((double)txout.nValue/COIN));
+  }
+
+	err = param->VerifyTransaction();
+	if (err) {
+		return (error(err, "param transaction verification failure."));
+	}
+
+	return (true);
+}
 
 CAlias *CTransaction::CreateAlias(std::string name, int type)
 {
@@ -1121,6 +1184,67 @@ CAlias *CTransaction::RemoveAlias(std::string name)
   alias.SetExpireSpan((double)DEFAULT_ALIAS_LIFESPAN);
   alias.SetLabel(name);
   return (&alias);
+}
+
+bool CTransaction::VerifyAlias(int ifaceIndex, int nHeight)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  uint160 hashAlias;
+  time_t now;
+  int nOut;
+	int err;
+
+  /* core verification */
+  if (!IsAliasTx(*this))
+    return (error(SHERR_INVAL, "VerifyAlias: not an alias tx"));
+
+  /* verify hash in pub-script matches alias hash */
+  nOut = IndexOfAliasOutput(*this);
+  if (nOut == -1) {
+    return (false); /* no extension output */
+  }
+
+  int mode;
+  if (!DecodeAliasHash(vout[nOut].scriptPubKey, mode, hashAlias)) {
+    return (false); /* no alias hash in output */
+  }
+
+  if (mode != OP_EXT_ACTIVATE &&
+      mode != OP_EXT_UPDATE &&
+      mode != OP_EXT_TRANSFER &&
+      mode != OP_EXT_REMOVE) {
+    return (false);
+  }
+
+  CAlias *alias = GetAlias();
+	if (!alias)
+		return (false);
+  if (hashAlias != alias->GetHash()) {
+    return error(SHERR_INVAL, "VerifyAlias: transaction references invalid alias hash.");
+  }
+
+	{
+		int64 nBaseFee = alias->CalculateFee(iface, nHeight);
+		int64 nCredit = vout[nOut].nValue;
+
+		if (mode == OP_EXT_ACTIVATE) {
+			/** alias fee must be at least base alias fee. */
+			if (nCredit < nBaseFee) {
+				return (error(ERR_FEE, "insufficient alias fund"));
+			}
+		}
+
+    if (!alias->VerifyLifespan(iface, nCredit)) {
+      return (error(ERR_INVAL, "aliasificate expiration exceeds limit"));
+    }
+	}
+
+	err = alias->VerifyTransaction();
+	if (err) {
+		return (error(err, "VerifyAlias: error verifying alias-tx %s.", hashAlias.GetHex().c_str()));
+	}
+
+	return (true);
 }
 
 CCert *CTransaction::CreateCert(int ifaceIndex, string strTitle, CCoinAddr& addr, string hexSeed, int64 nLicenseFee)
@@ -1405,6 +1529,72 @@ COffer *CTransaction::RemoveOffer(uint160 hashOffer)
   off->hashOffer = hashOffer;
 
 	return (off);
+}
+
+bool CTransaction::VerifyOffer(int ifaceIndex, int nHeight)
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+	uint160 hashOffer;
+	int nOut;
+	int err;
+
+fprintf(stderr, "DEBUG: VerifyOffer()/start\n");
+
+	/* core verification */
+	if (!IsOfferTx(*this)) {
+		return (false); /* tx not flagged as offer */
+	}
+
+	/* verify hash in pub-script matches offer hash */
+	nOut = IndexOfOfferOutput(*this);
+	if (nOut == -1) {
+		return (false); /* no extension output */
+	}
+
+	int mode = GetOfferTxMode(*this);
+	if (!DecodeOfferHash(vout[nOut].scriptPubKey, mode, hashOffer)) {
+		return (error(ERR_INVAL, "VerifyOffer: DecodeOfferHash: no offer hash in output."));
+	}
+
+	if (mode != OP_EXT_NEW &&
+			mode != OP_EXT_ACTIVATE &&
+			mode != OP_EXT_TRANSFER &&
+			mode != OP_EXT_GENERATE &&
+			mode != OP_EXT_PAY &&
+			mode != OP_EXT_REMOVE) {
+		return (false);
+	}
+
+	COffer *offer = GetOffer();
+	if (hashOffer != offer->GetHash()) {
+		return (error(ERR_INVAL, "VerifyOffer: hashOffer != GetHash"));
+	}
+
+	err = offer->VerifyTransaction();
+	if (err) {
+		return (error(err, "VerifyOffer: offer-tx \"%s\" verification failure.", hashOffer.GetHex().c_str()));
+	}
+
+	{
+		int64 nBaseFee = offer->CalculateFee(iface, nHeight);
+		int64 nCredit = vout[nOut].nValue;
+
+		if (mode == OP_EXT_NEW ||
+				mode != OP_EXT_GENERATE) {
+			/* offer fee must be at least base offer fee. */
+			if (nCredit < nBaseFee) {
+				return (error(ERR_FEE, "insufficient offer fund"));
+			}
+		}
+
+		/* verify offer expiration time. */
+		if (!offer->VerifyLifespan(iface, nCredit)) {
+			return (error(ERR_INVAL, "expiration exceeds limit"));
+		}
+	}
+
+fprintf(stderr, "DEBUG: VerifyOffer()/finish\n");
+	return (true);
 }
 
 CAsset *CTransaction::CreateAsset(CCert *cert, int nType, int nSubType, const cbuff& vContent)

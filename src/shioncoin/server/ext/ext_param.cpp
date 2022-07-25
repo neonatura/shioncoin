@@ -131,6 +131,7 @@ bool IsParamTx(const CTransaction& tx)
   return (true);
 }
 
+#if 0
 /**
  * Verify the integrity of a param transaction.
  */
@@ -182,6 +183,7 @@ bool VerifyParamTx(CTransaction& tx, int& mode)
 
   return (true);
 }
+#endif
 
 int CParam::VerifyTransaction()
 {
@@ -191,7 +193,28 @@ int CParam::VerifyTransaction()
   if (err)
     return (err);
 
-  return (0);
+#if 0
+	/* verify param ext-tx version is appropriate. */
+	if (GetVersion() < 1) {
+		return error(SHERR_INVAL, "VerifyParam: param references invalid version (%d).", GetVersion());
+	}
+	if (GetVersion() == 1 && mode != OP_EXT_UPDATE) {
+		return error(SHERR_INVAL, "VerifyParam: param has invalid operation mode (%d).", mode);
+	}
+#endif
+
+	/* label is used to indicate param mode. */
+	if (GetMode().size() > CParam::MAX_MODE_LENGTH) {
+		return error(SHERR_INVAL, "VerifyParam: param mode exceeds 135 characters (%d).", GetMode().size());
+	}
+
+	return (0);
+}
+
+/* todo: remove me */
+int64 CParam::CalculateFee(CIface *iface, int nHeight)
+{
+	return (GetParamOpFee(iface));
 }
 
 Object CParam::ToValue()
@@ -366,11 +389,40 @@ static bool ApplyParam(CIface *iface, string strMode, uint64_t nNewValue)
 	return (true);
 }
 
+int IndexOfParamOutput(const CTransaction& tx)
+{
+	CScript script;
+	int nTxOut;
+	int mode;
+
+	if (!GetExtOutput(tx, OP_PARAM, mode, nTxOut, script))
+		return (-1);
+
+	return (nTxOut);
+}
+
+int GetParamTxMode(CTransaction& tx)
+{
+	uint160 hashParam;
+	int nMode;
+	int nOut;
+
+  nOut = IndexOfParamOutput(tx);
+  if (nOut == -1)
+    return (-1);
+
+  if (!DecodeParamHash(tx.vout[nOut].scriptPubKey, nMode, hashParam)) {
+    return (-1);
+  }
+
+	return (nMode);
+}
+
 bool ConnectParamTx(CIface *iface, CTransaction *tx, CBlockIndex *pindexPrev)
 {
   CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
 	CParam *param;
-	int op_mode;
 
 	if (!iface || !tx || !pindexPrev)
 		return (false); /* sanity */
@@ -382,8 +434,11 @@ bool ConnectParamTx(CIface *iface, CTransaction *tx, CBlockIndex *pindexPrev)
 	if (!param)
 		return (false);
 
-	if (!VerifyParamTx(*tx, op_mode))
+	if (!tx->VerifyParam(ifaceIndex, pindexPrev->nHeight)) {
 		return (error(ERR_INVAL, "ConnectParamTx: unable to verify param."));
+	}
+
+	int op_mode = GetParamTxMode(*tx);
 	if (op_mode != OP_EXT_UPDATE)
 		return (true); /* no-op */
 
@@ -443,10 +498,14 @@ bool DisconnectParamTx(CIface *iface, CTransaction *tx)
 {
   CWallet *wallet = GetWallet(iface);
 	CParam *param;
-	int op_mode;
 
-	if (!VerifyParamTx(*tx, op_mode))
+#if 0
+	if (!tx.VerifyParamTx()) {
 		return (false);
+	}
+#endif
+	
+	int op_mode = GetParamTxMode(*tx);
 	if (op_mode != OP_EXT_UPDATE)
 		return (true); /* no-op */
 

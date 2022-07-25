@@ -660,7 +660,7 @@ _TEST(offertx)
   uint256 hashTx = wtx.GetHash();
 
   _TRUE(wtx.CheckTransaction(TEST_COIN_IFACE));
-  _TRUE(VerifyOffer(wtx, mode) == true);
+  _TRUE(wtx.VerifyOffer(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
   _TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
   /* insert offer-tx into chain */
   {
@@ -679,7 +679,7 @@ _TEST(offertx)
   _TRUE(0 == err);
   uint160 hashAccept = acc_wtx.offer.GetHash();
   _TRUE(acc_wtx.CheckTransaction(TEST_COIN_IFACE));
-  _TRUE(VerifyOffer(acc_wtx, mode) == true);
+  _TRUE(acc_wtx.VerifyOffer(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
   _TRUE(acc_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
   {
     CBlock *block = test_GenerateBlock();
@@ -693,10 +693,13 @@ _TEST(offertx)
   /* offer generate operation */
   CWalletTx gen_wtx;
   err = generate_offer_tx(iface, strLabel, hashOffer, gen_wtx);
+fprintf(stderr, "DEBUG: REMOVE ME: TEST: generate_offer_tx: err = %d\n", err);
   _TRUE(0 == err);
+	_TRUEPTR(gen_wtx.GetOffer());
   uint160 hashGen = gen_wtx.offer.GetHash();
+fprintf(stderr, "DEBUG: REMOVE ME: TEST: generate_offer_Tx: %s\n", gen_wtx.GetOffer()->ToString().c_str());
   _TRUE(gen_wtx.CheckTransaction(TEST_COIN_IFACE));
-  _TRUE(VerifyOffer(gen_wtx, mode) == true);
+  _TRUE(gen_wtx.VerifyOffer(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
   {
     CBlock *block = test_GenerateBlock();
     _TRUEPTR(block);

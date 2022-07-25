@@ -74,10 +74,8 @@ class CAlias : public CEntity
 		}
 
 		IMPLEMENT_SERIALIZE (
-				READWRITE(*(CEntity *)this);
-				)
-
-			void FillReference(SHAlias *ref);
+			READWRITE(*(CEntity *)this);
+		)
 
 		bool GetCoinAddr(int ifaceIndex, CCoinAddr& addrRet);
 
@@ -106,15 +104,12 @@ class CAlias : public CEntity
 			CEntity::SetNull();
 		}
 
+#if 0
 		void NotifySharenet(int ifaceIndex);
+		void FillReference(SHAlias *ref);
+#endif
 
-		const uint160 GetHash()
-		{
-			uint256 hashOut = SerializeHash(*this);
-			unsigned char *raw = (unsigned char *)&hashOut;
-			cbuff rawbuf(raw, raw + sizeof(hashOut));
-			return Hash160(rawbuf);
-		}
+		int64 CalculateFee(CIface *iface, int nHeight);
 
 		time_t GetMinimumLifespan()
 		{
@@ -126,6 +121,14 @@ class CAlias : public CEntity
 		std::string ToString(int ifaceIndex);
 
 		Object ToValue(int ifaceIndex);
+
+		const uint160 GetHash()
+		{
+			uint256 hashOut = SerializeHash(*this);
+			unsigned char *raw = (unsigned char *)&hashOut;
+			cbuff rawbuf(raw, raw + sizeof(hashOut));
+			return Hash160(rawbuf);
+		}
 
 };
 
@@ -148,8 +151,6 @@ bool GetTxOfAlias(CIface *iface, const std::string strTitle, CTransaction& tx);
 
 CAlias *GetAliasByName(CIface *iface, string label, CTransaction& tx);
 
-bool VerifyAlias(CTransaction& tx);
-
 bool CommitAliasTx(CIface *iface, CTransaction& tx, int nHeight);
 
 bool ConnectAliasTx(CIface *iface, CTransaction& tx);
@@ -158,6 +159,9 @@ bool DisconnectAliasTx(CIface *iface, CTransaction& tx);
 
 bool IsValidAliasName(CIface *iface, string label);
 
+bool DecodeAliasHash(const CScript& script, int& mode, uint160& hash);
+
+int IndexOfAliasOutput(const CTransaction& tx);
 
 int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx, bool fTest = false);
 

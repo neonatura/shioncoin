@@ -33,6 +33,7 @@ class COffer : public CExtCore
 {
 
 	public:
+
 		/** The maximum supported version of an offer type transaction. */
 		static const int MAX_OFFER_VERSION = SHC_VERSION_MAJOR;
 
@@ -219,6 +220,8 @@ class COffer : public CExtCore
 			return (MAX_OFFER_VERSION);
 		}
 
+		int64 CalculateFee(CIface *iface, int nHeight);
+
 		time_t GetMinimumLifespan()
 		{
 			return (GetMaximumLifespan());
@@ -238,15 +241,27 @@ class COffer : public CExtCore
 };
 
 
+bool GetTxOfOffer(CIface *iface, const uint160& hash, CTransaction& tx);
 
-/** Verify the integrity of a "Offer Extended Transaction". */
-bool VerifyOffer(const CTransaction& tx, int& mode);
+bool IsOfferTx(const CTransaction& tx);
+
+int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight);
+
+bool DisconnectOfferTx(CIface *iface, CTransaction& tx);
 
 /**
  * The coin cost to initiate a offer or offer-accept transaction.
  * @note This is effectively minimized to the smallest possible expense.
  */
 int64 GetOfferOpFee(CIface *iface);
+
+int IndexOfOfferOutput(const CTransaction& tx);
+
+int GetOfferTransactionMode(CTransaction& tx);
+
+bool DecodeOfferHash(const CScript& script, int& mode, uint160& hash);
+
+int GetOfferTxMode(CTransaction& tx);
 
 /**
  * @param iface The primary coin interface
@@ -264,14 +279,6 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
 int generate_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWalletTx& wtx);
 
 int cancel_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWalletTx& wtx);
-
-extern bool GetTxOfOffer(CIface *iface, const uint160& hash, CTransaction& tx);
-
-bool IsOfferTx(const CTransaction& tx);
-
-int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight);
-
-bool DisconnectOfferTx(CIface *iface, CTransaction& tx);
 
 
 #endif /* ndef __OFFER_H__ */

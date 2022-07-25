@@ -71,7 +71,7 @@ _TEST(sip6_aliastx)
 	_TRUE(0 == err);
 
 	_TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyAlias(wtx) == true);
+	_TRUE(wtx.VerifyAlias(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
 
 	{
 		CBlock *block = test_GenerateBlock();
@@ -86,7 +86,7 @@ _TEST(sip6_aliastx)
 	err = update_alias_addr_tx(iface, "test", addr, mod_wtx);
 	_TRUE(0 == err);
 	_TRUE(mod_wtx.CheckTransaction(TEST_COIN_IFACE) == true); /* .. */
-	_TRUE(VerifyAlias(mod_wtx) == true);
+	_TRUE(mod_wtx.VerifyAlias(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
 	_TRUE(mod_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	/* insert into block-chain */
@@ -109,7 +109,7 @@ _TEST(sip6_aliastx)
 	err = remove_alias_addr_tx(iface, strLabel, strTitle, rem_wtx);
 	_TRUE(0 == err);
 	_TRUE(rem_wtx.CheckTransaction(TEST_COIN_IFACE) == true); /* .. */
-	_TRUE(VerifyAlias(rem_wtx) == true);
+	_TRUE(rem_wtx.VerifyAlias(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
 	_TRUE(rem_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	/* insert into block-chain */
@@ -150,7 +150,7 @@ _TEST(sip6_di_aliastx)
 	_TRUE(0 == err);
 
 	_TRUE(wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
-	_TRUE(VerifyAlias(wtx) == true);
+	_TRUE(wtx.VerifyAlias(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
 
 	{
 		CBlock *block = test_GenerateBlock();
@@ -164,7 +164,7 @@ _TEST(sip6_di_aliastx)
 	err = update_alias_addr_tx(iface, "test", addr, mod_wtx);
 	_TRUE(0 == err);
 	_TRUE(mod_wtx.CheckTransaction(TEST_COIN_IFACE) == true); /* .. */
-	_TRUE(VerifyAlias(mod_wtx) == true);
+	_TRUE(mod_wtx.VerifyAlias(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
 	_TRUE(mod_wtx.IsInMemoryPool(TEST_COIN_IFACE) == true);
 
 	/* insert into block-chain */

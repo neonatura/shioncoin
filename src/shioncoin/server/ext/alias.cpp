@@ -99,15 +99,22 @@ bool DecodeAliasHash(const CScript& script, int& mode, uint160& hash)
   return (true);
 }
 
+int IndexOfAliasOutput(const CTransaction& tx)
+{
+	CScript script;
+	int nTxOut;
+	int mode;
 
+	if (!GetExtOutput(tx, OP_ALIAS, mode, nTxOut, script))
+		return (-1);
 
+	return (nTxOut);
+}
 
-
+#if 0
 bool IsAliasOp(int op) {
 	return (op == OP_ALIAS);
 }
-
-
 string aliasFromOp(int op) {
 	switch (op) {
 	case OP_EXT_ACTIVATE:
@@ -122,6 +129,7 @@ string aliasFromOp(int op) {
 		return "<unknown alias op>";
 	}
 }
+#endif
 
 bool DecodeAliasScript(const CScript& script, int& op,
 		vector<vector<unsigned char> > &vvch, CScript::const_iterator& pc) 
@@ -255,7 +263,7 @@ bool IsLocalAlias(CIface *iface, const CTransaction& tx)
   return (IsLocalAlias(iface, tx.vout[nOut]));
 }
 
-
+#if 0
 /**
  * Verify the integrity of an alias transaction.
  */
@@ -309,6 +317,7 @@ bool VerifyAlias(CTransaction& tx)
 
   return (true);
 }
+#endif
 
 bool IsValidAliasName(CIface *iface, string label)
 {
@@ -521,11 +530,12 @@ bool VerifyAliasChain(CIface *iface, CTransaction& tx)
 
 bool CommitAliasTx(CIface *iface, CTransaction& tx, int nHeight)
 {
+  int ifaceIndex = GetCoinIndex(iface);
 
-  if (!VerifyAlias(tx))
+  if (!tx.VerifyAlias(ifaceIndex, nHeight))
     return (false);
 
-  int nOut = IndexOfExtOutput(tx);
+  int nOut = IndexOfAliasOutput(tx);
   if (nOut == -1)
     return (false);
 
@@ -537,9 +547,11 @@ bool CommitAliasTx(CIface *iface, CTransaction& tx, int nHeight)
 
   switch (mode) {
     case OP_EXT_ACTIVATE:
+#if 0
       /* Verify that the correct fee was paid for an alias creation operation.  */
       if (tx.vout[nOut].nValue < GetAliasOpFee(iface, nHeight)) 
         return (error(SHERR_INVAL, "CommitAliasTx: insufficient coin fee spent for transaction operation."));
+#endif
       if (!ConnectAliasTx(iface, tx))
         return (false);
       break;
@@ -561,6 +573,7 @@ bool CommitAliasTx(CIface *iface, CTransaction& tx, int nHeight)
   return (true);
 }
 
+#if 0
 void CAlias::FillReference(SHAlias *ref)
 {
   memset(ref, 0, sizeof(SHAlias));
@@ -576,7 +589,6 @@ void CAlias::FillReference(SHAlias *ref)
   ref->ref_expire = tExpire;
   ref->ref_type = nType;
 }
-
 void CAlias::NotifySharenet(int ifaceIndex)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -585,6 +597,76 @@ void CAlias::NotifySharenet(int ifaceIndex)
   SHAlias ref;
   FillReference(&ref);
   shnet_inform(iface, TX_REFERENCE, &ref, sizeof(ref));
+}
+#endif
+
+std::string CAlias::ToString(int ifaceIndex)
+{
+  return (write_string(Value(ToValue(ifaceIndex)), false));
+}
+
+Object CAlias::ToValue(int ifaceIndex)
+{
+  Object obj = CEntity::ToValue();
+
+/* TODO: custimize CIDent::TOValue */
+  if (GetType() == ALIAS_COINADDR) {
+    obj.push_back(Pair("type-name", "coinaddr"));
+
+#if 0
+		CCoinAddr addr(ifaceIndex);
+		if (GetCoinAddr(ifaceIndex, addr)) {
+			CCoinAddr addr;
+			CKeyID keyid;
+			if (addr.GetKeyID(keyid)) {
+				CWallet *wallet = GetWallet(ifaceIndex);
+				Array addr_list;
+				vector<CTxDestination> vDest;
+
+				GetAddrDestination(wallet->ifaceIndex, keyid, vDest);
+				BOOST_FOREACH(const CTxDestination& destTmp, vDest) {
+					CCoinAddr addrTmp(ifaceIndex, destTmp);
+					addr_list.push_back(addrTmp.ToString());
+				}
+				obj.push_back(Pair("address", addr_list));
+			}
+		}
+#endif
+  }
+
+  return (obj);
+}
+
+int64 CAlias::CalculateFee(CIface *iface, int nHeight)
+{
+	return (GetAliasOpFee(iface, nHeight));
+}
+
+int CAlias::VerifyTransaction()
+{
+  int err;
+
+  err = CEntity::VerifyTransaction();
+  if (err) {
+    return (error(err, "CAlias::VerifyTransaction: error verifying entity."));
+	}
+
+  if (GetLabel().size() > 135)
+    return (error(SHERR_INVAL, "CAlias::VerifyTransaction: label exceeds 135 characters."));
+
+  if (tExpire == SHTIME_UNDEFINED) {
+    return (error(SHERR_INVAL, "CAlias::VerifyTransaction: alias has no expiration date."));
+  }
+
+#if 0
+  now = time(NULL);
+  if (GetExpireTime() > (now + DEFAULT_ALIAS_LIFESPAN)) {
+    return error(SHERR_KEYEXPIRED, "VerifyAlias: expiration exceeds %d years.",
+        (DEFAULT_ALIAS_LIFESPAN/31536000));
+  }
+#endif
+
+	return (0);
 }
 
 int init_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWalletTx& wtx, bool fTest)
@@ -823,50 +905,3 @@ int remove_alias_addr_tx(CIface *iface, string strAccount, string strTitle, CWal
 	return (0);
 }
 
-std::string CAlias::ToString(int ifaceIndex)
-{
-  return (write_string(Value(ToValue(ifaceIndex)), false));
-}
-
-Object CAlias::ToValue(int ifaceIndex)
-{
-  Object obj = CEntity::ToValue();
-
-/* TODO: custimize CIDent::TOValue */
-  if (GetType() == ALIAS_COINADDR) {
-    obj.push_back(Pair("type-name", "coinaddr"));
-
-#if 0
-		CCoinAddr addr(ifaceIndex);
-		if (GetCoinAddr(ifaceIndex, addr)) {
-			CCoinAddr addr;
-			CKeyID keyid;
-			if (addr.GetKeyID(keyid)) {
-				CWallet *wallet = GetWallet(ifaceIndex);
-				Array addr_list;
-				vector<CTxDestination> vDest;
-
-				GetAddrDestination(wallet->ifaceIndex, keyid, vDest);
-				BOOST_FOREACH(const CTxDestination& destTmp, vDest) {
-					CCoinAddr addrTmp(ifaceIndex, destTmp);
-					addr_list.push_back(addrTmp.ToString());
-				}
-				obj.push_back(Pair("address", addr_list));
-			}
-		}
-#endif
-  }
-
-  return (obj);
-}
-
-int CAlias::VerifyTransaction()
-{
-  int err;
-
-  err = CEntity::VerifyTransaction();
-  if (err)
-    return (err);
-
-	return (0);
-}

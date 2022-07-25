@@ -149,12 +149,64 @@ bool DecodeOfferHash(const CScript& script, int& mode, uint160& hash)
   return (true);
 }
 
+int IndexOfOfferOutput(const CTransaction& tx)
+{
+	CScript script;
+	int nTxOut;
+	int mode;
 
+	if (!GetExtOutput(tx, OP_OFFER, mode, nTxOut, script))
+		return (-1);
+
+	return (nTxOut);
+}
+
+int GetOfferTxMode(CTransaction& tx)
+{
+	uint160 hashOffer;
+	int nMode;
+	int nOut;
+
+  nOut = IndexOfOfferOutput(tx);
+  if (nOut == -1)
+    return (-1);
+
+  if (!DecodeOfferHash(tx.vout[nOut].scriptPubKey, nMode, hashOffer)) {
+    return (-1);
+  }
+
+	return (nMode);
+}
+
+int GetOfferTransactionMode(CTransaction& tx)
+{
+	uint160 hOffer;
+	int nOut;
+  int mode;
+
+	  /* core verification */
+  if (!IsOfferTx(tx)) {
+    return (-1); /* tx not flagged as asset */
+	}
+
+  /* verify hash in pub-script matches asset hash */
+  nOut = IndexOfOfferOutput(tx);
+  if (nOut == -1) {
+    return (-1); /* no extension output */
+	}
+
+	mode = 0;
+  if (!DecodeOfferHash(tx.vout[nOut].scriptPubKey, mode, hOffer)) {
+    return (-1); /* no asset hash in output */
+	}
+
+	return (mode);
+}
+
+#if 0
 bool IsOfferOp(int op) {
 	return (op == OP_OFFER);
 }
-
-
 string offerFromOp(int op) {
 	switch (op) {
 	case OP_EXT_NEW:
@@ -171,6 +223,7 @@ string offerFromOp(int op) {
 		return "<unknown offer op>";
 	}
 }
+#endif
 
 bool DecodeOfferScript(const CScript& script, int& op,
 		vector<vector<unsigned char> > &vvch, CScript::const_iterator& pc) 
@@ -241,7 +294,7 @@ CScript RemoveOfferScriptPrefix(const CScript& scriptIn)
 
 int64 GetOfferOpFee(CIface *iface)
 {
-  return (iface->min_tx_fee * 2);
+  return (MIN_TX_FEE(iface));
 }
 
 bool IsOfferTx(const CTransaction& tx)
@@ -335,7 +388,7 @@ bool IsLocalOffer(CIface *iface, const CTransaction& tx)
   return (IsLocalOffer(iface, tx.vout[nOut]));
 }
 
-
+#if 0
 /**
  * Verify the integrity of an offer transaction.
  */
@@ -387,6 +440,7 @@ bool VerifyOffer(const CTransaction& tx, int& mode)
 
   return (true);
 }
+#endif
 
 #if 0
 bool AcceptOffer(CIface *iface, COffer *offer, COffer& accept)
@@ -583,6 +637,11 @@ void COffer::SetXferAddr(const CPubKey& xferAddr)
 	vchXferAddr = xferAddr.Raw();
 }
 
+int64 COffer::CalculateFee(CIface *iface, int nHeight)
+{
+	return (GetOfferOpFee(iface));
+}
+
 int COffer::VerifyTransaction()
 {
   int err;
@@ -590,6 +649,19 @@ int COffer::VerifyTransaction()
   err = CExtCore::VerifyTransaction();
   if (err)
     return (err);
+
+	/* sanity -- label is not currently used in offer */
+  if (vchLabel.size() > MAX_SHARE_NAME_LENGTH)
+    return (ERR_INVAL);
+  /* ensure intended usage */
+  if (vchPayAddr.size() > MAX_SHARE_NAME_LENGTH)
+    return (ERR_INVAL);
+  if (vchXferAddr.size() > MAX_SHARE_NAME_LENGTH)
+    return (ERR_INVAL);
+  if (vchPayCoin.size() > MAX_SHARE_NAME_LENGTH)
+    return (ERR_INVAL);
+  if (vchXferCoin.size() > MAX_SHARE_NAME_LENGTH)
+    return (ERR_INVAL);
 
   return (0);
 }
@@ -627,7 +699,7 @@ std::string OfferHoldAltCoin(CIface *iface, string strAccount, COffer *offer, in
 
 	CTxCreator s_wtx(wallet, strAccount);
 	/* we must supply an extra tx fee for "GetAltTx" commit. */
-	if (!s_wtx.AddOutput(scriptPubKey, nValue + GetOfferOpFee(iface))) {
+	if (!s_wtx.AddOutput(scriptPubKey, nValue + (GetOfferOpFee(iface) * 2))) {
 		string strError = s_wtx.GetError();	
     return (strError);
 	}
@@ -1035,8 +1107,7 @@ int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 	int err;
 
 	/* validate */
-	int tx_mode;
-	if (!VerifyOffer(tx, tx_mode)) {
+	if (!tx.VerifyOffer(ifaceIndex, nHeight)) {
 		error(SHERR_INVAL, "CommitOfferTx: error verifying offer tx.");
 		return (SHERR_INVAL);
 	}
@@ -1047,6 +1118,7 @@ int CommitOfferTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
 		return (ERR_INVAL);
 	}
 
+	int tx_mode = GetOfferTxMode(tx);
 	switch (tx_mode) {
 		case OP_EXT_NEW:
 			if (!InsertOfferTable(ifaceIndex, tx.GetHash(), offer->GetHash()))
@@ -1140,7 +1212,7 @@ int init_offer_tx(CIface *iface, std::string strAccount, int altIndex, int64 nMi
 	}
 
 	/* check account balance to ensure "offer fee" can be paid. */
-	int64 nFee = GetOfferOpFee(iface) + nMaxValue;
+	int64 nFee = (GetOfferOpFee(iface) * 2) + nMaxValue;
 	int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
 	if (bal < nFee) {
 		sprintf(errbuf, "init_offer_tx: account '%s' balance %llu < nFee %llu\n", strAccount.c_str(), (unsigned long long)bal, (unsigned long long)nFee);
@@ -1263,9 +1335,9 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
 
 	uint160 hashAccept = accept->GetHash();
 
-	int64 minTxFee = MIN_TX_FEE(iface);
 	/* "offer" extended transaction */
 	CScript scriptPubKey;
+	int64 minTxFee = MIN_TX_FEE(iface);
 	scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << hashAccept << OP_2DROP << OP_RETURN << OP_0; /* null destination */
 	/* 'if alt-tx then send else return funds' script */
 	//	CPubKey retAddr = GetAccountPubKey(wallet, strAccount, true);
@@ -1290,7 +1362,6 @@ int generate_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWall
 {
 	int ifaceIndex = GetCoinIndex(iface);
 	CWallet *wallet = GetWallet(iface);
-	int64 minTxFee = MIN_TX_FEE(iface);
 	char errbuf[1024];
 	bool ret;
 
@@ -1323,7 +1394,7 @@ int generate_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWall
 	/* establish original tx */
 	uint256 wtxInHash = tx.GetHash();
 	if (!wallet->HasTx(wtxInHash))
-		return (false);
+		return (ERR_NOENT);
 
 	int64 nFeeValue;
 	string strAccountPrev;
@@ -1364,9 +1435,11 @@ int generate_offer_tx(CIface *iface, string strAccount, uint160 hashOffer, CWall
 	CScript scriptFee;
 	scriptFee << OP_EXT_GENERATE << CScript::EncodeOP_N(OP_OFFER) << OP_HASH160 << offerHash << OP_2DROP;
 	/* send nFeeValue to OP_CHECKALTPROOF */
+	int nHeight = GetBestHeight(iface);
+	int64 nMinFee = MIN_TX_FEE(iface);//offer->CalculateFee(iface, nHeight);
 	CPubKey retAddr = GetAccountPubKey(wallet, strAccount);
 	scriptFee += offer_CheckAltProofScript(iface, offer, retAddr);
-	s_wtx.AddOutput(scriptFee, minTxFee);
+	s_wtx.AddOutput(scriptFee, nMinFee);
 
 	/* commit transaction */
 	if (!s_wtx.Send()) {

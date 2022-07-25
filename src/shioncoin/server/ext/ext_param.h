@@ -36,6 +36,10 @@ class CParam : public CExtCore
 {
 
 	public:
+
+		/* current standard param-tx version. */
+		static const int PROTO_EXT_PARAM_VERSION = 1;
+
 		/** The maximum supported version of an param type transaction. */
 		static const int MAX_PARAM_VERSION = SHC_VERSION_MAJOR;
 
@@ -65,17 +69,17 @@ class CParam : public CExtCore
 		}
 
 		IMPLEMENT_SERIALIZE (
-				READWRITE(*(CExtCore *)this);
-				READWRITE(this->nValue);
-				)
+			READWRITE(*(CExtCore *)this);
+			READWRITE(this->nValue);
+		)
 
-			friend bool operator==(const CParam &a, const CParam &b)
-			{
-				return (
-						((CExtCore&) a) == ((CExtCore&) b) &&
-						a.nValue == b.nValue
-						);
-			}
+		friend bool operator==(const CParam &a, const CParam &b)
+		{
+			return (
+					((CExtCore&) a) == ((CExtCore&) b) &&
+					a.nValue == b.nValue
+					);
+		}
 
 		void Init(const CParam& b)
 		{
@@ -111,6 +115,11 @@ class CParam : public CExtCore
 			return (MAX_PARAM_VERSION);
 		}
 
+		int GetDefaultVersion()
+		{
+			return (PROTO_EXT_PARAM_VERSION);
+		}
+
 		time_t GetMinimumLifespan()
 		{
 			return (GetMaximumLifespan());
@@ -120,6 +129,8 @@ class CParam : public CExtCore
 		{
 			return (MAX_PARAM_LIFESPAN);
 		}
+
+		int64 CalculateFee(CIface *iface, int nHeight);
 
 		int VerifyTransaction();
 
@@ -131,18 +142,16 @@ class CParam : public CExtCore
 
 };
 
+
 /* Whether blockchain is capable of processing Param extended transactions. */
 bool HasParamConsensus(CIface *iface, CBlockIndex *pindexPrev = NULL);
-
-/**
- * Verify the integrity of an param transaction.
- */
-bool VerifyParamTx(CTransaction& tx, int& mode);
 
 /**
  * @returns true if the underlying transaction contained an extended param transaction.
  */
 bool IsParamTx(const CTransaction& tx);
+
+bool DecodeParamHash(const CScript& script, int& mode, uint160& hash);
 
 bool ConnectParamTx(CIface *iface, CTransaction *tx, CBlockIndex *pindexPrev);
 
@@ -157,6 +166,10 @@ bool IsValidParamTxConsensus(CIface *iface, CParam *param, int64_t nCurrent = 0)
 void AddParamIfNeccessary(CIface *iface, CWalletTx& wtx);
 
 int64_t GetParamTxValue(CIface *iface, string strName);
+
+int GetParamTxMode(CTransaction& tx);
+
+int IndexOfParamOutput(const CTransaction& tx);
 
 /**
  * submit consensus vote on a new block-chain parameter setting. 
