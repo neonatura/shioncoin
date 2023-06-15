@@ -1,0 +1,6 @@
+../../../src/libcrypto/openssl-1.0.1g/crypto/libcrypto_a-fips_ers.o: \
+ ../../../src/libcrypto/openssl-1.0.1g/crypto/fips_ers.c \
+ /usr/include/stdc-predef.h \
+ ../../../src/libcrypto/openssl-1.0.1g/include/openssl/opensslconf.h
+/usr/include/stdc-predef.h:
+../../../src/libcrypto/openssl-1.0.1g/include/openssl/opensslconf.h:

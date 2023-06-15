@@ -1,0 +1,4 @@
+../../../src/libcrypto/openssl-1.0.1g/crypto/x509v3/libcrypto_a-v3_ocsp.o: \
+ ../../../src/libcrypto/openssl-1.0.1g/crypto/x509v3/v3_ocsp.c \
+ /usr/include/stdc-predef.h
+/usr/include/stdc-predef.h:

@@ -1,3 +1,41 @@
+2022-07-24  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip25 #comment COffer::VerifyTransaction sip25 #comment CParam::VerifyTransaction sip25 #comment CAlias::VerifyTransaction
+
+2022-07-23  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip25 #comment CCert::VerifyTransaction sip25 #comment CLicense::VerifyTransaction
+
+	sip25 #comment CIdent::VerifyTransaction sip25 #comment CExec::VerifyTransaction
+
+2022-07-22  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip25 #comment CIdent::VerifyTransaction sip25 #comment CAltChain::VerifyTransaction
+
+2022-07-19  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip25 #comment CExtCore::VerifyTransaction
+
+2022-07-17  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip25 #comment CExtCore::VerifyTransaction
+
+2022-07-14  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip25 #comment CExtCore::VerifyTransaction
+
+2022-07-12  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip25 #comment asset tx mechanics
+
+2022-07-09  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP25 #comment unassociate TXF_IDENT with being a certificate type transaction.
+
+2022-07-03  Brian Burrell  <bburrell.brian@gmail.com>
+
+	v5.2
+
 2021-04-04  Brian Burrell  <bburrell.brian@gmail.com>
 
 	v5.2 build-aux

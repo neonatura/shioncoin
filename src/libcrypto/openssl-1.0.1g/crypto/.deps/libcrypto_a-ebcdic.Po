@@ -1,0 +1,8 @@
+../../../src/libcrypto/openssl-1.0.1g/crypto/libcrypto_a-ebcdic.o: \
+ ../../../src/libcrypto/openssl-1.0.1g/crypto/ebcdic.c \
+ /usr/include/stdc-predef.h \
+ ../../../src/libcrypto/openssl-1.0.1g/include/openssl/e_os2.h \
+ ../../../src/libcrypto/openssl-1.0.1g/include/openssl/opensslconf.h
+/usr/include/stdc-predef.h:
+../../../src/libcrypto/openssl-1.0.1g/include/openssl/e_os2.h:
+../../../src/libcrypto/openssl-1.0.1g/include/openssl/opensslconf.h:
