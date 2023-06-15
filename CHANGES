@@ -1,3 +1,7 @@
+2023-06-15  Brian Burrell  <bburrell.brian@gmail.com>
+
+	SIP25
+
 2022-07-24  Brian Burrell  <bburrell.brian@gmail.com>
 
 	sip25 #comment COffer::VerifyTransaction sip25 #comment CParam::VerifyTransaction sip25 #comment CAlias::VerifyTransaction
