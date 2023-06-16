@@ -389,6 +389,8 @@ public:
 		CBlockIndex *pindexBestKnownBlock;
 		CBlockIndex *pindexLastHeader;
 		CBlockIndex *pindexLastBlock;
+		int64 pindexThrottleHeight;
+		time_t pindexThrottleTime;
 
     CNode(int ifaceIndexIn, unsigned int hSocketIn, CAddress addrIn, std::string addrNameIn = "", bool fInboundIn=false) : vSend(SER_NETWORK, MIN_PROTO_VERSION), vRecv(SER_NETWORK, MIN_PROTO_VERSION)
     {
@@ -433,6 +435,8 @@ public:
 
 				pindexLastHeader = NULL;
 				pindexLastBlock = NULL;
+				pindexThrottleHeight = 0;
+				pindexThrottleTime = 0;
 
 				fNetDebug = opt_bool(OPT_NET_DEBUG);
 
