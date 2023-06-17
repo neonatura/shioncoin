@@ -433,6 +433,9 @@ libalgo_a_SOURCES = \
 	$(common_sources) \
 	$(common_includes)
 
+libalgo_a_CFLAGS = \
+	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include/
+
 libalgo_a_CPPFLAGS = \
 	-I$(top_srcdir)/src/libcrypto/openssl-1.0.1g/include/ \
 	-std=c++11
@@ -539,284 +542,284 @@ am--depfiles: $(am__depfiles_remade)
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
 libalgo_a-aes_helper.o: aes_helper.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-aes_helper.o -MD -MP -MF $(DEPDIR)/libalgo_a-aes_helper.Tpo -c -o libalgo_a-aes_helper.o `test -f 'aes_helper.c' || echo '$(srcdir)/'`aes_helper.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-aes_helper.o -MD -MP -MF $(DEPDIR)/libalgo_a-aes_helper.Tpo -c -o libalgo_a-aes_helper.o `test -f 'aes_helper.c' || echo '$(srcdir)/'`aes_helper.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-aes_helper.Tpo $(DEPDIR)/libalgo_a-aes_helper.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='aes_helper.c' object='libalgo_a-aes_helper.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-aes_helper.o `test -f 'aes_helper.c' || echo '$(srcdir)/'`aes_helper.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-aes_helper.o `test -f 'aes_helper.c' || echo '$(srcdir)/'`aes_helper.c
 
 libalgo_a-aes_helper.obj: aes_helper.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-aes_helper.obj -MD -MP -MF $(DEPDIR)/libalgo_a-aes_helper.Tpo -c -o libalgo_a-aes_helper.obj `if test -f 'aes_helper.c'; then $(CYGPATH_W) 'aes_helper.c'; else $(CYGPATH_W) '$(srcdir)/aes_helper.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-aes_helper.obj -MD -MP -MF $(DEPDIR)/libalgo_a-aes_helper.Tpo -c -o libalgo_a-aes_helper.obj `if test -f 'aes_helper.c'; then $(CYGPATH_W) 'aes_helper.c'; else $(CYGPATH_W) '$(srcdir)/aes_helper.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-aes_helper.Tpo $(DEPDIR)/libalgo_a-aes_helper.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='aes_helper.c' object='libalgo_a-aes_helper.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-aes_helper.obj `if test -f 'aes_helper.c'; then $(CYGPATH_W) 'aes_helper.c'; else $(CYGPATH_W) '$(srcdir)/aes_helper.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-aes_helper.obj `if test -f 'aes_helper.c'; then $(CYGPATH_W) 'aes_helper.c'; else $(CYGPATH_W) '$(srcdir)/aes_helper.c'; fi`
 
 libalgo_a-blake2.o: blake2.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-blake2.o -MD -MP -MF $(DEPDIR)/libalgo_a-blake2.Tpo -c -o libalgo_a-blake2.o `test -f 'blake2.c' || echo '$(srcdir)/'`blake2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-blake2.o -MD -MP -MF $(DEPDIR)/libalgo_a-blake2.Tpo -c -o libalgo_a-blake2.o `test -f 'blake2.c' || echo '$(srcdir)/'`blake2.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-blake2.Tpo $(DEPDIR)/libalgo_a-blake2.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='blake2.c' object='libalgo_a-blake2.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-blake2.o `test -f 'blake2.c' || echo '$(srcdir)/'`blake2.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-blake2.o `test -f 'blake2.c' || echo '$(srcdir)/'`blake2.c
 
 libalgo_a-blake2.obj: blake2.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-blake2.obj -MD -MP -MF $(DEPDIR)/libalgo_a-blake2.Tpo -c -o libalgo_a-blake2.obj `if test -f 'blake2.c'; then $(CYGPATH_W) 'blake2.c'; else $(CYGPATH_W) '$(srcdir)/blake2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-blake2.obj -MD -MP -MF $(DEPDIR)/libalgo_a-blake2.Tpo -c -o libalgo_a-blake2.obj `if test -f 'blake2.c'; then $(CYGPATH_W) 'blake2.c'; else $(CYGPATH_W) '$(srcdir)/blake2.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-blake2.Tpo $(DEPDIR)/libalgo_a-blake2.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='blake2.c' object='libalgo_a-blake2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-blake2.obj `if test -f 'blake2.c'; then $(CYGPATH_W) 'blake2.c'; else $(CYGPATH_W) '$(srcdir)/blake2.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-blake2.obj `if test -f 'blake2.c'; then $(CYGPATH_W) 'blake2.c'; else $(CYGPATH_W) '$(srcdir)/blake2.c'; fi`
 
 libalgo_a-blake2s.o: blake2s.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-blake2s.o -MD -MP -MF $(DEPDIR)/libalgo_a-blake2s.Tpo -c -o libalgo_a-blake2s.o `test -f 'blake2s.c' || echo '$(srcdir)/'`blake2s.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-blake2s.o -MD -MP -MF $(DEPDIR)/libalgo_a-blake2s.Tpo -c -o libalgo_a-blake2s.o `test -f 'blake2s.c' || echo '$(srcdir)/'`blake2s.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-blake2s.Tpo $(DEPDIR)/libalgo_a-blake2s.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='blake2s.c' object='libalgo_a-blake2s.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-blake2s.o `test -f 'blake2s.c' || echo '$(srcdir)/'`blake2s.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-blake2s.o `test -f 'blake2s.c' || echo '$(srcdir)/'`blake2s.c
 
 libalgo_a-blake2s.obj: blake2s.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-blake2s.obj -MD -MP -MF $(DEPDIR)/libalgo_a-blake2s.Tpo -c -o libalgo_a-blake2s.obj `if test -f 'blake2s.c'; then $(CYGPATH_W) 'blake2s.c'; else $(CYGPATH_W) '$(srcdir)/blake2s.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-blake2s.obj -MD -MP -MF $(DEPDIR)/libalgo_a-blake2s.Tpo -c -o libalgo_a-blake2s.obj `if test -f 'blake2s.c'; then $(CYGPATH_W) 'blake2s.c'; else $(CYGPATH_W) '$(srcdir)/blake2s.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-blake2s.Tpo $(DEPDIR)/libalgo_a-blake2s.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='blake2s.c' object='libalgo_a-blake2s.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-blake2s.obj `if test -f 'blake2s.c'; then $(CYGPATH_W) 'blake2s.c'; else $(CYGPATH_W) '$(srcdir)/blake2s.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-blake2s.obj `if test -f 'blake2s.c'; then $(CYGPATH_W) 'blake2s.c'; else $(CYGPATH_W) '$(srcdir)/blake2s.c'; fi`
 
 libalgo_a-groestl.o: groestl.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-groestl.o -MD -MP -MF $(DEPDIR)/libalgo_a-groestl.Tpo -c -o libalgo_a-groestl.o `test -f 'groestl.c' || echo '$(srcdir)/'`groestl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-groestl.o -MD -MP -MF $(DEPDIR)/libalgo_a-groestl.Tpo -c -o libalgo_a-groestl.o `test -f 'groestl.c' || echo '$(srcdir)/'`groestl.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-groestl.Tpo $(DEPDIR)/libalgo_a-groestl.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='groestl.c' object='libalgo_a-groestl.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-groestl.o `test -f 'groestl.c' || echo '$(srcdir)/'`groestl.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-groestl.o `test -f 'groestl.c' || echo '$(srcdir)/'`groestl.c
 
 libalgo_a-groestl.obj: groestl.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-groestl.obj -MD -MP -MF $(DEPDIR)/libalgo_a-groestl.Tpo -c -o libalgo_a-groestl.obj `if test -f 'groestl.c'; then $(CYGPATH_W) 'groestl.c'; else $(CYGPATH_W) '$(srcdir)/groestl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-groestl.obj -MD -MP -MF $(DEPDIR)/libalgo_a-groestl.Tpo -c -o libalgo_a-groestl.obj `if test -f 'groestl.c'; then $(CYGPATH_W) 'groestl.c'; else $(CYGPATH_W) '$(srcdir)/groestl.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-groestl.Tpo $(DEPDIR)/libalgo_a-groestl.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='groestl.c' object='libalgo_a-groestl.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-groestl.obj `if test -f 'groestl.c'; then $(CYGPATH_W) 'groestl.c'; else $(CYGPATH_W) '$(srcdir)/groestl.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-groestl.obj `if test -f 'groestl.c'; then $(CYGPATH_W) 'groestl.c'; else $(CYGPATH_W) '$(srcdir)/groestl.c'; fi`
 
 libalgo_a-keccak.o: keccak.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-keccak.o -MD -MP -MF $(DEPDIR)/libalgo_a-keccak.Tpo -c -o libalgo_a-keccak.o `test -f 'keccak.c' || echo '$(srcdir)/'`keccak.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-keccak.o -MD -MP -MF $(DEPDIR)/libalgo_a-keccak.Tpo -c -o libalgo_a-keccak.o `test -f 'keccak.c' || echo '$(srcdir)/'`keccak.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-keccak.Tpo $(DEPDIR)/libalgo_a-keccak.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='keccak.c' object='libalgo_a-keccak.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-keccak.o `test -f 'keccak.c' || echo '$(srcdir)/'`keccak.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-keccak.o `test -f 'keccak.c' || echo '$(srcdir)/'`keccak.c
 
 libalgo_a-keccak.obj: keccak.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-keccak.obj -MD -MP -MF $(DEPDIR)/libalgo_a-keccak.Tpo -c -o libalgo_a-keccak.obj `if test -f 'keccak.c'; then $(CYGPATH_W) 'keccak.c'; else $(CYGPATH_W) '$(srcdir)/keccak.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-keccak.obj -MD -MP -MF $(DEPDIR)/libalgo_a-keccak.Tpo -c -o libalgo_a-keccak.obj `if test -f 'keccak.c'; then $(CYGPATH_W) 'keccak.c'; else $(CYGPATH_W) '$(srcdir)/keccak.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-keccak.Tpo $(DEPDIR)/libalgo_a-keccak.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='keccak.c' object='libalgo_a-keccak.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-keccak.obj `if test -f 'keccak.c'; then $(CYGPATH_W) 'keccak.c'; else $(CYGPATH_W) '$(srcdir)/keccak.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-keccak.obj `if test -f 'keccak.c'; then $(CYGPATH_W) 'keccak.c'; else $(CYGPATH_W) '$(srcdir)/keccak.c'; fi`
 
 libalgo_a-qubit.o: qubit.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-qubit.o -MD -MP -MF $(DEPDIR)/libalgo_a-qubit.Tpo -c -o libalgo_a-qubit.o `test -f 'qubit.c' || echo '$(srcdir)/'`qubit.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-qubit.o -MD -MP -MF $(DEPDIR)/libalgo_a-qubit.Tpo -c -o libalgo_a-qubit.o `test -f 'qubit.c' || echo '$(srcdir)/'`qubit.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-qubit.Tpo $(DEPDIR)/libalgo_a-qubit.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='qubit.c' object='libalgo_a-qubit.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-qubit.o `test -f 'qubit.c' || echo '$(srcdir)/'`qubit.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-qubit.o `test -f 'qubit.c' || echo '$(srcdir)/'`qubit.c
 
 libalgo_a-qubit.obj: qubit.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-qubit.obj -MD -MP -MF $(DEPDIR)/libalgo_a-qubit.Tpo -c -o libalgo_a-qubit.obj `if test -f 'qubit.c'; then $(CYGPATH_W) 'qubit.c'; else $(CYGPATH_W) '$(srcdir)/qubit.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-qubit.obj -MD -MP -MF $(DEPDIR)/libalgo_a-qubit.Tpo -c -o libalgo_a-qubit.obj `if test -f 'qubit.c'; then $(CYGPATH_W) 'qubit.c'; else $(CYGPATH_W) '$(srcdir)/qubit.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-qubit.Tpo $(DEPDIR)/libalgo_a-qubit.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='qubit.c' object='libalgo_a-qubit.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-qubit.obj `if test -f 'qubit.c'; then $(CYGPATH_W) 'qubit.c'; else $(CYGPATH_W) '$(srcdir)/qubit.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-qubit.obj `if test -f 'qubit.c'; then $(CYGPATH_W) 'qubit.c'; else $(CYGPATH_W) '$(srcdir)/qubit.c'; fi`
 
 libalgo_a-scrypt.o: scrypt.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-scrypt.o -MD -MP -MF $(DEPDIR)/libalgo_a-scrypt.Tpo -c -o libalgo_a-scrypt.o `test -f 'scrypt.c' || echo '$(srcdir)/'`scrypt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-scrypt.o -MD -MP -MF $(DEPDIR)/libalgo_a-scrypt.Tpo -c -o libalgo_a-scrypt.o `test -f 'scrypt.c' || echo '$(srcdir)/'`scrypt.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-scrypt.Tpo $(DEPDIR)/libalgo_a-scrypt.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='scrypt.c' object='libalgo_a-scrypt.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-scrypt.o `test -f 'scrypt.c' || echo '$(srcdir)/'`scrypt.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-scrypt.o `test -f 'scrypt.c' || echo '$(srcdir)/'`scrypt.c
 
 libalgo_a-scrypt.obj: scrypt.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-scrypt.obj -MD -MP -MF $(DEPDIR)/libalgo_a-scrypt.Tpo -c -o libalgo_a-scrypt.obj `if test -f 'scrypt.c'; then $(CYGPATH_W) 'scrypt.c'; else $(CYGPATH_W) '$(srcdir)/scrypt.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-scrypt.obj -MD -MP -MF $(DEPDIR)/libalgo_a-scrypt.Tpo -c -o libalgo_a-scrypt.obj `if test -f 'scrypt.c'; then $(CYGPATH_W) 'scrypt.c'; else $(CYGPATH_W) '$(srcdir)/scrypt.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-scrypt.Tpo $(DEPDIR)/libalgo_a-scrypt.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='scrypt.c' object='libalgo_a-scrypt.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-scrypt.obj `if test -f 'scrypt.c'; then $(CYGPATH_W) 'scrypt.c'; else $(CYGPATH_W) '$(srcdir)/scrypt.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-scrypt.obj `if test -f 'scrypt.c'; then $(CYGPATH_W) 'scrypt.c'; else $(CYGPATH_W) '$(srcdir)/scrypt.c'; fi`
 
 libalgo_a-skein.o: skein.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-skein.o -MD -MP -MF $(DEPDIR)/libalgo_a-skein.Tpo -c -o libalgo_a-skein.o `test -f 'skein.c' || echo '$(srcdir)/'`skein.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-skein.o -MD -MP -MF $(DEPDIR)/libalgo_a-skein.Tpo -c -o libalgo_a-skein.o `test -f 'skein.c' || echo '$(srcdir)/'`skein.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-skein.Tpo $(DEPDIR)/libalgo_a-skein.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='skein.c' object='libalgo_a-skein.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-skein.o `test -f 'skein.c' || echo '$(srcdir)/'`skein.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-skein.o `test -f 'skein.c' || echo '$(srcdir)/'`skein.c
 
 libalgo_a-skein.obj: skein.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-skein.obj -MD -MP -MF $(DEPDIR)/libalgo_a-skein.Tpo -c -o libalgo_a-skein.obj `if test -f 'skein.c'; then $(CYGPATH_W) 'skein.c'; else $(CYGPATH_W) '$(srcdir)/skein.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-skein.obj -MD -MP -MF $(DEPDIR)/libalgo_a-skein.Tpo -c -o libalgo_a-skein.obj `if test -f 'skein.c'; then $(CYGPATH_W) 'skein.c'; else $(CYGPATH_W) '$(srcdir)/skein.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-skein.Tpo $(DEPDIR)/libalgo_a-skein.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='skein.c' object='libalgo_a-skein.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-skein.obj `if test -f 'skein.c'; then $(CYGPATH_W) 'skein.c'; else $(CYGPATH_W) '$(srcdir)/skein.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-skein.obj `if test -f 'skein.c'; then $(CYGPATH_W) 'skein.c'; else $(CYGPATH_W) '$(srcdir)/skein.c'; fi`
 
 libalgo_a-sph_blake.o: sph_blake.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_blake.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_blake.Tpo -c -o libalgo_a-sph_blake.o `test -f 'sph_blake.c' || echo '$(srcdir)/'`sph_blake.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_blake.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_blake.Tpo -c -o libalgo_a-sph_blake.o `test -f 'sph_blake.c' || echo '$(srcdir)/'`sph_blake.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_blake.Tpo $(DEPDIR)/libalgo_a-sph_blake.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_blake.c' object='libalgo_a-sph_blake.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_blake.o `test -f 'sph_blake.c' || echo '$(srcdir)/'`sph_blake.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_blake.o `test -f 'sph_blake.c' || echo '$(srcdir)/'`sph_blake.c
 
 libalgo_a-sph_blake.obj: sph_blake.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_blake.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_blake.Tpo -c -o libalgo_a-sph_blake.obj `if test -f 'sph_blake.c'; then $(CYGPATH_W) 'sph_blake.c'; else $(CYGPATH_W) '$(srcdir)/sph_blake.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_blake.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_blake.Tpo -c -o libalgo_a-sph_blake.obj `if test -f 'sph_blake.c'; then $(CYGPATH_W) 'sph_blake.c'; else $(CYGPATH_W) '$(srcdir)/sph_blake.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_blake.Tpo $(DEPDIR)/libalgo_a-sph_blake.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_blake.c' object='libalgo_a-sph_blake.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_blake.obj `if test -f 'sph_blake.c'; then $(CYGPATH_W) 'sph_blake.c'; else $(CYGPATH_W) '$(srcdir)/sph_blake.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_blake.obj `if test -f 'sph_blake.c'; then $(CYGPATH_W) 'sph_blake.c'; else $(CYGPATH_W) '$(srcdir)/sph_blake.c'; fi`
 
 libalgo_a-sph_bmw.o: sph_bmw.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_bmw.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_bmw.Tpo -c -o libalgo_a-sph_bmw.o `test -f 'sph_bmw.c' || echo '$(srcdir)/'`sph_bmw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_bmw.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_bmw.Tpo -c -o libalgo_a-sph_bmw.o `test -f 'sph_bmw.c' || echo '$(srcdir)/'`sph_bmw.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_bmw.Tpo $(DEPDIR)/libalgo_a-sph_bmw.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_bmw.c' object='libalgo_a-sph_bmw.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_bmw.o `test -f 'sph_bmw.c' || echo '$(srcdir)/'`sph_bmw.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_bmw.o `test -f 'sph_bmw.c' || echo '$(srcdir)/'`sph_bmw.c
 
 libalgo_a-sph_bmw.obj: sph_bmw.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_bmw.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_bmw.Tpo -c -o libalgo_a-sph_bmw.obj `if test -f 'sph_bmw.c'; then $(CYGPATH_W) 'sph_bmw.c'; else $(CYGPATH_W) '$(srcdir)/sph_bmw.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_bmw.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_bmw.Tpo -c -o libalgo_a-sph_bmw.obj `if test -f 'sph_bmw.c'; then $(CYGPATH_W) 'sph_bmw.c'; else $(CYGPATH_W) '$(srcdir)/sph_bmw.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_bmw.Tpo $(DEPDIR)/libalgo_a-sph_bmw.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_bmw.c' object='libalgo_a-sph_bmw.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_bmw.obj `if test -f 'sph_bmw.c'; then $(CYGPATH_W) 'sph_bmw.c'; else $(CYGPATH_W) '$(srcdir)/sph_bmw.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_bmw.obj `if test -f 'sph_bmw.c'; then $(CYGPATH_W) 'sph_bmw.c'; else $(CYGPATH_W) '$(srcdir)/sph_bmw.c'; fi`
 
 libalgo_a-sph_cubehash.o: sph_cubehash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_cubehash.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_cubehash.Tpo -c -o libalgo_a-sph_cubehash.o `test -f 'sph_cubehash.c' || echo '$(srcdir)/'`sph_cubehash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_cubehash.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_cubehash.Tpo -c -o libalgo_a-sph_cubehash.o `test -f 'sph_cubehash.c' || echo '$(srcdir)/'`sph_cubehash.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_cubehash.Tpo $(DEPDIR)/libalgo_a-sph_cubehash.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_cubehash.c' object='libalgo_a-sph_cubehash.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_cubehash.o `test -f 'sph_cubehash.c' || echo '$(srcdir)/'`sph_cubehash.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_cubehash.o `test -f 'sph_cubehash.c' || echo '$(srcdir)/'`sph_cubehash.c
 
 libalgo_a-sph_cubehash.obj: sph_cubehash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_cubehash.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_cubehash.Tpo -c -o libalgo_a-sph_cubehash.obj `if test -f 'sph_cubehash.c'; then $(CYGPATH_W) 'sph_cubehash.c'; else $(CYGPATH_W) '$(srcdir)/sph_cubehash.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_cubehash.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_cubehash.Tpo -c -o libalgo_a-sph_cubehash.obj `if test -f 'sph_cubehash.c'; then $(CYGPATH_W) 'sph_cubehash.c'; else $(CYGPATH_W) '$(srcdir)/sph_cubehash.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_cubehash.Tpo $(DEPDIR)/libalgo_a-sph_cubehash.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_cubehash.c' object='libalgo_a-sph_cubehash.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_cubehash.obj `if test -f 'sph_cubehash.c'; then $(CYGPATH_W) 'sph_cubehash.c'; else $(CYGPATH_W) '$(srcdir)/sph_cubehash.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_cubehash.obj `if test -f 'sph_cubehash.c'; then $(CYGPATH_W) 'sph_cubehash.c'; else $(CYGPATH_W) '$(srcdir)/sph_cubehash.c'; fi`
 
 libalgo_a-sph_echo.o: sph_echo.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_echo.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_echo.Tpo -c -o libalgo_a-sph_echo.o `test -f 'sph_echo.c' || echo '$(srcdir)/'`sph_echo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_echo.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_echo.Tpo -c -o libalgo_a-sph_echo.o `test -f 'sph_echo.c' || echo '$(srcdir)/'`sph_echo.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_echo.Tpo $(DEPDIR)/libalgo_a-sph_echo.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_echo.c' object='libalgo_a-sph_echo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_echo.o `test -f 'sph_echo.c' || echo '$(srcdir)/'`sph_echo.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_echo.o `test -f 'sph_echo.c' || echo '$(srcdir)/'`sph_echo.c
 
 libalgo_a-sph_echo.obj: sph_echo.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_echo.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_echo.Tpo -c -o libalgo_a-sph_echo.obj `if test -f 'sph_echo.c'; then $(CYGPATH_W) 'sph_echo.c'; else $(CYGPATH_W) '$(srcdir)/sph_echo.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_echo.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_echo.Tpo -c -o libalgo_a-sph_echo.obj `if test -f 'sph_echo.c'; then $(CYGPATH_W) 'sph_echo.c'; else $(CYGPATH_W) '$(srcdir)/sph_echo.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_echo.Tpo $(DEPDIR)/libalgo_a-sph_echo.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_echo.c' object='libalgo_a-sph_echo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_echo.obj `if test -f 'sph_echo.c'; then $(CYGPATH_W) 'sph_echo.c'; else $(CYGPATH_W) '$(srcdir)/sph_echo.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_echo.obj `if test -f 'sph_echo.c'; then $(CYGPATH_W) 'sph_echo.c'; else $(CYGPATH_W) '$(srcdir)/sph_echo.c'; fi`
 
 libalgo_a-sph_groestl.o: sph_groestl.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_groestl.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_groestl.Tpo -c -o libalgo_a-sph_groestl.o `test -f 'sph_groestl.c' || echo '$(srcdir)/'`sph_groestl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_groestl.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_groestl.Tpo -c -o libalgo_a-sph_groestl.o `test -f 'sph_groestl.c' || echo '$(srcdir)/'`sph_groestl.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_groestl.Tpo $(DEPDIR)/libalgo_a-sph_groestl.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_groestl.c' object='libalgo_a-sph_groestl.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_groestl.o `test -f 'sph_groestl.c' || echo '$(srcdir)/'`sph_groestl.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_groestl.o `test -f 'sph_groestl.c' || echo '$(srcdir)/'`sph_groestl.c
 
 libalgo_a-sph_groestl.obj: sph_groestl.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_groestl.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_groestl.Tpo -c -o libalgo_a-sph_groestl.obj `if test -f 'sph_groestl.c'; then $(CYGPATH_W) 'sph_groestl.c'; else $(CYGPATH_W) '$(srcdir)/sph_groestl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_groestl.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_groestl.Tpo -c -o libalgo_a-sph_groestl.obj `if test -f 'sph_groestl.c'; then $(CYGPATH_W) 'sph_groestl.c'; else $(CYGPATH_W) '$(srcdir)/sph_groestl.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_groestl.Tpo $(DEPDIR)/libalgo_a-sph_groestl.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_groestl.c' object='libalgo_a-sph_groestl.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_groestl.obj `if test -f 'sph_groestl.c'; then $(CYGPATH_W) 'sph_groestl.c'; else $(CYGPATH_W) '$(srcdir)/sph_groestl.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_groestl.obj `if test -f 'sph_groestl.c'; then $(CYGPATH_W) 'sph_groestl.c'; else $(CYGPATH_W) '$(srcdir)/sph_groestl.c'; fi`
 
 libalgo_a-sph_jh.o: sph_jh.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_jh.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_jh.Tpo -c -o libalgo_a-sph_jh.o `test -f 'sph_jh.c' || echo '$(srcdir)/'`sph_jh.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_jh.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_jh.Tpo -c -o libalgo_a-sph_jh.o `test -f 'sph_jh.c' || echo '$(srcdir)/'`sph_jh.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_jh.Tpo $(DEPDIR)/libalgo_a-sph_jh.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_jh.c' object='libalgo_a-sph_jh.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_jh.o `test -f 'sph_jh.c' || echo '$(srcdir)/'`sph_jh.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_jh.o `test -f 'sph_jh.c' || echo '$(srcdir)/'`sph_jh.c
 
 libalgo_a-sph_jh.obj: sph_jh.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_jh.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_jh.Tpo -c -o libalgo_a-sph_jh.obj `if test -f 'sph_jh.c'; then $(CYGPATH_W) 'sph_jh.c'; else $(CYGPATH_W) '$(srcdir)/sph_jh.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_jh.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_jh.Tpo -c -o libalgo_a-sph_jh.obj `if test -f 'sph_jh.c'; then $(CYGPATH_W) 'sph_jh.c'; else $(CYGPATH_W) '$(srcdir)/sph_jh.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_jh.Tpo $(DEPDIR)/libalgo_a-sph_jh.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_jh.c' object='libalgo_a-sph_jh.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_jh.obj `if test -f 'sph_jh.c'; then $(CYGPATH_W) 'sph_jh.c'; else $(CYGPATH_W) '$(srcdir)/sph_jh.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_jh.obj `if test -f 'sph_jh.c'; then $(CYGPATH_W) 'sph_jh.c'; else $(CYGPATH_W) '$(srcdir)/sph_jh.c'; fi`
 
 libalgo_a-sph_keccak.o: sph_keccak.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_keccak.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_keccak.Tpo -c -o libalgo_a-sph_keccak.o `test -f 'sph_keccak.c' || echo '$(srcdir)/'`sph_keccak.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_keccak.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_keccak.Tpo -c -o libalgo_a-sph_keccak.o `test -f 'sph_keccak.c' || echo '$(srcdir)/'`sph_keccak.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_keccak.Tpo $(DEPDIR)/libalgo_a-sph_keccak.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_keccak.c' object='libalgo_a-sph_keccak.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_keccak.o `test -f 'sph_keccak.c' || echo '$(srcdir)/'`sph_keccak.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_keccak.o `test -f 'sph_keccak.c' || echo '$(srcdir)/'`sph_keccak.c
 
 libalgo_a-sph_keccak.obj: sph_keccak.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_keccak.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_keccak.Tpo -c -o libalgo_a-sph_keccak.obj `if test -f 'sph_keccak.c'; then $(CYGPATH_W) 'sph_keccak.c'; else $(CYGPATH_W) '$(srcdir)/sph_keccak.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_keccak.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_keccak.Tpo -c -o libalgo_a-sph_keccak.obj `if test -f 'sph_keccak.c'; then $(CYGPATH_W) 'sph_keccak.c'; else $(CYGPATH_W) '$(srcdir)/sph_keccak.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_keccak.Tpo $(DEPDIR)/libalgo_a-sph_keccak.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_keccak.c' object='libalgo_a-sph_keccak.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_keccak.obj `if test -f 'sph_keccak.c'; then $(CYGPATH_W) 'sph_keccak.c'; else $(CYGPATH_W) '$(srcdir)/sph_keccak.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_keccak.obj `if test -f 'sph_keccak.c'; then $(CYGPATH_W) 'sph_keccak.c'; else $(CYGPATH_W) '$(srcdir)/sph_keccak.c'; fi`
 
 libalgo_a-sph_luffa.o: sph_luffa.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_luffa.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_luffa.Tpo -c -o libalgo_a-sph_luffa.o `test -f 'sph_luffa.c' || echo '$(srcdir)/'`sph_luffa.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_luffa.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_luffa.Tpo -c -o libalgo_a-sph_luffa.o `test -f 'sph_luffa.c' || echo '$(srcdir)/'`sph_luffa.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_luffa.Tpo $(DEPDIR)/libalgo_a-sph_luffa.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_luffa.c' object='libalgo_a-sph_luffa.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_luffa.o `test -f 'sph_luffa.c' || echo '$(srcdir)/'`sph_luffa.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_luffa.o `test -f 'sph_luffa.c' || echo '$(srcdir)/'`sph_luffa.c
 
 libalgo_a-sph_luffa.obj: sph_luffa.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_luffa.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_luffa.Tpo -c -o libalgo_a-sph_luffa.obj `if test -f 'sph_luffa.c'; then $(CYGPATH_W) 'sph_luffa.c'; else $(CYGPATH_W) '$(srcdir)/sph_luffa.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_luffa.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_luffa.Tpo -c -o libalgo_a-sph_luffa.obj `if test -f 'sph_luffa.c'; then $(CYGPATH_W) 'sph_luffa.c'; else $(CYGPATH_W) '$(srcdir)/sph_luffa.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_luffa.Tpo $(DEPDIR)/libalgo_a-sph_luffa.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_luffa.c' object='libalgo_a-sph_luffa.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_luffa.obj `if test -f 'sph_luffa.c'; then $(CYGPATH_W) 'sph_luffa.c'; else $(CYGPATH_W) '$(srcdir)/sph_luffa.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_luffa.obj `if test -f 'sph_luffa.c'; then $(CYGPATH_W) 'sph_luffa.c'; else $(CYGPATH_W) '$(srcdir)/sph_luffa.c'; fi`
 
 libalgo_a-sph_shavite.o: sph_shavite.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_shavite.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_shavite.Tpo -c -o libalgo_a-sph_shavite.o `test -f 'sph_shavite.c' || echo '$(srcdir)/'`sph_shavite.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_shavite.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_shavite.Tpo -c -o libalgo_a-sph_shavite.o `test -f 'sph_shavite.c' || echo '$(srcdir)/'`sph_shavite.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_shavite.Tpo $(DEPDIR)/libalgo_a-sph_shavite.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_shavite.c' object='libalgo_a-sph_shavite.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_shavite.o `test -f 'sph_shavite.c' || echo '$(srcdir)/'`sph_shavite.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_shavite.o `test -f 'sph_shavite.c' || echo '$(srcdir)/'`sph_shavite.c
 
 libalgo_a-sph_shavite.obj: sph_shavite.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_shavite.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_shavite.Tpo -c -o libalgo_a-sph_shavite.obj `if test -f 'sph_shavite.c'; then $(CYGPATH_W) 'sph_shavite.c'; else $(CYGPATH_W) '$(srcdir)/sph_shavite.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_shavite.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_shavite.Tpo -c -o libalgo_a-sph_shavite.obj `if test -f 'sph_shavite.c'; then $(CYGPATH_W) 'sph_shavite.c'; else $(CYGPATH_W) '$(srcdir)/sph_shavite.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_shavite.Tpo $(DEPDIR)/libalgo_a-sph_shavite.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_shavite.c' object='libalgo_a-sph_shavite.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_shavite.obj `if test -f 'sph_shavite.c'; then $(CYGPATH_W) 'sph_shavite.c'; else $(CYGPATH_W) '$(srcdir)/sph_shavite.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_shavite.obj `if test -f 'sph_shavite.c'; then $(CYGPATH_W) 'sph_shavite.c'; else $(CYGPATH_W) '$(srcdir)/sph_shavite.c'; fi`
 
 libalgo_a-sph_simd.o: sph_simd.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_simd.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_simd.Tpo -c -o libalgo_a-sph_simd.o `test -f 'sph_simd.c' || echo '$(srcdir)/'`sph_simd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_simd.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_simd.Tpo -c -o libalgo_a-sph_simd.o `test -f 'sph_simd.c' || echo '$(srcdir)/'`sph_simd.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_simd.Tpo $(DEPDIR)/libalgo_a-sph_simd.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_simd.c' object='libalgo_a-sph_simd.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_simd.o `test -f 'sph_simd.c' || echo '$(srcdir)/'`sph_simd.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_simd.o `test -f 'sph_simd.c' || echo '$(srcdir)/'`sph_simd.c
 
 libalgo_a-sph_simd.obj: sph_simd.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_simd.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_simd.Tpo -c -o libalgo_a-sph_simd.obj `if test -f 'sph_simd.c'; then $(CYGPATH_W) 'sph_simd.c'; else $(CYGPATH_W) '$(srcdir)/sph_simd.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_simd.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_simd.Tpo -c -o libalgo_a-sph_simd.obj `if test -f 'sph_simd.c'; then $(CYGPATH_W) 'sph_simd.c'; else $(CYGPATH_W) '$(srcdir)/sph_simd.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_simd.Tpo $(DEPDIR)/libalgo_a-sph_simd.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_simd.c' object='libalgo_a-sph_simd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_simd.obj `if test -f 'sph_simd.c'; then $(CYGPATH_W) 'sph_simd.c'; else $(CYGPATH_W) '$(srcdir)/sph_simd.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_simd.obj `if test -f 'sph_simd.c'; then $(CYGPATH_W) 'sph_simd.c'; else $(CYGPATH_W) '$(srcdir)/sph_simd.c'; fi`
 
 libalgo_a-sph_skein.o: sph_skein.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_skein.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_skein.Tpo -c -o libalgo_a-sph_skein.o `test -f 'sph_skein.c' || echo '$(srcdir)/'`sph_skein.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_skein.o -MD -MP -MF $(DEPDIR)/libalgo_a-sph_skein.Tpo -c -o libalgo_a-sph_skein.o `test -f 'sph_skein.c' || echo '$(srcdir)/'`sph_skein.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_skein.Tpo $(DEPDIR)/libalgo_a-sph_skein.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_skein.c' object='libalgo_a-sph_skein.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_skein.o `test -f 'sph_skein.c' || echo '$(srcdir)/'`sph_skein.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_skein.o `test -f 'sph_skein.c' || echo '$(srcdir)/'`sph_skein.c
 
 libalgo_a-sph_skein.obj: sph_skein.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_skein.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_skein.Tpo -c -o libalgo_a-sph_skein.obj `if test -f 'sph_skein.c'; then $(CYGPATH_W) 'sph_skein.c'; else $(CYGPATH_W) '$(srcdir)/sph_skein.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-sph_skein.obj -MD -MP -MF $(DEPDIR)/libalgo_a-sph_skein.Tpo -c -o libalgo_a-sph_skein.obj `if test -f 'sph_skein.c'; then $(CYGPATH_W) 'sph_skein.c'; else $(CYGPATH_W) '$(srcdir)/sph_skein.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-sph_skein.Tpo $(DEPDIR)/libalgo_a-sph_skein.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sph_skein.c' object='libalgo_a-sph_skein.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_skein.obj `if test -f 'sph_skein.c'; then $(CYGPATH_W) 'sph_skein.c'; else $(CYGPATH_W) '$(srcdir)/sph_skein.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-sph_skein.obj `if test -f 'sph_skein.c'; then $(CYGPATH_W) 'sph_skein.c'; else $(CYGPATH_W) '$(srcdir)/sph_skein.c'; fi`
 
 libalgo_a-x11.o: x11.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-x11.o -MD -MP -MF $(DEPDIR)/libalgo_a-x11.Tpo -c -o libalgo_a-x11.o `test -f 'x11.c' || echo '$(srcdir)/'`x11.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-x11.o -MD -MP -MF $(DEPDIR)/libalgo_a-x11.Tpo -c -o libalgo_a-x11.o `test -f 'x11.c' || echo '$(srcdir)/'`x11.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-x11.Tpo $(DEPDIR)/libalgo_a-x11.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='x11.c' object='libalgo_a-x11.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-x11.o `test -f 'x11.c' || echo '$(srcdir)/'`x11.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-x11.o `test -f 'x11.c' || echo '$(srcdir)/'`x11.c
 
 libalgo_a-x11.obj: x11.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libalgo_a-x11.obj -MD -MP -MF $(DEPDIR)/libalgo_a-x11.Tpo -c -o libalgo_a-x11.obj `if test -f 'x11.c'; then $(CYGPATH_W) 'x11.c'; else $(CYGPATH_W) '$(srcdir)/x11.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -MT libalgo_a-x11.obj -MD -MP -MF $(DEPDIR)/libalgo_a-x11.Tpo -c -o libalgo_a-x11.obj `if test -f 'x11.c'; then $(CYGPATH_W) 'x11.c'; else $(CYGPATH_W) '$(srcdir)/x11.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libalgo_a-x11.Tpo $(DEPDIR)/libalgo_a-x11.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='x11.c' object='libalgo_a-x11.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libalgo_a-x11.obj `if test -f 'x11.c'; then $(CYGPATH_W) 'x11.c'; else $(CYGPATH_W) '$(srcdir)/x11.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalgo_a_CPPFLAGS) $(CPPFLAGS) $(libalgo_a_CFLAGS) $(CFLAGS) -c -o libalgo_a-x11.obj `if test -f 'x11.c'; then $(CYGPATH_W) 'x11.c'; else $(CYGPATH_W) '$(srcdir)/x11.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

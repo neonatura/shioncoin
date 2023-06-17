@@ -413,12 +413,14 @@ task_t *task_init(task_attr_t *attr)
   if (!iface->enabled)
     return (NULL);
 
-	tree = stratum_miner_getblocktemplate(ifaceIndex, attr->alg);
-	if (!tree) {
-		sprintf(errbuf, "(%s) task_init: error decoding JSON.", iface->name);
-		shcoind_log(errbuf);
-		return (NULL);
-	}
+  tree = stratum_miner_getblocktemplate(ifaceIndex, attr->alg);
+  if (!tree) {
+#if 0
+	  sprintf(errbuf, "(%s) task_init: error decoding JSON.", iface->name);
+	  shcoind_log(errbuf);
+#endif
+	  return (NULL);
+  }
 
   block = shjson_obj(tree, "result");
   if (!block) {

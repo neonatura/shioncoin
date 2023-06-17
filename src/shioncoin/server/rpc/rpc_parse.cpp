@@ -897,10 +897,14 @@ const RPCOp WALLET_SET = {
 };
 #endif
 const RPCOp WALLET_SETKEY = {
-  &rpc_wallet_setkey, 2, {RPC_STRING, RPC_ACCOUNT, RPC_STRING},
-  "Syntax: <priv-key> <account> [<type>]\n"
+  &rpc_wallet_setkey, 2, {RPC_STRING, RPC_ACCOUNT, RPC_INT64, RPC_STRING},
+  "Syntax: <priv-key> <account> [<timestamp>] [<type>]\n"
   "Adds a private key (as returned by wallet.key) to your wallet.\n"
-	"Setting the <type> to \"default\" assigns the account's default key."
+	"\n"
+	"The <type> can be set to;\n"
+	"\t\"default\" assigns the account's default key.\n"
+	"\n"
+	"Note: The timestamp is a unix-time indicating when address was created."
 };
 const RPCOp WALLET_TX = {
   &rpc_wallet_tx, 1, {RPC_STRING}, 

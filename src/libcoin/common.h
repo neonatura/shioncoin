@@ -23,6 +23,7 @@ typedef int pid_t; /* define for windows compatiblity */
 #include <db_cxx.h>
 #include <stdarg.h>
 
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/date_time/gregorian/gregorian_types.hpp>

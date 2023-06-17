@@ -127,15 +127,18 @@ std::string CExtCore::ToString()
 Object CExtCore::ToValue()
 {
   Object obj;
-  char tbuf[256];
 
   obj.push_back(Pair("version", (int64_t)nVersion));
 
   if (vchLabel.size() != 0)
     obj.push_back(Pair("label", stringFromVch(vchLabel)));
 
-  sprintf(tbuf, "%-20.20s", shctime(tExpire)+4);
-  obj.push_back(Pair("expire", string(tbuf)));
+	if (tExpire != 0) {
+		char tbuf[256];
+
+		sprintf(tbuf, "%-20.20s", shctime(tExpire)+4);
+		obj.push_back(Pair("expire", string(tbuf)));
+	}
 
   return (obj);
 }

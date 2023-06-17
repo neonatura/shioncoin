@@ -923,11 +923,12 @@ Value rpc_wallet_setkey(CIface *iface, const Array& params, bool fStratum)
 	string strLabel = AccountFromValue(params[1]);
 	int64 nCreateTime = 0;
 
-	string strType;
 	if (params.size() >= 3)
-		strType = params[2].get_str();
+		nCreateTime = params[2].get_int();
+
+	string strType;
 	if (params.size() >= 4)
-		nCreateTime = params[3].get_int();
+		strType = params[3].get_str();
 
 	bool fGood = vchSecret.SetString(strSecret);
 	if (!fGood) {

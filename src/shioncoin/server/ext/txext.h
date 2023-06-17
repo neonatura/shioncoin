@@ -427,7 +427,7 @@ class CExtCore
 		if (now >= nExpireTime)
 			return (0);
 
-		return (nExpireTime - time(NULL));
+		return (nExpireTime - now);
 	}
 
 	bool VerifyLifespan(CIface *iface, int64 nCredit)

@@ -107,6 +107,12 @@ _TEST(sip10_ctxtx)
 		delete block;
 	}
 
+	/* verify insertion */
+	CTransaction t_tx;
+	_TRUEPTR(GetContextByHash(iface, hashContext, t_tx));
+	_TRUE(t_tx.GetHash() == wtx.GetHash());
+	_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+
 }
 
 _TEST(sip10_di_ctxtx)

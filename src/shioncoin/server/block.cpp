@@ -896,7 +896,9 @@ bool CTransaction::CheckTransactionInputs(int ifaceIndex)
 
 bool CBlock::CheckTransactionInputs(int ifaceIndex)
 {
+	int idx;
 
+	idx = 0;
   BOOST_FOREACH(CTransaction& tx, vtx) {
     bool fInBlock = false;
     BOOST_FOREACH(const CTxIn& txin, tx.vin) {
@@ -1342,12 +1344,6 @@ bool CTransaction::VerifyCert(int ifaceIndex, int nHeight)
     return error(SHERR_INVAL, "VerifyCert: insufficient fee (%f) for block accepted at height %d.", (double)vout[nOut].nValue/COIN, (int)nHeight);
 #endif
 
-fprintf(stderr, "DEBUG: REMOVE ME: VerifyLifespan: minLifespan %u\n", (unsigned int)cert->GetMinimumLifespan()); 
-fprintf(stderr, "DEBUG: REMOVE ME: VerifyLifespan: maxLifespan %u\n", (unsigned int)cert->GetMaximumLifespan()); 
-fprintf(stderr, "DEBUG: REMOVE ME: VerifyLifespan: expire span %u\n", cert->GetExpireTime());
-fprintf(stderr, "DEBUG: REMOVE ME: VerifyLifespan: expire span %u\n",
-		( cert->VerifyLifespan(iface, nCredit) ? "true" : "false" ));
-
 	if (!cert->VerifyLifespan(iface, nCredit)) {
 		return (error(ERR_INVAL, "certificate expiration exceeds limit"));
 	}
@@ -1538,8 +1534,6 @@ bool CTransaction::VerifyOffer(int ifaceIndex, int nHeight)
 	int nOut;
 	int err;
 
-fprintf(stderr, "DEBUG: VerifyOffer()/start\n");
-
 	/* core verification */
 	if (!IsOfferTx(*this)) {
 		return (false); /* tx not flagged as offer */
@@ -1593,7 +1587,6 @@ fprintf(stderr, "DEBUG: VerifyOffer()/start\n");
 		}
 	}
 
-fprintf(stderr, "DEBUG: VerifyOffer()/finish\n");
 	return (true);
 }
 
@@ -1724,9 +1717,6 @@ bool CTransaction::VerifyAsset(int ifaceIndex)
 		int nHeight = GetBestHeight(iface);
 		int64 nBaseFee = asset->CalculateFee(iface, nHeight);
 		int64 nCredit = vout[nOut].nValue;
-
-fprintf(stderr, "DEBUG: VerifyAsset(): nCredit %-8.8f\n", (nCredit/COIN)); 
-fprintf(stderr, "DEBUG: VerifyAsset(): nBaseFee %-8.8f\n", (nBaseFee/COIN)); 
 
 		/** asset fee must be at least base asset fee. */
 		if (nCredit < nBaseFee) {
@@ -2455,56 +2445,59 @@ bool CTransaction::VerifyExec(int ifaceIndex, int nHeight)
 
 bool CTransaction::VerifyContext(int ifaceIndex)
 {
-  CIface *iface = GetCoinByIndex(ifaceIndex);
-  uint160 hashContext;
-  int nOut;
-  int err;
+	CIface *iface = GetCoinByIndex(ifaceIndex);
+	uint160 hashContext;
+	int nOut;
+	int err;
 
-  if (!iface)
-    return (false);
+	if (!iface)
+		return (false);
 
-  /* core verification */
-  if (!IsContextTx(*this)) {
-    return (false); /* tx not flagged as context */
-  }
+	/* core verification */
+	if (!IsContextTx(*this)) {
+		return (false); /* tx not flagged as context */
+	}
 
-  /* verify hash in pub-script matches context hash */
-  nOut = IndexOfContextOutput(*this);
-  if (nOut == -1) {
-    return (false); /* no extension output */
-  }
+	/* verify hash in pub-script matches context hash */
+	nOut = IndexOfContextOutput(*this);
+	if (nOut == -1) {
+		return (false); /* no extension output */
+	}
 
-  int mode;
-  if (!DecodeContextHash(vout[nOut].scriptPubKey, mode, hashContext)) {
-    return (false); /* no context hash in output */
-  }
+	int mode;
+	if (!DecodeContextHash(vout[nOut].scriptPubKey, mode, hashContext)) {
+		return (false); /* no context hash in output */
+	}
 
-	if (mode == OP_EXT_NEW && 
-			mode == OP_EXT_UPDATE &&
-			mode == OP_EXT_REMOVE) {
+	if (mode != OP_EXT_NEW && 
+			mode != OP_EXT_UPDATE &&
+			mode != OP_EXT_REMOVE) {
+		/* unsupported operation. */
 		return (true);
 	}
 
-  CContext *context = GetContext();
-  if (hashContext != context->GetHash()) {
-    return error(SHERR_INVAL, "context hash mismatch");
-  }
+	CContext *context = GetContext();
+	if (hashContext != context->GetHash()) {
+		return error(SHERR_INVAL, "context hash mismatch");
+	}
 
-  err = context->VerifyTransaction();
-  if (err != 0) {
-    return (error(err, "context verification failure"));
-  }
+	err = context->VerifyTransaction();
+	if (err != 0) {
+		return (error(err, "context verification failure"));
+	}
 
+	/* verify context attributes. */
 	{
 		int nHeight = GetBestHeight(iface);
 		int64 nBaseFee = context->CalculateFee(iface, nHeight);
 		int64 nCredit = vout[nOut].nValue;
 
-		/** context fee must be at least base context fee. */
+		/* context fee must be at least base context fee. */
 		if (nCredit < nBaseFee) {
-			return (error(ERR_FEE, "insufficient context fund"));
+			return (error(ERR_FEE, "verify context: context fee (%s) insufficient. [fee=%s, size=%d, lifespan=%llu].", FormatMoney(nCredit).c_str(), FormatMoney(nBaseFee).c_str(), context->GetContentSize(), (unsigned long long)context->GetLifespan()));
 		}
 
+		/* ensure lifespan is sane in respect to fee. */
 		if (!context->VerifyLifespan(iface, nCredit)) {
 			return (error(ERR_INVAL, "expiration exceeds limit"));
 		}
@@ -2534,10 +2527,12 @@ bool CTransaction::VerifyAltChain(int ifaceIndex)
 	uint160 hashAltChain;
 	int mode;
 	int nOut; 
+	int err;
 
 	/* core verification */
-	if (!IsAltChainTx(*this))
-		return (error(SHERR_INVAL, "VerifyAltChain: not an altchain tx"));
+	if (!IsAltChainTx(*this)) {
+		return (error(SHERR_INVAL, "verify alt chain: transaction is not altchain type."));
+	}
 
 	/* verify hash in pub-script matches altchain hash */
 	nOut = IndexOfAltChainOutput(*this);
@@ -2550,32 +2545,36 @@ bool CTransaction::VerifyAltChain(int ifaceIndex)
 	}
 
 	CAltChain *altchain = GetAltChain();
-	if (!altchain)
+	if (!altchain) {
 		return (false);
+	}
 
 	if (hashAltChain != altchain->GetHash()) {
-		return error(SHERR_INVAL, "VerifyAltChain: transaction references invalid altchain hash.");       
-		return (false); /* altchain hash mismatch */
+		/* altchain hash mismatch */
+		return (error(SHERR_INVAL, "verify alt chain: transaction references invalid altchain hash."));
 	}
 
 	for (int i = 0; i < altchain->vtx.size(); i++) {
 		const CAltTx& alt_tx = altchain->vtx[i];
 		/* auxilliary payload for color-specific coin implementations. */
 		if (alt_tx.vchAux.size() > 4096) {
-			return error(SHERR_INVAL, "VerifyAltChain: auxillary payload exceeds 4096 bytes.");
+			return error(SHERR_INVAL, "verify alt chain: auxillary payload exceeds 4096 bytes.");
 		}
 
-		if ((int64)alt_tx.nLockTime > altchain->block.nTime)
-			return error(SHERR_INVAL, "VerifyAltChain: rejecting non-final transaction.");
+		if ((int64)alt_tx.nLockTime > altchain->block.nTime) {
+			return error(SHERR_INVAL, "verify alt chain: rejecting non-final transaction.");
+		}
 
 		BOOST_FOREACH(const CTxIn& txin, alt_tx.vin) {
-			if (!txin.IsFinal())
+			if (!txin.IsFinal()) {
 				return (false);
+			}
 		}
 	} 
 
-	if (!altchain->VerifyTransaction()) {
-		return (false);
+	err = altchain->VerifyTransaction();
+	if (err) {
+		return (error(err, "verify alt chain: error verifying transaction."));
 	}
 
 	{

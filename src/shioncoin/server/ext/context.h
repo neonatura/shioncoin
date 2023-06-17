@@ -136,7 +136,7 @@ class CContext : public CEntity
 
 		void ResetExpireTime(CIface *iface, int64 nFee);
 
-		int64 CalculateFee(CIface *iface, int nHeight, int nContentSize = -1, time_t nLifespan = -1);
+		int64 CalculateFee(CIface *iface, int nHeight);
 
 		bool Sign(int ifaceIndex);
 
@@ -212,13 +212,11 @@ int CommitContextTx(CIface *iface, CTransaction& tx, unsigned int nHeight);
 
 bool DisconnectContextTx(CIface *iface, CTransaction& tx);
 
-int64 GetContextOpFee(CIface *iface, int nHeight, int nSize = 4096);
-
 CContext *GetContextByHash(CIface *iface, uint160 hashName, CTransaction& ctx_tx);
 
 CContext *GetContextByName(CIface *iface, string strName, CTransaction& ctx_tx);
 
-int64 CalculateContextFee(CIface *iface, int nHeight, int nSize = 0, int nLifespan = 0);
+int64 GetContextOpFee(CIface *iface, int nHeight, int nSize = 0, time_t nLifespan = 0);
 
 bool DecodeContextHash(const CScript& script, int& mode, uint160& hash);
 

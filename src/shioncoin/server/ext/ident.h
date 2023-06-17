@@ -31,6 +31,8 @@ class CIdent : public CEntity
 
 	public:
 
+		static const int CURRENT_IDENT_VERSION = 4;
+
 		uint160 __uint160_reserved0__;
 		CSign __csign_reserved0__;
 		cbuff __cbuff_reserved0__;
@@ -62,11 +64,13 @@ class CIdent : public CEntity
 
 		IMPLEMENT_SERIALIZE (
 			READWRITE(*(CEntity *)this);
-			READWRITE(this->__uint160_reserved0__);
-			READWRITE(this->__csign_reserved0__);
-			READWRITE(this->__cbuff_reserved0__);
-			READWRITE(this->__int64_reserved0__);
-			READWRITE(this->__int_reserved0__);
+			if (this->nVersion < 4) {
+				READWRITE(__uint160_reserved0__);
+				READWRITE(__csign_reserved0__);
+				READWRITE(__cbuff_reserved0__);
+				READWRITE(__int64_reserved0__);
+				READWRITE(__int_reserved0__);
+			}
 		)
 
 		friend bool operator==(const CIdent &a, const CIdent &b)
@@ -83,25 +87,16 @@ class CIdent : public CEntity
 			return *this;
 		}
 
-		void SetNull()
-		{
-			CEntity::SetNull();
-			nVersion = 3;
-			__int64_reserved0__ = 0;
-			__uint160_reserved0__ = 0;
-			__int_reserved0__ = 0;
-		}
+		void SetNull();
 
 		void Init(const CIdent& b)
 		{
 			CEntity::Init(b);
-#if 0
 			__uint160_reserved0__ = b.__uint160_reserved0__;
 			__csign_reserved0__ = b.__csign_reserved0__;
 			__cbuff_reserved0__ = b.__cbuff_reserved0__;
 			__int64_reserved0__ = b.__int64_reserved0__;
 			__int_reserved0__ = b.__int_reserved0__;
-#endif
 		}
 
 		void Init(const CCert& b)

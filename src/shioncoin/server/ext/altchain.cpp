@@ -506,120 +506,108 @@ bool VerifyAltChainChain(CIface *iface, CTransaction& tx)
 }
 #endif
 
-static bool CommitNewAltChainTx(CIface *iface, CTransaction& tx, CNode *pfrom, bool fUpdate)
+static bool CommitNewAltChainTx(CIface *iface, CTransaction& tx, CNode *pfrom, bool fInit)
 {
+	CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
+	CIface *alt_iface;
 	CAltChain *alt;
 	CBlock *block;
 	int mode;
 
+	alt_iface = GetCoinByIndex(COLOR_COIN_IFACE);
+	if (!alt_iface) {
+		return (error(SHERR_OPNOTSUPP, "CommitNewAltChainTx: no altchain interface."));
+	}
+
+	alt = tx.GetAltChain();
+	if (!alt) {
+		return (error(SHERR_INVAL, "CommitNewAltChainTx: transaction has no altchain data."));
+	}
+
 	if (!tx.VerifyAltChain(ifaceIndex)) {
-		return error(SHERR_INVAL, "CommitNewAltChainTx: error verifying altchain chain on tx '%s'.", tx.GetHash().GetHex().c_str());
+		return error(SHERR_INVAL, 
+				"CommitNewAltChainTx: TX %s: error verifying altchain: %s",
+				tx.GetHash().GetHex().c_str(), tx.GetAltChain()->ToString().c_str());
 	}
 
 	mode = GetAltChainTxMode(tx);
-	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE)
-		return (true); /* unsupported - soft error */
-
-	alt = tx.GetAltChain();
-	if (!alt)
-		return (error(SHERR_INVAL, "CommitNewAltChainTx: transaction is not altchain-tx"));
-
-	{
-		CWallet *wallet = GetWallet(iface);
-
-		/* dissolve pool references as we commit to disk block-chain. */
-		if (wallet->mapColorPool.count(alt->hColor) != 0)
-			wallet->mapColorPool.erase(alt->hColor);
+	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE) {
+		return (true); /* unsupported operation - soft error */
 	}
 
-	if (!fUpdate) { /* run-time */
-		CBlockIndex *pindexBest;
+	/* dissolve pool references as we commit to disk block-chain. */
+	if (wallet->mapColorPool.count(alt->hColor) != 0)
+		wallet->mapColorPool.erase(alt->hColor);
 
-		pindexBest = GetBestColorBlockIndex(iface, alt->hColor);
-		if (pindexBest) {
-			if (alt->block.hashPrevBlock == 0) {
-				/* already established a genesis block. */
-				return (error(SHERR_INVAL, "CommitAltChainTx: rejecting genesis block on already established chain (color \"%s\", tail \"%s\")", alt->hColor.GetHex().c_str(), pindexBest->GetBlockHash()));
-			}
-		} else /* !pindexBest */ {
-			if (alt->block.hashPrevBlock != 0) {
-				return (error(SHERR_INVAL, "CommitAltChainTx: rejecting non-genesis block on non-established chain (color \"%s\")", alt->hColor.GetHex().c_str()));
-			}
+	const uint256 &altBlockHash = alt->block.GetHash();
+	if (fInit) { /* init */
+		if (HasBlockHash(alt_iface, altBlockHash) == false) {
+			Debug("warning: skipping non-committed altchain block \"%s\".",
+				 	altBlockHash.GetHex().c_str()); 
+			return (false);
+		}
+	} 
+
+	if (wallet->mapColor.count(alt->hColor) == 0) {
+		/* unestablished alt block chain. */
+		if (alt->block.hashPrevBlock != 0) {
+			return (error(SHERR_INVAL, "CommitAltChainTx: rejecting non-genesis block on non-established chain (color \"%s\")", alt->hColor.GetHex().c_str()));
+		}
+	} else {
+		/* already established alt block chain. */
+		if (alt->block.hashPrevBlock == 0) {
+			/* already established a genesis block. */
+			return (error(SHERR_INVAL, "CommitAltChainTx: rejecting genesis block on already established chain (color \"%s\")", alt->hColor.GetHex().c_str()));
 		}
 
-		if (pindexBest) {
-			CIface *alt_iface = GetCoinByIndex(COLOR_COIN_IFACE);
-			const uint256& hashBlock = alt->block.GetHash();
-			if (pindexBest->GetBlockHash() != hashBlock && /* not dup */
-					pindexBest->GetBlockHash() != alt->block.hashPrevBlock) {
-
-
-				/* The order of the alt-chain tx's received on the main service dictate the order of the color alt-chain. */
-#if 0
-				CBlockIndex *pindexPrev = GetBlockIndexByHash(COLOR_COIN_IFACE, alt->block.hashPrevBlock);
-				/* check whether chain-work is higher. */
-				if (pindexPrev && pindexPrev->pnext) {
-					CBlockIndex *pindex = pindexPrev->pnext;
-
-					if (HasBlockHash(alt_iface, pindex->GetBlockHash())) {
-						/* already commited. */
-						return (CommitAltChainOrphanTx(iface, tx));
-					}
-
-					CBigNum bnTarget;
-					bnTarget.SetCompact(alt->block.nBits);
-					if (bnTarget <= 0 ||
-							(CBigNum(1)<<256) / (bnTarget+1) <= pindex->GetBlockWork()) {
-						/* new block chain-work is less than old one. */
-						return (CommitAltChainOrphanTx(iface, tx));
-					}
-				}
-#endif
-
-
+		const uint256 &prevHash = wallet->mapColor[alt->hColor]; /* alt chain tip */
+		if (alt->block.hashPrevBlock != prevHash) {
+			/* orphan block */
+			if (fInit) { /* init */
+				Debug("commit new alt chain tx: skipping orphan block %s", altBlockHash.GetHex().c_str());
+				return (false);
+			} else { /* runtime */
 				return (CommitAltChainOrphanTx(iface, tx));
 			}
 		}
+	}
 
-		/* new block */
-		block = alt->GetBlock();
-		if (!ProcessBlock(pfrom, block)) {
-			error(SHERR_INVAL, "CommitAltChainTx: error processing block \"%s\": %s", alt->block.GetHash().GetHex().c_str(), block->ToString().c_str());
-			delete block;
-			return (false);
-		}
-
-		delete block;
-	} else { /* loading block-chain (startup) */
+	if (fInit) { /* init: load pre-existing from db. */
 		/* perform similar check to the normal run-time block submission without accessing the block index. */
 		block = alt->GetBlock();
 		if (!block->CheckBlock()) {
 			delete block;
-			return error(SHERR_INVAL, "CommitAltChainTx: error validating block integrity (%s).", alt->block.GetHash().GetHex().c_str());
+			return error(SHERR_INVAL, "CommitAltChainTx: error validating altchain block \"%s\" integrity.",
+					altBlockHash.GetHex().c_str());
 		}
-
 		/* presuming coin iface txdb is accessible on shc txidx init. */
 		if (!block->CheckTransactionInputs(COLOR_COIN_IFACE)) {
 			delete block;
-			return (error(SHERR_INVAL, "CommitAltChainTx: error validating block transactions (%s).", alt->block.GetHash().GetHex().c_str()));
+			return (error(SHERR_INVAL, "CommitAltChainTx: error validating altchain block \"%s\" transactions.",
+						altBlockHash.GetHex().c_str()));
 		}
 		delete block;
+	} else { /* runtime: new altchain block */
+		bool ok;
 
-		/* verify that block is stored in disk block-chain. */
-		CIface *clr_iface = GetCoinByIndex(COLOR_COIN_IFACE);
-		if (!HasBlockHash(clr_iface, alt->block.GetHash())) {
-			Debug("CommitAltChainTx: warning: non-commited block \"%s\"; skip.", alt->block.GetHash().GetHex().c_str());
-			return (false);
+		block = alt->GetBlock();
+		ok = ProcessBlock(pfrom, block);
+		delete block;
+		if (!ok) {
+			return (error(SHERR_INVAL, "CommitAltChainTx: error processing block \"%s\": %s",
+						altBlockHash.GetHex().c_str()));
 		}
 	}
 
-	if (!ConnectAltChainTx(iface, tx))
-		return error(SHERR_INVAL, "CommitAltChainTx: error updating altchain on tx '%s'.", tx.GetHash().GetHex().c_str());
+	if (!ConnectAltChainTx(iface, tx)) {
+		return (error(SHERR_INVAL, "CommitAltChainTx: error updating altchain block %s from tx %s.", 
+				altBlockHash.GetHex().c_str(), tx.GetHash().GetHex().c_str()));
+	}
 
-	if (!fUpdate)
-		Debug("CommitNewAltChainTx: alt-block \"%s\"",
-				alt->block.GetHash().GetHex().c_str());
+	if (!fInit) {
+		Debug("CommitNewAltChainTx: alt-block \"%s\"", altBlockHash.GetHex().c_str());
+	}
 
 	return (true);
 }
@@ -1061,10 +1049,12 @@ int CAltChain::VerifyTransaction()
 	int err;
 
 	err = CExtCore::VerifyTransaction();
-	if (err)
+	if (err) {
 		return (err);
+	}
 
 	if (GetLabel().size() > MAX_ALTCHAIN_LABEL_LENGTH) {
+		error(ERR_INVAL, "altchain: verify transaction: label size %d exceeds maximum %d characters.", GetLabel().size(), MAX_ALTCHAIN_LABEL_LENGTH);
 		return (ERR_INVAL);
 	}
 

@@ -39,7 +39,11 @@
 using namespace std;
 using namespace boost;
 
-#define MAX_BLOCK_DOWNLOAD_BATCH 64 /* 4m block * 64 = max 256m */
+/* 4m block * 128 = max 512m */
+#define MAX_BLOCK_DOWNLOAD_BATCH 128 
+
+/* wait 60s to reecive batch set of blocks from peer. */
+#define DEFAULT_THROTTLE_TIME 60
 
 ChainOp chain;
 
@@ -559,6 +563,7 @@ static bool chain_IsNodeBusy(CNode *pnode)
 	return (false);
 }
 
+#if 0
 static bool chain_AreNodesBusy(int ifaceIndex)
 {
 	NodeList &vNodes = GetNodeList(ifaceIndex);
@@ -573,10 +578,11 @@ static bool chain_AreNodesBusy(int ifaceIndex)
 
 	return (false);
 }
+#endif
 
 static CNode *chain_GetNextNode(int ifaceIndex)
 {
-  static int nNodeIndex[MAX_COIN_IFACE];
+  static unsigned int nNodeIndex[MAX_COIN_IFACE];
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 	CNode *pfrom;
 	int nIndex;
@@ -587,7 +593,7 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 
 	{
 		NodeList &vNodes = GetNodeList(ifaceIndex);
-		idx = (nNodeIndex[ifaceIndex] % vNodes.size());
+		idx = (nIndex % vNodes.size());
 		pfrom = vNodes[idx];
 	}
 
@@ -600,8 +606,9 @@ static CNode *chain_GetNextNode(int ifaceIndex)
 		return (NULL);
 	}
 
-	if (chain_IsNodeBusy(pfrom))
+	if (chain_IsNodeBusy(pfrom)) {
 		return (NULL);
+	}
 
 	if (!pfrom->fPreferHeaders) {
 		/* incompatible. */
@@ -747,10 +754,24 @@ bool ServiceLegacyBlockEvent(CIface *iface)
 }
 #endif
 
+void throttleNodes(CWallet *wallet, int64 nHeight)
+{
+	NodeList &vNodes = GetNodeList(wallet->ifaceIndex);
+	time_t expire;
+	int idx;
+
+	expire = time(NULL) + DEFAULT_THROTTLE_TIME;
+	for (idx = 0; idx < vNodes.size(); idx++) {
+		CNode *node = vNodes[idx];	
+		node->pindexThrottleHeight = nHeight;
+		node->pindexThrottleTime = expire;
+	}
+
+}
+
 bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *pfrom)
 {
 	static CBlockIndex *currentIndex;
-	static time_t currentTime;
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
 	CBlockIndex *pindex = NULL;
 	std::vector<CInv> vInv;
@@ -762,6 +783,13 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 			pfrom->pindexBestKnownBlock->bnChainWork < pindexBest->bnChainWork)
 		return (false); /* nothing of importance to provide */
 
+	if (pindexBest != NULL &&
+			pindexBest->nHeight < pfrom->pindexThrottleHeight &&
+			time(NULL) < pfrom->pindexThrottleTime) {
+		/* block is already being requested. */
+		return (false);
+	}
+
 	/* determine next block to download. */
 	vector<CBlockIndex *> vBlocks;
 	if (!FindNextBlocksToDownload(iface, pfrom, 
@@ -770,19 +798,6 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 
 	CBlockIndex *pindexFirst = vBlocks.front();
 	CBlockIndex *pindexLast = vBlocks.back();
-
-#if 0
-	/* suppress duplicate requests. */
-	if (pfrom->pindexLastBlock == pindexLast)
-		return (false);
-	pfrom->pindexLastBlock = pindexLast;
-#endif
-
-	/* duplicity for all nodes */
-	if (currentIndex == pindexLast &&
-			time(NULL) == currentTime) {
-		return (false);
-	}
 
 	/* check redundancy of node request. */
 	if (pfrom->pindexLastBlock) {
@@ -839,14 +854,16 @@ bool ServiceBlockGetDataEvent(CWallet *wallet, CBlockIndex* pindexBest, CNode *p
 	pfrom->PushMessage("getdata", vInv);
 
 	currentIndex = pindexLast;
-	currentTime = time(NULL);
+
+	if (IsInitialBlockDownload(wallet->ifaceIndex)) {
+		throttleNodes(wallet, currentIndex->nHeight);
+	}
 
 	/* debug */
-	Debug("(%s) ServiceBlockEvent: requesting %d blocks (%s) (height %d) from \"%s\".", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pindexFirst->nHeight, pfrom->addr.ToString().c_str());
+	Debug("(%s) ServiceBlockEvent: requesting %d blocks (%s) (height %d) from \"%s\" [init=%s].", iface->name, vInv.size(), vBlocks.front()->GetBlockHash().GetHex().c_str(), pindexFirst->nHeight, pfrom->addr.ToString().c_str(), (IsInitialBlockDownload(wallet->ifaceIndex) ? "true" : "false"));
 
 	return (true);
 }
-
 
 bool ServiceBlockHeadersEvent(CWallet *wallet, CBlockIndex *pindexBest, CNode *pfrom)
 {

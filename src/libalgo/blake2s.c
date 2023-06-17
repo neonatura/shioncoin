@@ -337,6 +337,7 @@ int blake2s( uint8_t *out, const void *in, const void *key, const uint8_t outlen
 
 	if ( NULL == key ) keylen = 0; /* Fail here instead if keylen != 0 and key == NULL? */
 
+	memset(&S, 0, sizeof(S));
 	if( keylen > 0 )
 	{
 		if( blake2s_init_key( &S, outlen, key, keylen ) < 0 ) return -1;

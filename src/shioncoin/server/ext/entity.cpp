@@ -92,13 +92,12 @@ int CEntity::VerifyTransaction()
 	if (err)
 		return (err);
 
-	if (GetLabelSize() == 0 ||
+	if (//GetLabelSize() == 0 ||
 			GetLabelSize() > GetMaximumLabelSize()) {
 		return (ERR_INVAL);
 	}
 
-	if (GetContentSize() < 0 ||
-			GetContentSize() > GetMaximumContentSize()) {
+	if (GetContentSize() > GetMaximumContentSize()) {
 		return (ERR_2BIG);
 	}
 

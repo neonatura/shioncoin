@@ -1604,7 +1604,7 @@ static int sexe_ContextCreateEvent(lua_State *L)
 	/* add context fee. */
 	double nFee = shjson_num(param, "fee", 0);
 	nFee += (double)GetContextOpFee(iface,
-			GetBestHeight(iface), strValue.length()) / COIN;
+			GetBestHeight(iface), strValue.length(), 0) / COIN;
 	shjson_num_add(param, "fee", nFee);
 
 #if 0

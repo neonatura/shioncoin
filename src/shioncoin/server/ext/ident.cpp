@@ -224,11 +224,10 @@ std::string CIdent::ToString()
 Object CIdent::ToValue()
 {
 	Object obj = CExtCore::ToValue();
-	char sig[256];
 	char loc[256];
 	shnum_t lat, lon;
 
-	//  obj.push_back(Pair("identhash", GetHash().GetHex()));
+	obj.push_back(Pair("identhash", GetHash().GetHex()));
 
 	shgeo_loc(&geo, &lat, &lon, NULL);
 	if (lat != 0.0000 || lon != 0.0000) {
@@ -264,9 +263,22 @@ int CIdent::VerifyTransaction(int ifaceIndex)
 	return (0);
 }
 
+void CIdent::SetNull()
+{
+	CEntity::SetNull();
+	nVersion = CIdent::CURRENT_IDENT_VERSION;
+
+	/* backwards compatibility */
+	__uint160_reserved0__ = 0;
+	__csign_reserved0__.SetNull();
+	__cbuff_reserved0__.clear();
+	__int64_reserved0__ = 0;
+	__int_reserved0__ = SHCERT_ENT_ORGANIZATION | SHCERT_CERT_DIGITAL | SHCERT_CERT_SIGN;
+}
+
 uint160 CIdent::GetHash()
 {
-	uint256 hash = SerializeHash(*this);
+	uint256 hash = SerializeHash(*(CEntity *)this);
 	unsigned char *raw = (unsigned char *)&hash;
 	cbuff rawbuf(raw, raw + sizeof(hash));
 	return Hash160(rawbuf);
