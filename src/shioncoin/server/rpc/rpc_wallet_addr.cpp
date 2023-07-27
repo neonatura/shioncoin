@@ -1150,14 +1150,13 @@ Value rpc_wallet_sethdkey(CIface *iface, const Array& params, bool fStratum)
 	return (ret_obj);
 }
 
-#if 0
-Value rpc_wallet_hdkeylist(CIface *iface, const Array& params, bool fStratum)
+Value rpc_wallet_hdlist(CIface *iface, const Array& params, bool fStratum)
 {
 	vector<CTxDestination> vAddr;
 	bool fVerbose = false;
 
 	if (params.size() > 2 || params.size() == 0)
-		throw runtime_error("wallet.addrlist <account> [verbose]\n");
+		throw runtime_error("wallet.hdkeylist <account> [verbose]\n");
 	if (fStratum)
 		throw runtime_error("unsupported operation");
 
@@ -1170,107 +1169,56 @@ Value rpc_wallet_hdkeylist(CIface *iface, const Array& params, bool fStratum)
 		fVerbose = true;
 
 	CAccountCache *account = wallet->GetAccount(strAccount);
-	if (!acc)
+	if (!account)
 		throw JSONRPCError(SHERR_NOENT, "Invalid account name specified.");
 
-
 	CCoinAddr defaultAddr = account->GetDefaultAddr();
+	CAccountAddress maddr(ifaceIndex, defaultAddr.Get());
+
+	Object masterObj;
+	if (fVerbose) {
+		masterObj.push_back(Pair("master", maddr.ToValue()));
+	} else {
+		masterObj.push_back(Pair("master", maddr.ToString()));
+	}
 
 	Object modeObj;
 	for (int nMode = 0; nMode < MAX_ACCADDR; nMode++) {
 		const char *tag = GetPubKeyTag(nMode);
+		CTxDestination pdest;
 		CPubKey pubkey;
 
 		if (!account->GetPrimaryPubKey(nMode, pubkey))
 			continue;
 
-		CKeyID keyid = pubkey.GetID(); 
+		const CKeyID& keyid = pubkey.GetID();
 		CKey *pkey = wallet->GetKey(keyid);
-		if (pkey) {
+		if (!pkey)
+			continue;
 
-			int hdIndex = account->GetHDIndex(nMode, SIGN_ALG_ECDSA);
-			if (hdIndex == 0)
-				continue;
+		int hdIndex = account->GetHDIndex(nMode,
+				pkey->IsDilithium() ? SIGN_ALG_DILITHIUM : SIGN_ALG_ECDSA);
+		if (hdIndex == 0)
+			continue;
 
-			Object ent;
-			CCoinAddr primaryAddr(ifaceIndex, CTxDestination(keyid));
-			if (pkey->hdKeypath.size() != 0) {
-				ent.push_back(Pair(pkey->hdKeypath, primaryAddr.ToString()));
-			} else {
-				ent.push_back(Pair(tag, primaryAddr.ToString()));
-			}
-
-			for (int idx = 0; idx < hdIndex; idx++) {
-			}
-
-			CCoinAddr primaryAddr = 
-			ent.push_back(Pair("primary", C 
-
-			Object primaryobj;
-			primaryObj.push_back(Pair("ecdsa", ent));	
-			Object primaryobj;
-			primaryObj.push_back(Pair(ecpkey->hdKeypath, ent));
+		Object modeObj;
+		CAccountAddress paddr(ifaceIndex, CTxDestination(keyid));
+		if (fVerbose) {
+			modeObj.push_back(Pair("primary", paddr.ToValue()));
+		} else {
+			modeObj.push_back(Pair("primary", paddr.ToString()));
 		}
-		
-		modeObj.push_back(Pair(tag, ent));
+
+		Array chainObj;
+		for (int idx = 0; idx < hdIndex; idx++) {
+		}
+		modeObj.push_back(Pair("chain", chainObj));	
+
+		masterObj.push_back(Pair(tag, modeObj));
 	}
 
-	Object masterObj;
-	masterObj.push_back(Pair(defaultAddr, modeObj));
-
-	Object obj;
-	obj.push_back(Pair(strAccount, masterObj));
-	return (obj);
-
-
-	/* find all addresses that have the given account. */
-	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook)
-	{
-		const string& strName = item.second;
-		if (strName == strAccount) {
-			vAddr.push_back(item.first);
-		}
-	}
-
-#if 0
-	/* handle keys with no account designation. */
-	if (strAccount.length() == 0) {
-		std::set<CKeyID> keys;
-		wallet->GetKeys(keys);
-		BOOST_FOREACH(const CKeyID& key, keys) {
-			if (wallet->mapAddressBook.count(key) == 0) {
-				vAddr.push_back(key);
-			}
-		}
-	}
-#endif
-
-	Array ret;
-	if (!fVerbose) {
-		BOOST_FOREACH(CTxDestination& key, vAddr) {
-			CCoinAddr addr(ifaceIndex, key);
-			ret.push_back(addr.ToString());
-		}
-	} else {
-		const CPubKey& pubkeyDefault = wallet->GetPrimaryPubKey(strAccount);
-		const CKeyID& keyidDefault = pubkeyDefault.GetID();
-		CAccountCache *acc = wallet->GetAccount(strAccount);
-		CKeyID keyid;
-
-		BOOST_FOREACH(CTxDestination& dest, vAddr) {
-			Object ent = rpcwallet_GetVerboseAddr(ifaceIndex, dest);
-#if 0
-			{
-				CCoinAddr addr(wallet->ifaceIndex, dest);
-				if (addr.GetKeyID(keyid) && keyidDefault == keyid)
-					ent.push_back(Pair("default", true));
-			}
-#endif
-			ret.push_back(ent);
-		}
-	}
-
-	return (ret);
+	Object retObj;
+	retObj.push_back(Pair(iface->name, masterObj));
+	return (retObj);
 }
-#endif
 

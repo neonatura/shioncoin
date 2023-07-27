@@ -58,7 +58,7 @@ static int _account_address_flags[MAX_ACCADDR] = {
 #define IS_ACCOUNT(type, flag) \
 	(_account_address_flags[(type)] & (flag))
 
-static const char *GetPubKeyTag(int type)
+const char *GetPubKeyTag(int type)
 {
 
 	if (type < 0 || type >= MAX_ACCADDR)

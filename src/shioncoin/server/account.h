@@ -34,6 +34,8 @@
 
 void GetAddrDestination(int ifaceIndex, const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0);
 
+const char *GetPubKeyTag(int type);
+
 class CAccountCache
 {
 	public:
