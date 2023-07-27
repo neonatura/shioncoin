@@ -1,12 +1,12 @@
 Name:           shioncoin
-Version:        6.2
+Version:        6.3
 Release:        1%{?dist}
 Summary:        The shioncoin virtual currency server.
 
 Group:          System Environment/Libraries
 License:        GPLv3+
 URL:            https://www.shcoins.com/
-Source0:        ftp://ftp.shcoins.com/release/shioncoin/shioncoin-6.2.tar.gz
+Source0:        ftp://ftp.shcoins.com/release/shioncoin/shioncoin-6.3.tar.gz
 
 #Requires:       libshare
 Requires:       info 
@@ -255,5 +255,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/*.a
 
 %changelog
-* Thu Jun 15 2023 Brian Burrell <support@neo-natura.com> - 6.2
+* Thu Jul 27 2023 Brian Burrell <support@neo-natura.com> - 6.3
 - The RPM release version of this package.
