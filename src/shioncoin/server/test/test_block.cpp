@@ -422,7 +422,7 @@ CBlock *test_GenerateBlock(CBlockIndex *pindexPrev)
 	CAccountCache *acc = wallet->GetAccount(sysAccount);
 	CPubKey pubkey;
 
-	if (!acc->CreateNewPubKey(pubkey, 0))
+	if (!acc->CreateNewPubKey(pubkey, ACCADDR_MINER, 0))
 		return (NULL);
 
   CBlock *block = test_CreateNewBlock(pubkey, pindexPrev);

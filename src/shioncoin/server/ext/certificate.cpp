@@ -675,8 +675,10 @@ bool IsCertAccount(CIface *iface, CTransaction& tx, string strAccount)
   if (!ret)
     return (false);
 
-  if (strCertAccount.length() > 0 && strCertAccount.at(0) == '@')
+  if (strCertAccount.length() > 0 &&
+			strCertAccount.substr(0, 1) == CWallet::EXT_ACCOUNT_PREFIX) {
     strCertAccount.erase(0, 1);
+	}
 
   return (strAccount == strCertAccount);
 }
@@ -984,6 +986,7 @@ bool GetTxOfLicense(CIface *iface, const uint160& hash, CTransaction& tx)
 }
 #endif
 
+/* Generate a ECDSA key to sign the certificate with. */
 int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTitle, string hexSeed, int64 nLicenseFee)
 {
   CWallet *wallet = GetWallet(iface);
@@ -999,12 +1002,19 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
   if (count != 0)
     return (SHERR_NOTUNIQ);
 
+	CCoinAddr signAddr(ifaceIndex);
+	if (!GenerateEntityAddress(wallet, strAccount, signAddr)) {
+		return (error(ERR_INVAL, "init_cert_tx: unable to derive certificate address."));
+	}
+#if 0
 	CTxDestination dest;
-	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
-	CCoinAddr addr(wallet->ifaceIndex, dest);
-//  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
-  if (!addr.IsValid())
+	if (!wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest))
+		return (error(ERR_INVAL, "init_cert_tx: unable to derive primary extended key."));
+	CCoinAddr signAddr(wallet->ifaceIndex, dest);
+//  CCoinAddr signAddr = GetAccountAddress(wallet, strAccount, true);
+  if (!signAddr.IsValid())
     return (SHERR_INVAL);
+#endif
 
 	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
   if (!extAddr.IsValid())
@@ -1012,7 +1022,7 @@ int init_cert_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strTit
 
   /* embed cert content into transaction */
 	CTxCreator s_wtx(wallet, strAccount);
-  cert = s_wtx.CreateCert(ifaceIndex, strTitle.c_str(), addr, hexSeed, nLicenseFee);
+  cert = s_wtx.CreateCert(ifaceIndex, strTitle.c_str(), signAddr, hexSeed, nLicenseFee);
 
   int64 nFee = GetCertOpFee(iface, GetBestHeight(iface));
   int64 bal = GetAccountBalance(ifaceIndex, strAccount, 1);
@@ -1089,7 +1099,7 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
       return error(SHERR_ACCESS, "derive_cert_tx: private entity warning: invalid chain certificate coin address.");
     }
 
-		string strExtAccount = "@" + strAccount;
+		string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
     if (strValAccount != strExtAccount) {
       return error(SHERR_ACCESS, "derive_cert_tx: must be certificate owner to derive 'private entity' certificate."); 
     }
@@ -1100,13 +1110,18 @@ int derive_cert_tx(CIface *iface, CWalletTx& wtx, const uint160& hChainCert, str
   if (!chain->VerifySignature(ifaceIndex))
     return error(SHERR_INVAL, "derive_cert_tx: signature integrity error.");
 
+#if 0
 	CTxDestination dest;
 	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
 	CCoinAddr addr(wallet->ifaceIndex, dest);
 //  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
   if (!addr.IsValid())
     return (SHERR_INVAL);
-
+#endif
+	CCoinAddr addr(wallet->ifaceIndex);
+	if (!GenerateEntityAddress(wallet, strAccount, addr)) {
+    return (error(ERR_INVAL, "derive_cert_tx: error generating certificate signing address."));
+	}
 
   /* embed cert content into transaction */
 	CTxCreator s_wtx(wallet, strAccount);
@@ -1369,6 +1384,8 @@ std::string CCertCore::ToString()
   return (write_string(Value(ToValue()), false));
 }
 
+
+
 #if 0
 void CCert::NotifySharenet(int ifaceIndex)
 {
@@ -1597,12 +1614,18 @@ int init_ident_stamp_tx(CIface *iface, std::string strAccount, std::string strCo
 
   int64 nFee = iface->min_tx_fee;
 
+#if 0
 	CTxDestination dest;
 	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
 	CCoinAddr addr(wallet->ifaceIndex, dest);
 //  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
   if (!addr.IsValid())
     return (SHERR_INVAL);
+#endif
+	CCoinAddr addr(wallet->ifaceIndex);
+	if (!GenerateEntityAddress(wallet, strAccount, addr)) {
+    return (error(ERR_INVAL, "init_ident_stamp_tx: error generating certificate signing address."));
+	}
 
   ident = wtx.CreateIdent(ifaceIndex, addr);
   if (!ident)

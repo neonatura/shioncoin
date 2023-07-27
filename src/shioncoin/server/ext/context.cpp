@@ -125,7 +125,8 @@ ctx_list *GetContextTable(int ifaceIndex)
 
 static string StripExtAccountName(string strAccount)
 {
-  if (strAccount.length() != 0 && strAccount.at(0) == '@')
+  if (strAccount.length() != 0 && 
+			strAccount.substr(0, 1) == CWallet::EXT_ACCOUNT_PREFIX)
     strAccount = strAccount.substr(1);
   return (strAccount);
 }
@@ -1037,7 +1038,7 @@ int update_ctx_tx(CIface *iface, CWalletTx& wtx, string strAccount, string strNa
 {
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
-  string strExtAccount = "@" + strAccount;
+  string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
   CContext *ctx;
 	int err;
 

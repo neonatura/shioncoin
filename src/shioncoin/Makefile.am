@@ -480,7 +480,7 @@ install-exec-hook:
 	systemctl daemon-reload 
 	systemctl disable shcoind
 	systemctl enable shcoind
-	[ -e /etc/systemd/system/shcoind.service ] || ln -sf  /usr/lib/systemd/system/shcoind.service /etc/systemd/system/shcoind.service
+#	[ -e /etc/systemd/system/shcoind.service ] || ln -sf  /usr/lib/systemd/system/shcoind.service /etc/systemd/system/shcoind.service
 
 uninstall-hook:
 	rm -f $(SYSD_FILE) /etc/systemd/system/shcoind.service

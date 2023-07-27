@@ -278,9 +278,8 @@ bool VerifyChannel(CTransaction& tx)
 
   /* core verification */
   if (!IsChannelTx(tx)) {
-//fprintf(stderr, "DEBUG: VerifyChannel: !IsChannelTx\n");
-    return (false); /* tx not flagged as channel */
-}
+		return (false); /* tx not flagged as channel */
+	}
 
   /* verify hash in pub-script matches channel hash */
   nOut = IndexOfExtOutput(tx);
@@ -561,7 +560,7 @@ bool CChannelKey::GenerateMasterKey(CWallet *wallet, string strAccount)
 //  wallet->SetMinVersion(FEATURE_COMPRPUBKEY);
 
   cbuff vchPubKey = key.GetPubKey().Raw();
-  string strExtAccount = "@" + strAccount;
+  string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
   wallet->SetAddressBookName(CPubKey(vchPubKey).GetID(), strExtAccount);
   if (!wallet->AddKey(key))
     return error(SHERR_INVAL, "GenerateChannelPubKey: AddKey failed");
@@ -707,9 +706,8 @@ error(SHERR_INVAL, "!origin->GetPubKey");
     return (false);
 }
   if (origin->hdpubkey != buff) {
-//fprintf(stderr, "DEBUG: CChanel.VerifyPubKey: origin->hdpubkey(%s) != buff(%s)", HexStr(origin->hdpubkey).c_str(), HexStr(buff).c_str());
-    return (false);
-}
+		return (false);
+	}
 
   buff.clear();
   if (!peer->GetPubKey(buff, nSeq)) {
@@ -737,14 +735,12 @@ int init_channel_tx(CIface *iface, string strAccount, int64 nValue, CCoinAddr& r
     return (SHERR_INVAL);
 
   if (nValue <= (iface->min_tx_fee*2)) {
-//fprintf(stderr, "DEBUG: init_channel_tx: nValue(%llu) < min-fee*2\n", nValue);
-    return (SHERR_INVAL);
-}
+		return (SHERR_INVAL);
+	}
 
   if (!rem_addr.IsValid()) {
-//fprintf(stderr, "DEBUG: init_channel_tx: !rem_addr.IsValid()\n");
-    return (SHERR_INVAL);
-}
+		return (SHERR_INVAL);
+	}
 
   
 
@@ -758,9 +754,8 @@ int init_channel_tx(CIface *iface, string strAccount, int64 nValue, CCoinAddr& r
   wtx.strFromAccount = strAccount; /* originating account for payment */
   channel = wtx.CreateChannel(addr, rem_addr, nValue - iface->min_tx_fee); 
   if (!channel) {
-//fprintf(stderr, "DEBUG: init_channel_tx:  !wtx.CreateChannel()\n");
-    return (SHERR_INVAL);
-}
+		return (SHERR_INVAL);
+	}
 
   /* generate funding and transmit public keys for p2sh */
   if (!channel->GetOrigin()->GenerateMasterKey(wallet, strAccount)) {
@@ -898,9 +893,8 @@ int pay_channel_tx(CIface *iface, string strAccount, uint160 hChan, CCoinAddr pa
     return (SHERR_OPNOTSUPP);
 
 	if (!GetOpenChannel(ifaceIndex, hChan, txIn)) {
-//fprintf(stderr, "DEBUG: GetOpenChannel: failure opening hChan '%s'\n", hChan.GetHex().c_str());
 		return (SHERR_NOENT);
-}
+	}
 
   CChannel& chanIn = txIn.channel;
 
@@ -959,9 +953,8 @@ error(SHERR_NOENT, "pay_channel_tx: unknown destination address specified.");
   }
 
   if (!channel->GeneratePubKey()) {
-//fprintf(stderr, "DEBUG: pay_channel_tx: !channel->GeneratePubKey\n"); 
-return (SHERR_INVAL);
-}
+		return (SHERR_INVAL);
+	}
 
 
   if (isOrigin) {

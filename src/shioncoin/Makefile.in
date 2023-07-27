@@ -8972,7 +8972,7 @@ uninstall-am: uninstall-sbinPROGRAMS
 @HAVE_SYSTEMCTL_TRUE@	systemctl daemon-reload 
 @HAVE_SYSTEMCTL_TRUE@	systemctl disable shcoind
 @HAVE_SYSTEMCTL_TRUE@	systemctl enable shcoind
-@HAVE_SYSTEMCTL_TRUE@	[ -e /etc/systemd/system/shcoind.service ] || ln -sf  /usr/lib/systemd/system/shcoind.service /etc/systemd/system/shcoind.service
+#	[ -e /etc/systemd/system/shcoind.service ] || ln -sf  /usr/lib/systemd/system/shcoind.service /etc/systemd/system/shcoind.service
 
 @HAVE_SYSTEMCTL_TRUE@uninstall-hook:
 @HAVE_SYSTEMCTL_TRUE@	rm -f $(SYSD_FILE) /etc/systemd/system/shcoind.service

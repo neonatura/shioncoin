@@ -182,7 +182,6 @@ _TEST(sip25_assettx)
 	/* perform asset renewal. */
 	CWalletTx a_wtx(wallet);
   err = activate_asset_tx(iface, xferStrLabel, hashAsset, 0, a_wtx);
-fprintf(stderr, "DEBUG: %d = activate_asset_tx()\n", err);
   _TRUE(0 == err);
   _TRUE(a_wtx.CheckTransaction(TEST_COIN_IFACE)); /* .. */
   _TRUE(a_wtx.VerifyAsset(TEST_COIN_IFACE) == true);
@@ -199,8 +198,6 @@ fprintf(stderr, "DEBUG: %d = activate_asset_tx()\n", err);
 	CTransaction a_tx;
 	_TRUEPTR(GetAssetByHash(iface, hashAsset, a_tx));
 	CAsset *a_asset = a_tx.GetAsset();
-fprintf(stderr, "DEBUG: TEST: RENEW ASSET: a_asset %s\n", a_asset->ToString().c_str());
-fprintf(stderr, "DEBUG: TEST: RENEW ASSET: a_wtx.GetAsset %s\n", a_wtx.GetAsset()->ToString().c_str());
 	_TRUEPTR(a_asset);
 	_TRUE(a_asset->GetHash() == a_wtx.GetAsset()->GetHash());
 	_TRUE(a_asset->VerifyContentChecksum() == true);

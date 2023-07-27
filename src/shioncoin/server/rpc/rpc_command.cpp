@@ -94,10 +94,14 @@ string AccountFromValue(const Value& value)
 {
   string strAccount = value.get_str();
 
-  if (strAccount == "*")
+  if (strAccount == "*") {
     throw JSONRPCError(-11, "Invalid account name");
-  if (strAccount.length() > 0 && strAccount.at(0) == '@')
+	}
+
+  if (strAccount.length() > 0 &&
+			strAccount.substr(0, 1) == CWallet::EXT_ACCOUNT_PREFIX) {
     throw JSONRPCError(-11, "Invalid account name");
+	}
 
   return strAccount;
 }
@@ -1103,10 +1107,10 @@ Value rpc_msg_sign(CIface *iface, const Array& params, bool fStratum)
 
   string strMessageMagic;
   if (0 == strcasecmp(iface->name, "emc2"))
-    strMessage.append("Einsteinium");
+    strMessageMagic.append("Einsteinium");
   else
-    strMessage.append(iface->name);
-  strMessage.append(" Signed Message:\n");
+    strMessageMagic.append(iface->name);
+  strMessageMagic.append(" Signed Message:\n");
 
   CDataStream ss(SER_GETHASH, 0);
   ss << strMessageMagic;
@@ -1151,10 +1155,10 @@ Value rpc_msg_verify(CIface *iface, const Array& params, bool fStratum)
 
   string strMessageMagic;
   if (0 == strcasecmp(iface->name, "emc2"))
-    strMessage.append("Einsteinium");
+    strMessageMagic.append("Einsteinium");
   else
-    strMessage.append(iface->name);
-  strMessage.append(" Signed Message:\n");
+    strMessageMagic.append(iface->name);
+  strMessageMagic.append(" Signed Message:\n");
 
   CDataStream ss(SER_GETHASH, 0);
   ss << strMessageMagic;

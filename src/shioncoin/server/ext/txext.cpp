@@ -264,6 +264,7 @@ bool CSign::SignAddress(int ifaceIndex, CCoinAddr& addr, unsigned char *data, si
   if (!addr.GetKeyID(keyID))
     return error(SHERR_INVAL, "Address does not refer to key");
 
+#if 0
   ECKey key;
   if (!wallet->GetECKey(keyID, key))
     return error(SHERR_INVAL, "Private key not available");
@@ -273,6 +274,17 @@ bool CSign::SignAddress(int ifaceIndex, CCoinAddr& addr, unsigned char *data, si
 
   vector<unsigned char> vchSig;
   if (!key.SignCompact(hashData, vchSig))
+    return error(SHERR_INVAL, "Sign failed");
+#endif
+  CKey *key = wallet->GetKey(keyID);
+  if (!key)
+    return error(SHERR_INVAL, "Private key not available");
+
+  cbuff vchData(data, data + data_len);
+  uint256 hashData = uint256(vchData);
+
+  vector<unsigned char> vchSig;
+  if (!key->SignCompact(hashData, vchSig))
     return error(SHERR_INVAL, "Sign failed");
 
   nAlg |= ALG_U160;

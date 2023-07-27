@@ -223,12 +223,14 @@ int TESTNETWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpd
   return ret;
 }
 #endif
+#if 0
 int TESTNETWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {
   if (pindexStart)
     InitServiceWalletEvent(this, pindexStart->nHeight);
   return (0);
 }
+#endif
 
 int64 TESTNETWallet::GetTxFee(CTransaction tx)
 {

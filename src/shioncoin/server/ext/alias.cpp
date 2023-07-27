@@ -49,6 +49,16 @@ alias_list *GetAliasTable(int ifaceIndex)
   return (&wallet->mapAlias);
 }
 
+aliasarch_list *GetAliasArchTable(int ifaceIndex)
+{
+  if (ifaceIndex < 0 || ifaceIndex >= MAX_COIN_IFACE)
+    return (NULL);
+  CWallet *wallet = GetWallet(ifaceIndex);
+  if (!wallet)
+    return (NULL);
+  return (&wallet->mapAliasArch);
+}
+
 #if 0
 alias_list *GetAliasPendingTable(int ifaceIndex)
 {
@@ -369,7 +379,9 @@ CAlias *GetAliasByName(CIface *iface, string label, CTransaction& tx)
   if (!GetTxOfAlias(iface, label, tx))
     return (NULL);
 
-  alias = &tx.alias;
+  alias = tx.GetAlias();
+	if (!alias)
+		return (NULL);
   if (alias->IsExpired())
     return (NULL);
 
@@ -481,8 +493,11 @@ bool RemoveAliasTx(CIface *iface, CTransaction& tx)
   wallet->mapAliasArch[cur_tx] = strTitle;
 
   /* erase current */
+	/*
   uint256 blank_hash;
   wallet->mapAlias[strTitle] = blank_hash;
+	*/
+  wallet->mapAlias.erase(strTitle);
 
   return (true);
 }
@@ -609,29 +624,10 @@ Object CAlias::ToValue(int ifaceIndex)
 {
   Object obj = CEntity::ToValue();
 
-/* TODO: custimize CIDent::TOValue */
+  obj.push_back(Pair("hash", GetHash().GetHex()));
+
   if (GetType() == ALIAS_COINADDR) {
     obj.push_back(Pair("type-name", "coinaddr"));
-
-#if 0
-		CCoinAddr addr(ifaceIndex);
-		if (GetCoinAddr(ifaceIndex, addr)) {
-			CCoinAddr addr;
-			CKeyID keyid;
-			if (addr.GetKeyID(keyid)) {
-				CWallet *wallet = GetWallet(ifaceIndex);
-				Array addr_list;
-				vector<CTxDestination> vDest;
-
-				GetAddrDestination(wallet->ifaceIndex, keyid, vDest);
-				BOOST_FOREACH(const CTxDestination& destTmp, vDest) {
-					CCoinAddr addrTmp(ifaceIndex, destTmp);
-					addr_list.push_back(addrTmp.ToString());
-				}
-				obj.push_back(Pair("address", addr_list));
-			}
-		}
-#endif
   }
 
   return (obj);
@@ -797,7 +793,8 @@ int update_alias_addr_tx(CIface *iface, const char *title, CCoinAddr& addr, CWal
   if (!GetCoinAddr(wallet, addrIn, strAccountIn))
     return (SHERR_REMOTE);
 
-	if (strAccount.substr(0, 1) == "@")
+	if (strAccount.size() != 0 &&
+			strAccount.substr(0, 1) == CWallet::EXT_ACCOUNT_PREFIX)
 		strAccount = strAccount.substr(1, strAccount.length());
 
 #if 0

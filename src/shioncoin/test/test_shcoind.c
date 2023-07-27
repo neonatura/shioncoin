@@ -60,6 +60,7 @@ extern TEST_coin_spendall(CuTest*);
 extern TEST_coin_spendall_segwit(CuTest*);
 extern TEST_sip10_ctxtx(CuTest*);
 extern TEST_sip10_di_ctxtx(CuTest*);
+extern TEST_sip10_geo_ctxtx(CuTest*);
 extern TEST_scriptid(CuTest*);
 extern TEST_segwit(CuTest*);
 extern TEST_segwit_serializetx(CuTest*);
@@ -78,6 +79,7 @@ extern TEST_bip32_hdkey(CuTest *);
 extern TEST_sip33_hdkey(CuTest *);
 extern TEST_sip33_tx(CuTest*);
 extern TEST_account_cache(CuTest*);
+extern TEST_account_addr(CuTest*);
 
 
 extern void test_shcoind_init(void);
@@ -134,6 +136,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_exectx);
 #endif
   SUITE_ADD_TEST(suite, TEST_sip10_ctxtx);
+  SUITE_ADD_TEST(suite, TEST_sip10_geo_ctxtx);
   SUITE_ADD_TEST(suite, TEST_scriptid);
   SUITE_ADD_TEST(suite, TEST_chainwork);
   SUITE_ADD_TEST(suite, TEST_offertx);
@@ -159,6 +162,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_bech32); /* BIP173 */
   SUITE_ADD_TEST(suite, TEST_sip33_tx); /* SIP33 */
   SUITE_ADD_TEST(suite, TEST_account_cache);
+  SUITE_ADD_TEST(suite, TEST_account_addr);
 
 	/* dilithium SIP33 */
   SUITE_ADD_TEST(suite, TEST_sip6_di_aliastx);

@@ -131,7 +131,7 @@ class DIKey : public CKey
 
     bool IsValid(); /* CKey */
 
-    void MergeKey(CKey& childKey, cbuff tag);
+    void MergeKey(CKey *masterKey, cbuff tag); /* CKey */
 
 		bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc);
 

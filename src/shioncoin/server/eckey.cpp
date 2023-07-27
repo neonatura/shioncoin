@@ -29,6 +29,10 @@
 #include "key.h"
 #include "eckey.h"
 #include "hmac_sha512.h"
+// for shake
+#include "pqclean_dilithium3_clean/sha3.h"
+#include "pqclean_dilithium3_clean/fips202.h"
+//#include "di3.h"
 
 static secp256k1_context* secp256k1_context_sign = NULL;
 
@@ -492,6 +496,7 @@ bool ECKey::IsValid()
   return secp256k1_ec_seckey_verify(secp256k1_context_sign, vch.data());
 }
 
+#if 0
 static void _keyxor(unsigned char *buf, unsigned char *alt, size_t size)
 {
   int i;
@@ -501,8 +506,7 @@ static void _keyxor(unsigned char *buf, unsigned char *alt, size_t size)
   }
 
 }
-
-static cbuff ckey_MergeKey(cbuff secret, cbuff tag)
+static cbuff eckey_MergeKey(cbuff secret, cbuff tag)
 {
   bool fCompr;
   uint256 pkey;
@@ -523,30 +527,50 @@ static cbuff ckey_MergeKey(cbuff secret, cbuff tag)
   /* create a key secret */
   return (cbuff(raw, raw + 32));
 }
+#endif
+static cbuff eckey_MergeKey(cbuff secret, cbuff tag)
+{
+	static const uint8_t version = 1;
+  unsigned char output[ECKey::ECDSA_SECRET_SIZE];
+
+	memset(output, 0, sizeof(output));
+
+	{
+		shake256incctx state;
+		shake256_inc_init(&state);
+		shake256_inc_absorb(&state, (const uint8_t *)secret.data(), (size_t)secret.size());
+		shake256_inc_absorb(&state, (const uint8_t *)&version, 1);
+		shake256_inc_absorb(&state, (const uint8_t *)tag.data(), (size_t)tag.size());
+		shake256_inc_finalize(&state);
+		shake256_inc_squeeze(output, ECKey::ECDSA_SECRET_SIZE, &state);
+	}
+
+  /* create a key secret */
+  return (cbuff(output, output + ECKey::ECDSA_SECRET_SIZE));
+}
 
 /**
  * Create a new derived key given a "tag" context.
  * @param tag A salt to purturb the calculation.
  */ 
-void ECKey::MergeKey(CKey& childKey, cbuff tag)
+void ECKey::MergeKey(CKey *masterKey, cbuff tag)
 {
-  cbuff secret(vch.begin(), vch.end());
+	bool fCompressed = false;
+	const CSecret& vchSecret = masterKey->GetSecret(fCompressed);
+//  cbuff secret(vch.begin(), vch.end());
+  cbuff secret(vchSecret.begin(), vchSecret.end());
   cbuff kbuff;
   unsigned char test_vch[32];
 
   kbuff = secret;
-  do {
-    kbuff = ckey_MergeKey(kbuff, tag); 
-    memcpy(test_vch, kbuff.data(), sizeof(test_vch));
-  } while (!secp256k1_ec_seckey_verify(secp256k1_context_sign, test_vch));
+	do {
+		kbuff = eckey_MergeKey(kbuff, tag); 
+		memcpy(test_vch, kbuff.data(), sizeof(test_vch));
+	} while (!secp256k1_ec_seckey_verify(secp256k1_context_sign, test_vch));
 
   /* create a key to return */
-  ECKey key;
   CSecret ksec(kbuff.begin(), kbuff.end());
-  key.SetSecret(ksec, fCompressedPubKey);
-
-	childKey = key;
-//  return (key);
+  SetSecret(ksec, true);
 }
 
 void BIP32Hash(const ChainCode &chainCode, unsigned int nChild, unsigned char header, const unsigned char data[32], unsigned char output[64])

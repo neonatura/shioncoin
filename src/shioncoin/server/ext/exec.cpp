@@ -152,8 +152,12 @@ static vector<string> json2vector(shjson_t *obj, char *var_name)
 
 static string StripExtAccountName(string strAccount)
 {
-  if (strAccount.length() != 0 && strAccount.at(0) == '@')
+
+  if (strAccount.length() != 0 && 
+			strAccount.substr(0, 1) == CWallet::EXT_ACCOUNT_PREFIX) {
     strAccount = strAccount.substr(1);
+	}
+
   return (strAccount);
 }
 
@@ -1347,7 +1351,9 @@ static bool SetExecLabel(CExec *exec, sexe_mod_t *mod)
 
 	/* skip reserved chars */
 	text = mod->name;
-	if (*text == '@') text++;
+	if (0 == strncmp(text, CWallet::EXT_ACCOUNT_PREFIX, 1)) {
+		text++;
+	}
 
 	/* define filename */
 	memset(path, 0, sizeof(path));

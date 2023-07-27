@@ -378,6 +378,7 @@ static int stratum_request_account_secret(int ifaceIndex, user_t *user, char *ha
   return (err);
 }
 
+#if 0
 static int stratum_request_account_import(int ifaceIndex, user_t *user, char *hash, const char *privaddr_str)
 {
   shjson_t *reply;
@@ -397,6 +398,7 @@ static int stratum_request_account_import(int ifaceIndex, user_t *user, char *ha
 
   return (err);
 }
+#endif
 
 static int stratum_request_account_tx(int ifaceIndex, user_t *user, char *account, char *pkey_str)
 {

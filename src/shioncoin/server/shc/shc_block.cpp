@@ -325,7 +325,6 @@ CBlock* shc_CreateNewBlock(const CPubKey& rkey)
     ret = BlockGenerateSpringMatrix(iface, pblock->vtx[0], reward);
   pblock->vtx[0].vout[0].nValue = reward; 
 
-
   /* define core header */
   pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
   pblock->hashMerkleRoot = pblock->BuildMerkleTree();

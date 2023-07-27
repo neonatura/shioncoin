@@ -432,3 +432,67 @@ CKeyMetadata *CBasicKeyStore::GetKeyMetadata(const CKeyID &address) const
 	return ((CKeyMetadata *)key);
 }
 
+void CBasicKeyStore::GetECKeys(std::set<CKeyID> &setAddress) const
+{
+	{
+		setAddress.clear();
+		{
+			LOCK(cs_KeyStore);
+			ECKeyMap::const_iterator mi = mapECKeys.begin();
+			while (mi != mapECKeys.end())
+			{
+				setAddress.insert((*mi).first);
+				mi++;
+			}
+		}
+		{
+			LOCK(cs_KeyStore);
+			DIKeyMap::const_iterator mi = mapDIKeys.begin();
+			while (mi != mapDIKeys.end())
+			{
+				setAddress.insert((*mi).first);
+				mi++;
+			}
+		}
+	}
+}
+
+void CBasicKeyStore::GetDIKeys(std::set<CKeyID> &setAddress) const
+{
+	{
+		setAddress.clear();
+		{
+			LOCK(cs_KeyStore);
+			ECKeyMap::const_iterator mi = mapECKeys.begin();
+			while (mi != mapECKeys.end())
+			{
+				setAddress.insert((*mi).first);
+				mi++;
+			}
+		}
+		{
+			LOCK(cs_KeyStore);
+			DIKeyMap::const_iterator mi = mapDIKeys.begin();
+			while (mi != mapDIKeys.end())
+			{
+				setAddress.insert((*mi).first);
+				mi++;
+			}
+		}
+	}
+}
+
+void CBasicKeyStore::GetKeys(std::set<CKeyID> &setAddress) const
+{
+	set<CKeyID> ecKeys;
+	set<CKeyID> diKeys;
+
+	setAddress.clear();
+
+	GetECKeys(ecKeys);
+	setAddress.insert(ecKeys.begin(), ecKeys.end());
+
+	GetDIKeys(diKeys);
+	setAddress.insert(diKeys.begin(), diKeys.end());
+}
+

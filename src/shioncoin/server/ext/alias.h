@@ -137,9 +137,7 @@ class CWalletTx;
 
 alias_list *GetAliasTable(int ifaceIndex);
 
-alias_list *GetAliasPendingTable(int ifaceIndex);
-
-
+aliasarch_list *GetAliasArchTable(int ifaceIndex);
 
 bool IsAliasTx(const CTransaction& tx);
 

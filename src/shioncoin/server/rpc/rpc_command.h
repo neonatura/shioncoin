@@ -27,7 +27,6 @@
 #define __SERVER__RPCCOMMAND_PROTO_H__
 
 
-
 #include <string>
 #include <list>
 #include <map>
@@ -101,7 +100,8 @@ Value rpc_wallet_witaddr(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_addrlist(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_balance(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_export(CIface *iface, const Array& params, bool fStratum);
-Value rpc_wallet_exportdat(CIface *iface, const Array& params, bool fStratum);
+//Value rpc_wallet_exportdat(CIface *iface, const Array& params, bool fStratum);
+Value rpc_wallet_export_account(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_get(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_info(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_cscript(CIface *iface, const Array& params, bool fStratum);
@@ -135,8 +135,11 @@ Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_keyremove(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_fee(CIface *iface, const Array& params, bool fStratum);
-
+Value rpc_wallet_burn(CIface *iface, const Array& params, bool fStratum); 
 Value rpc_wallet_extaddrlist(CIface *iface, const Array& params, bool fStratum);
+Value rpc_wallet_hdkey(CIface *iface, const Array& params, bool fStratum);
+Value rpc_wallet_sethdkey(CIface *iface, const Array& params, bool fStratum);
+
 
 #endif /* ndef __SERVER__RPCCOMMAND_PROTO_H__ */
 

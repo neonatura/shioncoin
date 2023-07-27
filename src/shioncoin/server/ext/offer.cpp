@@ -40,7 +40,7 @@ static CPubKey GetAccountPubKey(CWallet *wallet, string strAccount)
 {
 	static CPubKey pubkey;
 	CAccountCache *acc = wallet->GetAccount(strAccount);
-	acc->CreateNewPubKey(pubkey, 0);
+	acc->CreateNewPubKey(pubkey, ACCADDR_RECV, 0);
 	return (pubkey);
 }
 
@@ -683,12 +683,12 @@ std::string OfferHoldAltCoin(CIface *iface, string strAccount, COffer *offer, in
 
 	CCoinAddr xferAddr(ifaceIndex);
 	if (ifaceIndex == COLOR_COIN_IFACE) {
-		string strExtAccount = "@" + offer->hashColor.GetHex();
+		string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + offer->hashColor.GetHex();
 		xferAddr = GetAccountAddress(wallet, strExtAccount);
 		if (!xferAddr.IsValid())
 			return string("error generating holding account");
 	} else {
-		string strExtAccount = "@" + strAccount;
+		string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
 		xferAddr = GetAccountAddress(wallet, strExtAccount);
 		if (!xferAddr.IsValid())
 			return string("error generating holding account");
@@ -1230,7 +1230,7 @@ int init_offer_tx(CIface *iface, std::string strAccount, int altIndex, int64 nMi
 	offer->nMaxValue = nMaxValue;
 	offer->nRate = (int64)(dRate * COIN);
 
-	string strExtAccount = "@" + strAccount;
+	string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
 	CPubKey extAddr = GetAccountPubKey(wallet, strExtAccount);
 
 	CPubKey payAddr = GetAccountPubKey(wallet, strAccount);

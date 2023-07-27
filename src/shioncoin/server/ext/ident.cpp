@@ -323,12 +323,18 @@ int init_ident_donate_tx(CIface *iface, string strAccount, uint64_t nValue, uint
 	CTransaction tx;
 	bool hasCert = GetTxOfCert(iface, hashCert, tx);
 
+#if 0
 	CTxDestination dest;
 	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
 	CCoinAddr addr(wallet->ifaceIndex, dest);
 	//  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
 	if (!addr.IsValid())
 		return (SHERR_INVAL);
+#endif
+	CCoinAddr addr(wallet->ifaceIndex);
+	if (!GenerateEntityAddress(wallet, strAccount, addr)) {
+    return (error(ERR_INVAL, "init_ident_dontate_tx: error generating certificate signing address."));
+	}
 
 	CTxCreator t_wtx(wallet, strAccount); /* first tx */
 	if (hasCert) {
@@ -419,12 +425,18 @@ int init_ident_stamp_tx(CIface *iface, std::string strAccount, std::string strCo
 
 	int64 nFee = iface->min_tx_fee;
 
+#if 0
 	CTxDestination dest;
 	wallet->GetAccount(strAccount)->GetPrimaryAddr(ACCADDR_EXT, dest);
 	CCoinAddr addr(wallet->ifaceIndex, dest);
 	//  CCoinAddr addr = GetAccountAddress(wallet, strAccount, true);
 	if (!addr.IsValid())
 		return (SHERR_INVAL);
+#endif
+	CCoinAddr addr(wallet->ifaceIndex);
+	if (!GenerateEntityAddress(wallet, strAccount, addr)) {
+    return (error(ERR_INVAL, "init_ident_stamp_tx: error generating certificate signing address."));
+	}
 
 	ident = wtx.CreateIdent(ifaceIndex, addr);
 	if (!ident)

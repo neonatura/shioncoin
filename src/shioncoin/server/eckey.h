@@ -66,6 +66,8 @@ class ECKey : public CKey
 
 	public:
 
+    static const unsigned int ECDSA_SECRET_SIZE = 32;
+
     ECKey()
 		{
 			SetNull();
@@ -126,7 +128,7 @@ class ECKey : public CKey
 
     bool IsValid(); /* CKey */
 
-    void MergeKey(CKey& childKey, cbuff tag);
+    void MergeKey(CKey *masterKey, cbuff tag); /* CKey */
 
 		bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc);
 

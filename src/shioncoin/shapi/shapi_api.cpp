@@ -52,7 +52,7 @@ extern double print_rpc_difficulty(CBigNum val);
 extern unsigned int GetDailyTxRate(CIface *iface); /* rpc_command.cpp */
 extern double GetAverageBlockSpan(CIface *iface);
 extern Value GetNetworkHashPS(int ifaceIndex, int lookup); /* rpc_parse.cpp */ 
-extern void rpcwallet_GetVerboseAddr(CWallet *wallet, CAccountCache *acc, CTxDestination dest, Object& ent);
+extern Object rpcwallet_GetVerboseAddr(int ifaceIndex, CTxDestination destination);
 
 static std::string HexBits(unsigned int nBits)
 {
@@ -214,7 +214,7 @@ static const ApiItems& shapi_api_account_create(int ifaceIndex, string strAccoun
 
 		CPubKey pubkey;
 		CAccountCache *acc = alt_wallet->GetAccount(strAccount);
-		if (!acc->CreateNewPubKey(pubkey, 0))
+		if (!acc->CreateNewPubKey(pubkey, ACCADDR_RECV, 0))
 			continue;
 		const CKeyID& keyID = pubkey.GetID();
 
@@ -871,8 +871,8 @@ static const ApiItems& shapi_api_account_addr(int ifaceIndex, string strAccount,
 
 	result.push_back(Pair("account", account->strAccount));
 
-	addr = account->GetAddr(ACCADDR_HDKEY);
-	result.push_back(Pair("primary", addr.ToString()));
+//	addr = account->GetAddr(ACCADDR_HDKEY);
+//	result.push_back(Pair("primary", addr.ToString()));
 
 	addr = account->GetAddr(ACCADDR_RECV);
 	result.push_back(Pair("receive", addr.ToString()));
@@ -908,8 +908,8 @@ static const ApiItems& shapi_api_account_addrlist(int ifaceIndex, string strAcco
 	static ApiItems items;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   CWallet *wallet = GetWallet(ifaceIndex);
-	CAccountCache *acc = wallet->GetAccount(strAccount);
-	int64 now = (int64)time(NULL);
+//	CAccountCache *acc = wallet->GetAccount(strAccount);
+//	int64 now = (int64)time(NULL);
 
 	items.clear();
 	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, wallet->mapAddressBook) {
@@ -917,9 +917,7 @@ static const ApiItems& shapi_api_account_addrlist(int ifaceIndex, string strAcco
 		if (strName != strAccount)
 			continue;
 
-		Object result;
-		rpcwallet_GetVerboseAddr(wallet, acc, item.first, result);
-		items.push_back(result);
+		items.push_back(rpcwallet_GetVerboseAddr(ifaceIndex, item.first));
 	}
 
   return (items);

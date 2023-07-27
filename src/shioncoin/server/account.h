@@ -31,16 +31,6 @@
 #include "keystore.h"
 #include "script.h"
 #include "coin.h"
-#include "account.h"
-
-/* use segwit program, if available. */
-#define ACCADDRF_WITNESS (1 << 0)
-/* derived via hdkey, if available. */
-#define ACCADDRF_DERIVE (1 << 1)
-/* always the same address returned */
-#define ACCADDRF_STATIC (1 << 2)
-/* permit dilithium signature */
-#define ACCADDRF_DILITHIUM (1 << 3)
 
 void GetAddrDestination(int ifaceIndex, const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0);
 
@@ -124,18 +114,11 @@ class CAccountCache
 
 		bool CreateNewAddr(CTxDestination& addrRet, int type, int flags);
 
-		bool CreateNewPubKey(CPubKey& addrRet, int flags);
+		bool CreateNewPubKey(CPubKey& addrRet, int type, int flags);
 
-		/**
-		 * When the ACCADDRF_DILITHIUM flag is passed in then only the bech32 Witness v14 address is returned, and otherwise a pubkey, pubkey-script, witness, and bech32 is returned based on blockchain capability.
-		 * @param nFlag ACCADDRF_XX
-		 */
-		void GetAddrDestination(const CKeyID& keyid, vector<CTxDestination>& vDest, int nFlag = 0)
-		{
-			::GetAddrDestination(wallet->ifaceIndex, keyid, vDest, nFlag);
-		}
+		bool GetMergedPubKey(CKey *pkey, int nAlg, cbuff tag, CPubKey& pubkey);
 
-		void SetAddrDestinations(const CKeyID& keyid);
+		bool GetMergedPubKey(int nMode, int nAlg, cbuff tag, CPubKey& pubkey);
 
 		bool GetMergedPubKey(cbuff tag, CPubKey& pubkey);
 
@@ -153,9 +136,200 @@ class CAccountCache
 			return (GetMergedAddr(tagbuf, addr));
 		}
 
-		bool SetCertHash(const uint160& hCert);
+		bool SetAliasHash(const uint160& hAlias);
 
-		uint160 GetCertHash() const;
+		uint160 GetAliasHash() const;
+
+		CAccountCache *GetExtAccount();
+
+		int GetAddrMode(const CTxDestination& addr);
+
+		uint GetHDIndex(int nMode, int nAlg);
+
+		void IncrementHDIndex(int nMode, int nAlg);
+
+		void ResetHDIndex();
+
+		bool CalculateHDIndex(vector<CTxDestination>& vAddr, int nMode, int nAlg, int nMinCount = 0);
+
+		void CalculateECKeyChain(vector<CTxDestination>& vAddr, int nType, int nMinCount);
+
+		void CalculateDIKeyChain(vector<CTxDestination>& vAddr, int nMode, int nMinCount);
+
+		bool GetCoinbasePubKey(CPubKey& pubkeyRet);
+
+		CCoinAddr GetCoinbaseAddr();
+
+		bool AddKey(ECKey& key);
+
+		bool AddKey(DIKey& key);
+
+		/**
+		 * When the ACCADDRF_DILITHIUM flag is passed in then only the bech32 Witness v14 address is returned, and otherwise a pubkey, pubkey-script, witness, and bech32 is returned based on blockchain capability.
+		 * @param nFlag ACCADDRF_XX
+		 */
+		void CalcAddressBook(const CKeyID& keyid, vector<CTxDestination>& vDest, bool fDilithium);
+
+		void CalcAddressBook(CKey *key, vector<CTxDestination>& vDest);
+
+		void SetAddressBook(const CKeyID& keyid, vector<CTxDestination>& vDest, bool fDilithium);
+
+		void SetAddressBook(CKey *key, vector<CTxDestination>& vDest);
+
+		CTxDestination GetDestination(const CKeyID& keyid, int nFlag);
+
+		CTxDestination GetDestination(CKey *key);
+
+    bool GenerateNewECKey(CPubKey& pubkeyRet, bool fCompressed = true, int nFlag = 0);
+
+    bool GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag = 0);
+
+
+protected:
+    bool DerivePrimaryKey(CPubKey& pubkeyRet, int nType = 0);
+
+    bool GeneratePrimaryKey(CPubKey& pubkeyRet, int nType = 0);
+
+		CKey *GetPrimaryKey(int nMode, int nAlg);
+
+};
+
+class CAccountAddress : public CCoinAddr
+{
+
+	public:
+		CWallet *wallet;
+//		CAccountCache *account;
+//		CTxDestination destination;
+		CKeyID keyid;
+
+//		CScript scriptPubKey;
+//		vector<CTxDestination> addresses;
+		txnouttype nOutputType;
+//		int nRequired;
+
+		bool fWitness;
+		int nWitnessVersion;
+		int nWitnessSize;
+
+//		bool fScript;
+//		CScriptID scriptID;
+		CScript script;
+
+		CAccountAddress(int ifaceIndexIn) : CCoinAddr(ifaceIndexIn) {
+			SetNull();
+			Init();
+    }
+
+		CAccountAddress(int ifaceIndexIn, const CTxDestination& destinationIn) : CCoinAddr(ifaceIndexIn) {
+			SetNull();
+			Set(destinationIn);
+			Init();
+    }
+
+		CAccountAddress(int ifaceIndexIn, const std::string& strAddressIn) : CCoinAddr(ifaceIndexIn) {
+			SetNull();
+			SetString(strAddressIn);
+			Init();
+    }
+
+		void SetNull();
+
+		void Init();
+
+		/*
+		void SetCreateTime(time_t nCreateTimeIn) 
+		{
+			nCreateTime = nCreateTimeIn;
+		}
+
+		time_t GetCreateTime()
+		{
+			return (nCreateTime);
+		}
+		*/
+
+		bool IsDefault();
+
+		bool IsMine();
+
+		CAccountCache *GetAccountCache();
+
+		CAccount *GetAccount();
+
+		CTxDestination GetDestination();
+
+		CScript GetScriptPubKey();
+
+		bool GetScriptID(CScriptID& scriptID);
+
+		string GetAccountName();
+
+		string GetExtAccountName();
+
+		void SetAccountName(string strAccount);
+
+		CCoinAddr *GetCoinAddr();
+
+		bool HaveKey();
+
+		const CScript& ToScript();
+
+		Object ToValue();
+
+};
+
+class CAccountAddressKey : public CAccountAddress
+{
+
+	protected:
+		CKey *key;
+		CPubKey pubkey; 
+
+	public:
+		CAccountAddressKey(int ifaceIndexIn) : CAccountAddress(ifaceIndexIn) {
+			SetNull();
+			Init();
+    }
+
+		CAccountAddressKey(int ifaceIndexIn, const CTxDestination& destinationIn) : CAccountAddress(ifaceIndexIn, destinationIn) {
+			SetNull();
+			Init();
+    }
+
+		CAccountAddressKey(int ifaceIndexIn, const std::string& strAddressIn) : CAccountAddress(ifaceIndexIn, strAddressIn) {
+			SetNull();
+			Init();
+    }
+
+		CAccountAddressKey(int ifaceIndexIn, CKey *keyIn) : CAccountAddress(ifaceIndexIn) {
+			SetNull();
+			key = keyIn;
+			pubkey = key->GetPubKey();
+      Set(pubkey.GetID());
+			CAccountAddress::Init();
+    }
+
+		void SetNull();
+
+		void Init();
+
+		time_t GetCreateTime()
+		{
+			return (key ? key->nCreateTime : 0);
+		}
+
+		const CPubKey& GetPubKey() {
+			return (pubkey);
+		}
+
+		CKey *GetKey() {
+			return (key);
+		}
+
+		Object ToValue();
+
+		bool FromValue(Object obj);
 
 };
 

@@ -94,6 +94,11 @@ inline vector<unsigned char> vchFromValue(const json_spirit::Value& value) {
   return vector<unsigned char>(strbeg, strbeg + strName.size());
 }
 
+bool boolFromObject(const json_spirit::Object& obj, string name);
+
+int64 numFromObject(const json_spirit::Object& obj, string name);
+
+string strFromObject(const json_spirit::Object& obj, string name);
 
 void RegisterRPCOp(int ifaceIndex, string name, const RPCOp& op);
 

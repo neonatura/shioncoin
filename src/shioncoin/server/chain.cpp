@@ -45,8 +45,11 @@ using namespace boost;
 /* wait 60s to reecive batch set of blocks from peer. */
 #define DEFAULT_THROTTLE_TIME 60
 
+static vector<CBlockFilter *> event_cycle_ops;
+
 ChainOp chain;
 
+CCriticalSection cs_chain;
 
 extern CCriticalSection cs_main;
 
@@ -64,8 +67,10 @@ static void set_serv_state(CIface *iface, int flag)
   memset(errbuf, 0, sizeof(errbuf));
   if (flag & COINF_DL_SCAN) {
     strcpy(errbuf, "entering service mode: download block-chain [scan]");
+#if 0
   } else if (flag & COINF_WALLET_SCAN) {
     strcpy(errbuf, "entering service mode: wallet tx [scan]");
+#endif
   } else if (flag & COINF_PEER_SCAN) {
     strcpy(errbuf, "entering service mode: peer list [scan]");
   } else if (flag & COINF_VALIDATE_SCAN) {
@@ -84,8 +89,10 @@ static void unset_serv_state(CIface *iface, int flag)
   memset(errbuf, 0, sizeof(errbuf));
   if (flag & COINF_DL_SCAN) {
     strcpy(errbuf, "exiting service mode: download block-chain [scan]");
+#if 0
   } else if (flag & COINF_WALLET_SCAN) {
     strcpy(errbuf, "exiting service mode: wallet tx [scan]");
+#endif
   } else if (flag & COINF_PEER_SCAN) {
     strcpy(errbuf, "exiting service mode: peer list [scan]");
   } else if (flag & COINF_VALIDATE_SCAN) {
@@ -144,7 +151,7 @@ static bool chain_VerifyValidOutputs(int ifaceIndex, const uint256& tx_hash, CWa
 	return (!fUpdated);
 }
 
-
+#if 0
 static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransaction& tx, bool& fCoinBase)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -242,7 +249,9 @@ static void chain_UpdateWalletCoins(int ifaceIndex, CBlock *block, const CTransa
 	}
  
 }
+#endif
 
+#if 0
 static bool ServiceWalletEvent(int ifaceIndex)
 {
   CIface *iface = GetCoinByIndex(ifaceIndex);
@@ -333,6 +342,7 @@ static bool ServiceWalletEvent(int ifaceIndex)
 
   return (true);
 }
+#endif
 
 static bool ServiceValidateEvent(int ifaceIndex)
 {
@@ -1067,12 +1077,14 @@ void ServiceEventState(int ifaceIndex)
     return;
   }
 
+#if 0
   if (serv_state(iface, COINF_WALLET_SCAN)) {
     if (!ServiceWalletEvent(ifaceIndex)) {
       unset_serv_state(iface, COINF_WALLET_SCAN);
     }
     return;
   }
+#endif
 
   if (serv_state(iface, COINF_PEER_SCAN)) {
     if (!ServicePeerEvent(ifaceIndex)) {
@@ -1093,11 +1105,13 @@ void ServiceEventState(int ifaceIndex)
     return;
   } 
 
+#if 0
   if (!serv_state(iface, COINF_WALLET_SYNC)) {
     set_serv_state(iface, COINF_WALLET_SYNC);
     set_serv_state(iface, COINF_WALLET_SCAN);
     return;
   } 
+#endif
 
   if (!serv_state(iface, COINF_PEER_SYNC)) {
     set_serv_state(iface, COINF_PEER_SYNC);
@@ -1109,6 +1123,7 @@ void ServiceEventState(int ifaceIndex)
 
 void ResetServiceWalletEvent(CWallet *wallet)
 {
+#if 0
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
 
   if (serv_state(iface, COINF_WALLET_SCAN))
@@ -1118,6 +1133,7 @@ void ResetServiceWalletEvent(CWallet *wallet)
     unset_serv_state(iface, COINF_WALLET_SYNC);
 
   wallet->nScanHeight = 0;
+#endif
 }
 
 void ResetServiceValidateEvent(CWallet *wallet)
@@ -1133,7 +1149,28 @@ void ResetServiceValidateEvent(CWallet *wallet)
   wallet->nValidateHeight = 0;
 }
 
+void InitServiceWalletEvent(int ifaceIndex, CBlockIndex *pindex)
+{
 
+	if (!pindex)
+		return;
+
+	CBlockIndex *bestIndex = GetBestBlockIndex(ifaceIndex);
+  if (bestIndex && pindex->nHeight == bestIndex->nHeight) {
+		return;
+	}
+
+	CWalletUpdateFilter *filter = new CWalletUpdateFilter(ifaceIndex, pindex->nTime);
+	InitChainFilter(filter);
+}
+
+void InitServiceWalletEvent(int ifaceIndex, uint64_t nHeight)
+{
+  CBlockIndex *pindex = GetBlockIndexByHeight(ifaceIndex, nHeight); 
+	return (InitServiceWalletEvent(ifaceIndex, pindex));
+}
+
+#if 0
 void InitServiceWalletEvent(CWallet *wallet, uint64_t nHeight)
 {
   CIface *iface = GetCoinByIndex(wallet->ifaceIndex);
@@ -1148,9 +1185,8 @@ void InitServiceWalletEvent(CWallet *wallet, uint64_t nHeight)
     wallet->nScanHeight = nHeight;
   else
     wallet->nScanHeight = MIN(nHeight, wallet->nScanHeight); 
-
-
 }
+#endif
 
 void InitServiceValidateEvent(CWallet *wallet, uint64_t nHeight)
 {
@@ -1265,6 +1301,34 @@ void event_cycle_chain(int ifaceIndex)
 	/* the "block event" continuously runs. */
 	ServiceBlockEvent(ifaceIndex);
 
+	vector<int> vRemove;
+	for (int idx = 0; idx < event_cycle_ops.size(); idx++) {
+		CBlockFilter *filter = event_cycle_ops[idx];
+		if (filter->GetIfaceIndex() != ifaceIndex)
+			continue;
+
+		for (int incr = 0; incr < 1000; incr++) {
+			if (!filter->IsRunning())
+				break;
+			filter->filter();
+		}
+		if (filter->IsFinished()) {
+			vRemove.push_back(idx);
+		}
+	}
+	for (vector<int>::iterator it = vRemove.begin(); it != vRemove.end(); ++it) {
+		CBlockFilter *filter = event_cycle_ops[(*it)];
+		event_cycle_ops.erase(event_cycle_ops.begin() + (*it));
+		delete filter;
+	}
+
+}
+
+void InitChainFilter(CBlockFilter *filter)
+{
+  CIface *iface = filter->GetIface();
+	Debug("(%s) Initiated \"%s\" chain filter.", iface->name, filter->GetLabel().c_str());
+	event_cycle_ops.push_back(filter);
 }
 
 int InitServiceBlockEvent(int ifaceIndex, uint64_t nHeight)
@@ -1460,10 +1524,505 @@ bool HasAlgoConsensus(CIface *iface, CBlockIndex *pindexLast)
 	return (true);
 }
 
+CBlock *CBlock_Filter(CIface *iface, CBlockFilter *filter, vector<CTransaction *>& tx_list)
+{
+	CBlock *block;
+
+	if (0 == (filter->GetBlockHeight() % 50000)) {
+		Debug("(%s) block filter[%s]: operation inprogress (height: %d).",
+				iface->name, filter->GetLabel().c_str(), filter->GetBlockHeight());
+	}
+
+	if (filter->GetBlockTime() < filter->GetMinimumTime()) {
+		/* prior to filter's minimum time. */
+		return (NULL);
+	}
+
+	if (filter->BlockIndexFilter()) {
+		return (NULL);
+	}
+
+	block = GetBlockByHeight(iface, filter->GetBlockHeight());
+	if (!block) {
+		return (NULL);
+	}
+
+	/* filter block */
+	if (filter->BlockFilter(block)) {
+		delete block;
+		return (NULL);
+	}
+
+	/* filter transaction */
+	for (size_t s = 0; s < block->vtx.size(); s++) {
+		CTransaction *tx = &block->vtx[s];
+		if (filter->TransactionFilter(block, tx)) {
+			continue;
+		}
+
+		tx_list.push_back(tx);
+	}
+	if (tx_list.size() == 0) {
+		/* all transactions have been filtered. */
+		delete block;
+		return (NULL);
+	}
+
+	return (block);
+}
+
+void CBlockFilter::SetNull()
+{
+	ifaceIndex = -1;
+	stream = NULL;
+	vBlock.clear();
+	vTx.clear();
+
+	nMinTime = 0;
+	blockStart = -1;
+	blockEnd = -1;
+
+	txTotal = 0;
+	blockTotal = 0;
+	blockIndex = NULL;
+
+	state = BLOCKFILTER_NONE;
+}
+
+void CBlockFilter::filter()
+{
+	CIface *iface = GetIface();
+	int ifaceIndex = GetIfaceIndex();
+	int64 nHeight;
+
+	if (!iface)
+		return;
+
+	if (state == BLOCKFILTER_NONE) {
+		initialize();
+		return;
+	}
+
+	if (blockIndex == NULL) {
+		if (state != BLOCKFILTER_SYNC) {
+			terminate();
+		}
+		return;
+	}
+
+	{
+		LOCK(cs_chain);
+
+		vector<CTransaction *> tx_list;
+		CBlock *block = CBlock_Filter(iface, this, tx_list);
+		if (block) {
+			CWallet *wallet = GetWallet();
+
+			LOCK(wallet->cs_wallet);
+
+			/* process block */
+			BlockTask(block);
+			blockTotal++;
+
+			/* process tx(s) */
+			BOOST_FOREACH(CTransaction *tx, tx_list) {
+				TransactionTask(block, tx);
+				txTotal++;
+			}
+
+			delete block;
+		}
+	}
+
+	nHeight = blockIndex->nHeight + 1;
+	if (nHeight > blockEnd) {
+		blockIndex = NULL;
+		return;
+	}
+	blockIndex = GetBlockIndexByHeight(ifaceIndex, nHeight);
+}
+
+void CBlockFilter::filterAll()
+{
+	while (IsRunning()) {
+		filter();
+	}
+}
+
+void CBlockFilter::terminate()
+{
+	CIface *iface = GetIface();
+
+	state = BLOCKFILTER_SYNC;
+
+	Debug("(%s) block filter[%s]: operation terminated (x%d blocks / x%d tx).", 
+			iface->name, GetLabel().c_str(), blockTotal, txTotal);
+
+}
+
+void CBlockFilter::initialize()
+{
+	CIface *iface = GetIface();
+
+	state = BLOCKFILTER_SCAN;
+
+	/* establish defaults. */
+	if (blockStart == -1) {
+		blockStart = 1;
+	}
+	if (blockEnd == -1) {
+		blockEnd = GetBestHeight(iface);
+	}
+
+	blockIndex = GetBlockIndexByHeight(ifaceIndex, blockStart);
+
+	time_t nMinTime = GetMinimumTime();
+	if (GetMinimumTime() != 0) {
+		/* seek ahead to minimum time. */
+		while (blockIndex && blockIndex->GetBlockTime() < nMinTime) {
+			blockIndex = blockIndex->pnext;
+		}
+		if (blockIndex) {
+			blockStart = blockIndex->nHeight;
+		}
+	}
+
+	Debug("(%s) block filter[%s]: operation initialized (height: %d+).",
+			iface->name, GetLabel().c_str(), blockStart);
+}
+
+bool CBlockFilter::IsFinished() 
+{
+ return (state == BLOCKFILTER_SYNC);
+}
+
+bool CBlockFilter::IsRunning() 
+{ 
+	return (!IsFinished());
+}
+
+CIface *CBlockFilter::GetIface() 
+{
+	return (GetCoinByIndex(ifaceIndex));
+}
+
+int CBlockFilter::GetIfaceIndex() 
+{
+	return (ifaceIndex);
+}
+
+CWallet *CBlockFilter::GetWallet() 
+{
+	return (::GetWallet(ifaceIndex));
+}
+
+void CBlockValidateFilter::SetNull()
+{
+
+}
+
+bool CBlockValidateFilter::BlockFilter(CBlock *block)
+{
+	return (block->CheckBlock());
+}
+
+bool CBlockValidateFilter::TransactionFilter(CBlock *block, CTransaction *tx)
+{
+	return (tx->CheckTransaction(ifaceIndex));
+}
+
+void CBlockValidateFilter::BlockTask(CBlock *block)
+{
+}
+
+void CBlockValidateFilter::TransactionTask(CBlock *block, CTransaction *tx)
+{
+}
+
+#if 0
+void CBlockDownloadFilterFilter::SetNull()
+{
+	CBlockFilter *entity = (CBlockFilter *)this;
+
+	entity->SetNull();
+
+	pNode = NULL;
+}
+
+bool CBlockDownloadFilter::BlockIndexFilter()
+{
+  CIface *iface = GetCoinByIndex(ifaceIndex);
+  CWallet *wallet = GetWallet(iface);
+	CNode *pfrom;
+
+	pfrom = chain_GetNextNode(wallet->ifaceIndex);
+	if (!pfrom) {
+		return (true); /* filter - no nodes available. */
+	}
+
+  ProcessBlockAvailability(wallet->ifaceIndex, pfrom);
+
+  if (pfrom->pindexBestKnownBlock == NULL ||
+      pfrom->pindexBestKnownBlock->bnChainWork < pindexBest->bnChainWork) {
+    return (true); /* filter - nothing of importance to provide */
+	}
+
+  if (pindexBest != NULL &&
+      pindexBest->nHeight < pfrom->pindexThrottleHeight &&
+      time(NULL) < pfrom->pindexThrottleTime) {
+    /* filter - block is already being requested. */
+    return (true);
+  }
+
+	/* do not ask for additional blocks/headers if the best known block that they have is the best known header that we have. */
+	if (pfrom->pindexBestKnownBlock &&
+			pfrom->pindexBestKnownBlock == wallet->pindexBestHeader) {
+		return (true);
+	}
+
+	SetNode(pfrom);
+	return (false);
+}
+
+void CBlockDownloadFilter::BlockTask(CBlock *block)
+{
+	CBlockIndex *pindex = GetBlockIndex();
+
+	/* attempt d/l blocks */
+	if (!ServiceBlockGetDataEvent(wallet, pindexBest, pfrom)) {
+		/* fallback to headers */
+		ServiceBlockHeadersEvent(wallet, pindexBest, pfrom);
+	}
+}
+#endif
+
+void CWalletUpdateFilter::SetNull()
+{
+	vDestination.clear();
+}
+
+static bool Block_MatchDestination(CWallet *wallet, const CTxOut& out, vector<CTxDestination>& vDestination) 
+{
+	vector<CTxDestination> vOutDest;
+	txnouttype outType = TX_NONSTANDARD;
+	int nRet;
+
+	if (!ExtractDestinations(out.scriptPubKey, outType, vOutDest, nRet)) {
+		return (false);
+	}
+
+	BOOST_FOREACH(CTxDestination& txDest, vOutDest) {
+		if (vDestination.size() == 0) {
+			/* search any case where local pubkey/scriptkey matches. */
+			if (::IsMine(*wallet, txDest)) {
+				/* matches local key */
+				return (true);
+			}
+		} else {
+			/* search from addresses in list supplied. */
+			if (find(vDestination.begin(), vDestination.end(), txDest) != vDestination.end()) {
+				/* matches list of addr */
+				return (true);
+			}
+		}
+	}
+
+	return (false);
+}
+
+bool CWalletUpdateFilter::TransactionFilter(CBlock *block, CTransaction *tx)
+{
+  CIface *iface = GetIface();
+  CWallet *wallet = GetWallet();
+  uint256 tx_hash = tx->GetHash();
+
+	BOOST_FOREACH(const CTxOut& out, tx->vout) {
+		if (Block_MatchDestination(wallet, out, vDestination)) {
+			/* no-filter: matches associated tx output. */
+			return (false);
+		}
+	}
+
+	if (!tx->IsCoinBase()) {
+		/* scan tx inputs for missing spends. */
+		BOOST_FOREACH(const CTxIn& txin, tx->vin) {
+			const uint256& hash = txin.prevout.hash;
+			int nOut = txin.prevout.n;
+
+			if (wallet->mapWallet.count(hash) == 0) {
+				continue;
+			}
+
+			CWalletTx& wtx = wallet->mapWallet[hash];
+			const CTxOut& out = wtx.vout[nOut];
+			if (Block_MatchDestination(wallet, out, vDestination)) {
+				/* no-filter: matches associated tx input. */
+				return (false);
+			}
+		}
+	}
+
+	return (true);
+}
+
+void CWalletUpdateFilter::TransactionTask(CBlock *block, CTransaction *tx)
+{
+  CIface *iface = GetIface();
+  CWallet *wallet = GetWallet();
+  uint256 tx_hash = tx->GetHash();
+	vector<uint256> vOuts;
+
+	if (wallet->mapWallet.count(tx_hash) != 0) {
+		CWalletTx& wtx = wallet->mapWallet[tx_hash];
+		wtx.MarkDirty();
+		Debug("(%s) TransactionTask: reset cache on wallet-tx \"%s\".", iface->name, tx_hash.GetHex().c_str());
+		return;
+	}
+
+	CWalletTx arch_wtx(wallet);
+	if (wallet->ReadArchTx(tx_hash, arch_wtx)) {
+		arch_wtx.BindWallet(wallet);
+		wallet->InitSpent(arch_wtx);
+		if (!arch_wtx.IsArchivable()) {
+			/* refresh live instance from arch database. */
+			wallet->mapWallet[tx_hash] = arch_wtx;
+//			wallet->WriteArchTx(arch_wtx);
+			wallet->WriteWalletTx(arch_wtx);
+		}
+		Debug("(%s) TransactionTask: reset archived wallet-tx \"%s\".", iface->name, tx_hash.GetHex().c_str());
+		return;
+	}
+
+	{ // add new wtx
+		LOCK(wallet->cs_wallet);
+
+		CWalletTx wtx(wallet, *tx);
+		wallet->InitSpent(wtx);
+		wtx.SetMerkleBranch(block);
+
+		if (!wtx.IsArchivable()) {
+			wallet->mapWallet[tx_hash] = wtx;
+			wallet->WriteWalletTx(wtx);
+		} else {
+			wallet->WriteArchTx(wtx);
+		}
+
+		if (wtx.IsCoinBase() && wtx.GetBlocksToMaturity(ifaceIndex) > 0) {
+			add_stratum_miner_block(ifaceIndex,
+					(char *)block->GetHash().GetHex().c_str());
+		}
+
+		Debug("(%s) TransactionTask: created new wallet-tx \"%s\".", iface->name, tx_hash.GetHex().c_str());
+	}
+
+}
+
+void CWalletValidateFilter::SetNull()
+{
+}
+
+bool CWalletValidateFilter::TransactionFilter(CBlock *block, CTransaction *tx)
+{
+  CIface *iface = GetIface();
+  CWallet *wallet = GetWallet();
+  uint256 tx_hash = tx->GetHash();
+	vector<uint256> vOuts;
+
+	if (wallet->mapWallet.count(tx_hash) != 0 || 
+			wallet->HasArchTx(tx_hash) == true) {
+		/* already established wallet transaction. */
+		return (false);
+	}
+
+	BOOST_FOREACH(const CTxIn& in, tx->vin) {
+		const uint256& in_hash = in.prevout.hash;
+		if (wallet->mapWallet.count(in_hash) != 0 ||
+				wallet->HasArchTx(in_hash)) {
+			/* input transaction exists in wallet. */
+			return (false);
+		}
+	}
+
+	BOOST_FOREACH(const CTxOut& out, tx->vout) {
+		CTxDestination address;
+		if (ExtractDestination(out.scriptPubKey, address) &&
+				IsMine(*wallet, address)) {
+			/* non-filter: found associated transaction. */
+			return (false);
+		}
+	}
+
+	return (true);
+}
+
+/* enforce validity on wallet & tx's spent chain */
+void CWalletValidateFilter::TransactionTask(CBlock *block, CTransaction *tx)
+{
+  CIface *iface = GetIface();
+  CWallet *wallet = GetWallet();
+  uint256 tx_hash = tx->GetHash();
+
+	if (wallet->mapWallet.count(tx_hash) == 0) {
+		{
+			CWalletTx arch_wtx(wallet);
+			if (wallet->ReadArchTx(tx_hash, arch_wtx)) {
+				if (!chain_VerifyValidOutputs(ifaceIndex, tx_hash, arch_wtx)) {
+					/* mis-matched spent markers. */
+					wallet->AddTx(arch_wtx);
+				}
+				return;
+			}
+		}
+
+		bool fIsMine = false;
+		BOOST_FOREACH(const CTxOut& out, tx->vout) {
+			if (wallet->IsMine(out)) {
+				fIsMine = true;
+				break;
+			}
+		}
+		if (fIsMine) { /* found missing wallet tx. */
+			CWalletTx wtx(wallet, *tx);
+			wallet->InitSpent(wtx);
+			wtx.SetMerkleBranch(block);
+			wallet->AddTx(wtx);
+		}
+	} else {
+		CWalletTx& wtx = wallet->mapWallet[tx_hash];
+		chain_VerifyValidOutputs(ifaceIndex, tx_hash, wtx);
+	}
+
+	/* scan tx inputs for missing spends. */
+	BOOST_FOREACH(const CTxIn& txin, tx->vin) {
+		const uint256& hash = txin.prevout.hash;
+		int nOut = txin.prevout.n;
+
+		if (wallet->mapWallet.count(hash) != 0) {
+			CWalletTx& wtx = wallet->mapWallet[hash];
+			vector<uint256> vOuts;
+			bool fCoins;
+			bool fUpdate;
+
+			if (!wtx.IsSpent(nOut)) {
+				Debug("(%s) core_UpdateCoins: updated wtx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
+				wtx.MarkSpent(nOut);
+			}
+
+			if (wtx.ReadCoins(ifaceIndex, vOuts) && /* coin db */
+					nOut < vOuts.size()) {
+				if (vOuts[nOut] != tx_hash) {
+					vOuts[nOut] = tx_hash;
+					if (wtx.WriteCoins(ifaceIndex, vOuts)) {
+						Debug("(%s) core_UpdateCoins: updated tx \"%s\" [spent on \"%s\"].", iface->name, hash.GetHex().c_str(), tx_hash.GetHex().c_str());
+					}
+				} 
+			}
+		}
+	}
+ 
+}
 
 #ifdef __cplusplus
 }
 #endif
-
-
 

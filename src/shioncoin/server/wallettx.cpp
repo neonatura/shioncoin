@@ -348,10 +348,17 @@ bool CWallet::ReadArchTx(uint256 hash, CWalletTx& wtx) const
 	if (err)
 		return (error(err, "bc_get [CWallet.ReadTx]"));
 
+	/* deserialize */
 	CDataStream sBlock(SER_DISK, CLIENT_VERSION);
 	sBlock.write((const char *)data, data_len);
 	sBlock >> wtx;
 	free(data);
+
+#if 0
+	/* initialize */
+	wtx.BindWallet(this);
+	InitSpent(wtx);
+#endif
 
 	return (true);
 }

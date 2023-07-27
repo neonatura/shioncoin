@@ -38,7 +38,7 @@ class LTCWallet : public CWallet
     void RelayWalletTransaction(CWalletTx& wtx);
     void ResendWalletTransactions();
     void ReacceptWalletTransactions();
-    int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
+//    int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     int64 GetTxFee(CTransaction tx);
     bool CommitTransaction(CWalletTx& wtxNew);
 

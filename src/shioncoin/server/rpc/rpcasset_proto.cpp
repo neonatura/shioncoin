@@ -34,6 +34,7 @@
 #include "txmempool.h"
 #include "asset.h"
 #include "asset.h"
+#include "account.h"
 #include "rpc_proto.h"
 
 using namespace std;
@@ -309,7 +310,7 @@ Value rpc_asset_listacc(CIface *iface, const Array& params, bool fHelp)
 		kwd = params[0].get_str();
 
 	vector<COutput> vCoins;
-	string strExtAccount = "@" + strAccount; /* where asset tx's are stored */
+	string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount; /* where asset tx's are stored */
 	wallet->AvailableAccountCoins(strExtAccount, vCoins, true);
 
 	Object result;
@@ -543,5 +544,114 @@ Value rpc_asset_activate(CIface *iface, const Array& params, bool fHelp)
 		throw JSONRPCError(err, "failure updating asset transaction.");
 
 	return (wtx.ToValue(ifaceIndex));
+}
+
+static bool IsAssetAccount(CWallet *wallet, string strAccount, const CTxDestination& destination)
+{
+	string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
+
+	/* filter for account specified. */
+	map<CTxDestination, string>::iterator mi = wallet->mapAddressBook.find(destination);
+	if (mi == wallet->mapAddressBook.end()) {
+		return (false);
+	}
+	if (mi->second != strAccount &&
+			mi->second != strExtAccount) {
+		return (false);
+	}
+
+	return (true);
+}
+
+static bool IsAssetAccount(CWallet *wallet, string strAccount, const CScript& scriptPubKey, CTxDestination& destination)
+{
+
+	if (!ExtractDestination(scriptPubKey, destination)) {
+		return (false);
+	}
+
+	return (IsAssetAccount(wallet, strAccount, destination));
+}
+
+Value rpc_asset_export(CIface *iface, const Array& params, bool fStratum) 
+{
+  CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	vector<CTxDestination> vAddr;
+	asset_list *list;
+	string strAccount;
+
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+
+  if (params.size() != 1)
+    throw runtime_error("invalid parameters");
+
+  if (ifaceIndex != TEST_COIN_IFACE &&
+      ifaceIndex != TESTNET_COIN_IFACE &&
+      ifaceIndex != SHC_COIN_IFACE) {
+    throw runtime_error("unsupported operation");
+	}
+
+	strAccount = params[0].get_str();
+
+  list = GetAssetTable(ifaceIndex);
+  BOOST_FOREACH(PAIRTYPE(const uint160, uint256)& r, *list) {
+    uint256& tx_hash = r.second;
+
+    CTransaction tx;
+    if (!GetTransaction(iface, tx_hash, tx, NULL)) {
+      continue;
+		}
+
+    CAsset *asset = tx.GetAsset();
+		if (!asset) {
+			continue;
+		}
+		if (asset->IsExpired()) {
+			continue;
+		}
+
+		BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+			uint160 hAsset;
+			int mode;
+			if (!DecodeAssetHash(txout.scriptPubKey, mode, hAsset)) {
+				continue;
+			}
+
+			CTxDestination destination;
+			if (!IsAssetAccount(wallet, strAccount, txout.scriptPubKey, destination)) {
+				continue;
+			}
+
+			vAddr.push_back(destination);
+		}
+
+#if 0 // n/a
+		CCoinAddr addr(ifaceIndex);
+		if (asset->GetCoinAddr(ifaceIndex, addr)) {
+			const CTxDestination& destination = addr.Get();
+			if (!IsAssetAccount(wallet, strAccount, destination)) {
+				continue;
+			}
+
+			vAddr.push_back(destination);
+		}
+#endif
+	}
+
+	/* compile return data */
+	Array ret_val;
+	BOOST_FOREACH(const CTxDestination& destination, vAddr) {
+		CAccountAddressKey addr(ifaceIndex, destination);
+
+		/* redundant ownership verification. */
+		if (!addr.IsMine()) {
+			continue;
+		}
+
+		ret_val.push_back(addr.ToValue());
+	}
+	return (ret_val);
 }
 

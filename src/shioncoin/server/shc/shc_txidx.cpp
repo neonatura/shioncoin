@@ -347,8 +347,8 @@ static bool shc_LoadBlockIndex()
   //printf("LoadBlockIndex(): SHCBlock::hashBestChain=%s  height=%d  date=%s\n", hashBestChain.ToString().substr(0,20).c_str(), GetBestHeight(iface), DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
 
   int nCheckDepth = (GetBestHeight(SHC_COIN_IFACE) / 640) + 640;
-  int nWalletCheckDepth = nCheckDepth * 1.5;
-  int nValidateCheckDepth = nCheckDepth * 3;
+  int nWalletCheckDepth = nCheckDepth * 1;
+  int nValidateCheckDepth = nCheckDepth * 2;
   int total = 0;
   int invalid = 0;
   int maxHeight = 0;
@@ -404,7 +404,7 @@ static bool shc_LoadBlockIndex()
 
   /* validate wallet transactions */
   nWalletCheckDepth = MIN(maxHeight-1, nWalletCheckDepth);
-  InitServiceWalletEvent(wallet, maxHeight - nWalletCheckDepth);
+  InitServiceWalletEvent(SHC_COIN_IFACE, maxHeight - nWalletCheckDepth);
   sprintf(errbuf, "SHC::LoadBlockIndex: Initiated wallet validation of %d total blocks (%-3.3f%%).", nWalletCheckDepth, (100 / (double)maxHeight * (double)nWalletCheckDepth));
   unet_log(SHC_COIN_IFACE, errbuf);
 

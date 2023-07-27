@@ -224,6 +224,7 @@ void LTCWallet::ReacceptWalletTransactions()
 	}
 }
 
+#if 0
 int LTCWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {
     int ret = 0;
@@ -251,6 +252,7 @@ int LTCWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 
     return ret;
 }
+#endif
 
 int64 LTCWallet::GetTxFee(CTransaction tx)
 {

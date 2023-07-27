@@ -32,6 +32,8 @@
 #include "util.h"
 #include "chain.h"
 #include "certificate.h"
+#include "account.h"
+#include "script.h"
 #include "rpc_proto.h"
 
 using namespace std;
@@ -40,7 +42,7 @@ using namespace json_spirit;
 
 extern json_spirit::Value ValueFromAmount(int64 amount);
 
-extern void rpcwallet_GetVerboseAddr(CWallet *wallet, CAccountCache *acc, CTxDestination dest, Object& ent);
+extern Object rpcwallet_GetVerboseAddr(int ifaceIndex, CTxDestination destination);
 
 extern void rpcwallet_GetWalletAddr(CWallet *wallet, shjson_t *tree, string strLabel, const CKeyID& keyID);
 
@@ -49,10 +51,6 @@ static bool fHelp = false;
 Value rpc_alias_info(CIface *iface, const Array& params, bool fStratum) 
 {
   int ifaceIndex = GetCoinIndex(iface);
-  alias_list *list;
-
-  if (fStratum)
-    throw runtime_error("unsupported operation");
 
   if (0 != params.size())
     throw runtime_error("invalid parameters");
@@ -62,8 +60,11 @@ Value rpc_alias_info(CIface *iface, const Array& params, bool fStratum)
   int nBestHeight = GetBestHeight(iface); 
   obj.push_back(Pair("fee", ValueFromAmount(GetAliasOpFee(iface, nBestHeight))));
 
-  list = GetAliasTable(ifaceIndex);
-  obj.push_back(Pair("total", (int)list->size()));
+  alias_list *list = GetAliasTable(ifaceIndex);
+  obj.push_back(Pair("active", (int)list->size()));
+
+  aliasarch_list *archlist = GetAliasArchTable(ifaceIndex);
+  obj.push_back(Pair("archived", (int)archlist->size()));
 
   return (obj);
 }
@@ -172,7 +173,8 @@ Value rpc_alias_pubaddr(CIface *iface, const Array& params, bool fStratum)
     if (!alias->GetCoinAddr(ifaceIndex, addr))
       throw JSONRPCError(-5, "Invalid coin address.");
 
-    return (addr.ToString());
+		/* allow user to regenerate to refresh expiration time. */
+		strAddress = addr.ToString();
   }
 
   if (strAddress.size() < 1)
@@ -266,8 +268,7 @@ Value rpc_alias_getaddr(CIface *iface, const Array& params, bool fStratum)
 	CCoinAddr addr(wallet->ifaceIndex);
 	if (alias->GetCoinAddr(ifaceIndex, addr) &&
 			ExtractDestinationKey(wallet, addr.Get(), keyid)) {
-		Object pubent;
-		rpcwallet_GetVerboseAddr(wallet, NULL, addr.Get(), pubent);
+		Object pubent = rpcwallet_GetVerboseAddr(ifaceIndex, addr.Get());
 		ent.push_back(Pair("pubkey", pubent));
 	}
 
@@ -327,7 +328,7 @@ Value rpc_alias_remove(CIface *iface, const Array& params, bool fStratum)
   if (fStratum)
     throw runtime_error("unsupported operation");
 
-  if (params.size() != 1)
+  if (params.size() > 2)
     throw runtime_error("invalid parameters");
 
   int ifaceIndex = GetCoinIndex(iface);
@@ -374,17 +375,47 @@ Value rpc_alias_remove(CIface *iface, const Array& params, bool fStratum)
     if (err == SHERR_NOENT)
       throw JSONRPCError(-5, "Coin address not located in wallet.");
     if (err == ERR_FEE)
-      throw JSONRPCError(-5, "Not enough coins in account to create alias.");
+      throw JSONRPCError(-5, "Not enough coins in account to remove alias.");
     throw JSONRPCError(-5, "Unable to generate transaction.");
   }
 
   return (wtx.ToValue(ifaceIndex));
 }
 
-#if 0
+static bool IsAliasAccount(CWallet *wallet, string strAccount, const CTxDestination& destination)
+{
+	string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
+
+	/* filter for account specified. */
+	map<CTxDestination, string>::iterator mi = wallet->mapAddressBook.find(destination);
+	if (mi == wallet->mapAddressBook.end()) {
+		return (false);
+	}
+	if (mi->second != strAccount &&
+			mi->second != strExtAccount) {
+		return (false);
+	}
+
+	return (true);
+}
+
+static bool IsAliasAccount(CWallet *wallet, string strAccount, const CScript& scriptPubKey, CTxDestination& destination)
+{
+
+	if (!ExtractDestination(scriptPubKey, destination)) {
+		return (false);
+	}
+
+	return (IsAliasAccount(wallet, strAccount, destination));
+}
+
 Value rpc_alias_export(CIface *iface, const Array& params, bool fStratum) 
 {
   CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	vector<CTxDestination> vAddr;
+	alias_list *list;
+	string strAccount;
 
   if (fStratum)
     throw runtime_error("unsupported operation");
@@ -392,38 +423,71 @@ Value rpc_alias_export(CIface *iface, const Array& params, bool fStratum)
   if (params.size() != 1)
     throw runtime_error("invalid parameters");
 
-  int ifaceIndex = GetCoinIndex(iface);
   if (ifaceIndex != TEST_COIN_IFACE &&
       ifaceIndex != TESTNET_COIN_IFACE &&
-      ifaceIndex != SHC_COIN_IFACE)
+      ifaceIndex != SHC_COIN_IFACE) {
     throw runtime_error("unsupported operation");
+	}
 
-	CTransaction tx;
-	if (!GetAliasByName(iface, label, tx))
-    throw JSONRPCError(ERR_NOENT, "Unknown alias name: " + label);
+	strAccount = params[0].get_str();
 
-	int mode;
-	int nOut;
-	CScript scriptPubKey;
-	if (!GetExtOutput(tx, OP_ALIAS, mode, nOut, scriptPubKey))
-    throw JSONRPCError(ERR_NOENT, "Invalid alias transaction: " + tx.GetHash().GetHex());
+  list = GetAliasTable(ifaceIndex);
+  BOOST_FOREACH(PAIRTYPE(const string, uint256)& r, *list) {
+    uint256& hash = r.second;
 
-	CTxDestination dest;
-	if (!ExtractDestination(scriptPubKey, dest))
-    throw JSONRPCError(ERR_NOENT, "Unknown output destination: " + tx.GetHash().GetHex());
+    CTransaction tx;
+    if (!GetTransaction(iface, hash, tx, NULL)) {
+      continue;
+		}
 
-	CKeyID keyid;
-	if (!ExtractDestinationKey(wallet, dest, keyid))
-    throw JSONRPCError(ERR_NOENT, "Unknown output pubkey: " + tx.GetHash().GetHex());
+    CAlias *alias = tx.GetAlias();
+		if (!alias) {
+			continue;
+		}
+		if (alias->IsExpired()) {
+			continue;
+		}
 
-	key = wallet->GetKey(keyID);
-	if (!key)
-    throw JSONRPCError(ERR_REMOTE, "non local pubkey: " + keyid.GetHex());
+		BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+			uint160 hAlias;
+			hash;
+			int mode;
+			if (!DecodeAliasHash(txout.scriptPubKey, mode, hAlias)) {
+				continue;
+			}
 
-	bool fCompressed = false;
-	CSecret vchSecret = key->GetSecret(fCompressed);;
-	CCoinSecret csec(wallet->ifaceIndex, vchSecret, fCompressed);
-	return (csec.ToString());
+			CTxDestination destination;
+			if (!IsAliasAccount(wallet, strAccount, txout.scriptPubKey, destination)) {
+				continue;
+			}
+
+			vAddr.push_back(destination);
+		}
+
+
+		CCoinAddr addr(ifaceIndex);
+		if (alias->GetCoinAddr(ifaceIndex, addr)) {
+			const CTxDestination& destination = addr.Get();
+			if (!IsAliasAccount(wallet, strAccount, destination)) {
+				continue;
+			}
+
+			vAddr.push_back(destination);
+		}
+	}
+
+	/* compile return data */
+	Array ret_val;
+	BOOST_FOREACH(const CTxDestination& destination, vAddr) {
+		CAccountAddressKey addr(ifaceIndex, destination);
+
+		/* redundant ownership verification. */
+		if (!addr.IsMine()) {
+			continue;
+		}
+
+		ret_val.push_back(addr.ToValue());
+	}
+	return (ret_val);
 }
-#endif
 

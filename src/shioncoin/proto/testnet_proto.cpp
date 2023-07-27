@@ -243,7 +243,8 @@ static CPubKey testnet_GetMainAccountPubKey(CWallet *wallet)
   static CPubKey pubkey;
   if (!pubkey.IsValid()) {
     CAccountCache *account = wallet->GetAccount("");
-    account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+    //account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
+		account->GetCoinbasePubKey(pubkey);
     /* miner fee */
 		wallet->GetAccount("bank");
     /* cpu miner */

@@ -137,7 +137,7 @@ Value rpc_ctx_list(CIface *iface, const Array& params, bool fStratum)
     strAccount = AccountFromValue(params[0]);
 
     /* get set of pub keys assigned to extended account. */
-    string strExtAccount = "@" + strAccount;
+    string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
     GetAccountAddresses(wallet, strExtAccount, setAddress);
     if (setAddress.size() == 0) {
       return (ret);

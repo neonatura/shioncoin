@@ -249,16 +249,17 @@ _TEST(coin_key)
   ECKey pkey;
   pkey.MakeNewKey(fCompr);
   ECKey key1;
-	pkey.MergeKey(key1, tag);
+	key1.MergeKey(&pkey, tag);
   ECKey key2;
-	pkey.MergeKey(key2, tag);
+	key2.MergeKey(&pkey, tag);
   _TRUE(key1.GetPubKey().GetID() == key2.GetPubKey().GetID());
   _TRUE(pkey.GetPubKey().GetID() != key2.GetPubKey().GetID());
 
   strcpy(teststr, "test2");
   cbuff tag2(teststr, teststr + strlen(teststr));
-	pkey.MergeKey(key2, tag2);
-  _TRUE(key1.GetPubKey().GetID() != key2.GetPubKey().GetID());
+  ECKey key5;
+	key5.MergeKey(&pkey, tag2);
+  _TRUE(key1.GetPubKey().GetID() != key5.GetPubKey().GetID());
 
 }
 

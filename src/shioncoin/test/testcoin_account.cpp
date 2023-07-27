@@ -133,6 +133,10 @@ _TEST(account_cache)
 
 }
 
+_TEST(account_addr)
+{
+}
+
 
 #ifdef __cplusplus
 }

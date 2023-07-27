@@ -121,12 +121,14 @@ void COLORWallet::ReacceptWalletTransactions()
 	}
 }
 
+#if 0
 int COLORWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {
   if (pindexStart)
     InitServiceWalletEvent(this, pindexStart->nHeight);
   return (0);
 }
+#endif
 
 int64 COLORWallet::GetTxFee(CTransaction tx)
 {

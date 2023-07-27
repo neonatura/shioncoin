@@ -58,6 +58,8 @@ Value rpc_alias_listaddr(CIface *iface, const Array& params, bool fStratum);
 
 Value rpc_alias_remove(CIface *iface, const Array& params, bool fStratum);
 
+Value rpc_alias_export(CIface *iface, const Array& params, bool fStratum);
+
 
 #endif /* ndef __SERVER__RPCALIAS_PROTO_H__ */
 

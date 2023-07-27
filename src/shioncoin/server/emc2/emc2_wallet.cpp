@@ -224,6 +224,7 @@ void EMC2Wallet::ReacceptWalletTransactions()
 	}
 }
 
+#if 0
 int EMC2Wallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {
     int ret = 0;
@@ -251,6 +252,7 @@ int EMC2Wallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate
 
     return ret;
 }
+#endif
 
 int64 EMC2Wallet::GetTxFee(CTransaction tx)
 {

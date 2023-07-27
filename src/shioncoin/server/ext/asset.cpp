@@ -226,8 +226,6 @@ int64 CalculateAssetFee(CIface *iface, int nHeight, int nContentSize, time_t nLi
   nFee = MAX(MIN_TX_FEE(iface), nFee);
   nFee = MIN(MAX_TX_FEE(iface), nFee);
 
-fprintf(stderr, "DEBUG: CalculateAssetFee(): nContentSize(%u) nLifespan(%d) nFee(%-8.8f)\n", nContentSize, nLifespan, ((double)nFee/COIN));  
-
   return (nFee);
 }
 
@@ -412,7 +410,7 @@ bool VerifyAssetAccount(CWallet *wallet, const CTxOut& outAsset, string strAccou
 {
 	bool fIsScript;
 
-	strAccount = "@" + strAccount;
+	strAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
 
 	/* extract "extended account" tx-destination. */
 	CTxDestination dest;
@@ -791,8 +789,6 @@ static bool ProcessNewAssetTx(CIface *iface, CTransaction& tx)
 	CAsset *asset = tx.GetAsset();
 	const uint160& hAsset = asset->GetHash();
 
-fprintf(stderr, "DEBG: REMOVE ME: ProcessNewAssetTx()/start\n");
-
 	if (wallet->mapAsset.count(hAsset) != 0) {
 		return (error(ERR_NOTUNIQ, "ProcessNewAssetTx: non-unique hash asset."));
 	}
@@ -812,9 +808,7 @@ fprintf(stderr, "DEBG: REMOVE ME: ProcessNewAssetTx()/start\n");
 		return (error(ERR_INVAL, "ProcessNewAssetTx: invalid content signature"));
 	}
 
-
 	InsertAssetTable(iface, tx);
-fprintf(stderr, "DEBG: REMOVE ME: ProcessNewAssetTx()/finish\n");
 	return (true);
 }
 
@@ -823,8 +817,6 @@ static bool ProcessUpdateAssetTx(CIface *iface, CTransaction& tx)
   CWallet *wallet = GetWallet(iface);
   int ifaceIndex = GetCoinIndex(iface);
 	uint256 hPrevAssetTx;
-
-fprintf(stderr, "DEBG: REMOVE ME: ProcessUpdateAssetTx()/start\n");
 
 	CAsset *asset = tx.GetAsset();
 	if (!asset)
@@ -859,7 +851,6 @@ fprintf(stderr, "DEBG: REMOVE ME: ProcessUpdateAssetTx()/start\n");
 	}
 
 	InsertAssetTable(iface, tx);
-fprintf(stderr, "DEBG: REMOVE ME: ProcessUpdateAssetTx()/finish\n");
 
 	return (true);
 }
@@ -910,8 +901,6 @@ static bool ProcessActivateAssetTx(CIface *iface, CTransaction& tx)
   int ifaceIndex = GetCoinIndex(iface);
 	uint256 hPrevAssetTx;
 
-fprintf(stderr, "DEBG: REMOVE ME: ProcessActivateAssetTx()/start\n");
-
 	CAsset *asset = tx.GetAsset();
 	if (!asset)
 		return (false);
@@ -941,13 +930,10 @@ fprintf(stderr, "DEBG: REMOVE ME: ProcessActivateAssetTx()/start\n");
 		return (error(ERR_INVAL, "ProcessActivateAsset invalid asset certificate."));
 	}
 	if (prevAsset->GetContentChecksum() != asset->GetContentChecksum()) {
-fprintf(stderr, "DEBUG: TEST: prevAsset->GetContentChecksum %llu\n", prevAsset->GetContentChecksum());
-fprintf(stderr, "DEBUG: TEST: asset->GetContentChecksum %llu\n", asset->GetContentChecksum());
 		return (error(ERR_INVAL, "ProcessActivateAsst: invalid asset checksum."));
 	}
 
 	InsertAssetTable(iface, tx);
-fprintf(stderr, "DEBG: REMOVE ME: ProcessActivateAssetTx()/finish\n");
 
 	return (true);
 }
@@ -1479,7 +1465,6 @@ int activate_asset_tx(CIface *iface, string strAccount, const uint160& hashAsset
   }
 	nOut = IndexOfAssetOutput(tx);
 	if (nOut == -1) {
-fprintf(stderr, "DEBUG: TEST: !IndexOfAssetOutput(tx)\n");
 		return (ERR_INVAL);
 	}
 	if (!VerifyAssetAccount(wallet, tx.vout[nOut], strAccount)) {
@@ -1492,7 +1477,6 @@ fprintf(stderr, "DEBUG: TEST: !IndexOfAssetOutput(tx)\n");
   /* generate new coin address */
 	CCoinAddr extAddr = wallet->GetExtAddr(strAccount);
   if (!extAddr.IsValid()) {
-fprintf(stderr, "DEBUG: TEST: !extAddr\n");
     return (SHERR_INVAL);
   }
 	/* create asset tx */
@@ -1501,18 +1485,15 @@ fprintf(stderr, "DEBUG: TEST: !extAddr\n");
 
 	/* add previous asset as transaction input. */
 	if (!s_wtx.AddInput(hTxIn, nOut)) {
-fprintf(stderr, "DEBUG: TEST: !s_wtx.AddInput()\n");
 		return (ERR_INVAL);
 	}
 
 	/* redefine content. */
 	cbuff vContent;
 	if (!GetAssetContent(iface, tx, vContent)) {
-fprintf(stderr, "DEBUG: TEST: !GetAssetContent\n");
 		return (ERR_INVAL);
 	}
 	asset->SetContent(vContent);
-fprintf(stderr, "DEBUG: activate_asset_tx: vContent size %u\n", asset->GetContentSize()); 
 
   /* establish fee for asset transfer. */
   int nHeight = GetBestHeight(iface);
@@ -1540,7 +1521,6 @@ fprintf(stderr, "DEBUG: activate_asset_tx: vContent size %u\n", asset->GetConten
 	scriptPubKey << OP_EXT_ACTIVATE << CScript::EncodeOP_N(OP_ASSET) << OP_HASH160 << assetHash << OP_2DROP;
   scriptPubKey += scriptPubKeyOrig;
   if (!s_wtx.AddOutput(scriptPubKey, nNetFee)) {
-fprintf(stderr, "DEBUG: TEST: !s_wtx.AddOutput(%s, %-8.8f)\n", scriptPubKey.ToString().c_str(), ((double)nNetFee/COIN));
     return (SHERR_INVAL);
 	}
 

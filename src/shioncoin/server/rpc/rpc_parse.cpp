@@ -738,8 +738,7 @@ const RPCOp WALLET_BALANCE = {
   "If [account] is specified, returns the balance in the account."
 }; 
 const RPCOp WALLET_EXPORT = {
-  &rpc_wallet_export, 1, {RPC_STRING},
-  "Syntax: <path>\n"
+  &rpc_wallet_export, 0, { },
   "Export the coin wallet to the specified path in JSON format."
 }; 
 #if 0 
@@ -749,6 +748,11 @@ const RPCOp WALLET_EXPORTDAT = {
   "Export the coin wallet to the specified path (dir or file)."
 }; 
 #endif
+const RPCOp WALLET_EXPORT_ACCOUNT = {
+  &rpc_wallet_export_account, 1, {RPC_ACCOUNT},
+  "Syntax: <account>\n"
+  "Export the coin wallet keys for the specified account."
+}; 
 
 const RPCOp WALLET_FEE = {
   &rpc_wallet_fee, 0, {RPC_INT, RPC_STRING},
@@ -759,7 +763,7 @@ const RPCOp WALLET_FEE = {
 const RPCOp WALLET_GET = {
   &rpc_wallet_get, 1, {RPC_STRING},
   "wallet.get <coin address>\n"
-  "Returns the account associated with the given address."
+  "Returns the wallet account information associated with the given coin address."
 }; 
 
 const RPCOp WALLET_INFO = {
@@ -780,7 +784,7 @@ const RPCOp WALLET_IMPORT = {
   "Import a JSON wallet file."
 };
 const RPCOp WALLET_KEY = {
-  &rpc_wallet_key, 1, {RPC_STRING},
+  &rpc_wallet_key, 1, {RPC_STRING, RPC_BOOL},
   "Syntax: <address>\n"
   "Summary: Reveals the private key corresponding to a public coin address.\n"
   "Params: [ <address> The coin address. ]\n"
@@ -794,6 +798,17 @@ const RPCOp WALLET_KEY = {
   "The private coin address can be imported into another system via the 'wallet.setkey' command.\n"
   "\n"
   "The entire wallet can be exported to a file via the 'wallet.export' command."
+};
+const RPCOp WALLET_HDKEY = {
+  &rpc_wallet_hdkey, 1, {RPC_STRING, RPC_BOOL},
+  "Syntax: <address> [<verbose>=false]\n"
+  "Summary: Reveals the master private key corresponding to a coin address.\n"
+  "Params: [ <address> The coin address. ]\n"
+  "\n"
+  "The 'wallet.hdkey' command provides a method to obtain the master HD private key associated\n"
+  "with a particular coin address.\n"
+  "\n"
+  "The private coin address can be imported into another system via the 'wallet.sethdkey' command."
 };
 const RPCOp WALLET_LIST = {
   &rpc_wallet_list, 0, {RPC_INT},
@@ -897,14 +912,18 @@ const RPCOp WALLET_SET = {
 };
 #endif
 const RPCOp WALLET_SETKEY = {
-  &rpc_wallet_setkey, 2, {RPC_STRING, RPC_ACCOUNT, RPC_INT64, RPC_STRING},
-  "Syntax: <priv-key> <account> [<timestamp>] [<type>]\n"
+  &rpc_wallet_setkey, 2, {RPC_STRING, RPC_ACCOUNT, RPC_INT64},
+  "Syntax: <priv-key> <account> [<timestamp>]\n"
   "Adds a private key (as returned by wallet.key) to your wallet.\n"
 	"\n"
-	"The <type> can be set to;\n"
-	"\t\"default\" assigns the account's default key.\n"
+	"Note: The timestamp is a unix-time indicating when the address was created."
+};
+const RPCOp WALLET_SETHDKEY = {
+  &rpc_wallet_sethdkey, 2, {RPC_ACCOUNT, RPC_STRING, RPC_INT64},
+  "Syntax: <account> <priv-key> [<timestamp>]\n"
+  "Sets the master private key (as returned by wallet.hdkey) for an account.\n"
 	"\n"
-	"Note: The timestamp is a unix-time indicating when address was created."
+	"Note: The timestamp is a unix-time indicating when the address was created."
 };
 const RPCOp WALLET_TX = {
   &rpc_wallet_tx, 1, {RPC_STRING}, 
@@ -1088,9 +1107,6 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "tx.validate", TX_VALIDATE);
 
   RegisterRPCOp(ifaceIndex, "wallet.addr", WALLET_ADDR);
-  if (opt_bool(OPT_ADMIN)) {
-		//RegisterRPCOp(ifaceIndex, "wallet.burn", WALLET_BURN);
-	}
   RegisterRPCOp(ifaceIndex, "wallet.witaddr", WALLET_WITADDR);
   RegisterRPCOp(ifaceIndex, "wallet.listaddr", WALLET_LISTADDR);
 	RegisterRPCOp(ifaceIndex, "wallet.listextaddr", WALLET_LISTEXTADDR);
@@ -1099,12 +1115,14 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "wallet.cscript", WALLET_CSCRIPT);
 
   RegisterRPCOp(ifaceIndex, "wallet.export", WALLET_EXPORT);
+  RegisterRPCOp(ifaceIndex, "wallet.exportaccount", WALLET_EXPORT_ACCOUNT);
 //  RegisterRPCOp(ifaceIndex, "wallet.exportdat", WALLET_EXPORTDAT);
 
 	RegisterRPCOp(ifaceIndex, "wallet.fee", WALLET_FEE);
   RegisterRPCAlias(ifaceIndex, "estimatesmartfee", WALLET_FEE);
 
   RegisterRPCOp(ifaceIndex, "wallet.get", WALLET_GET);
+  RegisterRPCOp(ifaceIndex, "wallet.hdkey", WALLET_HDKEY);
 
 //  RegisterRPCOp(ifaceIndex, "wallet.info", WALLET_INFO);
   RegisterRPCOp(ifaceIndex, "wallet.import", WALLET_IMPORT);
@@ -1146,6 +1164,7 @@ void RegisterRPCOpDefaults(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "wallet.set", WALLET_SET);
 #endif
 
+  RegisterRPCOp(ifaceIndex, "wallet.sethdkey", WALLET_SETHDKEY);
   RegisterRPCOp(ifaceIndex, "wallet.setkey", WALLET_SETKEY);
   RegisterRPCAlias(ifaceIndex, "importprivkey", WALLET_SETKEY);
 
@@ -1508,7 +1527,7 @@ int ExecuteRPC(int ifaceIndex, shjson_t *json, shbuf_t *buff)
         string p_str(pstr);
         param.push_back(p_str);
       } else if (op->arg[i] == RPC_ACCOUNT || RPC_STRING) {
-        string p_str();
+        string p_str;
         param.push_back(p_str);
       } else {
         char buf[256];
@@ -1544,5 +1563,51 @@ int ExecuteRPC(int ifaceIndex, shjson_t *json, shbuf_t *buff)
   return (SHERR_INVAL);
 }
 
+bool boolFromObject(const Object& obj, string name)
+{
 
+	for (Object::size_type i = 0; i != obj.size(); i++) {
+		const Pair& pair = obj[i];
+		const string& fieldName = pair.name_;
+
+		if (name == fieldName) {
+			const Value& value = pair.value_;
+			return (value.get_bool());
+		}
+	}
+
+	return (false);
+}
+
+int64 numFromObject(const Object& obj, string name)
+{
+
+	for (Object::size_type i = 0; i != obj.size(); i++) {
+		const Pair& pair = obj[i];
+		const string& fieldName = pair.name_;
+
+		if (name == fieldName) {
+			const Value& value = pair.value_;
+			return (value.get_int64());
+		}
+	}
+
+  return (0);
+}
+
+string strFromObject(const Object& obj, string name)
+{
+
+	for (Object::size_type i = 0; i != obj.size(); i++) {
+		const Pair& pair = obj[i];
+		const string& fieldName = pair.name_;
+
+		if (name == fieldName) {
+			const Value& value = pair.value_;
+			return (value.get_str());
+		}
+	}
+
+  return (string());
+}
 

@@ -44,7 +44,7 @@ class SHCWallet : public CWallet
 
     void ReacceptWalletTransactions();
 
-    int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
+//    int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
 
     int64 GetTxFee(CTransaction tx);
 

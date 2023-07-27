@@ -164,8 +164,11 @@ class CEntity : public CExtCore
 
 class CTxOut;
 
+class CWallet;
 
 bool IsLocalEntity(CIface *iface, const CTxOut& txout);
+
+bool GenerateEntityAddress(CWallet *wallet, string strAccount, CCoinAddr& addrRet);
 
 
 #endif /* ndef __EXT__ENTITY_H__ */

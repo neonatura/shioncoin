@@ -115,8 +115,6 @@ const char *stratum_getaccountinfo(int ifaceIndex, const char *account, const ch
 
 const char *stratum_error_get(int req_id);
 
-const char *stratum_importaddress(int ifaceIndex, const char *account, const char *privaddr_str);
-
 const char *stratum_call_rpc(int ifaceIndex, const char *account, const char *pkey_str, shjson_t *json);
 
 const char *getnewaddress(int ifaceIndex, const char *account);

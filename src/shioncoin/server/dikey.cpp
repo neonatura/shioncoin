@@ -352,6 +352,19 @@ static cbuff dikey_MergeKey(cbuff secret, cbuff tag)
  * Create a new derived key given a "tag" context.
  * @param tag A salt to purturb the calculation.
  */ 
+void DIKey::MergeKey(CKey *masterKey, cbuff tag)
+{
+	bool fCompressed = false;
+	const CSecret& vchSecret = masterKey->GetSecret(fCompressed);
+//  cbuff secret(vch.begin(), vch.end());
+  cbuff secret(vchSecret.begin(), vchSecret.end());
+  cbuff kbuff = dikey_MergeKey(secret, tag); 
+
+  /* create a key to return */
+  CSecret ksec(kbuff.begin(), kbuff.end());
+  SetSecret(ksec);
+}
+#if 0
 void DIKey::MergeKey(CKey& childKey, cbuff tag)
 {
   cbuff secret(vch.begin(), vch.end());
@@ -364,6 +377,7 @@ void DIKey::MergeKey(CKey& childKey, cbuff tag)
 
 	childKey = key;
 }
+#endif
 
 static void SIP33Hash(const ChainCode &chainCode, unsigned int nChild, uint16_t header, uint8_t *data, size_t data_len, unsigned char *output/*[128]*/)
 {

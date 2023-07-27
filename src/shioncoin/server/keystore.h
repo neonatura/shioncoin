@@ -112,28 +112,13 @@ public:
         }
         return result;
     }
-    void GetKeys(std::set<CKeyID> &setAddress) const
-    {
-        setAddress.clear();
-        {
-            LOCK(cs_KeyStore);
-            ECKeyMap::const_iterator mi = mapECKeys.begin();
-            while (mi != mapECKeys.end())
-            {
-                setAddress.insert((*mi).first);
-                mi++;
-            }
-        }
-        {
-            LOCK(cs_KeyStore);
-            DIKeyMap::const_iterator mi = mapDIKeys.begin();
-            while (mi != mapDIKeys.end())
-            {
-                setAddress.insert((*mi).first);
-                mi++;
-            }
-        }
-    }
+
+    void GetECKeys(std::set<CKeyID> &setAddress) const;
+
+    void GetDIKeys(std::set<CKeyID> &setAddress) const;
+
+    void GetKeys(std::set<CKeyID> &setAddress) const;
+
 #if 0
     bool GetKey(const CKeyID &address, HDPrivKey &keyOut) const
     {

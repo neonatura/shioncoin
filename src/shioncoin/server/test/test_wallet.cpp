@@ -245,6 +245,7 @@ void TESTWallet::ReacceptWalletTransactions()
 
 }
 
+#if 0
 int TESTWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {
     int ret = 0;
@@ -272,6 +273,7 @@ int TESTWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate
 
     return ret;
 }
+#endif
 
 int64 TESTWallet::GetTxFee(CTransaction tx)
 {

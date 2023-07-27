@@ -32,6 +32,7 @@
 #include "chain.h"
 #include "wallet.h"
 #include "txmempool.h"
+#include "account.h"
 #include "certificate.h"
 #include "rpc_proto.h"
 
@@ -447,7 +448,7 @@ Value rpc_wallet_stamp(CIface *iface, const Array& params, bool fStratum)
   return (wtx.ToValue(ifaceIndex));
 }
 
-Value rpc_cert_export(CIface *iface, const Array& params, bool fStratum) 
+Value rpc_cert_export_hash(CIface *iface, const Array& params, bool fStratum) 
 {
   int ifaceIndex = GetCoinIndex(iface);
   int64 nBalance;
@@ -499,6 +500,21 @@ Value rpc_cert_export(CIface *iface, const Array& params, bool fStratum)
 
 
   Array result;
+
+	{
+		CAccountAddressKey addr(ifaceIndex, ext_addr);
+		if (addr.IsValid())
+			result.push_back(addr.ToValue());
+	}
+
+	{
+		CAccountAddressKey addr(ifaceIndex, cert_addr.Get());
+		if (addr.IsValid())
+			result.push_back(addr.ToValue());
+	}
+
+	return (result);
+#if 0
   map<string, int64> mapAccountBalances;
   BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
     CTxDestination dest = entry.first;
@@ -548,7 +564,9 @@ Value rpc_cert_export(CIface *iface, const Array& params, bool fStratum)
   }
 
   return (obj);
+#endif
 }
+
 
 
 #if 0
@@ -750,7 +768,7 @@ Value rpc_asset_listacc(CIface *iface, const Array& params, bool fStratum)
     kwd = params[0].get_str();
 
 	vector<COutput> vCoins;
-	string strExtAccount = "@" + strAccount; /* where asset tx's are stored */
+	string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount; /* where asset tx's are stored */
 	wallet->AvailableAccountCoins(strExtAccount, vCoins, true);
 
   Object result;
@@ -916,3 +934,112 @@ Value rpc_asset_list(CIface *iface, const Array& params, bool fHelp)
   return (result);
 }
 #endif
+
+static bool IsCertificateAccount(CWallet *wallet, string strAccount, const CTxDestination& destination)
+{
+	string strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
+
+	/* filter for account specified. */
+	map<CTxDestination, string>::iterator mi = wallet->mapAddressBook.find(destination);
+	if (mi == wallet->mapAddressBook.end()) {
+		return (false);
+	}
+	if (mi->second != strAccount &&
+			mi->second != strExtAccount) {
+		return (false);
+	}
+
+	return (true);
+}
+
+static bool IsCertificateAccount(CWallet *wallet, string strAccount, const CScript& scriptPubKey, CTxDestination& destination)
+{
+
+	if (!ExtractDestination(scriptPubKey, destination)) {
+		return (false);
+	}
+
+	return (IsCertificateAccount(wallet, strAccount, destination));
+}
+
+Value rpc_cert_export(CIface *iface, const Array& params, bool fStratum) 
+{
+  CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+	vector<CTxDestination> vAddr;
+	string strAccount;
+
+  if (fStratum)
+    throw runtime_error("unsupported operation");
+
+  if (params.size() != 1)
+    throw runtime_error("invalid parameters");
+
+  if (ifaceIndex != TEST_COIN_IFACE &&
+      ifaceIndex != TESTNET_COIN_IFACE &&
+      ifaceIndex != SHC_COIN_IFACE) {
+    throw runtime_error("unsupported operation");
+	}
+
+	strAccount = params[0].get_str();
+
+  cert_list *certs = GetCertTable(ifaceIndex);
+  BOOST_FOREACH(PAIRTYPE(const uint160, uint256)& r, *certs) {
+    uint256& hash = r.second;
+
+    CTransaction tx;
+    if (!GetTransaction(iface, hash, tx, NULL)) {
+      continue;
+		}
+
+    CCert *cert = tx.GetCertificate();
+		if (!cert) {
+			continue;
+		}
+		if (cert->IsExpired()) {
+			continue;
+		}
+
+		BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+			uint160 hCert;
+			hash;
+			int mode;
+			if (!DecodeCertHash(txout.scriptPubKey, mode, hCert)) {
+				continue;
+			}
+
+			CTxDestination destination;
+			if (!IsCertificateAccount(wallet, strAccount, txout.scriptPubKey, destination)) {
+				continue;
+			}
+
+			vAddr.push_back(destination);
+		}
+
+		const CEntity& ident = (CEntity&)tx.certificate;
+		CCoinAddr cert_addr(ifaceIndex, stringFromVch(ident.vAddr));
+		if (cert_addr.IsValid()) {
+			const CTxDestination& destination = cert_addr.Get();
+			if (!IsCertificateAccount(wallet, strAccount, destination)) {
+				continue;
+			}
+
+			vAddr.push_back(destination);
+		}
+	}
+
+	/* compile return data */
+	Array ret_val;
+	BOOST_FOREACH(const CTxDestination& destination, vAddr) {
+		CAccountAddressKey addr(ifaceIndex, destination);
+
+		/* redundant ownership verification. */
+		if (!addr.IsMine()) {
+			continue;
+		}
+
+		ret_val.push_back(addr.ToValue());
+	}
+	return (ret_val);
+}
+

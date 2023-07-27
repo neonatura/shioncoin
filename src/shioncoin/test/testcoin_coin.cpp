@@ -369,7 +369,6 @@ _TEST(coinaddr)
   {
     const CCoinAddr& address = CCoinAddr(wallet->ifaceIndex, item.first);
     const string& account = item.second;
-fprintf(stderr, "DEBUG: TEST: found addr '%s' for account '%s'\n", address.ToString().c_str(), account.c_str());
   }
 #endif
 

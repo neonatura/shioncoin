@@ -53,6 +53,8 @@ static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS =
 		LOCKTIME_VERIFY_SEQUENCE |
 		LOCKTIME_MEDIAN_TIME_PAST;
 
+static const char *ExtendedDefaultKeyTag = "ext-default";
+
 CWallet *GetWallet(int iface_idx)
 {
 #ifndef TEST_SHCOIND
@@ -98,39 +100,18 @@ struct CompareValueOnly
 	}
 };
 
-bool CWallet::GenerateNewECKey(CPubKey& pubkeyRet, bool fCompressed, int nFlag)
+void CWallet::GenerateNewECKey(ECKey& key, bool fCompressed, int nFlag)
 {
-	ECKey key;
-
-	{
-		LOCK(cs_wallet);
-		key.MakeNewKey(fCompressed);
-
-	}
-
+	LOCK(cs_wallet);
+	key.MakeNewKey(fCompressed);
 	key.nFlag |= nFlag;
-	if (!AddKey(key))
-		return (false);
-
-	pubkeyRet = key.GetPubKey();
-	return (true);
 }
 
-bool CWallet::GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag)
+void CWallet::GenerateNewDIKey(DIKey& key, int nFlag)
 {
-	DIKey key;
-
-	{
-		LOCK(cs_wallet);
-		key.MakeNewKey();
-	}
-
+	LOCK(cs_wallet);
+	key.MakeNewKey();
 	key.nFlag |= nFlag;
-	if (!AddKey(key))
-		return (false);
-
-	pubkeyRet = key.GetPubKey();
-	return (true);
 }
 
 bool CWallet::AddKey(ECKey& key)
@@ -566,13 +547,21 @@ void CWallet::AvailableAccountCoins(string strAccount, vector<COutput>& vCoins, 
 		}
 	}
 
-	if (strAccount.length() == 0) {
+	if (strAccount == "") {
 		/* include coinbase (non-mapped) pub-keys */
 		std::set<CKeyID> keys;
-		GetKeys(keys);
+
+		GetECKeys(keys);
 		BOOST_FOREACH(const CKeyID& key, keys) {
 			if (mapAddressBook.count(key) == 0) { /* loner */
-				vDest.push_back(CTxDestination(key));
+				GetAddrDestination(ifaceIndex, key, vDest, ACCADDRF_WITNESS); 
+			}
+		}
+
+		GetDIKeys(keys);
+		BOOST_FOREACH(const CKeyID& key, keys) {
+			if (mapAddressBook.count(key) == 0) { /* loner */
+				GetAddrDestination(ifaceIndex, key, vDest, ACCADDRF_WITNESS | ACCADDRF_DILITHIUM); 
 			}
 		}
 	}
@@ -1416,7 +1405,7 @@ bool GetCoinAddr(CWallet *wallet, string strAddress, CCoinAddr& addrAccount)
 	if (strAddress.length() == 0)
 		return (false);
 
-	if (strAddress.at(0) == '@') {
+	if (strAddress.substr(0, 1) == CWallet::EXT_ACCOUNT_PREFIX) {
 		return (GetCoinAddrAlias(wallet, strAddress.substr(1), addrAccount));
 	}
 
@@ -2016,10 +2005,50 @@ void core_ReacceptWalletTransactions(CWallet *wallet)
 		}
 	}
 
+#if 0
 	/* rescan from height of newest wallet tx */
 	if (min_pindex)
 		wallet->ScanForWalletTransactions(min_pindex);
+#endif
 
+	if (min_pindex) {
+		Debug("Last wallet transaction @ height %d (block %s).", min_pindex->nHeight, min_pindex->GetBlockHash().GetHex().c_str());
+	}
+
+}
+
+static bool GenerateExtendedDefaultKey(CWallet *wallet, CKeyID masterKeyID, CPubKey& pubkeyRet)
+{
+	cbuff tagbuf(ExtendedDefaultKeyTag, ExtendedDefaultKeyTag + strlen(ExtendedDefaultKeyTag));
+	CKey *eckey;
+  CKey *pkey;
+
+  pkey = wallet->GetKey(masterKeyID);
+  if (!pkey)
+    return (false);
+
+#if 0
+	eckey = wallet->toECKey(pkey);
+	if (!eckey)
+		return (false);
+#endif
+
+  ECKey key;
+  key.MergeKey(pkey, tagbuf);
+  key.nFlag |= ACCADDRF_MASTER;
+
+  pubkeyRet = key.GetPubKey();
+  if (!pubkeyRet.IsValid())
+    return (false);
+
+  const CKeyID& keyid = pubkeyRet.GetID();
+  if (!wallet->HaveKey(keyid)) {
+    /* add key to address book */
+    if (!wallet->AddKey(key))
+      return (false);
+  }
+
+  return (true);
 }
 
 CAccountCache *CWallet::GetAccount(string strAccount)
@@ -2043,14 +2072,59 @@ CAccountCache *CWallet::GetAccount(string strAccount)
 			walletdb.Close();
 		}
 
-		if (!ca->account.vchPubKey.IsValid()) {
-			CPubKey pubkey;
-			if (ca->CreateNewPubKey(pubkey, 0)) {
-				ca->account.vchPubKey = pubkey;
-				fUpdate = true;
+		/* initial extended account primary key creation. */
+		if (!ca->account.vchPubKey.IsValid() &&
+				strAccount.substr(0, 1) == CWallet::EXT_ACCOUNT_PREFIX) {
+			/* derive from non-extended account. */
+			string strMasterAccount = strAccount.substr(1);
+
+			CAccount masterAccount;
+			{
+				LOCK(cs_wallet);
+
+				/* load from wallet */
+				CWalletDB walletdb(strWalletFile);
+				walletdb.ReadAccount(strMasterAccount, masterAccount);
+				walletdb.Close();
+			}
+
+			if (masterAccount.vchPubKey.IsValid()) {
+				CPubKey pubkey;
+				CKeyID keyid;
+
+				if (GenerateExtendedDefaultKey(this, masterAccount.vchPubKey.GetID(), pubkey)) {
+					ca->account.vchPubKey = pubkey;
+					fUpdate = true;
+				}
 			}
 		}
 
+		/* initial regular account master key creation. */
+		if (!ca->account.vchPubKey.IsValid()) {
+			CPubKey pubkey;
+			bool fOk;
+
+			if (opt_bool(OPT_DILITHIUM) &&
+					(ifaceIndex == SHC_COIN_IFACE ||
+					 ifaceIndex == TEST_COIN_IFACE ||
+					 ifaceIndex == TESTNET_COIN_IFACE)) {
+				/* uses dilithium key as master to increase entropy (seed) of derived hd-keys. */
+				fOk = ca->GenerateNewDIKey(pubkey, ACCADDRF_MASTER);
+			} else {
+				/* standard ecdsa key */
+				fOk = ca->GenerateNewECKey(pubkey, ACCADDRF_MASTER);
+			}
+#if 0
+			fOk = GenerateNewECKey(pubkey, ACCADDRF_MASTER);
+#endif
+			if (fOk) {
+				ca->account.vchPubKey = pubkey;
+        fUpdate = true; 
+			}
+		}
+
+#if 0
+		/* initial master hd key. */
 		if (ca->account.masterKeyID == 0) {
 			CPubKey pubkey;
 			if (ca->GetPrimaryPubKey(ACCADDR_HDKEY, pubkey)) {
@@ -2058,15 +2132,19 @@ CAccountCache *CWallet::GetAccount(string strAccount)
 				fUpdate = true;
 			}
 		}
+#endif
 
-		if (fUpdate)
+		if (fUpdate) {
+//			ca->SetAddrDestinations(ca->account.vchPubKey.GetID());
 			ca->UpdateAccount();
+		}
 
 		mapAddrCache[strAccount] = ca;
 	}
 
 	return (mapAddrCache[strAccount]);
 }
+
 
 CPubKey CWallet::GetPrimaryPubKey(string strAccount)
 {
@@ -2085,7 +2163,7 @@ CCoinAddr CWallet::GetExecAddr(string strAccount)
 
 CCoinAddr CWallet::GetExtAddr(string strAccount)
 {
-	return (GetAccount("@"+strAccount)->GetAddr(ACCADDR_EXT));
+	return (GetAccount(EXT_ACCOUNT_PREFIX + strAccount)->GetAddr(ACCADDR_EXT));
 }
 
 CCoinAddr CWallet::GetNotaryAddr(string strAccount)
@@ -2169,11 +2247,11 @@ CBlockIndex *CWallet::GetLocatorIndex(const CBlockLocator& loc)
 	return (GetGenesisBlockIndex(iface));
 }
 
-bool CWallet::DeriveNewECKey(CAccount *hdChain, ECKey& secret, bool internal)
+bool CWallet::DeriveNewECKey(CAccount *hdChain, ECKey& secret, int nType)
 {
 	// for now we use a fixed keypath scheme of m/0'/0'/k
-	ECExtKey masterKey;             //hd master key
-	ECExtKey accountKey;            //key at m/0'
+//	ECExtKey masterKey;             //hd master key
+//	ECExtKey accountKey;            //key at m/0'
 	ECExtKey chainChildKey;         //key at m/0'/0' (external) or m/0'/1' (internal)
 	ECExtKey childKey;              //key at m/0'/0'/<n>'
 	string hdKeypath;
@@ -2181,6 +2259,7 @@ bool CWallet::DeriveNewECKey(CAccount *hdChain, ECKey& secret, bool internal)
 	if (!hdChain)
 		return (false);
 
+#if 0
 	CKey *key = GetKey(hdChain->masterKeyID);
 	if (!key)
 		return (false);
@@ -2191,39 +2270,78 @@ bool CWallet::DeriveNewECKey(CAccount *hdChain, ECKey& secret, bool internal)
 	// use hardened derivation (child keys >= 0x80000000 are hardened after bip32)
 	masterKey.Derive(accountKey, BIP32_HARDENED_KEY_LIMIT);
 
-	// derive m/0'/0' (external chain) OR m/0'/1' (internal chain)
-	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT+(internal ? 1 : 0));
+	// derive "m/0'/<nType>'"
+	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT + nType);
+#endif
+
+	if (!DerivePrimaryECExtKey(hdChain, chainChildKey, nType))
+		return (false);
 
 	// derive child key at next index, skip keys already known to the wallet
 	do {
 		// always derive hardened keys
 		// childIndex | BIP32_HARDENED_KEY_LIMIT = derive childIndex in hardened child-index-range
 		// example: 1 | BIP32_HARDENED_KEY_LIMIT == 0x80000001 == 2147483649
-		if (internal) {
-			chainChildKey.Derive(childKey, hdChain->nInternalECChainCounter | BIP32_HARDENED_KEY_LIMIT);
-			hdKeypath = "m/0'/1'/" + std::to_string(hdChain->nInternalECChainCounter) + "'";
-			hdChain->nInternalECChainCounter++;
-		}
-		else {
-			chainChildKey.Derive(childKey, hdChain->nExternalECChainCounter | BIP32_HARDENED_KEY_LIMIT);
-			hdKeypath = "m/0'/0'/" + std::to_string(hdChain->nExternalECChainCounter) + "'";
-			hdChain->nExternalECChainCounter++;
-		}
+		uint nIndex = hdChain->GetHDIndex(nType, SIGN_ALG_ECDSA);
+		chainChildKey.Derive(childKey, nIndex | BIP32_HARDENED_KEY_LIMIT);
+		hdKeypath = "m/0'/" + std::to_string(nType) + "'/" + std::to_string(nIndex) + "'";
+		hdChain->IncrementHDIndex(nType, SIGN_ALG_ECDSA); 	
 	} while (HaveKey(childKey.key.GetPubKey().GetID()));
 
 	secret = childKey.key;
-	secret.nFlag |= CKeyMetadata::META_HD_KEY;
-	secret.hdMasterKeyID = hdChain->masterKeyID;
+	secret.nFlag |= ACCADDRF_DERIVE;
+	secret.hdMasterKeyID = hdChain->GetMasterKeyID();
 	secret.hdKeypath = hdKeypath;
 
 	return (true);
 }
 
-bool CWallet::DeriveNewDIKey(CAccount *hdChain, DIKey& secret, bool internal)
+bool CWallet::DerivePrimaryECExtKey(CAccount *hdChain, ECExtKey& chainChildKey, int nType)
+{
+	ECExtKey masterKey;             //hd master key
+	ECExtKey accountKey;            //key at m/0'
+//	ECExtKey chainChildKey;         //key at m/0'/<nType>'
+
+	if (!hdChain) {
+		return (false);
+	}
+
+	CKey *key = GetKey(hdChain->GetMasterKeyID());
+	if (!key) {
+		return (false);
+	}
+
+	masterKey.SetMaster(key->begin(), key->size());
+
+	// derive m/0'
+	// use hardened derivation (child keys >= 0x80000000 are hardened after bip32)
+	masterKey.Derive(accountKey, BIP32_HARDENED_KEY_LIMIT);
+
+	// derive m/0'/X' based on type.
+	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT + nType);
+
+	return (true);
+}
+
+bool CWallet::DerivePrimaryECKey(CAccount *hdChain, ECKey& secret, int nType)
+{
+	ECExtKey chainChildKey;
+
+	if (!DerivePrimaryECExtKey(hdChain, chainChildKey, nType))
+		return (false); 
+
+	secret = chainChildKey.key;
+	secret.nFlag |= CKeyMetadata::META_HD_KEY;
+	secret.hdMasterKeyID = hdChain->GetMasterKeyID();
+	secret.hdKeypath = "m/0'/" + std::to_string(nType) + "'";
+	return (true);
+}
+
+bool CWallet::DeriveNewDIKey(CAccount *hdChain, DIKey& secret, int nType)
 {
 	// for now we use a fixed keypath scheme of m/0'/0'/k
-	DIExtKey masterKey;             //hd master key
-	DIExtKey accountKey;            //key at m/0'
+//	DIExtKey masterKey;             //hd master key
+//	DIExtKey accountKey;            //key at m/0'
 	DIExtKey chainChildKey;         //key at m/0'/0' (external) or m/0'/1' (internal)
 	DIExtKey childKey;              //key at m/0'/0'/<n>'
 	string hdKeypath;
@@ -2231,6 +2349,7 @@ bool CWallet::DeriveNewDIKey(CAccount *hdChain, DIKey& secret, bool internal)
 	if (!hdChain)
 		return (false);
 
+#if 0
 	CKey *key = GetKey(hdChain->masterKeyID);
 	if (!key)
 		return (false);
@@ -2241,31 +2360,69 @@ bool CWallet::DeriveNewDIKey(CAccount *hdChain, DIKey& secret, bool internal)
 	// use hardened derivation (child keys >= 0x80000000 are hardened after bip32)
 	masterKey.Derive(accountKey, BIP32_HARDENED_KEY_LIMIT);
 
-	// derive m/0'/0' (external chain) OR m/0'/1' (internal chain)
-	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT+(internal ? 1 : 0));
+	// derive "m/0'/<nType>'"
+	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT + nType);
+#endif
+	if (!DerivePrimaryDIExtKey(hdChain, chainChildKey, nType))
+		return (false);
 
 	// derive child key at next index, skip keys already known to the wallet
 	do {
 		// always derive hardened keys
 		// childIndex | BIP32_HARDENED_KEY_LIMIT = derive childIndex in hardened child-index-range
 		// example: 1 | BIP32_HARDENED_KEY_LIMIT == 0x80000001 == 2147483649
-		if (internal) {
-			chainChildKey.Derive(childKey, hdChain->nInternalDIChainCounter | BIP32_HARDENED_KEY_LIMIT);
-			hdKeypath = "m/0'/1'/" + std::to_string(hdChain->nInternalDIChainCounter) + "'";
-			hdChain->nInternalDIChainCounter++;
-		}
-		else {
-			chainChildKey.Derive(childKey, hdChain->nExternalDIChainCounter | BIP32_HARDENED_KEY_LIMIT);
-			hdKeypath = "m/0'/0'/" + std::to_string(hdChain->nExternalDIChainCounter) + "'";
-			hdChain->nExternalDIChainCounter++;
-		}
+		uint nIndex = hdChain->GetHDIndex(nType, SIGN_ALG_DILITHIUM);
+		chainChildKey.Derive(childKey, nIndex | BIP32_HARDENED_KEY_LIMIT);
+		hdKeypath = "m/0'/" + std::to_string(nType) + "'/" + std::to_string(nIndex) + "'";
+		hdChain->IncrementHDIndex(nType, SIGN_ALG_DILITHIUM);
 	} while (HaveKey(childKey.key.GetPubKey().GetID()));
 
 	secret = childKey.key;
-	secret.nFlag |= CKeyMetadata::META_HD_KEY;
-	secret.hdMasterKeyID = hdChain->masterKeyID;
+	secret.nFlag |= ACCADDRF_DERIVE;
+	secret.nFlag |= ACCADDRF_DILITHIUM;
+	secret.hdMasterKeyID = hdChain->GetMasterKeyID();
 	secret.hdKeypath = hdKeypath;
 
+	return (true);
+}
+
+bool CWallet::DerivePrimaryDIExtKey(CAccount *hdChain, DIExtKey& chainChildKey, int nType)
+{
+	DIExtKey masterKey;             //hd master key
+	DIExtKey accountKey;            //key at "m/0'"
+//	DIExtKey chainChildKey;         //key at "m/0'/<nType>'"
+
+	if (!hdChain)
+		return (false);
+
+	CKey *key = GetKey(hdChain->GetMasterKeyID());
+	if (!key)
+		return (false);
+
+	masterKey.SetMaster(key->begin(), key->size());
+
+	// derive m/0'
+	// use hardened derivation (child keys >= 0x80000000 are hardened after bip32)
+	masterKey.Derive(accountKey, BIP32_HARDENED_KEY_LIMIT);
+
+	// derive m/0'/X' based on type.
+	accountKey.Derive(chainChildKey, BIP32_HARDENED_KEY_LIMIT + nType);
+
+	return (true);
+}
+
+bool CWallet::DerivePrimaryDIKey(CAccount *hdChain, DIKey& secret, int nType)
+{
+	DIExtKey chainChildKey;
+
+	if (!DerivePrimaryDIExtKey(hdChain, chainChildKey, nType))
+		return (false); 
+
+	secret = chainChildKey.key;
+	secret.nFlag |= CKeyMetadata::META_HD_KEY;
+	secret.nFlag |= ACCADDRF_DILITHIUM;
+	secret.hdMasterKeyID = hdChain->GetMasterKeyID();
+	secret.hdKeypath = "m/0'/" + std::to_string(nType) + "'";
 	return (true);
 }
 
@@ -2446,4 +2603,57 @@ void CWallet::InitSpent(CWalletTx& wtx)
 			wtx.vfSpent[i] = true;
 	}
 }
+
+#if 0
+CKey *CWallet::toECKey(CKey *key)
+{
+	static const uint8_t version = DILITHIUM_VERSION;
+
+	bool fCompressed = false;
+  uint8_t buf[128];
+	uint8_t seed[128];
+	size_t seed_len;
+
+	if (key->GetMethod() == SIGN_ALG_ECDSA) {
+		return (key);
+	} 
+
+	const CSecret& keySecret = key->GetSecret(fCompressed);
+	if (keySecret.size() > 128) {
+		return (NULL);
+	}
+
+	cbuff keyBuff(keySecret.begin(), keySecret.end());
+	memcpy(seed, keyBuff.begin(), keyBuff.size());
+	seed_len = keyBuff.size(); 
+
+  {
+    shake256incctx state;
+
+		memset(buf, 0, sizeof(buf));
+    shake256_inc_init(&state);
+    shake256_inc_absorb(&state, (const uint8_t *)seed, seed_len);
+    shake256_inc_absorb(&state, (const uint8_t *)&version, 1);
+    shake256_inc_finalize(&state);
+    shake256_inc_squeeze(buf, ECKey::ECDSA_SECRET_SIZE, &state);
+  }
+
+	ECKey eckey;
+  if (!eckey.SetSecret(CSecret(buf, buf + ECKey::ECDSA_SECRET_SIZE)), true) {
+		return (NULL);
+	}
+
+  if (!wallet->HaveKey(keyid)) {
+		if (!wallet->AddKey(eckey)) {
+			return (NULL);
+		}
+
+    SetAddressBookName(CTxDestination(keyid), 
+const CTxDestination& address, const std::string& strName);
+	}
+
+	const CPubKey& pubkey = eckey.GetPubKey();
+	return (GetKey(pubkey.GetID()));
+}
+#endif
 

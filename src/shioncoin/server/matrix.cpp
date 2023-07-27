@@ -886,6 +886,9 @@ CTxMatrix *CTransaction::GenerateSpringMatrix(int ifaceIndex, CIdent& ident)
 		return (NULL);
 	}
 
+// TODO: verify
+	ident = *springIdent; 
+
 	nFlag |= CTransaction::TXF_MATRIX;
 
 	matrix = CTxMatrix();

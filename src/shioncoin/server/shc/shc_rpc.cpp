@@ -38,17 +38,27 @@
 #include "rpcoffer_proto.h"
 #include "rpcparam_proto.h"
 
-
 using namespace std;
 using namespace boost;
 
+extern void RegisterRPCAlias(int ifaceIndex, string name, const RPCOp& op);
 extern Value rpc_wallet_keyphrase(CIface *iface, const Array& params, bool fHelp);
 extern Value rpc_wallet_setkeyphrase(CIface *iface, const Array& params, bool fHelp);
+extern Value rpc_wallet_burn(CIface *iface, const Array& params, bool fStratum); 
 
 const RPCOp WALLET_CSEND = {
   &rpc_wallet_csend, 4, {RPC_ACCOUNT, RPC_COINADDR, RPC_DOUBLE, RPC_STRING},
   "Syntax: <account> <address> <value> <cert-hash>\n"
   "Summary: Send a certified coin transaction."
+};
+
+const RPCOp WALLET_BURN = {
+  &rpc_wallet_burn, 2, {RPC_ACCOUNT, RPC_DOUBLE},
+  "Syntax: <account> <value>\n"
+  "Summary: Send coins to a null destination.\n"
+  "Params: [ <account> The coin account name., <value> The coin value to burn. ]\n"
+  "\n"
+  "Burnt coins are no longer accessible on the blockchain once sent. The maximum burn value in a single transaction is 1000 coins."
 };
 
 const RPCOp WALLET_DONATE = {
@@ -92,15 +102,15 @@ const RPCOp WALLET_STAMP = {
     "A single coin reward can be achieved by creating an ident stamp transaction on a location present in the \"spring matrix\". The reward will be given, at most, once per location. A minimum transaction fee will apply and is sub-sequently returned once the transaction has been processed."
 };
 
-const RPCOp WALLET_GETCERT = {
-  &rpc_wallet_getcert, 1, {RPC_ACCOUNT},
-  "Syntax: <address>\n"
+const RPCOp WALLET_GETACCALIAS = {
+  &rpc_wallet_getaccalias, 1, {RPC_ACCOUNT},
+  "Syntax: <account>\n"
 	"Get the default certificate for the given account name."
 };
 
-const RPCOp WALLET_SETCERT = {
-  &rpc_wallet_setcert, 2, {RPC_ACCOUNT, RPC_STRING},
-  "Syntax: <address> <cert-hash>\n"
+const RPCOp WALLET_SETACCALIAS = {
+  &rpc_wallet_setaccalias, 2, {RPC_ACCOUNT, RPC_STRING},
+  "Syntax: <account> <cert-hash>\n"
 	"Set the default certificate for the given account name."
 };
 
@@ -114,20 +124,21 @@ const RPCOp ALIAS_FEE = {
   &rpc_alias_fee, 0, {},
   "Get current service fee to perform an alias operation."
 };
-const RPCOp ALIAS_PUBADDR = {
+const RPCOp ALIAS_SETADDR = {
   &rpc_alias_pubaddr, 1, {RPC_STRING, RPC_STRING},
   "Syntax: <name> [<coin-address>]\n"
   "Summary: Generate, transfer, or obtain a published coin-address alias.\n"
   "Params: [ <name> The alias's label, <coin-address> The alias's referenced coin address. ]\n"
   "When a coin address is specified the alias label will be published onto the block chain in reference. If the alias label already exists, then a transfer will occur providing you are the original owner.\n"
-  "The assigned coin address, if one exists, is printed if a specific coin address is not specified."
+	"If the coin-address is not specified for an existing alias, then the alias will be regenerated and the expiration time will be refreshed."
 };
 const RPCOp ALIAS_REMOVE = {
-  &rpc_alias_remove, 1, {RPC_STRING, RPC_ACCOUNT},
-  "Syntax: <name> [<account>]\n"
+  &rpc_alias_remove, 1, {RPC_STRING},//, RPC_ACCOUNT},
+  "Syntax: <name>\n"
   "Summary: Removed a published alias.\n"
-  "Params: [ <name> The alias's label, <account> the account of the referenced coin address. ]\n"
-  "Removes a published alias from the block-chain. The alias owner's account is verified [when an account specification is warranted]."
+  "Params: [ <name> The alias's label. ]\n"
+  "Removes a published alias from the block-chain."
+//	The alias owner's account is verified [when an account specification is warranted]."
 };
 const RPCOp ALIAS_GET = {
   &rpc_alias_get, 1, {RPC_STRING},
@@ -135,7 +146,7 @@ const RPCOp ALIAS_GET = {
   "Summary: Obtain specific information about an alias.\n"
   "Params: [ <alias-hash> The alias hash being referenced. ]\n"
   "\n"
-  "Print indepth information about a particular alias based on it's hash."
+  "Print indepth information about a particular alias."
 };
 const RPCOp ALIAS_GETADDR = {
   &rpc_alias_getaddr, 1, {RPC_STRING},
@@ -145,20 +156,35 @@ const RPCOp ALIAS_GETADDR = {
   "\n"
   "Print indepth information about a particular alias based on it's label."
 };
-const RPCOp ALIAS_LIST = {
+const RPCOp ALIAS_LISTADDR = {
   &rpc_alias_listaddr, 0, {RPC_STRING},
   "Syntax: [<keyword>]\n"
   "List all published aliases with optional keyword filter."
+};
+const RPCOp ALIAS_EXPORT = {
+  &rpc_alias_export, 1, {RPC_ACCOUNT},
+  "Syntax: <account>\n"
+  "Summary: Export an account's published alias(es).\n"
+  "Params: [ <account> the account to export from. ]\n"
+  "Exports neccessary walet keys for published aliases(es) associated with an account."
 };
 
 
 
 /* ext tx; certificate */
-const RPCOp CERT_EXPORT = {
-  &rpc_cert_export, 1, {RPC_STRING, RPC_STRING},
-  "Syntax: <cert-hash> [<path>]\n"
+const RPCOp CERT_EXPORTHASH = {
+  &rpc_cert_export_hash, 1, {RPC_STRING},
+  "Syntax: <cert-hash>\n"
   "Summary: Export the credentials neccessary to own a certificate.\n"
   "Params: [ <cert-hash> The certificate's reference hash. ]\n"
+  "\n"
+  "Ownership and management of a certificate depends on having specific coin address key(s) in the coin wallet. Exporting a certificate provides JSON formatted content which can be used with \"wallet.import\" command to attain ownership of a certificate."
+};
+const RPCOp CERT_EXPORT = {
+  &rpc_cert_export, 1, {RPC_ACCOUNT},
+  "Syntax: <account>\n"
+  "Summary: Export the certificate credentials associated with an account.\n"
+  "Params: [ <acount> The account to export certificate(s) for. ]\n"
   "\n"
   "Ownership and management of a certificate depends on having specific coin address key(s) in the coin wallet. Exporting a certificate provides JSON formatted content which can be used with \"wallet.import\" command to attain ownership of a certificate."
 };
@@ -558,7 +584,13 @@ const RPCOp ASSET_UPDATE = {
   "\n"
   "Update information for an asset on the blockchain."
 };
-
+const RPCOp ASSET_EXPORT = {
+  &rpc_asset_export, 1, {RPC_ACCOUNT},
+  "Syntax: <account>\n"
+  "Summary: Export an account's published asset(es).\n"
+  "Params: [ <account> the account to export from. ]\n"
+  "Exports neccessary walet keys for published asset(es) associated with an account."
+};
 
 const RPCOp OFFER_NEW = {
   &rpc_offer_new, 2, {RPC_ACCOUNT, RPC_STRING},
@@ -626,30 +658,33 @@ void shc_RegisterRPCOp(int ifaceIndex)
 
   RegisterRPCOpDefaults(ifaceIndex);
 
+//  Note: Alias hash is not currently shown to user or used as input param.
+
+  RegisterRPCOp(ifaceIndex, "alias.export", ALIAS_EXPORT);
   RegisterRPCOp(ifaceIndex, "alias.fee", ALIAS_FEE);
-//  RegisterRPCOp(ifaceIndex, "alias.get", ALIAS_GET);
+  RegisterRPCOp(ifaceIndex, "alias.get", ALIAS_GET);
   RegisterRPCOp(ifaceIndex, "alias.getaddr", ALIAS_GETADDR);
   RegisterRPCOp(ifaceIndex, "alias.info", ALIAS_INFO);
-  RegisterRPCOp(ifaceIndex, "alias.list", ALIAS_LIST);
-  RegisterRPCOp(ifaceIndex, "alias.pubaddr", ALIAS_PUBADDR);
+  RegisterRPCOp(ifaceIndex, "alias.listaddr", ALIAS_LISTADDR);
+  RegisterRPCOp(ifaceIndex, "alias.setaddr", ALIAS_SETADDR);
   RegisterRPCOp(ifaceIndex, "alias.remove", ALIAS_REMOVE);
 
-//  if (opt_bool(OPT_TX_ASSET)) {
-		RegisterRPCOp(ifaceIndex, "asset.fee", ASSET_FEE);
-		RegisterRPCOp(ifaceIndex, "asset.get", ASSET_GET);
-		RegisterRPCOp(ifaceIndex, "asset.info", ASSET_INFO);
-		RegisterRPCOp(ifaceIndex, "asset.list", ASSET_LIST);
-		RegisterRPCOp(ifaceIndex, "asset.listacc", ASSET_LISTACC);
-		RegisterRPCOp(ifaceIndex, "asset.listcert", ASSET_LISTCERT);
-		RegisterRPCOp(ifaceIndex, "asset.new", ASSET_NEW);
-		RegisterRPCOp(ifaceIndex, "asset.newcert", ASSET_NEWCERT);
-		RegisterRPCOp(ifaceIndex, "asset.remove", ASSET_REMOVE);
-		RegisterRPCOp(ifaceIndex, "asset.renew", ASSET_ACTIVATE);
-		RegisterRPCOp(ifaceIndex, "asset.send", ASSET_TRANSFER);
-		RegisterRPCOp(ifaceIndex, "asset.update", ASSET_UPDATE);
-//	}
+	RegisterRPCOp(ifaceIndex, "asset.fee", ASSET_FEE);
+	RegisterRPCOp(ifaceIndex, "asset.get", ASSET_GET);
+	RegisterRPCOp(ifaceIndex, "asset.export", ASSET_EXPORT);
+	RegisterRPCOp(ifaceIndex, "asset.info", ASSET_INFO);
+	RegisterRPCOp(ifaceIndex, "asset.list", ASSET_LIST);
+	RegisterRPCOp(ifaceIndex, "asset.listacc", ASSET_LISTACC);
+	RegisterRPCOp(ifaceIndex, "asset.listcert", ASSET_LISTCERT);
+	RegisterRPCOp(ifaceIndex, "asset.new", ASSET_NEW);
+	RegisterRPCOp(ifaceIndex, "asset.newcert", ASSET_NEWCERT);
+	RegisterRPCOp(ifaceIndex, "asset.remove", ASSET_REMOVE);
+	RegisterRPCOp(ifaceIndex, "asset.renew", ASSET_ACTIVATE);
+	RegisterRPCOp(ifaceIndex, "asset.send", ASSET_TRANSFER);
+	RegisterRPCOp(ifaceIndex, "asset.update", ASSET_UPDATE);
 
   RegisterRPCOp(ifaceIndex, "cert.export", CERT_EXPORT);
+  RegisterRPCOp(ifaceIndex, "cert.exporthash", CERT_EXPORTHASH);
   RegisterRPCOp(ifaceIndex, "cert.info", CERT_INFO);
   RegisterRPCOp(ifaceIndex, "cert.get", CERT_GET);
   RegisterRPCOp(ifaceIndex, "cert.list", CERT_LIST);
@@ -673,6 +708,7 @@ void shc_RegisterRPCOp(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "ctx.setloc", CTX_SETLOC);
   RegisterRPCOp(ifaceIndex, "ctx.findloc", CTX_FINDLOC);
   RegisterRPCOp(ifaceIndex, "ctx.loctypes", CTX_LOCTYPES);
+//  RegisterRPCOp(ifaceIndex, "ctx.export", CTX_EXPORT);
 
 #ifdef USE_SEXE
   RegisterRPCOp(ifaceIndex, "exec.compile", EXEC_COMPILE);
@@ -686,6 +722,8 @@ void shc_RegisterRPCOp(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "exec.reset", EXEC_RESET);
   RegisterRPCOp(ifaceIndex, "exec.run", EXEC_RUN);
 //  RegisterRPCOp(ifaceIndex, "exec.transfer", EXEC_TRANSFER);
+
+//  RegisterRPCOp(ifaceIndex, "exec.export", EXEC_EXPORT);
 #endif
 
 	RegisterRPCOp(ifaceIndex, "offer.new", OFFER_NEW);
@@ -700,13 +738,19 @@ void shc_RegisterRPCOp(int ifaceIndex)
 	RegisterRPCOp(ifaceIndex, "param.value", PARAM_VALUE);
 	RegisterRPCOp(ifaceIndex, "param.get", PARAM_GET);
 
+	RegisterRPCOp(ifaceIndex, "wallet.burn", WALLET_BURN);
   RegisterRPCOp(ifaceIndex, "wallet.csend", WALLET_CSEND);
   RegisterRPCOp(ifaceIndex, "wallet.donate", WALLET_DONATE);
-  RegisterRPCOp(ifaceIndex, "wallet.getcert", WALLET_GETCERT);
   RegisterRPCOp(ifaceIndex, "wallet.keyphrase", WALLET_KEYPHRASE);
-  RegisterRPCOp(ifaceIndex, "wallet.setcert", WALLET_SETCERT);
   RegisterRPCOp(ifaceIndex, "wallet.setkeyphrase", WALLET_SETKEYPHRASE);
   RegisterRPCOp(ifaceIndex, "wallet.stamp", WALLET_STAMP);
+
+
+#if 0
+	/* no supporting functionality to utilize 'default cert for account'. */
+  RegisterRPCOp(ifaceIndex, "wallet.getaccalias", WALLET_GETACCALIAS);
+  RegisterRPCOp(ifaceIndex, "wallet.setaccalias", WALLET_SETACCALIAS);
+#endif
 
 }
 

@@ -246,8 +246,8 @@ static bool emc2_LoadBlockIndex()
 #endif
 
   int nCheckDepth = (GetBestHeight(EMC2_COIN_IFACE) / 640) + 640;
-  int nWalletCheckDepth = nCheckDepth * 1.5;
-  int nValidateCheckDepth = nCheckDepth * 3;
+  int nWalletCheckDepth = nCheckDepth * 1;
+  int nValidateCheckDepth = nCheckDepth * 2;
   int total = 0;
   int invalid = 0;
   int maxHeight = 0;
@@ -310,7 +310,7 @@ static bool emc2_LoadBlockIndex()
 
   /* validate wallet transactions */
   nWalletCheckDepth = MIN(maxHeight-1, nWalletCheckDepth);
-  InitServiceWalletEvent(wallet, maxHeight - nWalletCheckDepth);
+  InitServiceWalletEvent(EMC2_COIN_IFACE, maxHeight - nWalletCheckDepth);
   sprintf(errbuf, "EMC2::LoadBlockIndex: Initiated wallet validation of %d total blocks (%-3.3f%%).", nWalletCheckDepth, (100 / (double)maxHeight * (double)nWalletCheckDepth));
   unet_log(EMC2_COIN_IFACE, errbuf);
 

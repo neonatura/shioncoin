@@ -57,7 +57,7 @@ static CPubKey GetAccountPubKey(CWallet *wallet, string strAccount, bool fNew = 
 {
 	static CPubKey pubkey;
 	CAccountCache *acc = wallet->GetAccount(strAccount);
-	acc->CreateNewPubKey(pubkey, 0);
+	acc->CreateNewPubKey(pubkey, ACCADDR_RECV, 0);
 	return (pubkey);
 }
 
@@ -693,11 +693,9 @@ _TEST(offertx)
   /* offer generate operation */
   CWalletTx gen_wtx;
   err = generate_offer_tx(iface, strLabel, hashOffer, gen_wtx);
-fprintf(stderr, "DEBUG: REMOVE ME: TEST: generate_offer_tx: err = %d\n", err);
   _TRUE(0 == err);
 	_TRUEPTR(gen_wtx.GetOffer());
   uint160 hashGen = gen_wtx.offer.GetHash();
-fprintf(stderr, "DEBUG: REMOVE ME: TEST: generate_offer_Tx: %s\n", gen_wtx.GetOffer()->ToString().c_str());
   _TRUE(gen_wtx.CheckTransaction(TEST_COIN_IFACE));
   _TRUE(gen_wtx.VerifyOffer(TEST_COIN_IFACE, GetBestHeight(iface)) == true);
   {
@@ -1342,6 +1340,7 @@ _TEST(scriptid)
 
   CCoinAddr ret_addr = GetAccountAddress(wallet, strAccount);
   _TRUE(ret_addr.IsValid());
+
   CCoinAddr addr = GetAccountAddress(wallet, strExtAccount);
   _TRUE(addr.IsValid());
 
@@ -1370,8 +1369,6 @@ _TEST(scriptid)
     _TRUE(ProcessBlock(NULL, block) == true);
     delete block;
   }
-//int64 nValue = GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1);
-//fprintf(stderr, "DEBUG: TEST: SCRIPTID: bal/before nValue %f\n", (double)nValue / COIN);
   _TRUE((int64)COIN == GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1));
 
   /* redeem scriptID back to origin */
@@ -1393,8 +1390,6 @@ _TEST(scriptid)
     delete block;
   }
   _TRUE(wtx2.IsInMemoryPool(TEST_COIN_IFACE) == false);
-//int64 nValue = GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1);
-//fprintf(stderr, "DEBUG: TEST: SCRIPTID: bal/after %f\n", (double)nValue/COIN);
 
   _TRUE(GetAccountBalance(TEST_COIN_IFACE, strExtAccount, 1) < CENT);
 }
@@ -1732,7 +1727,6 @@ _TEST(txmempool_depend)
   _TRUE(true == s_tx.AddOutput(addr.Get(), (int64)COIN));
   _TRUE(true == s_tx.Send());
 
-fprintf(stderr, "DEBUG: REMOVE ME: TEST: txmempool_depend: pool->size() == %d\n", pool->size());
   _TRUE(pool->size() == 2);
 
   {
@@ -2001,7 +1995,7 @@ _TEST(bech32)
 
 	CPubKey pubkey;
 	CAccountCache *acc = wallet->GetAccount("");
-	_TRUE(acc->CreateNewPubKey(pubkey, 0));
+	_TRUE(acc->CreateNewPubKey(pubkey, ACCADDR_RECV, 0));
 	//CCoinAddr addr = GetAccountAddress(wallet, strWitAccount);
 	CCoinAddr addr(wallet->ifaceIndex, pubkey.GetID());
 	//CCoinAddr witAddr(TEST_COIN_IFACE);

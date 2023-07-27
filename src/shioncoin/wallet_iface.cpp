@@ -1170,7 +1170,7 @@ static const char *json_stratum_create_account(int ifaceIndex, const char *acc_n
 
 			CPubKey pubkey;
 			CAccountCache *acc = wallet->GetAccount(strAccount);
-			if (!acc->CreateNewPubKey(pubkey, 0))
+			if (!acc->CreateNewPubKey(pubkey, ACCADDR_RECV, 0))
 				continue;
 			const CKeyID& keyID = pubkey.GetID();
 
@@ -1533,6 +1533,7 @@ static const char *c_stratum_account_info(int ifaceIndex, const char *acc_name, 
   return (accountinfo_json.c_str());
 }
 
+#if 0
 string account_import_json;
 static const char *json_stratum_account_import(int ifaceIndex, const char *acc_name, const char *privaddr_str)
 {
@@ -1584,6 +1585,7 @@ static const char *json_stratum_account_import(int ifaceIndex, const char *acc_n
   account_import_json = JSONRPCReply(result, Value::null, Value::null);
   return (account_import_json.c_str());
 }
+#endif
 
 string stratumerror_json;
 const char *c_stratum_error_get(int req_id)
@@ -1695,12 +1697,14 @@ const char *stratum_error_get(int req_id)
   return (c_stratum_error_get(req_id));
 }
 
+#if 0
 const char *stratum_importaddress(int ifaceIndex, const char *account, const char *privaddr_str)
 {
   if (!account || !privaddr_str)
     return (NULL);
   return (json_stratum_account_import(ifaceIndex, account, privaddr_str));
 }
+#endif
 
 const char *getnewaddress(int ifaceIndex, const char *account)
 {

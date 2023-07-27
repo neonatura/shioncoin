@@ -40,6 +40,19 @@
 #define SIGN_ALG_ECDSA 1
 #define SIGN_ALG_DILITHIUM 2
 
+/* use segwit program, if available. */
+#define ACCADDRF_WITNESS (1 << 0)
+/* hdkey derived. */
+#define ACCADDRF_DERIVE (1 << 1)
+/* always the same address returned */
+#define ACCADDRF_STATIC (1 << 2)
+/* permit dilithium signature */
+#define ACCADDRF_DILITHIUM (1 << 3)
+/* extended transaction (internal) */
+#define ACCADDRF_INTERNAL (1 << 4)
+/* the 'default' key for an account. */
+#define ACCADDRF_MASTER (1 << 5)
+
 typedef uint256 ChainCode;
 
 // secure_allocator is defined in serialize.h
@@ -161,9 +174,9 @@ class CPubKey
 class CKeyMetadata
 {
 	public:
-		static const int META_SEGWIT = (1 << 0);
-		static const int META_HD_KEY = (1 << 1);
-		static const int META_INTERNAL = (1 << 2);
+		static const int META_SEGWIT = ACCADDRF_WITNESS;
+		static const int META_HD_KEY = ACCADDRF_DERIVE;
+		static const int META_PRIMARY = ACCADDRF_STATIC;
 
 		unsigned int nFlag;
 		int64_t nCreateTime; // 0 means unknown
@@ -214,8 +227,8 @@ class CKeyMetadata
 				ret_str += "hd ";
 			if (nFlag & META_SEGWIT)
 				ret_str += "wit ";
-			if (nFlag & META_INTERNAL)
-				ret_str += "int ";
+			if (nFlag & META_PRIMARY)
+				ret_str += "pri ";
 			if (ret_str.size() != 0)
 				ret_str = ret_str.substr(0, ret_str.size()-1);
 			return (ret_str);
@@ -349,7 +362,7 @@ public:
 
     virtual bool IsValid() = 0;
 
-    virtual void MergeKey(CKey& keyChild, cbuff tag) = 0;
+    virtual void MergeKey(CKey *masterKey, cbuff tag) = 0;
 
 		virtual bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) = 0;
 		

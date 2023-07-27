@@ -110,3 +110,38 @@ bool IsLocalEntity(CIface *iface, const CTxOut& txout)
   return (IsMine(*pwalletMain, txout.scriptPubKey)); 
 }
 
+bool GenerateEntityAddress(CWallet *wallet, string strAccount, CCoinAddr& addrRet)
+{
+	static const char *tag = "entity";
+	CAccountCache *acc;
+
+	acc = wallet->GetAccount(strAccount);
+	if (!acc)
+		return (false);
+
+	CPubKey pubkey;
+	if (!acc->GetPrimaryPubKey(ACCADDR_EXT, pubkey))
+		return (false);
+
+	CKey *pkey = wallet->GetKey(pubkey.GetID());
+	if (!pkey)
+		return (false);
+
+	ECKey ckey;
+	ckey.MergeKey(pkey, cbuff(tag, tag + strlen(tag)));
+	ckey.nFlag |= ACCADDRF_INTERNAL;
+	if (!acc->AddKey(ckey)) {
+		return (false);
+	}
+#if 0
+	const CKeyID& keyid = ckey.GetPubKey().GetID();
+	if (!wallet->HaveKey(keyid)) {
+		wallet->AddKey(ckey);
+		acc->SetAddrDestinations(keyid);
+	}
+#endif
+
+	const CKeyID& keyid = ckey.GetPubKey().GetID();
+	addrRet = CCoinAddr(wallet->ifaceIndex, CTxDestination(keyid));
+	return (true);
+}

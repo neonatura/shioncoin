@@ -101,8 +101,8 @@ public:
 
 		int nType; /* ADDR_BASE58 | ADDR_BECH32 */
     int ifaceIndex;
-		int64_t nCreateTime; 
-		int64_t nAccessTime; 
+//		int64_t nCreateTime; 
+//		int64_t nAccessTime; 
 
 		/* for serialization and initialization */
     CCoinAddr()
@@ -111,8 +111,8 @@ public:
 			nType = 0;
 			vchVersion.clear();
 			vchData.clear();
-			nCreateTime = 0;
-			nAccessTime = 0;
+//			nCreateTime = 0;
+//			nAccessTime = 0;
 		}
 
     CCoinAddr(int ifaceIndexIn)
@@ -156,8 +156,8 @@ public:
 			vchVersion.clear();
 			vchVersion.clear();
 			vchData.clear();
-			nCreateTime = time(NULL);
-			nAccessTime = 0;
+//			nCreateTime = time(NULL);
+//			nAccessTime = 0;
 		}
 
 		bool Set(const CKeyID &id); 

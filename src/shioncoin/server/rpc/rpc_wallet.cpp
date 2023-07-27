@@ -146,6 +146,7 @@ void rpcwallet_GetWalletAddr(CWallet *wallet, shjson_t *tree, string strLabel, c
 	if (acc->account.vchPubKey == pubkey)
 		shjson_bool_add(node, "default", TRUE);
 
+#if 0
 	CAccount *chain = &acc->account;
 	if (chain->masterKeyID == pubkey.GetID()) {
 		shjson_bool_add(node, "master", TRUE);
@@ -155,9 +156,11 @@ void rpcwallet_GetWalletAddr(CWallet *wallet, shjson_t *tree, string strLabel, c
 			shjson_num_add(node, "hdindex", chain->nExternalECChainCounter);
 		}
 	}
+#endif
 
 }
 
+#if 0
 Value rpc_wallet_export(CIface *iface, const Array& params, bool fStratum)
 {
 
@@ -240,6 +243,7 @@ Value rpc_wallet_export(CIface *iface, const Array& params, bool fStratum)
 
 	return Value::null;
 }
+#endif
 
 /** removes from address book only -- does not remove from keystore */
 Value rpc_wallet_prune(CIface *iface, const Array& params, bool fStratum)
@@ -312,45 +316,84 @@ Value rpc_wallet_get(CIface *iface, const Array& params, bool fStratum)
 	if (params.size() != 1)
 		throw runtime_error("wallet.get");
 
-	CCoinAddr address(ifaceIndex, params[0].get_str());
-	if (!address.IsValid())
+	CAccountAddress address(ifaceIndex, params[0].get_str());
+	if (!address.IsValid()) {
 		throw JSONRPCError(-5, "Invalid coin address");
+	}
 
-	string strAccount;
+#if 0
+	string strAccount = "";
 	map<CTxDestination, string>::iterator mi = pwalletMain->mapAddressBook.find(address.Get());
 	if (mi != pwalletMain->mapAddressBook.end() && !(*mi).second.empty())
 		strAccount = (*mi).second;
 	return strAccount;
+#endif
+
+	return (address.ToValue());
 }
 
 Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum)
+{
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	bool fVerbose;
+
+	if (fStratum)
+		throw runtime_error("unsupported operation");
+
+	string strAddress = params[0].get_str();
+
+	fVerbose = false;
+	if (params.size() == 2)
+		fVerbose = params[1].get_bool();
+
+	CCoinAddr address(ifaceIndex, strAddress);
+	if (!address.IsValid())
+		throw JSONRPCError(ERR_INVAL, "Invalid address");
+
+	CKeyID keyid;
+	if (!ExtractDestinationKey(wallet, address.Get(), keyid)) {
+		if (!address.GetKeyID(keyid)) {
+			throw JSONRPCError(ERR_NOKEY, "Invalid address destination");
+		}
+	}
+
+	if (fVerbose) {
+		CAccountAddressKey addr(ifaceIndex, CTxDestination(keyid));
+		if (!addr.IsValid())
+			throw JSONRPCError(ERR_NOKEY, "Private key for address " + strAddress + " is not known");
+		return (addr.ToValue());
+	}
+
+	/* private key only */
+	CSecret vchSecret;
+	bool fCompressed = true;
+	if (!wallet->GetSecret(keyid, vchSecret, fCompressed))
+		throw JSONRPCError(ERR_NOKEY, "Private key for address " + strAddress + " is not known");
+
+	return CCoinSecret(ifaceIndex, vchSecret, fCompressed).ToString();
+}
+
+Value rpc_wallet_hdkey(CIface *iface, const Array& params, bool fStratum)
 {
 	CWallet *wallet = GetWallet(iface);
 
 	if (fStratum)
 		throw runtime_error("unsupported operation");
 
-	if (params.size() != 1)
-		throw runtime_error(
-				"wallet.key <address>\n"
-				"Summary: Reveals the private key corresponding to a public coin address.\n"
-				"Params: [ <address> The coin address. ]\n"
-				"\n"
-				"The 'wallet.key' command provides a method to obtain the private key associated\n"
-				"with a particular coin address.\n"
-				"\n"
-				"The coin address must be available in the local wallet in order to print it's pr\n"
-				"ivate address.\n"
-				"\n"
-				"The private coin address can be imported into another system via the 'wallet.setkey' command.\n"
-				"\n"
-				"The entire wallet can be exported to a file via the 'wallet.export' command.\n"
-				);
-
 	CWallet *pwalletMain = GetWallet(iface);
 	int ifaceIndex = GetCoinIndex(iface);
 
 	string strAddress = params[0].get_str();
+
+	bool fVerbose = false;
+	if (params.size() == 2)
+		fVerbose = params[1].get_bool();
+
+	if (fVerbose) {
+		CAccountAddressKey address(ifaceIndex, strAddress);
+		return (address.ToValue());
+	}
 
 	CCoinAddr address(ifaceIndex, strAddress);
 	if (!address.IsValid())
@@ -363,12 +406,27 @@ Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum)
 		}
 	}
 
-	CSecret vchSecret;
-	bool fCompressed = true;
-	if (!pwalletMain->GetSecret(keyid, vchSecret, fCompressed))
-		throw JSONRPCError(-4,"Private key for address " + strAddress + " is not known");
+	while (keyid != 0) {
+		CKey *key = wallet->GetKey(keyid);
+		if (!key)
+			break;
 
+		if (key->hdMasterKeyID == 0)
+			break;
+
+		keyid = key->hdMasterKeyID;
+	};
+	if (keyid == 0) {
+		throw JSONRPCError(ERR_NOKEY, "Private hd-key for address " + strAddress + " is not known");
+	}
+
+#if 0
+	bool fCompressed = false;
+	CSecret vchSecret = key->GetSecret(fCompressed);
 	return CCoinSecret(ifaceIndex, vchSecret, fCompressed).ToString();
+#endif
+	CAccountAddressKey addr(ifaceIndex, CTxDestination(keyid));
+	return (addr.ToValue());
 }
 
 Value rpc_wallet_info(CIface *iface, const Array& params, bool fStratum)
@@ -426,6 +484,7 @@ Value rpc_wallet_cscript(CIface *iface, const Array& params, bool fStratum)
 	return (Value(script_addr.ToString()));
 }
 
+#if 0
 Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 {
 	int nTotal = 0;
@@ -659,6 +718,174 @@ Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 
 	return ret;
 }
+#endif
+static const Value& GetObjectValue(Object obj, string cmp_name)
+{
+
+  for( Object::size_type i = 0; i != obj.size(); ++i )
+  {
+    const Pair& pair = obj[i];
+    const string& name = pair.name_;
+
+    if (cmp_name == name) {
+      const Value& value = pair.value_;
+      return (value);
+    }
+  }
+
+	throw runtime_error("unknown json value");
+}
+
+Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
+{
+	int ifaceIndex = GetCoinIndex(iface);
+	CWallet *wallet;
+	Array ret_obj;
+	vector<CTxDestination> vAddr;
+	char *text;
+	struct stat st;
+	FILE *fl;
+
+	if (fStratum) {
+		throw runtime_error("unsupported operation");
+	}
+	if (params.size() != 1) {
+		throw runtime_error("wallet.import");
+	}
+	wallet = GetWallet(iface);
+	if (!wallet) {
+		throw runtime_error("wallet.import: invalid chain");
+	}
+
+	std::string strPath = params[0].get_str();
+	fl = fopen(strPath.c_str(), "rb");
+	if (!fl)
+		throw runtime_error("error opening file.");
+
+	memset(&st, 0, sizeof(st));
+	fstat(fileno(fl), &st);
+	if (st.st_size == 0)
+		throw runtime_error("file is not in JSON format.");
+
+	text = (char *)calloc(st.st_size + 1, sizeof(char));
+	if (!text)
+		throw runtime_error("not enough memory to allocate file.");
+
+	fread(text, sizeof(char), st.st_size, fl);
+	fclose(fl);
+
+	Value objWalletValue;
+	const string strWallet(text);
+	if (!read_string(strWallet, objWalletValue)) {
+		throw runtime_error("file is not is JSON format.");
+	}
+
+	time_t nCreateTime = time(NULL);
+	Object objWallet = objWalletValue.get_obj();
+	Array arWallet = GetObjectValue(objWallet, iface->name).get_array();
+	for (Array::size_type i = 0; i != arWallet.size(); ++i) {
+		Value& value = arWallet[i];
+		uint32_t nECChainCounter[7];
+		Object& objAddr = value.get_obj();
+
+		CAccountAddressKey addr(ifaceIndex);
+		//	todo:			addr << value.get_obj();
+		bool fImport = addr.FromValue(objAddr);
+
+		if (fImport) {
+			/* retain earliest import time. */
+			nCreateTime = MIN(addr.GetCreateTime(), nCreateTime); 
+
+			/* retain addr for wallet tx scan. */
+			CAccountCache *account = addr.GetAccountCache();
+			if (addr.keyid == 0 || !account) {
+				const CTxDestination& destination = addr.GetDestination();
+				if (find(vAddr.begin(), vAddr.end(), destination) == vAddr.end()) {
+					vAddr.push_back(destination);
+				}
+			} else {
+				if (addr.GetKey() != NULL) {
+					/* append all variations to tx-scan list */
+#if 0
+					int nFlag = (addr.GetKey()->IsDilithium() ? ACCADDRF_DILITHIUM : 0);
+					account->GetAddrDestinations(addr.keyid, vAddr, nFlag);
+#endif
+					account->CalcAddressBook(addr.GetKey(), vAddr);
+				}
+
+				bool bDefault = boolFromObject(objAddr, "default");
+				if (bDefault) {
+					account->SetDefaultAddr(addr.GetPubKey());
+
+					for (int nMode = 0; nMode < MAX_ACCADDR; nMode++) {
+						CTxDestination dest;
+						account->GetPrimaryAddr(nMode, dest);
+						if (find(vAddr.begin(), vAddr.end(), dest) == vAddr.end()) {
+							vAddr.push_back(dest);
+						}
+					}
+
+					Array echdi = GetObjectValue(objAddr, "echdi").get_array();
+					for (Array::size_type nMode = 0; nMode != echdi.size(); ++nMode) {
+						int nCount = echdi[nMode].get_int();
+						account->CalculateECKeyChain(vAddr, nMode, nCount); 
+					}
+
+					Array dihdi = GetObjectValue(objAddr, "dihdi").get_array();
+					for (Array::size_type nMode = 0; nMode != dihdi.size(); ++nMode) {
+						int nCount = dihdi[nMode].get_int();
+						account->CalculateDIKeyChain(vAddr, nMode, nCount); 
+					}
+				}
+
+#if 0
+				bool bMaster = boolFromObject(objAddr, "master");
+				if (bMaster) {
+					int nMode = account->GetAddrMode(CKeyID(addr.keyid));
+					if (nMode != -1) {
+						int hdindex = numFromObject(objAddr, "hdindex");
+
+						/* derive new hd-keys until hdindex is reached. */ 
+						while (account->GetHDIndex(nMode) < hdindex) {
+							CPubKey hdPubKey;
+
+							if (!account->CreateNewPubKey(hdPubKey, /*nMode,*/
+										addr.GetKey()->nFlag | CKeyMetadata::META_HD_KEY)) {
+								break;
+							}
+
+							const CKeyID& hdKeyid = hdPubKey.GetID();
+							account->GetAddrDestinations(hdKeyid, vAddr);
+						}
+					}
+				}
+#endif
+			}
+
+			Debug("Imported new coin address \"%s\".",  addr.ToString().c_str());
+		}
+
+		if (addr.IsValid()) {
+			/* return json version with general address info. */
+			CAccountAddress *retAddr = (CAccountAddress *)&addr;
+			Object obj = retAddr->ToValue(); 
+			obj.push_back(Pair("import", fImport));
+			ret_obj.push_back(obj);
+		}
+	}
+
+	if (vAddr.size() != 0) {
+		/* update wallet */
+		CWalletUpdateFilter *filter =
+			new CWalletUpdateFilter(ifaceIndex, vAddr, nCreateTime);
+		InitChainFilter(filter);
+	}
+
+	/* clear cache to reflect new addresses. */
+	wallet->MarkDirty();
+
+	return (ret_obj);
+}
 
 Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum)
 {
@@ -683,8 +910,10 @@ Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum)
 	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
 		const string& strAccount = entry.second;
 
-		if (strAccount.length() != 0 && strAccount.at(0) == '@')
+		if (strAccount.length() != 0 &&
+				strAccount.substr(0, 1) == CWallet::EXT_ACCOUNT_PREFIX) {
 			continue; /* ext account */
+		}
 
 		if (find(vAcc.begin(), vAcc.end(), strAccount) != vAcc.end())
 			continue; /* already established account name */
@@ -848,7 +1077,7 @@ Value rpc_wallet_verify(CIface *iface, const Array& params, bool fStratum)
 		/* reset wallet-scan event state */
 		ResetServiceWalletEvent(wallet);
 		/* scan entire chain for corrections to wallet & coin-db. */
-		InitServiceWalletEvent(wallet, minHeight);
+		InitServiceWalletEvent(ifaceIndex, minHeight);
 	}
 
 	ret.push_back(Pair("start-height", minHeight));
@@ -1436,6 +1665,7 @@ Value rpc_wallet_tx(CIface *iface, const Array& params, bool fStratum)
 
 Value rpc_wallet_keyphrase(CIface *iface, const Array& params, bool fStratum)
 {
+	bool fVerbose;
 
 	if (fStratum)
 		throw runtime_error("unsupported operation");
@@ -1449,6 +1679,10 @@ Value rpc_wallet_keyphrase(CIface *iface, const Array& params, bool fStratum)
 	CCoinAddr address(ifaceIndex);
 	if (!address.SetString(strAddress))
 		throw JSONRPCError(-5, "Invalid address");
+
+	fVerbose = false;
+	if (params.size() >= 2)
+		fVerbose = params[1].get_bool();
 
 	CKeyID keyid;
 	if (!ExtractDestinationKey(wallet, address.Get(), keyid))
@@ -1527,8 +1761,14 @@ Value rpc_wallet_keyphrase(CIface *iface, const Array& params, bool fStratum)
 
 	bool fCompressed = false;
 	CSecret vchSecret = key->GetSecret(fCompressed);
+	if (!fCompressed) {
+		throw JSONRPCError(ERR_OPNOTSUPP, "Uncompressed key phrase export not supported.");
+	}
+
 	CCoinSecret secret(ifaceIndex, vchSecret, fCompressed);
 	string phrase = EncodeMnemonicSecret(secret);
+
+// TODO: fVerbose
 
 	return (phrase);
 }
@@ -1562,7 +1802,7 @@ Value rpc_wallet_fee(CIface *iface, const Array& params, bool fStratum)
 	return (obj);
 }
 
-Value rpc_wallet_getcert(CIface *iface, const Array& params, bool fStratum)
+Value rpc_wallet_getaccalias(CIface *iface, const Array& params, bool fStratum)
 {
 	CWallet *wallet = GetWallet(iface);
 	string strAccount;
@@ -1580,15 +1820,19 @@ Value rpc_wallet_getcert(CIface *iface, const Array& params, bool fStratum)
 	CAccountCache *acc = wallet->GetAccount(strAccount);
 	if (!acc)
 		throw JSONRPCError(ERR_INVAL, "invalid account");
-	const uint160& hCert = acc->GetCertHash();
+	const uint160& hAlias = acc->GetAliasHash();
 
 	Value ret;
-	ret = hCert.GetHex();
+	if (hAlias != 0) {
+		ret = hAlias.GetHex();
+	}
 	return (ret);
 }
 
-Value rpc_wallet_setcert(CIface *iface, const Array& params, bool fStratum)
+Value rpc_wallet_setaccalias(CIface *iface, const Array& params, bool fStratum)
 {
+	throw runtime_error("unsupported operation");
+#if 0
 	CWallet *wallet = GetWallet(iface);
 
 	if (fStratum)
@@ -1623,5 +1867,223 @@ Value rpc_wallet_setcert(CIface *iface, const Array& params, bool fStratum)
 	ret.push_back(Pair("hash", hCert.GetHex()));
 	ret.push_back(Pair("label", cert->GetLabel()));
 	return (ret);
+#endif
+}
+
+Value rpc_wallet_export(CIface *iface, const Array& params, bool fStratum)
+{
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	vector<CTxDestination> vSkip;
+	CAccountCache *account;
+	Array result;
+
+	if (fStratum)
+		throw runtime_error("unsupported operation");
+
+	/* coinaddr destinations with no address book entry. */
+	std::set<CKeyID> keys;
+	wallet->GetKeys(keys);
+	account = wallet->GetAccount("");
+	BOOST_FOREACH(const CKeyID& keyid, keys) {
+		if (wallet->mapAddressBook.count(keyid) != 0)
+			continue;
+
+		CKey *key = wallet->GetKey(keyid);
+		if (!key)
+			continue;
+
+		CTxDestination ckeyid(keyid);
+		CAccountAddressKey addr(ifaceIndex, ckeyid);
+		result.push_back(addr.ToValue());
+		account->CalcAddressBook(key, vSkip);
+	}
+
+	/* pubkey coinaddr destinations from address book. */
+	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
+		CTxDestination dest = entry.first;
+		string strLabel = entry.second;
+
+		if (find(vSkip.begin(), vSkip.end(), dest) != vSkip.end()) {
+			continue;
+		}
+
+		CKeyID keyid;
+		CCoinAddr tAddr(ifaceIndex, dest);
+		if (!tAddr.GetKeyID(keyid)) {
+			continue; // not keyid kind
+		}
+
+		CKey *key = wallet->GetKey(keyid);
+		if (!key) {
+			continue;
+		}
+
+		account = wallet->GetAccount(strLabel);
+
+		CAccountAddressKey addr(ifaceIndex, CTxDestination(keyid));
+		result.push_back(addr.ToValue());
+		account->CalcAddressBook(key, vSkip);
+	}
+
+	/* script/misc coinaddr destinations from address book. */
+	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
+		CTxDestination dest = entry.first;
+		string strLabel = entry.second;
+
+		if (find(vSkip.begin(), vSkip.end(), dest) != vSkip.end())
+			continue;
+
+		account = wallet->GetAccount(strLabel);
+
+		CAccountAddressKey addr(ifaceIndex, dest);
+		result.push_back(addr.ToValue());
+	}
+
+	Object ret;
+	ret.push_back(Pair(iface->name, result));
+	return (ret);
+}
+
+Value rpc_wallet_export_account(CIface *iface, const Array& params, bool fStratum)
+{
+	CWallet *wallet = GetWallet(iface);
+	int ifaceIndex = GetCoinIndex(iface);
+	vector<CScriptID> vSkip;
+	Array result;
+	string strExtAccount;
+	string strAccount;
+
+	if (fStratum)
+		throw runtime_error("unsupported operation");
+
+	if (params.size() != 1)
+		throw runtime_error("wallet.export");
+
+	strAccount = AccountFromValue(params[0]);
+	if (!IsAccountValid(iface, strAccount)) {
+		throw JSONRPCError(ERR_NOENT, "unknown account");
+	}
+	strExtAccount = CWallet::EXT_ACCOUNT_PREFIX + strAccount;
+
+	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
+		CTxDestination dest = entry.first;
+		string strLabel = entry.second;
+
+		if (strLabel != strAccount &&
+				strLabel != strExtAccount) {
+			continue;
+		}
+
+		CAccountAddressKey addr(ifaceIndex, dest);
+		CKeyID keyID;
+		if (addr.GetKeyID(keyID)) {
+			result.push_back(addr.ToValue());
+//			rpcwallet_GetWalletAddr(wallet, tree, strLabel, keyID);
+
+			vector<CTxDestination> vDestTmp;
+			CAccountCache *account = wallet->GetAccount(strLabel);
+			account->CalcAddressBook(addr.GetKey(), vDestTmp);
+
+			/* retain script derivatives. */
+			CScriptID scriptID;
+//			GetAddrDestination(wallet->ifaceIndex, keyID, vDestTmp);
+			BOOST_FOREACH(const CTxDestination& dest, vDestTmp) {
+				CCoinAddr addrTmp(wallet->ifaceIndex, dest);
+				if (addrTmp.GetScriptID(scriptID))
+					vSkip.push_back(scriptID);
+			}
+		}
+	}
+
+	/* handle scripts not directly derived from regular pubkey (witness, etc) */
+	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
+		CTxDestination dest = entry.first;
+		string strLabel = entry.second;
+
+		if (strLabel != strAccount &&
+				strLabel != strExtAccount) {
+			continue;
+		}
+
+		CScriptID scriptID;
+		CAccountAddressKey addr(wallet->ifaceIndex, dest);
+		if (addr.GetScriptID(scriptID)) {
+			if (find(vSkip.begin(), vSkip.end(), scriptID) != vSkip.end())
+				continue; /* will be regenerated. */
+
+#if 0
+			CScript script;
+			if (!wallet->GetCScript(scriptID, script))
+				continue;
+
+			shjson_t *node = shjson_obj_add(tree, NULL);
+			shjson_str_add(node, "script", (char *)HexStr(script).c_str());
+			shjson_str_add(node, "label", (char *)strLabel.c_str());
+			shjson_str_add(node, "addr", (char *)addr.ToString().c_str());
+#endif
+			result.push_back(addr.ToValue());
+		}
+	}
+
+	Object ret;
+	ret.push_back(Pair(iface->name, result));
+	return (ret);
+}
+
+/**
+ * Burn coins by sending to a null coin address.
+ */
+Value rpc_wallet_burn(CIface *iface, const Array& params, bool fStratum) 
+{
+	CWallet *wallet = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+  int64 nBalance;
+  int err;
+
+	if (params.size() != 2) {
+    throw runtime_error("invalid parameters");
+	}
+
+  if (ifaceIndex != TEST_COIN_IFACE &&
+      ifaceIndex != TESTNET_COIN_IFACE &&
+      ifaceIndex != SHC_COIN_IFACE) {
+    throw runtime_error("Unsupported operation for coin service.");
+	}
+
+  string strAccount = AccountFromValue(params[0]);
+  if (!IsAccountValid(iface, strAccount)) {
+    throw JSONRPCError(SHERR_INVAL, "Invalid account name specified.");
+	}
+
+  int64 nValue = AmountFromValue(params[1]);
+  if (nValue < iface->min_tx_fee || 
+			nValue > MAX_TRANSACTION_FEE(iface)) {
+    throw JSONRPCError(SHERR_INVAL, "Invalid coin value specified.");
+	}
+
+  nBalance = GetAccountBalance(ifaceIndex, strAccount, 1);
+  if (nBalance < nValue) {
+    throw JSONRPCError(ERR_FEE, "Insufficient funds available for amount specified.");
+	}
+
+	int64 nFee = nValue - iface->min_tx_fee;
+	if (nFee < iface->min_input) {
+    throw JSONRPCError(ERR_FEE, "Insufficient coin value specified.");
+	}
+
+	/* generate script for null destination */
+	CScript scriptPubKey;
+	scriptPubKey << OP_RETURN << OP_0;
+
+	CTxCreator s_wtx(wallet, strAccount);
+	if (!s_wtx.AddOutput(scriptPubKey, nFee)) {
+    throw JSONRPCError(ERR_CANCELED, "Invalid coin destination.");
+	}
+	if (!s_wtx.Send()) {
+    throw JSONRPCError(ERR_CANCELED, "Unable to generate transaction.");
+	}
+
+	return (s_wtx.ToValue(ifaceIndex));
 }
 

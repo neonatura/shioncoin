@@ -63,6 +63,8 @@ Value rpc_asset_newcert(CIface *iface, const Array& params, bool fStratum);
 
 Value rpc_asset_activate(CIface *iface, const Array& params, bool fHelp);
 
+Value rpc_asset_export(CIface *iface, const Array& params, bool fStratum);
+
 
 #endif /* ndef __SERVER__RPCASSET_PROTO_H__ */
 

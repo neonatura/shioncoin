@@ -211,7 +211,7 @@ static const ApiItems& stratum_api_account_create(int ifaceIndex, string strAcco
 
 		CPubKey pubkey;
 		CAccountCache *acc = alt_wallet->GetAccount(strAccount);
-		if (!acc->CreateNewPubKey(pubkey, 0))
+		if (!acc->CreateNewPubKey(pubkey, ACCADDR_RECV, 0))
 			continue;
 		const CKeyID& keyID = pubkey.GetID();
 

@@ -45,7 +45,6 @@ _TEST(sip10_ctxtx)
 {
 	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
 	CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
-	shgeo_t geo;
 	int idx;
 	int err;
 
@@ -85,33 +84,13 @@ _TEST(sip10_ctxtx)
 		delete block;
 	}
 
-	/* verify insertion */
-	CTransaction t_tx;
-	_TRUEPTR(GetContextByHash(iface, hashContext, t_tx));
-	_TRUE(t_tx.GetHash() == wtx.GetHash());
-	_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
-
-	/* test geodetic context */
-	shgeo_set(&geo, 46.7467, -114.1096, 0);
-	string strName = "geo:46.7467,-114.1096";
-	const char *payload = "{\"name\":\"mountain\",\"code\":\"AREA\"}";
-	cbuff vchValue(payload, payload + strlen(payload));
-	err = init_ctx_tx(iface, wtx, strLabel, strName, vchValue, &geo);
-	_TRUE(err == 0);
-
-	/* insert ctx into chain + create a coin balance */
 	{
-		CBlock *block = test_GenerateBlock();
-		_TRUEPTR(block);
-		_TRUE(ProcessBlock(NULL, block) == true);
-		delete block;
+		/* verify insertion */
+		CTransaction t_tx;
+		_TRUEPTR(GetContextByHash(iface, hashContext, t_tx));
+		_TRUE(t_tx.GetHash() == wtx.GetHash());
+		_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 	}
-
-	/* verify insertion */
-	CTransaction t_tx;
-	_TRUEPTR(GetContextByHash(iface, hashContext, t_tx));
-	_TRUE(t_tx.GetHash() == wtx.GetHash());
-	_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
 
 }
 
@@ -165,6 +144,55 @@ _TEST(sip10_di_ctxtx)
 	_TRUEPTR(GetContextByHash(iface, hashContext, t_tx));
 	_TRUE(t_tx.GetHash() == wtx.GetHash());
 	_TRUE(wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+
+}
+
+_TEST(sip10_geo_ctxtx)
+{
+	CWallet *wallet = GetWallet(TEST_COIN_IFACE);
+	CIface *iface = GetCoinByIndex(TEST_COIN_IFACE);
+	shgeo_t geo;
+	int idx;
+	int err;
+
+	string strLabel("");
+
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+
+	CWalletTx geo_wtx;
+
+	/* test geodetic context */
+	shgeo_set(&geo, 46.7467, -114.1096, 0);
+	string strName = "geo:46.7467,-114.1096";
+	const char *payload = "{\"name\":\"mountain\",\"code\":\"AREA\"}";
+	cbuff vchValue(payload, payload + strlen(payload));
+	err = init_ctx_tx(iface, geo_wtx, strLabel, strName, vchValue, &geo);
+	_TRUE(err == 0);
+
+	CContext *ctx = geo_wtx.GetContext();
+	_TRUEPTR(ctx);
+	uint160 hashContext = ctx->GetHash();
+
+	/* insert ctx into chain + create a coin balance */
+	{
+		CBlock *block = test_GenerateBlock();
+		_TRUEPTR(block);
+		_TRUE(ProcessBlock(NULL, block) == true);
+		delete block;
+	}
+
+	{
+		/* verify insertion */
+		CTransaction t_tx;
+		_TRUEPTR(GetContextByHash(iface, hashContext, t_tx));
+		_TRUE(t_tx.GetHash() == geo_wtx.GetHash());
+		_TRUE(geo_wtx.IsInMemoryPool(TEST_COIN_IFACE) == false);
+	}
 
 }
 

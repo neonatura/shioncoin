@@ -1762,7 +1762,7 @@ bool DecodeMnemonicSecret(int ifaceIndex, const string phrase, CCoinSecret& addr
 
 	{
 		CSecret t_buff(secret.begin(), secret.begin() + secret.size());
-		addr = CCoinSecret(ifaceIndex, t_buff, false);
+		addr = CCoinSecret(ifaceIndex, t_buff, true);//false);
 	}
 
 	return (true);

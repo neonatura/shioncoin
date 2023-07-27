@@ -62,20 +62,20 @@ class CAccountCache;
 #define ACCADDR_RECV 0
 /* address created for purpose of returning change. */
 #define ACCADDR_CHANGE 1
-/* address is for SEXE class "sender" address. */
-#define ACCADDR_EXEC 2
-/* primary pubkey used for hdkey */
-#define ACCADDR_HDKEY 3
 /* ext transactions (@account) */
-#define ACCADDR_EXT 4 
+#define ACCADDR_EXT 2
+/* address is for SEXE class "sender" address. */
+#define ACCADDR_EXEC 3
 /* notary address */
-#define ACCADDR_NOTARY 5
+#define ACCADDR_NOTARY 4
 /* miner address */
-#define ACCADDR_MINER 6
+#define ACCADDR_MINER 5
 
-#define MAX_ACCADDR 7
+#define MAX_HD_ACCADDR 3
+#define MAX_ACCADDR 6
 
 class CAccount;
+class CAccountAddressKey;
 
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
@@ -86,6 +86,8 @@ class CWallet : public CBasicKeyStore
 		CWalletDB *pwalletdbEncryption;
 
 	public:
+		static constexpr char *EXT_ACCOUNT_PREFIX = "@";
+
 		CCheckpoints *checkpoints;
 		mutable CCriticalSection cs_wallet;
 		int ifaceIndex;
@@ -212,16 +214,9 @@ class CWallet : public CBasicKeyStore
 
 		bool SelectAccountCoins(string strAccount, int64 nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet, uint160 hColor = 0) const;
 
-		bool GenerateNewECKey(CPubKey& pubkeyRet, bool fCompressed = true, int nFlag = 0);
+		void GenerateNewECKey(ECKey& pubkeyRet, bool fCompressed = true, int nFlag = 0);
 
-		CPubKey GenerateNewECKey(bool fCompressed = true, int nFlag = 0)
-		{
-			CPubKey pubkey;
-			GenerateNewECKey(pubkey, fCompressed, nFlag);
-			return (pubkey);
-		}
-
-		bool GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag = 0);
+		void GenerateNewDIKey(DIKey& pubkeyRet, int nFlag = 0);
 
 		bool AddKey(ECKey& key);
 
@@ -373,7 +368,7 @@ class CWallet : public CBasicKeyStore
 
 		virtual void RelayWalletTransaction(CWalletTx& wtx) = 0;
 		virtual int64 GetTxFee(CTransaction tx) = 0;
-		virtual int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false) = 0;
+//		virtual int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false) = 0;
 		virtual void ReacceptWalletTransactions() = 0;
 
 		virtual bool CreateAccountTransaction(string strFromAccount, const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, string& strError, int64& nFeeRet) = 0;
@@ -412,6 +407,8 @@ class CWallet : public CBasicKeyStore
 
 		CAccountCache *GetAccount(string strAccount);
 
+		CAccountCache *GetExtAccount(string strAccount);
+
 		CPubKey GetPrimaryPubKey(string strAccount);
 
 		CCoinAddr GetChangeAddr(string strAccount);
@@ -440,9 +437,17 @@ class CWallet : public CBasicKeyStore
 		bool EraseArchTx(uint256 hash) const;
 		bool HasArchTx(uint256 hash) const;
 
-		bool DeriveNewECKey(CAccount *hdChain, ECKey& secret, bool internal = false);
+		bool DeriveNewECKey(CAccount *hdChain, ECKey& secret, int nType = 0);
 
-		bool DeriveNewDIKey(CAccount *hdChain, DIKey& secret, bool internal = false);
+		bool DerivePrimaryECExtKey(CAccount *hdChain, ECExtKey& chainChildKey, int nType = 0);
+
+		bool DerivePrimaryECKey(CAccount *hdChain, ECKey& secret, int nType = 0);
+
+		bool DeriveNewDIKey(CAccount *hdChain, DIKey& secret, int nType = 0);
+
+		bool DerivePrimaryDIExtKey(CAccount *hdChain, DIExtKey& chainChildKey, int nType = 0);
+
+		bool DerivePrimaryDIKey(CAccount *hdChain, DIKey& secret, int nType = 0);
 
 		const cbuff& Base58Prefix(int type) const;
 
@@ -725,6 +730,21 @@ class CWalletTx : public CMerkleTx
 				 return nChangeCached;
 			 }
 
+
+			 bool IsArchivable() {
+				 bool fArch = true;
+				 unsigned int idx;
+
+				 for (idx = 0; idx < vout.size(); idx++) {
+					 if (!IsSpent(idx) && pwallet->IsMine(vout[idx])) {
+						 fArch = false;
+						 break;
+					 }
+				 }
+
+				 return (fArch);
+			 }
+
 			 void GetAmounts(int ifaceIndex, int64& nGeneratedImmature, int64& nGeneratedMature) const;
 
 			 void GetAmounts(list<pair<CTxDestination, int64> >& listReceived, list<pair<CTxDestination, int64> >& listSent, int64& nFee, string& strSentAccount) const;
@@ -798,21 +818,65 @@ class CWalletKey
 			)
 };
 
+class CHDChainIndex
+{
+
+public:
+	/* ecdsa */
+	uint32_t ecCounter;
+
+	/* dilithium */
+	uint32_t diCounter;
+
+	void SetNull() 
+	{
+		ecCounter = 0;
+		diCounter = 0;
+	}
+
+	uint GetCounter(int nAlg)
+	{
+		switch (nAlg) {
+			case SIGN_ALG_ECDSA:
+				return ((uint)ecCounter);
+			case SIGN_ALG_DILITHIUM:
+				return ((uint)diCounter);
+			default:
+				return (0);
+		}
+	}
+
+	void IncrementCounter(int nAlg) 
+	{
+		switch (nAlg) {
+			case SIGN_ALG_ECDSA:
+				ecCounter++;
+				break;
+			case SIGN_ALG_DILITHIUM:
+				diCounter++;
+				break;
+		}
+	}
+
+};
+
 /** Account information.
  * Stored in wallet with key "acc"+string account name.
  */
 class CAccount
 {
 	public:
+		/* the master key for the account. */
 		CPubKey vchPubKey;
-		uint160 hCert;
 
-		/* HD Chain */
-		uint32_t nExternalECChainCounter;
-		uint32_t nExternalDIChainCounter;
-		uint32_t nInternalECChainCounter;
-		uint32_t nInternalDIChainCounter;
-		CKeyID masterKeyID; 
+		/* default alias associated with account. */
+		uint160 hAlias;
+
+		/* the tx-destination of default alias. */
+		CKeyID hAliasKeyID;
+
+		/* HD Chain Counters */
+		CHDChainIndex hdIndex[MAX_ACCADDR];
 
 		CAccount()
 		{
@@ -828,23 +892,21 @@ class CAccount
 		void SetNull()
 		{
 			vchPubKey = CPubKey();
-			hCert = 0;
-			masterKeyID.SetNull();
-			nExternalECChainCounter = 0;
-			nExternalDIChainCounter = 0;
-			nInternalECChainCounter = 0;
-			nInternalDIChainCounter = 0;
+			hAlias = 0;
+			hAliasKeyID.SetNull();
+			for (int idx = 0; idx < MAX_ACCADDR; idx++) {
+				hdIndex[idx].SetNull();
+			}
 		}
 
 		void Init(const CAccount& b)
 		{
 			vchPubKey = b.vchPubKey;
-			hCert = b.hCert;
-			masterKeyID = b.masterKeyID;
-			nExternalECChainCounter = b.nExternalECChainCounter;
-			nExternalDIChainCounter = b.nExternalDIChainCounter;
-			nInternalECChainCounter = b.nInternalECChainCounter;
-			nInternalDIChainCounter = b.nInternalDIChainCounter;
+			hAlias = b.hAlias;
+			hAliasKeyID = b.hAliasKeyID;
+			for (int idx = 0; idx < MAX_ACCADDR; idx++) {
+				hdIndex[idx] = b.hdIndex[idx];
+			}
 		}
 
 		IMPLEMENT_SERIALIZE
@@ -853,14 +915,48 @@ class CAccount
 				READWRITE(nVersion);
 			READWRITE(vchPubKey);
 			if (nVersion >= 4010000) {
-				READWRITE(hCert);
-				READWRITE(masterKeyID); 
-				READWRITE(nInternalECChainCounter);
-				READWRITE(nInternalDIChainCounter);
-				READWRITE(nExternalECChainCounter);
-				READWRITE(nExternalDIChainCounter);
+				READWRITE(hAlias);
+				READWRITE(hAliasKeyID);
+
+				for (int idx = 0; idx < MAX_ACCADDR; idx++) {
+					READWRITE(hdIndex[ACCADDR_RECV].ecCounter);
+					READWRITE(hdIndex[ACCADDR_RECV].diCounter);
+					READWRITE(hdIndex[ACCADDR_CHANGE].ecCounter);
+					READWRITE(hdIndex[ACCADDR_CHANGE].diCounter);
+#if 0
+					READWRITE(nInternalECChainCounter);
+					READWRITE(nInternalDIChainCounter);
+					READWRITE(nExternalECChainCounter);
+					READWRITE(nExternalDIChainCounter);
+#endif
+				}
 			}
 		)
+
+		uint GetHDIndex(int nMode, int nAlg) {
+			if (nMode < 0 || nMode >= MAX_ACCADDR) {
+				return (0);
+			}
+			return hdIndex[nMode].GetCounter(nAlg);
+		}
+
+		void IncrementHDIndex(int nMode, int nAlg) {
+			if (nMode < 0 || nMode >= MAX_ACCADDR) {
+				return;
+			}
+			hdIndex[nMode].IncrementCounter(nAlg);
+		}
+
+		void ResetHDIndex() {
+			for (int nMode = 0; nMode < MAX_ACCADDR; nMode++) {
+				hdIndex[nMode].SetNull();
+			}
+		}
+
+		CKeyID GetMasterKeyID() {
+			return (vchPubKey.GetID());
+		}
+
 };
 
 /** Internal transfers.

@@ -481,6 +481,7 @@ class CExtCore
 
 
 typedef std::map<std::string, uint256> alias_list;
+typedef std::map<uint256, std::string> aliasarch_list;
 typedef std::map<uint160, uint256> asset_list;
 typedef std::map<uint160, uint256> cert_list;
 typedef std::map<uint160, uint256> exec_list;
