@@ -59,7 +59,7 @@ static int is_stratum_keccak_task_pending(int *ret_iface)
 	}
 
   for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-		if (!is_stratum_miner_algo(ifaceIndex, ALGO_KECCAK))
+		if (!is_stratum_miner_algo(ifaceIndex, ALGO_KECCAKC))
 			continue;
 
 //		if (ifaceIndex == TESTNET_COIN_IFACE) continue;
@@ -125,7 +125,7 @@ static void stratum_keccak_timer(void)
   int blk_iface;
   int err;
 
-	attr.alg = ALGO_KECCAK;
+	attr.alg = ALGO_KECCAKC;
 
 	/* OPT_STRATUM_WORK_CYCLE: Maximum time-span between work creation (default: 15 seconds, max: 1 hour). */
   tnow = time(NULL) / stratum_work_cycle;
@@ -175,7 +175,7 @@ static void stratum_keccak_accept(int fd, struct sockaddr *net_addr)
   if (in_fam == AF_INET) {
     struct sockaddr_in *addr = (struct sockaddr_in *)net_addr;
 
-    sprintf(buf, "stratum_accept: received connection (%s port %d).", inet_ntoa(addr->sin_addr), get_stratum_port(ALGO_KECCAK));
+    sprintf(buf, "stratum_accept: received connection (%s port %d).", inet_ntoa(addr->sin_addr), get_stratum_port(ALGO_KECCAKC));
     shcoind_log(buf);  
   } else {
     sprintf(buf, "stratum_accept: received connection (family %d)", in_fam);
@@ -184,7 +184,7 @@ static void stratum_keccak_accept(int fd, struct sockaddr *net_addr)
 
   user = stratum_register_client(fd);
 	if (user) {
-		user->alg = ALGO_KECCAK;
+		user->alg = ALGO_KECCAKC;
 	}
  
 }
@@ -197,7 +197,7 @@ int stratum_keccak_init(void)
 	stratum_work_cycle = (time_t)fabs(opt_num(OPT_STRATUM_WORK_CYCLE));
 	if (stratum_work_cycle < 2) stratum_work_cycle = 2;
 
-	err = unet_bind(UNET_STRATUM_KECCAK, get_stratum_port(ALGO_KECCAK), NULL);
+	err = unet_bind(UNET_STRATUM_KECCAK, get_stratum_port(ALGO_KECCAKC), NULL);
 	if (err)
 		return (err);
 

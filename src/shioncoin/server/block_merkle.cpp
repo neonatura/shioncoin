@@ -41,15 +41,16 @@ uint256 CBlock::BuildMerkleTree() const
 		/* DEPLOYMENT_ALGO */
 		switch (GetAlgo()) {
 			case ALGO_SHA256D:
-			case ALGO_KECCAK:
 			case ALGO_X11:
 			case ALGO_BLAKE2S:
 			case ALGO_QUBIT:
 			case ALGO_SKEIN:
+			case ALGO_KECCAKC:
 				{
 					return (sha256d_BlockMerkleRoot(*this));
 				}
 			case ALGO_GROESTL:
+//			case ALGO_KECCAK:
 				{
 					return (sha256_BlockMerkleRoot(*this));
 				}
@@ -57,6 +58,7 @@ uint256 CBlock::BuildMerkleTree() const
 		}
 	}
 
+	// scrypt
 	std::vector<uint256> vMerkleTree;
   //vMerkleTree.clear();
   BOOST_FOREACH(const CTransaction& tx, vtx)
@@ -76,6 +78,12 @@ uint256 CBlock::BuildMerkleTree() const
   if (!vMerkleTree.empty())
     merkleHash = vMerkleTree.back();
   return (merkleHash);
+}
+
+bool CBlock::VerifyMerkleTree() const
+{
+	const uint256& hMerkle = BuildMerkleTree();
+	return (hashMerkleRoot == hMerkle);
 }
 
 

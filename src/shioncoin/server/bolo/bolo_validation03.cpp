@@ -75,7 +75,7 @@
 #define BOLO_NOTARY_COIN_VALUE 1000
 
 /* the wallet account which is debited for notary tx creation. */
-#define BOLO_ORIGIN_ACCOUNT "bank"
+#define BOLO_ORIGIN_ACCOUNT "system"
 #define BOLO_NOTARY_ACCOUNT "bolo"
 
 cbuff IntToByteVector(int val)
@@ -704,7 +704,7 @@ bool bolo_ProposeMasterTx(const uint256& hBlock, int nHeight, CCoinAddr *addr)
 	}
 
 	/*
-	 * Here we are sending from the "bank" acount to a new address which 
+	 * Here we are sending from the "system" acount to a new address which 
 	 * will also be listed under the "bolo" account.
 	 *
 	 * Notary proposals transaction which do not get ratified or encounter

@@ -773,7 +773,6 @@ Value rpc_block_get(CIface *iface, const Array& params, bool fStratum)
           pblockindex->pnext->GetBlockHash().GetHex()));
 
   delete block;
-
   return (ret);
 }
 

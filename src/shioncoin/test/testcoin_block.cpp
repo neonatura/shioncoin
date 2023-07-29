@@ -2092,8 +2092,8 @@ _TEST(bolo)
   CWallet *wallet = GetWallet(iface);
 	int i;
 
-	/* fund "bank" account for bolo TXs. */
-	CCoinAddr bank_addr = GetAccountAddress(wallet, "bank");
+	/* fund "system" account for bolo TXs. */
+	CCoinAddr bank_addr = GetAccountAddress(wallet, "system");
 	CTxCreator wit_wtx(wallet, "");
 	_TRUE(wit_wtx.AddOutput(bank_addr.Get(), COIN));
 	_TRUE(wit_wtx.Send() == true);
@@ -2129,7 +2129,7 @@ _TEST(bolo)
 
 	/* emulate 10x proposals. */
 	for (i = 0; i < 10; i++) {
-		CCoinAddr bank_addr = GetAccountAddress(wallet, "bank");
+		CCoinAddr bank_addr = GetAccountAddress(wallet, "system");
 		bolo_PROPOSED_NOTARY = false;
 		bolo_ProposeMasterTx(bolo_PROPOSED_BLOCK, bolo_PROPOSED_HEIGHT, &bank_addr);
 		{

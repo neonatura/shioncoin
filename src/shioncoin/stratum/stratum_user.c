@@ -253,9 +253,7 @@ void stratum_user_block(user_t *user, double share_diff)
 {
   double diff;
   double cur_t;
-  double speed;
   double span;
-  int step;
   
   if (share_diff != INFINITY) {
 		share_diff /= (double)GetAlgoWorkFactor(user->alg); 
@@ -265,11 +263,14 @@ void stratum_user_block(user_t *user, double share_diff)
 
   cur_t = shtimef(shtime());
   if (user->block_tm) {
-    span = cur_t - user->block_tm;
+    span = MAX(0.001, cur_t - user->block_tm);
 
-    step = ((int)cur_t % MAX_SPEED_STEP);
-    speed = (double)user->work_diff / span * pow(2, 32) / 0xffff;
     if (span > 1.0) {
+			double speed;
+			int step;
+
+			step = ((int)cur_t % MAX_SPEED_STEP);
+			speed = (double)user->work_diff / span * pow(2, 32) / 65535.0;// 0xffff;
       speed /= 1000; /* khs */
       user->speed[step] = (user->speed[step] + speed) / 2;
     }
@@ -278,11 +279,11 @@ void stratum_user_block(user_t *user, double share_diff)
     if (user->block_freq < 1) { 
       if (user->work_diff < MAX_USER_WORK_DIFFICULTY)
 				stratum_set_difficulty(user, 
-						MIN(MAX_USER_WORK_DIFFICULTY, user->work_diff + 256));
+						MIN(MAX_USER_WORK_DIFFICULTY, user->work_diff + 128));
     } else if (user->block_freq > 30) {
       if (user->work_diff > MIN_USER_WORK_DIFFICULTY)
         stratum_set_difficulty(user, 
-						MAX(MIN_USER_WORK_DIFFICULTY, user->work_diff - 256));
+						MAX(MIN_USER_WORK_DIFFICULTY, user->work_diff - 128));
     }
   }
   user->block_tm = cur_t;

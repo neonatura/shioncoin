@@ -102,7 +102,7 @@ bool CheckBlock(CBlock *block)
 	}
 
 	/* check merkleroot. */
-	if (block->hashMerkleRoot != block->BuildMerkleTree()) {
+	if (!block->VerifyMerkleTree()) {
 		if (block->originPeer)
 			block->originPeer->PushReject("block", block->GetHash(), REJECT_INVALID, "bad-txnmrklroot");
 		return error(SHERR_INVAL, "(%s) CheckBlock: hashMerkleRoot mismatch", iface->name);

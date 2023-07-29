@@ -87,7 +87,7 @@ redeem script.
 
 At no point will a incomplete "notary tx" be added to
 the transaction memory pool and the "input sequence" to a
-non-final value until all signatures have been squired. Nodes which
+non-final value until all signatures have been acquired. Nodes which
 do not have a public key address listed in the multi-sig redeem
 script will still relay the transaction even if it's incomplete. 
 

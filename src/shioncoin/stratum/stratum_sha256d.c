@@ -90,6 +90,7 @@ static int is_stratum_sha256d_task_pending(int *ret_iface)
   return (FALSE);
 }
 
+#if 0
 static void stratum_sha256d_task_gen(task_attr_t *attr)
 {
   task_t *task;
@@ -100,14 +101,16 @@ static void stratum_sha256d_task_gen(task_attr_t *attr)
   int err;
 
   task = task_init(attr);
-  if (!task)
+  if (!task) {
     return;
+	}
 
   /* notify subscribed clients of new task. */
   stratum_user_broadcast_task(task, attr);
 
   task_free(&task);
 }
+#endif
 
 static void stratum_sha256d_timer(void)
 {

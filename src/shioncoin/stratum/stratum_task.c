@@ -601,6 +601,7 @@ void stratum_round_reset(time_t stamp)
 
 }
 
+#if 0
 /**
  * Generate MAX_SERVER_NONCE scrypt hashes against a work task.
  * @note Submits a block 
@@ -678,6 +679,7 @@ sprintf(ntime, "%-8.8x", (unsigned int)task->curtime);
   }
 
 }
+#endif
 
 static uint64_t pend_block_height[MAX_COIN_IFACE];
 int is_stratum_task_pending(int *ret_iface)
@@ -742,10 +744,12 @@ void stratum_task_gen(task_attr_t *attr)
   /* notify subscribed clients of new task. */
   stratum_user_broadcast_task(task, attr);
 
+#if 0
 	if (attr->alg == ALGO_SCRYPT) {
 		/* cpuminer (8 cycles) */
 		stratum_task_work(task, attr);
 	}
+#endif
 
   task_free(&task);
 }

@@ -35,7 +35,7 @@ int get_stratum_port(int alg)
 	switch (alg) {
 		case ALGO_SHA256D:
 			return (opt_num(OPT_STRATUM_SHA256D_PORT));
-		case ALGO_KECCAK:
+		case ALGO_KECCAKC:
 			return (opt_num(OPT_STRATUM_KECCAK_PORT));
 		case ALGO_X11:
 			return (opt_num(OPT_STRATUM_X11_PORT));

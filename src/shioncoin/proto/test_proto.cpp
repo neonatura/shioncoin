@@ -157,8 +157,6 @@ static CPubKey test_GetMainAccountPubKey(CWallet *wallet)
     CAccountCache *account = wallet->GetAccount("");
     //account->GetPrimaryPubKey(ACCADDR_MINER, pubkey);
 		account->GetCoinbasePubKey(pubkey);
-    /* miner fee */
-		wallet->GetAccount("bank");
     /* cpu miner */
 		wallet->GetAccount("system");
   }

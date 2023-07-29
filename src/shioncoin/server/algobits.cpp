@@ -30,7 +30,7 @@
 static const char *algobits_label[MAX_ALGOBITS] = {
 	"scrypt",
 	"sha256d",
-	"keccak",
+	"keccak-c",
 	"x11",
 	"blake2s",
 	"qubit",
@@ -99,7 +99,7 @@ uint32_t GetAlgoWorkFactor(int alg)
 		case ALGO_SHA256D:
 			rate = 1552;
 			break;
-		case ALGO_KECCAK:
+		case ALGO_KECCAKC:
 			rate = 264;
 			break;
 		case ALGO_X11:

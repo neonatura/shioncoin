@@ -121,5 +121,5 @@ participant" option, when enabled, will both generate the
 initial proposal transactions on the external blockchain and the
 subsequent signing process. No participation is required and none
 will be taken without available funds in the litecoin service for the
-"bank" account name. 
+"system" account name. 
 

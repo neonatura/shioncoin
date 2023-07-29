@@ -3046,9 +3046,6 @@ void core_SetExtraNonce(CBlock* pblock, const char *xn_hex)
   pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }
 
-
-
-
 bool core_DisconnectBlock(CBlockIndex* pindex, CBlock *pblock)
 {
   CIface *iface = GetCoinByIndex(pblock->ifaceIndex);
@@ -3527,7 +3524,7 @@ uint256 CBlockHeader::GetPoWHash() const
 				{
 					return GetHash();
 				}
-			case ALGO_KECCAK:
+			case ALGO_KECCAKC:
 				{
 					keccakhash(UBEGIN(thash), UBEGIN(nVersion));
 					return (thash);

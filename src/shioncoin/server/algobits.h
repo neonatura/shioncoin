@@ -28,7 +28,7 @@
 
 #define ALGO_SCRYPT 0
 #define ALGO_SHA256D 1
-#define ALGO_KECCAK 2
+#define ALGO_KECCAKC 2
 #define ALGO_X11 3
 #define ALGO_BLAKE2S 4
 #define ALGO_QUBIT 5
@@ -38,7 +38,7 @@
 
 #define BLOCK_ALGO_SCRYPT 0
 #define BLOCK_ALGO_SHA256D (1 << 0)
-#define BLOCK_ALGO_KECCAK (1 << 1)
+#define BLOCK_ALGO_KECCAKC (1 << 1)
 #define BLOCK_ALGO_X11 (1 << 2)
 #define BLOCK_ALGO_BLAKE2S (1 << 3)
 #define BLOCK_ALGO_QUBIT (1 << 4)
