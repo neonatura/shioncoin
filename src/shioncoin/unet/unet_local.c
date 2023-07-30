@@ -226,7 +226,7 @@ void unet_local_init(void)
   char buf[256];
   time_t scan_time;
   shnum_t lat, lon;
-  shgeo_t geo;
+//  shgeo_t geo;
 
   unet_local_add("127.0.0.1"); /* ipv4 standard loopback */
   unet_local_add("::1"); /* ipv6 standard loopback */
@@ -252,7 +252,7 @@ void unet_local_init(void)
     freeifaddrs(addrs);
   }
 
-  memset(&geo, 0, sizeof(geo));
+//  memset(&geo, 0, sizeof(geo));
   lat = atof(shpref_get("shcoind.geo.latitude", "0"));
   lon = atof(shpref_get("shcoind.geo.longitude", "0"));
 
@@ -270,6 +270,7 @@ void unet_local_init(void)
     unet_local_set(buf);
   }
 
+#if 0
   /* set the local geodetic location based on the listening address. */
   if (lat != 0.0 && lon != 0.0) {
     shgeo_set(&geo, lat, lon, 0);
@@ -279,9 +280,12 @@ void unet_local_init(void)
   }
 
   shgeo_loc(&geo, &lat, &lon, NULL);
+#endif
   if (lat != 0.0 && lon != 0.0) {
+#if 0
     /* register location as local with libshare. */
     shgeo_local_set(&geo);
+#endif
 
     /* persist */
     sprintf(buf, "%Lf", lat);

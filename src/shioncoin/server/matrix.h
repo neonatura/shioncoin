@@ -212,7 +212,7 @@ void BlockRetractValidateMatrix(CIface *iface, const CTransaction& tx, CBlockInd
 
 bool ProcessValidateMatrixNotaryTx(CIface *iface, const CTransaction& tx);
 
-extern CScriptID GenerateValidateScript(CWallet *wallet, bool& fConsensus, CScript& script, vector<CPubKey> kSend);
+CScriptID GenerateValidateScript(CWallet *wallet, bool& fConsensus, CScript& script, const vector<CPubKey>& kSend);
 
 bool CreateValidateNotaryTx(CIface *iface, const CTransaction& txPrev, int nPrevOut, CTransaction& tx, vector<CPubKey> kSend);
 

@@ -351,8 +351,9 @@ task_t *task_init(task_attr_t *attr)
     /* determine weightiest iface */
     stratum_task_weight(attr);
     for (ifaceIndex = 1; ifaceIndex < MAX_COIN_IFACE; ifaceIndex++) {
-			if (!is_stratum_miner_algo(ifaceIndex, attr->alg))
+			if (!is_stratum_miner_algo(ifaceIndex, attr->alg)) {
 				continue;
+			}
 
 //			if (ifaceIndex == TESTNET_COIN_IFACE) continue;
 //			if (ifaceIndex == COLOR_COIN_IFACE) continue;
@@ -782,8 +783,9 @@ void stratum_task_weight(task_attr_t *attr)
 
   now = time(NULL);
   for (idx = 1; idx < MAX_COIN_IFACE; idx++) {
-		if (!is_stratum_miner_algo(idx, attr->alg))
+		if (!is_stratum_miner_algo(idx, attr->alg)) {
 			continue;
+		}
 //		if (idx == TESTNET_COIN_IFACE) continue;
 //		if (idx == COLOR_COIN_IFACE) continue;
     iface = GetCoinByIndex(idx);

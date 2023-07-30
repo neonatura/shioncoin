@@ -119,7 +119,7 @@ bool GetValidateNotaries(CWallet *wallet, vector<CPubKey>& kSend, uint256 hMatri
 }
 
 /* A redeem script from a OP_MATRIX:GENERATE tx output that is used to trigger a new dynamic checkpoint. */
-CScriptID GenerateValidateScript(CWallet *wallet, bool& fConsensus, CScript& script, vector<CPubKey> kSend)
+CScriptID GenerateValidateScript(CWallet *wallet, bool& fConsensus, CScript& script, const vector<CPubKey>& kSend)
 {
 	int nMinConsensus = matrix_GetMinConsensus(wallet->ifaceIndex);
 
@@ -268,12 +268,14 @@ bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward
 
 	int64 nFee = MAX(0, MIN(COIN, nReward - (int64)iface->min_tx_fee));
 	if (!MoneyRange(iface, nFee) ||
-			nFee < iface->min_tx_fee)
+			nFee < iface->min_tx_fee) {
 		return (false); /* reward too small */
+	}
 
 	CTxMatrix *m = tx.GenerateValidateMatrix(ifaceIndex);
-	if (!m)
+	if (!m) {
 		return (false); /* not applicable */
+	}
 
 	bool fConsensus = false;
 	CScript scriptRedeem;
@@ -300,7 +302,7 @@ bool BlockGenerateValidateMatrix(CIface *iface, CTransaction& tx, int64& nReward
 	tx.vout.push_back(CTxOut(nFee, scriptMatrix));
 
 	/* deduct from reward. */
-	nReward -= nFee;
+	nReward = MAX(0, nReward - nFee);
 
 	return (true);
 }
@@ -785,7 +787,6 @@ bool BlockGenerateSpringMatrix(CIface *iface, CTransaction& tx, int64& nReward)
 	if (nFee < iface->min_tx_fee)
 		return (false); /* reward too small */
 
-
 	CIdent springIdent;
 	CTxMatrix *m = tx.GenerateSpringMatrix(ifaceIndex, springIdent);
 	if (!m)
@@ -805,7 +806,7 @@ bool BlockGenerateSpringMatrix(CIface *iface, CTransaction& tx, int64& nReward)
 	tx.vout.push_back(CTxOut(nFee, scriptMatrix));
 
 	/* deduct from reward. */
-	nReward -= nFee;
+	nReward = MAX(0, nReward - nFee);
 
 	Debug("BlockGenerateSpringMatrix: (matrix hash %s) proposed: %s\n", hashMatrix.GetHex().c_str(), m->ToString().c_str());
 
