@@ -1319,7 +1319,9 @@ int accept_offer_tx(CIface *iface, std::string strAccount, uint160 hashOffer, in
 
 	/* establish destination alt-coin address. */
 	if (destIndex == COLOR_COIN_IFACE) {
-		CPubKey xferAddr = GetAltChainAddr(offer->hashColor, strAccount, false);
+		CPubKey xferAddr;
+		if (!GetAltChainPubKey(strAccount, offer->hashColor, xferAddr))
+			return (ERR_INVAL);
 		accept->SetXferAddr(xferAddr);
 	} else {
 		CPubKey xferAddr = GetAccountPubKey(alt_wallet, strAccount);

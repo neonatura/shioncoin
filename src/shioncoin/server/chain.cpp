@@ -55,6 +55,10 @@ extern CCriticalSection cs_main;
 
 extern VersionBitsCache *GetVersionBitsCache(CIface *iface);
 
+extern uint GetBestColorHeight(CIface *iface, uint160 hColor);
+
+extern CBlockIndex *GetColorBlockIndexByHeight(CIface *iface, int64 nHeight, uint160 hColor);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -380,20 +384,6 @@ static bool ServiceValidateEvent(int ifaceIndex)
   }
 
   return (true);
-}
-
-
-/* deprecate */
-void ServiceWalletEventUpdate(CWallet *wallet, const CBlock *pblock)
-{
-  CBlockIndex *pindex;
-  uint256 hash = pblock->GetHash();
-
-  pindex = GetBlockIndexByHash(wallet->ifaceIndex, hash);
-  if (!pindex)
-    return;
-
-  wallet->nScanHeight = MAX(wallet->nScanHeight, pindex->nHeight);
 }
 
 bool LoadExternalBlockchainFile()
@@ -1304,8 +1294,10 @@ void event_cycle_chain(int ifaceIndex)
 	vector<int> vRemove;
 	for (int idx = 0; idx < event_cycle_ops.size(); idx++) {
 		CBlockFilter *filter = event_cycle_ops[idx];
-		if (filter->GetIfaceIndex() != ifaceIndex)
+		if (filter->GetIfaceIndex() != ifaceIndex) {
+			/* irrelevant. */
 			continue;
+		}
 
 		for (int incr = 0; incr < 1000; incr++) {
 			if (!filter->IsRunning())
@@ -1542,7 +1534,13 @@ CBlock *CBlock_Filter(CIface *iface, CBlockFilter *filter, vector<CTransaction *
 		return (NULL);
 	}
 
-	block = GetBlockByHeight(iface, filter->GetBlockHeight());
+	//block = GetBlockByHeight(iface, filter->GetBlockHeight());
+	if (filter->GetColor() == 0) {
+		block = GetBlockByHash(iface, filter->GetBlockIndex()->GetBlockHash());
+	} else {
+		CIface *altIface = GetCoinByIndex(COLOR_COIN_IFACE);
+		block = GetBlockByHash(altIface, filter->GetBlockIndex()->GetBlockHash());
+	}
 	if (!block) {
 		return (NULL);
 	}
@@ -1574,13 +1572,12 @@ CBlock *CBlock_Filter(CIface *iface, CBlockFilter *filter, vector<CTransaction *
 void CBlockFilter::SetNull()
 {
 	ifaceIndex = -1;
+	hColor = 0;
 	stream = NULL;
 	vBlock.clear();
 	vTx.clear();
 
 	nMinTime = 0;
-	blockStart = -1;
-	blockEnd = -1;
 
 	txTotal = 0;
 	blockTotal = 0;
@@ -1593,7 +1590,6 @@ void CBlockFilter::filter()
 {
 	CIface *iface = GetIface();
 	int ifaceIndex = GetIfaceIndex();
-	int64 nHeight;
 
 	if (!iface)
 		return;
@@ -1616,10 +1612,6 @@ void CBlockFilter::filter()
 		vector<CTransaction *> tx_list;
 		CBlock *block = CBlock_Filter(iface, this, tx_list);
 		if (block) {
-			CWallet *wallet = GetWallet();
-
-			LOCK(wallet->cs_wallet);
-
 			/* process block */
 			BlockTask(block);
 			blockTotal++;
@@ -1634,12 +1626,7 @@ void CBlockFilter::filter()
 		}
 	}
 
-	nHeight = blockIndex->nHeight + 1;
-	if (nHeight > blockEnd) {
-		blockIndex = NULL;
-		return;
-	}
-	blockIndex = GetBlockIndexByHeight(ifaceIndex, nHeight);
+	blockIndex = blockIndex->pnext;
 }
 
 void CBlockFilter::filterAll()
@@ -1666,29 +1653,29 @@ void CBlockFilter::initialize()
 
 	state = BLOCKFILTER_SCAN;
 
-	/* establish defaults. */
-	if (blockStart == -1) {
-		blockStart = 1;
+	int64 nHeight = 1;
+	if (hColor == 0) {
+		blockIndex = GetBlockIndexByHeight(ifaceIndex, nHeight);
+	} else {
+		blockIndex = GetColorBlockIndexByHeight(iface, nHeight, hColor);
 	}
-	if (blockEnd == -1) {
-		blockEnd = GetBestHeight(iface);
-	}
-
-	blockIndex = GetBlockIndexByHeight(ifaceIndex, blockStart);
 
 	time_t nMinTime = GetMinimumTime();
 	if (GetMinimumTime() != 0) {
 		/* seek ahead to minimum time. */
 		while (blockIndex && blockIndex->GetBlockTime() < nMinTime) {
 			blockIndex = blockIndex->pnext;
-		}
-		if (blockIndex) {
-			blockStart = blockIndex->nHeight;
+			nHeight++;
 		}
 	}
 
-	Debug("(%s) block filter[%s]: operation initialized (height: %d+).",
-			iface->name, GetLabel().c_str(), blockStart);
+	if (hColor == 0) {
+		Debug("(%s) block filter[%s]: operation initialized (height: %d+).",
+				iface->name, GetLabel().c_str(), nHeight);
+	} else {
+		Debug("(%s) block filter[%s]: operation initialized (height: %d+) (color: %s).",
+				iface->name, GetLabel().c_str(), nHeight, hColor.GetHex().c_str());
+	}
 }
 
 bool CBlockFilter::IsFinished() 
@@ -1711,9 +1698,18 @@ int CBlockFilter::GetIfaceIndex()
 	return (ifaceIndex);
 }
 
+/* The wallet used to access coin addresses. */
 CWallet *CBlockFilter::GetWallet() 
 {
-	return (::GetWallet(ifaceIndex));
+	CWallet *wallet;
+
+	if (GetColor() == 0) {
+		wallet = ::GetWallet(ifaceIndex);
+	} else {
+		wallet = ::GetWallet(COLOR_COIN_IFACE);
+	}
+
+	return (wallet);
 }
 
 void CBlockValidateFilter::SetNull()
@@ -1832,7 +1828,6 @@ static bool Block_MatchDestination(CWallet *wallet, const CTxOut& out, vector<CT
 
 bool CWalletUpdateFilter::TransactionFilter(CBlock *block, CTransaction *tx)
 {
-  CIface *iface = GetIface();
   CWallet *wallet = GetWallet();
   uint256 tx_hash = tx->GetHash();
 
@@ -1867,7 +1862,6 @@ bool CWalletUpdateFilter::TransactionFilter(CBlock *block, CTransaction *tx)
 
 void CWalletUpdateFilter::TransactionTask(CBlock *block, CTransaction *tx)
 {
-  CIface *iface = GetIface();
   CWallet *wallet = GetWallet();
   uint256 tx_hash = tx->GetHash();
 	vector<uint256> vOuts;
@@ -1875,7 +1869,7 @@ void CWalletUpdateFilter::TransactionTask(CBlock *block, CTransaction *tx)
 	if (wallet->mapWallet.count(tx_hash) != 0) {
 		CWalletTx& wtx = wallet->mapWallet[tx_hash];
 		wtx.MarkDirty();
-		Debug("(%s) TransactionTask: reset cache on wallet-tx \"%s\".", iface->name, tx_hash.GetHex().c_str());
+		Debug("TransactionTask: reset cache on wallet-tx \"%s\".", tx_hash.GetHex().c_str());
 		return;
 	}
 
@@ -1889,7 +1883,7 @@ void CWalletUpdateFilter::TransactionTask(CBlock *block, CTransaction *tx)
 //			wallet->WriteArchTx(arch_wtx);
 			wallet->WriteWalletTx(arch_wtx);
 		}
-		Debug("(%s) TransactionTask: reset archived wallet-tx \"%s\".", iface->name, tx_hash.GetHex().c_str());
+		Debug("TransactionTask: reset archived wallet-tx \"%s\".", tx_hash.GetHex().c_str());
 		return;
 	}
 
@@ -1912,7 +1906,7 @@ void CWalletUpdateFilter::TransactionTask(CBlock *block, CTransaction *tx)
 					(char *)block->GetHash().GetHex().c_str());
 		}
 
-		Debug("(%s) TransactionTask: created new wallet-tx \"%s\".", iface->name, tx_hash.GetHex().c_str());
+		Debug("TransactionTask: created new wallet-tx \"%s\".", tx_hash.GetHex().c_str());
 	}
 
 }

@@ -27,14 +27,15 @@
 #include "wallet.h"
 #include "net.h"
 #include "strlcpy.h"
-#include "color_pool.h"
-#include "color_block.h"
-#include "color_wallet.h"
-#include "color_txidx.h"
+#include "account.h"
 #include "chain.h"
 #include "coin.h"
 #include "versionbits.h"
 #include "algobits.h"
+#include "color_pool.h"
+#include "color_block.h"
+#include "color_wallet.h"
+#include "color_txidx.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -299,33 +300,18 @@ int64 color_GetBlockValue(uint160 hColor, int nHeight, int64 nFees)
   return (nValue);
 }
 
-CBlockIndex *GetBestColorBlockIndex(CIface *iface, uint160 hColor)
+uint GetBestColorHeight(CIface *iface, uint160 hColor)
 {
-	CWallet *wallet = GetWallet(iface);
-	blkidx_t *blockIndex;
-	uint256 hash;
+	CBlockIndex *pindex;
 
-	blockIndex = GetBlockTable(COLOR_COIN_IFACE);
-	if (!blockIndex)
-		return (NULL);
-
-	if (wallet->mapColorPool.count(hColor) != 0) {
-		/* alt-chain pool */
-		hash = wallet->mapColorPool[hColor];
-		blkidx_t::iterator mi = blockIndex->find(hash);
-		if (mi != blockIndex->end())
-			return (mi->second);
+	pindex = GetBestColorBlockIndex(iface, hColor);
+	if (!pindex) {
+		return (-1);
 	}
 
-	if (wallet->mapColor.count(hColor) != 0) {
-		/* alt-chain for color */
-		hash = wallet->mapColor[hColor];
-		blkidx_t::iterator mi = blockIndex->find(hash);
-		if (mi != blockIndex->end())
-			return (mi->second);
-	}
-
-	return (NULL);
+	unsigned int nHeight = 0;
+	GetColorBlockHeight(pindex, nHeight);
+	return (nHeight);
 }
 
 bool color_GetBlockColor(CIface *iface, CBlockIndex *pindex, uint160& hColor)
@@ -408,6 +394,8 @@ COLORBlock* color_CreateNewBlock(uint160 hColor, CBlockIndex *pindexPrev, const 
 			(CScript() << qual << ParseHex(hexStr)) + 
 			COINBASE_FLAGS;
 	}
+
+  pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
   return pblock.release();
 }
@@ -614,7 +602,6 @@ static void color_EraseFromWallets(uint256 hash)
 
 bool color_ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
-  CBlockIndex *pindexBest = GetBestBlockIndex(COLOR_COIN_IFACE);
   int ifaceIndex = COLOR_COIN_IFACE;
   CIface *iface = GetCoinByIndex(ifaceIndex);
   blkidx_t *blockIndex = GetBlockTable(ifaceIndex); 
@@ -753,6 +740,7 @@ void static COLOR_SetBestChain(const CBlockLocator& loc)
 
 bool COLORBlock::IsBestChain()
 {
+	// TODO
   CBlockIndex *pindexBest = GetBestBlockIndex(COLOR_COIN_IFACE);
   return (pindexBest && GetHash() == pindexBest->GetBlockHash());
 }
@@ -874,7 +862,12 @@ bool COLORBlock::AcceptBlock()
 
 	}
 
+	/* register block-index as having persitent data. */
+	pindex->nStatus |= BLOCK_HAVE_DATA;
+
+	/* updat stats */
 	STAT_BLOCK_ACCEPTS(iface)++;
+
 	return (true);
 }
 
@@ -1325,5 +1318,86 @@ bool color_IsSupported(uint160 hColor)
 	}
 
 	return (true);
+}
+
+/**
+ * @param iface SHC_COIN_IFACE
+ */
+CBlockIndex *GetColorGenesisBlockIndex(CIface *iface, uint160 hColor)
+{
+	CWallet *wallet = GetWallet(iface);
+	CBlockIndex *pindex;
+
+	pindex = NULL;
+	BOOST_FOREACH(const PAIRTYPE(uint256, uint160)& tok, wallet->mapColorHead) {
+		const uint256& hBlock = tok.first;
+		const uint160& hHeadColor = tok.second;
+		if (hColor == hHeadColor) {
+			pindex = GetBlockIndexByHash(COLOR_COIN_IFACE, hBlock);
+			break;
+		}
+	}
+
+	return (pindex);
+}
+
+/**
+ * @param iface SHC_COIN_IFACE
+ */
+CBlockIndex *GetColorBlockIndexByHeight(CIface *iface, int64 nHeight, uint160 hColor)
+{
+	CBlockIndex *pindexBest;
+
+	pindexBest = GetBestColorBlockIndex(iface, hColor);
+	if (!pindexBest) {
+		return (NULL);
+	}
+
+	uint nScanHeight = 0;
+	GetColorBlockHeight(pindexBest, nScanHeight);
+	if (nHeight > nScanHeight) {
+		return (NULL);
+	}
+
+	CBlockIndex *pindexRet = pindexBest;
+	for (; nScanHeight > nHeight; nScanHeight--) {
+		pindexRet = pindexRet->pprev;
+		if (!pindexRet)
+			break;
+	}
+
+	return (pindexRet);
+}
+
+/**
+ * @param iface SHC_COIN_IFACE
+ */
+CBlockIndex *GetBestColorBlockIndex(CIface *iface, uint160 hColor)
+{
+	CWallet *wallet = GetWallet(iface);
+	blkidx_t *blockIndex;
+	uint256 hash;
+
+	blockIndex = GetBlockTable(COLOR_COIN_IFACE);
+	if (!blockIndex)
+		return (NULL);
+
+	if (wallet->mapColorPool.count(hColor) != 0) {
+		/* alt-chain pool */
+		hash = wallet->mapColorPool[hColor];
+		blkidx_t::iterator mi = blockIndex->find(hash);
+		if (mi != blockIndex->end())
+			return (mi->second);
+	}
+
+	if (wallet->mapColor.count(hColor) != 0) {
+		/* alt-chain for color */
+		hash = wallet->mapColor[hColor];
+		blkidx_t::iterator mi = blockIndex->find(hash);
+		if (mi != blockIndex->end())
+			return (mi->second);
+	}
+
+	return (NULL);
 }
 

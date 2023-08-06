@@ -362,7 +362,6 @@ static bool shc_LoadBlockIndex()
       break;
     SHCBlock block;
     if (!block.ReadFromDisk(pindex)) {
-//fprintf(stderr, "DEBUG: SHCBlock::LoadBlockIndex() : block.ReadFromDisk failed");
       pindexFork = pindex->pprev;
       continue;
     }

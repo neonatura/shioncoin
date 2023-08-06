@@ -47,6 +47,7 @@ extern TEST_cointx(CuTest*);
 extern TEST_offertx(CuTest*);
 extern TEST_sip6_aliastx(CuTest*);
 extern TEST_sip6_di_aliastx(CuTest*);
+extern TEST_sip22_altblock(CuTest*);
 extern TEST_sip25_assettx(CuTest*);
 extern TEST_sip25_di_assettx(CuTest*);
 extern TEST_sip5_certtx(CuTest*);
@@ -131,6 +132,7 @@ int main(int argc, char *argv[])
   SUITE_ADD_TEST(suite, TEST_cointx);
   SUITE_ADD_TEST(suite, TEST_sip6_aliastx);
   SUITE_ADD_TEST(suite, TEST_sip5_certtx);
+  SUITE_ADD_TEST(suite, TEST_sip22_altblock);
   SUITE_ADD_TEST(suite, TEST_sip25_assettx);
 #ifdef USE_SEXE
   SUITE_ADD_TEST(suite, TEST_exectx);

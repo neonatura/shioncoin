@@ -224,9 +224,20 @@ int64 color_GetBlockValueRate(uint160 hColor);
 /* Determine whether the alt-chain specified has any options defined that are not known in this node version. */
 bool color_IsSupported(uint160 hColor);
 
+uint GetBestColorHeight(CIface *iface, uint160 hColor);
+
+CBlockIndex *GetColorBlockIndexByHeight(CIface *iface, int64 nHeight, uint160 hColor);
+
+CBlockIndex *GetColorGenesisBlockIndex(CIface *iface, uint160 hColor);
+
+bool color_CheckProofOfWork(uint256 hash, unsigned int nBits);
+
+COLORBlock* color_CreateNewBlock(uint160 hColor, CBlockIndex *pindexPrev, const CPubKey& rkey);
+
 
 /**
  * @}
  */
+
 
 #endif /* ndef __COLOR_BLOCK_H__ */

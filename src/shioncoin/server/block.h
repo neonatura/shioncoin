@@ -915,7 +915,7 @@ class CTransaction : public CTransactionCore
 
 			 CAltChain *CreateAltChain();
 			 /* Verify the integrity of an altchain transaction. */
-			 bool VerifyAltChain(int ifaceIndex);
+			 bool VerifyAltChain(int ifaceIndex, int& mode);
 
 			 CAlias *GetAlias()
 			 {

@@ -103,6 +103,7 @@ Value rpc_wallet_export(CIface *iface, const Array& params, bool fStratum);
 //Value rpc_wallet_exportdat(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_export_account(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_get(CIface *iface, const Array& params, bool fStratum);
+Value rpc_wallet_hdlist(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_info(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_cscript(CIface *iface, const Array& params, bool fStratum);
 Value rpc_wallet_(CIface *iface, const Array& params, bool fStratum);

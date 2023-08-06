@@ -405,7 +405,7 @@ class CWallet : public CBasicKeyStore
 
 		CBlockIndex *GetLocatorIndex(const CBlockLocator& loc);
 
-		CAccountCache *GetAccount(string strAccount);
+		CAccountCache *GetAccount(string strAccount, uint160 hColor = 0);
 
 		CAccountCache *GetExtAccount(string strAccount);
 
@@ -437,17 +437,17 @@ class CWallet : public CBasicKeyStore
 		bool EraseArchTx(uint256 hash) const;
 		bool HasArchTx(uint256 hash) const;
 
-		bool DeriveNewECKey(CAccount *hdChain, ECKey& secret, int nType = 0);
+		bool DeriveNewECKey(CKey *key, CAccount *hdChain, ECKey& secret, int nType = 0);
 
-		bool DerivePrimaryECExtKey(CAccount *hdChain, ECExtKey& chainChildKey, int nType = 0);
+		bool DerivePrimaryECExtKey(CKey *key, ECExtKey& chainChildKey, int nType = 0);
 
-		bool DerivePrimaryECKey(CAccount *hdChain, ECKey& secret, int nType = 0);
+		bool DerivePrimaryECKey(CKey *key, ECKey& secret, int nType = 0);
 
-		bool DeriveNewDIKey(CAccount *hdChain, DIKey& secret, int nType = 0);
+		bool DeriveNewDIKey(CKey *key, CAccount *hdChain, DIKey& secret, int nType = 0);
 
-		bool DerivePrimaryDIExtKey(CAccount *hdChain, DIExtKey& chainChildKey, int nType = 0);
+		bool DerivePrimaryDIExtKey(CKey *key, DIExtKey& chainChildKey, int nType = 0);
 
-		bool DerivePrimaryDIKey(CAccount *hdChain, DIKey& secret, int nType = 0);
+		bool DerivePrimaryDIKey(CKey *key, DIKey& secret, int nType = 0);
 
 		const cbuff& Base58Prefix(int type) const;
 

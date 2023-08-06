@@ -89,14 +89,15 @@ _TEST(account_cache)
 	opt_bool_set(OPT_HDKEY, TRUE);
 	opt_bool_set(OPT_DILITHIUM, FALSE);
 
+	CKey *pkey = acc->GetDefaultKey();
+	_TRUEPTR(pkey);
+
 	/* ecdsa derive bech32 */
 	opt_bool_set(OPT_BECH32, TRUE);
 	CAccount *hdChain = &acc->account;
 	CAccount hdChainCopy = *hdChain;
 	ECKey eckey;
-	_TRUE(wallet->DeriveNewECKey(&hdChainCopy, eckey));
-//	_TRUE(wallet->AddKey(eckey));
-//	acc->SetAddrDestinations(eckey.GetPubKey().GetID(), 0);
+	_TRUE(wallet->DeriveNewECKey(pkey, &hdChainCopy, eckey));
 	acc->ResetAddr(ACCADDR_RECV);
 	const CCoinAddr& r_bech32_addr = acc->GetAddr(ACCADDR_RECV);
 	/* ecdsa compare */
@@ -111,7 +112,7 @@ _TEST(account_cache)
 	opt_bool_set(OPT_DILITHIUM, TRUE);
 	hdChainCopy = *hdChain;
 	DIKey dikey;
-	_TRUE(wallet->DeriveNewDIKey(&hdChainCopy, dikey));
+	_TRUE(wallet->DeriveNewDIKey(pkey, &hdChainCopy, dikey));
 //	_TRUE(wallet->AddKey(dikey));
 //	acc->SetAddrDestinations(dikey.GetPubKey().GetID(), ACCADDRF_DILITHIUM);
 	acc->ResetAddr(ACCADDR_RECV);

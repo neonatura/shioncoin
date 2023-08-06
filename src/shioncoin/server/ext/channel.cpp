@@ -770,7 +770,7 @@ int init_channel_tx(CIface *iface, string strAccount, int64 nValue, CCoinAddr& r
     return (ERR_FEE);
   BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
     wtx.vin.push_back(CTxIn(coin.first->GetHash(),coin.second));
-/* DEBUG: TODO: must be marked as spent */
+/* TODO: must be marked as spent */
 
   nValue -= iface->min_tx_fee;
 
@@ -845,7 +845,7 @@ int activate_channel_tx(CIface *iface, CTransaction *txIn, int64 nValue, CWallet
       wtx.vout.push_back(CTxOut(nValueIn - nValue, scriptRet));
     }
 
-/* DEBUG: TODO: must be marked as spent */
+/* TODO: must be marked as spent */
   }
 
 #if 0

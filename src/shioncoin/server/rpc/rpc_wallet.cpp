@@ -905,7 +905,6 @@ Value rpc_wallet_list(CIface *iface, const Array& params, bool fStratum)
 	if (params.size() > 0)
 		nMinDepth = params[0].get_int();
 
-
 	vector<string> vAcc;
 	BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, wallet->mapAddressBook) {
 		const string& strAccount = entry.second;

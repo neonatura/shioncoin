@@ -418,7 +418,6 @@ static bool ltc_LoadBlockIndex()
 #endif
   {
     if (LTCBlock::pindexGenesisBlock == NULL) {
-  //    fprintf(stderr, "DEBUG: LTCTxDB::LoadBlockIndex() : LTCBlock::hashBestChain not loaded, but pindexGenesisBlock == NULL");
       return true;
     }
     //    return error(SHERR_INVAL, "LTCTxDB::LoadBlockIndex() : LTCBlock::hashBestChain not loaded");
@@ -441,7 +440,6 @@ static bool ltc_LoadBlockIndex()
     pindexBest = GetBestBlockIndex(iface);
     if (!pindexBest)
       return error(SHERR_INVAL, "LTCTxDB::LoadBlockIndex() : LTCBlock::hashBestChain not found in the block index");
-//fprintf(stderr, "DEBUG: LoadBlockIndex: falling back to highest block height %d\n", pindexBest->nHeight);
     hashBestChain = pindexBest->GetBlockHash();
   }
 

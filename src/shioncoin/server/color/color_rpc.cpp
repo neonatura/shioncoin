@@ -45,8 +45,8 @@ const RPCOp ALT_ADDR = {
 };
 
 const RPCOp ALT_ADDRLIST = {
-  &rpc_alt_addrlist, 1, {RPC_STRING, RPC_ACCOUNT},
-  "Syntax: <name|color-hex> [<account>]\n"
+  &rpc_alt_addrlist, 0, {RPC_ACCOUNT, RPC_BOOL},
+  "Syntax: [<account>] [verbose=false]\n"
   "Summary: Obtain a list of alt-chain coin addresses.\n"
   "\n"
   "List all local coin addresses associated with a alternate block-chain."
@@ -60,7 +60,7 @@ const RPCOp ALT_SEND = {
   "Transfers coins to a destination address of a particular alternate block-chain.\n"
 	"\n"
 	"Note: Each color is a seperate chain, and therefore coins can not be sent from one color to another with this command.\n"
-	"Note: A 0.001 tx-fee will be charged [on the main block-chain] in order to create an alt-chain block."
+	"Note: A minimal SHC tx-fee (from the same account name) will be charged in order to create an alt-chain block."
 };
 
 const RPCOp ALT_INFO = {
@@ -102,7 +102,7 @@ const RPCOp ALT_MINE = {
   "\n"
   "Uses the built-in CPU miner in order to generate a block on an alternate block-chain. A genesis block will be created for the first block of each color.\n"
 	"\n"
-	"Note: A minimal tx-fee will be charged [on the main block-chain] in order to create an alt-chain block."
+	"Note: A minimal SHC tx-fee (from the same account name) will be charged in order to create an alt-chain block."
 };
 const RPCOp ALT_NEW = {
   &rpc_alt_new, 1, {RPC_STRING, RPC_ACCOUNT, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING, RPC_STRING},
@@ -125,7 +125,7 @@ const RPCOp ALT_NEW = {
 	"\t\tThe txfee of X, where X is (10 ^ (X+1)) / COIN.\n"
 	"\t\tFor example: A 7 value would indicate ((10^7)/COIN=) 1 coins.\n"
   "\n"
-	"Note: A minimal tx-fee will be charged [on the main block-chain] in order to create an alt-chain block."
+	"Note: A minimal SHC tx-fee (from the same account name) will be charged in order to create an alt-chain block."
 };
 
 const RPCOp ALT_BLOCK = {
@@ -141,15 +141,15 @@ const RPCOp ALT_TX = {
 };
 
 const RPCOp ALT_KEY = {
-  &rpc_alt_key, 1, {RPC_COINADDR},
-  "Syntax: <coin-addr>\n"
+  &rpc_alt_key, 1, {RPC_STRING, RPC_BOOL},
+  "Syntax: <coin-addr> [verbose=false]\n"
   "Summary: Print the private key of a colored coin address."
 };
 
 const RPCOp ALT_SETKEY = {
-  &rpc_alt_setkey, 1, {RPC_STRING, RPC_ACCOUNT},
-  "Syntax: <coin-addr> [<account>]\n"
-  "Summary: Print the private key of a colored coin address."
+  &rpc_alt_setkey, 2, {RPC_STRING, RPC_STRING, RPC_ACCOUNT},
+  "Syntax: <name|color-hex> <priv key> [<account>]\n"
+  "Summary: Add a new private key to the colored alt-chain wallet."
 };
 
 const RPCOp ALT_UNSPENT = {
@@ -179,5 +179,50 @@ void color_RegisterRPCOp(int ifaceIndex)
   RegisterRPCOp(ifaceIndex, "alt.tx", ALT_TX);
   RegisterRPCOp(ifaceIndex, "alt.unspent", ALT_UNSPENT);
 
+	/*
+	 * TODO ideas for addl alt.xx cmds
+	 *
+	 * alt.hash
+	 *   Get block hash by height.
+	 * alt.list
+	 *   List current block of all known alt-chains.
+	 * alt.export
+	 *   Export all color wallet keys.
+	 * alt.import
+	 *   Import color wallet keys.
+	 * alt.workex
+	 *   Obtain mining work data or submits data.
+	 * alt.commit
+	 *   Submit a new alt-chain transaction.
+	 * alt.verify
+	 *   Verify an alt-chain for errors.
+	 * alt.rescan
+	 *   Rescan an alt-chain for wallet. 
+	 *
+	 * TODO idea for shapi api call
+	 *   Utilize "format" color coin to specify detailed format of data for various alt-chain.
+	 *   {
+	 *     "mime": "text/json",
+	 *     "label": "nft"
+	 *     "fields": [
+	 *       {
+	 *         "label": "model"
+	 *         "type": "string"
+	 *         width, height, depth, crc
+	 *         global item attributes
+	 *       }
+	 *     ]
+	 *   }
+	 *   {
+	 *   	 "format":<tx of format>
+	 *     "hier":<pubkey> 
+	 *     "state":
+	 *     "signature":
+	 *     "payload" {
+	 *       "model": "item/sword/glass_purple"
+	 *     }
+	 *
+	 *   
+	 */
 }
 

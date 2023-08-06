@@ -1102,7 +1102,7 @@ bool EMC2Block::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
   }
   else
   {
-/* DEBUG: 060316 - reorg will try to load this block from db. */
+/* DEBUG 060316 - reorg will try to load this block from db. */
     WriteArchBlock();
 
     ret = EMC2_Reorganize(txdb, pindexNew, &mempool);
@@ -1737,7 +1737,7 @@ bool EMC2Block::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
   char errbuf[1024];
 
   /* "Check it again in case a previous version let a bad block in" */
-#if 1 /* DEBUG: */
+#if 1 /* DEBUG */
   if (!CheckBlock())
     return false;
 #endif

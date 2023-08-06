@@ -810,6 +810,14 @@ const RPCOp WALLET_HDKEY = {
   "\n"
   "The private coin address can be imported into another system via the 'wallet.sethdkey' command."
 };
+const RPCOp WALLET_HDLIST = {
+  &rpc_wallet_hdlist, 1, {RPC_ACCOUNT, RPC_BOOL},
+  "Syntax: <account> [<verbose>=false]\n"
+  "Summary: Show the HD hierarchy for an account."
+  "\n"
+  "The 'wallet.hdlist' command provides a hierarchy list of the HD derived coin addresses for\n"
+	"an account."
+};
 const RPCOp WALLET_LIST = {
   &rpc_wallet_list, 0, {RPC_INT},
   "wallet.list [<minconf>=1]\n"
@@ -1123,6 +1131,7 @@ void RegisterRPCOpDefaults(int ifaceIndex)
 
   RegisterRPCOp(ifaceIndex, "wallet.get", WALLET_GET);
   RegisterRPCOp(ifaceIndex, "wallet.hdkey", WALLET_HDKEY);
+  RegisterRPCOp(ifaceIndex, "wallet.hdlist", WALLET_HDLIST);
 
 //  RegisterRPCOp(ifaceIndex, "wallet.info", WALLET_INFO);
   RegisterRPCOp(ifaceIndex, "wallet.import", WALLET_IMPORT);

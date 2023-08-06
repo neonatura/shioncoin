@@ -62,6 +62,7 @@ class CBlockFilter
 	protected:
 		int ifaceIndex;
 		string label;
+		uint160 hColor;
 
 		/* result */
 		shjson_t *stream;
@@ -72,24 +73,22 @@ class CBlockFilter
 		/* config */
 		time_t nMinTime;
 
-		int blockStart;
-
-		int blockEnd;
-
 		/* working vars */
-		int blockTotal;
-
-		int txTotal;
-
 		CBlockIndex *blockIndex;
 
 		BlockFilterState state;
 
-		CBlockFilter(int ifaceIndexIn, string labelIn)
+		/* stats */
+		int blockTotal;
+
+		int txTotal;
+
+		CBlockFilter(int ifaceIndexIn, string labelIn, uint160 hColorIn = 0)
 		{
 			SetNull();
 			this->ifaceIndex = ifaceIndexIn;
 			this->label = labelIn;
+			this->hColor = hColorIn;
 		}
 
 		void SetNull();
@@ -111,6 +110,8 @@ class CBlockFilter
 		int64 GetBlockHeight() { return (blockIndex ? blockIndex->nHeight : 0); }
 
 		time_t GetBlockTime() { return (blockIndex ? (time_t)blockIndex->GetBlockTime() : 0); }
+
+		uint160 GetColor() { return (hColor); }
 
 		void filter();
 
@@ -162,7 +163,7 @@ class CBlockValidateFilter : public CBlockFilter
 
 	public:
 
-		CBlockValidateFilter(int ifaceIndexIn) : CBlockFilter(ifaceIndexIn, "block-validate")
+		CBlockValidateFilter(int ifaceIndexIn, uint160 hColorIn = 0) : CBlockFilter(ifaceIndexIn, "block-validate", hColorIn)
 		{
 			SetNull();
 		}
@@ -223,13 +224,13 @@ class CWalletUpdateFilter : public CBlockFilter
 	public:
 		vector<CTxDestination> vDestination;
 
-		CWalletUpdateFilter(int ifaceIndexIn, time_t nMinTime = 0) : CBlockFilter(ifaceIndexIn, "wallet-update")
+		CWalletUpdateFilter(int ifaceIndexIn, time_t nMinTime = 0, uint160 hColorIn = 0) : CBlockFilter(ifaceIndexIn, "wallet-update", hColorIn)
 		{
 			SetNull();
 			SetMinimumTime(nMinTime);
 		}
 
-		CWalletUpdateFilter(int ifaceIndexIn, vector<CTxDestination>& vDestinationIn, time_t nMinTime = 0) : CBlockFilter(ifaceIndexIn, "wallet-update")
+		CWalletUpdateFilter(int ifaceIndexIn, vector<CTxDestination>& vDestinationIn, time_t nMinTime = 0, uint160 hColorIn = 0) : CBlockFilter(ifaceIndexIn, "wallet-update", hColorIn)
 		{
 			SetNull();
 			vDestination.insert(vDestination.end(), vDestinationIn.begin(), vDestinationIn.end());
@@ -254,7 +255,7 @@ class CWalletValidateFilter : public CBlockFilter
 
 	public:
 
-		CWalletValidateFilter(int ifaceIndexIn) : CBlockFilter(ifaceIndexIn, "wallet-validate")
+		CWalletValidateFilter(int ifaceIndexIn, uint160 hColorIn = 0) : CBlockFilter(ifaceIndexIn, "wallet-validate", hColorIn)
 		{
 			SetNull();
 		}
@@ -279,8 +280,6 @@ int InitChainImport(int ifaceIndex, const char *path, int offset);
 int InitChainExport(int ifaceIndex, const char *path, int min, int max);
 
 void event_cycle_chain(int ifaceIndex);
-
-void ServiceWalletEventUpdate(CWallet *wallet, const CBlock *pblock);
 
 void InitServiceValidateEvent(CWallet *wallet, uint64_t nHeight);
 

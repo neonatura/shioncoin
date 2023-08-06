@@ -2521,11 +2521,10 @@ CAltChain *CTransaction::CreateAltChain()
 	return (alt);
 }
 
-bool CTransaction::VerifyAltChain(int ifaceIndex)
+bool CTransaction::VerifyAltChain(int ifaceIndex, int& op_mode)
 {
 	CIface *iface = GetCoinByIndex(ifaceIndex);
 	uint160 hashAltChain;
-	int mode;
 	int nOut; 
 	int err;
 
@@ -2540,7 +2539,7 @@ bool CTransaction::VerifyAltChain(int ifaceIndex)
 		return (false); /* no extension output */
 	} 
 
-	if (!DecodeAltChainHash(vout[nOut].scriptPubKey, mode, hashAltChain)) {
+	if (!DecodeAltChainHash(vout[nOut].scriptPubKey, op_mode, hashAltChain)) {
 		return (false); /* no altchain hash in output */
 	}
 
@@ -2556,9 +2555,10 @@ bool CTransaction::VerifyAltChain(int ifaceIndex)
 
 	for (int i = 0; i < altchain->vtx.size(); i++) {
 		const CAltTx& alt_tx = altchain->vtx[i];
+
 		/* auxilliary payload for color-specific coin implementations. */
-		if (alt_tx.vchAux.size() > 4096) {
-			return error(SHERR_INVAL, "verify alt chain: auxillary payload exceeds 4096 bytes.");
+		if (alt_tx.vchAux.size() > CAltChain::MAX_ALTCHAIN_PAYLOAD_LENGTH) {
+			return error(SHERR_INVAL, "verify alt chain: auxillary payload exceeds maximum length.");
 		}
 
 		if ((int64)alt_tx.nLockTime > altchain->block.nTime) {
@@ -2764,6 +2764,12 @@ void CBlockIndex::BuildSkip()
 
 bool IsWitnessEnabled(CIface *iface, const CBlockIndex* pindexPrev)
 {
+
+	if (GetCoinIndex(iface) == COLOR_COIN_IFACE) {
+		/* The color coin interface does not support witness, bech32, or dilithium coin-addresses. */
+		return (false);
+	}
+
   return (VersionBitsState(pindexPrev, iface, DEPLOYMENT_SEGWIT) == THRESHOLD_ACTIVE);
 }
 

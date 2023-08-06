@@ -28,8 +28,6 @@
 #include "strlcpy.h"
 #include "chain.h"
 #include "algobits.h"
-#include "color_pool.h"
-#include "color_block.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -46,6 +44,8 @@
 #include <share.h>
 #include "walletdb.h"
 #include "txsignature.h"
+#include "account.h"
+#include "color/color_pool.h"
 #include "color/color_block.h"
 #include "color/color_wallet.h"
 #include "color/color_txidx.h"
@@ -419,5 +419,17 @@ bool COLORWallet::IsAlgoSupported(int alg, CBlockIndex *pindexPrev, uint160 hCol
 
 	int flag = color_GetAlgoFlags(hColor);
 	return (flag & (1 << (alg-1)));
+}
+
+CAccountCache *GetColorAccount(string strAccount, uint160 hColor)
+{
+	CWallet *altWallet = GetWallet(COLOR_COIN_IFACE);
+	return (altWallet->GetAccount(strAccount, hColor));
+}
+
+CCoinAddr GetColorCoinAddress(string strAccount, uint160 hColor, int nType)
+{
+	CAccountCache *account = GetColorAccount(strAccount, hColor);
+	return (account->GetAddr(nType));
 }
 

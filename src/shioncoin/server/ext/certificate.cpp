@@ -1429,13 +1429,6 @@ void CLicense::NotifySharenet(int ifaceIndex)
   int err;
   int i;
 
-#if 0
-/* DEBUG: */
-  /* only applies to ShionCoin block-chain transaction */
-  if (ifaceIndex != SHC_COIN_IFACE)
-    return;
-#endif
-
   uint160 hLic = GetHash();
   shkey_t *pubkey;
   SHLicense lic;

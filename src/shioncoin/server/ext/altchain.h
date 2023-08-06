@@ -167,9 +167,11 @@ class CAltChain : public CExtCore
 
 	public:
 		/** The maximum supported version of an entity type transaction. */
-		static const int MAX_ALTBLOCK_VERSION = SHC_VERSION_MAJOR;
+		static const int MAX_ALTBLOCK_VERSION = COLOR_VERSION_MAJOR;
 
 		static const int MAX_ALTCHAIN_LABEL_LENGTH = 135;
+
+		static const int MAX_ALTCHAIN_PAYLOAD_LENGTH = 4096;
 
 		uint32_t nFlag;
 		uint160 hColor;
@@ -309,8 +311,6 @@ string GetAltColorHashAbrev(uint160 hash);
 
 void GetAltColorCode(uint160 hash, uint32_t *r_p, uint32_t *g_p, uint32_t *b_p, uint32_t *a_p);
 
-const CPubKey& GetAltChainAddr(uint160 hColor, string strAccount, bool bForceNew);
-
 bool CommitAltChainTx(CIface *iface, CTransaction& tx, CNode *pfrom, bool fUpdate = false);
 
 /** submit a new active pool altchain-tx containing a alt-chain block. */
@@ -329,6 +329,10 @@ int GetAltChainTxMode(CTransaction& tx);
 bool DecodeAltChainHash(const CScript& script, int& mode, uint160& hash);
 
 int IndexOfAltChainOutput(const CTransaction& tx);
+
+CCoinAddr GetAltChainAddress(string strAccount, uint160 hColor);
+
+bool GetAltChainPubKey(string strAccount, uint160 hColor, CPubKey& pubkeyRet);
 
 int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt& opt, CWalletTx& wtx);
 

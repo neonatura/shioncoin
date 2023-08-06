@@ -74,6 +74,10 @@ extern COLORWallet *colorWallet;
 
 bool color_LoadWallet(void);
 
+CAccountCache *GetColorAccount(string strAccount, uint160 hColor);
+
+CCoinAddr GetColorCoinAddress(string strAccount, uint160 hColor, int nType);
+
 
 /**
  * @}

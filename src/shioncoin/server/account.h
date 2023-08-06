@@ -40,17 +40,22 @@ class CAccountCache
 {
 	public:
 		CAccount account;
-		uint256 _reserved0_;
+
 		string strAccount;
+
+		uint160 hColor;
+
 		CCoinAddr vAddr[MAX_ACCADDR];
 
 		mutable CWallet *wallet;
 
-		CAccountCache(CWallet *walletIn) { 
+		CAccountCache(CWallet *walletIn, uint160 hColorIn = 0) { 
 			SetNull(); 
 			wallet = walletIn;
+			hColor = hColorIn;
 		}
 
+#if 0
 		CAccountCache(CWallet *walletIn, CPubKey vchPubKeyIn, string strAccountIn = "")
 		{ 
 			SetNull(); 
@@ -58,7 +63,6 @@ class CAccountCache
 			account.vchPubKey = vchPubKeyIn;
 			strAccount = strAccountIn;
 		}
-
 		CAccountCache(CWallet *walletIn, CAccount accountIn, string strAccountIn = "")
 		{
 			SetNull();
@@ -66,21 +70,21 @@ class CAccountCache
 			account = accountIn;
 			strAccount = strAccountIn;
 		}
-
 		IMPLEMENT_SERIALIZE(
 				READWRITE(account);
 				READWRITE(_reserved0_);
 				READWRITE(strAccount);
 				)
+#endif
 
-			void SetNull() 
-			{ 
-				account.vchPubKey.SetNull();
-				_reserved0_ = 0;
-				strAccount.clear();
-				for (unsigned int i = 0; i < MAX_ACCADDR; i++)
-					vAddr[i].SetNull();
-			}
+		void SetNull() 
+		{ 
+			account.vchPubKey.SetNull();
+			strAccount.clear();
+			hColor = 0;
+			for (unsigned int i = 0; i < MAX_ACCADDR; i++)
+				vAddr[i].SetNull();
+		}
 
 		bool IsNull() const { 
 			return (!account.vchPubKey.IsValid());
@@ -97,10 +101,6 @@ class CAccountCache
 		bool IsAddrUsed(const CCoinAddr& vchPubKey);
 
 		bool IsAddrUsed(const CPubKey& vchPubKey);
-
-		CCoinAddr GetDefaultAddr();
-
-		void SetDefaultAddr(const CPubKey& pubkey);
 
 		CCoinAddr GetAddr(int type);
 
@@ -182,15 +182,28 @@ class CAccountCache
 
 		CTxDestination GetDestination(CKey *key);
 
-    bool GenerateNewECKey(CPubKey& pubkeyRet, bool fCompressed = true, int nFlag = 0);
+		CCoinAddr GetDefaultAddr();
 
-    bool GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag = 0);
+		void SetDefaultAddr(const CPubKey& pubkey);
 
+		bool GetDefaultPubKey(CPubKey& pubkeyRet);
 
-protected:
-    bool DerivePrimaryKey(CPubKey& pubkeyRet, int nType = 0);
+		bool GenerateDefaultKey();
 
-    bool GeneratePrimaryKey(CPubKey& pubkeyRet, int nType = 0);
+		bool GenerateNewECKey(CPubKey& pubkeyRet, bool fCompressed = true, int nFlag = 0);
+
+		bool GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag = 0);
+
+		bool DeriveNewDIKey(DIKey& key, int nType);
+
+		bool DeriveNewECKey(ECKey& key, int nType);
+
+		CKey *GetDefaultKey();
+
+	protected:
+		bool DerivePrimaryKey(CPubKey& pubkeyRet, int nType = 0);
+
+		bool GeneratePrimaryKey(CPubKey& pubkeyRet, int nType = 0);
 
 		CKey *GetPrimaryKey(int nMode, int nAlg);
 

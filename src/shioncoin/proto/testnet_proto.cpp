@@ -100,7 +100,6 @@ static int testnet_init(CIface *iface, void *_unused_)
 	testnetWallet->checkpoints = new CCheckpoints(TESTNET_COIN_IFACE);
   SetWallet(TESTNET_COIN_IFACE, testnetWallet);
 
-
 	/* normal startup */
 	if (!testnet_InitBlockIndex()) {
 		error(SHERR_INVAL, "testnet_proto: unable to initialize block index table.");

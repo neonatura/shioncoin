@@ -594,7 +594,8 @@ am__test_shcoind_SOURCES_DIST = $(top_builddir)/config.h \
 	test/testcoin_account.cpp test/testcoin_bip32.cpp \
 	test/testcoin_sip5.cpp test/testcoin_sip6.cpp \
 	test/testcoin_sip10.cpp test/testcoin_sip12.cpp \
-	test/testcoin_sip25.cpp test/testcoin_sip33.cpp
+	test/testcoin_sip25.cpp test/testcoin_sip33.cpp \
+	test/testcoin_sip22.cpp
 am__objects_15 = test_shcoind-shcoind_rpc.$(OBJEXT) \
 	test_shcoind-shcoind_error.$(OBJEXT) \
 	test_shcoind-shcoind_log.$(OBJEXT) \
@@ -775,7 +776,8 @@ am_test_shcoind_OBJECTS = $(am__objects_1) $(am__objects_15) \
 	test/shcoind-testcoin_sip10.$(OBJEXT) \
 	test/shcoind-testcoin_sip12.$(OBJEXT) \
 	test/shcoind-testcoin_sip25.$(OBJEXT) \
-	test/shcoind-testcoin_sip33.$(OBJEXT)
+	test/shcoind-testcoin_sip33.$(OBJEXT) \
+	test/shcoind-testcoin_sip22.$(OBJEXT)
 test_shcoind_OBJECTS = $(am_test_shcoind_OBJECTS)
 test_shcoind_DEPENDENCIES =  \
 	$(top_builddir)/src/secp256k1/libsecp256k1.a \
@@ -1109,6 +1111,7 @@ am__depfiles_remade = ./$(DEPDIR)/shcoind-block_iface.Po \
 	test/$(DEPDIR)/shcoind-testcoin_key.Po \
 	test/$(DEPDIR)/shcoind-testcoin_sip10.Po \
 	test/$(DEPDIR)/shcoind-testcoin_sip12.Po \
+	test/$(DEPDIR)/shcoind-testcoin_sip22.Po \
 	test/$(DEPDIR)/shcoind-testcoin_sip25.Po \
 	test/$(DEPDIR)/shcoind-testcoin_sip33.Po \
 	test/$(DEPDIR)/shcoind-testcoin_sip5.Po \
@@ -1887,7 +1890,8 @@ test_shcoind_SOURCES = \
 	test/testcoin_sip10.cpp \
 	test/testcoin_sip12.cpp \
 	test/testcoin_sip25.cpp \
-	test/testcoin_sip33.cpp
+	test/testcoin_sip33.cpp \
+	test/testcoin_sip22.cpp
 
 test_shcoind_LDADD = $(top_builddir)/src/secp256k1/libsecp256k1.a \
 	$(top_builddir)/src/libcrypto/libcrypto.a \
@@ -2807,6 +2811,8 @@ test/shcoind-testcoin_sip25.$(OBJEXT): test/$(am__dirstamp) \
 	test/$(DEPDIR)/$(am__dirstamp)
 test/shcoind-testcoin_sip33.$(OBJEXT): test/$(am__dirstamp) \
 	test/$(DEPDIR)/$(am__dirstamp)
+test/shcoind-testcoin_sip22.$(OBJEXT): test/$(am__dirstamp) \
+	test/$(DEPDIR)/$(am__dirstamp)
 
 test_shcoind$(EXEEXT): $(test_shcoind_OBJECTS) $(test_shcoind_DEPENDENCIES) $(EXTRA_test_shcoind_DEPENDENCIES) 
 	@rm -f test_shcoind$(EXEEXT)
@@ -3141,6 +3147,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/shcoind-testcoin_key.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/shcoind-testcoin_sip10.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/shcoind-testcoin_sip12.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/shcoind-testcoin_sip22.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/shcoind-testcoin_sip25.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/shcoind-testcoin_sip33.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/shcoind-testcoin_sip5.Po@am__quote@ # am--include-marker
@@ -7870,6 +7877,20 @@ test/shcoind-testcoin_sip33.obj: test/testcoin_sip33.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test/shcoind-testcoin_sip33.obj `if test -f 'test/testcoin_sip33.cpp'; then $(CYGPATH_W) 'test/testcoin_sip33.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip33.cpp'; fi`
 
+test/shcoind-testcoin_sip22.o: test/testcoin_sip22.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test/shcoind-testcoin_sip22.o -MD -MP -MF test/$(DEPDIR)/shcoind-testcoin_sip22.Tpo -c -o test/shcoind-testcoin_sip22.o `test -f 'test/testcoin_sip22.cpp' || echo '$(srcdir)/'`test/testcoin_sip22.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) test/$(DEPDIR)/shcoind-testcoin_sip22.Tpo test/$(DEPDIR)/shcoind-testcoin_sip22.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip22.cpp' object='test/shcoind-testcoin_sip22.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test/shcoind-testcoin_sip22.o `test -f 'test/testcoin_sip22.cpp' || echo '$(srcdir)/'`test/testcoin_sip22.cpp
+
+test/shcoind-testcoin_sip22.obj: test/testcoin_sip22.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -MT test/shcoind-testcoin_sip22.obj -MD -MP -MF test/$(DEPDIR)/shcoind-testcoin_sip22.Tpo -c -o test/shcoind-testcoin_sip22.obj `if test -f 'test/testcoin_sip22.cpp'; then $(CYGPATH_W) 'test/testcoin_sip22.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip22.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) test/$(DEPDIR)/shcoind-testcoin_sip22.Tpo test/$(DEPDIR)/shcoind-testcoin_sip22.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test/testcoin_sip22.cpp' object='test/shcoind-testcoin_sip22.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_shcoind_CXXFLAGS) $(CXXFLAGS) -c -o test/shcoind-testcoin_sip22.obj `if test -f 'test/testcoin_sip22.cpp'; then $(CYGPATH_W) 'test/testcoin_sip22.cpp'; else $(CYGPATH_W) '$(srcdir)/test/testcoin_sip22.cpp'; fi`
+
 mostlyclean-libtool:
 	-rm -f *.lo
 
@@ -8514,6 +8535,7 @@ distclean: distclean-am
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_key.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip10.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip12.Po
+	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip22.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip25.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip33.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip5.Po
@@ -8892,6 +8914,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_key.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip10.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip12.Po
+	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip22.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip25.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip33.Po
 	-rm -f test/$(DEPDIR)/shcoind-testcoin_sip5.Po

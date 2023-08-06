@@ -1165,7 +1165,7 @@ Value rpc_wallet_hdlist(CIface *iface, const Array& params, bool fStratum)
 	string strAccount = AccountFromValue(params[0]);
 	if (!IsAccountValid(iface, strAccount))
 		throw JSONRPCError(SHERR_NOENT, "Invalid account name specified.");
-	if (params.size() == 2 && params[1].get_bool() == true)
+	if (params.size() >= 2 && params[1].get_bool() == true)
 		fVerbose = true;
 
 	CAccountCache *account = wallet->GetAccount(strAccount);

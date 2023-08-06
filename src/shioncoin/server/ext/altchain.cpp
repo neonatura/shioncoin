@@ -37,11 +37,13 @@ using namespace json_spirit;
 #include "txcreator.h"
 #include "certificate.h"
 #include "versionbits.h"
+#include "account.h"
 #include "altchain.h"
 #include "altchain_color.h"
 #include "txsignature.h"
 #include "color/color_pool.h"
 #include "color/color_block.h"
+#include "color/color_wallet.h"
 
 extern std::string HexBits(unsigned int nBits);
 extern void ScriptPubKeyToJSON(int ifaceIndex, const CScript& scriptPubKey, Object& out);
@@ -393,7 +395,7 @@ bool ConnectAltChainTx(CIface *iface, const CTransaction& tx)
 			if (wallet->mapColorPool.count(alt->hColor) == 0) {
 				bOrphan = true;
 			} else {
-				const uint256& hashPoolBlock = wallet->mapColor[alt->hColor];
+				const uint256& hashPoolBlock = wallet->mapColorPool[alt->hColor];
 				if (alt->block.hashPrevBlock != hashPoolBlock) {
 					bOrphan = true;
 				}
@@ -407,8 +409,6 @@ bool ConnectAltChainTx(CIface *iface, const CTransaction& tx)
 	wallet->mapColor[alt->hColor] = alt->block.GetHash();
 
 	ReorganizeColorPoolMap(iface, alt->hColor, hashBlock);
-
-//	Debug("(%s) ConnectAltChainTx: hashBlock \"%s\" (color: %s)", iface->name, hashBlock.GetHex().c_str(), alt->hColor.GetHex().c_str());
 
   return (true);
 }
@@ -520,20 +520,18 @@ static bool CommitNewAltChainTx(CIface *iface, CTransaction& tx, CNode *pfrom, b
 		return (error(SHERR_OPNOTSUPP, "CommitNewAltChainTx: no altchain interface."));
 	}
 
-	alt = tx.GetAltChain();
-	if (!alt) {
-		return (error(SHERR_INVAL, "CommitNewAltChainTx: transaction has no altchain data."));
-	}
-
-	if (!tx.VerifyAltChain(ifaceIndex)) {
+	if (!tx.VerifyAltChain(ifaceIndex, mode)) {
 		return error(SHERR_INVAL, 
 				"CommitNewAltChainTx: TX %s: error verifying altchain: %s",
 				tx.GetHash().GetHex().c_str(), tx.GetAltChain()->ToString().c_str());
 	}
-
-	mode = GetAltChainTxMode(tx);
 	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE) {
 		return (true); /* unsupported operation - soft error */
+	}
+
+	alt = tx.GetAltChain();
+	if (!alt) {
+		return (error(SHERR_INVAL, "CommitNewAltChainTx: transaction has no altchain data."));
 	}
 
 	/* dissolve pool references as we commit to disk block-chain. */
@@ -631,20 +629,23 @@ bool CommitAltChainPoolTx(CIface *iface, CTransaction& tx, bool fPool)
 	CBlock *block;
 	int mode;
 
-	if (tx.VerifyAltChain(ifaceIndex) == false) {
+	if (tx.VerifyAltChain(ifaceIndex, mode) == false) {
 		return (error(SHERR_INVAL, "CommitAltChainPoolTx: error verifying alt-chain tx."));
 	}
 
 	alt = tx.GetAltChain();
-	if (!alt)
+	if (!alt) {
 		return (error(SHERR_INVAL, "CommitAltChainPool: !tx.GetAltChain"));
+	}
 
 	CBlockIndex *pindexBest = GetBestColorBlockIndex(iface, alt->hColor);
-
-	if (!pindexBest && mode != OP_EXT_NEW)
+	if (!pindexBest && mode != OP_EXT_NEW) {
 		return (false); /* genesis is always created via EXT_NEW mode */
-	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE)
+	}
+	if (mode != OP_EXT_NEW && mode != OP_EXT_UPDATE) {
+		Debug("CommitAltChainPool: skipping non-standard alt-chain tx \"%s\".", tx.GetHash().GetHex().c_str()); 
 		return (true); /* nonstandard - soft error */
+	}
 
 	if ( (!pindexBest && alt->block.hashPrevBlock != 0) ||
 			 (pindexBest && alt->block.hashPrevBlock != pindexBest->GetBlockHash()) ) {
@@ -689,9 +690,7 @@ bool CommitAltChainPoolTx(CIface *iface, CTransaction& tx, bool fPool)
 	}
 
 	const uint256& hBlock = block->GetHash();
-
 	wallet->mapColorPool[alt->hColor] = hBlock;
-
 	if (!pindexBest) {
 		/* genesis */
 		color_opt opt;
@@ -700,8 +699,18 @@ bool CommitAltChainPoolTx(CIface *iface, CTransaction& tx, bool fPool)
 		wallet->mapColorHead[hBlock] = alt->hColor;
 	}
 
+#if 0
+	{
+		CBlockIndex *pindex = GetBlockIndexByHash(COLOR_COIN_IFACE, hBlock);
+		if (pindex) {
+			pindex->nStatus |= BLOCK_HAVE_DATA;
+		}
+	}
+#endif
+
 	delete block;
 
+	Debug("CommitAltChainPool: submitted block \"%s\".", hBlock.GetHex().c_str());
 	return (true);
 }
 
@@ -983,6 +992,25 @@ bool GenerateAltChainBlock(CIface *iface, string strAccount, CAltChain *altchain
 	return (true);
 }
 
+static bool GetAltCoinbasePubKey(string strAccount, uint160 hColor, CPubKey& pubkeyRet)
+{
+	CWallet *wallet = GetWallet(COLOR_COIN_IFACE);
+	CAccountCache *account = wallet->GetAccount(strAccount, hColor);
+	return (account->GetCoinbasePubKey(pubkeyRet));
+}
+
+CCoinAddr GetAltChainAddress(string strAccount, uint160 hColor)
+{
+	return (GetColorCoinAddress(strAccount, hColor, ACCADDR_RECV));
+}
+
+bool GetAltChainPubKey(string strAccount, uint160 hColor, CPubKey& pubkeyRet)
+{
+	// TODO
+	return (GetAltCoinbasePubKey(strAccount, hColor, pubkeyRet));
+}
+
+#if 0
 const CPubKey& GetAltChainAddr(uint160 hColor, string strAccount, bool bForceNew)
 {
 	static CPubKey pubkey;
@@ -990,6 +1018,7 @@ const CPubKey& GetAltChainAddr(uint160 hColor, string strAccount, bool bForceNew
 	wallet->GetMergedPubKey(strAccount, hColor.GetHex().c_str(), pubkey);
 	return (pubkey);
 }
+#endif
 
 CBlock *CAltChain::GetBlock()
 {
@@ -1211,9 +1240,14 @@ int init_altchain_tx(CIface *iface, string strAccount, uint160 hColor, color_opt
 
 	altchain->ResetExpireTime(iface, nFee);
 
+	CPubKey pubkey;
+	if (!GetAltCoinbasePubKey(strAccount, hColor, pubkey)) {
+		return (ERR_INVAL);
+	}
+
 	/* fill in altchain ext tx */
 	vector<CTransaction> vAltTx;
-	const CPubKey& pubkey = GetAltChainAddr(hColor, strAccount, false); 
+//	const CPubKey& pubkey = GetAltChainAddr(hColor, strAccount, false); 
 	if (!GenerateAltChainGenesisBlock(iface, altchain, hColor, opt, pubkey, NULL)) {
 		error(SHERR_INVAL, "init_altchain_tx: !GenerateAltChainBlock");
 		return (SHERR_INVAL);
@@ -1270,8 +1304,12 @@ int update_altchain_tx(CIface *iface, string strAccount, uint160 hColor, vector<
 
 	altchain->ResetExpireTime(iface, nFee);
 
+	CPubKey pubkey;
+	if (!GetAltCoinbasePubKey(strAccount, hColor, pubkey)) {
+		return (SHERR_INVAL);
+	}
+
 	/* fill in altchain ext tx */
-	const CPubKey& pubkey = GetAltChainAddr(hColor, strAccount, false); 
 	if (!GenerateAltChainBlock(iface, strAccount, altchain, hColor, vAltTx, pubkey, NULL)) {
 		error(SHERR_INVAL, "update_altchain_tx: !GenerateAltChainBlock");
 		return (SHERR_INVAL);

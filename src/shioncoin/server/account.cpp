@@ -190,11 +190,6 @@ CCoinAddr CAccountCache::GetAddr(int type)
 	return (addr);
 }
 
-CCoinAddr CAccountCache::GetDefaultAddr()
-{
-	return (CCoinAddr(wallet->ifaceIndex, account.vchPubKey.GetID()));
-}
-
 void CAccountCache::SetDefaultAddr(const CPubKey& pubkey)
 {
 
@@ -210,7 +205,6 @@ void CAccountCache::SetDefaultAddr(const CPubKey& pubkey)
 	for (int i = 0; i < MAX_ACCADDR; i++) {
 		/* reset primary addr. */
 		ResetAddr(i);
-
 	}
 
 	/* reset hd-index. */
@@ -326,11 +320,16 @@ CKey *CAccountCache::GetPrimaryKey(int nMode, int nAlg)
 {
 	CKeyID keyid;
 	CPubKey pubkey;
+	CKey *pkey;
+
+	pkey = GetDefaultKey();
+	if (!pkey)
+		return (NULL);
 
 	if (nAlg == SIGN_ALG_DILITHIUM) {
 		DIKey secret;
 
-		if (!wallet->DerivePrimaryDIKey(&account, secret, nMode)) {
+		if (!wallet->DerivePrimaryDIKey(pkey, secret, nMode)) {
 			error(ERR_INVAL, "GetPrimaryKey: error deriving primary di-key");
 			return (NULL);
 		}
@@ -354,7 +353,7 @@ CKey *CAccountCache::GetPrimaryKey(int nMode, int nAlg)
 	} else {
 		ECKey secret;
 
-		if (!wallet->DerivePrimaryECKey(&account, secret, nMode)) {
+		if (!wallet->DerivePrimaryECKey(pkey, secret, nMode)) {
 			error(ERR_INVAL, "GetPrimaryKey: error deriving primary ec-key");
 			return (NULL);
 		}
@@ -476,7 +475,7 @@ bool CAccountCache::CreateNewPubKey(CPubKey& addrRet, int type, int flags)
 		} else {
 			DIKey key;
 			CAccount *hdChain = &account;
-			bool fOk = wallet->DeriveNewDIKey(hdChain, key, type);
+			bool fOk = DeriveNewDIKey(key, type);
 			if (!fOk) {
 				error(SHERR_INVAL, "CreateNewPubKey: error deriving new dikey.");
 				return (false);
@@ -497,7 +496,7 @@ bool CAccountCache::CreateNewPubKey(CPubKey& addrRet, int type, int flags)
 		} else {
 			ECKey key;
 			CAccount *hdChain = &account;
-			if (!wallet->DeriveNewECKey(hdChain, key, type)) {
+			if (!DeriveNewECKey(key, type)) {
 				error(SHERR_INVAL, "CreateNewPubKey: error deriving new eckey.");
 				return (false);
 			}
@@ -655,7 +654,7 @@ bool CAccountCache::GetMergedPubKey(cbuff tag, CPubKey& pubkey)
 	return (true);
 #endif
 
-	CKey *pkey = wallet->GetKey(account.vchPubKey.GetID());
+	CKey *pkey = GetDefaultKey();
 	if (!pkey)
 		return (false);
 
@@ -744,10 +743,15 @@ void CAccountCache::ResetHDIndex()
 bool CAccountCache::DerivePrimaryKey(CPubKey& pubkeyRet, int nType)
 {
 	bool fDilithium = opt_bool(OPT_DILITHIUM);
+	CKey *pkey;
+
+	pkey = GetDefaultKey();
+	if (!pkey)
+		return (NULL);
 
 	if (fDilithium) {
 		DIKey secret;
-		if (!wallet->DerivePrimaryDIKey(&account, secret, nType))
+		if (!wallet->DerivePrimaryDIKey(pkey, secret, nType))
 			return (false);
 
 		pubkeyRet = secret.GetPubKey();
@@ -760,7 +764,7 @@ bool CAccountCache::DerivePrimaryKey(CPubKey& pubkeyRet, int nType)
 		}
 	} else {
 		ECKey secret;
-		if (!wallet->DerivePrimaryECKey(&account, secret, nType))
+		if (!wallet->DerivePrimaryECKey(pkey, secret, nType))
 			return (false);
 
 		pubkeyRet = secret.GetPubKey();
@@ -784,7 +788,7 @@ bool CAccountCache::GeneratePrimaryKey(CPubKey& pubkeyRet, int nType)
 	const char *tag = GetPubKeyTag(nType);
 	cbuff tagbuff(tag, tag + strlen(tag));
 
-	pkey = wallet->GetKey(account.GetMasterKeyID());
+	pkey = GetDefaultKey();
 	if (!pkey) {
 		return (false);
 	}
@@ -1117,17 +1121,23 @@ Object CAccountAddressKey::ToValue()
 	}
 
 	if (account && IsDefault()) {
+		/* ecdsa hd-key indexes */
 		Array echdindex;
 		for (int nMode = 0; nMode < MAX_HD_ACCADDR; nMode++) {
 			echdindex.push_back(Value((uint64_t)account->GetHDIndex(nMode, SIGN_ALG_ECDSA)));
 		}
 		obj.push_back(Pair("echdi", echdindex));
 
-		Array dihdindex;
-		for (int nMode = 0; nMode < MAX_HD_ACCADDR; nMode++) {
-			dihdindex.push_back(Value((uint64_t)account->GetHDIndex(nMode, SIGN_ALG_DILITHIUM)));
+		if (wallet->ifaceIndex == TEST_COIN_IFACE ||
+				wallet->ifaceIndex == TESTNET_COIN_IFACE ||
+				wallet->ifaceIndex == SHC_COIN_IFACE) {
+			/* dilithium hd-key indexes */
+			Array dihdindex;
+			for (int nMode = 0; nMode < MAX_HD_ACCADDR; nMode++) {
+				dihdindex.push_back(Value((uint64_t)account->GetHDIndex(nMode, SIGN_ALG_DILITHIUM)));
+			}
+			obj.push_back(Pair("dihdi", dihdindex));
 		}
-		obj.push_back(Pair("dihdi", dihdindex));
 	}
 #if 0
 	/* list all aliases of the pubkey address. */
@@ -1348,7 +1358,11 @@ void CAccountCache::CalculateECKeyChain(vector<CTxDestination>& vAddr, int nType
 	if (!hdChain)
 		return;
 
-	if (!wallet->DerivePrimaryECExtKey(hdChain, chainChildKey, nType))
+	CKey *pkey = GetDefaultKey();
+	if (!pkey)
+		return;
+
+	if (!wallet->DerivePrimaryECExtKey(pkey, chainChildKey, nType))
 		return;
 
 	// derive child key at next index, skip keys already known to the wallet
@@ -1404,7 +1418,11 @@ void CAccountCache::CalculateDIKeyChain(vector<CTxDestination>& vAddr, int nMode
 	if (!hdChain)
 		return;
 
-	if (!wallet->DerivePrimaryDIExtKey(hdChain, chainChildKey, nMode))
+	CKey *pkey = GetDefaultKey();
+	if (!pkey)
+		return;
+
+	if (!wallet->DerivePrimaryDIExtKey(pkey, chainChildKey, nMode))
 		return;
 
 	// derive child key at next index, skip keys already known to the wallet
@@ -1698,5 +1716,91 @@ bool CAccountCache::GenerateNewDIKey(CPubKey& pubkeyRet, int nFlag)
 
 	pubkeyRet = ckey.GetPubKey(); 
 	return (true);
+}
+
+/** 
+ * Obtain the default key for an account. The default key, otherwise known as the master key, is used to derive the primary coin addresses for the account. 
+ * @returns NULL if no default key has been established.
+ */
+CKey *CAccountCache::GetDefaultKey()
+{
+	CKey *key;
+
+  key = wallet->GetKey(account.GetMasterKeyID());
+  if (!key) {
+    return (NULL);
+  }
+
+	if (hColor != 0) {
+		ECKey ckey;
+
+		cbuff tag(hColor.begin(), hColor.end());
+		ckey.MergeKey(key, tag);
+		AddKey(ckey);
+
+		const CKeyID& keyid = ckey.GetPubKey().GetID();
+		key = wallet->GetKey(keyid);
+	}
+
+	return (key);
+}
+
+
+/* Obtain the default address for an account. Otherwise known as the account's "master key". */
+CCoinAddr CAccountCache::GetDefaultAddr()
+{
+	return (CCoinAddr(wallet->ifaceIndex, account.GetMasterKeyID()));
+}
+
+bool CAccountCache::GetDefaultPubKey(CPubKey& pubkeyRet)
+{
+	pubkeyRet = account.vchPubKey;
+	return (pubkeyRet.IsValid()); 
+}
+
+bool CAccountCache::GenerateDefaultKey()
+{
+	int ifaceIndex = wallet->ifaceIndex;
+	CPubKey pubkey;
+	bool fOk;
+
+	if (opt_bool(OPT_DILITHIUM) &&
+			(ifaceIndex == SHC_COIN_IFACE ||
+			 ifaceIndex == TEST_COIN_IFACE ||
+			 ifaceIndex == TESTNET_COIN_IFACE)) {
+		/* uses dilithium key as master to increase entropy (seed) of derived hd-keys. */
+		fOk = GenerateNewDIKey(pubkey, ACCADDRF_MASTER);
+	} else {
+		/* standard ecdsa key */
+		fOk = GenerateNewECKey(pubkey, ACCADDRF_MASTER);
+	}
+
+	if (fOk) {
+		account.vchPubKey = pubkey;
+	}
+
+	return (fOk);
+}
+
+bool CAccountCache::DeriveNewDIKey(DIKey& key, int nType)
+{
+	CKey *pkey;
+
+	pkey = GetDefaultKey();
+	if (!pkey)
+		return (false);
+
+	return (wallet->DeriveNewDIKey(pkey, &account, key, nType));
+}
+
+bool CAccountCache::DeriveNewECKey(ECKey& key, int nType)
+{
+	CKey *pkey;
+
+	pkey = GetDefaultKey();
+	if (!pkey)
+		return (false);
+
+	return (wallet->DeriveNewECKey(pkey, &account, key, nType));
 }
 

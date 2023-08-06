@@ -283,7 +283,7 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
     if (!vRecv.empty())
       vRecv >> pfrom->nStartingHeight;
 
-#if 0 /* DEBUG: verify & implement if warranted */
+#if 0 /* DEBUG verify & implement if warranted */
     if (0 != strncmp(pfrom->strSubVer.c_str(), "/EMC2", 5)) {
       error(SHERR_INVAL, "(emc2) ProcessMessage: connect from wrong coin interface '%s' (%s), disconnecting\n", pfrom->addr.ToString().c_str(), pfrom->strSubVer.c_str());
       pfrom->fDisconnect = true;
@@ -1003,7 +1003,7 @@ bool emc2_ProcessMessage(CIface *iface, CNode* pfrom, string strCommand, CDataSt
       ss << ": hash " << hash.ToString();
 
       if (strMsg == "tx") {
-        /* DEBUG: TODO: pool.DecrPriority(hash) */
+        /*DEBUG: TODO: pool.DecrPriority(hash) */
       }
     }
     error(SHERR_REMOTE, ss.str().c_str()); 

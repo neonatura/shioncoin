@@ -541,7 +541,7 @@ int CommitContextTx(CIface *iface, CTransaction& tx, unsigned int nHeight)
   shctx_set_key(ctx->hashIssuer.GetKey(), 
       ctx->vContext.data(), ctx->vContext.size());
 #if 0
-/* DEBUG: */ /* record in libshare runtime */
+/* DEBUG */ /* record in libshare runtime */
   ctx.NotifySharenet(GetCoinIndex(iface));
 #endif
 
