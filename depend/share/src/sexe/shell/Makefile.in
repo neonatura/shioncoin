@@ -200,6 +200,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_1 = alias.$(OBJEXT) arith_yacc.$(OBJEXT) \
 	arith_yylex.$(OBJEXT) cd.$(OBJEXT) error.$(OBJEXT) \
 	eval.$(OBJEXT) exec.$(OBJEXT) expand.$(OBJEXT) input.$(OBJEXT) \
@@ -207,8 +208,8 @@ am__objects_1 = alias.$(OBJEXT) arith_yacc.$(OBJEXT) \
 	memalloc.$(OBJEXT) miscbltin.$(OBJEXT) mystring.$(OBJEXT) \
 	options.$(OBJEXT) parser.$(OBJEXT) redir.$(OBJEXT) \
 	show.$(OBJEXT) trap.$(OBJEXT) output.$(OBJEXT) \
-	printf.$(OBJEXT) system.$(OBJEXT) test.$(OBJEXT) \
-	times.$(OBJEXT) var.$(OBJEXT)
+	bltin/printf.$(OBJEXT) system.$(OBJEXT) bltin/test.$(OBJEXT) \
+	bltin/times.$(OBJEXT) var.$(OBJEXT)
 am_sxsh_OBJECTS = $(am__objects_1)
 sxsh_OBJECTS = $(am_sxsh_OBJECTS)
 sxsh_DEPENDENCIES = $(top_builddir)/src/sexe/libshare_sexe.la \
@@ -240,9 +241,10 @@ am__depfiles_remade = ./$(DEPDIR)/alias.Po ./$(DEPDIR)/arith_yacc.Po \
 	./$(DEPDIR)/memalloc.Po ./$(DEPDIR)/miscbltin.Po \
 	./$(DEPDIR)/mystring.Po ./$(DEPDIR)/options.Po \
 	./$(DEPDIR)/output.Po ./$(DEPDIR)/parser.Po \
-	./$(DEPDIR)/printf.Po ./$(DEPDIR)/redir.Po ./$(DEPDIR)/show.Po \
-	./$(DEPDIR)/system.Po ./$(DEPDIR)/test.Po ./$(DEPDIR)/times.Po \
-	./$(DEPDIR)/trap.Po ./$(DEPDIR)/var.Po
+	./$(DEPDIR)/redir.Po ./$(DEPDIR)/show.Po ./$(DEPDIR)/system.Po \
+	./$(DEPDIR)/trap.Po ./$(DEPDIR)/var.Po \
+	bltin/$(DEPDIR)/printf.Po bltin/$(DEPDIR)/test.Po \
+	bltin/$(DEPDIR)/times.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -1315,6 +1317,18 @@ clean-binPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+bltin/$(am__dirstamp):
+	@$(MKDIR_P) bltin
+	@: > bltin/$(am__dirstamp)
+bltin/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) bltin/$(DEPDIR)
+	@: > bltin/$(DEPDIR)/$(am__dirstamp)
+bltin/printf.$(OBJEXT): bltin/$(am__dirstamp) \
+	bltin/$(DEPDIR)/$(am__dirstamp)
+bltin/test.$(OBJEXT): bltin/$(am__dirstamp) \
+	bltin/$(DEPDIR)/$(am__dirstamp)
+bltin/times.$(OBJEXT): bltin/$(am__dirstamp) \
+	bltin/$(DEPDIR)/$(am__dirstamp)
 
 sxsh$(EXEEXT): $(sxsh_OBJECTS) $(sxsh_DEPENDENCIES) $(EXTRA_sxsh_DEPENDENCIES) 
 	@rm -f sxsh$(EXEEXT)
@@ -1322,6 +1336,7 @@ sxsh$(EXEEXT): $(sxsh_OBJECTS) $(sxsh_DEPENDENCIES) $(EXTRA_sxsh_DEPENDENCIES)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f bltin/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -1344,14 +1359,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/options.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/printf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/redir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/show.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/system.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/times.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trap.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/var.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@bltin/$(DEPDIR)/printf.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@bltin/$(DEPDIR)/test.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@bltin/$(DEPDIR)/times.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -1360,67 +1375,28 @@ $(am__depfiles_remade):
 am--depfiles: $(am__depfiles_remade)
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
-
-printf.o: bltin/printf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT printf.o -MD -MP -MF $(DEPDIR)/printf.Tpo -c -o printf.o `test -f 'bltin/printf.c' || echo '$(srcdir)/'`bltin/printf.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/printf.Tpo $(DEPDIR)/printf.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bltin/printf.c' object='printf.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o printf.o `test -f 'bltin/printf.c' || echo '$(srcdir)/'`bltin/printf.c
-
-printf.obj: bltin/printf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT printf.obj -MD -MP -MF $(DEPDIR)/printf.Tpo -c -o printf.obj `if test -f 'bltin/printf.c'; then $(CYGPATH_W) 'bltin/printf.c'; else $(CYGPATH_W) '$(srcdir)/bltin/printf.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/printf.Tpo $(DEPDIR)/printf.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bltin/printf.c' object='printf.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o printf.obj `if test -f 'bltin/printf.c'; then $(CYGPATH_W) 'bltin/printf.c'; else $(CYGPATH_W) '$(srcdir)/bltin/printf.c'; fi`
-
-test.o: bltin/test.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test.o -MD -MP -MF $(DEPDIR)/test.Tpo -c -o test.o `test -f 'bltin/test.c' || echo '$(srcdir)/'`bltin/test.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test.Tpo $(DEPDIR)/test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bltin/test.c' object='test.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test.o `test -f 'bltin/test.c' || echo '$(srcdir)/'`bltin/test.c
-
-test.obj: bltin/test.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test.obj -MD -MP -MF $(DEPDIR)/test.Tpo -c -o test.obj `if test -f 'bltin/test.c'; then $(CYGPATH_W) 'bltin/test.c'; else $(CYGPATH_W) '$(srcdir)/bltin/test.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test.Tpo $(DEPDIR)/test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bltin/test.c' object='test.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test.obj `if test -f 'bltin/test.c'; then $(CYGPATH_W) 'bltin/test.c'; else $(CYGPATH_W) '$(srcdir)/bltin/test.c'; fi`
-
-times.o: bltin/times.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT times.o -MD -MP -MF $(DEPDIR)/times.Tpo -c -o times.o `test -f 'bltin/times.c' || echo '$(srcdir)/'`bltin/times.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/times.Tpo $(DEPDIR)/times.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bltin/times.c' object='times.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o times.o `test -f 'bltin/times.c' || echo '$(srcdir)/'`bltin/times.c
-
-times.obj: bltin/times.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT times.obj -MD -MP -MF $(DEPDIR)/times.Tpo -c -o times.obj `if test -f 'bltin/times.c'; then $(CYGPATH_W) 'bltin/times.c'; else $(CYGPATH_W) '$(srcdir)/bltin/times.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/times.Tpo $(DEPDIR)/times.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bltin/times.c' object='times.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o times.obj `if test -f 'bltin/times.c'; then $(CYGPATH_W) 'bltin/times.c'; else $(CYGPATH_W) '$(srcdir)/bltin/times.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1546,6 +1522,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f bltin/$(DEPDIR)/$(am__dirstamp)
+	-rm -f bltin/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1573,14 +1551,14 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/options.Po
 	-rm -f ./$(DEPDIR)/output.Po
 	-rm -f ./$(DEPDIR)/parser.Po
-	-rm -f ./$(DEPDIR)/printf.Po
 	-rm -f ./$(DEPDIR)/redir.Po
 	-rm -f ./$(DEPDIR)/show.Po
 	-rm -f ./$(DEPDIR)/system.Po
-	-rm -f ./$(DEPDIR)/test.Po
-	-rm -f ./$(DEPDIR)/times.Po
 	-rm -f ./$(DEPDIR)/trap.Po
 	-rm -f ./$(DEPDIR)/var.Po
+	-rm -f bltin/$(DEPDIR)/printf.Po
+	-rm -f bltin/$(DEPDIR)/test.Po
+	-rm -f bltin/$(DEPDIR)/times.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1644,14 +1622,14 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/options.Po
 	-rm -f ./$(DEPDIR)/output.Po
 	-rm -f ./$(DEPDIR)/parser.Po
-	-rm -f ./$(DEPDIR)/printf.Po
 	-rm -f ./$(DEPDIR)/redir.Po
 	-rm -f ./$(DEPDIR)/show.Po
 	-rm -f ./$(DEPDIR)/system.Po
-	-rm -f ./$(DEPDIR)/test.Po
-	-rm -f ./$(DEPDIR)/times.Po
 	-rm -f ./$(DEPDIR)/trap.Po
 	-rm -f ./$(DEPDIR)/var.Po
+	-rm -f bltin/$(DEPDIR)/printf.Po
+	-rm -f bltin/$(DEPDIR)/test.Po
+	-rm -f bltin/$(DEPDIR)/times.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

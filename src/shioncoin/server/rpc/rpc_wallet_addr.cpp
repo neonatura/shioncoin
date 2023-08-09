@@ -309,6 +309,7 @@ Object rpcwallet_GetVerboseAddr(int ifaceIndex, CTxDestination destination)
 	return (addr.ToValue());
 }
 
+#if 0
 Value rpc_wallet_validate(CIface *iface, const Array& params, bool fStratum)
 {
 	int ifaceIndex = GetCoinIndex(iface);
@@ -352,6 +353,53 @@ Value rpc_wallet_validate(CIface *iface, const Array& params, bool fStratum)
 #endif
 
 	return (ent);
+}
+#endif
+Value rpc_wallet_validate(CIface *iface, const Array& params, bool fStratum)
+{
+  CWallet *pwalletMain = GetWallet(iface);
+  int ifaceIndex = GetCoinIndex(iface);
+
+  if (fStratum) {
+    throw runtime_error("unsupported operation");
+	}
+
+  string strAddress = params[0].get_str();
+	CAccountAddress addr(ifaceIndex, strAddress);
+
+	/* optional coin-address creation time. */
+	int64 nCreateTime = 0;
+	if (params.size() >= 2) {
+		nCreateTime = params[1].get_int();
+	}
+
+	/* obtain keyid to obtain key. */
+	CKeyID keyid;
+	if (!addr.GetKeyID(keyid)) {
+		throw JSONRPCError(ERR_INVAL, "Invalid coin address.");
+	}
+
+	/* obtain key to generate full coin alias list. */
+	CKey *key = pwalletMain->GetKey(keyid);
+	if (!key) {
+		throw JSONRPCError(ERR_ACCESS, "Unknown coin address.");
+	}
+
+	CAccountCache *account = pwalletMain->GetAccount(addr.GetAccountName());
+	if (!account) {
+		throw JSONRPCError(ERR_INVAL, "Unknown coin address account.");
+	}
+
+	/* generate background job to scan for wallet-tx's. */
+	vector<CTxDestination> vAddr;
+	vAddr.push_back(addr.Get());
+	account->CalcAddressBook(key, vAddr);
+
+	CWalletUpdateFilter *filter =
+		new CWalletUpdateFilter(ifaceIndex, vAddr, nCreateTime);
+	InitChainFilter(filter);
+
+	return (addr.ToValue());
 }
 
 Value rpc_wallet_addrlist(CIface *iface, const Array& params, bool fStratum)

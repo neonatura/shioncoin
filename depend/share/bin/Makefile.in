@@ -89,14 +89,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = sx$(EXEEXT) sxc$(EXEEXT) readsexe$(EXEEXT) \
-	sxsh$(EXEEXT) shattr$(EXEEXT) shcat$(EXEEXT) shcert$(EXEEXT) \
-	shcp$(EXEEXT) shdb$(EXEEXT) shdelta$(EXEEXT) shdiff$(EXEEXT) \
-	shfsck$(EXEEXT) shinfo$(EXEEXT) shln$(EXEEXT) shls$(EXEEXT) \
-	shpatch$(EXEEXT) shstat$(EXEEXT) shpref$(EXEEXT) \
-	shpasswd$(EXEEXT) shpkg$(EXEEXT) shrev$(EXEEXT) shrm$(EXEEXT)
+	sxsh$(EXEEXT)
 @WINDOWS_FALSE@am__append_1 = \
-@WINDOWS_FALSE@	libshare.so libshare.so.5 \
-@WINDOWS_FALSE@	libshare.so.5.0.$(version_patch)
+@WINDOWS_FALSE@	libshare.so libshare.so.6 \
+@WINDOWS_FALSE@	libshare.so.6.0.$(version_patch)
 
 @HAVE_DOXYGEN_TRUE@am__append_2 = html man
 subdir = bin
@@ -217,60 +213,6 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-shattr_SOURCES = shattr.c
-shattr_OBJECTS = shattr.$(OBJEXT)
-shattr_LDADD = $(LDADD)
-shcat_SOURCES = shcat.c
-shcat_OBJECTS = shcat.$(OBJEXT)
-shcat_LDADD = $(LDADD)
-shcert_SOURCES = shcert.c
-shcert_OBJECTS = shcert.$(OBJEXT)
-shcert_LDADD = $(LDADD)
-shcp_SOURCES = shcp.c
-shcp_OBJECTS = shcp.$(OBJEXT)
-shcp_LDADD = $(LDADD)
-shdb_SOURCES = shdb.c
-shdb_OBJECTS = shdb.$(OBJEXT)
-shdb_LDADD = $(LDADD)
-shdelta_SOURCES = shdelta.c
-shdelta_OBJECTS = shdelta.$(OBJEXT)
-shdelta_LDADD = $(LDADD)
-shdiff_SOURCES = shdiff.c
-shdiff_OBJECTS = shdiff.$(OBJEXT)
-shdiff_LDADD = $(LDADD)
-shfsck_SOURCES = shfsck.c
-shfsck_OBJECTS = shfsck.$(OBJEXT)
-shfsck_LDADD = $(LDADD)
-shinfo_SOURCES = shinfo.c
-shinfo_OBJECTS = shinfo.$(OBJEXT)
-shinfo_LDADD = $(LDADD)
-shln_SOURCES = shln.c
-shln_OBJECTS = shln.$(OBJEXT)
-shln_LDADD = $(LDADD)
-shls_SOURCES = shls.c
-shls_OBJECTS = shls.$(OBJEXT)
-shls_LDADD = $(LDADD)
-shpasswd_SOURCES = shpasswd.c
-shpasswd_OBJECTS = shpasswd.$(OBJEXT)
-shpasswd_LDADD = $(LDADD)
-shpatch_SOURCES = shpatch.c
-shpatch_OBJECTS = shpatch.$(OBJEXT)
-shpatch_LDADD = $(LDADD)
-shpkg_SOURCES = shpkg.c
-shpkg_OBJECTS = shpkg.$(OBJEXT)
-shpkg_LDADD = $(LDADD)
-shpref_SOURCES = shpref.c
-shpref_OBJECTS = shpref.$(OBJEXT)
-shpref_LDADD = $(LDADD)
-shrev_SOURCES = shrev.c
-shrev_OBJECTS = shrev.$(OBJEXT)
-shrev_LDADD = $(LDADD)
-shrm_SOURCES = shrm.c
-shrm_OBJECTS = shrm.$(OBJEXT)
-shrm_LDADD = $(LDADD)
-shstat_SOURCES = shstat.c
-shstat_OBJECTS = shstat.$(OBJEXT)
-shstat_LDADD = $(LDADD)
 sx_SOURCES = sx.c
 sx_OBJECTS = sx.$(OBJEXT)
 sx_LDADD = $(LDADD)
@@ -296,15 +238,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/src/share-lib -I$(top_builddir)/src/php-share-lib
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/readsexe.Po ./$(DEPDIR)/shattr.Po \
-	./$(DEPDIR)/shcat.Po ./$(DEPDIR)/shcert.Po ./$(DEPDIR)/shcp.Po \
-	./$(DEPDIR)/shdb.Po ./$(DEPDIR)/shdelta.Po \
-	./$(DEPDIR)/shdiff.Po ./$(DEPDIR)/shfsck.Po \
-	./$(DEPDIR)/shinfo.Po ./$(DEPDIR)/shln.Po ./$(DEPDIR)/shls.Po \
-	./$(DEPDIR)/shpasswd.Po ./$(DEPDIR)/shpatch.Po \
-	./$(DEPDIR)/shpkg.Po ./$(DEPDIR)/shpref.Po \
-	./$(DEPDIR)/shrev.Po ./$(DEPDIR)/shrm.Po ./$(DEPDIR)/shstat.Po \
-	./$(DEPDIR)/sx.Po ./$(DEPDIR)/sxc.Po ./$(DEPDIR)/sxsh.Po
+am__depfiles_remade = ./$(DEPDIR)/readsexe.Po ./$(DEPDIR)/sx.Po \
+	./$(DEPDIR)/sxc.Po ./$(DEPDIR)/sxsh.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -324,13 +259,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = readsexe.c shattr.c shcat.c shcert.c shcp.c shdb.c shdelta.c \
-	shdiff.c shfsck.c shinfo.c shln.c shls.c shpasswd.c shpatch.c \
-	shpkg.c shpref.c shrev.c shrm.c shstat.c sx.c sxc.c sxsh.c
-DIST_SOURCES = readsexe.c shattr.c shcat.c shcert.c shcp.c shdb.c \
-	shdelta.c shdiff.c shfsck.c shinfo.c shln.c shls.c shpasswd.c \
-	shpatch.c shpkg.c shpref.c shrev.c shrm.c shstat.c sx.c sxc.c \
-	sxsh.c
+SOURCES = readsexe.c sx.c sxc.c sxsh.c
+DIST_SOURCES = readsexe.c sx.c sxc.c sxsh.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -1319,24 +1249,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readsexe.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shattr.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcat.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcert.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shcp.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shdb.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shdelta.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shdiff.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shfsck.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shinfo.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shln.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shls.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shpasswd.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shpatch.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shpkg.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shpref.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shrev.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shrm.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shstat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sx.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sxc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sxsh.Po@am__quote@ # am--include-marker
@@ -1348,22 +1260,25 @@ $(am__depfiles_remade):
 am--depfiles: $(am__depfiles_remade)
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
@@ -1500,24 +1415,6 @@ clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
 
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/readsexe.Po
-	-rm -f ./$(DEPDIR)/shattr.Po
-	-rm -f ./$(DEPDIR)/shcat.Po
-	-rm -f ./$(DEPDIR)/shcert.Po
-	-rm -f ./$(DEPDIR)/shcp.Po
-	-rm -f ./$(DEPDIR)/shdb.Po
-	-rm -f ./$(DEPDIR)/shdelta.Po
-	-rm -f ./$(DEPDIR)/shdiff.Po
-	-rm -f ./$(DEPDIR)/shfsck.Po
-	-rm -f ./$(DEPDIR)/shinfo.Po
-	-rm -f ./$(DEPDIR)/shln.Po
-	-rm -f ./$(DEPDIR)/shls.Po
-	-rm -f ./$(DEPDIR)/shpasswd.Po
-	-rm -f ./$(DEPDIR)/shpatch.Po
-	-rm -f ./$(DEPDIR)/shpkg.Po
-	-rm -f ./$(DEPDIR)/shpref.Po
-	-rm -f ./$(DEPDIR)/shrev.Po
-	-rm -f ./$(DEPDIR)/shrm.Po
-	-rm -f ./$(DEPDIR)/shstat.Po
 	-rm -f ./$(DEPDIR)/sx.Po
 	-rm -f ./$(DEPDIR)/sxc.Po
 	-rm -f ./$(DEPDIR)/sxsh.Po
@@ -1565,24 +1462,6 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/readsexe.Po
-	-rm -f ./$(DEPDIR)/shattr.Po
-	-rm -f ./$(DEPDIR)/shcat.Po
-	-rm -f ./$(DEPDIR)/shcert.Po
-	-rm -f ./$(DEPDIR)/shcp.Po
-	-rm -f ./$(DEPDIR)/shdb.Po
-	-rm -f ./$(DEPDIR)/shdelta.Po
-	-rm -f ./$(DEPDIR)/shdiff.Po
-	-rm -f ./$(DEPDIR)/shfsck.Po
-	-rm -f ./$(DEPDIR)/shinfo.Po
-	-rm -f ./$(DEPDIR)/shln.Po
-	-rm -f ./$(DEPDIR)/shls.Po
-	-rm -f ./$(DEPDIR)/shpasswd.Po
-	-rm -f ./$(DEPDIR)/shpatch.Po
-	-rm -f ./$(DEPDIR)/shpkg.Po
-	-rm -f ./$(DEPDIR)/shpref.Po
-	-rm -f ./$(DEPDIR)/shrev.Po
-	-rm -f ./$(DEPDIR)/shrm.Po
-	-rm -f ./$(DEPDIR)/shstat.Po
 	-rm -f ./$(DEPDIR)/sx.Po
 	-rm -f ./$(DEPDIR)/sxc.Po
 	-rm -f ./$(DEPDIR)/sxsh.Po
@@ -1649,11 +1528,11 @@ libshare.a:
 libshare.so:
 	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so . 
 
-libshare.so.5:
-	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so.5 .
+libshare.so.6:
+	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so.6 .
 
-libshare.so.5.0.$(version_patch):
-	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so.5.0.$(version_patch) .
+libshare.so.6.0.$(version_patch):
+	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so.6.0.$(version_patch) .
 
 sx$(EXEEXT):
 	ln -sf $(top_builddir)/src/sexe/.libs/sx$(EXEEXT) .
@@ -1666,60 +1545,6 @@ readsexe$(EXEEXT):
 
 sxsh$(EXEEXT):
 	ln -sf $(top_builddir)/src/sexe/shell/.libs/sxsh$(EXEEXT) .
-
-shcat$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shcat$(EXEEXT) .
-
-shstat$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shstat$(EXEEXT) .
-
-shls$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shls$(EXEEXT) .
-
-shattr$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shattr$(EXEEXT) .
-
-shpref$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shpref$(EXEEXT) .
-
-shrm$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shrm$(EXEEXT) .
-
-shrev$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shrev$(EXEEXT) .
-
-shcp$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shcp$(EXEEXT) .
-
-shdiff$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shdiff$(EXEEXT) .
-
-shdelta$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shdelta$(EXEEXT) .
-
-shpatch$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shpatch$(EXEEXT) .
-
-shln$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shln$(EXEEXT) .
-
-shpkg$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shpkg$(EXEEXT) .
-
-shpasswd$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shpasswd$(EXEEXT) .
-
-shinfo$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shinfo$(EXEEXT) .
-
-shcert$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shcert$(EXEEXT) .
-
-shdb$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shdb$(EXEEXT) .
-
-shfsck$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shfsck$(EXEEXT) .
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -612,7 +612,7 @@ shtime_t shtime(void)
   memset(&tv, 0, sizeof(tv));
   gettimeofday(&tv, NULL);
   secs = (shnum_t)(tv.tv_sec - SHTIME_EPOCH);
-  ms = (shnum_t)tv.tv_usec / 1000000;
+  ms = (shnum_t)(tv.tv_usec / 1000) / 1000;
   shnum_set(secs + ms, &ret_stamp);
 
   return (ret_stamp);
@@ -774,7 +774,7 @@ shtime_t shgettime(struct timeval *tv)
     return (SHTIME_UNDEFINED);
 
   secs = (shnum_t)(tv->tv_sec - SHTIME_EPOCH);
-  ms = (shnum_t)tv->tv_usec / 1000000;
+  ms = (shnum_t)(tv->tv_usec / 1000) / 1000;
   shnum_set(secs + ms, &ret_stamp);
 
   return (ret_stamp);

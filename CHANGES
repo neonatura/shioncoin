@@ -1,3 +1,26 @@
+2023-08-06  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip22
+
+2023-07-29  Brian Burrell  <bburrell.brian@gmail.com>
+
+	sip20
+
+	stratum_miner
+	The merkles generated for mining notifiations via stratum, for the
+	scrypt pow algorithym, are now compatible with the general
+	double-sha256-hash method of deriving a block's merkle hash.
+
+2023-07-27  Brian Burrell  <bburrell.brian@gmail.com>
+
+	release/6.3
+
+	rpc
+
+2023-07-26  Brian Burrell  <bburrell.brian@gmail.com>
+
+	chain account rpc
+
 2023-06-17  Brian Burrell  <bburrell.brian@gmail.com>
 
 	Merge branch 'develop' into epic/sip25

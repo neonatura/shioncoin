@@ -321,15 +321,13 @@ Value rpc_wallet_get(CIface *iface, const Array& params, bool fStratum)
 		throw JSONRPCError(-5, "Invalid coin address");
 	}
 
-#if 0
-	string strAccount = "";
-	map<CTxDestination, string>::iterator mi = pwalletMain->mapAddressBook.find(address.Get());
-	if (mi != pwalletMain->mapAddressBook.end() && !(*mi).second.empty())
-		strAccount = (*mi).second;
-	return strAccount;
-#endif
+	Object obj = address.ToValue();
 
-	return (address.ToValue());
+	const CTxDestination& dest = address.Get();
+	bool fMine = ::IsMine(*pwalletMain, dest);
+	obj.push_back(Pair("ismine", fMine));
+
+	return (obj);
 }
 
 Value rpc_wallet_key(CIface *iface, const Array& params, bool fStratum)
@@ -733,7 +731,7 @@ static const Value& GetObjectValue(Object obj, string cmp_name)
     }
   }
 
-	throw runtime_error("unknown json value");
+	return Value::null;
 }
 
 Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
@@ -825,16 +823,22 @@ Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 						}
 					}
 
-					Array echdi = GetObjectValue(objAddr, "echdi").get_array();
-					for (Array::size_type nMode = 0; nMode != echdi.size(); ++nMode) {
-						int nCount = echdi[nMode].get_int();
-						account->CalculateECKeyChain(vAddr, nMode, nCount); 
+					const Value& echdiValue = GetObjectValue(objAddr, "echdi");
+					if (!echdiValue.is_null()) {
+						Array echdi = echdiValue.get_array();
+						for (Array::size_type nMode = 0; nMode != echdi.size(); ++nMode) {
+							int nCount = echdi[nMode].get_int();
+							account->CalculateECKeyChain(vAddr, nMode, nCount); 
+						}
 					}
 
-					Array dihdi = GetObjectValue(objAddr, "dihdi").get_array();
-					for (Array::size_type nMode = 0; nMode != dihdi.size(); ++nMode) {
-						int nCount = dihdi[nMode].get_int();
-						account->CalculateDIKeyChain(vAddr, nMode, nCount); 
+					const Value& dihdiValue = GetObjectValue(objAddr, "dihdi");
+					if (!dihdiValue.is_null()) {
+						Array dihdi = dihdiValue.get_array();
+						for (Array::size_type nMode = 0; nMode != dihdi.size(); ++nMode) {
+							int nCount = dihdi[nMode].get_int();
+							account->CalculateDIKeyChain(vAddr, nMode, nCount); 
+						}
 					}
 				}
 

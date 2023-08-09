@@ -775,8 +775,8 @@ const RPCOp WALLET_CSCRIPT = {
   "Create a Script ID destination from a pubkey address."
 };
 const RPCOp TX_VALIDATE = {
-  &rpc_tx_validate, 1, {RPC_STRING}, 
-  "Validate a wallet transaction."
+	&rpc_tx_validate, 1, {RPC_STRING},
+	"Validate a wallet transaction."
 };
 const RPCOp WALLET_IMPORT = {
   &rpc_wallet_import, 1, {RPC_STRING}, 
@@ -957,10 +957,17 @@ const RPCOp WALLET_SELECT = {
   "Syntax: <account> <value>\n"
   "Returns array of sample transaction outputs to spend."
 };
+#if 0
 const RPCOp WALLET_VALIDATE = {
   &rpc_wallet_validate, 1, {RPC_COINADDR},
   "Syntax: <coin-address>\n"
   "Return summarized information about <coin-address>."
+};
+#endif
+const RPCOp WALLET_VALIDATE = {
+  &rpc_wallet_validate, 1, {RPC_COINADDR, RPC_INT64}, 
+  "Syntax: <coin-address> [<timestamp>]\n"
+  "Validate wallet transactions for a coin address."
 };
 
 const RPCOp STRATUM_KEYADD = {

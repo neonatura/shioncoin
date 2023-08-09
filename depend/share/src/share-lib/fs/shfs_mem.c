@@ -37,34 +37,39 @@ int shfs_mem_read(char *path, shbuf_t *buff)
 
   memset(&st, 0, sizeof(st));
   err = stat(path, &st);
-  if (err)
-    return (err);
+  if (err) {
+    return (errno2sherr());
+	}
 
-  if (st.st_size == 0)
+  if (st.st_size == 0) {
     return (0);
+	}
 
-  if (S_ISDIR(st.st_mode))
+  if (S_ISDIR(st.st_mode)) {
     return (SHERR_ISDIR);
+	}
 
   fl = fopen(path, "rb");
   if (!fl) {
     free(data);
-    return (-1);
+    return (errno2sherr());
   }
 
   r_of = 0;
   while (r_of < st.st_size) {
     r_len = fread(inbuff, sizeof(char), sizeof(inbuff), fl);
-    if (r_len < 0)
+    if (r_len < 0) {
       return (errno2sherr());
+		}
 
     shbuf_cat(buff, inbuff, r_len);
     r_of += r_len;
   }
 
   err = fclose(fl);
-  if (err)
-    return (err);
+  if (err) {
+    return (errno2sherr());
+	}
 
   return (0);
 }
@@ -125,8 +130,9 @@ int shfs_mem_write(char *path, shbuf_t *buff)
   }
 
   fl = fopen(path, "wb");
-  if (!fl)
-    return (-1);
+  if (!fl) {
+		return (errno2sherr());
+	}
 
   b_of = 0;
   while (b_of < shbuf_size(buff)) {
@@ -139,8 +145,9 @@ int shfs_mem_write(char *path, shbuf_t *buff)
   }
 
   err = fclose(fl);
-  if (err)
-    return (err);
+  if (err) {
+		return (errno2sherr());
+	}
 
   return (0);
 }

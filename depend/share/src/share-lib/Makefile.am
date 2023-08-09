@@ -525,9 +525,10 @@ xd3_headers = \
 lib_LIBRARIES = libshare.a
 libshare_a_SOURCES = $(common_INCLUDES) $(common_sources) $(zlib_sources) \
 	$(ecdsa_sources) $(gnu_sources) \
-	$(top_srcdir)/src/share-lib/test/shtest.c
+	shtest.c
 libshare_a_CFLAGS = $(AM_CFLAGS) \
 	-DHAVE_CONFIG_H -DSHARELIB=1 \
+	-I$(srcdir)/test \
 	-I$(srcdir)/net -I$(srcdir)/fs -I$(srcdir)/mem \
 	-I$(srcdir)/mem/zlib \
 	-I$(top_srcdir)/src/gnu -I$(top_builddir)/src/gnu
@@ -536,13 +537,14 @@ libshare_a_LDFLAGS = $(ld_flags)
 lib_LTLIBRARIES = libshare.la
 libshare_la_SOURCES = $(common_INCLUDES) $(common_sources) \
 	$(zlib_sources) $(ecdsa_sources) $(gnu_sources) \
-	$(top_srcdir)/src/share-lib/test/shtest.c
+	shtest.c
 if LIBSHARE_JAVA
 libshare_la_SOURCES += \
 	$(srcdir)/java/libshare_java_wrap.c 
 endif
 libshare_la_CFLAGS = $(AM_CFLAGS) \
 	-DHAVE_CONFIG_H -DSHARELIB=1 \
+	-I$(srcdir)/test \
 	-I$(srcdir)/net -I$(srcdir)/fs -I$(srcdir)/mem \
 	-I$(srcdir)/mem/zlib \
 	-I$(top_srcdir)/src/gnu -I$(top_builddir)/src/gnu
@@ -561,12 +563,12 @@ AM_CXXFLAGS = \
   -fomit-frame-pointer -fstrength-reduce -fthread-jumps -funroll-loops
 endif
 
-CLEANFILES = $(top_srcdir)/src/share-lib/test/shtest.c 
+CLEANFILES = shtest.c
 
-$(top_srcdir)/src/share-lib/test/shtest.c: $(common_sources) 
+shtest.c: $(common_sources) 
 	@mkdir -p $(top_srcdir)/src/share-lib/test/
-	@echo "Generating 'test/shtest.c' for test suite."
-	$(top_srcdir)/scripts/make-tests.sh $(top_srcdir)/src/share-lib/*.c $(top_srcdir)/src/share-lib/sys/*.c $(top_srcdir)/src/share-lib/mem/*.c $(top_srcdir)/src/share-lib/fs/*.c $(top_srcdir)/src/share-lib/fs/meta/*.c $(top_srcdir)/src/share-lib/net/*.c $(top_srcdir)/src/share-lib/sys/*.c $(top_srcdir)/src/share-lib/sys/pkg/*.c > $(top_srcdir)/src/share-lib/test/shtest.c
+	@echo "Generating 'shtest.c' for test suite."
+	$(top_srcdir)/scripts/make-tests.sh $(top_srcdir)/src/share-lib/*.c $(top_srcdir)/src/share-lib/sys/*.c $(top_srcdir)/src/share-lib/mem/*.c $(top_srcdir)/src/share-lib/fs/*.c $(top_srcdir)/src/share-lib/fs/meta/*.c $(top_srcdir)/src/share-lib/net/*.c $(top_srcdir)/src/share-lib/sys/*.c $(top_srcdir)/src/share-lib/sys/pkg/*.c > shtest.c
 
 clean-local:
-	rm -f $(top_srcdir)/src/share-lib/test/shtest.c
+	rm -f shtest.c

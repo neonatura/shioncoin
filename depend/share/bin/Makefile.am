@@ -1,36 +1,17 @@
 
 
-
 noinst_SCRIPTS = \
 	.notice \
 	libshare.a
 
 noinst_PROGRAMS = \
-	sx sxc readsexe sxsh \
-	shattr \
-	shcat \
-	shcert \
-	shcp \
-	shdb \
-	shdelta \
-	shdiff \
-	shfsck \
-	shinfo \
-	shln \
-	shls \
-	shpatch \
-	shstat \
-	shpref \
-	shpasswd \
-	shpkg \
-	shrev \
-	shrm
+	sx sxc readsexe sxsh
 
 if WINDOWS
 else
 noinst_SCRIPTS += \
-	libshare.so libshare.so.5 \
-	libshare.so.5.0.$(version_patch)
+	libshare.so libshare.so.6 \
+	libshare.so.6.0.$(version_patch)
 endif
 if HAVE_DOXYGEN
 noinst_SCRIPTS += html man
@@ -65,11 +46,11 @@ libshare.a:
 libshare.so:
 	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so . 
 
-libshare.so.5:
-	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so.5 .
+libshare.so.6:
+	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so.6 .
 
-libshare.so.5.0.$(version_patch):
-	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so.5.0.$(version_patch) .
+libshare.so.6.0.$(version_patch):
+	ln -sf $(top_builddir)/src/share-lib/.libs/libshare.so.6.0.$(version_patch) .
 
 
 sx$(EXEEXT):
@@ -84,57 +65,4 @@ readsexe$(EXEEXT):
 sxsh$(EXEEXT):
 	ln -sf $(top_builddir)/src/sexe/shell/.libs/sxsh$(EXEEXT) .
 
-shcat$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shcat$(EXEEXT) .
-
-shstat$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shstat$(EXEEXT) .
-
-shls$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shls$(EXEEXT) .
-
-shattr$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shattr$(EXEEXT) .
-
-shpref$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shpref$(EXEEXT) .
-
-shrm$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shrm$(EXEEXT) .
-
-shrev$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shrev$(EXEEXT) .
-
-shcp$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shcp$(EXEEXT) .
-
-shdiff$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shdiff$(EXEEXT) .
-
-shdelta$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shdelta$(EXEEXT) .
-
-shpatch$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shpatch$(EXEEXT) .
-
-shln$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shln$(EXEEXT) .
-
-shpkg$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shpkg$(EXEEXT) .
-
-shpasswd$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shpasswd$(EXEEXT) .
-
-shinfo$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shinfo$(EXEEXT) .
-
-shcert$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shcert$(EXEEXT) .
-
-shdb$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shdb$(EXEEXT) .
-
-shfsck$(EXEEXT):
-	ln -sf $(top_builddir)/src/share-util/static/shfsck$(EXEEXT) .
 
