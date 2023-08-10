@@ -4,7 +4,7 @@
 AC_PREREQ([2.69])
 AC_INIT(libshare, 6.5)
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/share-lib])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_HEADERS([src/share-lib/test_libshare.c])

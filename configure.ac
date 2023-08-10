@@ -4,7 +4,7 @@
 AC_PREREQ([2.69])
 AC_INIT(shioncoin, 6.5)
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE()
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 

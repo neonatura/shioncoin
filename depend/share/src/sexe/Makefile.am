@@ -85,13 +85,13 @@ sxc_cflags += -DLUA_USE_POSIX -DLUA_USE_DLOPEN -Wl,-E
 endif
 if LINUX
 sx_cflags += -DLUA_USE_LINUX -Wl,-E \
-	-fstack-protector-strong \
-	-fstack-clash-protection \
-	-fcf-protection
+	-fstack-protector-strong
+#	-fstack-clash-protection \
+#	-fcf-protection
 sxc_cflags += -DLUA_USE_LINUX -Wl,-E \
-	-fstack-protector-strong \
-	-fstack-clash-protection \
-	-fcf-protection
+	-fstack-protector-strong
+#	-fstack-clash-protection \
+#	-fcf-protection
 endif
 if DEBUG
 sx_cflags += -g
