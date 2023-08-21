@@ -207,9 +207,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/shtimeu.3.gz
 %{_mandir}/man3/shutimef.3.gz
 %{_mandir}/man3/shwarn.3.gz
-%{_includedir}/*
-%{_libdir}/*.so
-%{_libdir}/*.a
+
+%exclude %{_includedir}/*
+%exclude %{_libdir}/*.so
+%exclude %{_libdir}/*.a
 
 %changelog
 * Tue Aug 01 2023 Brian Burrell <support@neo-natura.com> - 6.5

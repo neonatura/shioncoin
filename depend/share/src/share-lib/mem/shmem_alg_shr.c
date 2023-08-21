@@ -728,7 +728,7 @@ int shcr224_bin(unsigned char salt_key[SHCR224_SALT_SIZE], shcr224_t ret_key, un
   unsigned char enc_data[4096];
   uint32_t matrix[7];
   shr224_t ctx;
-  unsigned char salt[64];
+  unsigned char salt[96];
   unsigned char hash[28];
   uint32_t *v;
   uint32_t *enc_key;
@@ -739,7 +739,6 @@ int shcr224_bin(unsigned char salt_key[SHCR224_SALT_SIZE], shcr224_t ret_key, un
 
   memset(ret_key, 0, sizeof(ret_key));
 
-  memset(salt, 0, sizeof(salt));
   err = shr224_expand(salt_key, salt, SHCR224_SIZE);
   if (err) return (err);
 

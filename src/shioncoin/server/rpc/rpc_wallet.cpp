@@ -717,21 +717,23 @@ Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 	return ret;
 }
 #endif
-static const Value& GetObjectValue(Object obj, string cmp_name)
+static bool GetArrayValue(Object obj, string cmp_name, Array& retArray)
 {
 
-  for( Object::size_type i = 0; i != obj.size(); ++i )
-  {
+  for (Object::size_type i = 0; i < obj.size(); i++) {
     const Pair& pair = obj[i];
     const string& name = pair.name_;
 
     if (cmp_name == name) {
-      const Value& value = pair.value_;
-      return (value);
+			const Value& value = pair.value_;
+			if (value.type() == array_type) {
+				retArray = value.get_array();
+				return (true);
+			}
     }
   }
 
-	return Value::null;
+	return (false);
 }
 
 Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
@@ -780,103 +782,103 @@ Value rpc_wallet_import(CIface *iface, const Array& params, bool fStratum)
 
 	time_t nCreateTime = time(NULL);
 	Object objWallet = objWalletValue.get_obj();
-	Array arWallet = GetObjectValue(objWallet, iface->name).get_array();
-	for (Array::size_type i = 0; i != arWallet.size(); ++i) {
-		Value& value = arWallet[i];
-		uint32_t nECChainCounter[7];
-		Object& objAddr = value.get_obj();
+	Array arWallet;
+	if (GetArrayValue(objWallet, iface->name, arWallet)) {
+    for (Array::size_type i = 0; i < arWallet.size(); i++) {
+      Value& value = arWallet[i];
+      Object& objAddr = value.get_obj();
 
-		CAccountAddressKey addr(ifaceIndex);
-		//	todo:			addr << value.get_obj();
-		bool fImport = addr.FromValue(objAddr);
+      CAccountAddressKey addr(ifaceIndex);
+      //	todo:			addr << value.get_obj();
+      bool fImport = addr.FromValue(objAddr);
 
-		if (fImport) {
-			/* retain earliest import time. */
-			nCreateTime = MIN(addr.GetCreateTime(), nCreateTime); 
+      if (fImport) {
+        /* retain earliest import time. */
+        nCreateTime = MIN(addr.GetCreateTime(), nCreateTime); 
 
-			/* retain addr for wallet tx scan. */
-			CAccountCache *account = addr.GetAccountCache();
-			if (addr.keyid == 0 || !account) {
-				const CTxDestination& destination = addr.GetDestination();
-				if (find(vAddr.begin(), vAddr.end(), destination) == vAddr.end()) {
-					vAddr.push_back(destination);
-				}
-			} else {
-				if (addr.GetKey() != NULL) {
-					/* append all variations to tx-scan list */
+        /* retain addr for wallet tx scan. */
+        CAccountCache *account = addr.GetAccountCache();
+        if (addr.keyid == 0 || !account) {
+          const CTxDestination& destination = addr.GetDestination();
+          if (find(vAddr.begin(), vAddr.end(), destination) == vAddr.end()) {
+            vAddr.push_back(destination);
+          }
+        } else {
+          if (addr.GetKey() != NULL) {
+            /* append all variations to tx-scan list */
 #if 0
-					int nFlag = (addr.GetKey()->IsDilithium() ? ACCADDRF_DILITHIUM : 0);
-					account->GetAddrDestinations(addr.keyid, vAddr, nFlag);
+            int nFlag = (addr.GetKey()->IsDilithium() ? ACCADDRF_DILITHIUM : 0);
+            account->GetAddrDestinations(addr.keyid, vAddr, nFlag);
 #endif
-					account->CalcAddressBook(addr.GetKey(), vAddr);
-				}
+            account->CalcAddressBook(addr.GetKey(), vAddr);
+          }
 
-				bool bDefault = boolFromObject(objAddr, "default");
-				if (bDefault) {
-					account->SetDefaultAddr(addr.GetPubKey());
+          bool bDefault = boolFromObject(objAddr, "default");
+          if (bDefault) {
+            account->SetDefaultAddr(addr.GetPubKey());
 
-					for (int nMode = 0; nMode < MAX_ACCADDR; nMode++) {
-						CTxDestination dest;
-						account->GetPrimaryAddr(nMode, dest);
-						if (find(vAddr.begin(), vAddr.end(), dest) == vAddr.end()) {
-							vAddr.push_back(dest);
-						}
-					}
+            for (int nMode = 0; nMode < MAX_ACCADDR; nMode++) {
+              CTxDestination dest;
+              account->GetPrimaryAddr(nMode, dest);
+              if (find(vAddr.begin(), vAddr.end(), dest) == vAddr.end()) {
+                vAddr.push_back(dest);
+              }
+            }
 
-					const Value& echdiValue = GetObjectValue(objAddr, "echdi");
-					if (!echdiValue.is_null()) {
-						Array echdi = echdiValue.get_array();
-						for (Array::size_type nMode = 0; nMode != echdi.size(); ++nMode) {
-							int nCount = echdi[nMode].get_int();
-							account->CalculateECKeyChain(vAddr, nMode, nCount); 
-						}
-					}
 
-					const Value& dihdiValue = GetObjectValue(objAddr, "dihdi");
-					if (!dihdiValue.is_null()) {
-						Array dihdi = dihdiValue.get_array();
-						for (Array::size_type nMode = 0; nMode != dihdi.size(); ++nMode) {
-							int nCount = dihdi[nMode].get_int();
-							account->CalculateDIKeyChain(vAddr, nMode, nCount); 
-						}
-					}
-				}
+						Array echdi;
+						if (GetArrayValue(objAddr, "echdi", echdi)) {
+              for (Array::size_type nMode = 0; nMode < echdi.size() && nMode < MAX_ACCADDR; nMode++) {
+                int nCount = echdi[nMode].get_int();
+                account->CalculateECKeyChain(vAddr, nMode, nCount); 
+              }
+            }
+
+						Array dihdi;
+            if (GetArrayValue(objAddr, "dihdi", dihdi)) {
+              for (Array::size_type nMode = 0; nMode < dihdi.size() && nMode < MAX_ACCADDR; nMode++) {
+                int nCount = dihdi[nMode].get_int();
+                account->CalculateDIKeyChain(vAddr, nMode, nCount); 
+              }
+            }
+          }
 
 #if 0
-				bool bMaster = boolFromObject(objAddr, "master");
-				if (bMaster) {
-					int nMode = account->GetAddrMode(CKeyID(addr.keyid));
-					if (nMode != -1) {
-						int hdindex = numFromObject(objAddr, "hdindex");
+          bool bMaster = boolFromObject(objAddr, "master");
+          if (bMaster) {
+            int nMode = account->GetAddrMode(CKeyID(addr.keyid));
+            if (nMode != -1) {
+              int hdindex = numFromObject(objAddr, "hdindex");
 
-						/* derive new hd-keys until hdindex is reached. */ 
-						while (account->GetHDIndex(nMode) < hdindex) {
-							CPubKey hdPubKey;
+              /* derive new hd-keys until hdindex is reached. */ 
+              while (account->GetHDIndex(nMode) < hdindex) {
+                CPubKey hdPubKey;
 
-							if (!account->CreateNewPubKey(hdPubKey, /*nMode,*/
-										addr.GetKey()->nFlag | CKeyMetadata::META_HD_KEY)) {
-								break;
-							}
+                if (!account->CreateNewPubKey(hdPubKey, /*nMode,*/
+                      addr.GetKey()->nFlag | CKeyMetadata::META_HD_KEY)) {
+                  break;
+                }
 
-							const CKeyID& hdKeyid = hdPubKey.GetID();
-							account->GetAddrDestinations(hdKeyid, vAddr);
-						}
-					}
-				}
+                const CKeyID& hdKeyid = hdPubKey.GetID();
+                account->GetAddrDestinations(hdKeyid, vAddr);
+              }
+            }
+          }
 #endif
-			}
+        }
 
-			Debug("Imported new coin address \"%s\".",  addr.ToString().c_str());
-		}
+        Debug("Imported new coin address \"%s\".",  addr.ToString().c_str());
+      }
 
-		if (addr.IsValid()) {
-			/* return json version with general address info. */
-			CAccountAddress *retAddr = (CAccountAddress *)&addr;
-			Object obj = retAddr->ToValue(); 
-			obj.push_back(Pair("import", fImport));
-			ret_obj.push_back(obj);
-		}
-	}
+      if (addr.IsValid()) {
+        /* return json version with general address info. */
+        CAccountAddress *retAddr = (CAccountAddress *)&addr;
+        Object obj = retAddr->ToValue(); 
+        obj.push_back(Pair("import", fImport));
+        ret_obj.push_back(obj);
+      }
+    }
+  }
 
 	if (vAddr.size() != 0) {
 		/* update wallet */
