@@ -37,6 +37,7 @@
 #define UNSETCMD (builtincmd + 37)
 #define WAITCMD (builtincmd + 38)
 
+#define NUMBUILTINS 39
 
 #define BUILTIN_SPECIAL 0x1
 #define BUILTIN_REGULAR 0x2
@@ -49,4 +50,3 @@ struct builtincmd {
 };
 
 extern const struct builtincmd builtincmd[];
-#define NUMBUILTINS 38
